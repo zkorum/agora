@@ -646,6 +646,7 @@ export function buildMockSurveyResults({
       accessLevel: surveyViewerAccess,
       suppressionThreshold: surveySuppressionThreshold,
       suppressedRows: [],
+      questionDisplayContents: [],
     };
   }
 
@@ -655,6 +656,7 @@ export function buildMockSurveyResults({
       accessLevel: surveyViewerAccess,
       suppressionThreshold: surveySuppressionThreshold,
       suppressedRows: [],
+      questionDisplayContents: [],
       fullRows: surveyViewerAccess === "owner" ? [] : undefined,
     };
   }
@@ -775,6 +777,7 @@ export function buildMockSurveyResults({
     accessLevel: surveyViewerAccess,
     suppressionThreshold: surveySuppressionThreshold,
     suppressedRows,
+    questionDisplayContents: [],
     fullRows: surveyViewerAccess === "owner" ? fullRows : undefined,
   };
 }

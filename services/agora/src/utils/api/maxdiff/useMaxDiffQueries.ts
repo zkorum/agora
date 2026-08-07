@@ -15,14 +15,14 @@ import { useLanguageStore } from "src/stores/language";
 import { getRetainedConversationRankingStatsUpdate } from "src/utils/api/post/rankingStatsUpdate";
 import type { MaxDiffState } from "src/utils/maxdiff";
 import { hasPendingMaxDiffItemTranslations } from "src/utils/maxdiffTranslation";
-import { useBoundedTranslationPolling } from "src/utils/translation/boundedTranslationPolling";
-import { computed, type MaybeRefOrGetter, toValue, watch } from "vue";
+import {
+  isContentTranslationEventForIdentity,
+  useContentTranslationRecovery,
+} from "src/utils/translation/useContentTranslationRecovery";
+import { computed, type MaybeRefOrGetter, toValue } from "vue";
 
 import { useBackendAuthApi } from "../auth";
 import { useMaxDiffApi } from "./maxdiff";
-
-const TRANSLATION_POLL_INTERVAL_MS = 2_000;
-const TRANSLATION_POLL_MAX_DURATION_MS = 30_000;
 
 export function useMaxDiffItemsQuery({
   conversationSlugId,
@@ -33,11 +33,6 @@ export function useMaxDiffItemsQuery({
 }) {
   const { fetchMaxDiffItems } = useMaxDiffApi();
   const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
-  const translationPolling = useBoundedTranslationPolling({
-    intervalMs: TRANSLATION_POLL_INTERVAL_MS,
-    maxDurationMs: TRANSLATION_POLL_MAX_DURATION_MS,
-  });
-
   const query = useQuery({
     queryKey: [
       "maxdiff-items",
@@ -56,29 +51,50 @@ export function useMaxDiffItemsQuery({
       return response.data.items;
     },
     enabled: computed(() => toValue(enabled)),
-    refetchInterval: translationPolling.refetchInterval,
     staleTime: 60 * 1000,
     refetchOnWindowFocus: false,
     retry: false,
   });
 
-  // A later SSE or manual refetch can restart recovery after a polling timeout.
-  watch(
-    [
-      () =>
-        toValue(enabled) &&
-        hasPendingMaxDiffItemTranslations(query.data.value),
-      () => query.dataUpdatedAt.value,
-    ],
-    ([shouldPoll]) => {
-      if (shouldPoll && !translationPolling.isActive.value) {
-        translationPolling.start();
-      } else if (!shouldPoll) {
-        translationPolling.stop();
-      }
+  useContentTranslationRecovery({
+    identity: computed(() =>
+      JSON.stringify([
+        "maxdiff-items",
+        toValue(conversationSlugId),
+        displayLanguage.value,
+        [...spokenLanguages.value].sort(),
+      ])
+    ),
+    enabled,
+    isPending: computed(() =>
+      hasPendingMaxDiffItemTranslations(query.data.value)
+    ),
+    classifyEvent: (data) => {
+      const isCurrentItem = query.data.value?.some((item) =>
+        isContentTranslationEventForIdentity({
+          data,
+          subject: {
+            kind: "ranking_item",
+            conversationSlugId: toValue(conversationSlugId),
+            itemSlugId: item.slugId,
+            sourceVersion: item.displayContent.sourceVersion,
+          },
+          targetLanguageCode: displayLanguage.value,
+        })
+      );
+      return isCurrentItem === true ? "refresh" : "ignore";
     },
-    { immediate: true }
-  );
+    refresh: async () => {
+      const result = await query.refetch();
+      if (result.isError) {
+        return "pending";
+      }
+      return hasPendingMaxDiffItemTranslations(result.data)
+        ? "pending"
+        : "settled";
+    },
+    onFailure: () => undefined,
+  });
 
   return query;
 }
@@ -129,11 +145,10 @@ export function useRankingStatsCheckpointsQuery({
     ],
     queryFn: async (): Promise<RankingStatsCheckpointsResponse> => {
       const requestedSnapshotId = toValue(requestedRankingStatsSnapshotId);
-      const retainedSnapshotId =
-        getRetainedConversationRankingStatsUpdate({
-          queryClient,
-          conversationSlugId: toValue(conversationSlugId),
-        })?.rankingStatsSnapshotId;
+      const retainedSnapshotId = getRetainedConversationRankingStatsUpdate({
+        queryClient,
+        conversationSlugId: toValue(conversationSlugId),
+      })?.rankingStatsSnapshotId;
       const freshnessSnapshotId =
         requestedSnapshotId === undefined
           ? retainedSnapshotId

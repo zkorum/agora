@@ -48,6 +48,7 @@ import {
 } from "fastify-type-provider-zod";
 import fs from "fs";
 import { Transform } from "node:stream";
+import pLimit from "p-limit";
 import type { z } from "zod";
 import {
     config,
@@ -236,6 +237,9 @@ import {
 import type {
     ConversationMultilingualSetting,
     DeviceIsKnownTrueLoginStatus,
+    SurveyConfig,
+    SurveyQuestionContentVariant,
+    SurveyQuestionResultDisplayContent,
 } from "./shared/types/zod.js";
 import type { DeviceLoginStatusInternal } from "./service/authUtil.js";
 import {
@@ -712,7 +716,7 @@ async function getPreferredContentTranslationAvailabilityForConversation({
     };
 }
 
-async function getOpinionDisplayContentPreferencesForConversation({
+async function getDisplayContentPreferencesForConversation({
     database = db,
     conversationSlugId,
     personalizationUserId,
@@ -916,6 +920,114 @@ const queueValkeyRef: ValkeyRef = {
 const contentTranslationQueueScript = new Script(
     ENQUEUE_CONTENT_TRANSLATION_WORK_SCRIPT,
 );
+const SURVEY_DISPLAY_CONTENT_CONCURRENCY = 5;
+
+function getSurveyQuestionConfigContent(
+    question: SurveyConfig["questions"][number],
+): SurveyQuestionContentVariant | undefined {
+    if (question.questionType === "free_text") {
+        return { questionText: question.questionText, options: [] };
+    }
+    const options = question.options.flatMap((option) =>
+        option.optionSlugId === undefined
+            ? []
+            : [
+                  {
+                      optionSlugId: option.optionSlugId,
+                      optionText: option.optionText,
+                  },
+              ],
+    );
+    return options.length === question.options.length
+        ? { questionText: question.questionText, options }
+        : undefined;
+}
+
+function areSurveyQuestionContentsEqual({
+    left,
+    right,
+}: {
+    left: SurveyQuestionContentVariant;
+    right: SurveyQuestionContentVariant;
+}): boolean {
+    return (
+        left.questionText === right.questionText &&
+        left.options.length === right.options.length &&
+        left.options.every(
+            (option, index) =>
+                option.optionSlugId === right.options[index]?.optionSlugId &&
+                option.optionText === right.options[index]?.optionText,
+        )
+    );
+}
+
+async function getSurveyQuestionDisplayContents({
+    conversationSlugId,
+    questions,
+    displayLanguage,
+    spokenLanguages,
+    targetLanguage,
+    translationAllowed,
+}: {
+    conversationSlugId: string;
+    questions: SurveyConfig["questions"];
+    displayLanguage: SupportedDisplayLanguageCodes;
+    spokenLanguages: SupportedSpokenLanguageCodes[];
+    targetLanguage: SupportedDisplayLanguageCodes;
+    translationAllowed: boolean;
+}): Promise<SurveyQuestionResultDisplayContent[]> {
+    const limit = pLimit(SURVEY_DISPLAY_CONTENT_CONCURRENCY);
+    const displayContents = await Promise.all(
+        questions.map((question) =>
+            limit(async () => {
+                if (question.questionSlugId === undefined) {
+                    return undefined;
+                }
+                const localizedContent =
+                    await contentTranslationService.requestSurveyQuestionContentTranslation(
+                        {
+                            db,
+                            valkey: queueValkeyRef.current,
+                            queueScript: contentTranslationQueueScript,
+                            conversationSlugId,
+                            questionSlugId: question.questionSlugId,
+                            targetLanguageCode: targetLanguage,
+                            requestMode: "read_existing",
+                            now: nowZeroMs(),
+                            log,
+                            beforeQueueTranslationWork: () => Promise.resolve(),
+                        },
+                    );
+                const sourceContent =
+                    localizedContent?.content.variants.original;
+                if (
+                    localizedContent === undefined ||
+                    sourceContent === undefined
+                ) {
+                    return undefined;
+                }
+
+                return {
+                    questionSlugId: question.questionSlugId,
+                    sourceContent,
+                    displayContent:
+                        conversationContentService.toSurveyQuestionDisplayContent(
+                            {
+                                content: localizedContent.content,
+                                translationAllowed,
+                                displayLanguage,
+                                spokenLanguages,
+                            },
+                        ),
+                };
+            }),
+        ),
+    );
+    return displayContents.flatMap((content) =>
+        content === undefined ? [] : [content],
+    );
+}
+
 const contentTranslationUserRateLimitScript = new Script(
     CONTENT_TRANSLATION_USER_RATE_LIMIT_SCRIPT,
 );
@@ -3223,7 +3335,7 @@ server.after(() => {
                 frameKey: request.body.frameKey,
                 personalizationUserId,
                 resolveDisplayContentPreferences: async ({ db: analysisDb }) =>
-                    await getOpinionDisplayContentPreferencesForConversation({
+                    await getDisplayContentPreferencesForConversation({
                         database: analysisDb,
                         conversationSlugId: request.body.conversationSlugId,
                         personalizationUserId,
@@ -3284,7 +3396,7 @@ server.after(() => {
                 personalizationUserId,
                 kind: request.body.kind,
                 resolveDisplayContentPreferences: async ({ db: analysisDb }) =>
-                    await getOpinionDisplayContentPreferencesForConversation({
+                    await getDisplayContentPreferencesForConversation({
                         database: analysisDb,
                         conversationSlugId: request.body.conversationSlugId,
                         personalizationUserId,
@@ -4343,86 +4455,59 @@ server.after(() => {
             const headerDisplayLanguage = getRequestDisplayLanguage({
                 request,
             });
-            const languagePreferences = deviceStatus.isKnown
-                ? await getLanguagePreferences({
-                      db,
-                      userId: deviceStatus.userId,
-                      request: {
-                          currentDisplayLanguage: headerDisplayLanguage,
-                      },
-                  })
-                : {
-                      displayLanguage: headerDisplayLanguage,
-                      spokenLanguages: [headerDisplayLanguage],
-                  };
-            const surveyForm = await surveyService.fetchSurveyForm({
-                db,
-                conversationSlugId: request.body.conversationSlugId,
-                participantId: deviceStatus.isKnown
-                    ? deviceStatus.userId
-                    : undefined,
-            });
-            const preferredContentTranslation =
-                await getPreferredContentTranslationAvailabilityForConversation(
-                    {
-                        conversationSlugId: request.body.conversationSlugId,
-                        displayLanguage: languagePreferences.displayLanguage,
-                    },
-                );
-            const questions = await Promise.all(
-                surveyForm.questions.map(async (question) => {
-                    const localizedContent =
-                        question.questionSlugId === undefined
-                            ? undefined
-                            : await contentTranslationService.requestSurveyQuestionContentTranslation(
-                                  {
-                                      db,
-                                      valkey: queueValkeyRef.current,
-                                      queueScript:
-                                          contentTranslationQueueScript,
-                                      conversationSlugId:
-                                          request.body.conversationSlugId,
-                                      questionSlugId: question.questionSlugId,
-                                      targetLanguageCode:
-                                          preferredContentTranslation.targetLanguageCode,
-                                      requestMode: "read_existing",
-                                      now: nowZeroMs(),
-                                      log,
-                                      beforeQueueTranslationWork: () =>
-                                          Promise.resolve(),
-                                  },
-                              );
-                    if (localizedContent === undefined) {
-                        return {
-                            ...question,
-                            displayContent: undefined,
-                        };
-                    }
-
-                    return {
-                        ...question,
-                        displayContent:
-                            conversationContentService.toSurveyQuestionDisplayContent(
-                                {
-                                    content: localizedContent.content,
-                                    translationAllowed:
-                                        preferredContentTranslation.isAllowed,
-                                    displayLanguage:
-                                        languagePreferences.displayLanguage,
-                                    spokenLanguages:
-                                        languagePreferences.spokenLanguages,
-                                },
-                            ),
-                    };
+            const [surveyForm, displayContentPreferences] = await Promise.all([
+                surveyService.fetchSurveyForm({
+                    db,
+                    conversationSlugId: request.body.conversationSlugId,
+                    participantId: deviceStatus.isKnown
+                        ? deviceStatus.userId
+                        : undefined,
                 }),
+                getDisplayContentPreferencesForConversation({
+                    conversationSlugId: request.body.conversationSlugId,
+                    personalizationUserId: deviceStatus.isKnown
+                        ? deviceStatus.userId
+                        : undefined,
+                    headerDisplayLanguage,
+                }),
+            ]);
+            const questionDisplayContents =
+                await getSurveyQuestionDisplayContents({
+                    conversationSlugId: request.body.conversationSlugId,
+                    questions: surveyForm.questions,
+                    displayLanguage: displayContentPreferences.displayLanguage,
+                    spokenLanguages: displayContentPreferences.spokenLanguages,
+                    targetLanguage: displayContentPreferences.targetLanguage,
+                    translationAllowed:
+                        displayContentPreferences.translationAllowed,
+                });
+            const displayContentsByQuestionSlugId = new Map(
+                questionDisplayContents.map((content) => [
+                    content.questionSlugId,
+                    content,
+                ]),
             );
             const responseQuestions: Extract<
                 SurveyFormFetchResponse,
                 { success: true }
             >["questions"] = [];
-            for (const question of questions) {
-                const { displayContent } = question;
-                if (displayContent === undefined) {
+            for (const question of surveyForm.questions) {
+                const questionDisplayContent =
+                    question.questionSlugId === undefined
+                        ? undefined
+                        : displayContentsByQuestionSlugId.get(
+                              question.questionSlugId,
+                          );
+                const formSourceContent =
+                    getSurveyQuestionConfigContent(question);
+                if (
+                    questionDisplayContent === undefined ||
+                    formSourceContent === undefined ||
+                    !areSurveyQuestionContentsEqual({
+                        left: questionDisplayContent.sourceContent,
+                        right: formSourceContent,
+                    })
+                ) {
                     return {
                         success: false as const,
                         reason: "content_not_found" as const,
@@ -4430,7 +4515,7 @@ server.after(() => {
                 }
                 responseQuestions.push({
                     ...question,
-                    displayContent,
+                    displayContent: questionDisplayContent.displayContent,
                 });
             }
             const response: SurveyFormFetchResponse = {
@@ -4594,25 +4679,45 @@ server.after(() => {
                 parsedHeaderDisplayLanguage.success
                     ? parsedHeaderDisplayLanguage.data
                     : "en";
-            const displayLanguage = deviceStatus.isKnown
-                ? (
-                      await getLanguagePreferences({
-                          db,
-                          userId: deviceStatus.userId,
-                          request: {
-                              currentDisplayLanguage: headerDisplayLanguage,
-                          },
-                      })
-                  ).displayLanguage
-                : headerDisplayLanguage;
-            return await surveyService.fetchSurveyAggregatedResults({
-                db,
-                conversationSlugId: request.body.conversationSlugId,
-                analysisView: request.body.analysisView,
-                checkpointViewSnapshotId: request.body.checkpointViewSnapshotId,
-                userId: deviceStatus.isKnown ? deviceStatus.userId : undefined,
-                displayLanguage,
-            });
+            const displayContentPreferences =
+                await getDisplayContentPreferencesForConversation({
+                    conversationSlugId: request.body.conversationSlugId,
+                    personalizationUserId: deviceStatus.isKnown
+                        ? deviceStatus.userId
+                        : undefined,
+                    headerDisplayLanguage,
+                });
+            const [surveyResults, surveyConfig] = await Promise.all([
+                surveyService.fetchSurveyAggregatedResults({
+                    db,
+                    conversationSlugId: request.body.conversationSlugId,
+                    analysisView: request.body.analysisView,
+                    checkpointViewSnapshotId:
+                        request.body.checkpointViewSnapshotId,
+                    userId: deviceStatus.isKnown
+                        ? deviceStatus.userId
+                        : undefined,
+                    displayLanguage: displayContentPreferences.displayLanguage,
+                }),
+                surveyService.fetchSurveyConfig({
+                    db,
+                    conversationSlugId: request.body.conversationSlugId,
+                }),
+            ]);
+            if (surveyConfig === undefined) {
+                return { ...surveyResults, questionDisplayContents: [] };
+            }
+            const questionDisplayContents =
+                await getSurveyQuestionDisplayContents({
+                    conversationSlugId: request.body.conversationSlugId,
+                    questions: surveyConfig.questions,
+                    displayLanguage: displayContentPreferences.displayLanguage,
+                    spokenLanguages: displayContentPreferences.spokenLanguages,
+                    targetLanguage: displayContentPreferences.targetLanguage,
+                    translationAllowed:
+                        displayContentPreferences.translationAllowed,
+                });
+            return { ...surveyResults, questionDisplayContents };
         },
     });
     server.withTypeProvider<ZodTypeProvider>().route({

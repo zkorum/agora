@@ -59,10 +59,7 @@ import {
   parseRawSSEFrame,
   splitCompleteSSEFrames,
 } from "src/utils/sse/frameParser";
-import {
-  publishContentTranslationFailed,
-  publishContentTranslationUpdated,
-} from "src/utils/translation/contentTranslationEvents";
+import { publishContentTranslationEvent } from "src/utils/translation/contentTranslationEvents";
 import { useNotify } from "src/utils/ui/notify";
 import { type MaybeRefOrGetter, onUnmounted, ref, toValue, watch } from "vue";
 
@@ -1299,7 +1296,6 @@ export function useRealtimeSSE({
       }
       if (data.status === "failed") {
         updateProjectContentQueryStatus({ data, status: "failed" });
-        publishContentTranslationFailed(data);
       } else {
         void queryClient.invalidateQueries({
           predicate: (query) =>
@@ -1309,7 +1305,7 @@ export function useRealtimeSSE({
               sourceVersion: data.subject.sourceVersion,
               targetLanguageCode: data.targetLanguageCode,
             }),
-          refetchType: "active",
+          refetchType: "none",
         });
         void queryClient.invalidateQueries({
           queryKey: getContentTranslationQueryKey({
@@ -1322,38 +1318,38 @@ export function useRealtimeSSE({
           }),
           refetchType: "none",
         });
-        publishContentTranslationUpdated(data);
       }
+      publishContentTranslationEvent(data);
       return;
     }
 
     if (data.status === "failed") {
-      publishContentTranslationFailed(data);
+      publishContentTranslationEvent(data);
       return;
     }
 
     void queryClient.invalidateQueries({
       queryKey: ["contentTranslation", data.subject, data.targetLanguageCode],
-      refetchType: "active",
+      refetchType: "none",
     });
     if (data.subject.kind === "conversation") {
       void queryClient.invalidateQueries({
         queryKey: ["conversation", data.subject.conversationSlugId],
-        refetchType: "active",
+        refetchType: "none",
       });
       void queryClient.invalidateQueries({
         queryKey: getConversationContentQueryPrefix({
           conversationSlugId: data.subject.conversationSlugId,
         }),
-        refetchType: "active",
+        refetchType: "none",
       });
       void queryClient.invalidateQueries({
         queryKey: getConversationDisplayContentQueryPrefix({
           conversationSlugId: data.subject.conversationSlugId,
         }),
-        refetchType: "active",
+        refetchType: "none",
       });
-      publishContentTranslationUpdated(data);
+      publishContentTranslationEvent(data);
       return;
     }
     if (data.subject.kind === "survey_question") {
@@ -1361,16 +1357,23 @@ export function useRealtimeSSE({
         queryKey: ["survey-form", data.subject.conversationSlugId],
         refetchType: "active",
       });
-      publishContentTranslationUpdated(data);
+      void queryClient.invalidateQueries({
+        queryKey: [
+          "survey-results-aggregated",
+          data.subject.conversationSlugId,
+        ],
+        refetchType: "active",
+      });
+      publishContentTranslationEvent(data);
       return;
     }
     if (data.subject.kind === "ranking_item") {
       void queryClient.invalidateQueries({
         queryKey: ["maxdiff-items", data.subject.conversationSlugId],
-        refetchType: "active",
+        refetchType: "none",
       });
     }
-    publishContentTranslationUpdated(data);
+    publishContentTranslationEvent(data);
   }
 
   async function updateProjectPageContentTranslation(

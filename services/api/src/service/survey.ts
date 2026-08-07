@@ -2107,6 +2107,20 @@ export async function getSurveyConfigForConversation({
     };
 }
 
+export async function fetchSurveyConfig({
+    db,
+    conversationSlugId,
+}: {
+    db: PostgresJsDatabase;
+    conversationSlugId: string;
+}): Promise<SurveyConfig | undefined> {
+    const { conversationId } = await getConversationAccessContextBySlugId({
+        db,
+        conversationSlugId,
+    });
+    return await getSurveyConfigForConversation({ db, conversationId });
+}
+
 export async function getSurveyGateSummary({
     db,
     conversationId,

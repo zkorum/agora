@@ -102,6 +102,7 @@
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
 import ZKLiveStatusDot from "src/components/ui-library/ZKLiveStatusDot.vue";
 import {
   getLanguageTextDirection,
@@ -109,9 +110,15 @@ import {
 } from "src/shared/languages";
 import type { ConversationContentFetchResponse } from "src/shared/types/dto";
 import type { ExtendedConversationDisplayData } from "src/shared/types/zod";
+import { useLanguageStore } from "src/stores/language";
 import { useProjectContentQuery } from "src/utils/api/contentTranslation/useContentTranslationQueries";
 import { getConversationLanguageSettingSourceLanguageCode } from "src/utils/translation/contentTranslation";
-import { computed } from "vue";
+import {
+  getContentTranslationEventIdentity,
+  isContentTranslationEventForIdentity,
+  useContentTranslationRecovery,
+} from "src/utils/translation/useContentTranslationRecovery";
+import { computed, ref, watch } from "vue";
 
 import ProjectConversationHeaderCard from "./ProjectConversationHeaderCard.vue";
 import ProjectDetailsAside from "./ProjectDetailsAside.vue";
@@ -139,10 +146,11 @@ const props = defineProps<{
   bannerImageUrl?: string;
   reportLayout?: boolean;
 }>();
-
 const emit = defineEmits<{
   conversationDeleted: [];
 }>();
+
+const { displayLanguage } = storeToRefs(useLanguageStore());
 
 const selectedLanguage = defineModel<SupportedDisplayLanguageCodes>(
   "selectedLanguage",
@@ -187,6 +195,22 @@ const translateProjectToSelectedLanguage = computed(() =>
     projectDynamicTranslationEnabled: props.project.dynamicTranslationEnabled,
   })
 );
+const projectTranslationIdentity = computed(() =>
+  getContentTranslationEventIdentity({
+    subject: {
+      kind: "project",
+      projectSlug: props.project.slug,
+      sourceVersion: props.project.displayContent.sourceVersion,
+    },
+    targetLanguageCode: displayLanguage.value,
+  })
+);
+const submittedProjectTranslationIdentity = ref<string>();
+const projectTranslationRequestMode = computed(() =>
+  submittedProjectTranslationIdentity.value === projectTranslationIdentity.value
+    ? "read_existing"
+    : "queue_if_missing"
+);
 const translatedProjectContentQuery = useProjectContentQuery({
   projectSlug: computed(() => props.project.slug),
   conversationSlugId: computed(
@@ -194,8 +218,60 @@ const translatedProjectContentQuery = useProjectContentQuery({
   ),
   sourceVersion: computed(() => props.project.displayContent.sourceVersion),
   mode: "translated",
-  requestMode: "queue_if_missing",
+  requestMode: projectTranslationRequestMode,
   enabled: translateProjectToSelectedLanguage,
+});
+watch(
+  () => translatedProjectContentQuery.isFetching.value,
+  (isFetching, wasFetching) => {
+    if (
+      wasFetching &&
+      !isFetching &&
+      !translatedProjectContentQuery.isError.value
+    ) {
+      submittedProjectTranslationIdentity.value =
+        projectTranslationIdentity.value;
+    }
+  }
+);
+useContentTranslationRecovery({
+  identity: projectTranslationIdentity,
+  enabled: translateProjectToSelectedLanguage,
+  isPending: computed(() => {
+    const status = translatedProjectContentQuery.data.value?.status;
+    return (
+      translatedProjectContentQuery.isError.value ||
+      status === "pending" ||
+      status === "running"
+    );
+  }),
+  classifyEvent: (data) => {
+    if (
+      !isContentTranslationEventForIdentity({
+        data,
+        subject: {
+          kind: "project",
+          projectSlug: props.project.slug,
+          sourceVersion: props.project.displayContent.sourceVersion,
+        },
+        targetLanguageCode: displayLanguage.value,
+      })
+    ) {
+      return "ignore";
+    }
+    return data.status === "failed" ? "fail" : "refresh";
+  },
+  refresh: async () => {
+    const result = await translatedProjectContentQuery.refetch();
+    if (result.isError || result.data === undefined) {
+      return "pending";
+    }
+    if (result.data.status === "failed") {
+      return "failed";
+    }
+    return result.data.status === "available" ? "settled" : "pending";
+  },
+  onFailure: () => undefined,
 });
 const projectTitle = computed(() => {
   const translatedContent = translatedProjectContentQuery.data.value;

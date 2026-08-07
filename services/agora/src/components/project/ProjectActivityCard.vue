@@ -111,6 +111,10 @@ import { htmlToCountedText } from "src/shared/shared";
 import type { LocalizedContentTranslationStatus } from "src/shared/types/zod";
 import { useConversationContentQuery } from "src/utils/api/contentTranslation/useContentTranslationQueries";
 import type { ContentTranslationDisplayMode } from "src/utils/translation/contentTranslation";
+import {
+  isContentTranslationEventForIdentity,
+  useContentTranslationRecovery,
+} from "src/utils/translation/useContentTranslationRecovery";
 import { computed, ref, watch } from "vue";
 
 import ProjectActionButton from "./ProjectActionButton.vue";
@@ -134,6 +138,22 @@ const props = defineProps<{
 const activityTranslationModePreference = ref<
   ContentTranslationDisplayMode | undefined
 >();
+const indexedActivitySlugId = computed(() =>
+  props.activity.isIndexed ? props.activity.slugId : undefined
+);
+const pendingServerTranslationMode = computed<
+  ContentTranslationDisplayMode | undefined
+>(() => {
+  const translationControl = props.activity.displayContent.translationControl;
+  if (
+    translationControl === null ||
+    (translationControl.status !== "pending" &&
+      translationControl.status !== "running")
+  ) {
+    return undefined;
+  }
+  return translationControl.alternateMode;
+});
 const userIdentityText = computed<UserIdentityCardTranslations>(
   () => userIdentityCardTranslations[props.languageCode]
 );
@@ -156,7 +176,9 @@ const activityTypeIcon = computed(() =>
 
 const isActivityInteractive = computed(() => props.activity.isIndexed);
 
-const activityIdentity = computed(() => getProjectActivityIdentity(props.activity));
+const activityIdentity = computed(() =>
+  getProjectActivityIdentity(props.activity)
+);
 
 const activityLinkTarget = computed(() => {
   if (!props.activity.isIndexed) {
@@ -165,7 +187,10 @@ const activityLinkTarget = computed(() => {
 
   return {
     name: "/project/[projectSlug]/conversation/[postSlugId]/" as const,
-    params: { projectSlug: props.projectSlug, postSlugId: props.activity.slugId },
+    params: {
+      projectSlug: props.projectSlug,
+      postSlugId: props.activity.slugId,
+    },
   };
 });
 
@@ -203,57 +228,139 @@ const activityActionAccessibleLabel = computed(() =>
 const requestedActivityContentMode = computed<ContentTranslationDisplayMode>(
   () =>
     activityTranslationModePreference.value ??
+    pendingServerTranslationMode.value ??
     (props.activity.displayContent.status === "available"
       ? props.activity.displayContent.mode
       : "original")
 );
+const requestedActivityTranslationIdentity = computed(() =>
+  JSON.stringify([
+    indexedActivitySlugId.value,
+    props.activity.displayContent.sourceVersion,
+    requestedActivityContentMode.value,
+    props.languageCode,
+  ])
+);
+const submittedActivityTranslationIdentity = ref<string>();
+const requestedActivityContentRequestMode = computed(() =>
+  requestedActivityContentMode.value === "translated" &&
+  activityTranslationModePreference.value === "translated" &&
+  submittedActivityTranslationIdentity.value !==
+    requestedActivityTranslationIdentity.value
+    ? "queue_if_missing"
+    : "read_existing"
+);
 const requestedActivityContentQuery = useConversationContentQuery({
-  conversationSlugId: computed(() =>
-    props.activity.isIndexed ? props.activity.slugId : ""
-  ),
+  conversationSlugId: computed(() => indexedActivitySlugId.value ?? ""),
   sourceVersion: computed(() => props.activity.displayContent.sourceVersion),
   mode: requestedActivityContentMode,
-  requestMode: computed(() =>
-    requestedActivityContentMode.value === "translated"
-      ? "queue_if_missing"
-      : "read_existing"
-  ),
+  requestMode: requestedActivityContentRequestMode,
   enabled: computed(
-    () => activityTranslationModePreference.value !== undefined && props.activity.isIndexed
+    () =>
+      props.activity.isIndexed &&
+      (activityTranslationModePreference.value !== undefined ||
+        pendingServerTranslationMode.value !== undefined)
   ),
 });
-const localActivityDisplayContent = computed<ProjectActivity["displayContent"]>(() => {
-  const displayContent = props.activity.displayContent;
-  const alternateContent = props.activity.isIndexed
-    ? undefined
-    : props.activity.alternateContent;
-  if (
-    activityTranslationModePreference.value === undefined ||
-    displayContent.status !== "available" ||
-    activityTranslationModePreference.value === displayContent.mode ||
-    alternateContent === undefined ||
-    alternateContent.mode !== activityTranslationModePreference.value
-  ) {
-    return displayContent;
+watch(
+  () => requestedActivityContentQuery.isFetching.value,
+  (isFetching, wasFetching) => {
+    if (
+      wasFetching &&
+      !isFetching &&
+      !requestedActivityContentQuery.isError.value
+    ) {
+      submittedActivityTranslationIdentity.value =
+        requestedActivityTranslationIdentity.value;
+    }
   }
-
-  return {
-    ...displayContent,
-    mode: alternateContent.mode,
-    content: alternateContent.content,
-    translationControl:
-      displayContent.translationControl === null
-        ? null
-        : {
-            ...displayContent.translationControl,
-            alternateMode: displayContent.mode,
-          },
-  };
+);
+useContentTranslationRecovery({
+  identity: requestedActivityTranslationIdentity,
+  enabled: computed(
+    () =>
+      props.activity.isIndexed &&
+      (activityTranslationModePreference.value === "translated" ||
+        pendingServerTranslationMode.value === "translated")
+  ),
+  isPending: computed(() => {
+    const status = requestedActivityContentQuery.data.value?.status;
+    return (
+      requestedActivityContentQuery.isError.value ||
+      status === "pending" ||
+      status === "running"
+    );
+  }),
+  classifyEvent: (data) => {
+    const conversationSlugId = indexedActivitySlugId.value;
+    if (
+      conversationSlugId === undefined ||
+      !isContentTranslationEventForIdentity({
+        data,
+        subject: {
+          kind: "conversation",
+          conversationSlugId,
+          sourceVersion: props.activity.displayContent.sourceVersion,
+        },
+        targetLanguageCode: props.languageCode,
+      })
+    ) {
+      return "ignore";
+    }
+    return data.status === "failed" ? "fail" : "refresh";
+  },
+  refresh: async () => {
+    const result = await requestedActivityContentQuery.refetch();
+    if (result.isError || result.data === undefined) {
+      return "pending";
+    }
+    if (result.data.status === "failed") {
+      return "failed";
+    }
+    return result.data.status === "available" &&
+      result.data.mode === "translated"
+      ? "settled"
+      : "pending";
+  },
+  onFailure: () => undefined,
 });
-const activeActivityDisplayContent = computed<ProjectActivity["displayContent"]>(() => {
+const localActivityDisplayContent = computed<ProjectActivity["displayContent"]>(
+  () => {
+    const displayContent = props.activity.displayContent;
+    const alternateContent = props.activity.isIndexed
+      ? undefined
+      : props.activity.alternateContent;
+    if (
+      activityTranslationModePreference.value === undefined ||
+      displayContent.status !== "available" ||
+      activityTranslationModePreference.value === displayContent.mode ||
+      alternateContent === undefined ||
+      alternateContent.mode !== activityTranslationModePreference.value
+    ) {
+      return displayContent;
+    }
+
+    return {
+      ...displayContent,
+      mode: alternateContent.mode,
+      content: alternateContent.content,
+      translationControl:
+        displayContent.translationControl === null
+          ? null
+          : {
+              ...displayContent.translationControl,
+              alternateMode: displayContent.mode,
+            },
+    };
+  }
+);
+const activeActivityDisplayContent = computed<
+  ProjectActivity["displayContent"]
+>(() => {
   if (
     props.activity.isIndexed &&
-    activityTranslationModePreference.value !== undefined &&
+    (activityTranslationModePreference.value !== undefined ||
+      pendingServerTranslationMode.value !== undefined) &&
     requestedActivityContentQuery.data.value !== undefined
   ) {
     const fetchedContent = requestedActivityContentQuery.data.value;
@@ -297,7 +404,8 @@ const activityTranslationControl = computed<
     }
   | undefined
 >(() => {
-  const translationControl = activeActivityDisplayContent.value.translationControl;
+  const translationControl =
+    activeActivityDisplayContent.value.translationControl;
   if (translationControl === null) {
     return undefined;
   }
@@ -342,7 +450,6 @@ function t(
     params,
   });
 }
-
 </script>
 
 <style scoped lang="scss">

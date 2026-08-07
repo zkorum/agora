@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import uuid
 
-from content_translation_worker.events import build_content_translation_event_data
+from content_translation_worker.events import (
+    build_content_translation_event_data,
+    build_project_content_translation_event_data,
+)
 
 
 def test_build_content_translation_event_data() -> None:
@@ -75,3 +78,27 @@ def test_build_opinion_translation_event_data_keeps_source_revision() -> None:
         **subject,
         "sourceVersion": str(source_version),
     }
+
+
+def test_build_project_content_translation_event_data() -> None:
+    source_version = uuid.UUID("029a6835-a9ed-44b3-bddb-72c6e3780c5e")
+
+    event_data = build_project_content_translation_event_data(
+        project_slug="citizens-project",
+        target_language_code="fr",
+        status="completed",
+        source_version=source_version,
+        timestamp_ms=123456,
+    )
+
+    assert event_data.payload == {
+        "subject": {
+            "kind": "project",
+            "projectSlug": "citizens-project",
+            "sourceVersion": str(source_version),
+        },
+        "targetLanguageCode": "fr",
+        "status": "completed",
+        "timestamp": 123456,
+    }
+    assert event_data.topic == "translation:project:citizens-project:target:fr"

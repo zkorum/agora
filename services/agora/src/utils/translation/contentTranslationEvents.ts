@@ -1,45 +1,28 @@
 import type { SSEContentTranslationUpdatedData } from "src/shared/types/sse";
 
-type ContentTranslationFailedListener = (
-  data: SSEContentTranslationUpdatedData
-) => void;
-type ContentTranslationUpdatedListener = (
+type ContentTranslationEventListener = (
   data: SSEContentTranslationUpdatedData
 ) => void;
 
-const failedListeners = new Set<ContentTranslationFailedListener>();
-const updatedListeners = new Set<ContentTranslationUpdatedListener>();
+const listeners = new Set<ContentTranslationEventListener>();
 
-export function publishContentTranslationUpdated(
+export function publishContentTranslationEvent(
   data: SSEContentTranslationUpdatedData
 ): void {
-  for (const listener of updatedListeners) {
-    listener(data);
+  for (const listener of listeners) {
+    try {
+      listener(data);
+    } catch (error) {
+      console.error("[ContentTranslation] Event listener failed", error);
+    }
   }
 }
 
-export function subscribeToContentTranslationUpdated(
-  listener: ContentTranslationUpdatedListener
+export function subscribeToContentTranslationEvents(
+  listener: ContentTranslationEventListener
 ): () => void {
-  updatedListeners.add(listener);
+  listeners.add(listener);
   return () => {
-    updatedListeners.delete(listener);
-  };
-}
-
-export function publishContentTranslationFailed(
-  data: SSEContentTranslationUpdatedData
-): void {
-  for (const listener of failedListeners) {
-    listener(data);
-  }
-}
-
-export function subscribeToContentTranslationFailed(
-  listener: ContentTranslationFailedListener
-): () => void {
-  failedListeners.add(listener);
-  return () => {
-    failedListeners.delete(listener);
+    listeners.delete(listener);
   };
 }

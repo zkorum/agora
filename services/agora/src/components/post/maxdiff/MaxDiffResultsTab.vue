@@ -300,7 +300,7 @@ import {
   type MaxDiffShortcutItem,
   maxdiffShortcutItemSchema,
 } from "src/utils/component/analysis/maxdiffShortcutBar";
-import { subscribeToContentTranslationUpdated } from "src/utils/translation/contentTranslationEvents";
+import { subscribeToContentTranslationEvents } from "src/utils/translation/contentTranslationEvents";
 import { getRankingItemDisplayText } from "src/utils/translation/rankingItemDisplayText";
 import {
   computed,
@@ -1189,9 +1189,10 @@ function unregisterRefreshHandler(): void {
 
 function registerTranslationHandler(): void {
   unregisterTranslationHandler();
-  unregisterTranslationUpdateHandler = subscribeToContentTranslationUpdated(
+  unregisterTranslationUpdateHandler = subscribeToContentTranslationEvents(
     (data) => {
       if (
+        data.targetLanguageCode === displayLanguage.value &&
         data.subject.kind === "ranking_item" &&
         data.subject.conversationSlugId === conversationSlugId
       ) {

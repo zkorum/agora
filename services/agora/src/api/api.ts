@@ -6344,6 +6344,7 @@ export interface ApiV1SurveyResultsAggregatedPost200Response {
     'suppressionThreshold': number;
     'suppressedRows': Array<ApiV1SurveyResultsAggregatedPost200ResponseSuppressedRowsInner>;
     'fullRows'?: Array<ApiV1SurveyResultsAggregatedPost200ResponseSuppressedRowsInner>;
+    'questionDisplayContents': Array<ApiV1SurveyResultsAggregatedPost200ResponseQuestionDisplayContentsInner>;
 }
 
 export const ApiV1SurveyResultsAggregatedPost200ResponseAccessLevelEnum = {
@@ -6353,6 +6354,11 @@ export const ApiV1SurveyResultsAggregatedPost200ResponseAccessLevelEnum = {
 
 export type ApiV1SurveyResultsAggregatedPost200ResponseAccessLevelEnum = typeof ApiV1SurveyResultsAggregatedPost200ResponseAccessLevelEnum[keyof typeof ApiV1SurveyResultsAggregatedPost200ResponseAccessLevelEnum];
 
+export interface ApiV1SurveyResultsAggregatedPost200ResponseQuestionDisplayContentsInner {
+    'questionSlugId': string;
+    'sourceContent': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOfContent;
+    'displayContent': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContent;
+}
 export interface ApiV1SurveyResultsAggregatedPost200ResponseSuppressedRowsInner {
     'scope': ApiV1SurveyResultsAggregatedPost200ResponseSuppressedRowsInnerScopeEnum;
     'clusterId': string;

@@ -2,15 +2,14 @@ import { useQueryClient } from "@tanstack/vue-query";
 import { isAxiosError } from "axios";
 import { storeToRefs } from "pinia";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type { SSEContentTranslationUpdatedData } from "src/shared/types/sse";
 import type {
   ContentTranslationSubject,
   LocalizedContentTranslationStatus,
   ProjectContentVariant,
+  SurveyQuestionContentVariant,
   TitleBodyContentVariant,
 } from "src/shared/types/zod";
 import {
-  zodConversationContentVariant,
   zodOpinionContentVariant,
   zodProjectContentVariant,
   zodSurveyQuestionContentVariant,
@@ -22,9 +21,8 @@ import { useContentTranslationQuery } from "src/utils/api/contentTranslation/use
 import { updateConversationQueryCache } from "src/utils/api/post/useConversationQuery";
 import { useNotify } from "src/utils/ui/notify";
 import type { MaybeRefOrGetter } from "vue";
-import { computed, onScopeDispose, ref, toValue, watch } from "vue";
+import { computed, ref, toValue, watch } from "vue";
 
-import { useBoundedTranslationPolling } from "./boundedTranslationPolling";
 import {
   type ContentTranslationDisplayMode,
   getContentTranslationSourceLanguageLabel,
@@ -32,19 +30,36 @@ import {
   resolveContentTranslationPollingOutcome,
 } from "./contentTranslation";
 import {
-  subscribeToContentTranslationFailed,
-  subscribeToContentTranslationUpdated,
-} from "./contentTranslationEvents";
-import {
   type ContentTranslationPreviewTranslations,
   contentTranslationPreviewTranslations,
 } from "./useContentTranslationPreview.i18n";
+import {
+  type ContentTranslationEventSubject,
+  getContentTranslationEventIdentity,
+  isContentTranslationEventForIdentity,
+  useContentTranslationRecovery,
+} from "./useContentTranslationRecovery";
 
-const TRANSLATION_POLL_INTERVAL_MS = 500;
-const TRANSLATION_POLL_MAX_DURATION_MS = 30_000;
-const TRANSLATION_POLL_MAX_CONSECUTIVE_REQUEST_FAILURES = 3;
+type ContentTranslationRequestState = "idle" | "submitting" | "waiting";
 
-type ContentTranslationRequestState = "idle" | "submitting" | "polling";
+function toContentTranslationEventSubject({
+  subject,
+  sourceVersion,
+}: {
+  subject: ContentTranslationSubject;
+  sourceVersion: string | undefined;
+}): ContentTranslationEventSubject | undefined {
+  if (sourceVersion === undefined) {
+    return undefined;
+  }
+  if (subject.kind === "conversation") {
+    return { ...subject, sourceVersion };
+  }
+  if (subject.kind === "survey_question") {
+    return { ...subject, sourceVersion };
+  }
+  return subject;
+}
 
 function isRateLimitError(error: unknown): boolean {
   return isAxiosError(error) && error.response?.status === 429;
@@ -91,16 +106,6 @@ function isSameContentTranslationSubject({
   return false;
 }
 
-export interface ConversationContentTranslationPreview {
-  isAvailable: boolean;
-  isLoadingInitialTranslation: boolean;
-  mode: ContentTranslationDisplayMode;
-  sourceLanguageLabel: string | undefined;
-  translationStatus: LocalizedContentTranslationStatus;
-  translatedTitle: string;
-  translatedBody: string | undefined;
-}
-
 export interface OpinionContentTranslationPreview {
   isAvailable: boolean;
   isLoadingInitialTranslation: boolean;
@@ -111,6 +116,8 @@ export interface OpinionContentTranslationPreview {
 }
 
 export interface SurveyQuestionContentTranslationPreview {
+  sourceVersion: string | undefined;
+  originalContent: SurveyQuestionContentVariant | undefined;
   isAvailable: boolean;
   isLoadingInitialTranslation: boolean;
   mode: ContentTranslationDisplayMode;
@@ -138,30 +145,21 @@ export interface ProjectContentTranslationPreview {
   translatedContent: ProjectContentVariant | undefined;
 }
 
-interface ContentTranslationController {
-  mode: Readonly<{ value: ContentTranslationDisplayMode }>;
-  sourceLanguageLabel: Readonly<{ value: string | undefined }>;
-  translationStatus: Readonly<{ value: LocalizedContentTranslationStatus }>;
-  isAvailable: Readonly<{ value: boolean }>;
-  isLoadingInitialTranslation: Readonly<{ value: boolean }>;
-  setMode: (mode: ContentTranslationDisplayMode) => Promise<void>;
-}
-
 function useContentTranslationController({
   subject,
+  expectedSourceVersion,
   sourceLanguageCode,
   enabled,
   initialModePreference,
 }: {
   subject: MaybeRefOrGetter<ContentTranslationSubject>;
+  expectedSourceVersion: MaybeRefOrGetter<string | undefined>;
   sourceLanguageCode: MaybeRefOrGetter<string | null | undefined>;
   enabled: MaybeRefOrGetter<boolean>;
   initialModePreference?: MaybeRefOrGetter<
     ContentTranslationDisplayMode | undefined
   >;
-}): ContentTranslationController & {
-  query: ReturnType<typeof useContentTranslationQuery>;
-} {
+}) {
   const languageStore = useLanguageStore();
   const { displayLanguage, spokenLanguages } = storeToRefs(languageStore);
   const queryClient = useQueryClient();
@@ -179,27 +177,29 @@ function useContentTranslationController({
   );
 
   const requestMode = ref<ContentTranslationRequestMode>("read_existing");
-  const translationPolling = useBoundedTranslationPolling({
-    intervalMs: TRANSLATION_POLL_INTERVAL_MS,
-    maxDurationMs: TRANSLATION_POLL_MAX_DURATION_MS,
-    maxConsecutiveRequestFailures:
-      TRANSLATION_POLL_MAX_CONSECUTIVE_REQUEST_FAILURES,
-    onRequestFailureLimit: () => {
-      resetToOriginal();
-      showQueryFailureToast();
-    },
-    onTimeout: () => {
-      resetToOriginal();
-      showNotifyMessage(t("translationTimedOut"));
-    },
-  });
 
   const query = useContentTranslationQuery({
     subject,
     targetLanguageCode: displayLanguage,
     requestMode,
     enabled: computed(() => toValue(enabled)),
-    refetchInterval: translationPolling.refetchInterval,
+  });
+
+  const currentResponse = computed(() => {
+    const response = query.data.value;
+    const currentSourceVersion = toValue(expectedSourceVersion);
+    if (
+      currentSourceVersion === undefined ||
+      response?.success !== true ||
+      response.content.sourceVersion !== currentSourceVersion ||
+      !isSameContentTranslationSubject({
+        left: response.subject,
+        right: toValue(subject),
+      })
+    ) {
+      return undefined;
+    }
+    return response;
   });
 
   const isLoadingInitialTranslation = computed(() => {
@@ -207,8 +207,7 @@ function useContentTranslationController({
   });
 
   const translatedVariant = computed(() => {
-    const response = query.data.value;
-    const content = response?.success === true ? response.content : undefined;
+    const content = currentResponse.value?.content;
     if (content?.kind !== "translatable") {
       return undefined;
     }
@@ -216,15 +215,12 @@ function useContentTranslationController({
   });
 
   const originalVariant = computed(() => {
-    const response = query.data.value;
-    return response?.success === true
-      ? response.content.variants.original
-      : undefined;
+    return currentResponse.value?.content.variants.original;
   });
 
   const pollingOutcome = computed(() => {
     const response = query.data.value;
-    const content = response?.success === true ? response.content : undefined;
+    const content = currentResponse.value?.content;
     return resolveContentTranslationPollingOutcome({
       responseSuccess: response?.success,
       translationStatus:
@@ -236,8 +232,7 @@ function useContentTranslationController({
   });
 
   const translationStatus = computed<LocalizedContentTranslationStatus>(() => {
-    const response = query.data.value;
-    const content = response?.success === true ? response.content : undefined;
+    const content = currentResponse.value?.content;
     if (
       content?.kind === "translatable" &&
       content.translation.status === "completed" &&
@@ -281,8 +276,7 @@ function useContentTranslationController({
   });
 
   const sourceLanguageLabel = computed(() => {
-    const response = query.data.value;
-    const content = response?.success === true ? response.content : undefined;
+    const content = currentResponse.value?.content;
     if (content?.kind === "translatable") {
       return getContentTranslationSourceLanguageLabel({
         sourceLanguage: content.translation.sourceLanguage,
@@ -296,32 +290,90 @@ function useContentTranslationController({
       displayLanguage: displayLanguage.value,
     });
   });
+  const eventSubject = computed(() =>
+    toContentTranslationEventSubject({
+      subject: toValue(subject),
+      sourceVersion: toValue(expectedSourceVersion),
+    })
+  );
+
+  const recovery = useContentTranslationRecovery({
+    identity: computed(() =>
+      getContentTranslationEventIdentity({
+        subject: eventSubject.value,
+        targetLanguageCode: displayLanguage.value,
+      })
+    ),
+    enabled: computed(() => toValue(enabled)),
+    isPending: computed(() => requestState.value === "waiting"),
+    classifyEvent: (data) => {
+      if (
+        !isContentTranslationEventForIdentity({
+          data,
+          subject: eventSubject.value,
+          targetLanguageCode: displayLanguage.value,
+        })
+      ) {
+        return "ignore";
+      }
+      return data.status === "failed" ? "fail" : "refresh";
+    },
+    refresh: async () => {
+      const result = await query.refetch();
+      if (result.isError) {
+        return "pending";
+      }
+      if (result.data?.success === false) {
+        return "failed";
+      }
+      if (currentResponse.value === undefined) {
+        return "pending";
+      }
+      if (pollingOutcome.value === "completed") {
+        return "settled";
+      }
+      return pollingOutcome.value === "terminal_failure" ? "failed" : "pending";
+    },
+    onFailure: () => {
+      resetToOriginal();
+      showNotifyMessage(t("translationFailed"));
+    },
+  });
 
   async function setMode(
     nextMode: ContentTranslationDisplayMode
   ): Promise<void> {
     if (nextMode === "translated") {
+      if (requestState.value === "submitting") {
+        return;
+      }
       modePreference.value = "translated";
       if (
         translationStatus.value !== "completed" ||
         translatedVariant.value === undefined
       ) {
-        if (requestState.value === "polling") {
-          translationPolling.start();
+        if (requestState.value === "waiting") {
+          recovery.start();
           return;
         }
-        translationPolling.stop();
+        recovery.stop();
         requestMode.value = "queue_if_missing";
         requestState.value = "submitting";
         const activeRequestGeneration = requestGeneration;
+        let result: Awaited<ReturnType<typeof query.refetch>>;
         try {
-          await query.refetch();
+          result = await query.refetch();
         } finally {
           if (activeRequestGeneration === requestGeneration) {
             requestMode.value = "read_existing";
           }
         }
         if (activeRequestGeneration !== requestGeneration) {
+          return;
+        }
+        if (result.isError) {
+          resetToOriginal();
+          showQueryFailureToast();
           return;
         }
         if (requestState.value !== "submitting") {
@@ -331,8 +383,8 @@ function useContentTranslationController({
           translationStatus.value !== "completed" ||
           translatedVariant.value === undefined
         ) {
-          requestState.value = "polling";
-          translationPolling.start();
+          requestState.value = "waiting";
+          recovery.start();
         } else {
           requestState.value = "idle";
         }
@@ -345,7 +397,7 @@ function useContentTranslationController({
     }
 
     const previousModePreference = modePreference.value;
-    translationPolling.stop();
+    recovery.stop();
     requestMode.value = "read_existing";
     modePreference.value = "original";
     requestState.value = "submitting";
@@ -362,7 +414,7 @@ function useContentTranslationController({
   }
 
   function resetToOriginal(): void {
-    translationPolling.stop();
+    recovery.stop();
     requestMode.value = "read_existing";
     modePreference.value = "original";
     requestState.value = "idle";
@@ -370,7 +422,7 @@ function useContentTranslationController({
 
   watch([displayLanguage, sortedSpokenLanguageKey], () => {
     requestGeneration += 1;
-    translationPolling.stop();
+    recovery.stop();
     requestMode.value = "read_existing";
     modePreference.value = undefined;
     requestState.value = "idle";
@@ -380,7 +432,7 @@ function useContentTranslationController({
     () => toValue(subject),
     () => {
       requestGeneration += 1;
-      translationPolling.stop();
+      recovery.stop();
       requestMode.value = "read_existing";
       modePreference.value = undefined;
       requestState.value = "idle";
@@ -397,10 +449,10 @@ function useContentTranslationController({
     ],
     ([isEnabled, initialMode]) => {
       if (isEnabled && initialMode !== undefined) {
-        requestState.value = "polling";
-        translationPolling.start();
+        requestState.value = "waiting";
+        recovery.start();
       } else if (!isEnabled) {
-        translationPolling.stop();
+        recovery.stop();
         requestState.value = "idle";
       }
     },
@@ -441,77 +493,9 @@ function useContentTranslationController({
     );
   }
 
-  function isEventForCurrentRequest(
-    data: SSEContentTranslationUpdatedData
-  ): boolean {
-    const currentSubject = toValue(subject);
-    const response = query.data.value;
-    const currentSourceVersion =
-      "sourceVersion" in currentSubject
-        ? currentSubject.sourceVersion
-        : response?.success === true
-          ? response.content.sourceVersion
-          : undefined;
-    return (
-      toValue(enabled) &&
-      data.targetLanguageCode === displayLanguage.value &&
-      currentSourceVersion !== undefined &&
-      data.subject.sourceVersion === currentSourceVersion &&
-      isSameContentTranslationSubject({
-        left: data.subject,
-        right: currentSubject,
-      })
-    );
-  }
-
-  let unsubscribeFailedEvents: (() => void) | undefined;
-  let unsubscribeUpdatedEvents: (() => void) | undefined;
-
-  function subscribeToTranslationEvents(): void {
-    if (
-      unsubscribeFailedEvents !== undefined ||
-      unsubscribeUpdatedEvents !== undefined
-    ) {
-      return;
-    }
-    unsubscribeFailedEvents = subscribeToContentTranslationFailed((data) => {
-      if (!isEventForCurrentRequest(data)) {
-        return;
-      }
-      resetToOriginal();
-      showNotifyMessage(t("translationFailed"));
-    });
-    unsubscribeUpdatedEvents = subscribeToContentTranslationUpdated((data) => {
-      if (!isEventForCurrentRequest(data)) {
-        return;
-      }
-      void query.refetch();
-      translationPolling.start();
-    });
-  }
-
-  function unsubscribeFromTranslationEvents(): void {
-    unsubscribeUpdatedEvents?.();
-    unsubscribeFailedEvents?.();
-    unsubscribeUpdatedEvents = undefined;
-    unsubscribeFailedEvents = undefined;
-  }
-
-  watch(
-    () => toValue(enabled),
-    (isEnabled) => {
-      if (isEnabled) {
-        subscribeToTranslationEvents();
-      } else {
-        unsubscribeFromTranslationEvents();
-      }
-    },
-    { immediate: true }
-  );
-
   watch([translationStatus, translatedVariant], ([status, variant]) => {
     if (status === "completed" && variant !== undefined) {
-      translationPolling.stop();
+      recovery.stop();
       requestState.value = "idle";
     }
   });
@@ -520,9 +504,6 @@ function useContentTranslationController({
     () => query.dataUpdatedAt.value,
     () => {
       const response = query.data.value;
-      if (requestState.value === "polling") {
-        translationPolling.recordRequestSuccess();
-      }
       if (requestState.value === "idle") {
         return;
       }
@@ -542,23 +523,6 @@ function useContentTranslationController({
     }
   );
 
-  watch(
-    () => query.errorUpdatedAt.value,
-    (errorUpdatedAt, previousErrorUpdatedAt) => {
-      if (
-        requestState.value === "polling" &&
-        errorUpdatedAt > previousErrorUpdatedAt
-      ) {
-        translationPolling.recordRequestFailure();
-      }
-    }
-  );
-
-  onScopeDispose(() => {
-    translationPolling.stop();
-    unsubscribeFromTranslationEvents();
-  });
-
   return {
     mode,
     sourceLanguageLabel,
@@ -566,61 +530,7 @@ function useContentTranslationController({
     isAvailable: computed(() => toValue(enabled)),
     isLoadingInitialTranslation,
     setMode,
-    query,
-  };
-}
-
-export function useConversationContentTranslationPreview({
-  subject,
-  sourceLanguageCode,
-  enabled,
-}: {
-  subject: MaybeRefOrGetter<
-    Extract<ContentTranslationSubject, { kind: "conversation" }>
-  >;
-  sourceLanguageCode: MaybeRefOrGetter<string | null | undefined>;
-  enabled: MaybeRefOrGetter<boolean>;
-}) {
-  const controller = useContentTranslationController({
-    subject,
-    sourceLanguageCode,
-    enabled,
-  });
-
-  const preview = computed<ConversationContentTranslationPreview | undefined>(
-    () => {
-      if (!controller.isAvailable.value) {
-        return undefined;
-      }
-      const response = controller.query.data.value;
-      const rawTranslatedVariant =
-        response?.success === true &&
-        response.subject.kind === "conversation" &&
-        response.content.kind === "translatable"
-          ? response.content.variants.translated
-          : undefined;
-      const translatedVariant =
-        zodConversationContentVariant.safeParse(rawTranslatedVariant);
-      return {
-        isAvailable: true,
-        isLoadingInitialTranslation:
-          controller.isLoadingInitialTranslation.value,
-        mode: controller.mode.value,
-        sourceLanguageLabel: controller.sourceLanguageLabel.value,
-        translationStatus: controller.translationStatus.value,
-        translatedTitle: translatedVariant.success
-          ? translatedVariant.data.title
-          : "",
-        translatedBody: translatedVariant.success
-          ? translatedVariant.data.body
-          : undefined,
-      };
-    }
-  );
-
-  return {
-    preview,
-    setMode: controller.setMode,
+    response: currentResponse,
   };
 }
 
@@ -641,6 +551,7 @@ export function useOpinionContentTranslationPreview({
 }) {
   const controller = useContentTranslationController({
     subject,
+    expectedSourceVersion: computed(() => toValue(subject).sourceVersion),
     sourceLanguageCode,
     enabled,
     initialModePreference,
@@ -650,7 +561,7 @@ export function useOpinionContentTranslationPreview({
     if (!controller.isAvailable.value) {
       return undefined;
     }
-    const response = controller.query.data.value;
+    const response = controller.response.value;
     const rawTranslatedVariant =
       response?.success === true &&
       response.subject.kind === "opinion" &&
@@ -679,19 +590,27 @@ export function useOpinionContentTranslationPreview({
 
 export function useSurveyQuestionContentTranslationPreview({
   subject,
+  expectedSourceVersion,
   sourceLanguageCode,
   enabled,
+  initialModePreference,
 }: {
   subject: MaybeRefOrGetter<
     Extract<ContentTranslationSubject, { kind: "survey_question" }>
   >;
+  expectedSourceVersion: MaybeRefOrGetter<string | undefined>;
   sourceLanguageCode: MaybeRefOrGetter<string | null | undefined>;
   enabled: MaybeRefOrGetter<boolean>;
+  initialModePreference?: MaybeRefOrGetter<
+    ContentTranslationDisplayMode | undefined
+  >;
 }) {
   const controller = useContentTranslationController({
     subject,
+    expectedSourceVersion,
     sourceLanguageCode,
     enabled,
+    initialModePreference,
   });
 
   const preview = computed<SurveyQuestionContentTranslationPreview | undefined>(
@@ -699,7 +618,7 @@ export function useSurveyQuestionContentTranslationPreview({
       if (!controller.isAvailable.value) {
         return undefined;
       }
-      const response = controller.query.data.value;
+      const response = controller.response.value;
       const rawTranslatedVariant =
         response?.success === true &&
         response.subject.kind === "survey_question" &&
@@ -708,7 +627,23 @@ export function useSurveyQuestionContentTranslationPreview({
           : undefined;
       const translatedVariant =
         zodSurveyQuestionContentVariant.safeParse(rawTranslatedVariant);
+      const rawOriginalVariant =
+        response?.success === true &&
+        response.subject.kind === "survey_question"
+          ? response.content.variants.original
+          : undefined;
+      const originalVariant =
+        zodSurveyQuestionContentVariant.safeParse(rawOriginalVariant);
+      const sourceVersion =
+        response?.success === true &&
+        response.subject.kind === "survey_question"
+          ? response.content.sourceVersion
+          : undefined;
       return {
+        sourceVersion,
+        originalContent: originalVariant.success
+          ? originalVariant.data
+          : undefined,
         isAvailable: true,
         isLoadingInitialTranslation:
           controller.isLoadingInitialTranslation.value,
@@ -735,17 +670,23 @@ export function useRankingItemContentTranslationPreview({
   subject,
   sourceLanguageCode,
   enabled,
+  initialModePreference,
 }: {
   subject: MaybeRefOrGetter<
     Extract<ContentTranslationSubject, { kind: "ranking_item" }>
   >;
   sourceLanguageCode: MaybeRefOrGetter<string | null | undefined>;
   enabled: MaybeRefOrGetter<boolean>;
+  initialModePreference?: MaybeRefOrGetter<
+    ContentTranslationDisplayMode | undefined
+  >;
 }) {
   const controller = useContentTranslationController({
     subject,
+    expectedSourceVersion: computed(() => toValue(subject).sourceVersion),
     sourceLanguageCode,
     enabled,
+    initialModePreference,
   });
 
   const preview = computed<RankingItemContentTranslationPreview | undefined>(
@@ -753,7 +694,7 @@ export function useRankingItemContentTranslationPreview({
       if (!controller.isAvailable.value) {
         return undefined;
       }
-      const response = controller.query.data.value;
+      const response = controller.response.value;
       const rawOriginalVariant =
         response?.success === true && response.subject.kind === "ranking_item"
           ? response.content.variants.original
@@ -806,6 +747,7 @@ export function useProjectContentTranslationPreview({
 }) {
   const controller = useContentTranslationController({
     subject,
+    expectedSourceVersion: computed(() => toValue(subject).sourceVersion),
     sourceLanguageCode: undefined,
     enabled,
     initialModePreference,
@@ -815,7 +757,7 @@ export function useProjectContentTranslationPreview({
     if (!controller.isAvailable.value) {
       return undefined;
     }
-    const response = controller.query.data.value;
+    const response = controller.response.value;
     const isCurrentProjectResponse =
       response?.success === true &&
       response.subject.kind === "project" &&

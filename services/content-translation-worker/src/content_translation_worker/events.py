@@ -31,3 +31,26 @@ def build_content_translation_event_data(
         },
         topic=f"translation:conversation:{conversation_slug_id}:target:{target_language_code}",
     )
+
+
+def build_project_content_translation_event_data(
+    *,
+    project_slug: str,
+    target_language_code: str,
+    status: Literal["completed", "failed"],
+    source_version: uuid.UUID,
+    timestamp_ms: int,
+) -> ContentTranslationEventData:
+    return ContentTranslationEventData(
+        payload={
+            "subject": {
+                "kind": "project",
+                "projectSlug": project_slug,
+                "sourceVersion": str(source_version),
+            },
+            "targetLanguageCode": target_language_code,
+            "status": status,
+            "timestamp": timestamp_ms,
+        },
+        topic=f"translation:project:{project_slug}:target:{target_language_code}",
+    )

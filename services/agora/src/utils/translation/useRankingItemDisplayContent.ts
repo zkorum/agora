@@ -41,6 +41,20 @@ export function useRankingItemDisplayContent({
       currentDisplayContent.translationControl !== null
     );
   });
+  const pendingServerTranslationMode = computed<
+    ContentTranslationDisplayMode | undefined
+  >(() => {
+    const translationControl = toValue(displayContent)?.translationControl;
+    if (
+      translationControl === undefined ||
+      translationControl === null ||
+      (translationControl.status !== "pending" &&
+        translationControl.status !== "running")
+    ) {
+      return undefined;
+    }
+    return translationControl.alternateMode;
+  });
   const hasCurrentRequestedTranslation = computed(() =>
     isRequestedTranslationPreviewCurrent({
       requestedSourceVersion: requestedTranslationSourceVersion.value,
@@ -63,11 +77,13 @@ export function useRankingItemDisplayContent({
     subject: translationSubject,
     enabled: computed(
       () =>
-        hasCurrentRequestedTranslation.value &&
+        (hasCurrentRequestedTranslation.value ||
+          pendingServerTranslationMode.value !== undefined) &&
         resolvedItemSlugId.value !== undefined &&
         sourceVersion.value !== undefined
     ),
     sourceLanguageCode: undefined,
+    initialModePreference: pendingServerTranslationMode,
   });
 
   const initialTranslationPreview = computed<

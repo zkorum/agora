@@ -12,7 +12,11 @@ import bleach
 from sqlalchemy import and_, func, or_, select, text, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-from content_translation_worker.events import build_content_translation_event_data
+from content_translation_worker.events import (
+    ContentTranslationEventData,
+    build_content_translation_event_data,
+    build_project_content_translation_event_data,
+)
 from content_translation_worker.generated_models import (
     AnalysisSnapshotOpinion,
     ContentTranslationSourceKind,
@@ -739,6 +743,12 @@ def process_claimed_work(
                     error_code=error.__class__.__name__,
                     error_message=str(error),
                 )
+                _insert_project_translation_event(
+                    session,
+                    source=source,
+                    target_language_code=claim.display_language_code.value,
+                    status="failed",
+                )
                 return ProcessWorkResult(work_id=claim.id, status="failed")
             _mark_completed(session, claim=claim)
             return ProcessWorkResult(work_id=claim.id, status="completed")
@@ -1142,7 +1152,9 @@ class RankingItemSource:
 @dataclass(frozen=True)
 class ProjectSource:
     project_id: int
+    project_slug: str
     content_id: int
+    public_id: uuid.UUID
     title: str
     subtitle: str | None
     body: str | None
@@ -1160,7 +1172,9 @@ def _fetch_project_source(
     row = session.execute(
         select(
             Project.id.label("project_id"),
+            Project.slug.label("project_slug"),
             ProjectContent.id,
+            ProjectContent.public_id,
             ProjectContent.title,
             ProjectContent.subtitle,
             ProjectContent.body,
@@ -1182,7 +1196,9 @@ def _fetch_project_source(
         return None
     return ProjectSource(
         project_id=row.project_id,
+        project_slug=row.project_slug,
         content_id=row.id,
+        public_id=row.public_id,
         title=row.title,
         subtitle=row.subtitle,
         body=row.body,
@@ -1934,6 +1950,12 @@ def _translate_project_source(
                 ),
             )
         )
+        _insert_project_translation_event(
+            session,
+            source=source,
+            target_language_code=display_language_code.value,
+            status="completed",
+        )
 
 
 def _translate_opinion_source(
@@ -2246,6 +2268,26 @@ def _insert_conversation_translation_event(
     )
 
 
+def _insert_project_translation_event(
+    session: Session,
+    *,
+    source: ProjectSource,
+    target_language_code: str,
+    status: Literal["completed", "failed"],
+) -> None:
+    timestamp_ms = int(datetime.now(UTC).timestamp() * 1000)
+    _persist_translation_event(
+        session,
+        event_data=build_project_content_translation_event_data(
+            project_slug=source.project_slug,
+            target_language_code=target_language_code,
+            status=status,
+            source_version=source.public_id,
+            timestamp_ms=timestamp_ms,
+        ),
+    )
+
+
 def _insert_opinion_translation_event(
     session: Session,
     *,
@@ -2422,6 +2464,14 @@ def _insert_translation_event(
         source_version=source_version,
         timestamp_ms=timestamp_ms,
     )
+    _persist_translation_event(session, event_data=event_data)
+
+
+def _persist_translation_event(
+    session: Session,
+    *,
+    event_data: ContentTranslationEventData,
+) -> None:
     event = RealtimeEventOutbox(
         event_type="content_translation_updated",
         payload=event_data.payload,

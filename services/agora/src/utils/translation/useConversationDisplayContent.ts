@@ -15,9 +15,8 @@ import {
 } from "src/utils/api/contentTranslation/useContentTranslationQueries";
 import { useNotify } from "src/utils/ui/notify";
 import type { MaybeRefOrGetter } from "vue";
-import { computed, onScopeDispose, ref, toValue, watch } from "vue";
+import { computed, ref, toValue, watch } from "vue";
 
-import { useBoundedTranslationPolling } from "./boundedTranslationPolling";
 import {
   type ContentTranslationDisplayMode,
   getContentTranslationSourceLanguageLabel,
@@ -26,16 +25,14 @@ import {
   selectConversationInitialDisplayContent,
 } from "./contentTranslation";
 import {
-  subscribeToContentTranslationFailed,
-  subscribeToContentTranslationUpdated,
-} from "./contentTranslationEvents";
-import {
   type ContentTranslationPreviewTranslations,
   contentTranslationPreviewTranslations,
 } from "./useContentTranslationPreview.i18n";
-
-const TRANSLATION_COMPLETION_POLL_INTERVAL_MS = 500;
-const TRANSLATION_COMPLETION_POLL_MAX_DURATION_MS = 5_000;
+import {
+  getContentTranslationEventIdentity,
+  isContentTranslationEventForIdentity,
+  useContentTranslationRecovery,
+} from "./useContentTranslationRecovery";
 
 export interface ConversationContentTranslationPreview {
   isAvailable: boolean;
@@ -52,7 +49,9 @@ export function useConversationDisplayContent({
   initialDisplayContent,
   fallbackPayload,
 }: {
-  conversationData: MaybeRefOrGetter<ExtendedConversationDisplayData | undefined>;
+  conversationData: MaybeRefOrGetter<
+    ExtendedConversationDisplayData | undefined
+  >;
   initialDisplayContent?: MaybeRefOrGetter<
     ConversationContentFetchResponse | undefined
   >;
@@ -83,36 +82,46 @@ export function useConversationDisplayContent({
   const sourceVersion = computed(
     () => effectiveInitialDisplayContent.value?.sourceVersion
   );
+  const pendingServerTranslationMode = computed<
+    ContentTranslationDisplayMode | undefined
+  >(() => {
+    const displayContent = effectiveInitialDisplayContent.value;
+    const translationControl = displayContent?.translationControl;
+    if (
+      displayContent === undefined ||
+      translationControl === undefined ||
+      translationControl === null ||
+      (translationControl.status !== "pending" &&
+        translationControl.status !== "running")
+    ) {
+      return undefined;
+    }
+    return translationControl.alternateMode;
+  });
   const requestedMode = computed<ConversationContentMode>(
     () => modePreference.value ?? "original"
   );
   const shouldQueueNextTranslatedRequest = ref(false);
   const requestMode = computed<ContentTranslationRequestMode>(() =>
-    shouldQueueNextTranslatedRequest.value && requestedMode.value === "translated"
+    shouldQueueNextTranslatedRequest.value &&
+    requestedMode.value === "translated"
       ? "queue_if_missing"
       : "read_existing"
   );
-  const completionPolling = useBoundedTranslationPolling({
-    intervalMs: TRANSLATION_COMPLETION_POLL_INTERVAL_MS,
-    maxDurationMs: TRANSLATION_COMPLETION_POLL_MAX_DURATION_MS,
-    onTimeout: () => {
-      modePreference.value = "original";
-      showNotifyMessage(t("translationTimedOut"));
-    },
-  });
   const requestedContentQuery = useConversationContentQuery({
     conversationSlugId,
     sourceVersion,
     mode: requestedMode,
     requestMode,
     enabled: computed(
-      () => modePreference.value !== undefined && toValue(conversationData) !== undefined
+      () =>
+        modePreference.value !== undefined &&
+        toValue(conversationData) !== undefined
     ),
-    refetchInterval: completionPolling.refetchInterval,
   });
 
   function resetToOriginal(): void {
-    completionPolling.stop();
+    recovery.stop();
     shouldQueueNextTranslatedRequest.value = false;
     modePreference.value = "original";
   }
@@ -125,29 +134,29 @@ export function useConversationDisplayContent({
     showNotifyMessage(t("translationFailed"));
   }
 
-  const activeDisplayContent = computed<ConversationContentFetchResponse | undefined>(
-    () => {
-      const requestedDisplayContent = requestedContentQuery.data.value;
-      const initialDisplayContent = effectiveInitialDisplayContent.value;
+  const activeDisplayContent = computed<
+    ConversationContentFetchResponse | undefined
+  >(() => {
+    const requestedDisplayContent = requestedContentQuery.data.value;
+    const initialDisplayContent = effectiveInitialDisplayContent.value;
+    if (
+      modePreference.value !== undefined &&
+      requestedDisplayContent !== undefined &&
+      isDisplayContentForMode({
+        displayContent: requestedDisplayContent,
+        mode: requestedMode.value,
+        isFetching: requestedContentQuery.isFetching.value,
+      })
+    ) {
       if (
-        modePreference.value !== undefined &&
-        requestedDisplayContent !== undefined &&
-        isDisplayContentForMode({
-          displayContent: requestedDisplayContent,
-          mode: requestedMode.value,
-          isFetching: requestedContentQuery.isFetching.value,
-        })
+        requestedDisplayContent.status === "available" ||
+        initialDisplayContent?.status !== "available"
       ) {
-        if (
-          requestedDisplayContent.status === "available" ||
-          initialDisplayContent?.status !== "available"
-        ) {
-          return requestedDisplayContent;
-        }
+        return requestedDisplayContent;
       }
-      return initialDisplayContent ?? requestedDisplayContent;
     }
-  );
+    return initialDisplayContent ?? requestedDisplayContent;
+  });
 
   const translationPreview = computed<
     ConversationContentTranslationPreview | undefined
@@ -169,10 +178,12 @@ export function useConversationDisplayContent({
     if (translationControl === null) {
       return undefined;
     }
-    const sourceLanguageCode = getConversationLanguageSettingSourceLanguageCode({
-      contentLanguageMetadata: conversation.metadata.contentLanguageMetadata,
-      languageSetting: conversation.metadata.languageSetting,
-    });
+    const sourceLanguageCode = getConversationLanguageSettingSourceLanguageCode(
+      {
+        contentLanguageMetadata: conversation.metadata.contentLanguageMetadata,
+        languageSetting: conversation.metadata.languageSetting,
+      }
+    );
     if (
       sourceLanguageCode !== undefined &&
       isSameContentLanguage({
@@ -231,8 +242,65 @@ export function useConversationDisplayContent({
       sourceLanguageLabel,
       translationStatus,
       translatedTitle: hasTranslatedContent ? displayContent.content.title : "",
-      translatedBody: hasTranslatedContent ? displayContent.content.body : undefined,
+      translatedBody: hasTranslatedContent
+        ? displayContent.content.body
+        : undefined,
     };
+  });
+  const eventSubject = computed(() => {
+    const currentSourceVersion = sourceVersion.value;
+    if (currentSourceVersion === undefined) {
+      return undefined;
+    }
+    return {
+      kind: "conversation" as const,
+      conversationSlugId: conversationSlugId.value,
+      sourceVersion: currentSourceVersion,
+    };
+  });
+
+  const recovery = useContentTranslationRecovery({
+    identity: computed(() =>
+      getContentTranslationEventIdentity({
+        subject: eventSubject.value,
+        targetLanguageCode: displayLanguage.value,
+      })
+    ),
+    enabled: computed(
+      () =>
+        modePreference.value === "translated" &&
+        sourceVersion.value !== undefined
+    ),
+    isPending: computed(() => {
+      const status = translationPreview.value?.translationStatus;
+      return status === "pending" || status === "running";
+    }),
+    classifyEvent: (data) => {
+      if (
+        !isContentTranslationEventForIdentity({
+          data,
+          subject: eventSubject.value,
+          targetLanguageCode: displayLanguage.value,
+        })
+      ) {
+        return "ignore";
+      }
+      return data.status === "failed" ? "fail" : "refresh";
+    },
+    refresh: async () => {
+      const result = await requestedContentQuery.refetch();
+      if (result.isError || result.data === undefined) {
+        return "pending";
+      }
+      if (result.data.status === "failed") {
+        return "failed";
+      }
+      return result.data.status === "available" &&
+        result.data.mode === "translated"
+        ? "settled"
+        : "pending";
+    },
+    onFailure: handleTranslationFailure,
   });
 
   const displayedTitle = computed(() => {
@@ -264,44 +332,18 @@ export function useConversationDisplayContent({
   });
 
   function setTranslationMode(mode: ContentTranslationDisplayMode): void {
-    completionPolling.stop();
+    if (modePreference.value === mode) {
+      return;
+    }
+    recovery.stop();
     if (mode !== "translated") {
       shouldQueueNextTranslatedRequest.value = false;
       modePreference.value = mode;
       return;
     }
-    const shouldRefetchCurrentMode = modePreference.value === "translated";
     shouldQueueNextTranslatedRequest.value = true;
     modePreference.value = mode;
-    if (shouldRefetchCurrentMode) {
-      void requestedContentQuery.refetch();
-    }
   }
-
-  const unsubscribeUpdatedEvents = subscribeToContentTranslationUpdated((data) => {
-    if (
-      modePreference.value !== "translated" ||
-      data.targetLanguageCode !== displayLanguage.value ||
-      data.subject.kind !== "conversation" ||
-      data.subject.conversationSlugId !== conversationSlugId.value
-    ) {
-      return;
-    }
-    void requestedContentQuery.refetch();
-    completionPolling.start();
-  });
-
-  const unsubscribeFailedEvents = subscribeToContentTranslationFailed((data) => {
-    if (
-      modePreference.value !== "translated" ||
-      data.targetLanguageCode !== displayLanguage.value ||
-      data.subject.kind !== "conversation" ||
-      data.subject.conversationSlugId !== conversationSlugId.value
-    ) {
-      return;
-    }
-    handleTranslationFailure();
-  });
 
   function isDisplayContentForMode({
     displayContent,
@@ -320,10 +362,20 @@ export function useConversationDisplayContent({
   }
 
   watch([displayLanguage, sortedSpokenLanguageKey], () => {
-    completionPolling.stop();
+    recovery.stop();
     shouldQueueNextTranslatedRequest.value = false;
-    modePreference.value = undefined;
+    modePreference.value = pendingServerTranslationMode.value;
   });
+
+  watch(
+    [conversationSlugId, sourceVersion],
+    () => {
+      recovery.stop();
+      shouldQueueNextTranslatedRequest.value = false;
+      modePreference.value = pendingServerTranslationMode.value;
+    },
+    { immediate: true }
+  );
 
   watch(
     () => requestedContentQuery.isFetching.value,
@@ -341,7 +393,7 @@ export function useConversationDisplayContent({
         displayContent?.status === "available" &&
         displayContent.mode === "translated"
       ) {
-        completionPolling.stop();
+        recovery.stop();
       }
     }
   );
@@ -354,12 +406,6 @@ export function useConversationDisplayContent({
       }
     }
   );
-
-  onScopeDispose(() => {
-    completionPolling.stop();
-    unsubscribeUpdatedEvents();
-    unsubscribeFailedEvents();
-  });
 
   return {
     activeDisplayContent,

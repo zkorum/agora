@@ -4,6 +4,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/vue-query";
+import { storeToRefs } from "pinia";
 import type {
   SurveyFormFetchResponse,
   SurveyStatusCheckResponse,
@@ -15,6 +16,7 @@ import {
   type SurveyGateSummary,
   type SurveyRouteResolution,
 } from "src/shared/types/zod";
+import { useLanguageStore } from "src/stores/language";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import {
   buildSurveyAnswerSubmission,
@@ -331,9 +333,15 @@ export function useSurveyFormQuery({
 }) {
   const { fetchSurveyForm } = useBackendSurveyApi();
   const { showNotifyMessage } = useNotify();
+  const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
 
   return useQuery({
-    queryKey: ["survey-form", computed(() => toValue(conversationSlugId))],
+    queryKey: [
+      "survey-form",
+      computed(() => toValue(conversationSlugId)),
+      displayLanguage,
+      computed(() => [...spokenLanguages.value].sort()),
+    ],
     queryFn: async (): Promise<SurveyFormData> => {
       const response = await fetchSurveyForm({
         conversationSlugId: toValue(conversationSlugId),
@@ -367,6 +375,7 @@ export function useSurveyResultsAggregatedQuery({
   enabled?: MaybeRefOrGetter<boolean>;
 }) {
   const { fetchSurveyResultsAggregated } = useBackendSurveyApi();
+  const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
 
   return useQuery({
     queryKey: [
@@ -374,6 +383,8 @@ export function useSurveyResultsAggregatedQuery({
       computed(() => toValue(conversationSlugId)),
       computed(() => toValue(analysisView)),
       computed(() => toValue(checkpointViewSnapshotId)),
+      displayLanguage,
+      computed(() => [...spokenLanguages.value].sort()),
     ],
     queryFn: async () => {
       const response = await fetchSurveyResultsAggregated({

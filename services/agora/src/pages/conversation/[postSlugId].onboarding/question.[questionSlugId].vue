@@ -196,14 +196,9 @@ import {
 } from "src/utils/survey/navigation";
 import { surveyTemplateTextTranslations } from "src/utils/survey/templates.i18n";
 import {
-  type ContentTranslationDisplayMode,
-  getContentTranslationSourceLanguageLabel,
   getConversationLanguageSettingSourceLanguageCode,
 } from "src/utils/translation/contentTranslation";
-import {
-  type SurveyQuestionContentTranslationPreview,
-  useSurveyQuestionContentTranslationPreview,
-} from "src/utils/translation/useContentTranslationPreview";
+import { useSurveyQuestionDisplayContent } from "src/utils/translation/useSurveyQuestionDisplayContent";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
@@ -265,11 +260,6 @@ const question = computed<SurveyFormQuestion | undefined>(() => {
   return surveyForm.value?.questions[questionIndex.value];
 });
 
-const surveyQuestionTranslationSubject = computed(() => ({
-  kind: "survey_question" as const,
-  conversationSlugId: conversationSlugId.value,
-  questionSlugId: routeQuestionSlugId.value,
-}));
 const conversationSourceLanguageCode = computed(() => {
   const metadata = conversationData.value?.metadata;
   if (metadata === undefined) {
@@ -281,72 +271,35 @@ const conversationSourceLanguageCode = computed(() => {
     languageSetting: metadata.languageSetting,
   });
 });
-const hasRequestedSurveyQuestionTranslation = ref(false);
-
-const {
-  preview: surveyQuestionTranslationPreview,
-  setMode: setSurveyQuestionTranslationMode,
-} = useSurveyQuestionContentTranslationPreview({
-  subject: surveyQuestionTranslationSubject,
-  enabled: computed(
-    () => hasRequestedSurveyQuestionTranslation.value && question.value !== undefined
-  ),
-  sourceLanguageCode: conversationSourceLanguageCode,
-});
-
-const backendSurveyQuestionTranslationPreview = computed<
-  SurveyQuestionContentTranslationPreview | undefined
->(() => {
-  const displayContent = question.value?.displayContent;
-  if (displayContent === undefined) {
-    return undefined;
-  }
-  const translationControl = displayContent?.translationControl;
-  if (translationControl === undefined || translationControl === null) {
-    return undefined;
-  }
-  const sourceLanguageLabel = getContentTranslationSourceLanguageLabel({
-    sourceLanguage: undefined,
-    fallbackLanguageCode: conversationSourceLanguageCode.value,
-    fallbackLabel: translationControl.sourceLanguageLabel,
-    displayLanguage: displayLanguage.value,
-  });
-
-  if (displayContent.status !== "available" || displayContent.mode !== "translated") {
-    return {
-      isAvailable: true,
-      isLoadingInitialTranslation: false,
-      mode: "original" as const,
-      sourceLanguageLabel,
-      translationStatus: translationControl.status,
-      translatedQuestionText: "",
-      translatedOptions: [],
-    };
-  }
-
+const originalQuestionContent = computed(() => {
+  const currentQuestion = question.value;
   return {
-    isAvailable: true,
-    isLoadingInitialTranslation: false,
-    mode: "translated" as const,
-    sourceLanguageLabel,
-    translationStatus: translationControl.status,
-    translatedQuestionText: displayContent.content.questionText,
-    translatedOptions: displayContent.content.options,
+    questionText: currentQuestion?.questionText ?? "",
+    options:
+      currentQuestion?.questionType === "choice"
+        ? currentQuestion.options.flatMap((option) =>
+            option.optionSlugId === undefined
+              ? []
+              : [
+                  {
+                    optionSlugId: option.optionSlugId,
+                    optionText: option.optionText,
+                  },
+                ]
+          )
+        : [],
   };
 });
-
-const displayedSurveyQuestionTranslationPreview = computed(
-  () =>
-    surveyQuestionTranslationPreview.value ??
-    backendSurveyQuestionTranslationPreview.value
-);
-
-const surveyQuestionTranslationMode = computed<ContentTranslationDisplayMode>({
-  get: () => displayedSurveyQuestionTranslationPreview.value?.mode ?? "original",
-  set: (mode) => {
-    hasRequestedSurveyQuestionTranslation.value = true;
-    void setSurveyQuestionTranslationMode(mode);
-  },
+const {
+  displayedContent: displayedQuestionContent,
+  translationPreview: displayedSurveyQuestionTranslationPreview,
+  translationMode: surveyQuestionTranslationMode,
+} = useSurveyQuestionDisplayContent({
+  conversationSlugId,
+  questionSlugId: routeQuestionSlugId,
+  originalContent: originalQuestionContent,
+  sourceLanguageCode: conversationSourceLanguageCode,
+  displayContent: computed(() => question.value?.displayContent),
 });
 
 const isSurveyOptional = computed(() => {
@@ -431,88 +384,15 @@ const choiceOptions = computed<Array<{ label: string; value: string }>>(() => {
     return [];
   }
 
-  return displayedQuestionOptions.value.flatMap((option) => {
-    if (option.optionSlugId === undefined) {
-      return [];
-    }
-
-    return [
-      {
-        label: option.optionText,
-        value: option.optionSlugId,
-      },
-    ];
-  });
-});
-
-const displayedQuestionText = computed(() => {
-  const currentQuestion = question.value;
-  if (currentQuestion === undefined) {
-    return "";
-  }
-  const preview = displayedSurveyQuestionTranslationPreview.value;
-  if (preview?.isLoadingInitialTranslation === true) {
-    return "";
-  }
-  if (
-    preview?.mode === "translated" &&
-    preview.translationStatus === "completed" &&
-    preview.translatedQuestionText.length > 0
-  ) {
-    return preview.translatedQuestionText;
-  }
-  if (
-    preview?.mode !== "original" &&
-    currentQuestion.displayContent.status === "available" &&
-    currentQuestion.displayContent.mode === "translated"
-  ) {
-    return currentQuestion.displayContent.content.questionText;
-  }
-  return currentQuestion.questionText;
-});
-
-const displayedQuestionOptions = computed(() => {
-  const currentQuestion = question.value;
-  if (currentQuestion === undefined || currentQuestion.questionType !== "choice") {
-    return [];
-  }
-  const preview = displayedSurveyQuestionTranslationPreview.value;
-  if (preview?.isLoadingInitialTranslation === true) {
-    return [];
-  }
-  if (preview?.mode !== "translated" || preview.translationStatus !== "completed") {
-    if (
-      preview?.mode !== "original" &&
-      currentQuestion.displayContent.status === "available" &&
-      currentQuestion.displayContent.mode === "translated"
-    ) {
-      const displayOptionsBySlugId = new Map(
-        currentQuestion.displayContent.content.options.map((option) => [
-          option.optionSlugId,
-          option.optionText,
-        ])
-      );
-      return currentQuestion.options.map((option) => ({
-        ...option,
-        optionText:
-          option.optionSlugId === undefined
-            ? option.optionText
-            : (displayOptionsBySlugId.get(option.optionSlugId) ?? option.optionText),
-      }));
-    }
-    return currentQuestion.options;
-  }
-  const translatedOptionsBySlugId = new Map(
-    preview.translatedOptions.map((option) => [option.optionSlugId, option.optionText])
-  );
-  return currentQuestion.options.map((option) => ({
-    ...option,
-    optionText:
-      option.optionSlugId === undefined
-        ? option.optionText
-        : (translatedOptionsBySlugId.get(option.optionSlugId) ?? option.optionText),
+  return displayedQuestionContent.value.options.map((option) => ({
+    label: option.optionText,
+    value: option.optionSlugId,
   }));
 });
+
+const displayedQuestionText = computed(
+  () => displayedQuestionContent.value.questionText
+);
 
 const isIntegerQuestion = computed(() => {
   const currentQuestion = question.value;

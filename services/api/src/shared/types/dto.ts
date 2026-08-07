@@ -83,6 +83,7 @@ import {
     zodRankingItemDisplayedContent,
     zodProjectDisplayedContent,
     zodSurveyQuestionDisplayedContent,
+    zodSurveyQuestionResultDisplayContent,
     zodProjectOrganizationAttributionRole,
     zodProjectSlug,
     zodHttpsUrl,
@@ -1337,6 +1338,9 @@ export class Dto {
             suppressionThreshold: z.number().int().positive(),
             suppressedRows: z.array(zodSurveyAggregateRow),
             fullRows: z.array(zodSurveyAggregateRow).optional(),
+            questionDisplayContents: z.array(
+                zodSurveyQuestionResultDisplayContent,
+            ),
         })
         .strict();
     static surveyCompletionCountsRequest = z

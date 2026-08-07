@@ -585,6 +585,7 @@ const surveyQuery = useQuery<SurveyResultsAggregatedResponse, Error>({
     accessLevel: "public",
     suppressionThreshold: 5,
     suppressedRows: [],
+    questionDisplayContents: [],
   }),
   staleTime: Infinity,
 });

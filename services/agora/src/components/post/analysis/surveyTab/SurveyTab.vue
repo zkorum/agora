@@ -90,55 +90,14 @@
               :max-height="compactMode ? compactSummaryMaxHeight : undefined"
             >
               <div class="question-list">
-                <ZKCard
-                  v-for="question in displayedQuestions"
-                  :key="question.id"
-                  padding="1rem"
-                  class="question-card"
-                >
-                  <div class="question-text">{{ question.question }}</div>
-
-                  <SurveySuppressedQuestionNotice
-                    v-if="question.isSuppressed"
-                    :suppression-reason="question.suppressionReason"
-                    class="question-card__suppressed"
-                  />
-
-                  <div v-else class="option-list">
-                    <div
-                      v-for="option in question.options"
-                      :key="option.id"
-                      class="option-row"
-                    >
-                      <div class="option-row__header">
-                        <span class="option-row__label">{{
-                          option.label
-                        }}</span>
-                        <span class="option-row__value">
-                          <template v-if="option.isSuppressed">
-                            {{ t("suppressed") }}
-                          </template>
-                          <template v-else>
-                            {{ formatAmount(option.count ?? 0) }} /
-                            {{ formatPercentage(option.percentage ?? 0) }}
-                          </template>
-                        </span>
-                      </div>
-
-                      <div class="option-row__bar">
-                        <div
-                          class="option-row__fill"
-                          :class="{
-                            'option-row__fill--suppressed': option.isSuppressed,
-                          }"
-                          :style="{
-                            width: `${option.isSuppressed ? 0 : (option.percentage ?? 0)}%`,
-                          }"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </ZKCard>
+                <SurveyResultQuestionCard
+                  v-for="card in displayedQuestionCards"
+                  :key="card.question.id"
+                  :conversation-slug-id="props.conversationSlugId"
+                  :question="card.question"
+                  :display-content="card.displayContent"
+                  :suppressed-label="t('suppressed')"
+                />
               </div>
             </CompactFadeContainer>
           </div>
@@ -152,10 +111,8 @@
 
 <script setup lang="ts">
 import type { UseQueryReturnType } from "@tanstack/vue-query";
-import SurveySuppressedQuestionNotice from "src/components/survey/SurveySuppressedQuestionNotice.vue";
 import SurveyVisibilityToggle from "src/components/survey/SurveyVisibilityToggle.vue";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
-import ZKCard from "src/components/ui-library/ZKCard.vue";
 import type { ConversationScrollContext } from "src/composables/conversation/useConversationParentState";
 import { useSurveyNavigation } from "src/composables/conversation/useSurveyNavigation";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
@@ -166,11 +123,11 @@ import type {
   SurveyGateSummary,
 } from "src/shared/types/zod";
 import { useConversationOnboardingStore } from "src/stores/conversationOnboarding";
-import { formatAmount, formatPercentage } from "src/utils/common";
 import { getHistoryPosition } from "src/utils/nav/historyBack";
 import {
   canViewFullSurveyResults,
   getDisplayedSurveyRows,
+  getSurveyQuestionResultCards,
   groupSurveyRowsByQuestion,
   type SurveyResultsDisplayMode,
 } from "src/utils/survey/results";
@@ -186,6 +143,7 @@ import CompactFadeContainer from "../common/CompactFadeContainer.vue";
 import EmptyStateMessage from "../common/EmptyStateMessage.vue";
 import ClusterVisualization from "../opinionGroupTab/ClusterVisualization.vue";
 import SurveyInformationDialog from "./SurveyInformationDialog.vue";
+import SurveyResultQuestionCard from "./SurveyResultQuestionCard.vue";
 import {
   type SurveyTabTranslations,
   surveyTabTranslations,
@@ -326,6 +284,12 @@ const questionGroups = computed(() => {
 const displayedQuestions = computed(() =>
   props.compactMode ? questionGroups.value.slice(0, 3) : questionGroups.value
 );
+const displayedQuestionCards = computed(() => {
+  return getSurveyQuestionResultCards({
+    questions: displayedQuestions.value,
+    displayContents: activeSurveyResults.value?.questionDisplayContents ?? [],
+  });
+});
 
 const compactSummaryMaxHeight = "22rem";
 
@@ -427,78 +391,10 @@ async function handleOpenSurveyResponses(): Promise<void> {
   gap: 0.75rem;
 }
 
-.question-card {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.question-text {
-  font-size: 1rem;
-  font-weight: var(--font-weight-medium);
-  color: #333238;
-}
-
-.option-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.question-card__suppressed {
-  margin-top: 0.25rem;
-}
-
-.option-row {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.option-row__header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.option-row__label {
-  color: #434149;
-}
-
-.option-row__value {
-  font-size: 0.875rem;
-  color: #6d6a74;
-  white-space: nowrap;
-}
-
-.option-row__bar {
-  height: 0.5rem;
-  border-radius: 999px;
-  background: #efedf8;
-  overflow: hidden;
-}
-
-.option-row__fill {
-  height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #6b4eff 0%, #9b8cff 100%);
-}
-
-.option-row__fill--suppressed {
-  background: #d8d6de;
-}
-
 @media (max-width: $breakpoint-xs-max) {
   .header-actions {
     flex-wrap: wrap;
     justify-content: flex-end;
-  }
-
-  .option-row__header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.15rem;
   }
 }
 </style>
