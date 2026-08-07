@@ -6,7 +6,6 @@ import type {
 
 import {
   createChoiceSurveyQuestionConstraints,
-  createIntegerSurveyQuestionConstraints,
   createRichTextSurveyQuestionConstraints,
 } from "./config";
 import {
@@ -14,7 +13,7 @@ import {
   surveyTemplateTextTranslations,
 } from "./templates.i18n";
 
-export type SurveyTemplateId = "age_group" | "age" | "sex_at_birth" | "gender";
+export type SurveyTemplateId = "age_group" | "sex_at_birth" | "gender";
 
 const AGE_GROUP_OPTIONS = ["18-24", "25-34", "35-44", "45-54", "55-64", "65+"];
 
@@ -64,14 +63,6 @@ export function createSurveyTemplateQuestion({
         options: createSurveyTemplateOptions({
           optionTexts: AGE_GROUP_OPTIONS,
         }),
-      };
-    case "age":
-      return {
-        questionType: "free_text",
-        questionText: translations.agePrompt,
-        isRequired: true,
-        displayOrder,
-        constraints: createIntegerSurveyQuestionConstraints(),
       };
     case "sex_at_birth":
       return {

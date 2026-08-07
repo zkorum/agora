@@ -24,24 +24,4 @@ describe("createSurveyTemplateQuestion", () => {
       "65+",
     ]);
   });
-
-  it("creates an integer free-text age template", () => {
-    const question = createSurveyTemplateQuestion({
-      templateId: "age",
-      displayOrder: 1,
-      displayLanguage: "en",
-    });
-
-    expect(question.questionType).toBe("free_text");
-    if (question.questionType !== "free_text") {
-      throw new Error("Expected free-text template");
-    }
-    expect(question.constraints).toEqual({
-      type: "free_text",
-      inputMode: "integer",
-      minValue: 1,
-      maxValue: 120,
-    });
-    expect("options" in question).toBe(false);
-  });
 });

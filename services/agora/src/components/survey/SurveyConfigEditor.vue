@@ -437,14 +437,6 @@
           flat
           no-caps
           color="primary"
-          :label="templateTexts.addAgeLabel"
-          :disable="props.readOnly"
-          @click="addTemplateQuestion({ templateId: 'age' })"
-        />
-        <q-btn
-          flat
-          no-caps
-          color="primary"
           :label="templateTexts.addSexAtBirthLabel"
           :disable="props.readOnly"
           @click="addTemplateQuestion({ templateId: 'sex_at_birth' })"

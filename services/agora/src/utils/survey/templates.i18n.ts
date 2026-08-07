@@ -2,7 +2,6 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 
 export interface SurveyTemplateTextTranslations {
   addAgeGroupLabel: string;
-  addAgeLabel: string;
   addSexAtBirthLabel: string;
   addGenderLabel: string;
   answerFormatLabel: string;
@@ -14,7 +13,6 @@ export interface SurveyTemplateTextTranslations {
   integerHelpBetween: string;
   integerHelpAtLeast: string;
   ageGroupPrompt: string;
-  agePrompt: string;
   sexAtBirthPrompt: string;
   genderPrompt: string;
   femaleOption: string;
@@ -31,7 +29,6 @@ export const surveyTemplateTextTranslations: Record<
 > = {
   en: {
     addAgeGroupLabel: "Add age group",
-    addAgeLabel: "Add age",
     addSexAtBirthLabel: "Add sex at birth",
     addGenderLabel: "Add gender",
     answerFormatLabel: "Answer format",
@@ -43,7 +40,6 @@ export const surveyTemplateTextTranslations: Record<
     integerHelpBetween: "Enter a whole number between {min} and {max}.",
     integerHelpAtLeast: "Enter a whole number of at least {min}.",
     ageGroupPrompt: "What is your age group?",
-    agePrompt: "What is your age?",
     sexAtBirthPrompt: "What sex were you assigned at birth?",
     genderPrompt: "What is your current gender?",
     femaleOption: "Female",
@@ -55,7 +51,6 @@ export const surveyTemplateTextTranslations: Record<
   },
   ar: {
     addAgeGroupLabel: "إضافة فئة عمرية",
-    addAgeLabel: "إضافة العمر",
     addSexAtBirthLabel: "إضافة الجنس عند الولادة",
     addGenderLabel: "إضافة الجندر",
     answerFormatLabel: "تنسيق الإجابة",
@@ -67,7 +62,6 @@ export const surveyTemplateTextTranslations: Record<
     integerHelpBetween: "أدخل عددًا صحيحًا بين {min} و {max}.",
     integerHelpAtLeast: "أدخل عددًا صحيحًا لا يقل عن {min}.",
     ageGroupPrompt: "ما هي فئتك العمرية؟",
-    agePrompt: "كم عمرك؟",
     sexAtBirthPrompt: "ما الجنس الذي تم تسجيله لك عند الولادة؟",
     genderPrompt: "ما هو جندرك الحالي؟",
     femaleOption: "أنثى",
@@ -79,7 +73,6 @@ export const surveyTemplateTextTranslations: Record<
   },
   es: {
     addAgeGroupLabel: "Agregar grupo de edad",
-    addAgeLabel: "Agregar edad",
     addSexAtBirthLabel: "Agregar sexo al nacer",
     addGenderLabel: "Agregar género",
     answerFormatLabel: "Formato de respuesta",
@@ -91,7 +84,6 @@ export const surveyTemplateTextTranslations: Record<
     integerHelpBetween: "Ingresa un número entero entre {min} y {max}.",
     integerHelpAtLeast: "Ingresa un número entero de al menos {min}.",
     ageGroupPrompt: "¿Cuál es tu grupo de edad?",
-    agePrompt: "¿Cuál es tu edad?",
     sexAtBirthPrompt: "¿Qué sexo se te asignó al nacer?",
     genderPrompt: "¿Cuál es tu género actual?",
     femaleOption: "Femenino",
@@ -103,7 +95,6 @@ export const surveyTemplateTextTranslations: Record<
   },
   fa: {
     addAgeGroupLabel: "افزودن گروه سنی",
-    addAgeLabel: "افزودن سن",
     addSexAtBirthLabel: "افزودن جنس هنگام تولد",
     addGenderLabel: "افزودن جنسیت",
     answerFormatLabel: "قالب پاسخ",
@@ -115,7 +106,6 @@ export const surveyTemplateTextTranslations: Record<
     integerHelpBetween: "یک عدد صحیح بین {min} و {max} وارد کنید.",
     integerHelpAtLeast: "یک عدد صحیح حداقل {min} وارد کنید.",
     ageGroupPrompt: "گروه سنی شما چیست؟",
-    agePrompt: "سن شما چقدر است؟",
     sexAtBirthPrompt: "هنگام تولد چه جنسی برای شما ثبت شد؟",
     genderPrompt: "جنسیت فعلی شما چیست؟",
     femaleOption: "زن",
@@ -127,7 +117,6 @@ export const surveyTemplateTextTranslations: Record<
   },
   fr: {
     addAgeGroupLabel: "Ajouter une tranche d'âge",
-    addAgeLabel: "Ajouter l'âge",
     addSexAtBirthLabel: "Ajouter le sexe à la naissance",
     addGenderLabel: "Ajouter le genre",
     answerFormatLabel: "Format de réponse",
@@ -139,7 +128,6 @@ export const surveyTemplateTextTranslations: Record<
     integerHelpBetween: "Entrez un nombre entier entre {min} et {max}.",
     integerHelpAtLeast: "Entrez un nombre entier d'au moins {min}.",
     ageGroupPrompt: "Quelle est votre tranche d'âge ?",
-    agePrompt: "Quel âge avez-vous ?",
     sexAtBirthPrompt: "Quel sexe vous a été assigné à la naissance ?",
     genderPrompt: "Quel est votre genre actuel ?",
     femaleOption: "Féminin",
@@ -151,7 +139,6 @@ export const surveyTemplateTextTranslations: Record<
   },
   he: {
     addAgeGroupLabel: "הוספת קבוצת גיל",
-    addAgeLabel: "הוספת גיל",
     addSexAtBirthLabel: "הוספת מין בלידה",
     addGenderLabel: "הוספת מגדר",
     answerFormatLabel: "פורמט תשובה",
@@ -163,7 +150,6 @@ export const surveyTemplateTextTranslations: Record<
     integerHelpBetween: "הזינו מספר שלם בין {min} ל-{max}.",
     integerHelpAtLeast: "הזינו מספר שלם של לפחות {min}.",
     ageGroupPrompt: "מה קבוצת הגיל שלך?",
-    agePrompt: "מה הגיל שלך?",
     sexAtBirthPrompt: "איזה מין הוקצה לך בלידה?",
     genderPrompt: "מהו המגדר הנוכחי שלך?",
     femaleOption: "נקבה",
@@ -175,7 +161,6 @@ export const surveyTemplateTextTranslations: Record<
   },
   ja: {
     addAgeGroupLabel: "年齢層を追加",
-    addAgeLabel: "年齢を追加",
     addSexAtBirthLabel: "出生時の性別を追加",
     addGenderLabel: "ジェンダーを追加",
     answerFormatLabel: "回答形式",
@@ -187,7 +172,6 @@ export const surveyTemplateTextTranslations: Record<
     integerHelpBetween: "{min} から {max} までの整数を入力してください。",
     integerHelpAtLeast: "{min} 以上の整数を入力してください。",
     ageGroupPrompt: "あなたの年齢層を教えてください。",
-    agePrompt: "あなたの年齢を教えてください。",
     sexAtBirthPrompt: "出生時に割り当てられた性別は何ですか。",
     genderPrompt: "現在のジェンダーを教えてください。",
     femaleOption: "女性",
@@ -199,7 +183,6 @@ export const surveyTemplateTextTranslations: Record<
   },
   ky: {
     addAgeGroupLabel: "Жаш курак тобун кошуу",
-    addAgeLabel: "Жашты кошуу",
     addSexAtBirthLabel: "Төрөлгөндөгү жынысты кошуу",
     addGenderLabel: "Гендерди кошуу",
     answerFormatLabel: "Жооп форматы",
@@ -211,7 +194,6 @@ export const surveyTemplateTextTranslations: Record<
     integerHelpBetween: "{min} менен {max} ортосундагы бүтүн санды киргизиңиз.",
     integerHelpAtLeast: "Кеминде {min} болгон бүтүн санды киргизиңиз.",
     ageGroupPrompt: "Сиз кайсы курак тобуна киресиз?",
-    agePrompt: "Сиздин жашыңыз канча?",
     sexAtBirthPrompt: "Төрөлгөндө сизге кайсы жыныс ыйгарылган?",
     genderPrompt: "Азыркы гендериңиз кайсы?",
     femaleOption: "Аял",
@@ -223,7 +205,6 @@ export const surveyTemplateTextTranslations: Record<
   },
   ru: {
     addAgeGroupLabel: "Добавить возрастную группу",
-    addAgeLabel: "Добавить возраст",
     addSexAtBirthLabel: "Добавить пол при рождении",
     addGenderLabel: "Добавить гендер",
     answerFormatLabel: "Формат ответа",
@@ -235,7 +216,6 @@ export const surveyTemplateTextTranslations: Record<
     integerHelpBetween: "Введите целое число от {min} до {max}.",
     integerHelpAtLeast: "Введите целое число не меньше {min}.",
     ageGroupPrompt: "Какая у вас возрастная группа?",
-    agePrompt: "Сколько вам лет?",
     sexAtBirthPrompt: "Какой пол вам был присвоен при рождении?",
     genderPrompt: "Какой у вас текущий гендер?",
     femaleOption: "Женский",
@@ -247,7 +227,6 @@ export const surveyTemplateTextTranslations: Record<
   },
   "zh-Hans": {
     addAgeGroupLabel: "添加年龄段",
-    addAgeLabel: "添加年龄",
     addSexAtBirthLabel: "添加出生时性别",
     addGenderLabel: "添加性别认同",
     answerFormatLabel: "回答格式",
@@ -259,7 +238,6 @@ export const surveyTemplateTextTranslations: Record<
     integerHelpBetween: "请输入介于 {min} 和 {max} 之间的整数。",
     integerHelpAtLeast: "请输入不小于 {min} 的整数。",
     ageGroupPrompt: "您的年龄段是？",
-    agePrompt: "您的年龄是？",
     sexAtBirthPrompt: "您出生时被指定的性别是什么？",
     genderPrompt: "您当前的性别认同是什么？",
     femaleOption: "女性",
@@ -271,7 +249,6 @@ export const surveyTemplateTextTranslations: Record<
   },
   "zh-Hant": {
     addAgeGroupLabel: "新增年齡層",
-    addAgeLabel: "新增年齡",
     addSexAtBirthLabel: "新增出生時性別",
     addGenderLabel: "新增性別認同",
     answerFormatLabel: "回答格式",
@@ -283,7 +260,6 @@ export const surveyTemplateTextTranslations: Record<
     integerHelpBetween: "請輸入介於 {min} 和 {max} 之間的整數。",
     integerHelpAtLeast: "請輸入不小於 {min} 的整數。",
     ageGroupPrompt: "您的年齡層是？",
-    agePrompt: "您的年齡是？",
     sexAtBirthPrompt: "您出生時被指定的性別是什麼？",
     genderPrompt: "您目前的性別認同是什麼？",
     femaleOption: "女性",
