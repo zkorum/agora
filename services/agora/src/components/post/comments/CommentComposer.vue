@@ -28,7 +28,7 @@
 
         <ZKButton
           button-type="icon"
-          aria-label="Opinion writing guidelines"
+          :aria-label="t('opinionWritingGuidelines')"
           @click="showGuidelinesDialog = true"
         >
           <ZKIcon
@@ -86,10 +86,7 @@ import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useParticipationGate } from "src/composables/conversation/useParticipationGate";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useIdleMount } from "src/composables/ui/useIdleMount";
-import {
-  hasVisiblePlainText,
-  MAX_LENGTH_OPINION,
-} from "src/shared/shared";
+import { hasVisiblePlainText, MAX_LENGTH_OPINION } from "src/shared/shared";
 import type {
   EventSlug,
   OpinionItem,
@@ -395,7 +392,6 @@ onMounted(() => {
   if (savedDraft) {
     opinionBody.value = savedDraft.body;
   }
-
 });
 
 watch(yScroll, () => {

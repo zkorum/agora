@@ -2,7 +2,7 @@
 title: "Encontrar puntos en común a gran escala: Agora Citizen Network en Devconnect Argentina 2025"
 description: "Yuting Jiang presenta Agora Citizen Network en Devconnect Argentina 2025 y muestra cómo la deliberación digital, el mapeo de opiniones, la identidad con privacidad y el broad listening pueden ayudar a las comunidades a encontrar puntos en común a gran escala."
 author: "Yuting Jiang"
-date: "November 2025"
+date: "2025-11-01"
 type: "vision"
 thumbnail: "https://i.ytimg.com/vi/phw1AlQs8DY/hqdefault.jpg"
 image: "https://i.ytimg.com/vi/phw1AlQs8DY/hqdefault.jpg"
@@ -21,7 +21,7 @@ La charla conecta el aumento de la polarización con la necesidad de escalar el 
 - Consultas comunitarias como [#bloquonstout](https://www.agoracitizen.network/resources/bloquonstout), donde Agora ayudó a manifestantes y facilitadores a identificar prioridades compartidas.
 
 <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; margin: 28px 0; overflow: hidden; border-radius: 12px; box-shadow: 0 8px 24px rgba(9, 15, 83, 0.16);">
-  <iframe src="https://www.youtube.com/embed/phw1AlQs8DY" title="Agora Citizen Network - Finding Common Ground At Scale - Devconnect Argentina 2025" style="position: absolute; inset: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+  <iframe src="https://www.youtube.com/embed/phw1AlQs8DY" title="Agora Citizen Network - Encontrar puntos en común a gran escala - Devconnect Argentina 2025" style="position: absolute; inset: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 </div>
 
 [Ver en YouTube](https://www.youtube.com/watch?v=phw1AlQs8DY)

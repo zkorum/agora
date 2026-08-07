@@ -57,24 +57,29 @@
 
   const facilitatorSteps = [
     {
-      title: "Seed",
-      description: "Clear statements",
+      id: "seed",
+      title: () => m.facilitators_step_seed_title(),
+      description: () => m.facilitators_step_seed_description(),
     },
     {
-      title: "Collect",
-      description: "Votes and opinions",
+      id: "collect",
+      title: () => m.facilitators_step_collect_title(),
+      description: () => m.facilitators_step_collect_description(),
     },
     {
-      title: "Map",
-      description: "Opinion groups",
+      id: "map",
+      title: () => m.facilitators_step_map_title(),
+      description: () => m.facilitators_step_map_description(),
     },
     {
-      title: "Find common ground",
-      description: "Bridging statements",
+      id: "common-ground",
+      title: () => m.facilitators_step_common_ground_title(),
+      description: () => m.facilitators_step_common_ground_description(),
     },
     {
-      title: "Prioritize",
-      description: "Shared proposals",
+      id: "prioritize",
+      title: () => m.facilitators_step_prioritize_title(),
+      description: () => m.facilitators_step_prioritize_description(),
     },
   ];
 </script>
@@ -123,7 +128,7 @@
           lg:grid-cols-5
         "
       >
-        {#each facilitatorSteps as step, index (step.title)}
+        {#each facilitatorSteps as step, index (step.id)}
           <li class="flex min-w-0 gap-2">
             <Text
               size="xs"
@@ -136,10 +141,10 @@
             </Text>
             <div class="min-w-0">
               <Text size="sm" weight="bold" leading="tight">
-                <GradientText>{step.title}</GradientText>
+                <GradientText>{step.title()}</GradientText>
               </Text>
               <Text size="xs" class="mt-1 text-secondary-foreground">
-                {step.description}
+                {step.description()}
               </Text>
             </div>
           </li>
@@ -154,8 +159,7 @@
       "
     >
       <Text size="sm" class="text-secondary-foreground">
-        Need the full playbook for events, consultations, and deliberation
-        projects?
+        {m.facilitators_guide_prompt()}
       </Text>
       <GradientButton
         href={localizeHref("/resources/facilitation-guide")}
@@ -164,7 +168,7 @@
         trailingIcon="icon-[lucide--arrow-right] size-4"
         class="shrink-0 gap-2 self-start"
       >
-        Read the guide
+        {m.facilitators_guide_cta()}
       </GradientButton>
     </div>
 

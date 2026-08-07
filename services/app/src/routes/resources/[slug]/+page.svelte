@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { getLocale } from "$lib/paraglide/runtime";
+  import { formatResourceDate } from "$logic/shared/resource-date";
   import GradientText from "$ui/shared/gradient-text.svelte";
   import Text from "$ui/shared/text.svelte";
 
@@ -18,7 +20,12 @@
       class="flex items-center gap-4 text-muted-foreground"
     >
       <span>{data.post.author}</span>
-      <span>{data.post.date}</span>
+      <span
+        >{formatResourceDate({
+          date: data.post.date,
+          locale: getLocale(),
+        })}</span
+      >
     </Text>
   </header>
 

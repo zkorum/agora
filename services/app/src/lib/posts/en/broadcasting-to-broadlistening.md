@@ -2,7 +2,7 @@
 title: "From Broadcasting to Broad Listening"
 description: "Bestian Tang from vTaiwan offers a clear frame for Agora: broad listening, sensemaking, and seeing beyond our own opinion groups."
 author: "Agora Team"
-date: "September 2025"
+date: "2025-09-01"
 type: "vision"
 thumbnail: "/images/resources/broadcasting-to-broad-listening.png"
 image: "/images/resources/broadcasting-to-broad-listening.png"

@@ -2,7 +2,7 @@
 title: "הקשבה בקנה מידה: רשמים מפיילוט עם ברית ה-MIL של UNESCO"
 description: "באוקטובר 2025, UNESCO שיתפו פעולה עם Agora כדי לתמוך בשבוע אוריינות מדיה ומידע. פיילוט זה בחן האם דיון דיגיטלי מובנה יכול להאריך את חיי השיחות של כנסים."
 author: "Yuting Jiang"
-date: "October 2025"
+date: "2025-10-01"
 type: "case-study"
 thumbnail: "/images/resources/unesco-mil-alliance.jpeg"
 ---

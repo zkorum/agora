@@ -12,6 +12,7 @@ export interface CommentComposerTranslations {
   exitPromptTitle: string;
   exitPromptDescription: string;
   validationWarningMultipleIdeas: string;
+  opinionWritingGuidelines: string;
 }
 
 export const commentComposerTranslations: Record<
@@ -20,12 +21,12 @@ export const commentComposerTranslations: Record<
 > = {
   en: {
     placeholder: "Add your own statement",
-    placeholderExpanded: "Focus on a single point that's easy to agree or disagree with",
+    placeholderExpanded:
+      "Focus on a single point that's easy to agree or disagree with",
     postButton: "Post",
     conversationLockedError:
       "Cannot create statement because the conversation is locked",
-    conversationClosedError:
-      "This conversation has been closed",
+    conversationClosedError: "This conversation has been closed",
     createOpinionError: "Error while trying to create a new statement",
     eventTicketRequiredTitle: "Event Ticket Required",
     eventTicketRequiredMessage:
@@ -34,14 +35,15 @@ export const commentComposerTranslations: Record<
     exitPromptDescription: "Your draft statement will be here when you return.",
     validationWarningMultipleIdeas:
       "Tip: This might contain multiple ideas - make sure voters can clearly agree or disagree",
+    opinionWritingGuidelines: "Statement writing guidelines",
   },
   ar: {
     placeholder: "أضف مقترحك",
-    placeholderExpanded: "ركز على نقطة واحدة يسهل الموافقة عليها أو الاختلاف معها",
+    placeholderExpanded:
+      "ركز على نقطة واحدة يسهل الموافقة عليها أو الاختلاف معها",
     postButton: "نشر",
     conversationLockedError: "لا يمكن إنشاء مقترح لأن المحادثة مقفلة",
-    conversationClosedError:
-      "تم إغلاق هذه المحادثة",
+    conversationClosedError: "تم إغلاق هذه المحادثة",
     createOpinionError: "خطأ أثناء محاولة إنشاء مقترح جديد",
     eventTicketRequiredTitle: "تذكرة الحدث مطلوبة",
     eventTicketRequiredMessage:
@@ -50,15 +52,16 @@ export const commentComposerTranslations: Record<
     exitPromptDescription: "ستكون مسودتك هنا عند عودتك.",
     validationWarningMultipleIdeas:
       "نصيحة: قد يحتوي هذا على أفكار متعددة - تأكد من أن المصوتين يمكنهم الموافقة أو عدم الموافقة بوضوح",
+    opinionWritingGuidelines: "إرشادات كتابة المقترحات",
   },
   es: {
     placeholder: "Añade tu proposición",
-    placeholderExpanded: "Enfócate en un solo punto con el que sea fácil estar de acuerdo o en desacuerdo",
+    placeholderExpanded:
+      "Enfócate en un solo punto con el que sea fácil estar de acuerdo o en desacuerdo",
     postButton: "Publicar",
     conversationLockedError:
       "No se puede crear una proposición porque la conversación está bloqueada",
-    conversationClosedError:
-      "Esta conversación ha sido cerrada",
+    conversationClosedError: "Esta conversación ha sido cerrada",
     createOpinionError: "Error al intentar crear una nueva proposición",
     eventTicketRequiredTitle: "Entrada del evento requerida",
     eventTicketRequiredMessage:
@@ -67,28 +70,34 @@ export const commentComposerTranslations: Record<
     exitPromptDescription: "Tu borrador estará aquí cuando regreses.",
     validationWarningMultipleIdeas:
       "Consejo: Esto podría contener múltiples ideas - asegúrate de que los votantes puedan estar claramente de acuerdo o en desacuerdo",
+    opinionWritingGuidelines: "Pautas para escribir proposiciones",
   },
   fa: {
     placeholder: "گزاره خود را اضافه کنید",
-    placeholderExpanded: "بر یک نکته واحد تمرکز کنید که موافقت یا مخالفت با آن آسان باشد",
+    placeholderExpanded:
+      "بر یک نکته واحد تمرکز کنید که موافقت یا مخالفت با آن آسان باشد",
     postButton: "ارسال",
-    conversationLockedError: "امکان ایجاد گزاره وجود ندارد زیرا گفتگو قفل شده است",
+    conversationLockedError:
+      "امکان ایجاد گزاره وجود ندارد زیرا گفتگو قفل شده است",
     conversationClosedError: "این گفتگو بسته شده است",
     createOpinionError: "خطا هنگام ایجاد گزاره جدید",
     eventTicketRequiredTitle: "بلیط رویداد الزامی است",
-    eventTicketRequiredMessage: "برای مشارکت در این گفتگو باید بلیط Devconnect 2025 خود را تأیید کنید.",
+    eventTicketRequiredMessage:
+      "برای مشارکت در این گفتگو باید بلیط Devconnect 2025 خود را تأیید کنید.",
     exitPromptTitle: "گزاره به عنوان پیش‌نویس ذخیره شود؟",
     exitPromptDescription: "پیش‌نویس شما هنگام بازگشت اینجا خواهد بود.",
-    validationWarningMultipleIdeas: "نکته: ممکن است این شامل چند ایده باشد — مطمئن شوید رأی‌دهندگان بتوانند به‌وضوح موافقت یا مخالفت کنند",
+    validationWarningMultipleIdeas:
+      "نکته: ممکن است این شامل چند ایده باشد — مطمئن شوید رأی‌دهندگان بتوانند به‌وضوح موافقت یا مخالفت کنند",
+    opinionWritingGuidelines: "راهنمای نوشتن گزاره",
   },
   fr: {
     placeholder: "Ajoutez votre proposition",
-    placeholderExpanded: "Concentrez-vous sur un seul point avec lequel il est facile d'être d'accord ou en désaccord",
+    placeholderExpanded:
+      "Concentrez-vous sur un seul point avec lequel il est facile d'être d'accord ou en désaccord",
     postButton: "Publier",
     conversationLockedError:
       "Impossible de créer une proposition car la conversation est verrouillée",
-    conversationClosedError:
-      "Cette conversation a été fermée",
+    conversationClosedError: "Cette conversation a été fermée",
     createOpinionError:
       "Erreur lors de la tentative de création d'une nouvelle proposition",
     eventTicketRequiredTitle: "Billet d'événement requis",
@@ -98,14 +107,14 @@ export const commentComposerTranslations: Record<
     exitPromptDescription: "Votre brouillon sera ici à votre retour.",
     validationWarningMultipleIdeas:
       "Conseil : Ceci pourrait contenir plusieurs idées - assurez-vous que les votants puissent clairement être d'accord ou en désaccord",
+    opinionWritingGuidelines: "Conseils pour rédiger une proposition",
   },
   "zh-Hans": {
     placeholder: "添加你的意见",
     placeholderExpanded: "专注于一个容易同意或不同意的单一意见",
     postButton: "发布",
     conversationLockedError: "无法创建意见，因为对话已锁定",
-    conversationClosedError:
-      "此对话已被关闭",
+    conversationClosedError: "此对话已被关闭",
     createOpinionError: "尝试创建新意见时出错",
     eventTicketRequiredTitle: "需要活动门票",
     eventTicketRequiredMessage:
@@ -114,14 +123,14 @@ export const commentComposerTranslations: Record<
     exitPromptDescription: "您的草稿将在您返回时保留在这里。",
     validationWarningMultipleIdeas:
       "提示：这可能包含多个想法 - 确保投票者可以清楚地同意或不同意",
+    opinionWritingGuidelines: "意见撰写指南",
   },
   "zh-Hant": {
     placeholder: "添加你的意見",
     placeholderExpanded: "專注於一個容易同意或不同意的單一意見",
     postButton: "發布",
     conversationLockedError: "無法創建意見，因為對話已鎖定",
-    conversationClosedError:
-      "此對話已被關閉",
+    conversationClosedError: "此對話已被關閉",
     createOpinionError: "嘗試創建新意見時出錯",
     eventTicketRequiredTitle: "需要活動門票",
     eventTicketRequiredMessage:
@@ -130,6 +139,7 @@ export const commentComposerTranslations: Record<
     exitPromptDescription: "您的草稿將在您返回時保留在這裡。",
     validationWarningMultipleIdeas:
       "提示：這可能包含多個想法 - 確保投票者可以清楚地同意或不同意",
+    opinionWritingGuidelines: "意見撰寫指南",
   },
   he: {
     placeholder: "הוסיפו הצהרה משלכם",
@@ -139,18 +149,20 @@ export const commentComposerTranslations: Record<
     conversationClosedError: "שיחה זו נסגרה",
     createOpinionError: "שגיאה בעת ניסיון ליצור הצהרה חדשה",
     eventTicketRequiredTitle: "נדרש כרטיס אירוע",
-    eventTicketRequiredMessage: "עליכם לאמת את כרטיס ה-Devconnect 2025 שלכם כדי להשתתף בשיחה זו.",
+    eventTicketRequiredMessage:
+      "עליכם לאמת את כרטיס ה-Devconnect 2025 שלכם כדי להשתתף בשיחה זו.",
     exitPromptTitle: "לשמור הצהרה כטיוטה?",
     exitPromptDescription: "הטיוטה שלך תהיה כאן כשתחזור.",
-    validationWarningMultipleIdeas: "טיפ: ייתכן שזה מכיל מספר רעיונות — ודאו שהמצביעים יכולים להסכים או לא להסכים בבירור",
+    validationWarningMultipleIdeas:
+      "טיפ: ייתכן שזה מכיל מספר רעיונות — ודאו שהמצביעים יכולים להסכים או לא להסכים בבירור",
+    opinionWritingGuidelines: "הנחיות לכתיבת הצהרות",
   },
   ja: {
     placeholder: "あなたの意見を追加",
     placeholderExpanded: "賛成または反対しやすい単一の論点に焦点を当てる",
     postButton: "投稿",
     conversationLockedError: "会話がロックされているため、意見を作成できません",
-    conversationClosedError:
-      "この会話は終了しました",
+    conversationClosedError: "この会話は終了しました",
     createOpinionError: "新しい意見を作成しようとした際にエラーが発生しました",
     eventTicketRequiredTitle: "イベントチケットが必要",
     eventTicketRequiredMessage:
@@ -159,15 +171,15 @@ export const commentComposerTranslations: Record<
     exitPromptDescription: "下書きは戻ったときにここにあります。",
     validationWarningMultipleIdeas:
       "ヒント：これには複数のアイデアが含まれている可能性があります - 投票者が明確に賛成または反対できることを確認してください",
+    opinionWritingGuidelines: "意見を書くためのガイドライン",
   },
   ky: {
     placeholder: "Өз пикириңизди кошуңуз",
-    placeholderExpanded: "Макулдашуу же макул эмес болуу оңой болгон бир пунктка көңүл буруңуз",
+    placeholderExpanded:
+      "Макул болуу же макул эмес болуу оңой болгон бир ойго көңүл буруңуз",
     postButton: "Жарыялоо",
-    conversationLockedError:
-      "Талкуу кулпуланганы үчүн пикир түзүү мүмкүн эмес",
-    conversationClosedError:
-      "Бул талкуу жабылган",
+    conversationLockedError: "Талкуу кулпуланганы үчүн пикир түзүү мүмкүн эмес",
+    conversationClosedError: "Бул талкуу жабылган",
     createOpinionError: "Жаңы пикир түзүүдө ката кетти",
     eventTicketRequiredTitle: "Иш-чара билети талап кылынат",
     eventTicketRequiredMessage:
@@ -175,16 +187,17 @@ export const commentComposerTranslations: Record<
     exitPromptTitle: "Пикирди карала катары сактоо?",
     exitPromptDescription: "Кайтканыңызда каралаңыз бул жерде болот.",
     validationWarningMultipleIdeas:
-      "Кеңеш: Бул бир нече идеяны камтышы мүмкүн — добуш берүүчүлөр ачык макулдашып же макул болбой аларына ынаныңыз",
+      "Кеңеш: Бул жерде бир нече ой болушу мүмкүн — добуш берүүчүлөр ага так макул же каршы боло аларын текшериңиз",
+    opinionWritingGuidelines: "Пикир жазуу боюнча көрсөтмөлөр",
   },
   ru: {
     placeholder: "Добавьте своё высказывание",
-    placeholderExpanded: "Сосредоточьтесь на одном тезисе, с которым легко согласиться или не согласиться",
+    placeholderExpanded:
+      "Сосредоточьтесь на одном тезисе, с которым легко согласиться или не согласиться",
     postButton: "Опубликовать",
     conversationLockedError:
       "Невозможно создать высказывание, так как обсуждение заблокировано",
-    conversationClosedError:
-      "Это обсуждение закрыто",
+    conversationClosedError: "Это обсуждение закрыто",
     createOpinionError: "Ошибка при создании нового высказывания",
     eventTicketRequiredTitle: "Требуется билет на мероприятие",
     eventTicketRequiredMessage:
@@ -193,5 +206,6 @@ export const commentComposerTranslations: Record<
     exitPromptDescription: "Ваш черновик будет здесь, когда вы вернётесь.",
     validationWarningMultipleIdeas:
       "Совет: Это может содержать несколько идей — убедитесь, что голосующие смогут чётко согласиться или не согласиться",
+    opinionWritingGuidelines: "Рекомендации по написанию высказываний",
   },
 };

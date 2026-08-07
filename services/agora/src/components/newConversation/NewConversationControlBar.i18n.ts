@@ -229,7 +229,7 @@ export const newConversationControlBarTranslations: Record<
     languageTranslateSuffix: " · תרגום",
     requiresAccount: "נדרש חשבון",
     requiresLogin: "נדרש אימות חזק",
-    requiresEmailVerification: "נדרש אימות דוא\"ל",
+    requiresEmailVerification: 'נדרש אימות דוא"ל',
     guestParticipation: "השתתפות אורחים",
     makePublicNever: "הפיכה לציבורי: לעולם לא",
     makePublic: "הפיכה לציבורי: {date}",
@@ -274,7 +274,7 @@ export const newConversationControlBarTranslations: Record<
     aiOn: "LLM иштетилген",
     aiOff: "LLM өчүрүлгөн",
     recommendedDefault: "Топтор: авто",
-    groupsLabel: "{count} groups",
+    groupsLabel: "{count} топ",
     languagesLabel:
       "Тилдер: {primaryLanguage}{additionalLanguageSuffix}{translateSuffix}",
     languagePrimaryAuto: "авто",
@@ -300,7 +300,7 @@ export const newConversationControlBarTranslations: Record<
     aiOn: "LLM включена",
     aiOff: "LLM выключена",
     recommendedDefault: "Группы: авто",
-    groupsLabel: "{count} групп",
+    groupsLabel: "Групп: {count}",
     languagesLabel:
       "Языки: {primaryLanguage}{additionalLanguageSuffix}{translateSuffix}",
     languagePrimaryAuto: "авто",

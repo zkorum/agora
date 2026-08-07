@@ -2,7 +2,7 @@
 title: "من البث إلى الإصغاء الواسع"
 description: "يقدّم Bestian Tang من vTaiwan إطاراً واضحاً لفهم Agora: الإصغاء الواسع، واستخلاص المعنى، ورؤية ما يتجاوز مجموعة الرأي الخاصة بنا."
 author: "فريق Agora"
-date: "September 2025"
+date: "2025-09-01"
 type: "vision"
 thumbnail: "/images/resources/broadcasting-to-broad-listening.png"
 image: "/images/resources/broadcasting-to-broad-listening.png"

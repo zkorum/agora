@@ -2,7 +2,7 @@
 title: "大規模傾聽：與聯合國教科文組織媒體與資訊素養聯盟試點計畫的筆記"
 description: "2025年10月，聯合國教科文組織與Agora合作支持媒體與資訊素養週。該試點探索了結構化數位審議是否能延續會議對話的生命力。"
 author: "蔣雨婷"
-date: "2025年10月"
+date: "2025-10-01"
 type: "case-study"
 thumbnail: "/images/resources/unesco-mil-alliance.jpeg"
 ---

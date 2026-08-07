@@ -59,8 +59,8 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ConversationModerationProperties } from "src/shared/types/zod";
 import { useUserStore } from "src/stores/user";
-import { moderationReasonMapping } from "src/utils/component/moderations";
-import { ref, watch } from "vue";
+import { useModerationMappings } from "src/utils/component/moderations";
+import { computed } from "vue";
 import { useRouter } from "vue-router";
 
 import ModerationTime from "../common/moderation/ModerationTime.vue";
@@ -79,32 +79,23 @@ const { t } = useComponentI18n<PostLockedMessageTranslations>(
   postLockedMessageTranslations
 );
 
-const moderationReasonName = ref("");
+const { moderationReasonMapping } = useModerationMappings();
+const moderationReasonName = computed(() => {
+  const moderationProperty = props.moderationProperty;
+  if (moderationProperty.status !== "moderated") {
+    return "";
+  }
+
+  return (
+    moderationReasonMapping.value.find(
+      (option) => option.value === moderationProperty.reason
+    )?.label ?? ""
+  );
+});
 
 const router = useRouter();
 
 const { profileData } = useUserStore();
-
-loadModerationreason();
-
-watch(
-  () => props.moderationProperty,
-  () => {
-    loadModerationreason();
-  }
-);
-
-function loadModerationreason() {
-  for (let i = 0; i < moderationReasonMapping.length; i++) {
-    if (
-      props.moderationProperty.status == "moderated" &&
-      moderationReasonMapping[i].value == props.moderationProperty.reason
-    ) {
-      moderationReasonName.value = moderationReasonMapping[i].label;
-      break;
-    }
-  }
-}
 
 async function openModerationPage() {
   await router.push({

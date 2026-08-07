@@ -29,7 +29,12 @@ export const voteLegendTranslations: Record<
     disagree: "En desacuerdo",
     noVote: "Sin voto",
   },
-  fa: { agree: "موافقم", unsure: "مطمئن نیستم", disagree: "مخالفم", noVote: "بدون رأی" },
+  fa: {
+    agree: "موافقم",
+    unsure: "مطمئن نیستم",
+    disagree: "مخالفم",
+    noVote: "بدون رأی",
+  },
   fr: {
     agree: "D'accord",
     unsure: "Incertain",
@@ -48,7 +53,12 @@ export const voteLegendTranslations: Record<
     disagree: "不同意",
     noVote: "不投票",
   },
-  he: { agree: "מסכים/ה", unsure: "לא בטוח/ה", disagree: "לא מסכים/ה", noVote: "ללא הצבעה" },
+  he: {
+    agree: "מסכים/ה",
+    unsure: "לא בטוח/ה",
+    disagree: "לא מסכים/ה",
+    noVote: "ללא הצבעה",
+  },
   ja: {
     agree: "同意",
     unsure: "わからない",
@@ -57,14 +67,14 @@ export const voteLegendTranslations: Record<
   },
   ky: {
     agree: "Макулмун",
-    unsure: "Белгисиз",
+    unsure: "Так билбейм",
     disagree: "Макул эмесмин",
-    noVote: "Добуш жок",
+    noVote: "Добуш берилген эмес",
   },
   ru: {
     agree: "Согласен",
     unsure: "Не уверен",
     disagree: "Не согласен",
-    noVote: "Нет голоса",
+    noVote: "Голос не отдан",
   },
 };

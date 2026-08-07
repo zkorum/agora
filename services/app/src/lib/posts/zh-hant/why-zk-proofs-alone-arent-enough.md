@@ -2,19 +2,19 @@
 title: "為什麼僅靠零知識證明不足以保護使用者隱私"
 description: "零知識證明可以保護憑證證明本身，但公民平台還需要在身份、後設資料、錢包、裝置和開源基礎設施層面共同保護隱私。"
 author: "Nicolas Gimenez"
-date: "2026年5月"
+date: "2024-09-01"
 type: "tech"
 thumbnail: "https://lh7-us.googleusercontent.com/docs/AHkbwyK44xfmb0zN95CAfiTWJ5ULJ_-8DpfWRTy8r23dsV6kahSE4C4X-cZ8W4Ed-n2MT0jfWuolbqR77m1-rt_yXV4xcoojPDahscs3bQ=w1200-h630-p"
 image: "https://lh7-us.googleusercontent.com/docs/AHkbwyK44xfmb0zN95CAfiTWJ5ULJ_-8DpfWRTy8r23dsV6kahSE4C4X-cZ8W4Ed-n2MT0jfWuolbqR77m1-rt_yXV4xcoojPDahscs3bQ=w1200-h630-p"
 ---
 
-零知識證明常被描述成隱私保護的完整答案。在公民科技中，這個承諾尤其有吸引力：一個人可以證明自己有資格參與、是唯一的真實個體、超過某個年齡，或居住在某個司法轄區，而無需公開完整身分證件。
+[零知識證明](https://en.wikipedia.org/wiki/Zero-knowledge_proof)常被描述成隱私保護的完整答案。在公民科技中，這個承諾尤其有吸引力：一個人可以證明自己有資格參與、是唯一的真實個體、超過某個年齡，或居住在某個司法轄區，而無需公開完整身分證件。
 
 這個承諾是真實的，但範圍也比聽起來更窄。
 
 零知識證明保護的是「證明」本身。它不會自動保護使用者的 IP 位址、瀏覽器指紋、電話號碼、電子郵件、錢包實作、裝置、作業系統，也不會自動保護圍繞證明產生的時間戳和行為訊號。如果這些周邊層沒有被謹慎設計，驗證方仍然可能知道使用者是誰。
 
-本文改寫自 2024 年 9 月向 NGI TrustChain 做的一次簡報。核心觀點很簡單：零知識證明是私密公民參與的重要構件，但使用者隱私是一種全棧屬性。
+本文改寫自 2024 年 9 月向 [NGI TrustChain](https://trustchain.ngi.eu/) 做的一次[簡報](https://docs.google.com/presentation/d/e/2PACX-1vRKRJW4-ZUHso3o-KzzwemuezH7ifLENCpvJCr9552PlRHzOtyxetsLM-4ghHDwCA/pub?start=false&loop=false&delayms=3000)。核心觀點很簡單：零知識證明是私密公民參與的重要構件，但使用者隱私是一種全棧屬性。
 
 ## 為什麼公民平台需要身份
 

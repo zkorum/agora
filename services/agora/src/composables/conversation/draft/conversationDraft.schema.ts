@@ -30,7 +30,7 @@ import { z } from "zod";
 export const zodTitleValidation = z
   .string()
   .trim()
-  .min(1, "Title is required to continue")
+  .min(1)
   .max(MAX_LENGTH_TITLE);
 
 /**
@@ -38,9 +38,7 @@ export const zodTitleValidation = z
  */
 export const zodPolisUrlValidation = z
   .string()
-  .refine((url) => !url || isValidPolisUrl(url), {
-    message: "Please enter a valid Polis URL.",
-  });
+  .refine((url) => !url || isValidPolisUrl(url));
 
 // ============================================================================
 // Persistence Schemas (for localStorage serialization)

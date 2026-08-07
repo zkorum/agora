@@ -53,7 +53,7 @@
           </Text>
           <div class="flex items-center justify-between">
             <Text size="base" element="span" class="text-white">
-              September 2025
+              {m.casestudy_date_september_2025()}
             </Text>
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -99,7 +99,7 @@
           </Text>
           <div class="flex items-center justify-between">
             <Text size="base" element="span" class="text-white">
-              September 2025
+              {m.casestudy_date_september_2025()}
             </Text>
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -145,7 +145,7 @@
           </Text>
           <div class="flex items-center justify-between">
             <Text size="base" element="span" class="text-white">
-              October 2025
+              {m.casestudy_date_october_2025()}
             </Text>
             <svg
               xmlns="http://www.w3.org/2000/svg"

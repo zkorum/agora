@@ -17,29 +17,31 @@ export interface CreateConversationProjectLanguageSettingsTranslations {
   projectLanguagesFallback: string;
 }
 
-const englishTranslations: CreateConversationProjectLanguageSettingsTranslations = {
-  projectLabel: "Project",
-  noProjectLabel: "No project",
-  projectSelectionDescription:
-    "Choose the listed project this conversation belongs to, or use no project.",
-  projectLanguagesDescription:
-    "Choose whether this conversation should inherit project language settings or override them.",
-  inheritProjectLanguagesTitle: "Inherit project languages",
-  inheritProjectLanguagesDescription:
-    "Use the selected project's language and translation settings.",
-  inheritedProjectLanguagesDescription:
-    "Use the selected project's language settings.",
-  customLanguagesDescription:
-    "Custom language settings for this conversation.",
-  noProjectLanguagesDescription:
-    "No project selected. Use conversation-specific language settings.",
-  usingProjectLanguagesDescription: "Using {projectTitle}'s language settings.",
-  overridingProjectLanguagesDescription:
-    "Overriding {projectTitle}'s language settings for this conversation.",
-  inheritSummaryPrefix: "Inherit",
-  overrideSummaryPrefix: "Override",
-  projectLanguagesFallback: "Project languages",
-};
+const englishTranslations: CreateConversationProjectLanguageSettingsTranslations =
+  {
+    projectLabel: "Project",
+    noProjectLabel: "No project",
+    projectSelectionDescription:
+      "Choose the listed project this conversation belongs to, or use no project.",
+    projectLanguagesDescription:
+      "Choose whether this conversation should inherit project language settings or override them.",
+    inheritProjectLanguagesTitle: "Inherit project languages",
+    inheritProjectLanguagesDescription:
+      "Use the selected project's language and translation settings.",
+    inheritedProjectLanguagesDescription:
+      "Use the selected project's language settings.",
+    customLanguagesDescription:
+      "Custom language settings for this conversation.",
+    noProjectLanguagesDescription:
+      "No project selected. Use conversation-specific language settings.",
+    usingProjectLanguagesDescription:
+      "Using {projectTitle}'s language settings.",
+    overridingProjectLanguagesDescription:
+      "Overriding {projectTitle}'s language settings for this conversation.",
+    inheritSummaryPrefix: "Inherit",
+    overrideSummaryPrefix: "Override",
+    projectLanguagesFallback: "Project languages",
+  };
 
 export const createConversationProjectLanguageSettingsTranslations: Record<
   SupportedDisplayLanguageCodes,
@@ -47,9 +49,10 @@ export const createConversationProjectLanguageSettingsTranslations: Record<
 > = {
   en: englishTranslations,
   es: {
-    ...englishTranslations,
     projectLabel: "Proyecto",
     noProjectLabel: "Sin proyecto",
+    projectSelectionDescription:
+      "Elige el proyecto de la lista al que pertenece esta conversación o no selecciones ningún proyecto.",
     projectLanguagesDescription:
       "Elige si esta conversación debe heredar la configuración de idioma del proyecto o sobrescribirla.",
     inheritProjectLanguagesTitle: "Heredar idiomas del proyecto",
@@ -70,7 +73,6 @@ export const createConversationProjectLanguageSettingsTranslations: Record<
     projectLanguagesFallback: "Idiomas del proyecto",
   },
   fr: {
-    ...englishTranslations,
     projectLabel: "Projet",
     noProjectLabel: "Aucun projet",
     projectSelectionDescription:
@@ -95,18 +97,15 @@ export const createConversationProjectLanguageSettingsTranslations: Record<
     projectLanguagesFallback: "Langues du projet",
   },
   "zh-Hant": {
-    ...englishTranslations,
     projectLabel: "專案",
     noProjectLabel: "無專案",
-    projectLanguagesDescription:
-      "選擇此對話要繼承專案語言設定，還是覆寫它們。",
+    projectSelectionDescription: "選擇此對話所屬的已列出專案，或不選擇專案。",
+    projectLanguagesDescription: "選擇此對話要繼承專案語言設定，還是覆寫它們。",
     inheritProjectLanguagesTitle: "繼承專案語言",
-    inheritProjectLanguagesDescription:
-      "使用所選專案的語言和翻譯設定。",
+    inheritProjectLanguagesDescription: "使用所選專案的語言和翻譯設定。",
     inheritedProjectLanguagesDescription: "使用所選專案的語言設定。",
     customLanguagesDescription: "此對話的自訂語言設定。",
-    noProjectLanguagesDescription:
-      "未選擇專案。使用此對話專用的語言設定。",
+    noProjectLanguagesDescription: "未選擇專案。使用此對話專用的語言設定。",
     usingProjectLanguagesDescription: "正在使用 {projectTitle} 的語言設定。",
     overridingProjectLanguagesDescription:
       "正在為此對話覆寫 {projectTitle} 的語言設定。",
@@ -115,14 +114,12 @@ export const createConversationProjectLanguageSettingsTranslations: Record<
     projectLanguagesFallback: "專案語言",
   },
   "zh-Hans": {
-    ...englishTranslations,
     projectLabel: "项目",
     noProjectLabel: "无项目",
-    projectLanguagesDescription:
-      "选择此对话应继承项目语言设置，还是覆盖它们。",
+    projectSelectionDescription: "选择此对话所属的已列出项目，或不选择项目。",
+    projectLanguagesDescription: "选择此对话应继承项目语言设置，还是覆盖它们。",
     inheritProjectLanguagesTitle: "继承项目语言",
-    inheritProjectLanguagesDescription:
-      "使用所选项目的语言和翻译设置。",
+    inheritProjectLanguagesDescription: "使用所选项目的语言和翻译设置。",
     inheritedProjectLanguagesDescription: "使用所选项目的语言设置。",
     customLanguagesDescription: "此对话的自定义语言设置。",
     noProjectLanguagesDescription: "未选择项目。使用对话专属语言设置。",
@@ -134,9 +131,10 @@ export const createConversationProjectLanguageSettingsTranslations: Record<
     projectLanguagesFallback: "项目语言",
   },
   ja: {
-    ...englishTranslations,
     projectLabel: "プロジェクト",
     noProjectLabel: "プロジェクトなし",
+    projectSelectionDescription:
+      "この会話が属する一覧内のプロジェクトを選択するか、プロジェクトなしを選択します。",
     projectLanguagesDescription:
       "この会話でプロジェクトの言語設定を継承するか、上書きするかを選択します。",
     inheritProjectLanguagesTitle: "プロジェクトの言語を継承",
@@ -156,9 +154,10 @@ export const createConversationProjectLanguageSettingsTranslations: Record<
     projectLanguagesFallback: "プロジェクトの言語",
   },
   ar: {
-    ...englishTranslations,
     projectLabel: "المشروع",
     noProjectLabel: "بدون مشروع",
+    projectSelectionDescription:
+      "اختر المشروع المدرج الذي تنتمي إليه هذه المحادثة، أو لا تختر أي مشروع.",
     projectLanguagesDescription:
       "اختر ما إذا كان يجب أن ترث هذه المحادثة إعدادات لغة المشروع أو تتجاوزها.",
     inheritProjectLanguagesTitle: "وراثة لغات المشروع",
@@ -169,7 +168,8 @@ export const createConversationProjectLanguageSettingsTranslations: Record<
     customLanguagesDescription: "إعدادات لغة مخصصة لهذه المحادثة.",
     noProjectLanguagesDescription:
       "لم يتم تحديد مشروع. استخدم إعدادات لغة خاصة بالمحادثة.",
-    usingProjectLanguagesDescription: "يتم استخدام إعدادات اللغة لـ {projectTitle}.",
+    usingProjectLanguagesDescription:
+      "يتم استخدام إعدادات اللغة لـ {projectTitle}.",
     overridingProjectLanguagesDescription:
       "يتم تجاوز إعدادات اللغة لـ {projectTitle} لهذه المحادثة.",
     inheritSummaryPrefix: "وراثة",
@@ -177,9 +177,10 @@ export const createConversationProjectLanguageSettingsTranslations: Record<
     projectLanguagesFallback: "لغات المشروع",
   },
   fa: {
-    ...englishTranslations,
     projectLabel: "پروژه",
     noProjectLabel: "بدون پروژه",
+    projectSelectionDescription:
+      "پروژه فهرست‌شده‌ای را که این گفتگو به آن تعلق دارد انتخاب کنید، یا هیچ پروژه‌ای انتخاب نکنید.",
     projectLanguagesDescription:
       "انتخاب کنید این گفتگو تنظیمات زبان پروژه را به ارث ببرد یا آن‌ها را بازنویسی کند.",
     inheritProjectLanguagesTitle: "به‌ارث‌بردن زبان‌های پروژه",
@@ -199,9 +200,10 @@ export const createConversationProjectLanguageSettingsTranslations: Record<
     projectLanguagesFallback: "زبان‌های پروژه",
   },
   he: {
-    ...englishTranslations,
     projectLabel: "פרויקט",
     noProjectLabel: "ללא פרויקט",
+    projectSelectionDescription:
+      "בחרו את הפרויקט מהרשימה שאליו שייכת השיחה הזו, או אל תבחרו פרויקט.",
     projectLanguagesDescription:
       "בחרו אם השיחה הזו תירש את הגדרות השפה של הפרויקט או תעקוף אותן.",
     inheritProjectLanguagesTitle: "ירושת שפות הפרויקט",
@@ -212,8 +214,7 @@ export const createConversationProjectLanguageSettingsTranslations: Record<
     customLanguagesDescription: "הגדרות שפה מותאמות לשיחה זו.",
     noProjectLanguagesDescription:
       "לא נבחר פרויקט. השתמשו בהגדרות שפה ייעודיות לשיחה.",
-    usingProjectLanguagesDescription:
-      "משתמשים בהגדרות השפה של {projectTitle}.",
+    usingProjectLanguagesDescription: "משתמשים בהגדרות השפה של {projectTitle}.",
     overridingProjectLanguagesDescription:
       "עוקפים את הגדרות השפה של {projectTitle} עבור שיחה זו.",
     inheritSummaryPrefix: "ירושה",
@@ -221,9 +222,10 @@ export const createConversationProjectLanguageSettingsTranslations: Record<
     projectLanguagesFallback: "שפות הפרויקט",
   },
   ky: {
-    ...englishTranslations,
     projectLabel: "Долбоор",
     noProjectLabel: "Долбоор жок",
+    projectSelectionDescription:
+      "Бул талкуу тизмедеги кайсы долбоорго таандык экенин тандаңыз же долбоорсуз калтырыңыз.",
     projectLanguagesDescription:
       "Бул талкуу долбоордун тил жөндөөлөрүн мурастайбы же аларды алмаштырабы, тандаңыз.",
     inheritProjectLanguagesTitle: "Долбоор тилдерин мурастоо",
@@ -243,9 +245,10 @@ export const createConversationProjectLanguageSettingsTranslations: Record<
     projectLanguagesFallback: "Долбоор тилдери",
   },
   ru: {
-    ...englishTranslations,
     projectLabel: "Проект",
     noProjectLabel: "Без проекта",
+    projectSelectionDescription:
+      "Выберите проект из списка, к которому относится это обсуждение, либо не указывайте проект.",
     projectLanguagesDescription:
       "Выберите, должно ли это обсуждение наследовать языковые настройки проекта или переопределять их.",
     inheritProjectLanguagesTitle: "Наследовать языки проекта",

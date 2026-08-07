@@ -2,7 +2,7 @@
 title: "Как фасилитировать мероприятия и совещательные проекты с помощью Agora"
 description: "Практическое руководство по использованию Agora на мероприятиях, конференциях, воркшопах и более длительных совещательных проектах."
 author: "Команда Agora"
-date: "Сентябрь 2025"
+date: "2025-09-01"
 type: "guide"
 thumbnail: "/images/facilitation-guide-thumbnail.jpg"
 image: "/images/facilitation-guide-thumbnail.jpg"

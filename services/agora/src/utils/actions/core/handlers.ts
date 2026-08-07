@@ -50,7 +50,10 @@ export function useActionHandlers() {
         invalidateFeed();
         await loadUserProfile();
 
-        return { success: true, message: "Conversation deleted successfully" };
+        return {
+          success: true,
+          message: t("conversationDeletedSuccessfully"),
+        };
       } else {
         return { success: false, error: "Failed to delete conversation" };
       }

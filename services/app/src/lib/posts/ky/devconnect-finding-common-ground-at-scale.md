@@ -2,7 +2,7 @@
 title: "Ири масштабда жалпы тил табуу: Agora Citizen Network Devconnect Argentina 2025те"
 description: "Yuting Jiang Devconnect Argentina 2025те Agora Citizen Networkту тааныштырып, санариптик делиберация, пикир карталоо, купуялыкты сактаган идентификация жана broad listening коомдорго ири масштабда жалпы тил табууга кантип жардам бере аларын түшүндүрөт."
 author: "Yuting Jiang"
-date: "November 2025"
+date: "2025-11-01"
 type: "vision"
 thumbnail: "https://i.ytimg.com/vi/phw1AlQs8DY/hqdefault.jpg"
 image: "https://i.ytimg.com/vi/phw1AlQs8DY/hqdefault.jpg"
@@ -21,7 +21,7 @@ Devconnect Argentina 2025те Agora Citizen Networkтун тең негиздө�
 - [#bloquonstout](https://www.agoracitizen.network/resources/bloquonstout) сыяктуу коомдук консультациялар, анда Agora нааразылык билдиргендерге жана фасилитаторлорго жалпы артыкчылыктарды аныктоого жардам берди.
 
 <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; margin: 28px 0; overflow: hidden; border-radius: 12px; box-shadow: 0 8px 24px rgba(9, 15, 83, 0.16);">
-  <iframe src="https://www.youtube.com/embed/phw1AlQs8DY" title="Agora Citizen Network - Finding Common Ground At Scale - Devconnect Argentina 2025" style="position: absolute; inset: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+  <iframe src="https://www.youtube.com/embed/phw1AlQs8DY" title="Agora Citizen Network - Ири масштабда жалпы тил табуу - Devconnect Argentina 2025" style="position: absolute; inset: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 </div>
 
 [YouTubeдан көрүү](https://www.youtube.com/watch?v=phw1AlQs8DY)

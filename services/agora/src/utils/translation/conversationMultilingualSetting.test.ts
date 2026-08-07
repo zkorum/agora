@@ -65,7 +65,7 @@ describe("conversation multilingual settings", () => {
     expect(updated.additionalLanguageCodes).toEqual(["es"]);
     expect(setting.additionalLanguageCodes).toEqual(["fr", "es"]);
     expect(
-      removeConversationAdditionalLanguage({ setting, languageCode: "de" })
+      removeConversationAdditionalLanguage({ setting, languageCode: "ja" })
     ).toBe(setting);
   });
 });

@@ -41,8 +41,7 @@ export const editConversationTranslations: Record<
     notFoundErrorTitle: "Conversation not found",
     notFoundErrorMessage: "Failed to load conversation",
     notAuthorErrorTitle: "You are not the facilitator of this conversation",
-    notAuthorErrorMessage:
-      "Only the facilitator can edit this conversation",
+    notAuthorErrorMessage: "Only the facilitator can edit this conversation",
     conversationLockedErrorTitle:
       "This conversation is locked and cannot be edited",
     conversationLockedErrorMessage:
@@ -56,7 +55,8 @@ export const editConversationTranslations: Record<
     premiumEditRestrictedBanner:
       "Premium access has expired. You can still update normal settings, but premium content changes are disabled.",
     premiumAccessExpiredError: "Premium access has expired for this change.",
-    premiumAccessRequiredError: "This setting is not available with your current plan.",
+    premiumAccessRequiredError:
+      "This setting is not available with your current plan.",
   },
   fr: {
     saveButton: "Enregistrer",
@@ -70,7 +70,8 @@ export const editConversationTranslations: Record<
       "Cette conversation est verrouillée et ne peut pas être modifiée",
     notFoundErrorTitle: "Conversation introuvable",
     notFoundErrorMessage: "Échec du chargement de la conversation",
-    notAuthorErrorTitle: "Vous n'êtes pas le facilitateur de cette conversation",
+    notAuthorErrorTitle:
+      "Vous n'êtes pas le facilitateur de cette conversation",
     notAuthorErrorMessage:
       "Seul le facilitateur peut modifier cette conversation",
     conversationLockedErrorTitle:
@@ -87,7 +88,8 @@ export const editConversationTranslations: Record<
     premiumEditRestrictedBanner:
       "L'accès premium a expiré. Vous pouvez toujours modifier les paramètres standards, mais les changements de contenu premium sont désactivés.",
     premiumAccessExpiredError: "L'accès premium a expiré pour ce changement.",
-    premiumAccessRequiredError: "Ce paramètre n'est pas disponible avec votre offre actuelle.",
+    premiumAccessRequiredError:
+      "Ce paramètre n'est pas disponible avec votre offre actuelle.",
   },
   es: {
     saveButton: "Guardar",
@@ -102,8 +104,7 @@ export const editConversationTranslations: Record<
     notFoundErrorTitle: "Conversación no encontrada",
     notFoundErrorMessage: "Error al cargar la conversación",
     notAuthorErrorTitle: "No eres el facilitador de esta conversación",
-    notAuthorErrorMessage:
-      "Solo el facilitador puede editar esta conversación",
+    notAuthorErrorMessage: "Solo el facilitador puede editar esta conversación",
     conversationLockedErrorTitle:
       "Esta conversación está bloqueada y no se puede editar",
     conversationLockedErrorMessage:
@@ -117,7 +118,8 @@ export const editConversationTranslations: Record<
     premiumEditRestrictedBanner:
       "El acceso premium expiró. Todavía puede actualizar la configuración normal, pero los cambios de contenido premium están deshabilitados.",
     premiumAccessExpiredError: "El acceso premium expiró para este cambio.",
-    premiumAccessRequiredError: "Esta configuración no está disponible con tu plan actual.",
+    premiumAccessRequiredError:
+      "Esta configuración no está disponible con tu plan actual.",
   },
   fa: {
     saveButton: "ذخیره",
@@ -301,9 +303,11 @@ export const editConversationTranslations: Record<
     createSurveyButton: "Сурамжылоо түзүү",
     editSurveyButton: "Сурамжылоону түзөтүү",
     premiumEditRestrictedBanner:
-      "Premium access has expired. You can still update normal settings, but premium content changes are disabled.",
-    premiumAccessExpiredError: "Premium access has expired for this change.",
-    premiumAccessRequiredError: "This setting is not available with your current plan.",
+      "Премиум мүмкүнчүлүктөрдүн мөөнөтү бүттү. Кадимки жөндөөлөрдү дагы эле жаңырта аласыз, бирок премиум мазмунду өзгөртүү өчүрүлгөн.",
+    premiumAccessExpiredError:
+      "Бул өзгөртүү үчүн премиум мүмкүнчүлүктүн мөөнөтү бүттү.",
+    premiumAccessRequiredError:
+      "Бул жөндөө учурдагы планыңызда жеткиликтүү эмес.",
   },
   ru: {
     saveButton: "Сохранить",
@@ -333,6 +337,7 @@ export const editConversationTranslations: Record<
     premiumEditRestrictedBanner:
       "Премиум-доступ истёк. Вы всё ещё можете менять обычные настройки, но изменения премиум-контента отключены.",
     premiumAccessExpiredError: "Премиум-доступ для этого изменения истёк.",
-    premiumAccessRequiredError: "Эта настройка недоступна на вашем текущем плане.",
+    premiumAccessRequiredError:
+      "Эта настройка недоступна на вашем текущем плане.",
   },
 };

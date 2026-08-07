@@ -2,7 +2,7 @@
 title: "Agoraでイベントと熟議プロジェクトをファシリテートする方法"
 description: "イベント、カンファレンス、ワークショップ、より長期の熟議プロジェクトでAgoraを使うための実践ガイド。"
 author: "Agoraチーム"
-date: "September 2025"
+date: "2025-09-01"
 type: "guide"
 thumbnail: "/images/facilitation-guide-thumbnail.jpg"
 image: "/images/facilitation-guide-thumbnail.jpg"

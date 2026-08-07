@@ -2,7 +2,7 @@
 title: "Поиск общего языка в большом масштабе: Agora Citizen Network на Devconnect Argentina 2025"
 description: "Yuting Jiang представляет Agora Citizen Network на Devconnect Argentina 2025 и показывает, как цифровая делиберация, картирование мнений, приватная идентичность и broad listening помогают сообществам находить общий язык в большом масштабе."
 author: "Yuting Jiang"
-date: "November 2025"
+date: "2025-11-01"
 type: "vision"
 thumbnail: "https://i.ytimg.com/vi/phw1AlQs8DY/hqdefault.jpg"
 image: "https://i.ytimg.com/vi/phw1AlQs8DY/hqdefault.jpg"
@@ -21,7 +21,7 @@ image: "https://i.ytimg.com/vi/phw1AlQs8DY/hqdefault.jpg"
 - Консультации сообществ, такие как [#bloquonstout](https://www.agoracitizen.network/resources/bloquonstout), где Agora помогла протестующим и фасилитаторам выявить общие приоритеты.
 
 <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; margin: 28px 0; overflow: hidden; border-radius: 12px; box-shadow: 0 8px 24px rgba(9, 15, 83, 0.16);">
-  <iframe src="https://www.youtube.com/embed/phw1AlQs8DY" title="Agora Citizen Network - Finding Common Ground At Scale - Devconnect Argentina 2025" style="position: absolute; inset: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+  <iframe src="https://www.youtube.com/embed/phw1AlQs8DY" title="Agora Citizen Network - Поиск общего языка в большом масштабе - Devconnect Argentina 2025" style="position: absolute; inset: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 </div>
 
 [Смотреть на YouTube](https://www.youtube.com/watch?v=phw1AlQs8DY)

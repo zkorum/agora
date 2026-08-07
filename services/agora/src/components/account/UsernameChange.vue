@@ -41,14 +41,13 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { MAX_LENGTH_USERNAME } from "src/shared/shared";
-import { zodUsername } from "src/shared/types/zod";
+import { MAX_LENGTH_USERNAME, MIN_LENGTH_USERNAME } from "src/shared/shared";
+import { usernameRegex, zodUsername } from "src/shared/types/zod";
 import { useUserStore } from "src/stores/user";
 import { useBackendAccountApi } from "src/utils/api/account";
 import { useCommonApi } from "src/utils/api/common";
 import { useNotify } from "src/utils/ui/notify";
 import { onMounted, ref, watch } from "vue";
-import { ZodError } from "zod";
 
 import ZKButton from "../ui-library/ZKButton.vue";
 import {
@@ -124,7 +123,14 @@ async function submitButtonClicked() {
 
 async function nameContainsValidCharacters(): Promise<boolean> {
   try {
-    zodUsername.parse(userName.value);
+    const validationResult = zodUsername.safeParse(userName.value);
+    if (!validationResult.success) {
+      userNameInvalidMessage.value = getUsernameValidationMessage(
+        userName.value
+      );
+      isValidUsername.value = false;
+      return false;
+    }
 
     const isInUse = await isUsernameInUse(userName.value);
     if (isInUse) {
@@ -142,13 +148,40 @@ async function nameContainsValidCharacters(): Promise<boolean> {
       userNameInvalidMessage.value = "";
       return true;
     }
-  } catch (error) {
-    if (error instanceof ZodError) {
-      userNameInvalidMessage.value = error.format()._errors[0];
-    }
+  } catch {
     isValidUsername.value = false;
     return false;
   }
+}
+
+function getUsernameValidationMessage(username: string): string {
+  if (!usernameRegex.test(username)) {
+    return t("invalidCharacters");
+  }
+  if (!/[a-z0-9]/.test(username)) {
+    return t("letterOrNumberRequired");
+  }
+  if (/__+/.test(username)) {
+    return t("consecutiveUnderscores");
+  }
+  if (username.length < MIN_LENGTH_USERNAME) {
+    return t("tooShort", { min: MIN_LENGTH_USERNAME });
+  }
+  if (username.length > MAX_LENGTH_USERNAME) {
+    return t("tooLong", { max: MAX_LENGTH_USERNAME });
+  }
+  if (username.startsWith("ext")) {
+    return t("reservedPrefix");
+  }
+  if (
+    username === "agora" ||
+    username === "zkorum" ||
+    username === "agoracitizennetwork" ||
+    username === "agora_citizen_network"
+  ) {
+    return t("reservedUsername");
+  }
+  return t("invalidUsername");
 }
 
 async function refreshName() {

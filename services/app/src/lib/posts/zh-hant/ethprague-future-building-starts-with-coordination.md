@@ -2,7 +2,7 @@
 title: "未來建設始於協調：ETHPrague 上的 Broad Listening"
 description: "Yuting Jiang 在 ETHPrague 介紹 Agora Citizen Network，指出最困難的問題不是智慧，而是協調，並說明 broad listening 如何幫助社群從共同注意力走向共同決策。"
 author: "Yuting Jiang"
-date: "May 2026"
+date: "2026-05-01"
 type: "vision"
 thumbnail: "/images/resources/ethprague-broad-listening.jpg"
 image: "/images/resources/ethprague-broad-listening.jpg"
@@ -24,7 +24,7 @@ image: "/images/resources/ethprague-broad-listening.jpg"
 - [**Decentralized Deliberation Standard**](https://dds.xyz)：一個建設可互操作公民科技工具生態的倡議，用於共享可驗證的集體智慧資料。
 
 <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; margin: 28px 0; overflow: hidden; border-radius: 12px; box-shadow: 0 8px 24px rgba(9, 15, 83, 0.16);">
-  <iframe src="https://www.youtube.com/embed/FHpcdHiyCXw" title="Future Building Starts with Coordination: Agree or Disagree? - Yuting Jiang" style="position: absolute; inset: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+  <iframe src="https://www.youtube.com/embed/FHpcdHiyCXw" title="未來建設始於協調：你同意還是不同意？ - Yuting Jiang" style="position: absolute; inset: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 </div>
 
 [在 YouTube 觀看](https://www.youtube.com/watch?v=FHpcdHiyCXw)

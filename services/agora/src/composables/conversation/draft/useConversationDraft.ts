@@ -31,7 +31,10 @@ import {
 } from "src/utils/translation/conversationMultilingualSetting";
 import { computed, type ComputedRef, type Ref, ref, watch } from "vue";
 
-import { zodPolisUrlValidation, zodTitleValidation } from "./conversationDraft.schema";
+import {
+  zodPolisUrlValidation,
+  zodTitleValidation,
+} from "./conversationDraft.schema";
 import type {
   ConversationDraft,
   ConversationFormState,
@@ -141,7 +144,9 @@ export function useConversationDraft(
       : undefined
   );
   const isPrivate = ref(initialDraft.isPrivate);
-  const participationMode = ref<ParticipationMode>(initialDraft.participationMode);
+  const participationMode = ref<ParticipationMode>(
+    initialDraft.participationMode
+  );
   const requiresEventTicket = ref<EventSlug | undefined>(
     initialDraft.requiresEventTicket
   );
@@ -151,7 +156,7 @@ export function useConversationDraft(
   );
   const postAs = ref<PostAsSettings>({ ...initialDraft.postAs });
   const externalSourceConfig = ref<ExternalSourceConfig | null>(
-    initialDraft.externalSourceConfig,
+    initialDraft.externalSourceConfig
   );
   const surveyConfig = ref<SurveyConfig | null>(initialDraft.surveyConfig);
   const importSettings = ref<ConversationImportSettings>({
@@ -198,7 +203,8 @@ export function useConversationDraft(
         store.conversationDraft.content = newSnapshot.content;
         store.conversationDraft.multilingualSetting =
           newSnapshot.multilingualSetting;
-        store.conversationDraft.selectedProjectSlug = newSnapshot.selectedProjectSlug;
+        store.conversationDraft.selectedProjectSlug =
+          newSnapshot.selectedProjectSlug;
         store.conversationDraft.inheritProjectLanguages =
           newSnapshot.inheritProjectLanguages;
         store.conversationDraft.seedOpinions = newSnapshot.seedOpinions;
@@ -216,7 +222,8 @@ export function useConversationDraft(
           };
         }
         store.conversationDraft.isPrivate = newSnapshot.isPrivate;
-        store.conversationDraft.participationMode = newSnapshot.participationMode;
+        store.conversationDraft.participationMode =
+          newSnapshot.participationMode;
         store.conversationDraft.requiresEventTicket =
           newSnapshot.requiresEventTicket;
         store.conversationDraft.aiLabelingEnabled =
@@ -242,7 +249,9 @@ export function useConversationDraft(
 
     if (!result.success) {
       const error =
-        result.error.issues[0]?.message || "Title validation failed";
+        title.value.trim() === ""
+          ? t("titleRequired")
+          : t("titleValidationFailed");
       validationState.value.title = {
         isValid: false,
         error,
@@ -367,7 +376,6 @@ export function useConversationDraft(
         });
         if (!result.firstErrorField) result.firstErrorField = "body";
       }
-
     }
 
     // For Polis URL import, validate URL
@@ -460,7 +468,8 @@ export function useConversationDraft(
       aiLabelingEnabled.value !== emptyDraft.aiLabelingEnabled;
 
     const hasPreferredOpinionGroupCountChanges =
-      preferredOpinionGroupCount.value !== emptyDraft.preferredOpinionGroupCount;
+      preferredOpinionGroupCount.value !==
+      emptyDraft.preferredOpinionGroupCount;
 
     // Check creation settings changes
     const hasCreationSettingsChanges =
@@ -470,11 +479,10 @@ export function useConversationDraft(
       JSON.stringify(importSettings.value.csvFileMetadata) !==
         JSON.stringify(emptyDraft.importSettings.csvFileMetadata);
 
-    const hasSurveyConfigChanges =
-      !areSurveyConfigsEqual({
-        left: surveyConfig.value,
-        right: emptyDraft.surveyConfig,
-      });
+    const hasSurveyConfigChanges = !areSurveyConfigsEqual({
+      left: surveyConfig.value,
+      right: emptyDraft.surveyConfig,
+    });
 
     return (
       hasContentChanges ||
@@ -575,8 +583,7 @@ export function useConversationDraft(
 
   const isFormValid = computed(() => {
     return (
-      validationState.value.title.isValid &&
-      validationState.value.body.isValid
+      validationState.value.title.isValid && validationState.value.body.isValid
     );
   });
 

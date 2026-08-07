@@ -69,8 +69,7 @@ export const conversationSurveySummaryTranslations: Record<
     currentStatusLabel: "الحالة الحالية",
     reviewAnswersTitle: "راجع إجاباتك",
     continueSurveyTitle: "واصل استبيانك",
-    summaryDescriptionComplete:
-      "إجابات الاستبيان الخاصة بك محفوظة ومحدّثة.",
+    summaryDescriptionComplete: "إجابات الاستبيان الخاصة بك محفوظة ومحدّثة.",
     summaryDescriptionPending:
       "لا تزال بعض الأسئلة تحتاج إلى انتباه قبل فتح المشاركة بالكامل.",
     statusComplete: "مكتمل",
@@ -121,8 +120,7 @@ export const conversationSurveySummaryTranslations: Record<
     confirmWithdrawButtonLabel: "Retirar respuesta",
     withdrawDialogCancelLabel: "Cancelar",
     confirmWithdrawMessage: "¿Retirar esta respuesta de la encuesta?",
-    failedToWithdrawMessage:
-      "No se pudo retirar tu respuesta de la encuesta.",
+    failedToWithdrawMessage: "No se pudo retirar tu respuesta de la encuesta.",
   },
   fa: {
     failedToLoadSurveyTitle: "بارگیری نظرسنجی انجام نشد",
@@ -152,8 +150,7 @@ export const conversationSurveySummaryTranslations: Record<
     confirmWithdrawButtonLabel: "پس گرفتن پاسخ",
     withdrawDialogCancelLabel: "لغو",
     confirmWithdrawMessage: "این پاسخ نظرسنجی پس گرفته شود؟",
-    failedToWithdrawMessage:
-      "پس گرفتن پاسخ نظرسنجی شما انجام نشد.",
+    failedToWithdrawMessage: "پس گرفتن پاسخ نظرسنجی شما انجام نشد.",
   },
   fr: {
     failedToLoadSurveyTitle: "Impossible de charger le questionnaire",
@@ -192,8 +189,7 @@ export const conversationSurveySummaryTranslations: Record<
     currentStatusLabel: "מצב נוכחי",
     reviewAnswersTitle: "עברו על התשובות שלכם",
     continueSurveyTitle: "המשיכו את הסקר שלכם",
-    summaryDescriptionComplete:
-      "תשובות הסקר שלכם שמורות ומעודכנות.",
+    summaryDescriptionComplete: "תשובות הסקר שלכם שמורות ומעודכנות.",
     summaryDescriptionPending:
       "כמה שאלות עדיין דורשות תשומת לב לפני שההשתתפות תיפתח במלואה.",
     statusComplete: "הושלם",
@@ -222,8 +218,7 @@ export const conversationSurveySummaryTranslations: Record<
     currentStatusLabel: "現在の状態",
     reviewAnswersTitle: "回答を確認してください",
     continueSurveyTitle: "アンケートを続けてください",
-    summaryDescriptionComplete:
-      "アンケートの回答は保存され、最新の状態です。",
+    summaryDescriptionComplete: "アンケートの回答は保存され、最新の状態です。",
     summaryDescriptionPending:
       "参加が完全に解放される前に、まだ確認が必要な質問があります。",
     statusComplete: "完了",
@@ -244,8 +239,7 @@ export const conversationSurveySummaryTranslations: Record<
     confirmWithdrawButtonLabel: "回答を取り下げる",
     withdrawDialogCancelLabel: "キャンセル",
     confirmWithdrawMessage: "このアンケート回答を取り下げますか？",
-    failedToWithdrawMessage:
-      "アンケート回答を取り下げられませんでした。",
+    failedToWithdrawMessage: "アンケート回答を取り下げられませんでした。",
   },
   ky: {
     failedToLoadSurveyTitle: "Сурамжылоону жүктөө ишке ашкан жок",
@@ -254,7 +248,7 @@ export const conversationSurveySummaryTranslations: Record<
     reviewAnswersTitle: "Жоопторуңузду карап чыгыңыз",
     continueSurveyTitle: "Сурамжылоону улантыңыз",
     summaryDescriptionComplete:
-      "Сурамжылоо жоопторуңуз сакталган жана актуалдуу.",
+      "Талкууга кайтардан мурун сурамжылоодогу жоопторуңузду карап чыгыңыз же түзөтүңүз.",
     summaryDescriptionPending:
       "Катышуу толук ачылышы үчүн айрым суроолор дагы эле көңүл бурууну талап кылат.",
     statusComplete: "Аяктаган",
@@ -270,7 +264,7 @@ export const conversationSurveySummaryTranslations: Record<
     questionStatusNotAnswered: "Жооп берилген эмес",
     editAnswerLabel: "Түзөтүү",
     continueSurveyLabel: "Сурамжылоону улантуу",
-    backToConversationLabel: "Сүйлөшүүгө кайтуу",
+    backToConversationLabel: "Талкууга кайтуу",
     withdrawResponseLabel: "Жоопту кайтарып алуу",
     confirmWithdrawButtonLabel: "Жоопту кайтарып алуу",
     withdrawDialogCancelLabel: "Жокко чыгаруу",
@@ -285,7 +279,7 @@ export const conversationSurveySummaryTranslations: Record<
     reviewAnswersTitle: "Проверьте свои ответы",
     continueSurveyTitle: "Продолжите опрос",
     summaryDescriptionComplete:
-      "Ваши ответы на опрос сохранены и актуальны.",
+      "Просмотрите или измените свои ответы на опрос, прежде чем вернуться к обсуждению.",
     summaryDescriptionPending:
       "Некоторые вопросы всё ещё требуют внимания, прежде чем участие будет полностью открыто.",
     statusComplete: "Завершён",
@@ -301,13 +295,12 @@ export const conversationSurveySummaryTranslations: Record<
     questionStatusNotAnswered: "Без ответа",
     editAnswerLabel: "Изменить",
     continueSurveyLabel: "Продолжить опрос",
-    backToConversationLabel: "Вернуться к беседе",
+    backToConversationLabel: "Вернуться к обсуждению",
     withdrawResponseLabel: "Отозвать ответ",
     confirmWithdrawButtonLabel: "Отозвать ответ",
     withdrawDialogCancelLabel: "Отмена",
     confirmWithdrawMessage: "Отозвать этот ответ на опрос?",
-    failedToWithdrawMessage:
-      "Не удалось отозвать ваш ответ на опрос.",
+    failedToWithdrawMessage: "Не удалось отозвать ваш ответ на опрос.",
   },
   "zh-Hans": {
     failedToLoadSurveyTitle: "无法加载问卷",
@@ -316,8 +309,7 @@ export const conversationSurveySummaryTranslations: Record<
     reviewAnswersTitle: "查看你的回答",
     continueSurveyTitle: "继续你的问卷",
     summaryDescriptionComplete: "你的问卷回答已保存并保持最新。",
-    summaryDescriptionPending:
-      "在完全解锁参与之前，仍有一些问题需要处理。",
+    summaryDescriptionPending: "在完全解锁参与之前，仍有一些问题需要处理。",
     statusComplete: "已完成",
     statusNeedsUpdate: "需要更新",
     statusWithdrawn: "已撤回",
@@ -345,8 +337,7 @@ export const conversationSurveySummaryTranslations: Record<
     reviewAnswersTitle: "查看你的回答",
     continueSurveyTitle: "繼續你的問卷",
     summaryDescriptionComplete: "你的問卷回答已儲存並保持最新。",
-    summaryDescriptionPending:
-      "在完全解鎖參與之前，仍有一些問題需要處理。",
+    summaryDescriptionPending: "在完全解鎖參與之前，仍有一些問題需要處理。",
     statusComplete: "已完成",
     statusNeedsUpdate: "需要更新",
     statusWithdrawn: "已撤回",

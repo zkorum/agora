@@ -6,28 +6,28 @@
         :style="{
           width: `${formatPercentage(calculatePercentage(props.voteCount1, numParticipants))}`,
         }"
-        :title="`${props.voteCount1} ${t('votes')} (${formatPercentage(calculatePercentage(props.voteCount1, numParticipants))})`"
+        :title="formatVoteTitle(props.voteCount1)"
       ></div>
       <div
         class="vote-bar vote-bar-2"
         :style="{
           width: `${formatPercentage(calculatePercentage(props.voteCount2, numParticipants))}`,
         }"
-        :title="`${props.voteCount2} ${t('votes')} (${formatPercentage(calculatePercentage(props.voteCount2, numParticipants))})`"
+        :title="formatVoteTitle(props.voteCount2)"
       ></div>
       <div
         class="vote-bar vote-bar-3"
         :style="{
           width: `${formatPercentage(calculatePercentage(props.voteCount3, numParticipants))}`,
         }"
-        :title="`${props.voteCount3} ${t('votes')} (${formatPercentage(calculatePercentage(props.voteCount3, numParticipants))})`"
+        :title="formatVoteTitle(props.voteCount3)"
       ></div>
       <div
         class="vote-bar vote-bar-4"
         :style="{
           width: `${formatPercentage(calculatePercentage(props.voteCount4, numParticipants))}`,
         }"
-        :title="`${props.voteCount4} ${t('votes')} (${formatPercentage(calculatePercentage(props.voteCount4, numParticipants))})`"
+        :title="formatVoteTitle(props.voteCount4)"
       ></div>
     </div>
 
@@ -72,6 +72,15 @@ const { t } = useComponentI18n<VoteCountVisualizerTranslations>(
   voteCountVisualizerTranslations
 );
 
+function formatVoteTitle(voteCount: number): string {
+  return t("voteCountTitle", {
+    count: voteCount,
+    percentage: formatPercentage(
+      calculatePercentage(voteCount, props.numParticipants)
+    ),
+  });
+}
+
 const legendItems = computed(() => {
   return [
     { label: props.label1 || t("group1"), count: props.voteCount1 },
@@ -98,7 +107,11 @@ const legendItems = computed(() => {
 }
 
 .vote-bar-1 {
-  background: linear-gradient(90deg, $sentiment-positive 0%, $sentiment-positive-end 100%);
+  background: linear-gradient(
+    90deg,
+    $sentiment-positive 0%,
+    $sentiment-positive-end 100%
+  );
 }
 
 .vote-bar-2 {
@@ -106,7 +119,11 @@ const legendItems = computed(() => {
 }
 
 .vote-bar-3 {
-  background: linear-gradient(90deg, $sentiment-negative 0%, $sentiment-negative-end 100%);
+  background: linear-gradient(
+    90deg,
+    $sentiment-negative 0%,
+    $sentiment-negative-end 100%
+  );
 }
 
 .vote-bar-4 {
@@ -133,7 +150,11 @@ const legendItems = computed(() => {
 }
 
 .legend-color-1 {
-  background: linear-gradient(90deg, $sentiment-positive 0%, $sentiment-positive-end 100%);
+  background: linear-gradient(
+    90deg,
+    $sentiment-positive 0%,
+    $sentiment-positive-end 100%
+  );
 }
 
 .legend-color-2 {
@@ -141,7 +162,11 @@ const legendItems = computed(() => {
 }
 
 .legend-color-3 {
-  background: linear-gradient(90deg, $sentiment-negative 0%, $sentiment-negative-end 100%);
+  background: linear-gradient(
+    90deg,
+    $sentiment-negative 0%,
+    $sentiment-negative-end 100%
+  );
 }
 
 .legend-color-4 {

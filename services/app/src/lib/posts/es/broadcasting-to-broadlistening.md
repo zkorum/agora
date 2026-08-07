@@ -2,7 +2,7 @@
 title: "De broadcasting a broad listening"
 description: "Bestian Tang, de vTaiwan, ofrece una forma clara de entender Agora: escucha amplia, síntesis de opiniones y una mirada más allá del propio grupo."
 author: "Equipo Agora"
-date: "September 2025"
+date: "2025-09-01"
 type: "vision"
 thumbnail: "/images/resources/broadcasting-to-broad-listening.png"
 image: "/images/resources/broadcasting-to-broad-listening.png"

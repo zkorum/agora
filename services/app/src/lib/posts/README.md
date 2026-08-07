@@ -40,7 +40,7 @@ Each locale folder mirrors the same set of slugs. The slug is derived from the f
    title: "Post Title"
    description: "Brief description"
    author: "Author Name"
-   date: "February 2026"
+   date: "2026-02-01"
    thumbnail: "/images/my-thumbnail.png"
    ---
    ```

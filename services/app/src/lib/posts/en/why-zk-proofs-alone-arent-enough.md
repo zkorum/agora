@@ -2,7 +2,7 @@
 title: "Why Zero-Knowledge Proofs Alone Are Not Enough to Protect User Privacy"
 description: "Zero-knowledge proofs can protect the credential proof itself, but civic platforms need privacy across identity, metadata, wallets, devices, and open-source infrastructure."
 author: "Nicolas Gimenez"
-date: "September 2024"
+date: "2024-09-01"
 type: "tech"
 thumbnail: "https://lh7-us.googleusercontent.com/docs/AHkbwyK44xfmb0zN95CAfiTWJ5ULJ_-8DpfWRTy8r23dsV6kahSE4C4X-cZ8W4Ed-n2MT0jfWuolbqR77m1-rt_yXV4xcoojPDahscs3bQ=w1200-h630-p"
 image: "https://lh7-us.googleusercontent.com/docs/AHkbwyK44xfmb0zN95CAfiTWJ5ULJ_-8DpfWRTy8r23dsV6kahSE4C4X-cZ8W4Ed-n2MT0jfWuolbqR77m1-rt_yXV4xcoojPDahscs3bQ=w1200-h630-p"

@@ -2,7 +2,8 @@
   import agoraBgGradient from "$lib/assets/agora-bg-gradient.png";
   import resourcesHeroIllustration from "$lib/assets/resources-hero-illustration.png";
   import * as m from "$lib/paraglide/messages.js";
-  import { localizeHref } from "$lib/paraglide/runtime";
+  import { getLocale, localizeHref } from "$lib/paraglide/runtime";
+  import { formatResourceDate } from "$logic/shared/resource-date";
   import type {
     ResourcePostMeta,
     ResourceType,
@@ -21,11 +22,11 @@
   let selectedType = $state<ResourceFilter>("all");
 
   const resourceFilters: { label: string; value: ResourceFilter }[] = [
-    { label: "All", value: "all" },
-    { label: "Vision", value: "vision" },
-    { label: "Case Studies", value: "case-study" },
-    { label: "Guides", value: "guide" },
-    { label: "Tech", value: "tech" },
+    { label: m.resources_filter_all(), value: "all" },
+    { label: m.resources_filter_vision(), value: "vision" },
+    { label: m.resources_filter_case_studies(), value: "case-study" },
+    { label: m.resources_filter_guides(), value: "guide" },
+    { label: m.resources_filter_tech(), value: "tech" },
   ];
 
   function findFeaturedPost(
@@ -50,13 +51,13 @@
   function getCategoryLabel(type: ResourceType): string {
     switch (type) {
       case "case-study":
-        return "CASE STUDY";
+        return m.resources_category_case_study();
       case "guide":
-        return "GUIDE";
+        return m.resources_category_guide();
       case "tech":
-        return "TECH";
+        return m.resources_category_tech();
       case "vision":
-        return "VISION";
+        return m.resources_category_vision();
     }
   }
 
@@ -71,7 +72,13 @@
   }
 
   function getFeaturedLabel(post: ResourcePostMeta): string {
-    return `HIGHLIGHTED ${getPostCategory(post)}`;
+    return m.resources_highlighted_category({
+      category: getPostCategory(post),
+    });
+  }
+
+  function getFormattedDate(date: Date): string {
+    return formatResourceDate({ date, locale: getLocale() });
   }
 </script>
 
@@ -136,7 +143,7 @@
             element="span"
             class="text-ink-light"
           >
-            {featuredPost.date}
+            {getFormattedDate(featuredPost.date)}
           </Text>
         </div>
       </article>
@@ -150,7 +157,7 @@
     "
   >
     <Text size="base" weight="bold" class="mb-14 text-center">
-      <GradientText>RECENT RESOURCES</GradientText>
+      <GradientText>{m.resources_recent()}</GradientText>
     </Text>
 
     <div
@@ -159,7 +166,7 @@
         sm:gap-4
       "
       role="tablist"
-      aria-label="Filter resources by content type"
+      aria-label={m.resources_filter_label()}
     >
       {#each resourceFilters as filter (filter.value)}
         <button
@@ -256,7 +263,7 @@
                 {m.blog_read_more()}
               </GradientButton>
               <Text size="base" element="span" class="text-ink-base">
-                {post.date}
+                {getFormattedDate(post.date)}
               </Text>
             </div>
           </div>

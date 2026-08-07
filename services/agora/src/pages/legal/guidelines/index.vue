@@ -1,121 +1,132 @@
 <template>
   <div>
     <Teleport v-if="isActive" to="#page-header">
-      <StandardMenuBar :title="t('guidelines')" :center-content="true" />
+      <StandardMenuBar :title="content.title" :center-content="true" />
     </Teleport>
 
-    <article class="guidelines-content">
+    <aside
+      v-if="isAutomatedTranslation"
+      class="translation-notice"
+      role="note"
+      aria-live="polite"
+      :lang="selectedLanguageCode"
+      aria-labelledby="automated-translation-title"
+    >
+      <div class="translation-notice__heading">
+        <span class="translation-notice__marker" aria-hidden="true">!</span>
+        <strong id="automated-translation-title">
+          {{ selectedContent.automatedTranslationNotice.title }}
+        </strong>
+      </div>
+      <p>{{ selectedContent.automatedTranslationNotice.message }}</p>
+      <button
+        type="button"
+        class="translation-notice__toggle"
+        aria-controls="community-guidelines-content"
+        :aria-pressed="showAuthoritativeEnglish"
+        @click="toggleAuthoritativeEnglish"
+      >
+        {{
+          showAuthoritativeEnglish
+            ? selectedContent.automatedTranslationNotice.returnTranslated
+            : selectedContent.automatedTranslationNotice.viewEnglish
+        }}
+      </button>
+    </aside>
+
+    <article
+      id="community-guidelines-content"
+      class="guidelines-content"
+      :lang="showAuthoritativeEnglish ? 'en' : selectedLanguageCode"
+      :dir="showAuthoritativeEnglish ? 'ltr' : undefined"
+    >
       <section>
-        <h2>1. Principles of Moderation</h2>
-        <p>
-          Agora Citizen Network is a space for open and constructive political and social discussions.
-          To ensure a fair, respectful, and inclusive environment, our moderation system follows these
-          principles:
-        </p>
+        <h2>{{ content.moderationPrinciples.heading }}</h2>
+        <p>{{ content.moderationPrinciples.introduction }}</p>
         <ul>
-          <li><strong>Transparency:</strong> All moderation actions are logged and publicly reviewable.</li>
-          <li><strong>Inclusivity:</strong> Diverse perspectives are welcome, provided they adhere to respectful discourse.</li>
-          <li><strong>Verifiability:</strong> Users can review moderation history and appeal decisions.</li>
+          <li
+            v-for="principle in content.moderationPrinciples.principles"
+            :key="principle.label"
+          >
+            <strong>{{ principle.label }}</strong>
+            {{ principle.description }}
+          </li>
         </ul>
       </section>
 
       <section>
-        <h2>2. Community Standards</h2>
-        <p>To participate in Agora, users must follow these guidelines:</p>
+        <h2>{{ content.communityStandards.heading }}</h2>
+        <p>{{ content.communityStandards.introduction }}</p>
 
-        <h3>2.1 Respectful Discourse</h3>
+        <template
+          v-for="subsection in content.communityStandards.subsections"
+          :key="subsection.heading"
+        >
+          <h3>{{ subsection.heading }}</h3>
+          <ul>
+            <li v-for="rule in subsection.rules" :key="rule">{{ rule }}</li>
+          </ul>
+        </template>
+      </section>
+
+      <section>
+        <h2>{{ content.moderationProcess.heading }}</h2>
+
+        <h3>{{ content.moderationProcess.reporting.heading }}</h3>
+        <p>{{ content.moderationProcess.reporting.introduction }}</p>
         <ul>
-          <li>Engage in discussions with mutual respect.</li>
-          <li>No personal attacks, insults, or harassment.</li>
-          <li>Disagreements should be expressed constructively.</li>
+          <li
+            v-for="category in content.moderationProcess.reporting.categories"
+            :key="category.label"
+          >
+            <strong>{{ category.label }}</strong>
+            {{ category.description }}
+          </li>
         </ul>
 
-        <h3>2.2 No Hate Speech or Extremism</h3>
+        <h3>{{ content.moderationProcess.review.heading }}</h3>
         <ul>
-          <li>No content promoting racism, sexism, xenophobia, homophobia, or discrimination.</li>
-          <li>No advocacy of violence, extremism, or radicalization.</li>
-        </ul>
-
-        <h3>2.3 No Misinformation or Manipulation</h3>
-        <ul>
-          <li>No intentional spreading of false information or conspiracy theories.</li>
-          <li>No use of bots, astroturfing, or deceptive behavior.</li>
-        </ul>
-
-        <h3>2.4 No Spam or Unsolicited Promotions</h3>
-        <ul>
-          <li>No excessive self-promotion, ads, or irrelevant content.</li>
-          <li>No repetitive posting of the same content across discussions.</li>
-        </ul>
-
-        <h3>2.5 Privacy and Safety Protection</h3>
-        <ul>
-          <li>No sharing of private or personally identifiable information without consent.</li>
-          <li>No doxxing, threats, or incitement to violence.</li>
+          <li
+            v-for="rule in content.moderationProcess.review.rules"
+            :key="rule"
+          >
+            {{ rule }}
+          </li>
         </ul>
       </section>
 
       <section>
-        <h2>3. Moderation Process</h2>
-
-        <h3>3.1 Community Moderation & Reporting</h3>
-        <p>Users can report content under the following categories:</p>
-        <ul>
-          <li><strong>Antisocial:</strong> Offensive, hateful, or targeted harassment.</li>
-          <li><strong>Misleading:</strong> False or misleading claims, deceptive content.</li>
-          <li><strong>Illegal:</strong> Violations of laws or promotion of illegal activities.</li>
-          <li><strong>Doxxing:</strong> Unauthorized sharing of private information.</li>
-          <li><strong>Sexual:</strong> Sexually explicit or inappropriate material.</li>
-          <li><strong>Spam:</strong> Repetitive, off-topic, or promotional content.</li>
-        </ul>
-
-        <h3>3.2 Moderation Review & Appeal System</h3>
-        <ul>
-          <li>Moderation actions (warnings, removals, suspensions) are logged and publicly reviewable.</li>
-          <li>Users may appeal moderation decisions through an open review process.</li>
-          <li>Repeated violations result in escalating consequences.</li>
-        </ul>
-      </section>
-
-      <section>
-        <h2>4. Consequences for Violations</h2>
+        <h2>{{ content.consequences.heading }}</h2>
         <table>
           <thead>
             <tr>
-              <th>Violation Level</th>
-              <th>Consequence</th>
+              <th>{{ content.consequences.violationHeader }}</th>
+              <th>{{ content.consequences.consequenceHeader }}</th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td><strong>First Violation</strong></td>
-              <td>Warning and content removal.</td>
-            </tr>
-            <tr>
-              <td><strong>Second Violation</strong></td>
-              <td>Temporary suspension.</td>
-            </tr>
-            <tr>
-              <td><strong>Severe Violations (e.g., threats, doxxing)</strong></td>
-              <td>Permanent suspension.</td>
+            <tr v-for="row in content.consequences.rows" :key="row.label">
+              <td>
+                <strong>{{ row.label }}</strong>
+              </td>
+              <td>{{ row.description }}</td>
             </tr>
           </tbody>
         </table>
       </section>
 
       <section>
-        <h2>5. Feedback & Adaptation</h2>
+        <h2>{{ content.feedback.heading }}</h2>
         <ul>
-          <li>Users may appeal moderation decisions through a transparent review system.</li>
-          <li>Feedback on moderation policies is encouraged and reviewed regularly to adapt to community needs.</li>
+          <li v-for="point in content.feedback.points" :key="point">
+            {{ point }}
+          </li>
         </ul>
+        <p>{{ content.feedback.closing }}</p>
         <p>
-          These guidelines are designed to foster a space for meaningful, respectful, and impactful discussions.
-          Thank you for being a part of Agora Citizen Network!
-        </p>
-        <p>
-          If you have any questions or concerns about our Community Guidelines, please contact us at
-          <a href="mailto:legal@zkorum.com">legal@zkorum.com</a>.
+          {{ content.feedback.contactBeforeEmail
+          }}<a href="mailto:legal@zkorum.com">legal@zkorum.com</a
+          >{{ content.feedback.contactAfterEmail }}
         </p>
       </section>
     </article>
@@ -125,21 +136,97 @@
 <script setup lang="ts">
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { parseSupportedDisplayLanguageOrUndefined } from "src/shared/languages";
+import { computed, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
 
-import {
-  type GuidelinesTranslations,
-  guidelinesTranslations,
-} from "./index.i18n";
+import { guidelinesContent } from "./index.i18n";
 
 const { isActive } = usePageLayout({ reducedWidth: true });
+const { locale } = useI18n();
+const showAuthoritativeEnglish = ref(false);
 
-const { t } = useComponentI18n<GuidelinesTranslations>(
-  guidelinesTranslations
+const selectedLanguageCode = computed(
+  () => parseSupportedDisplayLanguageOrUndefined(locale.value) ?? "en"
 );
+const selectedContent = computed(
+  () => guidelinesContent[selectedLanguageCode.value]
+);
+const isAutomatedTranslation = computed(
+  () => selectedLanguageCode.value !== "en"
+);
+const content = computed(() =>
+  showAuthoritativeEnglish.value ? guidelinesContent.en : selectedContent.value
+);
+
+function toggleAuthoritativeEnglish(): void {
+  showAuthoritativeEnglish.value = !showAuthoritativeEnglish.value;
+}
+
+watch(locale, () => {
+  showAuthoritativeEnglish.value = false;
+});
 </script>
 
 <style scoped lang="scss">
+.translation-notice {
+  max-width: 800px;
+  margin: 1rem auto 1.5rem;
+  padding: 1rem;
+  border: 2px solid #b45309;
+  border-inline-start-width: 0.5rem;
+  border-radius: 0.5rem;
+  color: #7c2d12;
+  background-color: #fff7ed;
+  box-shadow: 0 2px 8px rgba(124, 45, 18, 0.15);
+
+  p {
+    margin: 0.75rem 0;
+    line-height: 1.5;
+  }
+}
+
+.translation-notice__heading {
+  display: flex;
+  gap: 0.625rem;
+  align-items: center;
+  font-size: 1.1rem;
+}
+
+.translation-notice__marker {
+  display: inline-flex;
+  flex: 0 0 1.5rem;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  color: #fff;
+  font-weight: 700;
+  background-color: #b45309;
+}
+
+.translation-notice__toggle {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid currentcolor;
+  border-radius: 0.375rem;
+  color: inherit;
+  background-color: #fff;
+  font: inherit;
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #ffedd5;
+  }
+
+  &:focus-visible {
+    outline: 3px solid rgba(180, 83, 9, 0.35);
+    outline-offset: 2px;
+  }
+}
+
 .guidelines-content {
   max-width: 800px;
   margin: 0 auto;
@@ -170,7 +257,7 @@ const { t } = useComponentI18n<GuidelinesTranslations>(
   ul,
   ol {
     margin-bottom: 1rem;
-    padding-left: 1.5rem;
+    padding-inline-start: 1.5rem;
 
     li {
       margin-bottom: 0.5rem;
@@ -182,10 +269,11 @@ const { t } = useComponentI18n<GuidelinesTranslations>(
     border-collapse: collapse;
     margin-bottom: 1.5rem;
 
-    th, td {
+    th,
+    td {
       border: 1px solid #ddd;
       padding: 0.75rem;
-      text-align: left;
+      text-align: start;
       vertical-align: top;
     }
 

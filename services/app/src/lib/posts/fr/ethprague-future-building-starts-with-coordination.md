@@ -2,7 +2,7 @@
 title: "Construire le futur commence par la coordination : le broad listening à ETHPrague"
 description: "Yuting Jiang présente Agora Citizen Network à ETHPrague et affirme que le problème le plus difficile n'est pas l'intelligence, mais la coordination, et que le broad listening peut aider les communautés à passer de l'attention partagée aux décisions partagées."
 author: "Yuting Jiang"
-date: "May 2026"
+date: "2026-05-01"
 type: "vision"
 thumbnail: "/images/resources/ethprague-broad-listening.jpg"
 image: "/images/resources/ethprague-broad-listening.jpg"
@@ -24,7 +24,7 @@ Cette présentation introduit le **[Broad Listening](https://www.agoracitizen.ne
 - [**Decentralized Deliberation Standard**](https://dds.xyz) : une initiative qui construit un écosystème d'outils civic tech interopérables partageant des données vérifiables d'intelligence collective.
 
 <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; margin: 28px 0; overflow: hidden; border-radius: 12px; box-shadow: 0 8px 24px rgba(9, 15, 83, 0.16);">
-  <iframe src="https://www.youtube.com/embed/FHpcdHiyCXw" title="Future Building Starts with Coordination: Agree or Disagree? - Yuting Jiang" style="position: absolute; inset: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+  <iframe src="https://www.youtube.com/embed/FHpcdHiyCXw" title="Construire le futur commence par la coordination : d'accord ou pas ? - Yuting Jiang" style="position: absolute; inset: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 </div>
 
 [Voir sur YouTube](https://www.youtube.com/watch?v=FHpcdHiyCXw)

@@ -1,4 +1,5 @@
 import type { ParcnetAPI, Zapp } from "@parcnet-js/app-connector";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { EventSlug } from "src/shared/types/zod";
 import {
   getZupassCollectionName,
@@ -7,6 +8,11 @@ import {
 } from "src/shared/zupass/eventConfig";
 import { createDidIfDoesNotExist } from "src/utils/crypto/ucan/operation";
 import { ref, shallowRef } from "vue";
+
+import {
+  type UseZupassVerificationTranslations,
+  useZupassVerificationTranslations,
+} from "./useZupassVerification.i18n";
 
 // Parcnet app configuration
 const ZAPP_CONFIG: Zapp = {
@@ -63,6 +69,9 @@ export function resetZupassModuleState() {
  * All state is shared at module level - all components use the same Parcnet instance
  */
 export function useZupassVerification() {
+  const { t } = useComponentI18n<UseZupassVerificationTranslations>(
+    useZupassVerificationTranslations
+  );
 
   /**
    * Reset connection state (useful when permissions were denied or connection failed)
@@ -125,7 +134,12 @@ export function useZupassVerification() {
       return;
     }
 
-    const { init, doConnect, UserCancelledConnectionError, UserClosedDialogError } = appConnector;
+    const {
+      init,
+      doConnect,
+      UserCancelledConnectionError,
+      UserClosedDialogError,
+    } = appConnector;
 
     try {
       // Step 1 Fix: Call init() and doConnect() in sequence, no caching
@@ -134,9 +148,9 @@ export function useZupassVerification() {
       }
 
       // Initialize iframe
-      // We explicitly cast initContext.value as any to pass it if needed, 
+      // We explicitly cast initContext.value as any to pass it if needed,
       // but the logic below ignores existing initContext based on "Step 1 fix" comments.
-      
+
       const ctx = await init(zupassIframeContainer.value, "https://zupass.org");
 
       // Immediately connect using fresh context (no caching!)
@@ -155,16 +169,19 @@ export function useZupassVerification() {
       // Log error with container context for debugging
       const containerInfo = zupassIframeContainer.value
         ? `${zupassIframeContainer.value.tagName}`
-        : 'null';
-      console.error(`[Zupass] Connection failed (container: ${containerInfo}):`, err);
+        : "null";
+      console.error(
+        `[Zupass] Connection failed (container: ${containerInfo}):`,
+        err
+      );
 
       // Handle specific Parcnet errors
       if (err instanceof UserCancelledConnectionError) {
-        error.value = "Connection cancelled by user";
+        error.value = t("connectionCancelled");
       } else if (err instanceof UserClosedDialogError) {
-        error.value = "Dialog closed without approving permissions";
+        error.value = t("dialogClosedWithoutApproval");
       } else {
-        error.value = err instanceof Error ? err.message : "Failed to connect";
+        error.value = err instanceof Error ? err.message : t("failedToConnect");
       }
 
       connectionState.value = "error";
@@ -317,11 +334,17 @@ export function useZupassVerification() {
         const mod = await import("@parcnet-js/app-connector");
         UserCancelledConnectionError = mod.UserCancelledConnectionError;
       } catch (e) {
-        console.warn("[Zupass] Could not load UserCancelledConnectionError for error checking:", e);
+        console.warn(
+          "[Zupass] Could not load UserCancelledConnectionError for error checking:",
+          e
+        );
       }
 
       // Handle user cancellation gracefully
-      if (UserCancelledConnectionError && err instanceof UserCancelledConnectionError) {
+      if (
+        UserCancelledConnectionError &&
+        err instanceof UserCancelledConnectionError
+      ) {
         error.value = "Proof request cancelled by user";
         return {
           success: false,

@@ -2,7 +2,7 @@
 title: "Trouver un terrain d'entente à grande échelle : Agora Citizen Network à Devconnect Argentina 2025"
 description: "Yuting Jiang présente Agora Citizen Network à Devconnect Argentina 2025 et montre comment la délibération numérique, la cartographie des opinions, l'identité à divulgation sélective et le broad listening peuvent aider les communautés à trouver un terrain d'entente à grande échelle."
 author: "Yuting Jiang"
-date: "November 2025"
+date: "2025-11-01"
 type: "vision"
 thumbnail: "https://i.ytimg.com/vi/phw1AlQs8DY/hqdefault.jpg"
 image: "https://i.ytimg.com/vi/phw1AlQs8DY/hqdefault.jpg"
@@ -21,7 +21,7 @@ Cette présentation relie la montée de la polarisation à la nécessité de fai
 - Des consultations communautaires comme [#bloquonstout](https://www.agoracitizen.network/resources/bloquonstout), où Agora a aidé des manifestants et des facilitateurs à identifier des priorités partagées.
 
 <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; margin: 28px 0; overflow: hidden; border-radius: 12px; box-shadow: 0 8px 24px rgba(9, 15, 83, 0.16);">
-  <iframe src="https://www.youtube.com/embed/phw1AlQs8DY" title="Agora Citizen Network - Finding Common Ground At Scale - Devconnect Argentina 2025" style="position: absolute; inset: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+  <iframe src="https://www.youtube.com/embed/phw1AlQs8DY" title="Agora Citizen Network - Trouver un terrain d'entente à grande échelle - Devconnect Argentina 2025" style="position: absolute; inset: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 </div>
 
 [Voir sur YouTube](https://www.youtube.com/watch?v=phw1AlQs8DY)

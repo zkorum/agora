@@ -2,7 +2,7 @@
 title: "От broadcasting к broad listening"
 description: "Bestian Tang из vTaiwan предлагает ясную рамку для Agora: широкое слушание, осмысление и взгляд за пределы собственной группы мнений."
 author: "Команда Agora"
-date: "September 2025"
+date: "2025-09-01"
 type: "vision"
 thumbnail: "/images/resources/broadcasting-to-broad-listening.png"
 image: "/images/resources/broadcasting-to-broad-listening.png"

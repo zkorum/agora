@@ -5,19 +5,19 @@
   type Side = "left" | "right" | "top" | "bottom";
 
   interface Props {
+    title: string;
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
     side?: Side;
-    title?: string;
     class?: string;
     children: Snippet;
   }
 
   let {
+    title,
     open = $bindable(false),
     onOpenChange,
     side = "right",
-    title = "Menu",
     class: className = "",
     children,
   }: Props = $props();

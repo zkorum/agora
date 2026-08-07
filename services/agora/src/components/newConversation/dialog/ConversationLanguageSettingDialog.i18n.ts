@@ -20,7 +20,8 @@ export interface ConversationLanguageSettingDialogTranslations {
 
 const englishTranslations: ConversationLanguageSettingDialogTranslations = {
   languagesTitle: "Languages",
-  languagesDescription: "Choose the languages Agora should support for this conversation.",
+  languagesDescription:
+    "Choose the languages Agora should support for this conversation.",
   languageAutoLabel: "Auto",
   detectedLanguageAfterPublishing: "Detect main language after publishing",
   autoDetectDetectedDescription: "Detected: {language}",
@@ -29,8 +30,10 @@ const englishTranslations: ConversationLanguageSettingDialogTranslations = {
     "Could not detect language. Saving with auto-detect will try again.",
   autoDetectUnsupportedDescription:
     "Detected: {language}. Not supported for translations.",
-  additionalLanguagesEmptyDescription: "Add up to 2 additional target languages. If Auto detects one of them, it counts once.",
-  additionalLanguagesDescription: "Choose up to 2 additional target languages. If Auto detects one of them, it counts once.",
+  additionalLanguagesEmptyDescription:
+    "Add up to 2 additional target languages. If Auto detects one of them, it counts once.",
+  additionalLanguagesDescription:
+    "Choose up to 2 additional target languages. If Auto detects one of them, it counts once.",
   dynamicTranslationTitle: "Dynamic Translation",
   dynamicTranslationDescription:
     "Translate title, body, statements, and surveys into the selected languages.",
@@ -45,7 +48,6 @@ export const conversationLanguageSettingDialogTranslations: Record<
 > = {
   en: englishTranslations,
   es: {
-    ...englishTranslations,
     languagesTitle: "Idiomas",
     languagesDescription:
       "Elige los idiomas que Agora debe admitir en esta conversación.",
@@ -70,7 +72,6 @@ export const conversationLanguageSettingDialogTranslations: Record<
     languageSearchPlaceholder: "Buscar idiomas",
   },
   fr: {
-    ...englishTranslations,
     languagesTitle: "Langues",
     languagesDescription:
       "Choisissez les langues qu'Agora doit prendre en charge pour cette conversation.",
@@ -95,7 +96,6 @@ export const conversationLanguageSettingDialogTranslations: Record<
     languageSearchPlaceholder: "Rechercher une langue",
   },
   "zh-Hant": {
-    ...englishTranslations,
     languagesTitle: "語言",
     languagesDescription: "選擇 Agora 應為此對話支援的語言。",
     languageAutoLabel: "自動",
@@ -110,14 +110,12 @@ export const conversationLanguageSettingDialogTranslations: Record<
     additionalLanguagesDescription:
       "最多選擇 2 種額外目標語言。如果 Auto 偵測到其中一種，只會計算一次。",
     dynamicTranslationTitle: "動態翻譯",
-    dynamicTranslationDescription:
-      "將標題、內文、提案和問卷翻譯成選定語言。",
+    dynamicTranslationDescription: "將標題、內文、提案和問卷翻譯成選定語言。",
     dynamicTranslationOn: "開啟",
     dynamicTranslationOff: "關閉",
     languageSearchPlaceholder: "搜尋語言",
   },
   "zh-Hans": {
-    ...englishTranslations,
     languagesTitle: "语言",
     languagesDescription: "选择 Agora 应为此对话支持的语言。",
     languageAutoLabel: "自动",
@@ -132,14 +130,12 @@ export const conversationLanguageSettingDialogTranslations: Record<
     additionalLanguagesDescription:
       "最多选择 2 种额外目标语言。如果 Auto 检测到其中一种，只会计算一次。",
     dynamicTranslationTitle: "动态翻译",
-    dynamicTranslationDescription:
-      "将标题、正文、提案和问卷翻译成所选语言。",
+    dynamicTranslationDescription: "将标题、正文、提案和问卷翻译成所选语言。",
     dynamicTranslationOn: "开启",
     dynamicTranslationOff: "关闭",
     languageSearchPlaceholder: "搜索语言",
   },
   ja: {
-    ...englishTranslations,
     languagesTitle: "言語",
     languagesDescription: "この会話で Agora が対応する言語を選択します。",
     languageAutoLabel: "自動",
@@ -162,10 +158,8 @@ export const conversationLanguageSettingDialogTranslations: Record<
     languageSearchPlaceholder: "言語を検索",
   },
   ar: {
-    ...englishTranslations,
     languagesTitle: "اللغات",
-    languagesDescription:
-      "اختر اللغات التي يجب أن يدعمها Agora لهذه المحادثة.",
+    languagesDescription: "اختر اللغات التي يجب أن يدعمها Agora لهذه المحادثة.",
     languageAutoLabel: "تلقائي",
     detectedLanguageAfterPublishing: "اكتشاف اللغة الرئيسية بعد النشر",
     autoDetectDetectedDescription: "تم الاكتشاف: {language}",
@@ -186,7 +180,6 @@ export const conversationLanguageSettingDialogTranslations: Record<
     languageSearchPlaceholder: "ابحث عن اللغات",
   },
   fa: {
-    ...englishTranslations,
     languagesTitle: "زبان‌ها",
     languagesDescription:
       "زبان‌هایی را که Agora باید برای این گفتگو پشتیبانی کند انتخاب کنید.",
@@ -210,7 +203,6 @@ export const conversationLanguageSettingDialogTranslations: Record<
     languageSearchPlaceholder: "جستجوی زبان‌ها",
   },
   he: {
-    ...englishTranslations,
     languagesTitle: "שפות",
     languagesDescription: "בחרו את השפות ש-Agora תתמוך בהן בשיחה זו.",
     languageAutoLabel: "אוטומטי",
@@ -232,7 +224,6 @@ export const conversationLanguageSettingDialogTranslations: Record<
     languageSearchPlaceholder: "חיפוש שפות",
   },
   ky: {
-    ...englishTranslations,
     languagesTitle: "Тилдер",
     languagesDescription:
       "Бул талкуу үчүн Agora колдой турган тилдерди тандаңыз.",
@@ -251,13 +242,12 @@ export const conversationLanguageSettingDialogTranslations: Record<
       "Дагы 2ге чейин кошумча максаттуу тил тандаңыз. Эгер Auto алардын бирин аныктаса, ал бир жолу гана эсептелет.",
     dynamicTranslationTitle: "Динамикалык котормо",
     dynamicTranslationDescription:
-      "Аталышты, негизги текстти, сунуштарды жана сурамжылоолорду тандалган тилдерге которуңуз.",
+      "Аталышты, негизги текстти, пикирлерди жана сурамжылоолорду тандалган тилдерге которуңуз.",
     dynamicTranslationOn: "Күйүк",
     dynamicTranslationOff: "Өчүк",
     languageSearchPlaceholder: "Тилдерди издөө",
   },
   ru: {
-    ...englishTranslations,
     languagesTitle: "Языки",
     languagesDescription:
       "Выберите языки, которые Agora должна поддерживать для этого обсуждения.",

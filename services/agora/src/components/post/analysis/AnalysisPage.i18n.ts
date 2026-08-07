@@ -72,63 +72,6 @@ export interface AnalysisPageTranslations {
   checkpointReasonConversationClosed: string;
 }
 
-const analysisViewHelpFallbackTranslations = {
-  learnMore: "Learn more",
-  goBack: "Back",
-  analysisViewModesSection: "Modes",
-  analysisViewGroupCountsSection: "Group counts",
-  analysisViewLearnMoreTitle: "About group counts",
-  facilitatorPreferenceCaption:
-    "Uses the facilitator's group count. Falls back to Auto if unavailable.",
-  recommendedOption: "Recommended",
-  recommendedOptionDescription:
-    "Auto's highest-scoring fixed group count for the current checkpoint.",
-  fixedGroupCountOption: "Specific group counts",
-  fixedGroupCountOptionDescription:
-    "Shows exactly that many groups for the current checkpoint, or an empty state if unavailable.",
-  unavailableOption: "Unavailable",
-  unavailableOptionDescription:
-    "Agora could not form meaningful groups for this group count in the selected checkpoint.",
-  discouragedOptionDescription:
-    "This group count has an analysis result, but the result is weaker than the alternatives in the selected checkpoint.",
-  overallScoreLabel: "Overall {score}/100",
-  clarityScoreLabel: "Clarity {score}/100",
-  balanceScoreLabel: "Balance {score}/100",
-  overallScoreTitle: "Overall",
-  clarityScoreTitle: "Clarity",
-  balanceScoreTitle: "Balance",
-  overallScoreDescription:
-    "Combined 0-100 score used to compare group counts. Higher is better.",
-  clarityScoreDescription:
-    "0-100 score for how distinct the groups are from each other. Higher is better.",
-  balanceScoreDescription:
-    "0-100 score for how evenly participants are distributed across groups. Higher is better.",
-} satisfies Pick<
-  AnalysisPageTranslations,
-  | "learnMore"
-  | "goBack"
-  | "analysisViewModesSection"
-  | "analysisViewGroupCountsSection"
-  | "analysisViewLearnMoreTitle"
-  | "facilitatorPreferenceCaption"
-  | "recommendedOption"
-  | "recommendedOptionDescription"
-  | "fixedGroupCountOption"
-  | "fixedGroupCountOptionDescription"
-  | "unavailableOption"
-  | "unavailableOptionDescription"
-  | "discouragedOptionDescription"
-  | "overallScoreLabel"
-  | "clarityScoreLabel"
-  | "balanceScoreLabel"
-  | "overallScoreTitle"
-  | "clarityScoreTitle"
-  | "balanceScoreTitle"
-  | "overallScoreDescription"
-  | "clarityScoreDescription"
-  | "balanceScoreDescription"
->;
-
 export const analysisPageTranslations: Record<
   SupportedDisplayLanguageCodes,
   AnalysisPageTranslations
@@ -230,17 +173,17 @@ export const analysisPageTranslations: Record<
     analysisViewSortingCaption:
       "اختر كيف تُعرض مجموعات الرأي. الدرجات تخص نقطة التحقق المحددة فقط وقد تتغير.",
     facilitatorPreference: "تفضيل الميسر",
-    recommendedDefault: "Auto",
+    recommendedDefault: "تلقائي",
     groupsLabel: "{count} مجموعات",
-    systemDefaultCaption:
-      "يستخدم أعلى عدد مجموعات متاح تقييماً لكل نقطة تحقق.",
+    systemDefaultCaption: "يستخدم أعلى عدد مجموعات متاح تقييماً لكل نقطة تحقق.",
     analysisVariantsNotAvailable:
       "لم تكن ميزة التحليل متعدد المتغيرات المميزة مفعلة عند إنشاء نقطة التحقق هذه.",
     fixedGroupCountUnavailable:
       "تعذر على Agora تشكيل {count} مجموعات ذات معنى في نقطة التحقق المحددة.",
     recommendedDefaultUnavailable: "الوضع التلقائي غير متاح بعد.",
     sameAsRecommendedDefault: "مثل الوضع التلقائي",
-    usesGroups: "يستخدم {count} مجموعات. يعود إلى Auto إذا لم يكن متاحاً.",
+    usesGroups:
+      "يستخدم {count} مجموعات. يعود إلى الوضع التلقائي إذا لم يكن متاحاً.",
     recommendedOptionCaption: "موصى به",
     liveSnapshot: "مباشر",
     checkpointSnapshot: "نقطة تحقق",
@@ -257,17 +200,16 @@ export const analysisPageTranslations: Record<
     candidateIdLabel: "المرشح #{id}",
     resolvedGroupCountLabel: "يستخدم {count} مجموعات",
     silhouetteScoreLabel: "الوضوح {score}/100",
-    ...analysisViewHelpFallbackTranslations,
     learnMore: "معرفة المزيد",
     goBack: "رجوع",
     analysisViewModesSection: "الأوضاع",
     analysisViewGroupCountsSection: "أعداد المجموعات",
     analysisViewLearnMoreTitle: "حول أعداد المجموعات",
     facilitatorPreferenceCaption:
-      "يستخدم عدد المجموعات الذي اختاره الميسر. يعود إلى Auto إذا لم يكن متاحاً.",
+      "يستخدم عدد المجموعات الذي اختاره الميسر. يعود إلى الوضع التلقائي إذا لم يكن متاحاً.",
     recommendedOption: "موصى به",
     recommendedOptionDescription:
-      "عدد المجموعات الثابت الأعلى تقييماً في Auto لنقطة التحقق الحالية.",
+      "عدد المجموعات الثابت الأعلى تقييماً في الوضع التلقائي لنقطة التحقق الحالية.",
     fixedGroupCountOption: "أعداد مجموعات محددة",
     fixedGroupCountOptionDescription:
       "يعرض هذا العدد بالضبط من المجموعات لنقطة التحقق الحالية، أو حالة فارغة إذا لم يكن متاحاً.",
@@ -316,7 +258,7 @@ export const analysisPageTranslations: Record<
     analysisViewSortingCaption:
       "Elige cómo se muestran los grupos de opinión. Las puntuaciones son solo para el punto de control seleccionado y pueden cambiar.",
     facilitatorPreference: "Preferencia del facilitador",
-    recommendedDefault: "Auto",
+    recommendedDefault: "Automático",
     groupsLabel: "{count} grupos",
     systemDefaultCaption:
       "Usa el número de grupos disponible con mayor puntuación para cada punto de control.",
@@ -324,12 +266,12 @@ export const analysisPageTranslations: Record<
       "El análisis premium multivariante no estaba activado cuando se creó este punto de control.",
     fixedGroupCountUnavailable:
       "Agora no pudo formar {count} grupos significativos en el punto de control seleccionado.",
-    recommendedDefaultUnavailable:
-      "El modo automático aún no está disponible.",
+    recommendedDefaultUnavailable: "El modo automático aún no está disponible.",
     sameAsRecommendedDefault: "Igual que el modo automático",
-    usesGroups: "Usa {count} grupos. Vuelve a Auto si no está disponible.",
+    usesGroups:
+      "Usa {count} grupos. Vuelve al modo automático si no está disponible.",
     recommendedOptionCaption: "Recomendado",
-    liveSnapshot: "Live",
+    liveSnapshot: "En vivo",
     checkpointSnapshot: "Punto de control",
     pauseAtLatestCheckpoint: "Pausar en el último punto de control",
     returnToLiveAnalysis: "Volver al análisis en vivo",
@@ -344,17 +286,16 @@ export const analysisPageTranslations: Record<
     candidateIdLabel: "Candidato #{id}",
     resolvedGroupCountLabel: "Usa {count} grupos",
     silhouetteScoreLabel: "Claridad {score}/100",
-    ...analysisViewHelpFallbackTranslations,
     learnMore: "Más información",
     goBack: "Volver",
     analysisViewModesSection: "Modos",
     analysisViewGroupCountsSection: "Números de grupos",
     analysisViewLearnMoreTitle: "Acerca de los números de grupos",
     facilitatorPreferenceCaption:
-      "Usa el número de grupos del facilitador. Vuelve a Auto si no está disponible.",
+      "Usa el número de grupos del facilitador. Vuelve al modo automático si no está disponible.",
     recommendedOption: "Recomendado",
     recommendedOptionDescription:
-      "El número fijo de grupos con mayor puntuación de Auto para el punto de control actual.",
+      "El número fijo de grupos con mayor puntuación del modo automático para el punto de control actual.",
     fixedGroupCountOption: "Números de grupos específicos",
     fixedGroupCountOptionDescription:
       "Muestra exactamente ese número de grupos para el punto de control actual, o un estado vacío si no está disponible.",
@@ -381,7 +322,7 @@ export const analysisPageTranslations: Record<
     checkpointReasonsLabel: "Marcadores del punto de control",
     checkpointReasonFirstDisplayableAnalysis: "Primer análisis",
     checkpointReasonFirstGroupCountAvailable: "{count} grupos disponibles",
-    checkpointReasonDefaultGroupCountChanged: "Auto: {count} grupos",
+    checkpointReasonDefaultGroupCountChanged: "Automático: {count} grupos",
     checkpointReasonParticipationMilestone: "> {count} participantes",
     checkpointReasonVoteMilestone: "> {count} votos",
     checkpointReasonParticipantCount: "{count} participantes",
@@ -402,7 +343,7 @@ export const analysisPageTranslations: Record<
     analysisViewSortingCaption:
       "نحوه نمایش گروه‌های نظر را انتخاب کنید. امتیازها فقط برای نمای انتخاب‌شده هستند و ممکن است تغییر کنند.",
     facilitatorPreference: "ترجیح تسهیل‌گر",
-    recommendedDefault: "Auto",
+    recommendedDefault: "خودکار",
     groupsLabel: "{count} گروه",
     systemDefaultCaption:
       "برای هر نما از بالاترین تعداد گروه موجود از نظر امتیاز استفاده می‌کند.",
@@ -412,7 +353,8 @@ export const analysisPageTranslations: Record<
       "Agora نتوانست در نمای انتخاب‌شده {count} گروه معنادار تشکیل دهد.",
     recommendedDefaultUnavailable: "حالت خودکار هنوز در دسترس نیست.",
     sameAsRecommendedDefault: "همان حالت خودکار",
-    usesGroups: "از {count} گروه استفاده می‌کند. اگر در دسترس نباشد به Auto برمی‌گردد.",
+    usesGroups:
+      "از {count} گروه استفاده می‌کند. اگر در دسترس نباشد به حالت خودکار برمی‌گردد.",
     recommendedOptionCaption: "پیشنهادی",
     liveSnapshot: "زنده",
     checkpointSnapshot: "نقطه بررسی",
@@ -429,17 +371,16 @@ export const analysisPageTranslations: Record<
     candidateIdLabel: "نامزد #{id}",
     resolvedGroupCountLabel: "از {count} گروه استفاده می‌کند",
     silhouetteScoreLabel: "وضوح {score}/100",
-    ...analysisViewHelpFallbackTranslations,
     learnMore: "بیشتر بدانید",
     goBack: "بازگشت",
     analysisViewModesSection: "حالت‌ها",
     analysisViewGroupCountsSection: "تعداد گروه‌ها",
     analysisViewLearnMoreTitle: "درباره تعداد گروه‌ها",
     facilitatorPreferenceCaption:
-      "از تعداد گروه انتخاب‌شده توسط تسهیل‌گر استفاده می‌کند. اگر در دسترس نباشد به Auto برمی‌گردد.",
+      "از تعداد گروه انتخاب‌شده توسط تسهیل‌گر استفاده می‌کند. اگر در دسترس نباشد به حالت خودکار برمی‌گردد.",
     recommendedOption: "پیشنهادی",
     recommendedOptionDescription:
-      "تعداد گروه ثابت با بالاترین امتیاز Auto برای نمای فعلی.",
+      "تعداد گروه ثابت با بالاترین امتیاز حالت خودکار برای نمای فعلی.",
     fixedGroupCountOption: "تعداد گروه مشخص",
     fixedGroupCountOptionDescription:
       "دقیقاً همین تعداد گروه را برای نمای فعلی نشان می‌دهد، یا اگر در دسترس نباشد حالت خالی نشان می‌دهد.",
@@ -488,7 +429,7 @@ export const analysisPageTranslations: Record<
     analysisViewSortingCaption:
       "Choisissez comment afficher les groupes d'opinion. Les scores ne valent que pour le jalon sélectionné et peuvent changer.",
     facilitatorPreference: "Préférence du facilitateur",
-    recommendedDefault: "Auto",
+    recommendedDefault: "Automatique",
     groupsLabel: "{count} groupes",
     systemDefaultCaption:
       "Utilise le nombre de groupes disponible le mieux noté pour chaque jalon.",
@@ -499,9 +440,10 @@ export const analysisPageTranslations: Record<
     recommendedDefaultUnavailable:
       "Le mode automatique n'est pas encore disponible.",
     sameAsRecommendedDefault: "Identique au mode automatique",
-    usesGroups: "Utilise {count} groupes. Revient à Auto si indisponible.",
+    usesGroups:
+      "Utilise {count} groupes. Revient au mode automatique si indisponible.",
     recommendedOptionCaption: "Recommandé",
-    liveSnapshot: "Live",
+    liveSnapshot: "En direct",
     checkpointSnapshot: "Jalon",
     pauseAtLatestCheckpoint: "Mettre en pause au dernier jalon",
     returnToLiveAnalysis: "Revenir à l'analyse en direct",
@@ -516,17 +458,16 @@ export const analysisPageTranslations: Record<
     candidateIdLabel: "Candidat #{id}",
     resolvedGroupCountLabel: "Utilise {count} groupes",
     silhouetteScoreLabel: "Clarté {score}/100",
-    ...analysisViewHelpFallbackTranslations,
     learnMore: "En savoir plus",
     goBack: "Retour",
     analysisViewModesSection: "Modes",
     analysisViewGroupCountsSection: "Nombres de groupes",
     analysisViewLearnMoreTitle: "À propos des nombres de groupes",
     facilitatorPreferenceCaption:
-      "Utilise le nombre de groupes choisi par le facilitateur. Revient à Auto si indisponible.",
+      "Utilise le nombre de groupes choisi par le facilitateur. Revient au mode automatique si indisponible.",
     recommendedOption: "Recommandé",
     recommendedOptionDescription:
-      "Le nombre de groupes fixe le mieux noté par Auto pour le jalon actuel.",
+      "Le nombre de groupes fixe le mieux noté par le mode automatique pour le jalon actuel.",
     fixedGroupCountOption: "Nombres de groupes précis",
     fixedGroupCountOptionDescription:
       "Affiche exactement ce nombre de groupes pour le jalon actuel, ou un état vide s'il est indisponible.",
@@ -553,7 +494,7 @@ export const analysisPageTranslations: Record<
     checkpointReasonsLabel: "Marqueurs du jalon",
     checkpointReasonFirstDisplayableAnalysis: "Première analyse",
     checkpointReasonFirstGroupCountAvailable: "{count} groupes disponibles",
-    checkpointReasonDefaultGroupCountChanged: "Auto : {count} groupes",
+    checkpointReasonDefaultGroupCountChanged: "Automatique : {count} groupes",
     checkpointReasonParticipationMilestone: "> {count} participants",
     checkpointReasonVoteMilestone: "> {count} votes",
     checkpointReasonParticipantCount: "{count} participants",
@@ -573,16 +514,15 @@ export const analysisPageTranslations: Record<
     analysisViewSortingCaption:
       "选择意见群组的显示方式。分数仅适用于所选检查点，且可能会变化。",
     facilitatorPreference: "主持人偏好",
-    recommendedDefault: "Auto",
+    recommendedDefault: "自动",
     groupsLabel: "{count} 个群组",
     systemDefaultCaption: "为每个检查点使用评分最高的可用群组数量。",
-    analysisVariantsNotAvailable:
-      "创建此检查点时未启用高级多变体分析。",
+    analysisVariantsNotAvailable: "创建此检查点时未启用高级多变体分析。",
     fixedGroupCountUnavailable:
       "Agora 无法在所选检查点中形成 {count} 个有意义的群组。",
     recommendedDefaultUnavailable: "自动模式尚不可用。",
     sameAsRecommendedDefault: "与自动模式相同",
-    usesGroups: "使用 {count} 个群组。不可用时回退到 Auto。",
+    usesGroups: "使用 {count} 个群组。不可用时回退到自动模式。",
     recommendedOptionCaption: "推荐",
     liveSnapshot: "实时",
     checkpointSnapshot: "检查点",
@@ -599,17 +539,16 @@ export const analysisPageTranslations: Record<
     candidateIdLabel: "候选 #{id}",
     resolvedGroupCountLabel: "使用 {count} 个群组",
     silhouetteScoreLabel: "清晰度 {score}/100",
-    ...analysisViewHelpFallbackTranslations,
     learnMore: "了解更多",
     goBack: "返回",
     analysisViewModesSection: "模式",
     analysisViewGroupCountsSection: "群组数量",
     analysisViewLearnMoreTitle: "关于群组数量",
     facilitatorPreferenceCaption:
-      "使用主持人选择的群组数量。不可用时回退到 Auto。",
+      "使用主持人选择的群组数量。不可用时回退到自动模式。",
     recommendedOption: "推荐",
     recommendedOptionDescription:
-      "当前检查点中 Auto 评分最高的固定群组数量。",
+      "当前检查点中自动模式评分最高的固定群组数量。",
     fixedGroupCountOption: "指定群组数量",
     fixedGroupCountOptionDescription:
       "为当前检查点显示确切数量的群组；不可用时显示空状态。",
@@ -624,10 +563,8 @@ export const analysisPageTranslations: Record<
     overallScoreTitle: "总体",
     clarityScoreTitle: "清晰度",
     balanceScoreTitle: "平衡",
-    overallScoreDescription:
-      "用于比较群组数量的 0-100 综合分数。越高越好。",
-    clarityScoreDescription:
-      "表示群组之间区分程度的 0-100 分数。越高越好。",
+    overallScoreDescription: "用于比较群组数量的 0-100 综合分数。越高越好。",
+    clarityScoreDescription: "表示群组之间区分程度的 0-100 分数。越高越好。",
     balanceScoreDescription:
       "表示参与者在各群组之间分布均匀程度的 0-100 分数。越高越好。",
     checkpointTimelineLabel: "检查点时间线",
@@ -656,16 +593,15 @@ export const analysisPageTranslations: Record<
     analysisViewSortingCaption:
       "選擇意見群組的顯示方式。分數僅適用於所選檢查點，且可能會變化。",
     facilitatorPreference: "主持人偏好",
-    recommendedDefault: "Auto",
+    recommendedDefault: "自動",
     groupsLabel: "{count} 個群組",
     systemDefaultCaption: "為每個檢查點使用評分最高的可用群組數量。",
-    analysisVariantsNotAvailable:
-      "建立此檢查點時未啟用進階多變體分析。",
+    analysisVariantsNotAvailable: "建立此檢查點時未啟用進階多變體分析。",
     fixedGroupCountUnavailable:
       "Agora 無法在所選檢查點中形成 {count} 個有意義的群組。",
     recommendedDefaultUnavailable: "自動模式尚不可用。",
     sameAsRecommendedDefault: "與自動模式相同",
-    usesGroups: "使用 {count} 個群組。不可用時回退到 Auto。",
+    usesGroups: "使用 {count} 個群組。不可用時回退到自動模式。",
     recommendedOptionCaption: "推薦",
     liveSnapshot: "即時",
     checkpointSnapshot: "檢查點",
@@ -682,17 +618,16 @@ export const analysisPageTranslations: Record<
     candidateIdLabel: "候選 #{id}",
     resolvedGroupCountLabel: "使用 {count} 個群組",
     silhouetteScoreLabel: "清晰度 {score}/100",
-    ...analysisViewHelpFallbackTranslations,
     learnMore: "了解更多",
     goBack: "返回",
     analysisViewModesSection: "模式",
     analysisViewGroupCountsSection: "群組數量",
     analysisViewLearnMoreTitle: "關於群組數量",
     facilitatorPreferenceCaption:
-      "使用主持人選擇的群組數量。不可用時回退到 Auto。",
+      "使用主持人選擇的群組數量。不可用時回退到自動模式。",
     recommendedOption: "推薦",
     recommendedOptionDescription:
-      "目前檢查點中 Auto 評分最高的固定群組數量。",
+      "目前檢查點中自動模式評分最高的固定群組數量。",
     fixedGroupCountOption: "指定群組數量",
     fixedGroupCountOptionDescription:
       "為目前檢查點顯示確切數量的群組；不可用時顯示空狀態。",
@@ -707,10 +642,8 @@ export const analysisPageTranslations: Record<
     overallScoreTitle: "整體",
     clarityScoreTitle: "清晰度",
     balanceScoreTitle: "平衡",
-    overallScoreDescription:
-      "用於比較群組數量的 0-100 綜合分數。越高越好。",
-    clarityScoreDescription:
-      "表示群組之間區分程度的 0-100 分數。越高越好。",
+    overallScoreDescription: "用於比較群組數量的 0-100 綜合分數。越高越好。",
+    clarityScoreDescription: "表示群組之間區分程度的 0-100 分數。越高越好。",
     balanceScoreDescription:
       "表示參與者在各群組之間分布均勻程度的 0-100 分數。越高越好。",
     checkpointTimelineLabel: "檢查點時間線",
@@ -739,7 +672,7 @@ export const analysisPageTranslations: Record<
     analysisViewSortingCaption:
       "בחרו כיצד קבוצות הדעה מוצגות. הציונים תקפים רק לנקודת הביקורת שנבחרה ועשויים להשתנות.",
     facilitatorPreference: "העדפת המנחה",
-    recommendedDefault: "Auto",
+    recommendedDefault: "אוטומטי",
     groupsLabel: "{count} קבוצות",
     systemDefaultCaption:
       "משתמשת במספר הקבוצות הזמין בעל הציון הגבוה ביותר לכל נקודת ביקורת.",
@@ -749,7 +682,7 @@ export const analysisPageTranslations: Record<
       "Agora לא הצליחה ליצור {count} קבוצות משמעותיות בנקודת הביקורת שנבחרה.",
     recommendedDefaultUnavailable: "המצב האוטומטי עדיין לא זמין.",
     sameAsRecommendedDefault: "זהה למצב אוטומטי",
-    usesGroups: "משתמש ב-{count} קבוצות. חוזר ל-Auto אם לא זמין.",
+    usesGroups: "משתמש ב-{count} קבוצות. חוזר למצב אוטומטי אם לא זמין.",
     recommendedOptionCaption: "מומלץ",
     liveSnapshot: "חי",
     checkpointSnapshot: "נקודת ביקורת",
@@ -766,17 +699,16 @@ export const analysisPageTranslations: Record<
     candidateIdLabel: "מועמד #{id}",
     resolvedGroupCountLabel: "משתמש ב-{count} קבוצות",
     silhouetteScoreLabel: "בהירות {score}/100",
-    ...analysisViewHelpFallbackTranslations,
     learnMore: "מידע נוסף",
     goBack: "חזרה",
     analysisViewModesSection: "מצבים",
     analysisViewGroupCountsSection: "מספרי קבוצות",
     analysisViewLearnMoreTitle: "על מספרי קבוצות",
     facilitatorPreferenceCaption:
-      "משתמש במספר הקבוצות של המנחה. חוזר ל-Auto אם לא זמין.",
+      "משתמש במספר הקבוצות של המנחה. חוזר למצב אוטומטי אם לא זמין.",
     recommendedOption: "מומלץ",
     recommendedOptionDescription:
-      "מספר הקבוצות הקבוע בעל הציון הגבוה ביותר של Auto עבור נקודת הביקורת הנוכחית.",
+      "מספר הקבוצות הקבוע בעל הציון הגבוה ביותר במצב אוטומטי עבור נקודת הביקורת הנוכחית.",
     fixedGroupCountOption: "מספרי קבוצות מסוימים",
     fixedGroupCountOptionDescription:
       "מציג בדיוק מספר זה של קבוצות עבור נקודת הביקורת הנוכחית, או מצב ריק אם אינו זמין.",
@@ -824,7 +756,7 @@ export const analysisPageTranslations: Record<
     analysisViewSortingCaption:
       "意見グループの表示方法を選択します。スコアは選択中のチェックポイントだけのもので、変わることがあります。",
     facilitatorPreference: "ファシリテーターの設定",
-    recommendedDefault: "Auto",
+    recommendedDefault: "自動",
     groupsLabel: "{count} グループ",
     systemDefaultCaption:
       "各チェックポイントで利用可能な最高スコアのグループ数を使用します。",
@@ -834,7 +766,8 @@ export const analysisPageTranslations: Record<
       "Agora は選択中のチェックポイントで意味のある {count} グループを形成できませんでした。",
     recommendedDefaultUnavailable: "自動モードはまだ利用できません。",
     sameAsRecommendedDefault: "自動モードと同じ",
-    usesGroups: "{count} グループを使用します。利用できない場合は Auto に戻ります。",
+    usesGroups:
+      "{count} グループを使用します。利用できない場合は自動モードに戻ります。",
     recommendedOptionCaption: "推奨",
     liveSnapshot: "ライブ",
     checkpointSnapshot: "チェックポイント",
@@ -851,17 +784,16 @@ export const analysisPageTranslations: Record<
     candidateIdLabel: "候補 #{id}",
     resolvedGroupCountLabel: "{count} グループを使用",
     silhouetteScoreLabel: "明瞭さ {score}/100",
-    ...analysisViewHelpFallbackTranslations,
     learnMore: "詳しく見る",
     goBack: "戻る",
     analysisViewModesSection: "モード",
     analysisViewGroupCountsSection: "グループ数",
     analysisViewLearnMoreTitle: "グループ数について",
     facilitatorPreferenceCaption:
-      "ファシリテーターのグループ数を使用します。利用できない場合は Auto に戻ります。",
+      "ファシリテーターのグループ数を使用します。利用できない場合は自動モードに戻ります。",
     recommendedOption: "推奨",
     recommendedOptionDescription:
-      "現在のチェックポイントで Auto が選ぶ最高スコアの固定グループ数です。",
+      "現在のチェックポイントで自動モードが選ぶ最高スコアの固定グループ数です。",
     fixedGroupCountOption: "指定グループ数",
     fixedGroupCountOptionDescription:
       "現在のチェックポイントでその数のグループを正確に表示します。利用できない場合は空の状態を表示します。",
@@ -909,7 +841,7 @@ export const analysisPageTranslations: Record<
     analysisViewSortingCaption:
       "Пикир топтору кантип көрсөтүлөрүн тандаңыз. Упайлар тандалган текшерүү чекити үчүн гана жана өзгөрүшү мүмкүн.",
     facilitatorPreference: "Фасилитатордун тандоосу",
-    recommendedDefault: "Auto",
+    recommendedDefault: "Авто",
     groupsLabel: "{count} топ",
     systemDefaultCaption:
       "Ар бир текшерүү чекити үчүн жеткиликтүү эң жогорку упай алган топ санын колдонот.",
@@ -920,9 +852,10 @@ export const analysisPageTranslations: Record<
     recommendedDefaultUnavailable:
       "Автоматтык режим азырынча жеткиликтүү эмес.",
     sameAsRecommendedDefault: "Автоматтык режим менен бирдей",
-    usesGroups: "{count} топ колдонот. Жеткиликтүү болбосо Auto режимине кайтат.",
+    usesGroups:
+      "{count} топ колдонот. Жеткиликтүү болбосо «Авто» режимине кайтат.",
     recommendedOptionCaption: "Сунушталган",
-    liveSnapshot: "Live",
+    liveSnapshot: "Реалдуу убакытта",
     checkpointSnapshot: "Текшерүү чекити",
     pauseAtLatestCheckpoint: "Акыркы текшерүү чекитинде токтотуу",
     returnToLiveAnalysis: "Жандуу анализге кайтуу",
@@ -937,17 +870,16 @@ export const analysisPageTranslations: Record<
     candidateIdLabel: "Талапкер #{id}",
     resolvedGroupCountLabel: "{count} топ колдонот",
     silhouetteScoreLabel: "Тактык {score}/100",
-    ...analysisViewHelpFallbackTranslations,
     learnMore: "Көбүрөөк билүү",
     goBack: "Артка",
     analysisViewModesSection: "Режимдер",
     analysisViewGroupCountsSection: "Топ сандары",
     analysisViewLearnMoreTitle: "Топ сандары жөнүндө",
     facilitatorPreferenceCaption:
-      "Фасилитатор тандаган топ санын колдонот. Жеткиликтүү болбосо Auto режимине кайтат.",
+      "Фасилитатор тандаган топ санын колдонот. Жеткиликтүү болбосо «Авто» режимине кайтат.",
     recommendedOption: "Сунушталган",
     recommendedOptionDescription:
-      "Учурдагы текшерүү чекити үчүн Auto режиминдеги эң жогорку упай алган туруктуу топ саны.",
+      "Учурдагы текшерүү чекити үчүн «Авто» режиминдеги эң жогорку упай алган туруктуу топ саны.",
     fixedGroupCountOption: "Так топ сандары",
     fixedGroupCountOptionDescription:
       "Учурдагы текшерүү чекити үчүн так ошол сандагы топторду көрсөтөт, же жеткиликтүү болбосо бош абалды көрсөтөт.",
@@ -995,8 +927,8 @@ export const analysisPageTranslations: Record<
     analysisViewSortingCaption:
       "Выберите, как показывать группы мнений. Оценки относятся только к выбранной контрольной точке и могут измениться.",
     facilitatorPreference: "Предпочтение фасилитатора",
-    recommendedDefault: "Auto",
-    groupsLabel: "{count} групп",
+    recommendedDefault: "Авто",
+    groupsLabel: "Групп: {count}",
     systemDefaultCaption:
       "Использует доступное количество групп с наивысшей оценкой для каждой контрольной точки.",
     analysisVariantsNotAvailable:
@@ -1005,34 +937,34 @@ export const analysisPageTranslations: Record<
       "Agora не смогла сформировать {count} значимых групп в выбранной контрольной точке.",
     recommendedDefaultUnavailable: "Режим «Авто» пока недоступен.",
     sameAsRecommendedDefault: "Совпадает с режимом «Авто»",
-    usesGroups: "Использует {count} групп. Возвращается к Auto, если недоступно.",
+    usesGroups:
+      "Число используемых групп: {count}. Если вариант недоступен, используется режим «Авто».",
     recommendedOptionCaption: "Рекомендуется",
-    liveSnapshot: "Live",
+    liveSnapshot: "В реальном времени",
     checkpointSnapshot: "Контрольная точка",
     pauseAtLatestCheckpoint: "Пауза на последней контрольной точке",
     returnToLiveAnalysis: "Вернуться к анализу в реальном времени",
     previousCheckpoint: "Предыдущая контрольная точка",
     nextCheckpoint: "Следующая контрольная точка",
     recommendedAnalysisView: "Рекомендуемый вариант",
-    availableGroups: "{count} доступных групп",
+    availableGroups: "Доступно групп: {count}",
     availableOption: "Доступно",
     discouragedOption: "Не рекомендуется",
     lockedOption: "Заблокировано",
     selectionScoreLabel: "Выбор {score}/100",
     candidateIdLabel: "Кандидат #{id}",
-    resolvedGroupCountLabel: "Использует {count} групп",
+    resolvedGroupCountLabel: "Используется групп: {count}",
     silhouetteScoreLabel: "Ясность {score}/100",
-    ...analysisViewHelpFallbackTranslations,
     learnMore: "Подробнее",
     goBack: "Назад",
     analysisViewModesSection: "Режимы",
     analysisViewGroupCountsSection: "Количество групп",
     analysisViewLearnMoreTitle: "О количестве групп",
     facilitatorPreferenceCaption:
-      "Использует количество групп, выбранное фасилитатором. Возвращается к Auto, если недоступно.",
+      "Использует количество групп, выбранное фасилитатором. Возвращается к режиму «Авто», если недоступно.",
     recommendedOption: "Рекомендуется",
     recommendedOptionDescription:
-      "Фиксированное количество групп с наивысшей оценкой Auto для текущей контрольной точки.",
+      "Фиксированное количество групп с наивысшей оценкой в режиме «Авто» для текущей контрольной точки.",
     fixedGroupCountOption: "Конкретное количество групп",
     fixedGroupCountOptionDescription:
       "Показывает ровно это количество групп для текущей контрольной точки или пустое состояние, если оно недоступно.",
@@ -1058,12 +990,12 @@ export const analysisPageTranslations: Record<
     checkpointTimelineNow: "Сейчас",
     checkpointReasonsLabel: "Маркеры контрольной точки",
     checkpointReasonFirstDisplayableAnalysis: "Первый анализ",
-    checkpointReasonFirstGroupCountAvailable: "{count} групп доступно",
-    checkpointReasonDefaultGroupCountChanged: "Авто: {count} групп",
-    checkpointReasonParticipationMilestone: "> {count} участников",
-    checkpointReasonVoteMilestone: "> {count} голосов",
-    checkpointReasonParticipantCount: "{count} участников",
-    checkpointReasonVoteCount: "{count} голосов",
+    checkpointReasonFirstGroupCountAvailable: "Доступно групп: {count}",
+    checkpointReasonDefaultGroupCountChanged: "Авто, групп: {count}",
+    checkpointReasonParticipationMilestone: "Участников: > {count}",
+    checkpointReasonVoteMilestone: "Голосов: > {count}",
+    checkpointReasonParticipantCount: "Участников: {count}",
+    checkpointReasonVoteCount: "Голосов: {count}",
     checkpointReasonConversationClosed: "Закрыто",
   },
 };

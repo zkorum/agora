@@ -5,9 +5,9 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import {
   getDisplayLanguageFallbackChain,
   getLanguageTextDirection,
-  parseDisplayLanguage,
   ZodSupportedDisplayLanguageCodes,
 } from "src/shared/languages";
+import { detectInitialDisplayLanguage } from "src/utils/language";
 import { nextTick } from "vue";
 import type { I18n } from "vue-i18n";
 import { createI18n } from "vue-i18n";
@@ -32,13 +32,6 @@ declare module "vue-i18n" {
 }
 /* eslint-enable @typescript-eslint/no-empty-object-type */
 
-// Detect browser language
-function detectBrowserLanguage(): MessageLanguages {
-  const browserLang = navigator.language;
-  const displayLanguage = parseDisplayLanguage(browserLang);
-  return displayLanguage;
-}
-
 // Global i18n instance reference
 let i18nInstance: I18n<
   { message: MessageSchema },
@@ -56,12 +49,18 @@ let i18nInstance: I18n<
  * is set correctly — Quasar's layout components (QDrawer, QLayout, etc.)
  * rely on this flag for RTL positioning.
  */
-function getQuasarLangImport(locale: string): Promise<{ default: QuasarLanguage }> {
+function getQuasarLangImport(
+  locale: string
+): Promise<{ default: QuasarLanguage }> {
   switch (locale) {
-    case "ar": return import("quasar/lang/ar");
-    case "fa": return import("quasar/lang/fa");
-    case "he": return import("quasar/lang/he");
-    default:   return import("quasar/lang/en-US");
+    case "ar":
+      return import("quasar/lang/ar");
+    case "fa":
+      return import("quasar/lang/fa");
+    case "he":
+      return import("quasar/lang/he");
+    default:
+      return import("quasar/lang/en-US");
   }
 }
 
@@ -70,7 +69,10 @@ async function loadQuasarLangPack(locale: MessageLanguages): Promise<void> {
     const langPack = await getQuasarLangImport(locale);
     Lang.set(langPack.default);
   } catch (error) {
-    console.error(`[i18n] Failed to load Quasar lang pack for "${locale}"`, error);
+    console.error(
+      `[i18n] Failed to load Quasar lang pack for "${locale}"`,
+      error
+    );
   }
 }
 
@@ -154,10 +156,11 @@ export function getI18nInstance(): I18n<
 }
 
 export default defineBoot(async ({ app }) => {
-  // Get stored language preference or detect from browser
+  // Stored app preference wins; otherwise prefer the system locale before browser preferences.
   const storedLocale = localStorage.getItem("displayLanguage");
-  const defaultLocale =
-    (storedLocale as MessageLanguages) || detectBrowserLanguage();
+  const defaultLocale = detectInitialDisplayLanguage({
+    storedLanguage: storedLocale,
+  });
 
   const fallbackLocale = Object.fromEntries(
     ZodSupportedDisplayLanguageCodes.options.map((languageCode) => [
@@ -196,7 +199,10 @@ export default defineBoot(async ({ app }) => {
         await loadLocaleMessages(defaultLocale);
         setI18nLanguage(defaultLocale);
       } catch (error) {
-        console.error("[i18n] Failed to load initial locale, using English", error);
+        console.error(
+          "[i18n] Failed to load initial locale, using English",
+          error
+        );
         setI18nLanguage("en");
       }
     })();

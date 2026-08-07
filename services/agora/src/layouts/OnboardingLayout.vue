@@ -16,6 +16,7 @@
               <button
                 v-if="showBackButton"
                 class="backButton"
+                :aria-label="t('goBack')"
                 @click="handleBack"
               >
                 <q-icon name="mdi-arrow-left" size="1.2rem" />
@@ -23,7 +24,7 @@
               <button
                 v-if="showCloseButton"
                 class="closeButton"
-                aria-label="Close"
+                :aria-label="t('close')"
                 @click="handleClose"
               >
                 <q-icon name="mdi-close" size="1.2rem" />
@@ -36,7 +37,8 @@
                 :class="{
                   'topLayer--overBody': bodyBehindFooter,
                   'topLayer--pinned': pinFooterToBottom,
-                  'topLayer--fills-remaining': !pinFooterToBottom && !bodyBehindFooter,
+                  'topLayer--fills-remaining':
+                    !pinFooterToBottom && !bodyBehindFooter,
                 }"
               >
                 <div class="widthLimiter">
@@ -52,7 +54,13 @@
 </template>
 
 <script setup lang="ts">
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useRouter } from "vue-router";
+
+import {
+  type OnboardingLayoutTranslations,
+  onboardingLayoutTranslations,
+} from "./OnboardingLayout.i18n";
 
 const props = withDefaults(
   defineProps<{
@@ -74,6 +82,9 @@ const props = withDefaults(
 );
 
 const router = useRouter();
+const { t } = useComponentI18n<OnboardingLayoutTranslations>(
+  onboardingLayoutTranslations
+);
 
 function handleBack() {
   if (props.backCallback) {

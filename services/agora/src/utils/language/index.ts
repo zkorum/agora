@@ -1,19 +1,17 @@
-import type {
-  DisplayLanguageMetadata,
-  LanguageMetadata,
-  SupportedDisplayLanguageCodes,
-  SupportedSpokenLanguageCodes,
-} from "src/shared/languages";
 import {
+  type DisplayLanguageMetadata,
+  type LanguageMetadata,
   parseDisplayLanguage,
   parseSpokenLanguage,
+  parseSupportedDisplayLanguageOrUndefined,
+  type SupportedDisplayLanguageCodes,
+  type SupportedSpokenLanguageCodes,
   SupportedSpokenLanguageMetadataList,
   ZodSupportedDisplayLanguageCodes,
   ZodSupportedSpokenLanguageCodes,
 } from "src/shared/languages";
 
-export interface SpokenLanguageMetadata
-  extends Omit<LanguageMetadata, "code"> {
+export interface SpokenLanguageMetadata extends Omit<LanguageMetadata, "code"> {
   code: SupportedSpokenLanguageCodes;
 }
 
@@ -60,7 +58,9 @@ export function getLanguageByCode(
 ): SearchableLanguageMetadata | undefined {
   const spokenLanguageCode = ZodSupportedSpokenLanguageCodes.safeParse(code);
   if (!spokenLanguageCode.success) {
-    return SupportedSpokenLanguageMetadataList.find((lang) => lang.code === code);
+    return SupportedSpokenLanguageMetadataList.find(
+      (lang) => lang.code === code
+    );
   }
 
   return getSpokenLanguageByCode(spokenLanguageCode.data);
@@ -109,8 +109,10 @@ function getSpokenLanguageByCode(
     return { ...existingMetadata, code };
   }
 
-  const englishName = getIntlLanguageName({ languageCode: code, locale: "en" }) ?? code;
-  const nativeName = getIntlLanguageName({ languageCode: code, locale: code }) ?? englishName;
+  const englishName =
+    getIntlLanguageName({ languageCode: code, locale: "en" }) ?? code;
+  const nativeName =
+    getIntlLanguageName({ languageCode: code, locale: code }) ?? englishName;
 
   return {
     code,
@@ -140,14 +142,58 @@ export function parseBrowserLanguage({
   };
 }
 
+export function resolveInitialDisplayLanguage({
+  storedLanguage,
+  deviceLanguage,
+  browserLanguages,
+}: {
+  storedLanguage: string | null | undefined;
+  deviceLanguage: string | undefined;
+  browserLanguages: readonly string[];
+}): SupportedDisplayLanguageCodes {
+  const candidates = [storedLanguage, deviceLanguage, ...browserLanguages];
+  for (const candidate of candidates) {
+    if (candidate === null || candidate === undefined) {
+      continue;
+    }
+
+    const displayLanguage = parseSupportedDisplayLanguageOrUndefined(candidate);
+    if (displayLanguage !== undefined) {
+      return displayLanguage;
+    }
+  }
+
+  return "en";
+}
+
+export function detectInitialDisplayLanguage({
+  storedLanguage,
+}: {
+  storedLanguage: string | null | undefined;
+}): SupportedDisplayLanguageCodes {
+  let deviceLanguage: string | undefined;
+  try {
+    deviceLanguage = new Intl.DateTimeFormat().resolvedOptions().locale;
+  } catch {
+    deviceLanguage = undefined;
+  }
+
+  const browserLanguages =
+    navigator.languages.length > 0 ? navigator.languages : [navigator.language];
+
+  return resolveInitialDisplayLanguage({
+    storedLanguage,
+    deviceLanguage,
+    browserLanguages,
+  });
+}
+
 /**
  * Sort languages alphabetically by their English name
  */
-export function sortLanguagesByEnglishName<T extends SearchableLanguageMetadata>({
-  langs,
-}: {
-  langs: T[];
-}): T[] {
+export function sortLanguagesByEnglishName<
+  T extends SearchableLanguageMetadata,
+>({ langs }: { langs: T[] }): T[] {
   return [...langs].sort((a, b) => a.englishName.localeCompare(b.englishName));
 }
 

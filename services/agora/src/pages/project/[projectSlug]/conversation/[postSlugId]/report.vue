@@ -3,8 +3,12 @@
     <div v-if="isNarrowScreen" class="project-report__narrow-screen-message">
       <div class="project-report__narrow-screen-content">
         <q-icon name="mdi-monitor" size="3rem" color="grey-6" />
-        <h2 class="project-report__narrow-title">{{ t("narrowScreenTitle") }}</h2>
-        <p class="project-report__narrow-text">{{ t("narrowScreenMessage") }}</p>
+        <h2 class="project-report__narrow-title">
+          {{ t("narrowScreenTitle") }}
+        </h2>
+        <p class="project-report__narrow-text">
+          {{ t("narrowScreenMessage") }}
+        </p>
         <ZKButton button-type="compactButton" @click="handleNarrowBack">
           {{ t("goBack") }}
         </ZKButton>
@@ -15,7 +19,7 @@
       <div class="project-report__toolbar no-print">
         <SpaLink :to="analysisRoute" class="project-report__return-link">
           <q-icon name="mdi-chevron-left" size="1rem" />
-          <span>Return to live analysis</span>
+          <span>{{ t("returnToLiveAnalysis") }}</span>
         </SpaLink>
 
         <div class="project-report__download-actions">
@@ -26,7 +30,9 @@
           >
             <div class="project-report__download-button-content">
               <ZKIcon name="mdi:image-outline" size="1.2rem" color="#333238" />
-              <span>{{ isGeneratingZip ? t("generating") : t("downloadImages") }}</span>
+              <span>{{
+                isGeneratingZip ? t("generating") : t("downloadImages")
+              }}</span>
             </div>
           </ZKButton>
           <ZKButton
@@ -36,7 +42,9 @@
           >
             <div class="project-report__download-button-content">
               <ZKIcon name="mdi:file-pdf-box" size="1.2rem" color="#333238" />
-              <span>{{ isGeneratingPdf ? t("generating") : t("downloadPdf") }}</span>
+              <span>{{
+                isGeneratingPdf ? t("generating") : t("downloadPdf")
+              }}</span>
             </div>
           </ZKButton>
         </div>
@@ -62,7 +70,9 @@
                 :items-per-page="itemsPerPage"
                 :conversation-slug-id="conversationSlugId"
                 :conversation-title="getReportConversationTitle(reportFrame)"
-                :author-username="reportFrame.conversation.metadata.authorUsername"
+                :author-username="
+                  reportFrame.conversation.metadata.authorUsername
+                "
                 :conversation-organization-name="
                   reportFrame.conversation.metadata.organization?.name ?? ''
                 "
@@ -101,10 +111,6 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useConversationReport } from "src/composables/report/useConversationReport";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  type ReportPageTranslations,
-  reportPageTranslations,
-} from "src/pages/conversation/[conversationSlugId]/report.i18n";
 import type { ConversationContentFetchResponse } from "src/shared/types/dto";
 import type { ExtendedConversationDisplayData } from "src/shared/types/zod";
 import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
@@ -112,12 +118,19 @@ import type { ConversationRouteContext } from "src/utils/router/conversationRout
 import { getConversationAnalysisRoute } from "src/utils/router/conversationRouteContext";
 import { computed } from "vue";
 
+import {
+  type ProjectReportPageTranslations,
+  projectReportPageTranslations,
+} from "./report.i18n";
+
 const props = defineProps<{
   conversationData: ExtendedConversationDisplayData;
   conversationRouteContext: ConversationRouteContext;
 }>();
 
-const { t } = useComponentI18n<ReportPageTranslations>(reportPageTranslations);
+const { t } = useComponentI18n<ProjectReportPageTranslations>(
+  projectReportPageTranslations
+);
 const $q = useQuasar();
 const goBackButtonHandler = useGoBackButtonHandler();
 const isNarrowScreen = computed(() => $q.screen.xs);
@@ -154,7 +167,10 @@ const {
 const allStatementsOrderOptions = computed(() => [
   { label: t("allStatementsOrderNewest"), value: "newest" as const },
   { label: t("allStatementsOrderAgreement"), value: "agreement" as const },
-  { label: t("allStatementsOrderDisagreement"), value: "disagreement" as const },
+  {
+    label: t("allStatementsOrderDisagreement"),
+    value: "disagreement" as const,
+  },
   { label: t("allStatementsOrderDivisive"), value: "divisive" as const },
 ]);
 const analysisRoute = computed(() =>

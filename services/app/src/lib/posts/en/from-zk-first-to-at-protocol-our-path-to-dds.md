@@ -2,7 +2,7 @@
 title: "From ZK-first to AT Protocol: Our Path to DDS"
 description: "Why Agora is moving from a ZK-first protocol idea toward the Decentralized Deliberation Standard on AT Protocol."
 author: "Nicolas Gimenez"
-date: "March 2026"
+date: "2026-03-01"
 type: "tech"
 thumbnail: "https://www.dds.xyz/og-image.png"
 image: "https://www.dds.xyz/og-image.png"

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { browser } from "$app/environment";
   import { page } from "$app/state";
+  import * as m from "$lib/paraglide/messages.js";
   import { locales, localizeHref } from "$lib/paraglide/runtime";
   import GradientText from "$ui/shared/gradient-text.svelte";
   import Select from "$ui/shared/select.svelte";
@@ -60,6 +61,7 @@
 
 <Select
   items={selectItems}
+  placeholder={m.language_label()}
   value={currentLocale}
   onValueChange={handleLocaleChange}
 >

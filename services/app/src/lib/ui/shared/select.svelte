@@ -10,9 +10,9 @@
 
   interface Props {
     items: SelectItem[];
+    placeholder: string;
     value?: string;
     onValueChange?: (value: string | undefined) => void;
-    placeholder?: string;
     disabled?: boolean;
     triggerClass?: string;
     contentClass?: string;
@@ -22,9 +22,9 @@
 
   let {
     items,
+    placeholder,
     value = $bindable(),
     onValueChange,
-    placeholder = "Select...",
     disabled = false,
     triggerClass = "",
     contentClass = "",

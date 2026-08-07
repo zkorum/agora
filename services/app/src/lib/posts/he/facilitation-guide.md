@@ -2,7 +2,7 @@
 title: "איך להנחות אירועים ופרויקטי דליברציה עם Agora"
 description: "מדריך מעשי לשימוש ב-Agora באירועים, כנסים, סדנאות ופרויקטי דליברציה ארוכים יותר."
 author: "צוות Agora"
-date: "September 2025"
+date: "2025-09-01"
 type: "guide"
 thumbnail: "/images/facilitation-guide-thumbnail.jpg"
 image: "/images/facilitation-guide-thumbnail.jpg"

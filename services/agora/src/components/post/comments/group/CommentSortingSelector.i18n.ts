@@ -21,11 +21,13 @@ export const commentSortingSelectorTranslations: Record<
   en: {
     filterTitle: "Filter statements by:",
     discover: "Discover",
-    discoverDescription: "Diverse and emerging statements to assign you to a group and keep the analysis evolving",
+    discoverDescription:
+      "Diverse and emerging statements to assign you to a group and keep the analysis evolving",
     new: "New",
     newDescription: "Most recent statements",
     moderationHistory: "Moderation History",
-    moderationHistoryDescription: "Moderated statements, kept for transparency but excluded from analysis",
+    moderationHistoryDescription:
+      "Moderated statements, kept for transparency but excluded from analysis",
     hidden: "Hidden",
     hiddenDescription: "Statements removed by moderators",
     myVotes: "My Votes",
@@ -34,11 +36,13 @@ export const commentSortingSelectorTranslations: Record<
   ar: {
     filterTitle: "تصفية المقترحات حسب:",
     discover: "استكشف",
-    discoverDescription: "مقترحات متنوعة وناشئة لتعيينك في مجموعة وإبقاء التحليل متطورًا",
+    discoverDescription:
+      "مقترحات متنوعة وناشئة لتعيينك في مجموعة وإبقاء التحليل متطورًا",
     new: "جديد",
     newDescription: "أحدث المقترحات",
     moderationHistory: "تاريخ الإشراف",
-    moderationHistoryDescription: "مقترحات خاضعة للإشراف، محفوظة من باب الشفافية لكنها مستبعدة من التحليل",
+    moderationHistoryDescription:
+      "مقترحات خاضعة للإشراف، محفوظة من باب الشفافية لكنها مستبعدة من التحليل",
     hidden: "مخفي",
     hiddenDescription: "مقترحات أزالها المشرفون",
     myVotes: "أصواتي",
@@ -47,11 +51,13 @@ export const commentSortingSelectorTranslations: Record<
   es: {
     filterTitle: "Filtrar proposiciones por:",
     discover: "Descubrir",
-    discoverDescription: "Proposiciones variadas y emergentes para asignarte a un grupo y mantener el análisis en evolución",
+    discoverDescription:
+      "Proposiciones variadas y emergentes para asignarte a un grupo y mantener el análisis en evolución",
     new: "Nuevo",
     newDescription: "Proposiciones más recientes",
     moderationHistory: "Historial de moderación",
-    moderationHistoryDescription: "Proposiciones moderadas, conservadas por transparencia pero excluidas del análisis",
+    moderationHistoryDescription:
+      "Proposiciones moderadas, conservadas por transparencia pero excluidas del análisis",
     hidden: "Oculto",
     hiddenDescription: "Proposiciones eliminadas por moderadores",
     myVotes: "Mis Votos",
@@ -60,11 +66,13 @@ export const commentSortingSelectorTranslations: Record<
   fa: {
     filterTitle: "فیلتر گزاره‌ها بر اساس:",
     discover: "کشف",
-    discoverDescription: "گزاره‌های متنوع و نوظهور برای اختصاص شما به یک گروه و تکامل تحلیل",
+    discoverDescription:
+      "گزاره‌های متنوع و نوظهور برای اختصاص شما به یک گروه و تکامل تحلیل",
     new: "جدید",
     newDescription: "جدیدترین گزاره‌ها",
     moderationHistory: "تاریخچه مدیریت",
-    moderationHistoryDescription: "گزاره‌های مدیریت‌شده، برای شفافیت نگهداری شده اما از تحلیل خارج شده‌اند",
+    moderationHistoryDescription:
+      "گزاره‌های مدیریت‌شده، برای شفافیت نگهداری شده اما از تحلیل خارج شده‌اند",
     hidden: "پنهان",
     hiddenDescription: "گزاره‌هایی که توسط مدیران حذف شده‌اند",
     myVotes: "رأی‌های من",
@@ -73,11 +81,13 @@ export const commentSortingSelectorTranslations: Record<
   fr: {
     filterTitle: "Filtrer les propositions par :",
     discover: "Découvrir",
-    discoverDescription: "Propositions variées et émergentes pour vous assigner à un groupe et faire évoluer l'analyse",
+    discoverDescription:
+      "Propositions variées et émergentes pour vous assigner à un groupe et faire évoluer l'analyse",
     new: "Nouveau",
     newDescription: "Propositions les plus récentes",
     moderationHistory: "Historique de modération",
-    moderationHistoryDescription: "Propositions modérées, conservées par transparence mais exclues de l'analyse",
+    moderationHistoryDescription:
+      "Propositions modérées, conservées par transparence mais exclues de l'analyse",
     hidden: "Masqué",
     hiddenDescription: "Propositions supprimées par les modérateurs",
     myVotes: "Mes Votes",
@@ -112,11 +122,13 @@ export const commentSortingSelectorTranslations: Record<
   he: {
     filterTitle: "סינון הצהרות לפי:",
     discover: "גילוי",
-    discoverDescription: "הצהרות מגוונות ומתפתחות לשיוך לקבוצה ולהתפתחות הניתוח",
+    discoverDescription:
+      "הצהרות מגוונות ומתפתחות לשיוך לקבוצה ולהתפתחות הניתוח",
     new: "חדש",
     newDescription: "ההצהרות האחרונות",
     moderationHistory: "היסטוריית מודרציה",
-    moderationHistoryDescription: "הצהרות שעברו מודרציה, נשמרות לשקיפות אך מוחרגות מהניתוח",
+    moderationHistoryDescription:
+      "הצהרות שעברו מודרציה, נשמרות לשקיפות אך מוחרגות מהניתוח",
     hidden: "מוסתר",
     hiddenDescription: "הצהרות שהוסרו על ידי מנהלים",
     myVotes: "ההצבעות שלי",
@@ -125,11 +137,13 @@ export const commentSortingSelectorTranslations: Record<
   ja: {
     filterTitle: "意見を以下でフィルター：",
     discover: "発見",
-    discoverDescription: "多様な意見や新たな意見で、グループへの割り当てと分析の進化を促します",
+    discoverDescription:
+      "多様な意見や新たな意見で、グループへの割り当てと分析の進化を促します",
     new: "新着",
     newDescription: "最新の意見",
     moderationHistory: "モデレーション履歴",
-    moderationHistoryDescription: "モデレート済みの意見。透明性のため保持されますが、分析からは除外されます",
+    moderationHistoryDescription:
+      "モデレート済みの意見。透明性のため保持されますが、分析からは除外されます",
     hidden: "非表示",
     hiddenDescription: "モデレーターが削除した意見",
     myVotes: "自分の投票",
@@ -137,12 +151,14 @@ export const commentSortingSelectorTranslations: Record<
   },
   ky: {
     filterTitle: "Пикирлерди чыпкалоо:",
-    discover: "Ачуу",
-    discoverDescription: "Сизди топко дайындоо жана анализди өнүктүрүү үчүн ар түрдүү жана жаңы пикирлер",
+    discover: "Изилдөө",
+    discoverDescription:
+      "Сизди топко дайындоо жана анализди өнүктүрүү үчүн ар түрдүү жана жаңы пикирлер",
     new: "Жаңы",
     newDescription: "Эң акыркы пикирлер",
     moderationHistory: "Модерация тарыхы",
-    moderationHistoryDescription: "Модерацияланган пикирлер, ачыктык үчүн сакталган бирок анализден чыгарылган",
+    moderationHistoryDescription:
+      "Модерацияланган пикирлер, ачыктык үчүн сакталган бирок анализден чыгарылган",
     hidden: "Жашырылган",
     hiddenDescription: "Модераторлор тарабынан алынып салынган пикирлер",
     myVotes: "Менин добуштарым",
@@ -151,14 +167,16 @@ export const commentSortingSelectorTranslations: Record<
   ru: {
     filterTitle: "Фильтр высказываний:",
     discover: "Обзор",
-    discoverDescription: "Разнообразные и новые высказывания для определения вашей группы и развития анализа",
+    discoverDescription:
+      "Разнообразные и новые высказывания для определения вашей группы и развития анализа",
     new: "Новые",
     newDescription: "Самые последние высказывания",
     moderationHistory: "История модерации",
-    moderationHistoryDescription: "Модерированные высказывания, сохранены для прозрачности, но исключены из анализа",
+    moderationHistoryDescription:
+      "Модерированные высказывания, сохранённые для прозрачности, но исключённые из анализа",
     hidden: "Скрытые",
     hiddenDescription: "Высказывания, удалённые модераторами",
     myVotes: "Мои голоса",
-    myVotesDescription: "Высказывания, за которые вы голосовали",
+    myVotesDescription: "Высказывания, по которым вы голосовали",
   },
 };

@@ -2,7 +2,7 @@
 title: "Кеңири таратуудан кеңири угууга"
 description: "vTaiwan уюмунан Bestian Tang Agoraны түшүнүү үчүн так алкак сунуштайт: кеңири угуу, маанини түшүнүү жана өз пикир тобубуздан ары көрүү."
 author: "Agora командасы"
-date: "September 2025"
+date: "2025-09-01"
 type: "vision"
 thumbnail: "/images/resources/broadcasting-to-broad-listening.png"
 image: "/images/resources/broadcasting-to-broad-listening.png"

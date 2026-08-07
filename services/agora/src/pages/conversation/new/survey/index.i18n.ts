@@ -79,7 +79,8 @@ export const conversationSurveyStepTranslations: Record<
     choiceDisplayAuto: "Auto",
     choiceDisplayList: "List",
     choiceDisplayDropdown: "Searchable dropdown",
-    surveyValidationError: "Please complete all survey questions before publishing.",
+    surveyValidationError:
+      "Please complete all survey questions before publishing.",
     publishError: "Error while trying to create a new conversation",
     largeOptionCountWarning:
       "This question is set to List and has {count} options. Consider Auto or Searchable dropdown so participants can scan answers faster.",
@@ -93,7 +94,8 @@ export const conversationSurveyStepTranslations: Record<
     publishButton: "نشر",
     addQuestionButton: "إضافة سؤال",
     pageTitle: "استبيان المحادثة",
-    pageDescription: "اضبط خطوة الاستبيان التي تظهر قبل أن يتمكن المشاركون من التصويت على العبارات أو إنشاء عبارات جديدة.",
+    pageDescription:
+      "اضبط خطوة الاستبيان التي تظهر قبل أن يتمكن المشاركون من التصويت على العبارات أو إنشاء عبارات جديدة.",
     optionalSurveyToggleLabel: "السماح للمشاركين بتخطي الاستبيان",
     optionalSurveyToggleHint:
       "يمكن تخطي خطوة الاستبيان. يمكن للمشاركين التصويت أو إنشاء عبارات دون الإجابة على الاستبيان؛ وتُحتسب أصواتهم دائمًا في التحليل، ويتم تجاهل إعدادات إلزامية الأسئلة.",
@@ -102,7 +104,8 @@ export const conversationSurveyStepTranslations: Record<
     questionRequirementDisabledHint:
       "يُعامَل هذا السؤال كاختياري لأن خطوة الاستبيان يمكن تخطيها.",
     noQuestionsTitle: "لا يوجد استبيان بعد",
-    noQuestionsDescription: "اترك هذه الصفحة فارغة للنشر بدون استبيان، أو أضف أسئلة الآن.",
+    noQuestionsDescription:
+      "اترك هذه الصفحة فارغة للنشر بدون استبيان، أو أضف أسئلة الآن.",
     questionLabel: "السؤال {number}",
     requiredLabel: "مطلوب",
     optionalLabel: "اختياري",
@@ -136,8 +139,10 @@ export const conversationSurveyStepTranslations: Record<
     publishButton: "Publicar",
     addQuestionButton: "Agregar pregunta",
     pageTitle: "Encuesta de la conversación",
-    pageDescription: "Configura el paso de encuesta que aparece antes de que los participantes puedan votar sobre propuestas o crear nuevas.",
-    optionalSurveyToggleLabel: "Permitir que los participantes omitan la encuesta",
+    pageDescription:
+      "Configura el paso de encuesta que aparece antes de que los participantes puedan votar sobre propuestas o crear nuevas.",
+    optionalSurveyToggleLabel:
+      "Permitir que los participantes omitan la encuesta",
     optionalSurveyToggleHint:
       "El paso de encuesta se puede omitir. Los participantes pueden votar o crear propuestas sin responder la encuesta; sus votos siempre se incluyen en el análisis, y se ignoran los ajustes de preguntas obligatorias.",
     requiredSurveyToggleHint:
@@ -145,7 +150,8 @@ export const conversationSurveyStepTranslations: Record<
     questionRequirementDisabledHint:
       "Esta pregunta se trata como opcional porque el paso de encuesta se puede omitir.",
     noQuestionsTitle: "Aún no hay encuesta",
-    noQuestionsDescription: "Déjalo vacío para publicar sin encuesta o agrega preguntas ahora.",
+    noQuestionsDescription:
+      "Déjalo vacío para publicar sin encuesta o agrega preguntas ahora.",
     questionLabel: "Pregunta {number}",
     requiredLabel: "Obligatoria",
     optionalLabel: "Opcional",
@@ -158,14 +164,16 @@ export const conversationSurveyStepTranslations: Record<
     maxSelectionsLabel: "Selecciones máximas",
     minTextLengthLabel: "Longitud mínima del texto",
     maxTextLengthLabel: "Longitud máxima del texto",
-    freeTextHelp: "Se permite texto enriquecido. La finalización usa la longitud del texto plano.",
+    freeTextHelp:
+      "Se permite texto enriquecido. La finalización usa la longitud del texto plano.",
     typeChoice: "Elección",
     typeFreeText: "Texto libre",
     choiceDisplayLabel: "Visualización",
     choiceDisplayAuto: "Automático",
     choiceDisplayList: "Lista",
     choiceDisplayDropdown: "Desplegable con búsqueda",
-    surveyValidationError: "Completa todas las preguntas de la encuesta antes de publicar.",
+    surveyValidationError:
+      "Completa todas las preguntas de la encuesta antes de publicar.",
     publishError: "Error al intentar crear una nueva conversación",
     largeOptionCountWarning:
       "Esta pregunta está configurada como Lista y tiene {count} opciones. Considera usar Automático o Desplegable con búsqueda para que los participantes puedan revisar las respuestas más rápido.",
@@ -179,8 +187,10 @@ export const conversationSurveyStepTranslations: Record<
     publishButton: "انتشار",
     addQuestionButton: "افزودن پرسش",
     pageTitle: "نظرسنجی گفتگو",
-    pageDescription: "مرحله نظرسنجی را که پیش از رأی دادن شرکت‌کنندگان به گزاره‌ها یا ایجاد گزاره‌های جدید نمایش داده می‌شود تنظیم کنید.",
-    optionalSurveyToggleLabel: "اجازه دادن به شرکت‌کنندگان برای رد کردن نظرسنجی",
+    pageDescription:
+      "مرحله نظرسنجی را که پیش از رأی دادن شرکت‌کنندگان به گزاره‌ها یا ایجاد گزاره‌های جدید نمایش داده می‌شود تنظیم کنید.",
+    optionalSurveyToggleLabel:
+      "اجازه دادن به شرکت‌کنندگان برای رد کردن نظرسنجی",
     optionalSurveyToggleHint:
       "مرحله نظرسنجی را می‌توان رد کرد. شرکت‌کنندگان می‌توانند بدون پاسخ دادن به نظرسنجی رأی دهند یا گزاره ایجاد کنند؛ رأی‌های آن‌ها همیشه در تحلیل محاسبه می‌شود و تنظیمات الزامی پرسش‌ها نادیده گرفته می‌شود.",
     requiredSurveyToggleHint:
@@ -188,7 +198,8 @@ export const conversationSurveyStepTranslations: Record<
     questionRequirementDisabledHint:
       "این پرسش اختیاری در نظر گرفته می‌شود چون مرحله نظرسنجی را می‌توان رد کرد.",
     noQuestionsTitle: "هنوز نظرسنجی‌ای وجود ندارد",
-    noQuestionsDescription: "برای انتشار بدون نظرسنجی این بخش را خالی بگذارید، یا همین حالا پرسش اضافه کنید.",
+    noQuestionsDescription:
+      "برای انتشار بدون نظرسنجی این بخش را خالی بگذارید، یا همین حالا پرسش اضافه کنید.",
     questionLabel: "پرسش {number}",
     requiredLabel: "الزامی",
     optionalLabel: "اختیاری",
@@ -222,8 +233,10 @@ export const conversationSurveyStepTranslations: Record<
     publishButton: "Publier",
     addQuestionButton: "Ajouter une question",
     pageTitle: "Questionnaire de la conversation",
-    pageDescription: "Configurez l'étape de questionnaire affichée avant que les participants puissent voter sur des propositions ou en créer.",
-    optionalSurveyToggleLabel: "Autoriser les participants à ignorer le questionnaire",
+    pageDescription:
+      "Configurez l'étape de questionnaire affichée avant que les participants puissent voter sur des propositions ou en créer.",
+    optionalSurveyToggleLabel:
+      "Autoriser les participants à ignorer le questionnaire",
     optionalSurveyToggleHint:
       "L'étape de questionnaire peut être ignorée. Les participants peuvent voter ou créer des propositions sans répondre au questionnaire ; leurs votes sont toujours pris en compte dans l'analyse, et les réglages obligatoires des questions sont ignorés.",
     requiredSurveyToggleHint:
@@ -231,7 +244,8 @@ export const conversationSurveyStepTranslations: Record<
     questionRequirementDisabledHint:
       "Cette question est traitée comme facultative, car l'étape de questionnaire peut être ignorée.",
     noQuestionsTitle: "Pas encore de questionnaire",
-    noQuestionsDescription: "Laissez cette étape vide pour publier sans questionnaire, ou ajoutez des questions maintenant.",
+    noQuestionsDescription:
+      "Laissez cette étape vide pour publier sans questionnaire, ou ajoutez des questions maintenant.",
     questionLabel: "Question {number}",
     requiredLabel: "Requis",
     optionalLabel: "Facultatif",
@@ -244,14 +258,16 @@ export const conversationSurveyStepTranslations: Record<
     maxSelectionsLabel: "Sélections maximales",
     minTextLengthLabel: "Longueur minimale du texte",
     maxTextLengthLabel: "Longueur maximale du texte",
-    freeTextHelp: "Le texte enrichi est autorisé. La complétion utilise la longueur du texte brut.",
+    freeTextHelp:
+      "Le texte enrichi est autorisé. La complétion utilise la longueur du texte brut.",
     typeChoice: "Choix",
     typeFreeText: "Texte libre",
     choiceDisplayLabel: "Affichage",
     choiceDisplayAuto: "Automatique",
     choiceDisplayList: "Liste",
     choiceDisplayDropdown: "Liste déroulante avec recherche",
-    surveyValidationError: "Veuillez compléter toutes les questions du questionnaire avant de publier.",
+    surveyValidationError:
+      "Veuillez compléter toutes les questions du questionnaire avant de publier.",
     publishError: "Erreur lors de la création d'une nouvelle conversation",
     largeOptionCountWarning:
       "Cette question est réglée sur Liste et comporte {count} options. Pensez à utiliser Automatique ou Liste déroulante avec recherche pour aider les participants à parcourir les réponses plus vite.",
@@ -265,7 +281,8 @@ export const conversationSurveyStepTranslations: Record<
     publishButton: "פרסום",
     addQuestionButton: "הוספת שאלה",
     pageTitle: "סקר השיחה",
-    pageDescription: "הגדירו את שלב הסקר שמוצג לפני שמשתתפים יכולים להצביע על הצהרות או ליצור חדשות.",
+    pageDescription:
+      "הגדירו את שלב הסקר שמוצג לפני שמשתתפים יכולים להצביע על הצהרות או ליצור חדשות.",
     optionalSurveyToggleLabel: "לאפשר למשתתפים לדלג על הסקר",
     optionalSurveyToggleHint:
       "אפשר לדלג על שלב הסקר. המשתתפים יכולים להצביע או ליצור הצהרות בלי לענות על הסקר; ההצבעות שלהם תמיד נכללות בניתוח, והגדרות החובה של השאלות יזכו להתעלמות.",
@@ -274,7 +291,8 @@ export const conversationSurveyStepTranslations: Record<
     questionRequirementDisabledHint:
       "השאלה הזו נחשבת אופציונלית כי אפשר לדלג על שלב הסקר.",
     noQuestionsTitle: "עדיין אין סקר",
-    noQuestionsDescription: "השאירו את השלב הזה ריק כדי לפרסם בלי סקר, או הוסיפו שאלות עכשיו.",
+    noQuestionsDescription:
+      "השאירו את השלב הזה ריק כדי לפרסם בלי סקר, או הוסיפו שאלות עכשיו.",
     questionLabel: "שאלה {number}",
     requiredLabel: "נדרש",
     optionalLabel: "אופציונלי",
@@ -308,7 +326,8 @@ export const conversationSurveyStepTranslations: Record<
     publishButton: "公開",
     addQuestionButton: "質問を追加",
     pageTitle: "会話アンケート",
-    pageDescription: "参加者が意見に投票したり新しい意見を作成したりする前に表示されるアンケート手順を設定します。",
+    pageDescription:
+      "参加者が意見に投票したり新しい意見を作成したりする前に表示されるアンケート手順を設定します。",
     optionalSurveyToggleLabel: "参加者がアンケートをスキップできるようにする",
     optionalSurveyToggleHint:
       "アンケート手順はスキップできます。参加者はアンケートに回答せずに投票や意見の作成ができ、その投票は常に分析に含まれ、質問の必須設定は無視されます。",
@@ -317,7 +336,8 @@ export const conversationSurveyStepTranslations: Record<
     questionRequirementDisabledHint:
       "アンケート手順をスキップできるため、この質問は任意として扱われます。",
     noQuestionsTitle: "アンケートはまだありません",
-    noQuestionsDescription: "アンケートなしで公開する場合はこのままにするか、今すぐ質問を追加してください。",
+    noQuestionsDescription:
+      "アンケートなしで公開する場合はこのままにするか、今すぐ質問を追加してください。",
     questionLabel: "質問 {number}",
     requiredLabel: "必須",
     optionalLabel: "任意",
@@ -330,14 +350,16 @@ export const conversationSurveyStepTranslations: Record<
     maxSelectionsLabel: "最大選択数",
     minTextLengthLabel: "最小文字数",
     maxTextLengthLabel: "最大文字数",
-    freeTextHelp: "リッチテキストを使用できます。完了判定はプレーンテキストの長さを使います。",
+    freeTextHelp:
+      "リッチテキストを使用できます。完了判定はプレーンテキストの長さを使います。",
     typeChoice: "選択",
     typeFreeText: "自由記述",
     choiceDisplayLabel: "表示",
     choiceDisplayAuto: "自動",
     choiceDisplayList: "リスト",
     choiceDisplayDropdown: "検索可能なドロップダウン",
-    surveyValidationError: "公開前にアンケートの質問をすべて完成させてください。",
+    surveyValidationError:
+      "公開前にアンケートの質問をすべて完成させてください。",
     publishError: "新しい会話の作成中にエラーが発生しました",
     largeOptionCountWarning:
       "この質問はリスト表示に設定されており、{count} 個の選択肢があります。参加者が回答をすばやく確認できるように、自動または検索可能なドロップダウンの使用を検討してください。",
@@ -350,17 +372,20 @@ export const conversationSurveyStepTranslations: Record<
   ky: {
     publishButton: "Жарыялоо",
     addQuestionButton: "Суроо кошуу",
-    pageTitle: "Сүйлөшүүнүн сурамжылоосу",
-    pageDescription: "Катышуучулар билдирүүлөргө добуш берип же жаңыларын түзө алышынан мурун көрсөтүлүүчү сурамжылоо кадамын жөндөңүз.",
-    optionalSurveyToggleLabel: "Катышуучуларга сурамжылоону өткөрүп жиберүүгө уруксат берүү",
+    pageTitle: "Талкуунун сурамжылоосу",
+    pageDescription:
+      "Катышуучулар пикирлерге добуш берип же жаңы пикирлерди түзө алышынан мурун көрсөтүлүүчү сурамжылоо кадамын жөндөңүз.",
+    optionalSurveyToggleLabel:
+      "Катышуучуларга сурамжылоону өткөрүп жиберүүгө уруксат берүү",
     optionalSurveyToggleHint:
-      "Сурамжылоо кадамын өткөрүп жиберүүгө болот. Катышуучулар сурамжылоого жооп бербей эле добуш берип же билдирүү түзө алышат; алардын добуштары ар дайым талдоого кирет, ал эми суроолордун милдеттүү жөндөөлөрү эске алынбайт.",
+      "Сурамжылоо кадамын өткөрүп жиберүүгө болот. Катышуучулар сурамжылоого жооп бербей эле добуш берип же пикир түзө алышат; алардын добуштары ар дайым талдоого кирет, ал эми суроолордун милдеттүү жөндөөлөрү эске алынбайт.",
     requiredSurveyToggleHint:
-      "Сурамжылоо бар болсо, сурамжылоо кадамы милдеттүү. Айрым суроолор же бардык суроолор ыктыярдуу болсо да, катышуучулар добуш берүү же билдирүү түзүүдөн мурун бул кадамдан өтүшү керек. Бул кадамды аяктаган катышуучулардын добуштары гана талдоого кирет.",
+      "Сурамжылоо бар болсо, сурамжылоо кадамы милдеттүү. Айрым суроолор же бардык суроолор ыктыярдуу болсо да, катышуучулар добуш берүү же пикир түзүүдөн мурун бул кадамдан өтүшү керек. Бул кадамды аяктаган катышуучулардын добуштары гана талдоого кирет.",
     questionRequirementDisabledHint:
       "Сурамжылоо кадамын өткөрүп жиберүүгө болгондуктан, бул суроо ыктыярдуу деп эсептелет.",
     noQuestionsTitle: "Азырынча сурамжылоо жок",
-    noQuestionsDescription: "Сурамжылоосуз жарыялоо үчүн муну бош калтырыңыз же азыр суроолорду кошуңуз.",
+    noQuestionsDescription:
+      "Сурамжылоосуз жарыялоо үчүн муну бош калтырыңыз же азыр суроолорду кошуңуз.",
     questionLabel: "Суроо {number}",
     requiredLabel: "Милдеттүү",
     optionalLabel: "Ыктыярдуу",
@@ -373,14 +398,16 @@ export const conversationSurveyStepTranslations: Record<
     maxSelectionsLabel: "Максималдуу тандоо",
     minTextLengthLabel: "Тексттин минималдуу узундугу",
     maxTextLengthLabel: "Тексттин максималдуу узундугу",
-    freeTextHelp: "Rich text колдонууга болот. Аяктоо жөнөкөй тексттин узундугу менен эсептелет.",
+    freeTextHelp:
+      "Rich text колдонууга болот. Аяктоо жөнөкөй тексттин узундугу менен эсептелет.",
     typeChoice: "Тандоо",
     typeFreeText: "Эркин текст",
     choiceDisplayLabel: "Көрсөтүү",
     choiceDisplayAuto: "Авто",
     choiceDisplayList: "Тизме",
     choiceDisplayDropdown: "Издөөгө боло турган ачылма тизме",
-    surveyValidationError: "Жарыялоодон мурун бардык сурамжылоо суроолорун толтуруңуз.",
+    surveyValidationError:
+      "Жарыялоодон мурун бардык сурамжылоо суроолорун толтуруңуз.",
     publishError: "Жаңы сүйлөшүүнү түзүүдө ката кетти",
     largeOptionCountWarning:
       "Бул суроо Тизме режимине коюлган жана {count} варианты бар. Катышуучулар жоопторду тезирээк карап чыгышы үчүн Авто же издөөчү ачылма тизмени колдонуп көрүңүз.",
@@ -393,17 +420,19 @@ export const conversationSurveyStepTranslations: Record<
   ru: {
     publishButton: "Опубликовать",
     addQuestionButton: "Добавить вопрос",
-    pageTitle: "Опрос беседы",
-    pageDescription: "Настройте шаг опроса, который показывается перед тем, как участники смогут голосовать за утверждения или создавать новые.",
+    pageTitle: "Опрос обсуждения",
+    pageDescription:
+      "Настройте шаг опроса, который показывается перед тем, как участники смогут голосовать по высказываниям или создавать новые.",
     optionalSurveyToggleLabel: "Разрешить участникам пропускать опрос",
     optionalSurveyToggleHint:
-      "Шаг опроса можно пропустить. Участники могут голосовать или создавать утверждения без ответов на опрос; их голоса всегда включаются в анализ, а настройки обязательности вопросов игнорируются.",
+      "Шаг опроса можно пропустить. Участники могут голосовать или создавать высказывания без ответов на опрос; их голоса всегда включаются в анализ, а настройки обязательности вопросов игнорируются.",
     requiredSurveyToggleHint:
-      "Если есть опрос, шаг опроса обязателен. Участники должны пройти его перед голосованием или созданием утверждений, даже если некоторые или все вопросы необязательные. В анализ включаются только голоса участников, которые завершили этот шаг.",
+      "Если есть опрос, шаг опроса обязателен. Участники должны пройти его перед голосованием или созданием высказываний, даже если некоторые или все вопросы необязательные. В анализ включаются только голоса участников, которые завершили этот шаг.",
     questionRequirementDisabledHint:
       "Этот вопрос считается необязательным, потому что шаг опроса можно пропустить.",
     noQuestionsTitle: "Опроса пока нет",
-    noQuestionsDescription: "Оставьте этот шаг пустым, чтобы опубликовать без опроса, или добавьте вопросы сейчас.",
+    noQuestionsDescription:
+      "Оставьте этот шаг пустым, чтобы опубликовать без опроса, или добавьте вопросы сейчас.",
     questionLabel: "Вопрос {number}",
     requiredLabel: "Обязательный",
     optionalLabel: "Необязательный",
@@ -416,7 +445,8 @@ export const conversationSurveyStepTranslations: Record<
     maxSelectionsLabel: "Максимум выборов",
     minTextLengthLabel: "Минимальная длина текста",
     maxTextLengthLabel: "Максимальная длина текста",
-    freeTextHelp: "Допускается форматированный текст. Завершение определяется по длине обычного текста.",
+    freeTextHelp:
+      "Допускается форматированный текст. Завершение определяется по длине обычного текста.",
     typeChoice: "Выбор",
     typeFreeText: "Свободный текст",
     choiceDisplayLabel: "Отображение",
@@ -489,7 +519,8 @@ export const conversationSurveyStepTranslations: Record<
     questionRequirementDisabledHint:
       "由於問卷步驟可以跳過，此問題會被視為可選。",
     noQuestionsTitle: "還沒有問卷",
-    noQuestionsDescription: "若要不含問卷直接發布，可保持空白；或現在新增問題。",
+    noQuestionsDescription:
+      "若要不含問卷直接發布，可保持空白；或現在新增問題。",
     questionLabel: "問題 {number}",
     requiredLabel: "必答",
     optionalLabel: "可選",

@@ -2,7 +2,7 @@
 title: "將挫折轉化為集體力量"
 description: "在法國#bloquonstout罷工期間,Agora Citizen Network如何被用來將大規模動員轉化為共享的民主訴求。"
 author: "Agora團隊"
-date: "September 2025"
+date: "2025-09-01"
 type: "case-study"
 thumbnail: "/images/bloquonstout-thumbnail.jpg"
 image: "/images/bloquonstout-thumbnail.jpg"

@@ -82,7 +82,7 @@ export const opinionAnalysisDialogTranslations: Record<
     agree: "מסכים/ה",
     pass: "לא בטוח/ה",
     disagree: "לא מסכים/ה",
-    total: "סה\"כ",
+    total: 'סה"כ',
     noGroup: "ללא קבוצה",
     viewOriginal: "צפייה בהצהרה המקורית",
   },
@@ -98,7 +98,7 @@ export const opinionAnalysisDialogTranslations: Record<
   ky: {
     title: "Пикир анализи",
     agree: "Макулмун",
-    pass: "Белгисиз",
+    pass: "Так билбейм",
     disagree: "Макул эмесмин",
     total: "Жалпы",
     noGroup: "Топ жок",

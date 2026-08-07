@@ -1,7 +1,8 @@
 <!doctype html>
-<html lang="%lang%" class="scroll-smooth">
+<html lang="%lang%" class="scroll-smooth notranslate" translate="no">
   <head>
     <meta charset="utf-8" />
+    <meta name="google" content="notranslate" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <!-- Plausible Analytics (production only) -->
     <script>
@@ -40,36 +41,51 @@
         var RTL_LOCALES = ["ar", "fa", "he"];
         var STORAGE_KEY = "displayLanguage";
 
+        function parseSupportedLocale(rawLanguage) {
+          if (!rawLanguage) return null;
+
+          var lang = rawLanguage.toLowerCase();
+          if (
+            lang === "zh-tw" ||
+            lang === "zh-hk" ||
+            lang.startsWith("zh-hant")
+          ) {
+            return "zh-hant";
+          }
+          if (lang.startsWith("zh")) {
+            return "zh-hans";
+          }
+
+          var primary = lang.split("-")[0];
+          return SUPPORTED_LOCALES.indexOf(primary) !== -1 ? primary : null;
+        }
+
+        function detectDeviceLocale() {
+          try {
+            return parseSupportedLocale(
+              new Intl.DateTimeFormat().resolvedOptions().locale,
+            );
+          } catch (_) {
+            return null;
+          }
+        }
+
         function detectBrowserLocale() {
           var languages = navigator.languages || [navigator.language || ""];
           for (var i = 0; i < languages.length; i++) {
-            var lang = languages[i].toLowerCase();
-            // Chinese variants
-            if (
-              lang === "zh-tw" ||
-              lang === "zh-hk" ||
-              lang.startsWith("zh-hant")
-            ) {
-              return "zh-hant";
-            }
-            if (lang.startsWith("zh")) {
-              return "zh-hans";
-            }
-            // Other supported languages
-            var primary = lang.split("-")[0];
-            if (SUPPORTED_LOCALES.indexOf(primary) !== -1) {
-              return primary;
-            }
+            var locale = parseSupportedLocale(languages[i]);
+            if (locale) return locale;
           }
-          return DEFAULT_LOCALE;
+          return null;
         }
 
         function getPreferredLocale() {
           var saved = localStorage.getItem(STORAGE_KEY);
-          if (saved && SUPPORTED_LOCALES.indexOf(saved) !== -1) {
-            return saved;
-          }
-          return detectBrowserLocale();
+          var savedLocale = parseSupportedLocale(saved);
+          if (savedLocale) return savedLocale;
+          return (
+            detectDeviceLocale() || detectBrowserLocale() || DEFAULT_LOCALE
+          );
         }
 
         function getCurrentLocaleFromPath() {
@@ -101,11 +117,6 @@
         function handleLanguageRedirect() {
           var currentLocale = getCurrentLocaleFromPath();
           var preferredLocale = getPreferredLocale();
-
-          // Save the current locale if none was saved (user visited a locale URL directly)
-          if (!localStorage.getItem(STORAGE_KEY)) {
-            localStorage.setItem(STORAGE_KEY, currentLocale);
-          }
 
           // Set RTL direction for RTL languages
           var effectiveLocale = preferredLocale;

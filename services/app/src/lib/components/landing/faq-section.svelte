@@ -1,4 +1,5 @@
 <script lang="ts">
+  import * as m from "$lib/paraglide/messages.js";
   import { getLocale, localizeHref } from "$lib/paraglide/runtime";
   import GradientText from "$ui/shared/gradient-text.svelte";
   import Text from "$ui/shared/text.svelte";
@@ -57,7 +58,7 @@
   <div class="mx-auto max-w-[1120px]">
     <div class="mb-12 max-w-[720px]">
       <Text size="base" weight="bold">
-        <GradientText>FAQ</GradientText>
+        <GradientText>{m.faq_label()}</GradientText>
       </Text>
     </div>
 

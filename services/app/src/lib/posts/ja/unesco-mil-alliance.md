@@ -2,7 +2,7 @@
 title: "大規模な傾聴：ユネスコMILアライアンスとのパイロットからの報告"
 description: "2025年10月、ユネスコはメディア情報リテラシー週間を支援するためにAgoraと提携しました。このパイロットでは、構造化されたデジタル審議が会議で生まれた対話の寿命を延ばせるかどうかを探りました。"
 author: "ユーティン・ジアン"
-date: "2025年10月"
+date: "2025-10-01"
 type: "case-study"
 thumbnail: "/images/resources/unesco-mil-alliance.jpeg"
 ---

@@ -219,7 +219,7 @@ export const postActionBarTranslations: Record<
     moderatedVotesExplanation:
       "Голоса за модерированные высказывания исключены из анализа.",
     moderatedParticipantsExplanation:
-      "Участники, голосовавшие только за модерированные высказывания, исключены из анализа.",
+      "Участники, голосовавшие только по модерированным высказываниям, исключены из анализа.",
     surveyVotesExplanation:
       "Голоса участников, не завершивших опрос, исключены из анализа.",
     surveyParticipantsExplanation:

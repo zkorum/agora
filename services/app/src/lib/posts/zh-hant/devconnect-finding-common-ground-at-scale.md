@@ -2,7 +2,7 @@
 title: "大規模尋找共同點：Agora Citizen Network 在 Devconnect Argentina 2025"
 description: "Yuting Jiang 在 Devconnect Argentina 2025 介紹 Agora Citizen Network，分享數位審議、意見地圖、隱私保護身份與 broad listening 如何幫助社群大規模尋找共同點。"
 author: "Yuting Jiang"
-date: "November 2025"
+date: "2025-11-01"
 type: "vision"
 thumbnail: "https://i.ytimg.com/vi/phw1AlQs8DY/hqdefault.jpg"
 image: "https://i.ytimg.com/vi/phw1AlQs8DY/hqdefault.jpg"
@@ -21,7 +21,7 @@ image: "https://i.ytimg.com/vi/phw1AlQs8DY/hqdefault.jpg"
 - 像 [#bloquonstout](https://www.agoracitizen.network/resources/bloquonstout) 這樣的社群諮詢，Agora 幫助抗議者和促進者識別共同優先事項。
 
 <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; margin: 28px 0; overflow: hidden; border-radius: 12px; box-shadow: 0 8px 24px rgba(9, 15, 83, 0.16);">
-  <iframe src="https://www.youtube.com/embed/phw1AlQs8DY" title="Agora Citizen Network - Finding Common Ground At Scale - Devconnect Argentina 2025" style="position: absolute; inset: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+  <iframe src="https://www.youtube.com/embed/phw1AlQs8DY" title="Agora Citizen Network - 大規模尋找共同點 - Devconnect Argentina 2025" style="position: absolute; inset: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 </div>
 
 [在 YouTube 觀看](https://www.youtube.com/watch?v=phw1AlQs8DY)

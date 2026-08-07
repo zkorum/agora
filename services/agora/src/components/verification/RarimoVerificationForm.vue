@@ -3,11 +3,7 @@
     <ZKCard padding="1rem" class="cardBackground">
       <div class="stepContainer">
         <div class="stepFlex">
-          <q-icon
-            name="mdi-numeric-1"
-            size="2rem"
-            class="numberCircle"
-          />
+          <q-icon name="mdi-numeric-1" size="2rem" class="numberCircle" />
           <div>
             {{ t("download") }}
             <span>
@@ -23,19 +19,11 @@
         </div>
 
         <div class="stepFlex">
-          <q-icon
-            name="mdi-numeric-2"
-            size="2rem"
-            class="numberCircle"
-          />
+          <q-icon name="mdi-numeric-2" size="2rem" class="numberCircle" />
           {{ t("claimAnonymousId") }}
         </div>
         <div class="stepFlex">
-          <q-icon
-            name="mdi-numeric-3"
-            size="2rem"
-            class="numberCircle"
-          />
+          <q-icon name="mdi-numeric-3" size="2rem" class="numberCircle" />
           <div v-if="quasar.platform.is.mobile">
             {{ t("comeBackAndVerify") }}
           </div>
@@ -69,7 +57,7 @@
               v-if="verificationLink.length != 0"
               class="verificationProcedureBlock"
             >
-              <img :src="qrcode" alt="QR Code" />
+              <img :src="qrcode" :alt="t('qrCodeAlt')" />
               <div>{{ t("openLinkOnMobile") }}</div>
               <div class="longUrl">{{ verificationLink }}</div>
 
@@ -96,10 +84,7 @@
               :loading="verificationLink === ''"
               @click="clickedVerifyButton()"
             />
-            <div
-              v-if="verificationLink.length != 0"
-              class="mobileUrlContainer"
-            >
+            <div v-if="verificationLink.length != 0" class="mobileUrlContainer">
               <div class="mobileUrl">{{ verificationLink }}</div>
               <ZKButton
                 button-type="standardButton"

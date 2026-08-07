@@ -2,7 +2,7 @@
 title: "Cómo facilitar eventos y proyectos de deliberación con Agora"
 description: "Una guía práctica para usar Agora en eventos, conferencias, talleres y proyectos de deliberación más largos."
 author: "Equipo Agora"
-date: "September 2025"
+date: "2025-09-01"
 type: "guide"
 thumbnail: "/images/facilitation-guide-thumbnail.jpg"
 image: "/images/facilitation-guide-thumbnail.jpg"

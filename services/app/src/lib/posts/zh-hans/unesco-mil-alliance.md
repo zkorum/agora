@@ -2,7 +2,7 @@
 title: "大规模倾听：与联合国教科文组织媒介与信息素养联盟试点项目的笔记"
 description: "2025年10月，联合国教科文组织与Agora合作支持媒介与信息素养周。该试点探索了结构化数字审议是否能延续会议对话的生命力。"
 author: "蒋雨婷"
-date: "2025年10月"
+date: "2025-10-01"
 type: "case-study"
 thumbnail: "/images/resources/unesco-mil-alliance.jpeg"
 ---

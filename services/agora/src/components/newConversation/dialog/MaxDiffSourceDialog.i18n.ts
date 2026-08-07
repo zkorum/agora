@@ -18,16 +18,17 @@ export const maxDiffSourceDialogTranslations: Record<
     githubDescription: "Import items from GitHub issues with a specific label",
   },
   ar: {
-    manualTitle: "Manual",
-    manualDescription: "Add statements to rank manually",
+    manualTitle: "يدوي",
+    manualDescription: "أضف عبارات لترتيبها يدويًا",
     githubTitle: "GitHub",
-    githubDescription: "Import items from GitHub issues with a specific label",
+    githubDescription: "استورد عناصر من مشكلات GitHub التي تحمل تسمية محددة",
   },
   es: {
     manualTitle: "Manual",
-    manualDescription: "Add statements to rank manually",
+    manualDescription: "Añade proposiciones para clasificarlas manualmente",
     githubTitle: "GitHub",
-    githubDescription: "Import items from GitHub issues with a specific label",
+    githubDescription:
+      "Importa elementos de incidencias de GitHub con una etiqueta específica",
   },
   fa: {
     manualTitle: "دستی",
@@ -45,7 +46,8 @@ export const maxDiffSourceDialogTranslations: Record<
     manualTitle: "Manuel",
     manualDescription: "Ajouter des propositions à classer manuellement",
     githubTitle: "GitHub",
-    githubDescription: "Importer des éléments depuis les issues GitHub avec un label spécifique",
+    githubDescription:
+      "Importer des éléments depuis les issues GitHub avec un label spécifique",
   },
   "zh-Hans": {
     manualTitle: "手动",
@@ -66,15 +68,17 @@ export const maxDiffSourceDialogTranslations: Record<
     githubDescription: "特定のラベルが付いた GitHub issue から項目をインポート",
   },
   ky: {
-    manualTitle: "Manual",
-    manualDescription: "Add statements to rank manually",
+    manualTitle: "Кол менен",
+    manualDescription: "Рейтинг түзүү үчүн пикирлерди кол менен кошуңуз",
     githubTitle: "GitHub",
-    githubDescription: "Import items from GitHub issues with a specific label",
+    githubDescription:
+      "Белгилүү бир энбелгиси бар GitHub маселелеринен элементтерди импорттоо",
   },
   ru: {
-    manualTitle: "Manual",
-    manualDescription: "Add statements to rank manually",
+    manualTitle: "Вручную",
+    manualDescription: "Добавить высказывания для ранжирования вручную",
     githubTitle: "GitHub",
-    githubDescription: "Import items from GitHub issues with a specific label",
+    githubDescription:
+      "Импортировать элементы из задач GitHub с указанной меткой",
   },
 };

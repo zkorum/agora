@@ -7,6 +7,15 @@ export interface CommentGroupTranslations {
   opinionsLoadFailed: string;
   unexpectedErrorRetry: string;
   retryLoadOpinions: string;
+  commentsSection: string;
+  navigationHelp: string;
+  firstCommentHighlighted: string;
+  commentMetadata: string;
+  highlightedCommentMetadata: string;
+  seedCommentMetadata: string;
+  commentAriaLabel: string;
+  highlightedAriaSuffix: string;
+  seedAriaSuffix: string;
 }
 
 export const commentGroupTranslations: Record<
@@ -20,6 +29,15 @@ export const commentGroupTranslations: Record<
     opinionsLoadFailed: "Statements could not be loaded",
     unexpectedErrorRetry: "Something went wrong. Please try again.",
     retryLoadOpinions: "Retry loading statements",
+    commentsSection: "Statements section with {count} statements",
+    navigationHelp: "Use arrow keys to navigate between statements.",
+    firstCommentHighlighted: "The first statement is highlighted.",
+    commentMetadata: "Statement by {username}, posted {date}.",
+    highlightedCommentMetadata: "This statement is highlighted.",
+    seedCommentMetadata: "This is a seed statement.",
+    commentAriaLabel: "Statement {position} of {total}, by {username}",
+    highlightedAriaSuffix: ", highlighted",
+    seedAriaSuffix: ", seed statement",
   },
   ar: {
     noOpinionsMessage: "لا توجد مقترحات في هذا مرشح المحادثة.",
@@ -28,6 +46,15 @@ export const commentGroupTranslations: Record<
     opinionsLoadFailed: "لا يمكن تحميل المقترحات",
     unexpectedErrorRetry: "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
     retryLoadOpinions: "إعادة تحميل المقترحات",
+    commentsSection: "قسم المقترحات ويضم {count} مقترحًا",
+    navigationHelp: "استخدم مفاتيح الأسهم للتنقل بين المقترحات.",
+    firstCommentHighlighted: "المقترح الأول مميز.",
+    commentMetadata: "مقترح من {username}، نُشر في {date}.",
+    highlightedCommentMetadata: "هذا المقترح مميز.",
+    seedCommentMetadata: "هذا مقترح تمهيدي.",
+    commentAriaLabel: "المقترح {position} من {total}، من {username}",
+    highlightedAriaSuffix: "، مميز",
+    seedAriaSuffix: "، مقترح تمهيدي",
   },
   es: {
     noOpinionsMessage: "No hay proposiciones en este filtro de conversación.",
@@ -36,6 +63,16 @@ export const commentGroupTranslations: Record<
     opinionsLoadFailed: "No se pudieron cargar las proposiciones",
     unexpectedErrorRetry: "Algo salió mal. Inténtalo de nuevo.",
     retryLoadOpinions: "Reintentar carga de proposiciones",
+    commentsSection: "Sección con {count} proposiciones",
+    navigationHelp:
+      "Usa las teclas de flecha para navegar entre las proposiciones.",
+    firstCommentHighlighted: "La primera proposición está destacada.",
+    commentMetadata: "Proposición de {username}, publicada el {date}.",
+    highlightedCommentMetadata: "Esta proposición está destacada.",
+    seedCommentMetadata: "Esta es una proposición inicial.",
+    commentAriaLabel: "Proposición {position} de {total}, de {username}",
+    highlightedAriaSuffix: ", destacada",
+    seedAriaSuffix: ", proposición inicial",
   },
   fa: {
     noOpinionsMessage: "هیچ گزاره‌ای در این فیلتر گفتگو وجود ندارد.",
@@ -44,6 +81,16 @@ export const commentGroupTranslations: Record<
     opinionsLoadFailed: "بارگذاری گزاره‌ها امکان‌پذیر نبود",
     unexpectedErrorRetry: "مشکلی پیش آمد. لطفاً دوباره تلاش کنید.",
     retryLoadOpinions: "تلاش مجدد بارگذاری گزاره‌ها",
+    commentsSection: "بخش گزاره‌ها با {count} گزاره",
+    navigationHelp:
+      "برای جابه‌جایی بین گزاره‌ها از کلیدهای جهت‌نما استفاده کنید.",
+    firstCommentHighlighted: "گزاره اول برجسته شده است.",
+    commentMetadata: "گزاره از {username}، منتشرشده در {date}.",
+    highlightedCommentMetadata: "این گزاره برجسته شده است.",
+    seedCommentMetadata: "این یک گزاره آغازین است.",
+    commentAriaLabel: "گزاره {position} از {total}، از {username}",
+    highlightedAriaSuffix: "، برجسته",
+    seedAriaSuffix: "، گزاره آغازین",
   },
   fr: {
     noOpinionsMessage:
@@ -53,22 +100,16 @@ export const commentGroupTranslations: Record<
     opinionsLoadFailed: "Les propositions n'ont pas pu être chargées",
     unexpectedErrorRetry: "Quelque chose s'est mal passé. Veuillez réessayer.",
     retryLoadOpinions: "Réessayer le chargement des propositions",
-  },
-  "zh-Hans": {
-    noOpinionsMessage: "此对话筛选器中没有意见。",
-    loadingOpinions: "正在加载意见...",
-    retrying: "正在重试...",
-    opinionsLoadFailed: "无法加载意见",
-    unexpectedErrorRetry: "出现了一些问题。请重试。",
-    retryLoadOpinions: "重试加载意见",
-  },
-  "zh-Hant": {
-    noOpinionsMessage: "此對話篩選器中沒有意見。",
-    loadingOpinions: "正在載入意見...",
-    retrying: "正在重試...",
-    opinionsLoadFailed: "無法載入意見",
-    unexpectedErrorRetry: "發生了一些問題。請重試。",
-    retryLoadOpinions: "重試載入意見",
+    commentsSection: "Section contenant {count} propositions",
+    navigationHelp:
+      "Utilisez les touches fléchées pour parcourir les propositions.",
+    firstCommentHighlighted: "La première proposition est mise en évidence.",
+    commentMetadata: "Proposition de {username}, publiée le {date}.",
+    highlightedCommentMetadata: "Cette proposition est mise en évidence.",
+    seedCommentMetadata: "Ceci est une proposition initiale.",
+    commentAriaLabel: "Proposition {position} sur {total}, de {username}",
+    highlightedAriaSuffix: ", mise en évidence",
+    seedAriaSuffix: ", proposition initiale",
   },
   he: {
     noOpinionsMessage: "אין הצהרות במסנן שיחה זה.",
@@ -77,6 +118,15 @@ export const commentGroupTranslations: Record<
     opinionsLoadFailed: "לא ניתן לטעון הצהרות",
     unexpectedErrorRetry: "משהו השתבש. אנא נסו שוב.",
     retryLoadOpinions: "נסה שוב לטעון הצהרות",
+    commentsSection: "אזור הצהרות הכולל {count} הצהרות",
+    navigationHelp: "השתמשו במקשי החצים כדי לנווט בין ההצהרות.",
+    firstCommentHighlighted: "ההצהרה הראשונה מודגשת.",
+    commentMetadata: "הצהרה מאת {username}, פורסמה ב-{date}.",
+    highlightedCommentMetadata: "הצהרה זו מודגשת.",
+    seedCommentMetadata: "זוהי הצהרת פתיחה.",
+    commentAriaLabel: "הצהרה {position} מתוך {total}, מאת {username}",
+    highlightedAriaSuffix: ", מודגשת",
+    seedAriaSuffix: ", הצהרת פתיחה",
   },
   ja: {
     noOpinionsMessage: "この会話フィルターには意見がありません。",
@@ -86,6 +136,15 @@ export const commentGroupTranslations: Record<
     unexpectedErrorRetry:
       "何らかの問題が発生しました。もう一度お試しください。",
     retryLoadOpinions: "意見の読み込みを再試行",
+    commentsSection: "{count}件の意見があるセクション",
+    navigationHelp: "矢印キーで意見間を移動できます。",
+    firstCommentHighlighted: "最初の意見が強調表示されています。",
+    commentMetadata: "{username}さんの意見、投稿日：{date}。",
+    highlightedCommentMetadata: "この意見は強調表示されています。",
+    seedCommentMetadata: "これは最初から用意された意見です。",
+    commentAriaLabel: "{total}件中{position}件目の意見、投稿者：{username}",
+    highlightedAriaSuffix: "、強調表示",
+    seedAriaSuffix: "、初期意見",
   },
   ky: {
     noOpinionsMessage: "Бул талкуу чыпкасында пикирлер жок.",
@@ -94,6 +153,15 @@ export const commentGroupTranslations: Record<
     opinionsLoadFailed: "Пикирлерди жүктөө мүмкүн болбоду",
     unexpectedErrorRetry: "Бир нерсе туура эмес болду. Кайра аракет кылыңыз.",
     retryLoadOpinions: "Пикирлерди кайра жүктөө",
+    commentsSection: "{count} пикир камтылган пикирлер бөлүмү",
+    navigationHelp: "Пикирлер арасында өтүү үчүн жебе баскычтарын колдонуңуз.",
+    firstCommentHighlighted: "Биринчи пикир белгиленди.",
+    commentMetadata: "{username} жазган пикир, {date} жарыяланган.",
+    highlightedCommentMetadata: "Бул пикир белгиленди.",
+    seedCommentMetadata: "Бул баштапкы пикир.",
+    commentAriaLabel: "{total} пикирдин {position}-пикири, автору {username}",
+    highlightedAriaSuffix: ", белгиленген",
+    seedAriaSuffix: ", баштапкы пикир",
   },
   ru: {
     noOpinionsMessage: "В этом фильтре обсуждения нет высказываний.",
@@ -102,5 +170,50 @@ export const commentGroupTranslations: Record<
     opinionsLoadFailed: "Не удалось загрузить высказывания",
     unexpectedErrorRetry: "Что-то пошло не так. Пожалуйста, попробуйте снова.",
     retryLoadOpinions: "Повторить загрузку высказываний",
+    commentsSection: "Раздел с высказываниями: {count}",
+    navigationHelp:
+      "Используйте клавиши со стрелками для перехода между высказываниями.",
+    firstCommentHighlighted: "Первое высказывание выделено.",
+    commentMetadata:
+      "Высказывание пользователя {username}, опубликовано {date}.",
+    highlightedCommentMetadata: "Это высказывание выделено.",
+    seedCommentMetadata: "Это начальное высказывание.",
+    commentAriaLabel: "Высказывание {position} из {total}, автор: {username}",
+    highlightedAriaSuffix: ", выделено",
+    seedAriaSuffix: ", начальное высказывание",
+  },
+  "zh-Hans": {
+    noOpinionsMessage: "此对话筛选器中没有意见。",
+    loadingOpinions: "正在加载意见...",
+    retrying: "正在重试...",
+    opinionsLoadFailed: "无法加载意见",
+    unexpectedErrorRetry: "出现了一些问题。请重试。",
+    retryLoadOpinions: "重试加载意见",
+    commentsSection: "观点区，共有 {count} 条观点",
+    navigationHelp: "使用方向键在观点之间导航。",
+    firstCommentHighlighted: "第一条观点已突出显示。",
+    commentMetadata: "{username} 的观点，发布于 {date}。",
+    highlightedCommentMetadata: "此观点已突出显示。",
+    seedCommentMetadata: "这是一条初始观点。",
+    commentAriaLabel: "第 {position} 条观点，共 {total} 条，来自 {username}",
+    highlightedAriaSuffix: "，已突出显示",
+    seedAriaSuffix: "，初始观点",
+  },
+  "zh-Hant": {
+    noOpinionsMessage: "此對話篩選器中沒有意見。",
+    loadingOpinions: "正在載入意見...",
+    retrying: "正在重試...",
+    opinionsLoadFailed: "無法載入意見",
+    unexpectedErrorRetry: "發生了一些問題。請重試。",
+    retryLoadOpinions: "重試載入意見",
+    commentsSection: "觀點區，共有 {count} 則觀點",
+    navigationHelp: "使用方向鍵在觀點之間導覽。",
+    firstCommentHighlighted: "第一則觀點已醒目顯示。",
+    commentMetadata: "{username} 的觀點，發佈於 {date}。",
+    highlightedCommentMetadata: "此觀點已醒目顯示。",
+    seedCommentMetadata: "這是一則初始觀點。",
+    commentAriaLabel: "第 {position} 則觀點，共 {total} 則，來自 {username}",
+    highlightedAriaSuffix: "，已醒目顯示",
+    seedAriaSuffix: "，初始觀點",
   },
 };

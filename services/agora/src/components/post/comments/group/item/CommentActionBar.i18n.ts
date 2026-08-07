@@ -33,7 +33,8 @@ export const commentActionBarTranslations: Record<
     disagreeAriaLabel: "Disagree with statement. Current disagrees:",
     passAriaLabel: "Unsure about this statement. Current count:",
     agreeAriaLabel: "Agree with statement. Current agrees:",
-    keepVotingToDiscoverGroup: "Vote on at least {minVotes} statements to be assigned to a group",
+    keepVotingToDiscoverGroup:
+      "Vote on at least {minVotes} statements to be assigned to a group",
     keepVotingToRefineAnalysis: "Keep voting to refine the analysis",
     assignedGroup: "You have been assigned a group!",
     viewAnalysis: "View analysis",
@@ -43,13 +44,14 @@ export const commentActionBarTranslations: Record<
     pass: "غير متأكد",
     agree: "أوافق",
     voteFailed: "فشل في إرسال التصويت. يرجى المحاولة مرة أخرى.",
-    conversationClosed: "لا يمكن التصويت لأن المحادثة تم إغلاقها من قبل الميسر.",
-    closedConversationTooltip:
-      "التصويت معطل - تم إغلاق المحادثة أو قفلها",
+    conversationClosed:
+      "لا يمكن التصويت لأن المحادثة تم إغلاقها من قبل الميسر.",
+    closedConversationTooltip: "التصويت معطل - تم إغلاق المحادثة أو قفلها",
     disagreeAriaLabel: "أرفض المقترح. عدد الرفض الحالي:",
     passAriaLabel: "لست متأكداً من هذا المقترح. العدد الحالي:",
     agreeAriaLabel: "أوافق على المقترح. عدد الموافقة الحالي:",
-    keepVotingToDiscoverGroup: "صوّت على {minVotes} مقترحات على الأقل ليتم تعيينك في مجموعة",
+    keepVotingToDiscoverGroup:
+      "صوّت على {minVotes} مقترحات على الأقل ليتم تعيينك في مجموعة",
     keepVotingToRefineAnalysis: "استمر في التصويت لتحسين التحليل",
     assignedGroup: "تم تعيينك إلى مجموعة!",
     viewAnalysis: "عرض التحليل",
@@ -63,10 +65,12 @@ export const commentActionBarTranslations: Record<
       "No se puede votar porque la conversación fue cerrada por el facilitador.",
     closedConversationTooltip:
       "La votación está deshabilitada - la conversación ha sido cerrada o bloqueada",
-    disagreeAriaLabel: "En desacuerdo con la proposición. Desacuerdos actuales:",
+    disagreeAriaLabel:
+      "En desacuerdo con la proposición. Desacuerdos actuales:",
     passAriaLabel: "Inseguro sobre esta proposición. Recuento actual:",
     agreeAriaLabel: "De acuerdo con la proposición. Acuerdos actuales:",
-    keepVotingToDiscoverGroup: "Vota en al menos {minVotes} proposiciones para ser asignado a un grupo",
+    keepVotingToDiscoverGroup:
+      "Vota en al menos {minVotes} proposiciones para ser asignado a un grupo",
     keepVotingToRefineAnalysis: "Sigue votando para refinar el análisis",
     assignedGroup: "¡Te han asignado un grupo!",
     viewAnalysis: "Ver análisis",
@@ -76,12 +80,15 @@ export const commentActionBarTranslations: Record<
     pass: "مطمئن نیستم",
     agree: "موافقم",
     voteFailed: "ارسال رأی ناموفق بود. لطفاً دوباره تلاش کنید.",
-    conversationClosed: "امکان رأی‌گیری وجود ندارد زیرا گفتگو توسط تسهیل‌گر بسته شده است.",
-    closedConversationTooltip: "رأی‌گیری غیرفعال است — گفتگو بسته یا قفل شده است",
+    conversationClosed:
+      "امکان رأی‌گیری وجود ندارد زیرا گفتگو توسط تسهیل‌گر بسته شده است.",
+    closedConversationTooltip:
+      "رأی‌گیری غیرفعال است — گفتگو بسته یا قفل شده است",
     disagreeAriaLabel: "مخالفت با گزاره. تعداد فعلی مخالفت‌ها:",
     passAriaLabel: "مطمئن نیستم درباره این گزاره. تعداد فعلی:",
     agreeAriaLabel: "موافقت با گزاره. تعداد فعلی موافقت‌ها:",
-    keepVotingToDiscoverGroup: "برای اختصاص به یک گروه حداقل به {minVotes} گزاره رأی دهید",
+    keepVotingToDiscoverGroup:
+      "برای اختصاص به یک گروه حداقل به {minVotes} گزاره رأی دهید",
     keepVotingToRefineAnalysis: "برای دقیق‌تر شدن تحلیل به رأی‌گیری ادامه دهید",
     assignedGroup: "شما به یک گروه اختصاص داده شدید!",
     viewAnalysis: "مشاهده تحلیل",
@@ -98,7 +105,8 @@ export const commentActionBarTranslations: Record<
     disagreeAriaLabel: "Pas d'accord avec la proposition. Désaccords actuels:",
     passAriaLabel: "Incertain à propos de cette proposition. Nombre actuel :",
     agreeAriaLabel: "D'accord avec la proposition. Accords actuels:",
-    keepVotingToDiscoverGroup: "Votez sur au moins {minVotes} propositions pour être assigné à un groupe",
+    keepVotingToDiscoverGroup:
+      "Votez sur au moins {minVotes} propositions pour être assigné à un groupe",
     keepVotingToRefineAnalysis: "Continuez à voter pour affiner l'analyse",
     assignedGroup: "Vous avez été assigné à un groupe !",
     viewAnalysis: "Voir l'analyse",
@@ -143,7 +151,8 @@ export const commentActionBarTranslations: Record<
     disagreeAriaLabel: "לא מסכים/ה עם ההצהרה. מספר חוסר הסכמות נוכחי:",
     passAriaLabel: "לא בטוח/ה לגבי הצהרה זו. ספירה נוכחית:",
     agreeAriaLabel: "מסכים/ה עם ההצהרה. מספר הסכמות נוכחי:",
-    keepVotingToDiscoverGroup: "הצביעו על לפחות {minVotes} הצהרות כדי להיות משויכים לקבוצה",
+    keepVotingToDiscoverGroup:
+      "הצביעו על לפחות {minVotes} הצהרות כדי להיות משויכים לקבוצה",
     keepVotingToRefineAnalysis: "המשיכו להצביע כדי לחדד את הניתוח",
     assignedGroup: "שויכת לקבוצה!",
     viewAnalysis: "צפייה בניתוח",
@@ -153,29 +162,35 @@ export const commentActionBarTranslations: Record<
     pass: "わからない",
     agree: "同意",
     voteFailed: "投票の送信に失敗しました。もう一度お試しください。",
-    conversationClosed: "会話がファシリテーターによって閉じられたため、投票できません。",
+    conversationClosed:
+      "会話がファシリテーターによって閉じられたため、投票できません。",
     closedConversationTooltip:
       "投票は無効です - 会話は閉じられたかロックされています",
     disagreeAriaLabel: "意見に同意しない。現在の反対票数：",
     passAriaLabel: "この意見について不確かです。現在の保留票数：",
     agreeAriaLabel: "意見に同意。現在の同意票数：",
-    keepVotingToDiscoverGroup: "グループに割り当てられるには、少なくとも {minVotes} 件の意見に投票してください",
+    keepVotingToDiscoverGroup:
+      "グループに割り当てられるには、少なくとも {minVotes} 件の意見に投票してください",
     keepVotingToRefineAnalysis: "投票を続けて分析を改善しましょう",
     assignedGroup: "グループに割り当てられました！",
     viewAnalysis: "分析を見る",
   },
   ky: {
     disagree: "Макул эмесмин",
-    pass: "Белгисиз",
+    pass: "Так билбейм",
     agree: "Макулмун",
     voteFailed: "Добуш берүү ишке ашкан жок. Кайра аракет кылыңыз.",
-    conversationClosed: "Фасилитатор талкууну жапкандыктан добуш берүү мүмкүн эмес.",
+    conversationClosed:
+      "Фасилитатор талкууну жапкандыктан добуш берүү мүмкүн эмес.",
     closedConversationTooltip:
       "Добуш берүү өчүрүлгөн — талкуу жабылган же кулпуланган",
-    disagreeAriaLabel: "Пикирге макул эмес. Учурдагы макул эмес саны:",
-    passAriaLabel: "Бул пикир боюнча белгисиз. Учурдагы саны:",
-    agreeAriaLabel: "Пикирге макул. Учурдагы макул саны:",
-    keepVotingToDiscoverGroup: "Топко дайындалуу үчүн кеминде {minVotes} пикирге добуш бериңиз",
+    disagreeAriaLabel:
+      "Пикирге макул эмесмин. Учурдагы каршы добуштардын саны:",
+    passAriaLabel:
+      "Бул пикир боюнча так билбейм. Учурдагы «Так билбейм» добуштарынын саны:",
+    agreeAriaLabel: "Пикирге макулмун. Учурдагы макул добуштардын саны:",
+    keepVotingToDiscoverGroup:
+      "Топко дайындалуу үчүн кеминде {minVotes} пикирге добуш бериңиз",
     keepVotingToRefineAnalysis: "Анализди тактоо үчүн добуш берүүнү улантыңыз",
     assignedGroup: "Сизге топ дайындалды!",
     viewAnalysis: "Анализди көрүү",
@@ -185,13 +200,17 @@ export const commentActionBarTranslations: Record<
     pass: "Не уверен",
     agree: "Согласен",
     voteFailed: "Не удалось отправить голос. Пожалуйста, попробуйте снова.",
-    conversationClosed: "Невозможно голосовать, так как обсуждение закрыто фасилитатором.",
+    conversationClosed:
+      "Невозможно голосовать, так как обсуждение закрыто фасилитатором.",
     closedConversationTooltip:
       "Голосование отключено — обсуждение закрыто или заблокировано",
-    disagreeAriaLabel: "Не согласен с высказыванием. Текущее количество несогласных:",
-    passAriaLabel: "Не уверен по поводу этого высказывания. Текущее количество:",
+    disagreeAriaLabel:
+      "Не согласен с высказыванием. Текущее количество несогласных:",
+    passAriaLabel:
+      "Не уверен по поводу этого высказывания. Текущее количество:",
     agreeAriaLabel: "Согласен с высказыванием. Текущее количество согласных:",
-    keepVotingToDiscoverGroup: "Проголосуйте минимум за {minVotes} высказываний, чтобы быть распределённым в группу",
+    keepVotingToDiscoverGroup:
+      "Проголосуйте как минимум по {minVotes} высказываниям, чтобы система определила вашу группу",
     keepVotingToRefineAnalysis: "Продолжайте голосовать для уточнения анализа",
     assignedGroup: "Вам назначена группа!",
     viewAnalysis: "Посмотреть анализ",

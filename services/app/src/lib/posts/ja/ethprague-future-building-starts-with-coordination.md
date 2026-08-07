@@ -2,7 +2,7 @@
 title: "未来づくりは協調から始まる：ETHPragueでのBroad Listening"
 description: "Yuting JiangがETHPragueでAgora Citizen Networkを紹介し、最も難しい問題は知能ではなく協調であり、broad listeningが共有された注意を共有された意思決定へ移す助けになると語ります。"
 author: "Yuting Jiang"
-date: "May 2026"
+date: "2026-05-01"
 type: "vision"
 thumbnail: "/images/resources/ethprague-broad-listening.jpg"
 image: "/images/resources/ethprague-broad-listening.jpg"
@@ -24,7 +24,7 @@ ETHPragueで、Yuting JiangはAgora Citizen Networkを、複雑で分断を生�
 - [**Decentralized Deliberation Standard**](https://dds.xyz)：検証可能な集合知データを共有する、相互運用可能な市民技術ツールのエコシステムを構築する取り組み。
 
 <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; margin: 28px 0; overflow: hidden; border-radius: 12px; box-shadow: 0 8px 24px rgba(9, 15, 83, 0.16);">
-  <iframe src="https://www.youtube.com/embed/FHpcdHiyCXw" title="Future Building Starts with Coordination: Agree or Disagree? - Yuting Jiang" style="position: absolute; inset: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+  <iframe src="https://www.youtube.com/embed/FHpcdHiyCXw" title="未来づくりは協調から始まる：賛成、それとも反対？ - Yuting Jiang" style="position: absolute; inset: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 </div>
 
 [YouTubeで見る](https://www.youtube.com/watch?v=FHpcdHiyCXw)

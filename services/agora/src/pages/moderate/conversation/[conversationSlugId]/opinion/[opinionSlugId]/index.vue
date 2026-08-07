@@ -4,49 +4,49 @@
   </Teleport>
 
   <div class="container">
-      <div class="title">{{ t("title") }}</div>
+    <div class="title">{{ t("title") }}</div>
 
-      <div class="userOpinion">
-        <ZKHtmlContent
-          :html-body="opinionItem.opinion"
-          :compact-mode="false"
-          :enable-links="false"
-        />
-      </div>
-
-      <q-select
-        v-model="moderationAction"
-        :options="actionMapping"
-        :label="t('actionLabel')"
-        :disable="actionMapping.length <= 1"
-        emit-value
-        map-options
-      />
-
-      <q-select
-        v-model="moderationReason"
-        :options="reasonMapping"
-        :label="t('reasonLabel')"
-        emit-value
-        map-options
-      />
-
-      <!-- @vue-expect-error Quasar q-input types modelValue as string | number | null -->
-      <q-input v-model="moderationExplanation" :label="t('explanationLabel')" />
-
-      <ZKGradientButton
-        :label="hasExistingDecision ? t('modifyButton') : t('moderateButton')"
-        @click="clickedSubmit()"
-      />
-
-      <ZKGradientButton
-        v-if="hasExistingDecision"
-        :label="t('withdrawButton')"
-        gradient-background="#E7E7FF"
-        label-color="#6b4eff"
-        @click="clickedWithdraw()"
+    <div class="userOpinion">
+      <ZKHtmlContent
+        :html-body="opinionItem.opinion"
+        :compact-mode="false"
+        :enable-links="false"
       />
     </div>
+
+    <q-select
+      v-model="moderationAction"
+      :options="actionMapping"
+      :label="t('actionLabel')"
+      :disable="actionMapping.length <= 1"
+      emit-value
+      map-options
+    />
+
+    <q-select
+      v-model="moderationReason"
+      :options="reasonMapping"
+      :label="t('reasonLabel')"
+      emit-value
+      map-options
+    />
+
+    <!-- @vue-expect-error Quasar q-input types modelValue as string | number | null -->
+    <q-input v-model="moderationExplanation" :label="t('explanationLabel')" />
+
+    <ZKGradientButton
+      :label="hasExistingDecision ? t('modifyButton') : t('moderateButton')"
+      @click="clickedSubmit()"
+    />
+
+    <ZKGradientButton
+      v-if="hasExistingDecision"
+      :label="t('withdrawButton')"
+      gradient-background="#E7E7FF"
+      label-color="#6b4eff"
+      @click="clickedWithdraw()"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -64,12 +64,9 @@ import type {
 import { useUserStore } from "src/stores/user";
 import { useBackendCommentApi } from "src/utils/api/comment/comment";
 import { useBackendModerateApi } from "src/utils/api/moderation";
-import {
-  moderationReasonMapping,
-  opinionModerationActionMapping,
-} from "src/utils/component/moderations";
+import { useModerationMappings } from "src/utils/component/moderations";
 import { getSingleRouteParam } from "src/utils/router/params";
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import {
@@ -99,15 +96,18 @@ const moderationAction = ref<OpinionModerationAction>(
   DEFAULT_MODERATION_ACTION
 );
 const { profileData } = storeToRefs(useUserStore());
-const actionMapping = ref(
+const {
+  moderationReasonMapping: reasonMapping,
+  opinionModerationActionMapping,
+} = useModerationMappings();
+const actionMapping = computed(() =>
   profileData.value.isSiteModerator
-    ? opinionModerationActionMapping
-    : opinionModerationActionMapping.filter((a) => a.value !== "hide")
+    ? opinionModerationActionMapping.value
+    : opinionModerationActionMapping.value.filter((a) => a.value !== "hide")
 );
 
 const DEFAULT_MODERATION_REASON = "misleading";
 const moderationReason = ref<ModerationReason>(DEFAULT_MODERATION_REASON);
-const reasonMapping = ref(moderationReasonMapping);
 
 const moderationExplanation = ref("");
 

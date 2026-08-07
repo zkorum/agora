@@ -35,10 +35,12 @@ export const commentSectionTranslations: Record<
     retryLoadingOpinions: "Retry loading statements",
     voteUnlockSingular: "1 more vote to unlock your group analysis",
     voteUnlockPlural: "{count} more votes to unlock your group analysis",
-    notEnoughOpinions: "Create more statements to vote on to allow opinion group mapping",
+    notEnoughOpinions:
+      "Create more statements to vote on to allow opinion group mapping",
     clusteredBanner: "You have been assigned a group!",
     viewAnalysis: "View analysis",
-    statementRemovedByModerator: "This statement has been removed by a moderator.",
+    statementRemovedByModerator:
+      "This statement has been removed by a moderator.",
     newStatementButton: "New statements",
   },
   ar: {
@@ -70,11 +72,14 @@ export const commentSectionTranslations: Record<
     emptyHidden: "No hay proposiciones ocultas",
     retryLoadingOpinions: "Reintentar cargar proposiciones",
     voteUnlockSingular: "1 voto más para desbloquear tu análisis de cluster",
-    voteUnlockPlural: "{count} votos más para desbloquear tu análisis de cluster",
-    notEnoughOpinions: "Crea más proposiciones para votar y permitir el clustering",
+    voteUnlockPlural:
+      "{count} votos más para desbloquear tu análisis de cluster",
+    notEnoughOpinions:
+      "Crea más proposiciones para votar y permitir el clustering",
     clusteredBanner: "¡Te han asignado un cluster!",
     viewAnalysis: "Ver análisis",
-    statementRemovedByModerator: "Esta proposición ha sido eliminada por un moderador.",
+    statementRemovedByModerator:
+      "Esta proposición ha sido eliminada por un moderador.",
     newStatementButton: "Nuevas proposiciones",
   },
   fa: {
@@ -89,7 +94,8 @@ export const commentSectionTranslations: Record<
     retryLoadingOpinions: "تلاش مجدد بارگذاری گزاره‌ها",
     voteUnlockSingular: "۱ رأی دیگر برای باز کردن تحلیل گروه شما",
     voteUnlockPlural: "{count} رأی دیگر برای باز کردن تحلیل گروه شما",
-    notEnoughOpinions: "گزاره‌های بیشتری برای رأی‌گیری ایجاد کنید تا نقشه‌برداری گروه نظر فعال شود",
+    notEnoughOpinions:
+      "گزاره‌های بیشتری برای رأی‌گیری ایجاد کنید تا نقشه‌برداری گروه نظر فعال شود",
     clusteredBanner: "شما به یک گروه اختصاص داده شدید!",
     viewAnalysis: "مشاهده تحلیل",
     statementRemovedByModerator: "این گزاره توسط مدیر حذف شده است.",
@@ -105,12 +111,16 @@ export const commentSectionTranslations: Record<
     emptyMyVotes: "Vous n'avez pas encore voté sur une proposition",
     emptyHidden: "Aucune proposition masquée",
     retryLoadingOpinions: "Réessayer de charger les propositions",
-    voteUnlockSingular: "1 vote de plus pour débloquer votre analyse de cluster",
-    voteUnlockPlural: "{count} votes de plus pour débloquer votre analyse de cluster",
-    notEnoughOpinions: "Créez plus de propositions pour voter et permettre le clustering",
+    voteUnlockSingular:
+      "1 vote de plus pour débloquer votre analyse de cluster",
+    voteUnlockPlural:
+      "{count} votes de plus pour débloquer votre analyse de cluster",
+    notEnoughOpinions:
+      "Créez plus de propositions pour voter et permettre le clustering",
     clusteredBanner: "Vous avez été assigné à un cluster!",
     viewAnalysis: "Voir l'analyse",
-    statementRemovedByModerator: "Cette proposition a été supprimée par un modérateur.",
+    statementRemovedByModerator:
+      "Cette proposition a été supprimée par un modérateur.",
     newStatementButton: "Nouvelles propositions",
   },
   "zh-Hans": {
@@ -179,10 +189,12 @@ export const commentSectionTranslations: Record<
     retryLoadingOpinions: "意見の読み込みを再試行",
     voteUnlockSingular: "あと 1 票でクラスター分析をアンロック",
     voteUnlockPlural: "あと {count} 票でクラスター分析をアンロック",
-    notEnoughOpinions: "クラスタリングできるように、投票できる意見をもっと作成してください",
+    notEnoughOpinions:
+      "クラスタリングできるように、投票できる意見をもっと作成してください",
     clusteredBanner: "クラスターに割り当てられました！",
     viewAnalysis: "分析を見る",
-    statementRemovedByModerator: "この意見はモデレーターによって削除されました。",
+    statementRemovedByModerator:
+      "この意見はモデレーターによって削除されました。",
     newStatementButton: "新しい意見",
   },
   ky: {
@@ -197,10 +209,12 @@ export const commentSectionTranslations: Record<
     retryLoadingOpinions: "Пикирлерди кайра жүктөө",
     voteUnlockSingular: "Топ анализиңизди ачуу үчүн дагы 1 добуш",
     voteUnlockPlural: "Топ анализиңизди ачуу үчүн дагы {count} добуш",
-    notEnoughOpinions: "Пикир топторун түзүү үчүн добуш берүүгө көбүрөөк пикир түзүңүз",
+    notEnoughOpinions:
+      "Пикир топторун түзүү үчүн добуш берүүгө көбүрөөк пикир түзүңүз",
     clusteredBanner: "Сизге топ дайындалды!",
     viewAnalysis: "Анализди көрүү",
-    statementRemovedByModerator: "Бул пикир модератор тарабынан алынып салынган.",
+    statementRemovedByModerator:
+      "Бул пикир модератор тарабынан алынып салынган.",
     newStatementButton: "Жаңы пикир",
   },
   ru: {
@@ -210,12 +224,14 @@ export const commentSectionTranslations: Record<
     emptyDiscover: "Высказываний пока нет",
     emptyNew: "Нет новых высказываний",
     emptyModerated: "Нет модерированных высказываний",
-    emptyMyVotes: "Вы ещё не голосовали ни за одно высказывание",
+    emptyMyVotes: "Вы ещё не голосовали ни по одному высказыванию",
     emptyHidden: "Нет скрытых высказываний",
     retryLoadingOpinions: "Повторить загрузку высказываний",
     voteUnlockSingular: "Ещё 1 голос, чтобы разблокировать анализ вашей группы",
-    voteUnlockPlural: "Ещё {count} голосов, чтобы разблокировать анализ вашей группы",
-    notEnoughOpinions: "Создайте больше высказываний для голосования, чтобы запустить группировку",
+    voteUnlockPlural:
+      "Чтобы разблокировать анализ вашей группы, осталось голосов: {count}",
+    notEnoughOpinions:
+      "Создайте больше высказываний для голосования, чтобы запустить группировку",
     clusteredBanner: "Вам назначена группа!",
     viewAnalysis: "Посмотреть анализ",
     statementRemovedByModerator: "Это высказывание удалено модератором.",

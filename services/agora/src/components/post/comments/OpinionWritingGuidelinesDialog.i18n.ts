@@ -83,19 +83,22 @@ export const opinionWritingGuidelinesDialogTranslations: Record<
     beClearTitle: "كن واضحاً",
     beClearDescription: "يجب أن يفهم الآخرون نقطتك على الفور",
     beClearExampleGood: "العمل عن بُعد يزيد من إنتاجية الموظفين",
-    beClearExampleBad: "نماذج العمل عن بُعد تتطلب إعادة النظر في الديناميكيات التنظيمية",
+    beClearExampleBad:
+      "نماذج العمل عن بُعد تتطلب إعادة النظر في الديناميكيات التنظيمية",
     dontCombineTitle: "لا تدمج",
     dontCombineDescription:
       'قسّم "أ و ب" إلى مقترحات منفصلة للحصول على تصويت أوضح',
     dontCombineExampleBad:
       "نحتاج إلى رعاية صحية شاملة ورسوم دراسية جامعية مجانية",
-    dontCombineExampleGood1: "يجب أن تكون الرعاية الصحية مجانية عند نقطة الخدمة",
+    dontCombineExampleGood1:
+      "يجب أن تكون الرعاية الصحية مجانية عند نقطة الخدمة",
     dontCombineExampleGood2: "يجب أن تكون الرسوم الدراسية الجامعية مجانية",
   },
   es: {
     title: "Consejos para Escribir Buenas Proposiciones",
     singleIdeaTitle: "Una idea específica",
-    singleIdeaDescription: "Enfócate en un solo punto sobre el que otros puedan votar",
+    singleIdeaDescription:
+      "Enfócate en un solo punto sobre el que otros puedan votar",
     singleIdeaExampleGood:
       "Los conductores de viajes compartidos deben tener los mismos requisitos de seguro que los taxistas",
     singleIdeaExampleBad:
@@ -130,37 +133,49 @@ export const opinionWritingGuidelinesDialogTranslations: Record<
   fa: {
     title: "نکاتی برای نوشتن گزاره‌های خوب",
     singleIdeaTitle: "یک ایده مشخص",
-    singleIdeaDescription: "بر یک نکته واحد تمرکز کنید که دیگران بتوانند به آن رأی دهند",
-    singleIdeaExampleGood: "رانندگان سرویس‌های اشتراکی باید همان الزامات بیمه‌ای رانندگان تاکسی را داشته باشند",
-    singleIdeaExampleBad: "Uber باید ممنوع شود و تاکسی‌ها به اپلیکیشن‌ها و سیستم‌های امتیازدهی بهتر نیاز دارند",
+    singleIdeaDescription:
+      "بر یک نکته واحد تمرکز کنید که دیگران بتوانند به آن رأی دهند",
+    singleIdeaExampleGood:
+      "رانندگان سرویس‌های اشتراکی باید همان الزامات بیمه‌ای رانندگان تاکسی را داشته باشند",
+    singleIdeaExampleBad:
+      "Uber باید ممنوع شود و تاکسی‌ها به اپلیکیشن‌ها و سیستم‌های امتیازدهی بهتر نیاز دارند",
     easyVoteTitle: "آسان برای موافقت/مخالفت",
     easyVoteDescription: "از عبارات پیچیده یا چندبخشی خودداری کنید",
-    easyVoteExampleGood: "شرکت‌های رسانه‌های اجتماعی باید در قبال اطلاعات نادرست در پلتفرم‌هایشان مسئول باشند",
-    easyVoteExampleBad: "تنظیم رسانه‌های اجتماعی پیچیده است و به عوامل و بافت‌های فرهنگی مختلف بستگی دارد",
+    easyVoteExampleGood:
+      "شرکت‌های رسانه‌های اجتماعی باید در قبال اطلاعات نادرست در پلتفرم‌هایشان مسئول باشند",
+    easyVoteExampleBad:
+      "تنظیم رسانه‌های اجتماعی پیچیده است و به عوامل و بافت‌های فرهنگی مختلف بستگی دارد",
     keepBriefTitle: "مختصر باشید",
     keepBriefDescription: "هدف ۲۸۰ کاراکتر یا کمتر",
     keepBriefExampleGood: "حمل‌ونقل عمومی باید برای دانشجویان رایگان باشد",
-    keepBriefExampleBad: "من فکر می‌کنم سیستم‌های حمل‌ونقل شهری باید سیاست‌های کرایه با هزینه کاهش‌یافته یا صفر را برای افراد ثبت‌نام‌شده در برنامه‌های آموزشی در نظر بگیرند زیرا...",
+    keepBriefExampleBad:
+      "من فکر می‌کنم سیستم‌های حمل‌ونقل شهری باید سیاست‌های کرایه با هزینه کاهش‌یافته یا صفر را برای افراد ثبت‌نام‌شده در برنامه‌های آموزشی در نظر بگیرند زیرا...",
     beClearTitle: "واضح باشید",
     beClearDescription: "دیگران باید فوراً منظور شما را درک کنند",
     beClearExampleGood: "کار از راه دور بهره‌وری کارکنان را افزایش می‌دهد",
-    beClearExampleBad: "الگوهای دورکاری نیازمند بازنگری در پویایی‌های سازمانی هستند",
+    beClearExampleBad:
+      "الگوهای دورکاری نیازمند بازنگری در پویایی‌های سازمانی هستند",
     dontCombineTitle: "ترکیب نکنید",
-    dontCombineDescription: "«الف و ب» را به گزاره‌های جداگانه تقسیم کنید تا رأی‌گیری شفاف‌تر شود",
-    dontCombineExampleBad: "ما به بهداشت همگانی و شهریه رایگان دانشگاه نیاز داریم",
-    dontCombineExampleGood1: "خدمات بهداشتی باید در نقطه ارائه خدمات رایگان باشد",
+    dontCombineDescription:
+      "«الف و ب» را به گزاره‌های جداگانه تقسیم کنید تا رأی‌گیری شفاف‌تر شود",
+    dontCombineExampleBad:
+      "ما به بهداشت همگانی و شهریه رایگان دانشگاه نیاز داریم",
+    dontCombineExampleGood1:
+      "خدمات بهداشتی باید در نقطه ارائه خدمات رایگان باشد",
     dontCombineExampleGood2: "شهریه دانشگاه باید رایگان باشد",
   },
   fr: {
     title: "Conseils pour Rédiger de Bonnes Propositions",
     singleIdeaTitle: "Une idée spécifique",
-    singleIdeaDescription: "Concentrez-vous sur un point unique sur lequel les autres peuvent voter",
+    singleIdeaDescription:
+      "Concentrez-vous sur un point unique sur lequel les autres peuvent voter",
     singleIdeaExampleGood:
       "Les conducteurs de covoiturage devraient avoir les mêmes exigences d'assurance que les chauffeurs de taxi",
     singleIdeaExampleBad:
       "Uber devrait être interdit et les taxis ont besoin de meilleures applications et systèmes d'évaluation",
     easyVoteTitle: "Facile d'être d'accord/en désaccord",
-    easyVoteDescription: "Évitez les déclarations complexes ou en plusieurs parties",
+    easyVoteDescription:
+      "Évitez les déclarations complexes ou en plusieurs parties",
     easyVoteExampleGood:
       "Les entreprises de médias sociaux devraient être responsables de la désinformation sur leurs plateformes",
     easyVoteExampleBad:
@@ -172,7 +187,8 @@ export const opinionWritingGuidelinesDialogTranslations: Record<
     keepBriefExampleBad:
       "Je pense que les systèmes de transport municipaux devraient envisager de mettre en œuvre des politiques tarifaires à coût réduit ou nul pour les personnes inscrites dans des programmes éducatifs car...",
     beClearTitle: "Soyez clair",
-    beClearDescription: "Les autres devraient comprendre votre point immédiatement",
+    beClearDescription:
+      "Les autres devraient comprendre votre point immédiatement",
     beClearExampleGood:
       "Le travail à distance augmente la productivité des employés",
     beClearExampleBad:
@@ -240,23 +256,30 @@ export const opinionWritingGuidelinesDialogTranslations: Record<
     title: "טיפים לכתיבת הצהרות טובות",
     singleIdeaTitle: "רעיון ספציפי אחד",
     singleIdeaDescription: "התמקדו בנקודה אחת שאחרים יכולים להצביע עליה",
-    singleIdeaExampleGood: "נהגי שיתוף נסיעות צריכים לעמוד באותן דרישות ביטוח כמו נהגי מוניות",
-    singleIdeaExampleBad: "יש לאסור על Uber ומוניות צריכות אפליקציות טובות יותר ומערכות דירוג",
+    singleIdeaExampleGood:
+      "נהגי שיתוף נסיעות צריכים לעמוד באותן דרישות ביטוח כמו נהגי מוניות",
+    singleIdeaExampleBad:
+      "יש לאסור על Uber ומוניות צריכות אפליקציות טובות יותר ומערכות דירוג",
     easyVoteTitle: "קל להסכים/לא להסכים",
     easyVoteDescription: "הימנעו מהצהרות מורכבות או מרובות חלקים",
-    easyVoteExampleGood: "חברות מדיה חברתית צריכות לשאת באחריות למידע שגוי בפלטפורמות שלהן",
-    easyVoteExampleBad: "רגולציית מדיה חברתית מורכבת ותלויה בגורמים ובהקשרים תרבותיים שונים",
+    easyVoteExampleGood:
+      "חברות מדיה חברתית צריכות לשאת באחריות למידע שגוי בפלטפורמות שלהן",
+    easyVoteExampleBad:
+      "רגולציית מדיה חברתית מורכבת ותלויה בגורמים ובהקשרים תרבותיים שונים",
     keepBriefTitle: "היו תמציתיים",
     keepBriefDescription: "כוונו ל-280 תווים או פחות",
     keepBriefExampleGood: "תחבורה ציבורית צריכה להיות חינם לסטודנטים",
-    keepBriefExampleBad: "אני חושב שמערכות תחבורה עירוניות צריכות לשקול יישום מדיניות תעריפים מופחתים או ללא עלות עבור אנשים הרשומים בתוכניות חינוכיות כי...",
+    keepBriefExampleBad:
+      "אני חושב שמערכות תחבורה עירוניות צריכות לשקול יישום מדיניות תעריפים מופחתים או ללא עלות עבור אנשים הרשומים בתוכניות חינוכיות כי...",
     beClearTitle: "היו ברורים",
     beClearDescription: "אחרים צריכים להבין את הנקודה שלכם מיד",
     beClearExampleGood: "עבודה מרחוק מגבירה את פרודוקטיביות העובדים",
-    beClearExampleBad: "פרדיגמות של עבודה מרחוק דורשות בחינה מחדש של דינמיקות ארגוניות",
+    beClearExampleBad:
+      "פרדיגמות של עבודה מרחוק דורשות בחינה מחדש של דינמיקות ארגוניות",
     dontCombineTitle: "אל תשלבו",
     dontCombineDescription: "פצלו \"א' וב'\" להצהרות נפרדות להצבעה ברורה יותר",
-    dontCombineExampleBad: "אנחנו צריכים שירותי בריאות אוניברסליים ושכר לימוד חינם",
+    dontCombineExampleBad:
+      "אנחנו צריכים שירותי בריאות אוניברסליים ושכר לימוד חינם",
     dontCombineExampleGood1: "שירותי בריאות צריכים להיות חינם בנקודת השירות",
     dontCombineExampleGood2: "שכר לימוד אקדמי צריך להיות חינם",
   },
@@ -294,52 +317,59 @@ export const opinionWritingGuidelinesDialogTranslations: Record<
   ky: {
     title: "Жакшы пикир жазуу боюнча кеңештер",
     singleIdeaTitle: "Бир конкреттүү идея",
-    singleIdeaDescription: "Башкалар добуш бере турган бир пунктка көңүл буруңуз",
+    singleIdeaDescription:
+      "Башкалар добуш бере турган бир пунктка көңүл буруңуз",
     singleIdeaExampleGood:
       "Жолоочулар менен бөлүшүү кызматынын айдоочулары такси айдоочулары менен бирдей камсыздандыруу талаптарына ээ болушу керек",
     singleIdeaExampleBad:
       "Uber тыюу салынышы керек, ал эми таксилерге жакшыраак тиркемелер жана рейтинг системалары керек",
-    easyVoteTitle: "Макулдашуу/макул эмес болуу оңой",
-    easyVoteDescription: "Татаал же бир нече бөлүктөн турган пикирлерден алыс болуңуз",
+    easyVoteTitle: "Макул болуу/макул эмес болуу оңой",
+    easyVoteDescription:
+      "Татаал же бир нече бөлүктөн турган пикирлерден алыс болуңуз",
     easyVoteExampleGood:
       "Социалдык тармак компаниялары платформаларындагы жалган маалымат үчүн жооптуу болушу керек",
     easyVoteExampleBad:
       "Социалдык тармактарды жөнгө салуу татаал жана ар кандай факторлорго жана маданий контексттерге көз каранды",
     keepBriefTitle: "Кыска болуңуз",
     keepBriefDescription: "280 белгиден аз болууга аракет кылыңыз",
-    keepBriefExampleGood: "Коомдук транспорт студенттер үчүн акысыз болушу керек",
+    keepBriefExampleGood:
+      "Коомдук транспорт студенттер үчүн акысыз болушу керек",
     keepBriefExampleBad:
       "Менин оюмча, муниципалдык транспорт системалары билим берүү программаларына катталган адамдар үчүн арзандатылган же акысыз жол кире саясатын ишке ашырууну карашы керек, анткени...",
     beClearTitle: "Так болуңуз",
     beClearDescription: "Башкалар сиздин пикириңизди дароо түшүнүшү керек",
-    beClearExampleGood: "Алыстан иштөө кызматкерлердин өндүрүмдүүлүгүн жогорулатат",
+    beClearExampleGood:
+      "Алыстан иштөө кызматкерлердин өндүрүмдүүлүгүн жогорулатат",
     beClearExampleBad:
       "Алыстан иштөө парадигмалары уюштуруу динамикасын кайра карап чыгууну талап кылат",
     dontCombineTitle: "Бириктирбеңиз",
     dontCombineDescription:
-      "Ачыктоо добуш берүү үчүн \"А жана Б\"ны өзүнчө пикирлерге бөлүңүз",
+      "Добуш берүү түшүнүктүүрөөк болушу үчүн «А жана Б» дегенди өзүнчө пикирлерге бөлүңүз",
     dontCombineExampleBad:
       "Бизге жалпы саламаттыкты сактоо жана акысыз жогорку билим керек",
-    dontCombineExampleGood1: "Саламаттыкты сактоо кызмат көрсөтүү пунктунда акысыз болушу керек",
-    dontCombineExampleGood2: "Жогорку окуу жайларынын акысы акысыз болушу керек",
+    dontCombineExampleGood1:
+      "Саламаттыкты сактоо кызмат көрсөтүү пунктунда акысыз болушу керек",
+    dontCombineExampleGood2: "Жогорку окуу жайларында окуу акысыз болушу керек",
   },
   ru: {
     title: "Советы по написанию хороших высказываний",
     singleIdeaTitle: "Одна конкретная идея",
-    singleIdeaDescription: "Сосредоточьтесь на одном тезисе, за который можно проголосовать",
+    singleIdeaDescription:
+      "Сосредоточьтесь на одном тезисе, за который можно проголосовать",
     singleIdeaExampleGood:
-      "Водители каршеринга должны иметь те же требования к страхованию, что и таксисты",
+      "К водителям сервисов заказа поездок должны предъявляться те же требования по страхованию, что и к водителям такси",
     singleIdeaExampleBad:
       "Uber нужно запретить, а такси нужны лучшие приложения и системы рейтинга",
     easyVoteTitle: "Легко согласиться/не согласиться",
-    easyVoteDescription: "Избегайте сложных или составных утверждений",
+    easyVoteDescription: "Избегайте сложных или составных высказываний",
     easyVoteExampleGood:
       "Компании социальных сетей должны нести ответственность за дезинформацию на своих платформах",
     easyVoteExampleBad:
       "Регулирование социальных сетей сложно и зависит от различных факторов и культурного контекста",
     keepBriefTitle: "Будьте кратким",
     keepBriefDescription: "Стремитесь к 280 символам или менее",
-    keepBriefExampleGood: "Общественный транспорт должен быть бесплатным для студентов",
+    keepBriefExampleGood:
+      "Общественный транспорт должен быть бесплатным для студентов",
     keepBriefExampleBad:
       "Я считаю, что муниципальные транспортные системы должны рассмотреть внедрение тарифной политики со сниженной или нулевой стоимостью для лиц, обучающихся в образовательных программах, потому что...",
     beClearTitle: "Будьте ясным",
@@ -352,7 +382,8 @@ export const opinionWritingGuidelinesDialogTranslations: Record<
       "Разделите «А и Б» на отдельные высказывания для более чёткого голосования",
     dontCombineExampleBad:
       "Нам нужно всеобщее здравоохранение и бесплатное высшее образование",
-    dontCombineExampleGood1: "Медицинская помощь должна быть бесплатной в месте оказания услуг",
+    dontCombineExampleGood1:
+      "Медицинская помощь должна быть бесплатной в месте оказания услуг",
     dontCombineExampleGood2: "Обучение в университете должно быть бесплатным",
   },
 };

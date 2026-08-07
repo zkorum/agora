@@ -2,7 +2,7 @@
 title: "משידור להקשבה רחבה"
 description: "Bestian Tang מ-vTaiwan מציע מסגרת ברורה ל-Agora: הקשבה רחבה, יצירת משמעות, וראייה מעבר לקבוצת הדעה שלנו."
 author: "צוות Agora"
-date: "September 2025"
+date: "2025-09-01"
 type: "vision"
 thumbnail: "/images/resources/broadcasting-to-broad-listening.png"
 image: "/images/resources/broadcasting-to-broad-listening.png"

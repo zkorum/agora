@@ -90,7 +90,7 @@ export const useTopicStore = defineStore("topic", () => {
     } else {
       handleAxiosErrorStatusCodes({
         axiosErrorCode: response.code,
-        defaultMessage: "Error while trying to load user followed topic list",
+        defaultMessage: t("followedTopicsLoadError"),
       });
     }
   }
@@ -103,7 +103,7 @@ export const useTopicStore = defineStore("topic", () => {
     } else {
       handleAxiosErrorStatusCodes({
         axiosErrorCode: response.code,
-        defaultMessage: "Error while trying to load topic list",
+        defaultMessage: t("topicsLoadError"),
       });
     }
   }

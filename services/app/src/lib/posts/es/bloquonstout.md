@@ -2,7 +2,7 @@
 title: "Transformar la frustración en poder colectivo"
 description: "Cómo se utilizó Agora Citizen Network para convertir la movilización masiva en demandas democráticas compartidas durante la huelga #bloquonstout de Francia."
 author: "Equipo Agora"
-date: "September 2025"
+date: "2025-09-01"
 type: "case-study"
 thumbnail: "/images/bloquonstout-thumbnail.jpg"
 image: "/images/bloquonstout-thumbnail.jpg"

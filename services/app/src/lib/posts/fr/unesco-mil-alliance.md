@@ -2,7 +2,7 @@
 title: "Écouter à grande échelle : notes d'un pilote avec l'Alliance MIL de l'UNESCO"
 description: "En octobre 2025, l'UNESCO s'est associée à Agora pour soutenir la Semaine de l'éducation aux médias et à l'information. Ce pilote a exploré si la délibération numérique structurée pouvait prolonger la vie des conversations issues de conférences."
 author: "Yuting Jiang"
-date: "Octobre 2025"
+date: "2025-10-01"
 type: "case-study"
 thumbnail: "/images/resources/unesco-mil-alliance.jpeg"
 ---

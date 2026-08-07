@@ -17,10 +17,10 @@ export const preferencesDialogTestTranslations: Record<
     openPreferencesDialogButton: "Open Preferences Dialog",
   },
   ar: {
-    preferencesDialog: "ترجمة: Preferences Dialog",
+    preferencesDialog: "حوار التفضيلات",
     preferencesDialogDescription:
-      "ترجمة: Test the post-signup preferences dialog that allows users to select their language and topic preferences after creating an account.",
-    openPreferencesDialogButton: "ترجمة: Open Preferences Dialog",
+      "اختبر حوار التفضيلات الذي يظهر بعد التسجيل ويتيح للمستخدمين اختيار تفضيلات اللغة والموضوع بعد إنشاء حساب.",
+    openPreferencesDialogButton: "فتح حوار التفضيلات",
   },
   es: {
     preferencesDialog: "Diálogo de preferencias",

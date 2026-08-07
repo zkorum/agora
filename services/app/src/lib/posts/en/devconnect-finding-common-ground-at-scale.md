@@ -2,7 +2,7 @@
 title: "Finding Common Ground at Scale: Agora Citizen Network at Devconnect Argentina 2025"
 description: "Yuting Jiang presents Agora Citizen Network at Devconnect Argentina 2025, sharing how digital deliberation, opinion mapping, zero-knowledge identity, and broad listening can help communities find common ground at scale."
 author: "Yuting Jiang"
-date: "November 2025"
+date: "2025-11-01"
 type: "vision"
 thumbnail: "https://i.ytimg.com/vi/phw1AlQs8DY/hqdefault.jpg"
 image: "https://i.ytimg.com/vi/phw1AlQs8DY/hqdefault.jpg"

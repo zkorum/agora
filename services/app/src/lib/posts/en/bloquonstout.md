@@ -2,7 +2,7 @@
 title: "Transforming Frustration into Collective Power"
 description: "How Agora Citizen Network was used to turn mass mobilization into shared democratic demands during France's #bloquonstout strike."
 author: "Agora Team"
-date: "September 2025"
+date: "2025-09-01"
 type: "case-study"
 thumbnail: "/images/bloquonstout-thumbnail.jpg"
 image: "/images/bloquonstout-thumbnail.jpg"

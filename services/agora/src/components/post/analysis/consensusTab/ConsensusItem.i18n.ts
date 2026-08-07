@@ -67,14 +67,14 @@ export const consensusItemTranslations: Record<
   },
   ky: {
     agree: "Макулмун",
-    pass: "Белгисиз",
+    pass: "Так билбейм",
     disagree: "Макул эмесмин",
-    noVote: "Добуш жок",
+    noVote: "Добуш берилген эмес",
   },
   ru: {
     agree: "Согласен",
     pass: "Не уверен",
     disagree: "Не согласен",
-    noVote: "Нет голоса",
+    noVote: "Голос не отдан",
   },
 };

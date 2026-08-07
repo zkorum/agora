@@ -2,19 +2,19 @@
 title: "Pourquoi les preuves zero-knowledge seules ne suffisent pas a proteger la vie privee"
 description: "Les preuves zero-knowledge protegent la preuve elle-meme, mais les plateformes civiques doivent aussi proteger l'identite, les metadonnees, les wallets, les appareils et l'infrastructure open source."
 author: "Nicolas Gimenez"
-date: "Mai 2026"
+date: "2024-09-01"
 type: "tech"
 thumbnail: "https://lh7-us.googleusercontent.com/docs/AHkbwyK44xfmb0zN95CAfiTWJ5ULJ_-8DpfWRTy8r23dsV6kahSE4C4X-cZ8W4Ed-n2MT0jfWuolbqR77m1-rt_yXV4xcoojPDahscs3bQ=w1200-h630-p"
 image: "https://lh7-us.googleusercontent.com/docs/AHkbwyK44xfmb0zN95CAfiTWJ5ULJ_-8DpfWRTy8r23dsV6kahSE4C4X-cZ8W4Ed-n2MT0jfWuolbqR77m1-rt_yXV4xcoojPDahscs3bQ=w1200-h630-p"
 ---
 
-Les preuves zero-knowledge sont souvent presentees comme une reponse complete a la protection de la vie privee. Dans les technologies civiques, la promesse est particulierement forte : une personne peut prouver qu'elle est eligible pour participer, qu'elle est unique, qu'elle a plus d'un certain age ou qu'elle reside dans une juridiction, sans reveler tout le contenu de son document d'identite.
+Les [preuves zero-knowledge](https://en.wikipedia.org/wiki/Zero-knowledge_proof) sont souvent presentees comme une reponse complete a la protection de la vie privee. Dans les technologies civiques, la promesse est particulierement forte : une personne peut prouver qu'elle est eligible pour participer, qu'elle est unique, qu'elle a plus d'un certain age ou qu'elle reside dans une juridiction, sans reveler tout le contenu de son document d'identite.
 
 Cette promesse est reelle. Elle est aussi plus limitee qu'elle n'en a l'air.
 
 Une preuve zero-knowledge protege une preuve. Elle ne protege pas automatiquement l'adresse IP, l'empreinte du navigateur, le numero de telephone, l'adresse e-mail, l'implementation du wallet, l'appareil, le systeme d'exploitation, ni les nombreux horodatages et signaux comportementaux crees autour de la preuve. Si ces couches ne sont pas concues avec soin, un verificateur peut encore apprendre qui est l'utilisateur.
 
-Cet article adapte une presentation donnee a NGI TrustChain en septembre 2024. L'idee centrale est simple : les preuves zero-knowledge sont une brique importante pour la participation civique privee, mais la vie privee est une propriete de toute la pile technique.
+Cet article adapte une [presentation](https://docs.google.com/presentation/d/e/2PACX-1vRKRJW4-ZUHso3o-KzzwemuezH7ifLENCpvJCr9552PlRHzOtyxetsLM-4ghHDwCA/pub?start=false&loop=false&delayms=3000) donnee a [NGI TrustChain](https://trustchain.ngi.eu/) en septembre 2024. L'idee centrale est simple : les preuves zero-knowledge sont une brique importante pour la participation civique privee, mais la vie privee est une propriete de toute la pile technique.
 
 ## Pourquoi l'identite entre dans les plateformes civiques
 

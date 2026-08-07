@@ -37,7 +37,8 @@ export const conversationSurveyCompleteTranslations: Record<
   },
   fr: {
     title: "Réponses enregistrées",
-    description: "Vous pouvez maintenant voter sur les propositions de la consultation.",
+    description:
+      "Vous pouvez maintenant voter sur les propositions de la consultation.",
     continueLabel: "Continuer",
     reviewAnswersLabel: "Voir mes réponses",
   },
@@ -61,7 +62,8 @@ export const conversationSurveyCompleteTranslations: Record<
   },
   ru: {
     title: "Ответы сохранены",
-    description: "Теперь вы можете голосовать за высказывания в этой консультации.",
+    description:
+      "Теперь вы можете голосовать по высказываниям в этом обсуждении.",
     continueLabel: "Продолжить",
     reviewAnswersLabel: "Посмотреть мои ответы",
   },

@@ -2,7 +2,7 @@
 title: "大規模に共通点を見つける：Devconnect Argentina 2025でのAgora Citizen Network"
 description: "Yuting JiangがDevconnect Argentina 2025でAgora Citizen Networkを紹介し、デジタル熟議、意見マッピング、プライバシーを守るアイデンティティ、そしてbroad listeningが、コミュニティの大規模な合意形成をどう支えるかを語ります。"
 author: "Yuting Jiang"
-date: "November 2025"
+date: "2025-11-01"
 type: "vision"
 thumbnail: "https://i.ytimg.com/vi/phw1AlQs8DY/hqdefault.jpg"
 image: "https://i.ytimg.com/vi/phw1AlQs8DY/hqdefault.jpg"
@@ -21,7 +21,7 @@ Devconnect Argentina 2025で、Agora Citizen Network共同創業者のYuting Jia
 - [#bloquonstout](https://www.agoracitizen.network/resources/bloquonstout)のようなコミュニティ協議。Agoraは抗議者とファシリテーターが共有された優先事項を見つけることを支援しました。
 
 <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; margin: 28px 0; overflow: hidden; border-radius: 12px; box-shadow: 0 8px 24px rgba(9, 15, 83, 0.16);">
-  <iframe src="https://www.youtube.com/embed/phw1AlQs8DY" title="Agora Citizen Network - Finding Common Ground At Scale - Devconnect Argentina 2025" style="position: absolute; inset: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+  <iframe src="https://www.youtube.com/embed/phw1AlQs8DY" title="Agora Citizen Network - 大規模に共通点を見つける - Devconnect Argentina 2025" style="position: absolute; inset: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 </div>
 
 [YouTubeで見る](https://www.youtube.com/watch?v=phw1AlQs8DY)

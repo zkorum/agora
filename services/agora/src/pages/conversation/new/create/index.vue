@@ -15,7 +15,13 @@
                   : t('nextButton')
             "
             :loading="isSubmitButtonLoading"
-            :disabled="isSubmitButtonLoading || hasActiveImport || isTitleOverLimit || isBodyOverLimit || isManualTitleEmpty"
+            :disabled="
+              isSubmitButtonLoading ||
+              hasActiveImport ||
+              isTitleOverLimit ||
+              isBodyOverLimit ||
+              isManualTitleEmpty
+            "
             @click="onSubmit()"
           />
         </template>
@@ -61,17 +67,16 @@
 
       <div class="contentFlexStyle">
         <!-- GitHub config fields (inline) -->
-        <div
-          v-if="externalSourceConfig !== null"
-          class="github-config-section"
-        >
+        <div v-if="externalSourceConfig !== null" class="github-config-section">
           <div class="github-config-header">
             <q-icon name="mdi-github" size="1.2rem" />
             <span>{{ t("githubConfig") }}</span>
           </div>
           <div class="github-config-fields">
             <div class="github-field">
-              <label class="github-field-label">{{ t("githubRepository") }}</label>
+              <label class="github-field-label">{{
+                t("githubRepository")
+              }}</label>
               <input
                 v-model="externalSourceConfig.repository"
                 type="text"
@@ -97,7 +102,7 @@
         >
           <div v-if="showTitleError" class="titleErrorMessage">
             <q-icon name="mdi-alert-circle" class="titleErrorIcon" />
-            {{ t('titleRequired') }}
+            {{ t("titleRequired") }}
           </div>
 
           <Editor
@@ -127,9 +132,7 @@
               conversationDraft.importSettings.importType === 'csv-import'
             "
             ref="polisCsvUploadRef"
-            v-model:csv-file-metadata="
-              importSettings.csvFileMetadata
-            "
+            v-model:csv-file-metadata="importSettings.csvFileMetadata"
           />
         </div>
 
@@ -187,7 +190,10 @@ import {
   type ValidationErrorField,
 } from "src/composables/conversation/draft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { MAX_LENGTH_CONVERSATION_BODY, MAX_LENGTH_TITLE } from "src/shared/shared";
+import {
+  MAX_LENGTH_CONVERSATION_BODY,
+  MAX_LENGTH_TITLE,
+} from "src/shared/shared";
 import type { GetConversationCreateProjectOptionsResponse } from "src/shared/types/dto";
 import type { ConversationTypeConfig } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
@@ -310,7 +316,9 @@ const {
   importConversation,
   importConversationFromCsv,
 } = useBackendPostApi();
-const projectLanguageProjects = ref<CreateConversationProjectLanguageProject[]>([]);
+const projectLanguageProjects = ref<CreateConversationProjectLanguageProject[]>(
+  []
+);
 let projectOptionsRequestId = 0;
 
 // Disable the warning since Vue template refs can be potentially null
@@ -535,7 +543,7 @@ async function handleImportSubmission(): Promise<void> {
     if (!files?.summary || !files?.comments || !files?.votes) {
       handleAxiosErrorStatusCodes({
         axiosErrorCode: "ERR_BAD_REQUEST",
-        defaultMessage: "Missing required CSV files",
+        defaultMessage: t("missingRequiredCsvFiles"),
       });
       return;
     }
@@ -574,7 +582,7 @@ async function handleImportSubmission(): Promise<void> {
       const axiosError = error as { code?: AxiosErrorCode };
       handleAxiosErrorStatusCodes({
         axiosErrorCode: axiosError.code ?? "ERR_BAD_RESPONSE",
-        defaultMessage: "Error while importing conversation from CSV",
+        defaultMessage: t("csvImportError"),
       });
       // Don't clear the draft on error - let user fix and retry
     }
@@ -610,7 +618,7 @@ async function handleImportSubmission(): Promise<void> {
     } else {
       handleAxiosErrorStatusCodes({
         axiosErrorCode: response.code,
-        defaultMessage: "Error while trying to import conversation from Polis",
+        defaultMessage: t("polisImportError"),
       });
     }
   }

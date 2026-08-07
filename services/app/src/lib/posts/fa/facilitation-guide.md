@@ -2,7 +2,7 @@
 title: "چگونه رویدادها و پروژه‌های مشورتی را با آگورا تسهیل کنیم"
 description: "راهنمایی عملی برای استفاده از آگورا در رویدادها، کنفرانس‌ها، کارگاه‌ها و پروژه‌های مشورتی طولانی‌تر."
 author: "تیم آگورا"
-date: "September 2025"
+date: "2025-09-01"
 type: "guide"
 thumbnail: "/images/facilitation-guide-thumbnail.jpg"
 image: "/images/facilitation-guide-thumbnail.jpg"

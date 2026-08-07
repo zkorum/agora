@@ -1,7 +1,13 @@
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ValidateCsvResponse } from "src/shared/types/dto";
 import { MAX_CSV_FILE_SIZE } from "src/shared-app-api/csvUpload";
 import type { Ref } from "vue";
-import { computed,ref } from "vue";
+import { computed, ref } from "vue";
+
+import {
+  type UseCsvFileTranslations,
+  useCsvFileTranslations,
+} from "./useCsvFile.i18n";
 
 export type FileType = "summary" | "comments" | "votes";
 export type FileStatus = "pending" | "uploaded" | "validating" | "error";
@@ -25,6 +31,9 @@ export interface CsvFileState {
  * Encapsulates file, error, and validation state with methods to manipulate them
  */
 export function useCsvFile(_fileType: FileType): CsvFileState {
+  const { t } = useComponentI18n<UseCsvFileTranslations>(
+    useCsvFileTranslations
+  );
   const file = ref<File | null>(null);
   const error = ref<string>("");
   const validation =
@@ -76,7 +85,7 @@ export function useCsvFile(_fileType: FileType): CsvFileState {
     validation.value = result;
 
     if (result && !result.isValid) {
-      error.value = result.error || "Validation failed";
+      error.value = result.error || t("validationFailed");
     } else {
       error.value = "";
     }

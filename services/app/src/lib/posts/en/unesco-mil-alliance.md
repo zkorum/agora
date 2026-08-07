@@ -2,7 +2,7 @@
 title: "Listening at Scale: Notes from a Pilot with UNESCO's MIL Alliance"
 description: "In October 2025, UNESCO partnered with Agora to support Media & Information Literacy Week. This pilot explored whether structured digital deliberation could extend the life of conference conversations."
 author: "Yuting Jiang"
-date: "October 2025"
+date: "2025-10-01"
 type: "case-study"
 thumbnail: "/images/resources/unesco-mil-alliance.jpeg"
 ---

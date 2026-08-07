@@ -45,14 +45,21 @@ export const maxDiffResultsTabTranslations: Record<
     score: "Score: {score}",
     loadingError: "Failed to load results.",
     retryButton: "Try again",
-    communityLearnMoreHow: "Votes count immediately. Individual preferences are aggregated into a community ranking using Solidago, an open-source algorithm that weighs votes by user trust level.",
-    communityLearnMoreCocm: "Connection-Oriented Cluster Match (COCM) is an optional setup that is not enabled here yet. When enabled, it helps correct unrepresentative participation by quadratically improving how votes are distributed across groups.",
-    communityLearnMoreDiversity: "Items are presented in randomized groups to prevent position bias. Indirect comparisons are inferred to minimize voting rounds.",
-    communityLearnMoreSourceManual: "Items are added by the conversation facilitator and can grow over time. New items join the voting pool as they are added.",
-    communityLearnMoreSourceGitHub: "Items are synced from GitHub issues with the configured label. New issues are automatically added to the voting pool when labeled.",
+    communityLearnMoreHow:
+      "Votes count immediately. Individual preferences are aggregated into a community ranking using Solidago, an open-source algorithm that weighs votes by user trust level.",
+    communityLearnMoreCocm:
+      "Connection-Oriented Cluster Match (COCM) is an optional setup that is not enabled here yet. When enabled, it helps correct unrepresentative participation by quadratically improving how votes are distributed across groups.",
+    communityLearnMoreDiversity:
+      "Items are presented in randomized groups to prevent position bias. Indirect comparisons are inferred to minimize voting rounds.",
+    communityLearnMoreSourceManual:
+      "Items are added by the conversation facilitator and can grow over time. New items join the voting pool as they are added.",
+    communityLearnMoreSourceGitHub:
+      "Items are synced from GitHub issues with the configured label. New issues are automatically added to the voting pool when labeled.",
     communityLearnMoreReference: "Learn more:",
-    meLearnMorePersonal: "Your ranking is based solely on the comparisons you've made. Once you compare enough statements, a complete personal ranking emerges.",
-    meLearnMoreCounts: "Your votes also feed into the community ranking immediately. You don't need to finish your personal ranking first.",
+    meLearnMorePersonal:
+      "Your ranking is based solely on the comparisons you've made. Once you compare enough statements, a complete personal ranking emerges.",
+    meLearnMoreCounts:
+      "Your votes also feed into the community ranking immediately. You don't need to finish your personal ranking first.",
     tabSummary: "Summary",
     tabMe: "Me",
     tabResults: "Results",
@@ -64,10 +71,14 @@ export const maxDiffResultsTabTranslations: Record<
     meProgress: "{percent}% complete · {votes} votes cast",
     meStartVoting: "Start voting to unlock your ranking",
     meKeepVoting: "Keep voting to unlock your full ranking",
-    completedLearnMoreManual: "Items marked as completed by the conversation facilitator. Their ranking score was frozen at the time of completion.",
-    completedLearnMoreGitHub: "GitHub issues closed as completed. Their ranking score was frozen when the issue was closed on GitHub.",
-    canceledLearnMoreManual: "Items that were canceled or removed. Their ranking score was frozen at the time of cancellation.",
-    canceledLearnMoreGitHub: "GitHub issues closed as not planned, or with the tracking label removed. Their ranking score was frozen at that time.",
+    completedLearnMoreManual:
+      "Items marked as completed by the conversation facilitator. Their ranking score was frozen at the time of completion.",
+    completedLearnMoreGitHub:
+      "GitHub issues closed as completed. Their ranking score was frozen when the issue was closed on GitHub.",
+    canceledLearnMoreManual:
+      "Items that were canceled or removed. Their ranking score was frozen at the time of cancellation.",
+    canceledLearnMoreGitHub:
+      "GitHub issues closed as not planned, or with the tracking label removed. Their ranking score was frozen at that time.",
   },
   ar: {
     title: "تصنيف المجتمع",
@@ -76,14 +87,21 @@ export const maxDiffResultsTabTranslations: Record<
     score: "النتيجة: {score}",
     loadingError: "فشل تحميل النتائج.",
     retryButton: "حاول مرة أخرى",
-    communityLearnMoreHow: "الأصوات تُحتسب فوراً. يتم تجميع التفضيلات الفردية في ترتيب مجتمعي باستخدام Solidago، خوارزمية مفتوحة المصدر تُرجّح الأصوات حسب مستوى ثقة المستخدم.",
-    communityLearnMoreCocm: "مطابقة العناقيد الموجّهة بالروابط (COCM) إعداد اختياري غير مفعّل هنا بعد. عند تفعيله، يساعد في تصحيح المشاركة غير الممثلة عبر تحسين توزيع الأصوات بين المجموعات بشكل تربيعي.",
-    communityLearnMoreDiversity: "تُعرض العناصر في مجموعات عشوائية لمنع التحيز الموضعي. تُستنتج المقارنات غير المباشرة لتقليل جولات التصويت.",
-    communityLearnMoreSourceManual: "يضيف مؤلف المحادثة العناصر ويمكن أن تنمو مع الوقت. تنضم العناصر الجديدة إلى مجموعة التصويت عند إضافتها.",
-    communityLearnMoreSourceGitHub: "تتم مزامنة العناصر من مشكلات GitHub بالتسمية المحددة. تُضاف المشكلات الجديدة تلقائياً إلى مجموعة التصويت عند تسميتها.",
+    communityLearnMoreHow:
+      "الأصوات تُحتسب فوراً. يتم تجميع التفضيلات الفردية في ترتيب مجتمعي باستخدام Solidago، خوارزمية مفتوحة المصدر تُرجّح الأصوات حسب مستوى ثقة المستخدم.",
+    communityLearnMoreCocm:
+      "مطابقة العناقيد الموجّهة بالروابط (COCM) إعداد اختياري غير مفعّل هنا بعد. عند تفعيله، يساعد في تصحيح المشاركة غير الممثلة عبر تحسين توزيع الأصوات بين المجموعات بشكل تربيعي.",
+    communityLearnMoreDiversity:
+      "تُعرض العناصر في مجموعات عشوائية لمنع التحيز الموضعي. تُستنتج المقارنات غير المباشرة لتقليل جولات التصويت.",
+    communityLearnMoreSourceManual:
+      "يضيف مؤلف المحادثة العناصر ويمكن أن تنمو مع الوقت. تنضم العناصر الجديدة إلى مجموعة التصويت عند إضافتها.",
+    communityLearnMoreSourceGitHub:
+      "تتم مزامنة العناصر من مشكلات GitHub بالتسمية المحددة. تُضاف المشكلات الجديدة تلقائياً إلى مجموعة التصويت عند تسميتها.",
     communityLearnMoreReference: "اعرف المزيد:",
-    meLearnMorePersonal: "ترتيبك مبني فقط على المقارنات التي أجريتها. بمجرد مقارنة عبارات كافية، يظهر ترتيب شخصي كامل.",
-    meLearnMoreCounts: "أصواتك تُدرج أيضاً في ترتيب المجتمع فوراً. لا تحتاج لإكمال ترتيبك الشخصي أولاً.",
+    meLearnMorePersonal:
+      "ترتيبك مبني فقط على المقارنات التي أجريتها. بمجرد مقارنة عبارات كافية، يظهر ترتيب شخصي كامل.",
+    meLearnMoreCounts:
+      "أصواتك تُدرج أيضاً في ترتيب المجتمع فوراً. لا تحتاج لإكمال ترتيبك الشخصي أولاً.",
     tabSummary: "ملخص",
     tabMe: "أنا",
     tabResults: "النتائج",
@@ -96,26 +114,38 @@ export const maxDiffResultsTabTranslations: Record<
     meProgress: "{percent}% مكتمل · {votes} أصوات",
     meStartVoting: "ابدأ التصويت لفتح ترتيبك",
     meKeepVoting: "واصل التصويت لفتح ترتيبك الكامل",
-    completedLearnMoreManual: "Items marked as completed by the conversation facilitator. Their ranking score was frozen at the time of completion.",
-    completedLearnMoreGitHub: "GitHub issues closed as completed. Their ranking score was frozen when the issue was closed on GitHub.",
-    canceledLearnMoreManual: "Items that were canceled or removed. Their ranking score was frozen at the time of cancellation.",
-    canceledLearnMoreGitHub: "GitHub issues closed as not planned, or with the tracking label removed. Their ranking score was frozen at that time.",
+    completedLearnMoreManual:
+      "العناصر التي وضع ميسّر المحادثة علامة مكتملة عليها. جُمّدت نتيجة ترتيبها عند اكتمالها.",
+    completedLearnMoreGitHub:
+      "مشكلات GitHub التي أُغلقت باعتبارها مكتملة. جُمّدت نتيجة ترتيبها عند إغلاق المشكلة على GitHub.",
+    canceledLearnMoreManual:
+      "العناصر التي أُلغيت أو أُزيلت. جُمّدت نتيجة ترتيبها عند إلغائها.",
+    canceledLearnMoreGitHub:
+      "مشكلات GitHub التي أُغلقت باعتبارها غير مخططة، أو التي أُزيلت منها تسمية التتبع. جُمّدت نتيجة ترتيبها في ذلك الوقت.",
   },
   es: {
     title: "Clasificación de la comunidad",
-    noResults: "Aún no hay datos de clasificación. ¡Sé el primero en participar!",
+    noResults:
+      "Aún no hay datos de clasificación. ¡Sé el primero en participar!",
     subtitle: "Agregado a partir de los votos de todos los participantes",
     score: "Puntuación: {score}",
     loadingError: "Error al cargar los resultados.",
     retryButton: "Intentar de nuevo",
-    communityLearnMoreHow: "Los votos cuentan inmediatamente. Las preferencias individuales se agregan en una clasificación comunitaria usando Solidago, un algoritmo de código abierto que pondera los votos según el nivel de confianza del usuario.",
-    communityLearnMoreCocm: "Connection-Oriented Cluster Match (COCM) es una configuración opcional que aún no está activada aquí. Cuando se activa, ayuda a corregir una participación no representativa mejorando de forma cuadrática cómo se distribuyen los votos entre grupos.",
-    communityLearnMoreDiversity: "Los elementos se presentan en grupos aleatorios para evitar sesgo de posicion. Se infieren comparaciones indirectas para minimizar rondas de votacion.",
-    communityLearnMoreSourceManual: "Los elementos son añadidos por el autor de la conversación y pueden crecer con el tiempo. Los nuevos elementos se unen al grupo de votación al ser añadidos.",
-    communityLearnMoreSourceGitHub: "Los elementos se sincronizan desde issues de GitHub con la etiqueta configurada. Los nuevos issues se añaden automáticamente al grupo de votación al ser etiquetados.",
+    communityLearnMoreHow:
+      "Los votos cuentan inmediatamente. Las preferencias individuales se agregan en una clasificación comunitaria usando Solidago, un algoritmo de código abierto que pondera los votos según el nivel de confianza del usuario.",
+    communityLearnMoreCocm:
+      "Connection-Oriented Cluster Match (COCM) es una configuración opcional que aún no está activada aquí. Cuando se activa, ayuda a corregir una participación no representativa mejorando de forma cuadrática cómo se distribuyen los votos entre grupos.",
+    communityLearnMoreDiversity:
+      "Los elementos se presentan en grupos aleatorios para evitar sesgo de posicion. Se infieren comparaciones indirectas para minimizar rondas de votacion.",
+    communityLearnMoreSourceManual:
+      "Los elementos son añadidos por el autor de la conversación y pueden crecer con el tiempo. Los nuevos elementos se unen al grupo de votación al ser añadidos.",
+    communityLearnMoreSourceGitHub:
+      "Los elementos se sincronizan desde issues de GitHub con la etiqueta configurada. Los nuevos issues se añaden automáticamente al grupo de votación al ser etiquetados.",
     communityLearnMoreReference: "Más información:",
-    meLearnMorePersonal: "Tu clasificación se basa únicamente en las comparaciones que has hecho. Una vez que compares suficientes declaraciones, emerge una clasificación personal completa.",
-    meLearnMoreCounts: "Tus votos también alimentan la clasificación de la comunidad inmediatamente. No necesitas terminar tu clasificación personal primero.",
+    meLearnMorePersonal:
+      "Tu clasificación se basa únicamente en las comparaciones que has hecho. Una vez que compares suficientes declaraciones, emerge una clasificación personal completa.",
+    meLearnMoreCounts:
+      "Tus votos también alimentan la clasificación de la comunidad inmediatamente. No necesitas terminar tu clasificación personal primero.",
     tabSummary: "Resumen",
     tabMe: "Yo",
     tabResults: "Resultados",
@@ -124,31 +154,44 @@ export const maxDiffResultsTabTranslations: Record<
     noItems: "No hay elementos en esta categoría.",
     meTitle: "Mi clasificación",
     meSubtitle: "Tu ordenamiento personal basado en tus comparaciones",
-    meVotesCounted: "Tus votos ya están contados en la clasificación de la comunidad",
+    meVotesCounted:
+      "Tus votos ya están contados en la clasificación de la comunidad",
     meProgress: "{percent}% completo · {votes} votos emitidos",
     meStartVoting: "Empieza a votar para desbloquear tu clasificación",
     meKeepVoting: "Sigue votando para desbloquear tu clasificación completa",
-    completedLearnMoreManual: "Items marked as completed by the conversation facilitator. Their ranking score was frozen at the time of completion.",
-    completedLearnMoreGitHub: "GitHub issues closed as completed. Their ranking score was frozen when the issue was closed on GitHub.",
-    canceledLearnMoreManual: "Items that were canceled or removed. Their ranking score was frozen at the time of cancellation.",
-    canceledLearnMoreGitHub: "GitHub issues closed as not planned, or with the tracking label removed. Their ranking score was frozen at that time.",
+    completedLearnMoreManual:
+      "Elementos marcados como completados por el facilitador de la conversación. Su puntuación de clasificación se fijó al completarlos.",
+    completedLearnMoreGitHub:
+      "Incidencias de GitHub cerradas como completadas. Su puntuación de clasificación se fijó al cerrar la incidencia en GitHub.",
+    canceledLearnMoreManual:
+      "Elementos cancelados o eliminados. Su puntuación de clasificación se fijó al cancelarlos.",
+    canceledLearnMoreGitHub:
+      "Incidencias de GitHub cerradas como no planificadas o cuya etiqueta de seguimiento se eliminó. Su puntuación de clasificación se fijó en ese momento.",
   },
   fa: {
     title: "رتبه‌بندی جامعه",
-    noResults: "هنوز داده رتبه‌بندی وجود ندارد. اولین نفری باشید که شرکت می‌کند!",
+    noResults:
+      "هنوز داده رتبه‌بندی وجود ندارد. اولین نفری باشید که شرکت می‌کند!",
     noItems: "موردی در این دسته‌بندی وجود ندارد.",
     subtitle: "تجمیع شده از آرای همه شرکت‌کنندگان",
     score: "امتیاز: {score}",
     loadingError: "بارگذاری نتایج ناموفق بود.",
     retryButton: "دوباره تلاش کنید",
-    communityLearnMoreHow: "آرا فوراً محاسبه می‌شوند. ترجیحات فردی با الگوریتم Solidago، سیستم متن‌باز که آرا را بر اساس سطح اعتماد کاربر وزن‌دهی می‌کند، در رتبه‌بندی جمعی تجمیع می‌شوند.",
-    communityLearnMoreCocm: "Connection-Oriented Cluster Match (COCM) یک تنظیم اختیاری است که هنوز اینجا فعال نشده است. وقتی فعال شود، با بهبود درجه‌دومی توزیع آرا میان گروه‌ها به اصلاح مشارکت غیرنماینده کمک می‌کند.",
-    communityLearnMoreDiversity: "گزاره‌ها در گروه‌های تصادفی ارائه می‌شوند تا از تعصب موقعیتی جلوگیری شود. مقایسه‌های غیرمستقیم استنتاج می‌شوند تا دورهای رأی‌گیری کمینه شوند.",
-    communityLearnMoreSourceManual: "موارد توسط نویسنده گفتگو اضافه می‌شوند و می‌توانند در طول زمان رشد کنند. موارد جدید هنگام اضافه شدن به مجموعه رأی‌گیری می‌پیوندند.",
-    communityLearnMoreSourceGitHub: "موارد از ایشوهای GitHub با برچسب پیکربندی شده همگام‌سازی می‌شوند. ایشوهای جدید هنگام برچسب‌گذاری به صورت خودکار به مجموعه رأی‌گیری اضافه می‌شوند.",
+    communityLearnMoreHow:
+      "آرا فوراً محاسبه می‌شوند. ترجیحات فردی با الگوریتم Solidago، سیستم متن‌باز که آرا را بر اساس سطح اعتماد کاربر وزن‌دهی می‌کند، در رتبه‌بندی جمعی تجمیع می‌شوند.",
+    communityLearnMoreCocm:
+      "Connection-Oriented Cluster Match (COCM) یک تنظیم اختیاری است که هنوز اینجا فعال نشده است. وقتی فعال شود، با بهبود درجه‌دومی توزیع آرا میان گروه‌ها به اصلاح مشارکت غیرنماینده کمک می‌کند.",
+    communityLearnMoreDiversity:
+      "گزاره‌ها در گروه‌های تصادفی ارائه می‌شوند تا از تعصب موقعیتی جلوگیری شود. مقایسه‌های غیرمستقیم استنتاج می‌شوند تا دورهای رأی‌گیری کمینه شوند.",
+    communityLearnMoreSourceManual:
+      "موارد توسط نویسنده گفتگو اضافه می‌شوند و می‌توانند در طول زمان رشد کنند. موارد جدید هنگام اضافه شدن به مجموعه رأی‌گیری می‌پیوندند.",
+    communityLearnMoreSourceGitHub:
+      "موارد از ایشوهای GitHub با برچسب پیکربندی شده همگام‌سازی می‌شوند. ایشوهای جدید هنگام برچسب‌گذاری به صورت خودکار به مجموعه رأی‌گیری اضافه می‌شوند.",
     communityLearnMoreReference: "اطلاعات بیشتر:",
-    meLearnMorePersonal: "رتبه‌بندی شما صرفاً بر اساس مقایسه‌هایی است که انجام داده‌اید. وقتی گزاره‌های کافی را مقایسه کنید، یک رتبه‌بندی شخصی کامل ظاهر می‌شود.",
-    meLearnMoreCounts: "آرای شما نیز فوراً در رتبه‌بندی جامعه وارد می‌شوند. نیازی نیست ابتدا رتبه‌بندی شخصی خود را تکمیل کنید.",
+    meLearnMorePersonal:
+      "رتبه‌بندی شما صرفاً بر اساس مقایسه‌هایی است که انجام داده‌اید. وقتی گزاره‌های کافی را مقایسه کنید، یک رتبه‌بندی شخصی کامل ظاهر می‌شود.",
+    meLearnMoreCounts:
+      "آرای شما نیز فوراً در رتبه‌بندی جامعه وارد می‌شوند. نیازی نیست ابتدا رتبه‌بندی شخصی خود را تکمیل کنید.",
     tabSummary: "خلاصه",
     tabMe: "من",
     tabResults: "نتایج",
@@ -160,10 +203,14 @@ export const maxDiffResultsTabTranslations: Record<
     meProgress: "{percent}% کامل · {votes} رأی",
     meStartVoting: "برای باز کردن رتبه‌بندی خود رأی‌گیری را شروع کنید",
     meKeepVoting: "برای باز کردن رتبه‌بندی کامل به رأی‌گیری ادامه دهید",
-    completedLearnMoreManual: "مواردی که توسط نویسنده گفتگو به عنوان تکمیل شده علامت‌گذاری شده‌اند. امتیاز رتبه‌بندی آنها در زمان تکمیل ثبت شده است.",
-    completedLearnMoreGitHub: "ایشوهای GitHub که به عنوان تکمیل شده بسته شده‌اند. امتیاز رتبه‌بندی آنها هنگام بسته شدن ایشو در GitHub ثبت شده است.",
-    canceledLearnMoreManual: "مواردی که لغو یا حذف شده‌اند. امتیاز رتبه‌بندی آنها در زمان لغو ثبت شده است.",
-    canceledLearnMoreGitHub: "ایشوهای GitHub که به عنوان بدون برنامه بسته شده‌اند یا برچسب ردیابی آنها حذف شده است. امتیاز رتبه‌بندی آنها در آن زمان ثبت شده است.",
+    completedLearnMoreManual:
+      "مواردی که توسط نویسنده گفتگو به عنوان تکمیل شده علامت‌گذاری شده‌اند. امتیاز رتبه‌بندی آنها در زمان تکمیل ثبت شده است.",
+    completedLearnMoreGitHub:
+      "ایشوهای GitHub که به عنوان تکمیل شده بسته شده‌اند. امتیاز رتبه‌بندی آنها هنگام بسته شدن ایشو در GitHub ثبت شده است.",
+    canceledLearnMoreManual:
+      "مواردی که لغو یا حذف شده‌اند. امتیاز رتبه‌بندی آنها در زمان لغو ثبت شده است.",
+    canceledLearnMoreGitHub:
+      "ایشوهای GitHub که به عنوان بدون برنامه بسته شده‌اند یا برچسب ردیابی آنها حذف شده است. امتیاز رتبه‌بندی آنها در آن زمان ثبت شده است.",
   },
   he: {
     title: "דירוג הקהילה",
@@ -173,14 +220,21 @@ export const maxDiffResultsTabTranslations: Record<
     score: "ציון: {score}",
     loadingError: "טעינת התוצאות נכשלה.",
     retryButton: "נסו שוב",
-    communityLearnMoreHow: "ההצבעות נספרות מיידית. העדפות אישיות מצטברות לדירוג קהילתי באמצעות Solidago, אלגוריתם בקוד פתוח שמשקלל הצבעות לפי רמת האמון של המשתמש.",
-    communityLearnMoreCocm: "Connection-Oriented Cluster Match (COCM) היא הגדרה אופציונלית שעדיין אינה מופעלת כאן. כשהיא מופעלת, היא עוזרת לתקן השתתפות שאינה מייצגת באמצעות שיפור ריבועי של חלוקת הקולות בין קבוצות.",
-    communityLearnMoreDiversity: "פריטים מוצגים בקבוצות אקראיות למניעת הטיית מיקום. השוואות עקיפות מוסקות כדי למזער סיבובי הצבעה.",
-    communityLearnMoreSourceManual: "פריטים מתווספים על ידי מחבר/ת השיחה ויכולים לגדול עם הזמן. פריטים חדשים מצטרפים למאגר ההצבעה עם הוספתם.",
-    communityLearnMoreSourceGitHub: "פריטים מסונכרנים מ-issues של GitHub עם התווית המוגדרת. Issues חדשים מתווספים אוטומטית למאגר ההצבעה כשמתויגים.",
+    communityLearnMoreHow:
+      "ההצבעות נספרות מיידית. העדפות אישיות מצטברות לדירוג קהילתי באמצעות Solidago, אלגוריתם בקוד פתוח שמשקלל הצבעות לפי רמת האמון של המשתמש.",
+    communityLearnMoreCocm:
+      "Connection-Oriented Cluster Match (COCM) היא הגדרה אופציונלית שעדיין אינה מופעלת כאן. כשהיא מופעלת, היא עוזרת לתקן השתתפות שאינה מייצגת באמצעות שיפור ריבועי של חלוקת הקולות בין קבוצות.",
+    communityLearnMoreDiversity:
+      "פריטים מוצגים בקבוצות אקראיות למניעת הטיית מיקום. השוואות עקיפות מוסקות כדי למזער סיבובי הצבעה.",
+    communityLearnMoreSourceManual:
+      "פריטים מתווספים על ידי מחבר/ת השיחה ויכולים לגדול עם הזמן. פריטים חדשים מצטרפים למאגר ההצבעה עם הוספתם.",
+    communityLearnMoreSourceGitHub:
+      "פריטים מסונכרנים מ-issues של GitHub עם התווית המוגדרת. Issues חדשים מתווספים אוטומטית למאגר ההצבעה כשמתויגים.",
     communityLearnMoreReference: "מידע נוסף:",
-    meLearnMorePersonal: "הדירוג שלכם מבוסס אך ורק על ההשוואות שביצעתם. ברגע שתשוו מספיק הצהרות, יופיע דירוג אישי מלא.",
-    meLearnMoreCounts: "ההצבעות שלכם מוזנות גם לדירוג הקהילתי מיידית. אין צורך לסיים את הדירוג האישי קודם.",
+    meLearnMorePersonal:
+      "הדירוג שלכם מבוסס אך ורק על ההשוואות שביצעתם. ברגע שתשוו מספיק הצהרות, יופיע דירוג אישי מלא.",
+    meLearnMoreCounts:
+      "ההצבעות שלכם מוזנות גם לדירוג הקהילתי מיידית. אין צורך לסיים את הדירוג האישי קודם.",
     tabSummary: "סיכום",
     tabMe: "אני",
     tabResults: "תוצאות",
@@ -192,26 +246,38 @@ export const maxDiffResultsTabTranslations: Record<
     meProgress: "{percent}% הושלם · {votes} הצבעות",
     meStartVoting: "התחילו להצביע כדי לפתוח את הדירוג שלכם",
     meKeepVoting: "המשיכו להצביע כדי לפתוח את הדירוג המלא שלכם",
-    completedLearnMoreManual: "פריטים שסומנו כהושלמו על ידי מחבר/ת השיחה. ציון הדירוג שלהם הוקפא בעת ההשלמה.",
-    completedLearnMoreGitHub: "Issues ב-GitHub שנסגרו כהושלמו. ציון הדירוג שלהם הוקפא כשה-issue נסגר ב-GitHub.",
-    canceledLearnMoreManual: "פריטים שבוטלו או הוסרו. ציון הדירוג שלהם הוקפא בעת הביטול.",
-    canceledLearnMoreGitHub: "Issues ב-GitHub שנסגרו כלא מתוכננים, או שתווית המעקב הוסרה. ציון הדירוג שלהם הוקפא באותו זמן.",
+    completedLearnMoreManual:
+      "פריטים שסומנו כהושלמו על ידי מחבר/ת השיחה. ציון הדירוג שלהם הוקפא בעת ההשלמה.",
+    completedLearnMoreGitHub:
+      "Issues ב-GitHub שנסגרו כהושלמו. ציון הדירוג שלהם הוקפא כשה-issue נסגר ב-GitHub.",
+    canceledLearnMoreManual:
+      "פריטים שבוטלו או הוסרו. ציון הדירוג שלהם הוקפא בעת הביטול.",
+    canceledLearnMoreGitHub:
+      "Issues ב-GitHub שנסגרו כלא מתוכננים, או שתווית המעקב הוסרה. ציון הדירוג שלהם הוקפא באותו זמן.",
   },
   fr: {
     title: "Classement de la communauté",
-    noResults: "Pas encore de données de classement. Soyez le premier à participer !",
+    noResults:
+      "Pas encore de données de classement. Soyez le premier à participer !",
     subtitle: "Agrégé à partir des votes de tous les participants",
     score: "Score : {score}",
     loadingError: "Échec du chargement des résultats.",
     retryButton: "Réessayer",
-    communityLearnMoreHow: "Les votes comptent immédiatement. Les préférences individuelles sont agrégées en un classement communautaire via Solidago, un algorithme open source qui pondère les votes selon le niveau de confiance de l'utilisateur.",
-    communityLearnMoreCocm: "Connection-Oriented Cluster Match (COCM) est une configuration optionnelle qui n'est pas encore activée ici. Une fois activée, elle aide à corriger une participation non représentative en améliorant quadratiquement la répartition des votes entre les groupes.",
-    communityLearnMoreDiversity: "Les éléments sont présentés dans des groupes aléatoires pour éviter le biais de position. Les comparaisons indirectes sont déduites pour minimiser les tours de vote.",
-    communityLearnMoreSourceManual: "Les éléments sont ajoutés par l'auteur de la conversation et peuvent augmenter avec le temps. Les nouveaux éléments rejoignent le pool de vote dès leur ajout.",
-    communityLearnMoreSourceGitHub: "Les éléments sont synchronisés depuis les issues GitHub avec le label configuré. Les nouvelles issues sont automatiquement ajoutées au pool de vote lors du labeling.",
+    communityLearnMoreHow:
+      "Les votes comptent immédiatement. Les préférences individuelles sont agrégées en un classement communautaire via Solidago, un algorithme open source qui pondère les votes selon le niveau de confiance de l'utilisateur.",
+    communityLearnMoreCocm:
+      "Connection-Oriented Cluster Match (COCM) est une configuration optionnelle qui n'est pas encore activée ici. Une fois activée, elle aide à corriger une participation non représentative en améliorant quadratiquement la répartition des votes entre les groupes.",
+    communityLearnMoreDiversity:
+      "Les éléments sont présentés dans des groupes aléatoires pour éviter le biais de position. Les comparaisons indirectes sont déduites pour minimiser les tours de vote.",
+    communityLearnMoreSourceManual:
+      "Les éléments sont ajoutés par l'auteur de la conversation et peuvent augmenter avec le temps. Les nouveaux éléments rejoignent le pool de vote dès leur ajout.",
+    communityLearnMoreSourceGitHub:
+      "Les éléments sont synchronisés depuis les issues GitHub avec le label configuré. Les nouvelles issues sont automatiquement ajoutées au pool de vote lors du labeling.",
     communityLearnMoreReference: "En savoir plus :",
-    meLearnMorePersonal: "Votre classement est basé uniquement sur les comparaisons que vous avez effectuées. Une fois suffisamment de propositions comparées, un classement personnel complet émerge.",
-    meLearnMoreCounts: "Vos votes alimentent aussi le classement de la communauté immédiatement. Vous n'avez pas besoin de terminer votre classement personnel d'abord.",
+    meLearnMorePersonal:
+      "Votre classement est basé uniquement sur les comparaisons que vous avez effectuées. Une fois suffisamment de propositions comparées, un classement personnel complet émerge.",
+    meLearnMoreCounts:
+      "Vos votes alimentent aussi le classement de la communauté immédiatement. Vous n'avez pas besoin de terminer votre classement personnel d'abord.",
     tabSummary: "Résumé",
     tabMe: "Moi",
     tabResults: "Résultats",
@@ -220,14 +286,19 @@ export const maxDiffResultsTabTranslations: Record<
     noItems: "Aucun élément dans cette catégorie.",
     meTitle: "Mon classement",
     meSubtitle: "Votre classement personnel basé sur vos comparaisons",
-    meVotesCounted: "Vos votes sont déjà pris en compte dans le classement de la communauté",
+    meVotesCounted:
+      "Vos votes sont déjà pris en compte dans le classement de la communauté",
     meProgress: "{percent}% terminé · {votes} votes",
     meStartVoting: "Commencez à voter pour débloquer votre classement",
     meKeepVoting: "Continuez à voter pour débloquer votre classement complet",
-    completedLearnMoreManual: "Items marked as completed by the conversation facilitator. Their ranking score was frozen at the time of completion.",
-    completedLearnMoreGitHub: "GitHub issues closed as completed. Their ranking score was frozen when the issue was closed on GitHub.",
-    canceledLearnMoreManual: "Items that were canceled or removed. Their ranking score was frozen at the time of cancellation.",
-    canceledLearnMoreGitHub: "GitHub issues closed as not planned, or with the tracking label removed. Their ranking score was frozen at that time.",
+    completedLearnMoreManual:
+      "Éléments marqués comme terminés par le facilitateur de la conversation. Leur score de classement a été figé au moment de leur achèvement.",
+    completedLearnMoreGitHub:
+      "Issues GitHub fermées comme terminées. Leur score de classement a été figé lors de la fermeture de l'issue sur GitHub.",
+    canceledLearnMoreManual:
+      "Éléments annulés ou supprimés. Leur score de classement a été figé au moment de leur annulation.",
+    canceledLearnMoreGitHub:
+      "Issues GitHub fermées comme non planifiées, ou dont le label de suivi a été supprimé. Leur score de classement a été figé à ce moment-là.",
   },
   "zh-Hans": {
     title: "社区排名",
@@ -236,13 +307,19 @@ export const maxDiffResultsTabTranslations: Record<
     score: "得分：{score}",
     loadingError: "加载结果失败。",
     retryButton: "重试",
-    communityLearnMoreHow: "投票立即生效。个人偏好通过 Solidago（一种按用户信任级别加权投票的开源算法）汇总为社区排名。",
-    communityLearnMoreCocm: "Connection-Oriented Cluster Match (COCM) 是一项可选设置，此处尚未启用。启用后，它通过以二次方式改善各群体之间的投票分配，帮助修正参与者分布不具代表性的问题。",
-    communityLearnMoreDiversity: "项目以随机分组呈现，防止位置偏差。间接比较会被推断以减少投票轮数。",
-    communityLearnMoreSourceManual: "项目由对话作者添加，可随时间增长。新项目添加后即加入投票池。",
-    communityLearnMoreSourceGitHub: "项目从带有配置标签的 GitHub 问题同步。新问题在添加标签时自动加入投票池。",
+    communityLearnMoreHow:
+      "投票立即生效。个人偏好通过 Solidago（一种按用户信任级别加权投票的开源算法）汇总为社区排名。",
+    communityLearnMoreCocm:
+      "Connection-Oriented Cluster Match (COCM) 是一项可选设置，此处尚未启用。启用后，它通过以二次方式改善各群体之间的投票分配，帮助修正参与者分布不具代表性的问题。",
+    communityLearnMoreDiversity:
+      "项目以随机分组呈现，防止位置偏差。间接比较会被推断以减少投票轮数。",
+    communityLearnMoreSourceManual:
+      "项目由对话作者添加，可随时间增长。新项目添加后即加入投票池。",
+    communityLearnMoreSourceGitHub:
+      "项目从带有配置标签的 GitHub 问题同步。新问题在添加标签时自动加入投票池。",
     communityLearnMoreReference: "了解更多：",
-    meLearnMorePersonal: "您的排名仅基于您所做的比较。当您比较足够多的意见后，完整的个人排名将会出现。",
+    meLearnMorePersonal:
+      "您的排名仅基于您所做的比较。当您比较足够多的意见后，完整的个人排名将会出现。",
     meLearnMoreCounts: "您的投票也会立即计入社区排名。您不需要先完成个人排名。",
     tabSummary: "总结",
     tabMe: "我",
@@ -256,10 +333,13 @@ export const maxDiffResultsTabTranslations: Record<
     meProgress: "{percent}% 完成 · {votes} 票",
     meStartVoting: "开始投票以解锁您的排名",
     meKeepVoting: "继续投票以解锁完整排名",
-    completedLearnMoreManual: "由对话作者标记为已完成的项目。其排名分数在完成时被冻结。",
-    completedLearnMoreGitHub: "在 GitHub 上关闭为已完成的 issue。其排名分数会在 issue 于 GitHub 关闭时被冻结。",
+    completedLearnMoreManual:
+      "由对话作者标记为已完成的项目。其排名分数在完成时被冻结。",
+    completedLearnMoreGitHub:
+      "在 GitHub 上关闭为已完成的 issue。其排名分数会在 issue 于 GitHub 关闭时被冻结。",
     canceledLearnMoreManual: "已取消或移除的项目。其排名分数在取消时被冻结。",
-    canceledLearnMoreGitHub: "关闭为 not planned 或移除追踪标签的 GitHub issue。其排名分数会在当时被冻结。",
+    canceledLearnMoreGitHub:
+      "关闭为 not planned 或移除追踪标签的 GitHub issue。其排名分数会在当时被冻结。",
   },
   "zh-Hant": {
     title: "社群排名",
@@ -268,13 +348,19 @@ export const maxDiffResultsTabTranslations: Record<
     score: "得分：{score}",
     loadingError: "載入結果失敗。",
     retryButton: "重試",
-    communityLearnMoreHow: "投票立即生效。個人偏好透過 Solidago（一種按使用者信任級別加權投票的開源演算法）匯總為社群排名。",
-    communityLearnMoreCocm: "Connection-Oriented Cluster Match (COCM) 是一項可選設定，此處尚未啟用。啟用後，它透過以二次方式改善各群體之間的投票分配，協助修正參與者分布不具代表性的問題。",
-    communityLearnMoreDiversity: "項目以隨機分組呈現，防止位置偏差。間接比較會被推斷以減少投票輪數。",
-    communityLearnMoreSourceManual: "項目由對話作者添加，可隨時間增長。新項目添加後即加入投票池。",
-    communityLearnMoreSourceGitHub: "項目從帶有配置標籤的 GitHub 問題同步。新問題在添加標籤時自動加入投票池。",
+    communityLearnMoreHow:
+      "投票立即生效。個人偏好透過 Solidago（一種按使用者信任級別加權投票的開源演算法）匯總為社群排名。",
+    communityLearnMoreCocm:
+      "Connection-Oriented Cluster Match (COCM) 是一項可選設定，此處尚未啟用。啟用後，它透過以二次方式改善各群體之間的投票分配，協助修正參與者分布不具代表性的問題。",
+    communityLearnMoreDiversity:
+      "項目以隨機分組呈現，防止位置偏差。間接比較會被推斷以減少投票輪數。",
+    communityLearnMoreSourceManual:
+      "項目由對話作者添加，可隨時間增長。新項目添加後即加入投票池。",
+    communityLearnMoreSourceGitHub:
+      "項目從帶有配置標籤的 GitHub 問題同步。新問題在添加標籤時自動加入投票池。",
     communityLearnMoreReference: "了解更多：",
-    meLearnMorePersonal: "您的排名僅基於您所做的比較。當您比較足夠多的意見後，完整的個人排名將會出現。",
+    meLearnMorePersonal:
+      "您的排名僅基於您所做的比較。當您比較足夠多的意見後，完整的個人排名將會出現。",
     meLearnMoreCounts: "您的投票也會立即計入社群排名。您不需要先完成個人排名。",
     tabSummary: "總結",
     tabMe: "我",
@@ -288,10 +374,13 @@ export const maxDiffResultsTabTranslations: Record<
     meProgress: "{percent}% 完成 · {votes} 票",
     meStartVoting: "開始投票以解鎖您的排名",
     meKeepVoting: "繼續投票以解鎖完整排名",
-    completedLearnMoreManual: "由對話作者標記為已完成的項目。其排名分數在完成時被凍結。",
-    completedLearnMoreGitHub: "在 GitHub 上關閉為已完成的 issue。其排名分數會在 issue 於 GitHub 關閉時被凍結。",
+    completedLearnMoreManual:
+      "由對話作者標記為已完成的項目。其排名分數在完成時被凍結。",
+    completedLearnMoreGitHub:
+      "在 GitHub 上關閉為已完成的 issue。其排名分數會在 issue 於 GitHub 關閉時被凍結。",
     canceledLearnMoreManual: "已取消或移除的項目。其排名分數在取消時被凍結。",
-    canceledLearnMoreGitHub: "關閉為 not planned 或移除追蹤標籤的 GitHub issue。其排名分數會在當時被凍結。",
+    canceledLearnMoreGitHub:
+      "關閉為 not planned 或移除追蹤標籤的 GitHub issue。其排名分數會在當時被凍結。",
   },
   ja: {
     title: "コミュニティランキング",
@@ -300,14 +389,21 @@ export const maxDiffResultsTabTranslations: Record<
     score: "スコア：{score}",
     loadingError: "結果の読み込みに失敗しました。",
     retryButton: "再試行",
-    communityLearnMoreHow: "投票は即座に反映されます。個人の好みはSolidago（ユーザーの信頼レベルに基づいて投票を重み付けするオープンソースアルゴリズム）でコミュニティランキングに集約されます。",
-    communityLearnMoreCocm: "Connection-Oriented Cluster Match (COCM) は任意設定で、ここではまだ有効化されていません。有効化すると、グループ間の票の配分を二次的に改善することで、代表性の低い参加状況の補正に役立ちます。",
-    communityLearnMoreDiversity: "項目はランダムなグループで提示され、位置バイアスを防止します。間接比較も推論され、投票ラウンドを最小化します。",
-    communityLearnMoreSourceManual: "アイテムは会話の作成者によって追加され、時間とともに増える可能性があります。新しいアイテムは追加時に投票プールに参加します。",
-    communityLearnMoreSourceGitHub: "アイテムは設定されたラベルのGitHub issueから同期されます。新しいissueはラベル付け時に自動的に投票プールに追加されます。",
+    communityLearnMoreHow:
+      "投票は即座に反映されます。個人の好みはSolidago（ユーザーの信頼レベルに基づいて投票を重み付けするオープンソースアルゴリズム）でコミュニティランキングに集約されます。",
+    communityLearnMoreCocm:
+      "Connection-Oriented Cluster Match (COCM) は任意設定で、ここではまだ有効化されていません。有効化すると、グループ間の票の配分を二次的に改善することで、代表性の低い参加状況の補正に役立ちます。",
+    communityLearnMoreDiversity:
+      "項目はランダムなグループで提示され、位置バイアスを防止します。間接比較も推論され、投票ラウンドを最小化します。",
+    communityLearnMoreSourceManual:
+      "アイテムは会話の作成者によって追加され、時間とともに増える可能性があります。新しいアイテムは追加時に投票プールに参加します。",
+    communityLearnMoreSourceGitHub:
+      "アイテムは設定されたラベルのGitHub issueから同期されます。新しいissueはラベル付け時に自動的に投票プールに追加されます。",
     communityLearnMoreReference: "詳しくはこちら：",
-    meLearnMorePersonal: "あなたのランキングは、あなたが行った比較のみに基づいています。十分な意見を比較すると、完全な個人ランキングが表示されます。",
-    meLearnMoreCounts: "あなたの投票はコミュニティランキングにも即座に反映されます。個人ランキングを先に完了する必要はありません。",
+    meLearnMorePersonal:
+      "あなたのランキングは、あなたが行った比較のみに基づいています。十分な意見を比較すると、完全な個人ランキングが表示されます。",
+    meLearnMoreCounts:
+      "あなたの投票はコミュニティランキングにも即座に反映されます。個人ランキングを先に完了する必要はありません。",
     tabSummary: "サマリー",
     tabMe: "私",
     tabResults: "結果",
@@ -316,14 +412,19 @@ export const maxDiffResultsTabTranslations: Record<
     noItems: "このカテゴリにはアイテムがありません。",
     meTitle: "マイランキング",
     meSubtitle: "あなたの比較に基づく個人ランキング",
-    meVotesCounted: "あなたの投票はすでにコミュニティランキングに反映されています",
+    meVotesCounted:
+      "あなたの投票はすでにコミュニティランキングに反映されています",
     meProgress: "{percent}% 完了 · {votes} 票",
     meStartVoting: "投票を始めてランキングを解除",
     meKeepVoting: "投票を続けてフルランキングを解除",
-    completedLearnMoreManual: "会話の作成者が完了済みとしてマークした項目です。ランキングスコアは完了時点で固定されています。",
-    completedLearnMoreGitHub: "GitHub で完了として閉じられた issue です。ランキングスコアは GitHub 上で issue が閉じられた時点で固定されています。",
-    canceledLearnMoreManual: "キャンセルまたは削除された項目です。ランキングスコアはキャンセル時点で固定されています。",
-    canceledLearnMoreGitHub: "not planned として閉じられた、または追跡ラベルが削除された GitHub issue です。ランキングスコアはその時点で固定されています。",
+    completedLearnMoreManual:
+      "会話の作成者が完了済みとしてマークした項目です。ランキングスコアは完了時点で固定されています。",
+    completedLearnMoreGitHub:
+      "GitHub で完了として閉じられた issue です。ランキングスコアは GitHub 上で issue が閉じられた時点で固定されています。",
+    canceledLearnMoreManual:
+      "キャンセルまたは削除された項目です。ランキングスコアはキャンセル時点で固定されています。",
+    canceledLearnMoreGitHub:
+      "not planned として閉じられた、または追跡ラベルが削除された GitHub issue です。ランキングスコアはその時点で固定されています。",
   },
   ky: {
     title: "Коомдук рейтинг",
@@ -332,14 +433,21 @@ export const maxDiffResultsTabTranslations: Record<
     score: "Упай: {score}",
     loadingError: "Натыйжаларды жүктөө ишке ашкан жок.",
     retryButton: "Кайра аракет кылуу",
-    communityLearnMoreHow: "Добуштар дароо эсепке алынат. Жеке каалоолор Solidago (колдонуучунун ишеним деңгээлине жараша добуштарды салмактаган ачык булак алгоритми) менен коомдук рейтингге бириктирилет.",
-    communityLearnMoreCocm: "Connection-Oriented Cluster Match (COCM) бул кошумча жөндөө жана бул жерде азырынча иштетилген эмес. Иштетилгенде, топтор арасында добуштардын бөлүштүрүлүшүн квадраттык түрдө жакшыртып, өкүлчүлүгү жетишсиз катышууну оңдоого жардам берет.",
-    communityLearnMoreDiversity: "Элементтер позициялык калыстыксыздыкты алдын алуу үчүн кокустук топтордо берилет. Кыйыр салыштыруулар добуш берүү раунддарын азайтуу үчүн чыгарылат.",
-    communityLearnMoreSourceManual: "Элементтер сүйлөшүүнүн автору тарабынан кошулат жана убакыт өткөн сайын көбөйүшү мүмкүн. Жаңы элементтер кошулганда добуш берүү пулуна кошулат.",
-    communityLearnMoreSourceGitHub: "Элементтер конфигурацияланган белги менен GitHub issues'тен синхрондолот. Жаңы issues белгиленгенде автоматтык түрдө добуш берүү пулуна кошулат.",
+    communityLearnMoreHow:
+      "Добуштар дароо эсепке алынат. Жеке каалоолор Solidago (колдонуучунун ишеним деңгээлине жараша добуштарды салмактаган ачык булак алгоритми) менен коомдук рейтингге бириктирилет.",
+    communityLearnMoreCocm:
+      "Connection-Oriented Cluster Match (COCM) бул кошумча жөндөө жана бул жерде азырынча иштетилген эмес. Иштетилгенде, топтор арасында добуштардын бөлүштүрүлүшүн квадраттык түрдө жакшыртып, өкүлчүлүгү жетишсиз катышууну оңдоого жардам берет.",
+    communityLearnMoreDiversity:
+      "Элементтер позициялык калыстыксыздыкты алдын алуу үчүн кокустук топтордо берилет. Кыйыр салыштыруулар добуш берүү раунддарын азайтуу үчүн чыгарылат.",
+    communityLearnMoreSourceManual:
+      "Элементтер талкуунун фасилитатору тарабынан кошулат жана убакыт өткөн сайын көбөйүшү мүмкүн. Жаңы элементтер кошулганда добуш берүү тизмесине кирет.",
+    communityLearnMoreSourceGitHub:
+      "Элементтер конфигурацияланган энбелгиси бар GitHub маселелеринен синхрондолот. Жаңы маселелер белгиленгенде автоматтык түрдө добуш берүү тизмесине кирет.",
     communityLearnMoreReference: "Көбүрөөк билүү:",
-    meLearnMorePersonal: "Сиздин рейтингиңиз сиз жасаган салыштыруулар гана негизделген. Жетиштүү билдирүүлөрдү салыштырганда, толук жеке рейтинг пайда болот.",
-    meLearnMoreCounts: "Сиздин добуштарыңыз коомдук рейтингге да дароо кирет. Адегенде жеке рейтингиңизди аяктоонун кереги жок.",
+    meLearnMorePersonal:
+      "Сиздин рейтингиңиз сиз жасаган салыштырууларга гана негизделген. Жетиштүү пикирлерди салыштырганда, толук жеке рейтинг пайда болот.",
+    meLearnMoreCounts:
+      "Сиздин добуштарыңыз коомдук рейтингге да дароо кирет. Адегенде жеке рейтингиңизди аяктоонун кереги жок.",
     tabSummary: "Кыскача",
     tabMe: "Мен",
     tabResults: "Натыйжалар",
@@ -352,10 +460,14 @@ export const maxDiffResultsTabTranslations: Record<
     meProgress: "{percent}% аяктаган · {votes} добуш",
     meStartVoting: "Рейтингди ачуу үчүн добуш берүүнү баштаңыз",
     meKeepVoting: "Толук рейтингди ачуу үчүн добуш берүүнү улантыңыз",
-    completedLearnMoreManual: "Items marked as completed by the conversation facilitator. Their ranking score was frozen at the time of completion.",
-    completedLearnMoreGitHub: "GitHub issues closed as completed. Their ranking score was frozen when the issue was closed on GitHub.",
-    canceledLearnMoreManual: "Items that were canceled or removed. Their ranking score was frozen at the time of cancellation.",
-    canceledLearnMoreGitHub: "GitHub issues closed as not planned, or with the tracking label removed. Their ranking score was frozen at that time.",
+    completedLearnMoreManual:
+      "Талкуунун фасилитатору аяктады деп белгилеген элементтер. Алардын рейтингдик упайы аяктаган учурда бекитилген.",
+    completedLearnMoreGitHub:
+      "GitHub'да аяктады деп жабылган маселелер. Алардын рейтингдик упайы маселе GitHub'да жабылган учурда бекитилген.",
+    canceledLearnMoreManual:
+      "Жокко чыгарылган же алынып салынган элементтер. Алардын рейтингдик упайы жокко чыгарылган учурда бекитилген.",
+    canceledLearnMoreGitHub:
+      "GitHub'да пландалган эмес деп жабылган же көз салуу энбелгиси алынып салынган маселелер. Алардын рейтингдик упайы ошол учурда бекитилген.",
   },
   ru: {
     title: "Рейтинг сообщества",
@@ -364,14 +476,21 @@ export const maxDiffResultsTabTranslations: Record<
     score: "Оценка: {score}",
     loadingError: "Не удалось загрузить результаты.",
     retryButton: "Попробовать ещё раз",
-    communityLearnMoreHow: "Голоса учитываются сразу. Индивидуальные предпочтения агрегируются в общий рейтинг с помощью Solidago, алгоритма с открытым кодом, взвешивающего голоса по уровню доверия пользователя.",
-    communityLearnMoreCocm: "Connection-Oriented Cluster Match (COCM) — это необязательная настройка, которая здесь пока не включена. При включении она помогает корректировать нерепрезентативное участие, квадратично улучшая распределение голосов между группами.",
-    communityLearnMoreDiversity: "Элементы представляются в рандомизированных группах для предотвращения позиционного смещения. Косвенные сравнения выводятся автоматически для минимизации раундов голосования.",
-    communityLearnMoreSourceManual: "Элементы добавляются автором беседы и могут расти со временем. Новые элементы присоединяются к пулу голосования при добавлении.",
-    communityLearnMoreSourceGitHub: "Элементы синхронизируются из issues GitHub с настроенной меткой. Новые issues автоматически добавляются в пул голосования при пометке.",
+    communityLearnMoreHow:
+      "Голоса учитываются сразу. Индивидуальные предпочтения агрегируются в общий рейтинг с помощью Solidago, алгоритма с открытым кодом, взвешивающего голоса по уровню доверия пользователя.",
+    communityLearnMoreCocm:
+      "Connection-Oriented Cluster Match (COCM) — это необязательная настройка, которая здесь пока не включена. При включении она помогает корректировать нерепрезентативное участие, квадратично улучшая распределение голосов между группами.",
+    communityLearnMoreDiversity:
+      "Элементы представляются в рандомизированных группах для предотвращения позиционного смещения. Косвенные сравнения выводятся автоматически для минимизации раундов голосования.",
+    communityLearnMoreSourceManual:
+      "Элементы добавляются фасилитатором обсуждения, и со временем их может становиться больше. Новые элементы включаются в список для голосования при добавлении.",
+    communityLearnMoreSourceGitHub:
+      "Элементы синхронизируются из задач GitHub с настроенной меткой. Новые задачи автоматически включаются в список для голосования при добавлении метки.",
     communityLearnMoreReference: "Подробнее:",
-    meLearnMorePersonal: "Ваш рейтинг основан исключительно на сделанных вами сравнениях. Когда вы сравните достаточно утверждений, появится полный личный рейтинг.",
-    meLearnMoreCounts: "Ваши голоса также сразу учитываются в рейтинге сообщества. Вам не нужно сначала завершить личный рейтинг.",
+    meLearnMorePersonal:
+      "Ваш рейтинг основан исключительно на сделанных вами сравнениях. Когда вы сравните достаточно высказываний, появится полный личный рейтинг.",
+    meLearnMoreCounts:
+      "Ваши голоса также сразу учитываются в рейтинге сообщества. Вам не нужно сначала завершить личный рейтинг.",
     tabSummary: "Обзор",
     tabMe: "Я",
     tabResults: "Результаты",
@@ -381,12 +500,16 @@ export const maxDiffResultsTabTranslations: Record<
     meTitle: "Мой рейтинг",
     meSubtitle: "Ваш личный рейтинг на основе ваших сравнений",
     meVotesCounted: "Ваши голоса уже учтены в рейтинге сообщества",
-    meProgress: "{percent}% завершено · {votes} голосов",
+    meProgress: "Завершено: {percent}% · голосов: {votes}",
     meStartVoting: "Начните голосовать, чтобы разблокировать ваш рейтинг",
     meKeepVoting: "Продолжайте голосовать, чтобы разблокировать полный рейтинг",
-    completedLearnMoreManual: "Items marked as completed by the conversation facilitator. Their ranking score was frozen at the time of completion.",
-    completedLearnMoreGitHub: "GitHub issues closed as completed. Their ranking score was frozen when the issue was closed on GitHub.",
-    canceledLearnMoreManual: "Items that were canceled or removed. Their ranking score was frozen at the time of cancellation.",
-    canceledLearnMoreGitHub: "GitHub issues closed as not planned, or with the tracking label removed. Their ranking score was frozen at that time.",
+    completedLearnMoreManual:
+      "Элементы, которые фасилитатор обсуждения отметил как завершённые. Их рейтинговая оценка была зафиксирована в момент завершения.",
+    completedLearnMoreGitHub:
+      "Задачи GitHub, закрытые как выполненные. Их рейтинговая оценка была зафиксирована при закрытии задачи в GitHub.",
+    canceledLearnMoreManual:
+      "Отменённые или удалённые элементы. Их рейтинговая оценка была зафиксирована в момент отмены.",
+    canceledLearnMoreGitHub:
+      "Задачи GitHub, закрытые как незапланированные, или задачи, с которых снята отслеживаемая метка. Их рейтинговая оценка была зафиксирована в этот момент.",
   },
 };

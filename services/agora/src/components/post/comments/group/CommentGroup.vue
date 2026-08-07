@@ -2,13 +2,13 @@
   <div
     class="commentListFlex"
     role="list"
-    :aria-label="`Comments section with ${finalCommentList.length} comments`"
+    :aria-label="t('commentsSection', { count: finalCommentList.length })"
     aria-describedby="comments-navigation-help"
   >
     <!-- Screen reader instructions -->
     <div id="comments-navigation-help" class="sr-only">
-      Use arrow keys to navigate between comments.
-      {{ highlightedOpinion ? "The first comment is highlighted." : "" }}
+      {{ t("navigationHelp") }}
+      {{ highlightedOpinion ? t("firstCommentHighlighted") : "" }}
     </div>
 
     <ZKCard
@@ -30,14 +30,18 @@
     >
       <!-- Hidden metadata for screen readers -->
       <div :id="`comment-meta-${commentItem.opinionSlugId}`" class="sr-only">
-        Comment by {{ commentItem.username }}, posted
-        {{ formatDateForScreenReader(commentItem.createdAt) }}.
+        {{
+          t("commentMetadata", {
+            username: commentItem.username,
+            date: formatDateForScreenReader(commentItem.createdAt),
+          })
+        }}
         {{
           isHighlightedComment(commentItem)
-            ? "This comment is highlighted."
+            ? t("highlightedCommentMetadata")
             : ""
         }}
-        {{ commentItem.isSeed ? "This is a seed comment." : "" }}
+        {{ commentItem.isSeed ? t("seedCommentMetadata") : "" }}
       </div>
 
       <TranslatedCommentItem
@@ -62,6 +66,7 @@
 <script setup lang="ts">
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import type { OpinionVotingUtilities } from "src/composables/opinion/types";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   localizedDateTimeFormatOptions,
   useLocalizedDateTimeFormatter,
@@ -76,6 +81,10 @@ import type {
 import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
 import { computed, nextTick } from "vue";
 
+import {
+  type CommentGroupTranslations,
+  commentGroupTranslations,
+} from "./CommentGroup.i18n";
 import TranslatedCommentItem from "./item/TranslatedCommentItem.vue";
 
 const props = defineProps<{
@@ -100,6 +109,10 @@ const emit = defineEmits<{
     payload: { userIdChanged: boolean; needsCacheRefresh: boolean },
   ];
 }>();
+
+const { t } = useComponentI18n<CommentGroupTranslations>(
+  commentGroupTranslations
+);
 
 const formatDateForScreenReader = useLocalizedDateTimeFormatter({
   options: localizedDateTimeFormatOptions.dateTime,
@@ -141,12 +154,17 @@ function isHighlightedComment(commentItem: OpinionItem): boolean {
  * Generates accessible aria-label for each comment
  */
 function getCommentAriaLabel(commentItem: OpinionItem, index: number): string {
-  const position = `Comment ${index + 1} of ${finalCommentList.value.length}`;
-  const author = `by ${commentItem.username}`;
-  const highlighted = isHighlightedComment(commentItem) ? ", highlighted" : "";
-  const seed = commentItem.isSeed ? ", seed comment" : "";
+  const label = t("commentAriaLabel", {
+    position: index + 1,
+    total: finalCommentList.value.length,
+    username: commentItem.username,
+  });
+  const highlighted = isHighlightedComment(commentItem)
+    ? t("highlightedAriaSuffix")
+    : "";
+  const seed = commentItem.isSeed ? t("seedAriaSuffix") : "";
 
-  return `${position} ${author}${highlighted}${seed}`;
+  return `${label}${highlighted}${seed}`;
 }
 
 /**

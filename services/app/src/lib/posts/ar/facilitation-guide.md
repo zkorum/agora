@@ -2,7 +2,7 @@
 title: "كيفية تيسير الفعاليات ومشاريع المداولة باستخدام أجورا"
 description: "دليل عملي لاستخدام أجورا في الفعاليات والمؤتمرات وورش العمل ومشاريع المداولة الأطول."
 author: "فريق أجورا"
-date: "September 2025"
+date: "2025-09-01"
 type: "guide"
 thumbnail: "/images/facilitation-guide-thumbnail.jpg"
 image: "/images/facilitation-guide-thumbnail.jpg"

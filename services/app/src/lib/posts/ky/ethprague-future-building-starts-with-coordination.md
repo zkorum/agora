@@ -2,7 +2,7 @@
 title: "Келечекти куруу координациядан башталат: ETHPragueдеги Broad Listening"
 description: "Yuting Jiang ETHPragueде Agora Citizen Networkту тааныштырып, эң оор маселе интеллект эмес, координация экенин жана broad listening коомдорго жалпы көңүл буруудан жалпы чечимдерге өтүүгө жардам бере аларын айтат."
 author: "Yuting Jiang"
-date: "May 2026"
+date: "2026-05-01"
 type: "vision"
 thumbnail: "/images/resources/ethprague-broad-listening.jpg"
 image: "/images/resources/ethprague-broad-listening.jpg"
@@ -24,7 +24,7 @@ ETHPragueде Yuting Jiang Agora Citizen Networkту татаал жана бө�
 - [**Decentralized Deliberation Standard**](https://dds.xyz): текшериле турган жамааттык интеллект маалыматтарын бөлүшкөн өз ара иштей алган civic tech куралдарынын экосистемасын куруу демилгеси.
 
 <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; margin: 28px 0; overflow: hidden; border-radius: 12px; box-shadow: 0 8px 24px rgba(9, 15, 83, 0.16);">
-  <iframe src="https://www.youtube.com/embed/FHpcdHiyCXw" title="Future Building Starts with Coordination: Agree or Disagree? - Yuting Jiang" style="position: absolute; inset: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+  <iframe src="https://www.youtube.com/embed/FHpcdHiyCXw" title="Келечекти куруу координациядан башталат: макулсузбу же каршысызбы? - Yuting Jiang" style="position: absolute; inset: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 </div>
 
 [YouTubeдан көрүү](https://www.youtube.com/watch?v=FHpcdHiyCXw)

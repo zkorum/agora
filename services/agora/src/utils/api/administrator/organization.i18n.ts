@@ -48,9 +48,9 @@ export const administratorOrganizationApiTranslations: Record<
 > = {
   en,
   es: {
-    ...en,
     failedToFetchOrganizations: "No se pudieron obtener las organizaciones",
-    failedToFetchOrganizationMembers: "Failed to fetch organization members",
+    failedToFetchOrganizationMembers:
+      "No se pudieron obtener los miembros de la organización",
     addedUserOrganizationMapping: "Asignación usuario-organización agregada",
     failedToAddUserOrganizationMapping:
       "No se pudo agregar la asignación usuario-organización",
@@ -63,13 +63,18 @@ export const administratorOrganizationApiTranslations: Record<
     failedToCreateUserOrganization: "No se pudo crear la organización",
     updatedOrganization: "Organización actualizada",
     failedToUpdateOrganization: "No se pudo actualizar la organización",
+    updatedOrganizationSlug: "Slug de la organización actualizado",
+    failedToUpdateOrganizationSlug:
+      "No se pudo actualizar el slug de la organización",
+    organizationSlugAlreadyExists: "Ya existe una organización con este slug",
+    organizationNotFound: "Organización no encontrada",
     failedToGetUserOrganizations:
       "No se pudieron obtener las organizaciones del usuario",
   },
   fr: {
-    ...en,
     failedToFetchOrganizations: "Échec de la récupération des organisations",
-    failedToFetchOrganizationMembers: "Failed to fetch organization members",
+    failedToFetchOrganizationMembers:
+      "Échec de la récupération des membres de l’organisation",
     addedUserOrganizationMapping:
       "Association utilisateur-organisation ajoutée",
     failedToAddUserOrganizationMapping:
@@ -84,13 +89,17 @@ export const administratorOrganizationApiTranslations: Record<
     failedToCreateUserOrganization: "Échec de la création de l’organisation",
     updatedOrganization: "Organisation mise à jour",
     failedToUpdateOrganization: "Échec de la mise à jour de l’organisation",
+    updatedOrganizationSlug: "Slug de l’organisation mis à jour",
+    failedToUpdateOrganizationSlug:
+      "Échec de la mise à jour du slug de l’organisation",
+    organizationSlugAlreadyExists: "Une organisation avec ce slug existe déjà",
+    organizationNotFound: "Organisation introuvable",
     failedToGetUserOrganizations:
       "Échec de la récupération des organisations de l’utilisateur",
   },
   "zh-Hant": {
-    ...en,
     failedToFetchOrganizations: "取得組織失敗",
-    failedToFetchOrganizationMembers: "Failed to fetch organization members",
+    failedToFetchOrganizationMembers: "取得組織成員失敗",
     addedUserOrganizationMapping: "已新增使用者組織對應",
     failedToAddUserOrganizationMapping: "新增使用者組織對應失敗",
     removedUserOrganizationMapping: "已移除使用者組織對應",
@@ -101,12 +110,15 @@ export const administratorOrganizationApiTranslations: Record<
     failedToCreateUserOrganization: "建立組織失敗",
     updatedOrganization: "組織已更新",
     failedToUpdateOrganization: "更新組織失敗",
+    updatedOrganizationSlug: "組織網址代稱已更新",
+    failedToUpdateOrganizationSlug: "更新組織網址代稱失敗",
+    organizationSlugAlreadyExists: "已有組織使用此網址代稱",
+    organizationNotFound: "找不到組織",
     failedToGetUserOrganizations: "取得使用者組織失敗",
   },
   "zh-Hans": {
-    ...en,
     failedToFetchOrganizations: "获取组织失败",
-    failedToFetchOrganizationMembers: "Failed to fetch organization members",
+    failedToFetchOrganizationMembers: "获取组织成员失败",
     addedUserOrganizationMapping: "已添加用户组织映射",
     failedToAddUserOrganizationMapping: "添加用户组织映射失败",
     removedUserOrganizationMapping: "已移除用户组织映射",
@@ -117,12 +129,15 @@ export const administratorOrganizationApiTranslations: Record<
     failedToCreateUserOrganization: "创建组织失败",
     updatedOrganization: "组织已更新",
     failedToUpdateOrganization: "更新组织失败",
+    updatedOrganizationSlug: "组织网址别名已更新",
+    failedToUpdateOrganizationSlug: "更新组织网址别名失败",
+    organizationSlugAlreadyExists: "已存在使用此网址别名的组织",
+    organizationNotFound: "未找到组织",
     failedToGetUserOrganizations: "获取用户组织失败",
   },
   ja: {
-    ...en,
     failedToFetchOrganizations: "組織を取得できませんでした",
-    failedToFetchOrganizationMembers: "Failed to fetch organization members",
+    failedToFetchOrganizationMembers: "組織のメンバーを取得できませんでした",
     addedUserOrganizationMapping: "ユーザーと組織の関連付けを追加しました",
     failedToAddUserOrganizationMapping:
       "ユーザーと組織の関連付けを追加できませんでした",
@@ -135,12 +150,15 @@ export const administratorOrganizationApiTranslations: Record<
     failedToCreateUserOrganization: "組織を作成できませんでした",
     updatedOrganization: "組織を更新しました",
     failedToUpdateOrganization: "組織を更新できませんでした",
+    updatedOrganizationSlug: "組織のスラッグを更新しました",
+    failedToUpdateOrganizationSlug: "組織のスラッグを更新できませんでした",
+    organizationSlugAlreadyExists: "このスラッグの組織はすでに存在します",
+    organizationNotFound: "組織が見つかりません",
     failedToGetUserOrganizations: "ユーザーの組織を取得できませんでした",
   },
   ar: {
-    ...en,
     failedToFetchOrganizations: "فشل جلب المؤسسات",
-    failedToFetchOrganizationMembers: "Failed to fetch organization members",
+    failedToFetchOrganizationMembers: "فشل جلب أعضاء المؤسسة",
     addedUserOrganizationMapping: "تمت إضافة ربط المستخدم بالمؤسسة",
     failedToAddUserOrganizationMapping: "فشل إضافة ربط المستخدم بالمؤسسة",
     removedUserOrganizationMapping: "تمت إزالة ربط المستخدم بالمؤسسة",
@@ -151,12 +169,15 @@ export const administratorOrganizationApiTranslations: Record<
     failedToCreateUserOrganization: "فشل إنشاء المؤسسة",
     updatedOrganization: "تم تحديث المؤسسة",
     failedToUpdateOrganization: "فشل تحديث المؤسسة",
+    updatedOrganizationSlug: "تم تحديث المعرّف المختصر للمؤسسة",
+    failedToUpdateOrganizationSlug: "فشل تحديث المعرّف المختصر للمؤسسة",
+    organizationSlugAlreadyExists: "توجد مؤسسة بهذا المعرّف المختصر بالفعل",
+    organizationNotFound: "لم يتم العثور على المؤسسة",
     failedToGetUserOrganizations: "فشل جلب مؤسسات المستخدم",
   },
   fa: {
-    ...en,
     failedToFetchOrganizations: "دریافت سازمان‌ها ناموفق بود",
-    failedToFetchOrganizationMembers: "Failed to fetch organization members",
+    failedToFetchOrganizationMembers: "دریافت اعضای سازمان ناموفق بود",
     addedUserOrganizationMapping: "نگاشت کاربر به سازمان افزوده شد",
     failedToAddUserOrganizationMapping:
       "افزودن نگاشت کاربر به سازمان ناموفق بود",
@@ -169,12 +190,15 @@ export const administratorOrganizationApiTranslations: Record<
     failedToCreateUserOrganization: "ایجاد سازمان ناموفق بود",
     updatedOrganization: "سازمان به‌روزرسانی شد",
     failedToUpdateOrganization: "به‌روزرسانی سازمان ناموفق بود",
+    updatedOrganizationSlug: "اسلاگ سازمان به‌روزرسانی شد",
+    failedToUpdateOrganizationSlug: "به‌روزرسانی اسلاگ سازمان ناموفق بود",
+    organizationSlugAlreadyExists: "سازمانی با این اسلاگ از قبل وجود دارد",
+    organizationNotFound: "سازمان یافت نشد",
     failedToGetUserOrganizations: "دریافت سازمان‌های کاربر ناموفق بود",
   },
   he: {
-    ...en,
     failedToFetchOrganizations: "טעינת הארגונים נכשלה",
-    failedToFetchOrganizationMembers: "Failed to fetch organization members",
+    failedToFetchOrganizationMembers: "טעינת חברי הארגון נכשלה",
     addedUserOrganizationMapping: "שיוך המשתמש לארגון נוסף",
     failedToAddUserOrganizationMapping: "הוספת שיוך המשתמש לארגון נכשלה",
     removedUserOrganizationMapping: "שיוך המשתמש לארגון הוסר",
@@ -185,12 +209,15 @@ export const administratorOrganizationApiTranslations: Record<
     failedToCreateUserOrganization: "יצירת הארגון נכשלה",
     updatedOrganization: "הארגון עודכן",
     failedToUpdateOrganization: "עדכון הארגון נכשל",
+    updatedOrganizationSlug: "המזהה המקוצר של הארגון עודכן",
+    failedToUpdateOrganizationSlug: "עדכון המזהה המקוצר של הארגון נכשל",
+    organizationSlugAlreadyExists: "כבר קיים ארגון עם המזהה המקוצר הזה",
+    organizationNotFound: "הארגון לא נמצא",
     failedToGetUserOrganizations: "טעינת הארגונים של המשתמש נכשלה",
   },
   ky: {
-    ...en,
     failedToFetchOrganizations: "Уюмдарды алуу ишке ашкан жок",
-    failedToFetchOrganizationMembers: "Failed to fetch organization members",
+    failedToFetchOrganizationMembers: "Уюмдун мүчөлөрүн алуу ишке ашкан жок",
     addedUserOrganizationMapping: "Колдонуучу-уюм байланышы кошулду",
     failedToAddUserOrganizationMapping:
       "Колдонуучу-уюм байланышын кошуу ишке ашкан жок",
@@ -203,12 +230,16 @@ export const administratorOrganizationApiTranslations: Record<
     failedToCreateUserOrganization: "Уюм түзүү ишке ашкан жок",
     updatedOrganization: "Уюм жаңыртылды",
     failedToUpdateOrganization: "Уюмду жаңыртуу ишке ашкан жок",
+    updatedOrganizationSlug: "Уюмдун URL слагы жаңыртылды",
+    failedToUpdateOrganizationSlug: "Уюмдун URL слагын жаңыртуу ишке ашкан жок",
+    organizationSlugAlreadyExists: "Мындай URL слагы бар уюм мурунтан эле бар",
+    organizationNotFound: "Уюм табылган жок",
     failedToGetUserOrganizations: "Колдонуучунун уюмдарын алуу ишке ашкан жок",
   },
   ru: {
-    ...en,
     failedToFetchOrganizations: "Не удалось получить организации",
-    failedToFetchOrganizationMembers: "Failed to fetch organization members",
+    failedToFetchOrganizationMembers:
+      "Не удалось получить список участников организации",
     addedUserOrganizationMapping: "Связь пользователя с организацией добавлена",
     failedToAddUserOrganizationMapping:
       "Не удалось добавить связь пользователя с организацией",
@@ -221,6 +252,11 @@ export const administratorOrganizationApiTranslations: Record<
     failedToCreateUserOrganization: "Не удалось создать организацию",
     updatedOrganization: "Организация обновлена",
     failedToUpdateOrganization: "Не удалось обновить организацию",
+    updatedOrganizationSlug: "URL-слаг организации обновлён",
+    failedToUpdateOrganizationSlug: "Не удалось обновить URL-слаг организации",
+    organizationSlugAlreadyExists:
+      "Организация с таким URL-слагом уже существует",
+    organizationNotFound: "Организация не найдена",
     failedToGetUserOrganizations:
       "Не удалось получить организации пользователя",
   },

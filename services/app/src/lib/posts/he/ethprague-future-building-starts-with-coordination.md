@@ -2,7 +2,7 @@
 title: "בניית העתיד מתחילה בתיאום: Broad Listening ב-ETHPrague"
 description: "Yuting Jiang מציגה את Agora Citizen Network ב-ETHPrague וטוענת שהבעיה הקשה ביותר אינה אינטליגנציה אלא תיאום, וש-broad listening יכול לעזור לקהילות לעבור מקשב משותף להחלטות משותפות."
 author: "Yuting Jiang"
-date: "May 2026"
+date: "2026-05-01"
 type: "vision"
 thumbnail: "/images/resources/ethprague-broad-listening.jpg"
 image: "/images/resources/ethprague-broad-listening.jpg"
@@ -24,7 +24,7 @@ image: "/images/resources/ethprague-broad-listening.jpg"
 - [**Decentralized Deliberation Standard**](https://dds.xyz): יוזמה לבניית אקוסיסטם של כלי civic tech בעלי יכולת פעולה הדדית, המשתפים נתוני בינה קולקטיבית ניתנים לאימות.
 
 <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; margin: 28px 0; overflow: hidden; border-radius: 12px; box-shadow: 0 8px 24px rgba(9, 15, 83, 0.16);">
-  <iframe src="https://www.youtube.com/embed/FHpcdHiyCXw" title="Future Building Starts with Coordination: Agree or Disagree? - Yuting Jiang" style="position: absolute; inset: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+  <iframe src="https://www.youtube.com/embed/FHpcdHiyCXw" title="בניית העתיד מתחילה בתיאום: מסכימים או לא? - Yuting Jiang" style="position: absolute; inset: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 </div>
 
 [צפייה ב-YouTube](https://www.youtube.com/watch?v=FHpcdHiyCXw)

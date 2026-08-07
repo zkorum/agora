@@ -1,5 +1,6 @@
 import { error } from "@sveltejs/kit";
 
+import * as m from "$lib/paraglide/messages.js";
 import { getLocale } from "$lib/paraglide/runtime";
 import { type SeoData, SITE_ORIGIN } from "$lib/seo";
 import { getAllSlugs, getResourcePost } from "$server/landing/resources";
@@ -30,7 +31,7 @@ export const load: PageServerLoad = async ({ params }) => {
   const post = await getResourcePost({ slug: params.slug, locale });
 
   if (!post) {
-    error(404, "Post not found");
+    error(404, m.resources_post_not_found());
   }
 
   const ogImagePath = post.image || post.thumbnail;

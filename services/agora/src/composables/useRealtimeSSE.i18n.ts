@@ -68,7 +68,8 @@ export const realtimeSSETranslations: Record<
     conversationSettingsUpdated: "Configuración de conversación actualizada",
     conversationPublic: "Esta conversación ahora es pública",
     conversationPrivate: "Esta conversación ahora es privada",
-    participationGuestAllowed: "Ahora cualquiera puede participar como invitado",
+    participationGuestAllowed:
+      "Ahora cualquiera puede participar como invitado",
     participationAccountRequired: "La participación ahora requiere una cuenta",
     participationEmailVerificationRequired:
       "La participación ahora requiere verificación por correo electrónico",
@@ -110,7 +111,8 @@ export const realtimeSSETranslations: Record<
     conversationPrivate: "Cette conversation est maintenant privée",
     participationGuestAllowed:
       "Tout le monde peut maintenant participer en tant qu'invité",
-    participationAccountRequired: "La participation nécessite maintenant un compte",
+    participationAccountRequired:
+      "La participation nécessite maintenant un compte",
     participationEmailVerificationRequired:
       "La participation nécessite maintenant une vérification par e-mail",
     participationStrongVerificationRequired:
@@ -171,8 +173,7 @@ export const realtimeSSETranslations: Record<
     eventTicketNotRequired: "כרטיס אירוע אינו נדרש עוד",
     llmTurnedOnByFacilitator: "ה-LLM הופעל על ידי המנחה",
     llmTurnedOffByFacilitator: "ה-LLM כובה על ידי המנחה",
-    facilitatorGroupCountPreferenceChanged:
-      "העדפת המנחה למספר הקבוצות השתנתה",
+    facilitatorGroupCountPreferenceChanged: "העדפת המנחה למספר הקבוצות השתנתה",
   },
   ja: {
     sessionEnded: "セッションが終了しました",
@@ -185,7 +186,8 @@ export const realtimeSSETranslations: Record<
     participationAccountRequired: "参加にはアカウントが必要になりました",
     participationEmailVerificationRequired:
       "参加にはメール認証が必要になりました",
-    participationStrongVerificationRequired: "参加には強い認証が必要になりました",
+    participationStrongVerificationRequired:
+      "参加には強い認証が必要になりました",
     eventTicketRequired: "イベントチケットが必要になりました",
     eventTicketNotRequired: "イベントチケットは不要になりました",
     llmTurnedOnByFacilitator: "ファシリテーターが LLM をオンにしました",
@@ -215,8 +217,8 @@ export const realtimeSSETranslations: Record<
   },
   ru: {
     sessionEnded: "Сеанс завершён",
-    conversationClosed: "Это обсуждение закрыто",
-    conversationOpened: "Это обсуждение снова открыто",
+    conversationClosed: "Это обсуждение закрыто фасилитатором",
+    conversationOpened: "Это обсуждение снова открыто фасилитатором",
     conversationSettingsUpdated: "Настройки обсуждения обновлены",
     conversationPublic: "Это обсуждение теперь публичное",
     conversationPrivate: "Это обсуждение теперь приватное",

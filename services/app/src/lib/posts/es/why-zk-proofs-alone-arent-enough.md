@@ -2,19 +2,19 @@
 title: "Por que las pruebas de conocimiento cero por si solas no bastan para proteger la privacidad"
 description: "Las pruebas de conocimiento cero pueden proteger la prueba de la credencial, pero las plataformas civicas necesitan privacidad en la identidad, los metadatos, las wallets, los dispositivos y la infraestructura open source."
 author: "Nicolas Gimenez"
-date: "Mayo 2026"
+date: "2024-09-01"
 type: "tech"
 thumbnail: "https://lh7-us.googleusercontent.com/docs/AHkbwyK44xfmb0zN95CAfiTWJ5ULJ_-8DpfWRTy8r23dsV6kahSE4C4X-cZ8W4Ed-n2MT0jfWuolbqR77m1-rt_yXV4xcoojPDahscs3bQ=w1200-h630-p"
 image: "https://lh7-us.googleusercontent.com/docs/AHkbwyK44xfmb0zN95CAfiTWJ5ULJ_-8DpfWRTy8r23dsV6kahSE4C4X-cZ8W4Ed-n2MT0jfWuolbqR77m1-rt_yXV4xcoojPDahscs3bQ=w1200-h630-p"
 ---
 
-Las pruebas de conocimiento cero suelen presentarse como una respuesta completa a la privacidad. En tecnologia civica, la promesa es especialmente atractiva: una persona puede demostrar que es elegible para participar, que es unica, que supera cierta edad o que reside en una jurisdiccion sin revelar todo el contenido de un documento de identidad.
+Las [pruebas de conocimiento cero](https://en.wikipedia.org/wiki/Zero-knowledge_proof) suelen presentarse como una respuesta completa a la privacidad. En tecnologia civica, la promesa es especialmente atractiva: una persona puede demostrar que es elegible para participar, que es unica, que supera cierta edad o que reside en una jurisdiccion sin revelar todo el contenido de un documento de identidad.
 
 Esa promesa es real. Tambien es mas limitada de lo que a veces parece.
 
 Una prueba de conocimiento cero protege una prueba. No protege automaticamente la direccion IP de la persona, la huella del navegador, el numero de telefono, la direccion de correo, la implementacion de la wallet, el dispositivo, el sistema operativo ni las muchas marcas de tiempo y senales de comportamiento que se crean alrededor de la prueba. Si esas capas no se disenan con cuidado, un verificador todavia puede aprender quien es la persona usuaria.
 
-Este articulo adapta una presentacion dada a NGI TrustChain en septiembre de 2024. La tesis central es sencilla: las pruebas de conocimiento cero son una pieza importante para la participacion civica privada, pero la privacidad de una persona es una propiedad de toda la pila.
+Este articulo adapta una [presentacion](https://docs.google.com/presentation/d/e/2PACX-1vRKRJW4-ZUHso3o-KzzwemuezH7ifLENCpvJCr9552PlRHzOtyxetsLM-4ghHDwCA/pub?start=false&loop=false&delayms=3000) dada a [NGI TrustChain](https://trustchain.ngi.eu/) en septiembre de 2024. La tesis central es sencilla: las pruebas de conocimiento cero son una pieza importante para la participacion civica privada, pero la privacidad de una persona es una propiedad de toda la pila.
 
 ## Por que la identidad entra en las plataformas civicas
 

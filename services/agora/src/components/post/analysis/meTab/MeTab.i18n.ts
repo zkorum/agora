@@ -1,3 +1,5 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
 export interface MeTabTranslations {
   whereDoIStandTitle: string;
   notAssignedToGroup: string;
@@ -8,7 +10,10 @@ export interface MeTabTranslations {
   voteMore: string;
 }
 
-export const meTabTranslations: Record<string, MeTabTranslations> = {
+export const meTabTranslations: Record<
+  SupportedDisplayLanguageCodes,
+  MeTabTranslations
+> = {
   en: {
     whereDoIStandTitle: "Where do I stand",
     notAssignedToGroup: "You are not assigned to any group",
@@ -16,6 +21,14 @@ export const meTabTranslations: Record<string, MeTabTranslations> = {
     voteToUnlock: "Vote on more statements to unlock",
     keepVotingToRefineAnalysis: "Keep voting to refine the analysis",
     voteMore: "Vote more",
+  },
+  ar: {
+    whereDoIStandTitle: "أين أقف",
+    notAssignedToGroup: "لم يتم تعيينك في أي مجموعة",
+    youAgreeWith: "أنت توافق على",
+    voteToUnlock: "صوّت على المزيد من العبارات لفتح التحليل",
+    keepVotingToRefineAnalysis: "واصل التصويت لتحسين التحليل",
+    voteMore: "صوّت أكثر",
   },
   es: {
     whereDoIStandTitle: "¿Dónde me sitúo?",

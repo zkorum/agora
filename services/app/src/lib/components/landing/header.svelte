@@ -30,7 +30,7 @@
     { label: m.nav_casestudies(), href: localizeHref("/#resources") },
     { label: m.nav_pricing(), href: localizeHref("/#pricing") },
     { label: m.nav_team(), href: localizeHref("/#team") },
-    { label: "FAQ", href: localizeHref("/#faq") },
+    { label: m.nav_faq(), href: localizeHref("/#faq") },
   ]);
 
   const resourceNavLinks = $derived([
@@ -39,7 +39,7 @@
     { label: m.nav_usecases(), href: localizeHref("/#usecases") },
     { label: m.nav_testimonials(), href: localizeHref("/#testimonials") },
     { label: m.nav_casestudies(), href: localizeHref("/resources") },
-    { label: "FAQ", href: localizeHref("/#faq") },
+    { label: m.nav_faq(), href: localizeHref("/#faq") },
   ]);
 
   const navLinks = $derived(
@@ -52,7 +52,7 @@
     <!-- Logo -->
     <a href={localizeHref("/")} class="flex shrink-0 items-center gap-3">
       <img src={agoraIcon} alt="" class="h-[29px] w-auto" />
-      <img src={agoraText} alt="Agora" class="h-[25px] w-auto" />
+      <img src={agoraText} alt={m.brand_name()} class="h-[25px] w-auto" />
     </a>
   {/snippet}
 
@@ -97,7 +97,7 @@
         lg:hidden
       "
       onclick={() => (mobileMenuOpen = true)}
-      aria-label="Open navigation menu"
+      aria-label={m.nav_open_menu()}
     >
       <span class="icon-[lucide--menu] size-6 gradient-primary"></span>
     </button>

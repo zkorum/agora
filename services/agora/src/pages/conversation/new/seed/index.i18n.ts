@@ -282,16 +282,16 @@ export const conversationReviewTranslations: Record<
     nextButton: "Кийинки",
     publishButton: "Жарыялоо",
     addSeedOpinions: "Баштапкы пикирлерди кошуу",
-    addMaxDiffItems: "Рейтингге билдирүүлөрдү кошуу",
+    addMaxDiffItems: "Рейтингге пикирлерди кошуу",
     seedOpinionsDescription:
       "Ар кандай көз караштардан 8ден 15ке чейин баштапкы пикир кошуу сунушталат. Бул эрте катышууга күчтүү таасир тийгизет.",
     maxDiffSeedDescription:
-      "Артыкчылыктуу кылуу үчүн кеминде 4 билдирүү керек. Эң жакшы тажрыйба үчүн 10-25 сунушталат.",
+      "Артыкчылык берүү үчүн кеминде 2 пикир керек. Ыңгайлуу колдонуу үчүн 10дон 25ке чейин пикир сунушталат.",
     addStatementShortcut:
-      "Жазып жатканда жаңы билдирүүнү баштоо үчүн Shift + Enter басыңыз.",
-    needMinimumForMaxDiff: "Артыкчылыктуу кылуу үчүн кеминде 4 билдирүү керек.",
+      "Жазып жатканда жаңы пикирди баштоо үчүн Shift + Enter басыңыз.",
+    needMinimumForMaxDiff: "Артыкчылык берүү үчүн кеминде 2 пикир керек.",
     addOpinion: "Пикир кошуу",
-    addMaxDiffItem: "Билдирүү кошуу",
+    addMaxDiffItem: "Пикир кошуу",
     opinionCannotBeEmpty: "Пикир бош болушу мүмкүн эмес",
     opinionExceedsLimit:
       "Пикир {limit} белги чегинен ашып кетти ({count}/{limit})",
@@ -310,17 +310,17 @@ export const conversationReviewTranslations: Record<
     nextButton: "Далее",
     publishButton: "Опубликовать",
     addSeedOpinions: "Добавить начальные высказывания",
-    addMaxDiffItems: "Добавить утверждения для ранжирования",
+    addMaxDiffItems: "Добавить высказывания для ранжирования",
     seedOpinionsDescription:
       "Рекомендуется добавить от 8 до 15 начальных высказываний с разных точек зрения. Это значительно стимулирует раннее участие.",
     maxDiffSeedDescription:
-      "Для приоритизации необходимо минимум 4 высказывания. Рекомендуем 10-25 для лучшего опыта.",
+      "Для приоритизации требуется как минимум 2 высказывания. Для удобной работы рекомендуем добавить от 10 до 25.",
     addStatementShortcut:
       "Во время ввода нажмите Shift + Enter, чтобы начать новое высказывание.",
     needMinimumForMaxDiff:
-      "Для приоритизации необходимо минимум 4 высказывания.",
+      "Для приоритизации требуется как минимум 2 высказывания.",
     addOpinion: "Добавить высказывание",
-    addMaxDiffItem: "Добавить утверждение",
+    addMaxDiffItem: "Добавить высказывание",
     opinionCannotBeEmpty: "Высказывание не может быть пустым",
     opinionExceedsLimit:
       "Высказывание превышает лимит в {limit} символов ({count}/{limit})",

@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
 
+  import * as m from "$lib/paraglide/messages.js";
   import Chip from "$ui/shared/chip.svelte";
   import Sheet from "$ui/shared/sheet.svelte";
 
@@ -26,7 +27,7 @@
   }: Props = $props();
 </script>
 
-<Sheet bind:open title="Navigation menu" side="right">
+<Sheet bind:open title={m.mobile_nav_title()} side="right">
   <!-- Close button (top-right) -->
   <div class="flex items-center justify-end px-6 py-4">
     <button
@@ -36,7 +37,7 @@
         hover:bg-sky-lightest
       "
       onclick={() => (open = false)}
-      aria-label="Close navigation menu"
+      aria-label={m.mobile_nav_close()}
     >
       <span class="icon-[lucide--x] size-5"></span>
     </button>
@@ -45,7 +46,7 @@
   <!-- Nav links using Chip -->
   <nav
     class="flex flex-1 flex-col gap-5 overflow-y-auto px-5 py-2"
-    aria-label="Mobile navigation"
+    aria-label={m.mobile_nav_label()}
   >
     {#each links as link (link.href)}
       <a href={link.href} onclick={onNavigate}>

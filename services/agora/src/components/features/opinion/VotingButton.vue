@@ -8,6 +8,7 @@
       ]"
       :disabled="disabled"
       :aria-label="setAriaLabel"
+      :aria-pressed="isSelected"
       @click="$emit('click')"
     >
       {{ label }}
@@ -75,7 +76,11 @@ defineEmits<{
     color: $sentiment-positive;
 
     &.voting-button--selected {
-      background: linear-gradient(114.81deg, $sentiment-positive 46.45%, $sentiment-positive-end 100.1%);
+      background: linear-gradient(
+        114.81deg,
+        $sentiment-positive 46.45%,
+        $sentiment-positive-end 100.1%
+      );
       color: #ffffff;
     }
   }
@@ -86,7 +91,11 @@ defineEmits<{
     color: $sentiment-negative-text;
 
     &.voting-button--selected {
-      background: linear-gradient(107.6deg, $sentiment-negative 31.49%, $sentiment-negative-end 100.22%);
+      background: linear-gradient(
+        107.6deg,
+        $sentiment-negative 31.49%,
+        $sentiment-negative-end 100.22%
+      );
       color: #ffffff;
     }
   }

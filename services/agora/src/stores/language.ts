@@ -11,7 +11,10 @@ import { zodLanguagePreferences } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { isNetworkError } from "src/utils/api/common";
 import { useBackendLanguageApi } from "src/utils/api/language";
-import { parseBrowserLanguage } from "src/utils/language";
+import {
+  detectInitialDisplayLanguage,
+  parseBrowserLanguage,
+} from "src/utils/language";
 import { useNotify } from "src/utils/ui/notify";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
@@ -22,11 +25,9 @@ import {
 } from "./language.i18n";
 
 function getDefaultDisplayLanguage(): SupportedDisplayLanguageCodes {
-  // Use browser detection for smart default
-  const browserDetection = parseBrowserLanguage({
-    browserLang: navigator.language,
+  return detectInitialDisplayLanguage({
+    storedLanguage: undefined,
   });
-  return browserDetection.displayLanguage;
 }
 
 function getDefaultSpokenLanguages(): SupportedSpokenLanguageCodes[] {

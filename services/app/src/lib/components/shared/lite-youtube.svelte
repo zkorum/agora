@@ -5,8 +5,8 @@
 
   interface Props {
     videoid: string;
+    videotitle: string;
     poster?: string;
-    videotitle?: string;
   }
 
   let { videoid, poster, videotitle }: Props = $props();
@@ -21,12 +21,7 @@
 {#if browser && ready}
   <lite-youtube {videoid} {videotitle} posterquality="maxresdefault">
     {#if poster}
-      <img
-        slot="image"
-        src={poster}
-        alt={videotitle ?? "Video thumbnail"}
-        loading="lazy"
-      />
+      <img slot="image" src={poster} alt={videotitle} loading="lazy" />
     {/if}
   </lite-youtube>
 {/if}

@@ -59,7 +59,8 @@ const en: EditSurveyTranslations = {
   saveButton: "Save survey",
   deleteButton: "Delete survey",
   title: "Edit survey",
-  description: "Configure the survey step shown before participants can vote on or create statements.",
+  description:
+    "Configure the survey step shown before participants can vote on or create statements.",
   optionalSurveyToggleLabel: "Allow participants to skip the survey",
   optionalSurveyToggleHint:
     "The survey step can be skipped. Participants can vote or create statements without answering the survey; their votes are always included in analysis, and required question settings are ignored.",
@@ -81,7 +82,8 @@ const en: EditSurveyTranslations = {
   updatedOptions: "Updated options: {count}",
   noChangesSummary: "No survey changes yet.",
   noSurveyTitle: "No survey yet",
-  noSurveyDescription: "Add questions or leave the conversation without a survey.",
+  noSurveyDescription:
+    "Add questions or leave the conversation without a survey.",
   questionTitle: "Question {number}",
   removeLabel: "Remove",
   questionTypeLabel: "Question type",
@@ -125,7 +127,8 @@ export const editSurveyTranslations: Record<
     saveButton: "حفظ الاستبيان",
     deleteButton: "حذف الاستبيان",
     title: "تعديل الاستبيان",
-    description: "اضبط خطوة الاستبيان التي تظهر قبل أن يتمكن المشاركون من التصويت على العبارات أو إنشاء عبارات جديدة.",
+    description:
+      "اضبط خطوة الاستبيان التي تظهر قبل أن يتمكن المشاركون من التصويت على العبارات أو إنشاء عبارات جديدة.",
     optionalSurveyToggleLabel: "السماح للمشاركين بتخطي الاستبيان",
     optionalSurveyToggleHint:
       "يمكن تخطي خطوة الاستبيان. يمكن للمشاركين التصويت أو إنشاء عبارات دون الإجابة على الاستبيان؛ وتُحتسب أصواتهم دائمًا في التحليل، ويتم تجاهل إعدادات إلزامية الأسئلة.",
@@ -168,9 +171,11 @@ export const editSurveyTranslations: Record<
     choiceDisplayList: "قائمة",
     choiceDisplayDropdown: "قائمة منسدلة قابلة للبحث",
     questionSemanticChangeLabel: "إبطال الإجابات على هذا السؤال",
-    questionSemanticChangeHint: "فعّل هذا إذا كانت الصياغة الجديدة تغيّر معنى السؤال.",
+    questionSemanticChangeHint:
+      "فعّل هذا إذا كانت الصياغة الجديدة تغيّر معنى السؤال.",
     optionSemanticChangeLabel: "إبطال الإجابات التي تستخدم هذا الخيار",
-    optionSemanticChangeHint: "فعّل هذا إذا كانت الصياغة الجديدة تغيّر معنى هذا الخيار.",
+    optionSemanticChangeHint:
+      "فعّل هذا إذا كانت الصياغة الجديدة تغيّر معنى هذا الخيار.",
     confirmRemoveQuestionMessage: "إزالة هذا السؤال من الاستبيان؟",
     confirmRemoveOptionMessage: "إزالة هذا الخيار من السؤال؟",
     confirmRemoveQuestionButtonLabel: "إزالة السؤال",
@@ -183,8 +188,10 @@ export const editSurveyTranslations: Record<
     saveButton: "Guardar encuesta",
     deleteButton: "Eliminar encuesta",
     title: "Editar encuesta",
-    description: "Configura el paso de encuesta que aparece antes de que los participantes puedan votar sobre propuestas o crear nuevas.",
-    optionalSurveyToggleLabel: "Permitir que los participantes omitan la encuesta",
+    description:
+      "Configura el paso de encuesta que aparece antes de que los participantes puedan votar sobre propuestas o crear nuevas.",
+    optionalSurveyToggleLabel:
+      "Permitir que los participantes omitan la encuesta",
     optionalSurveyToggleHint:
       "El paso de encuesta se puede omitir. Los participantes pueden votar o crear propuestas sin responder la encuesta; sus votos siempre se incluyen en el análisis, y se ignoran los ajustes de preguntas obligatorias.",
     requiredSurveyToggleHint:
@@ -192,7 +199,8 @@ export const editSurveyTranslations: Record<
     questionRequirementDisabledHint:
       "Esta pregunta se trata como opcional porque el paso de encuesta se puede omitir.",
     loadError: "No se pudo cargar la configuración de la encuesta.",
-    validationError: "Completa todas las preguntas de la encuesta antes de guardar.",
+    validationError:
+      "Completa todas las preguntas de la encuesta antes de guardar.",
     saveError: "No se pudo guardar la configuración de la encuesta.",
     deleteError: "No se pudo eliminar la encuesta.",
     confirmDeleteMessage: "¿Eliminar esta encuesta de la conversación?",
@@ -205,7 +213,8 @@ export const editSurveyTranslations: Record<
     updatedOptions: "Opciones actualizadas: {count}",
     noChangesSummary: "Todavía no hay cambios en la encuesta.",
     noSurveyTitle: "Aún no hay encuesta",
-    noSurveyDescription: "Agrega preguntas o deja la conversación sin encuesta.",
+    noSurveyDescription:
+      "Agrega preguntas o deja la conversación sin encuesta.",
     questionTitle: "Pregunta {number}",
     removeLabel: "Eliminar",
     questionTypeLabel: "Tipo de pregunta",
@@ -243,8 +252,10 @@ export const editSurveyTranslations: Record<
     saveButton: "ذخیره نظرسنجی",
     deleteButton: "حذف نظرسنجی",
     title: "ویرایش نظرسنجی",
-    description: "مرحله نظرسنجی را که پیش از رأی دادن شرکت‌کنندگان به گزاره‌ها یا ایجاد گزاره‌های جدید نمایش داده می‌شود تنظیم کنید.",
-    optionalSurveyToggleLabel: "اجازه دادن به شرکت‌کنندگان برای رد کردن نظرسنجی",
+    description:
+      "مرحله نظرسنجی را که پیش از رأی دادن شرکت‌کنندگان به گزاره‌ها یا ایجاد گزاره‌های جدید نمایش داده می‌شود تنظیم کنید.",
+    optionalSurveyToggleLabel:
+      "اجازه دادن به شرکت‌کنندگان برای رد کردن نظرسنجی",
     optionalSurveyToggleHint:
       "مرحله نظرسنجی را می‌توان رد کرد. شرکت‌کنندگان می‌توانند بدون پاسخ دادن به نظرسنجی رأی دهند یا گزاره ایجاد کنند؛ رأی‌های آن‌ها همیشه در تحلیل محاسبه می‌شود و تنظیمات الزامی پرسش‌ها نادیده گرفته می‌شود.",
     requiredSurveyToggleHint:
@@ -303,8 +314,10 @@ export const editSurveyTranslations: Record<
     saveButton: "Enregistrer le questionnaire",
     deleteButton: "Supprimer le questionnaire",
     title: "Modifier le questionnaire",
-    description: "Configurez l'étape de questionnaire affichée avant que les participants puissent voter sur des propositions ou en créer.",
-    optionalSurveyToggleLabel: "Autoriser les participants à ignorer le questionnaire",
+    description:
+      "Configurez l'étape de questionnaire affichée avant que les participants puissent voter sur des propositions ou en créer.",
+    optionalSurveyToggleLabel:
+      "Autoriser les participants à ignorer le questionnaire",
     optionalSurveyToggleHint:
       "L'étape de questionnaire peut être ignorée. Les participants peuvent voter ou créer des propositions sans répondre au questionnaire ; leurs votes sont toujours pris en compte dans l'analyse, et les réglages obligatoires des questions sont ignorés.",
     requiredSurveyToggleHint:
@@ -312,7 +325,8 @@ export const editSurveyTranslations: Record<
     questionRequirementDisabledHint:
       "Cette question est traitée comme facultative, car l'étape de questionnaire peut être ignorée.",
     loadError: "Impossible de charger les paramètres du questionnaire.",
-    validationError: "Veuillez compléter toutes les questions du questionnaire avant d'enregistrer.",
+    validationError:
+      "Veuillez compléter toutes les questions du questionnaire avant d'enregistrer.",
     saveError: "Impossible d'enregistrer les paramètres du questionnaire.",
     deleteError: "Impossible de supprimer le questionnaire.",
     confirmDeleteMessage: "Supprimer ce questionnaire de la conversation ?",
@@ -325,7 +339,8 @@ export const editSurveyTranslations: Record<
     updatedOptions: "Options mises à jour : {count}",
     noChangesSummary: "Aucun changement du questionnaire pour le moment.",
     noSurveyTitle: "Pas encore de questionnaire",
-    noSurveyDescription: "Ajoutez des questions ou laissez la conversation sans questionnaire.",
+    noSurveyDescription:
+      "Ajoutez des questions ou laissez la conversation sans questionnaire.",
     questionTitle: "Question {number}",
     removeLabel: "Supprimer",
     questionTypeLabel: "Type de question",
@@ -363,7 +378,8 @@ export const editSurveyTranslations: Record<
     saveButton: "שמירת סקר",
     deleteButton: "מחיקת סקר",
     title: "עריכת סקר",
-    description: "הגדירו את שלב הסקר שמוצג לפני שמשתתפים יכולים להצביע על הצהרות או ליצור חדשות.",
+    description:
+      "הגדירו את שלב הסקר שמוצג לפני שמשתתפים יכולים להצביע על הצהרות או ליצור חדשות.",
     optionalSurveyToggleLabel: "לאפשר למשתתפים לדלג על הסקר",
     optionalSurveyToggleHint:
       "אפשר לדלג על שלב הסקר. המשתתפים יכולים להצביע או ליצור הצהרות בלי לענות על הסקר; ההצבעות שלהם תמיד נכללות בניתוח, והגדרות החובה של השאלות יזכו להתעלמות.",
@@ -406,9 +422,11 @@ export const editSurveyTranslations: Record<
     choiceDisplayList: "רשימה",
     choiceDisplayDropdown: "תפריט נפתח עם חיפוש",
     questionSemanticChangeLabel: "לבטל תשובות לשאלה הזו",
-    questionSemanticChangeHint: "הפעילו זאת כשהניסוח החדש משנה את משמעות השאלה.",
+    questionSemanticChangeHint:
+      "הפעילו זאת כשהניסוח החדש משנה את משמעות השאלה.",
     optionSemanticChangeLabel: "לבטל תשובות שמשתמשות באפשרות הזו",
-    optionSemanticChangeHint: "הפעילו זאת כשהניסוח החדש משנה את משמעות האפשרות הזו.",
+    optionSemanticChangeHint:
+      "הפעילו זאת כשהניסוח החדש משנה את משמעות האפשרות הזו.",
     confirmRemoveQuestionMessage: "להסיר את השאלה הזו מהסקר?",
     confirmRemoveOptionMessage: "להסיר את האפשרות הזו מהשאלה?",
     confirmRemoveQuestionButtonLabel: "הסרת שאלה",
@@ -421,7 +439,8 @@ export const editSurveyTranslations: Record<
     saveButton: "アンケートを保存",
     deleteButton: "アンケートを削除",
     title: "アンケートを編集",
-    description: "参加者が意見に投票したり新しい意見を作成したりする前に表示されるアンケート手順を設定します。",
+    description:
+      "参加者が意見に投票したり新しい意見を作成したりする前に表示されるアンケート手順を設定します。",
     optionalSurveyToggleLabel: "参加者がアンケートをスキップできるようにする",
     optionalSurveyToggleHint:
       "アンケート手順はスキップできます。参加者はアンケートに回答せずに投票や意見の作成ができ、その投票は常に分析に含まれ、質問の必須設定は無視されます。",
@@ -443,7 +462,8 @@ export const editSurveyTranslations: Record<
     updatedOptions: "更新された選択肢: {count}",
     noChangesSummary: "アンケートの変更はまだありません。",
     noSurveyTitle: "アンケートはまだありません",
-    noSurveyDescription: "質問を追加するか、この会話をアンケートなしのままにします。",
+    noSurveyDescription:
+      "質問を追加するか、この会話をアンケートなしのままにします。",
     questionTitle: "質問 {number}",
     removeLabel: "削除",
     questionTypeLabel: "質問タイプ",
@@ -464,9 +484,11 @@ export const editSurveyTranslations: Record<
     choiceDisplayList: "リスト",
     choiceDisplayDropdown: "検索可能なドロップダウン",
     questionSemanticChangeLabel: "この質問への回答を無効にする",
-    questionSemanticChangeHint: "新しい文言が質問の意味を変える場合に有効にしてください。",
+    questionSemanticChangeHint:
+      "新しい文言が質問の意味を変える場合に有効にしてください。",
     optionSemanticChangeLabel: "この選択肢を使う回答を無効にする",
-    optionSemanticChangeHint: "新しい文言がこの選択肢の意味を変える場合に有効にしてください。",
+    optionSemanticChangeHint:
+      "新しい文言がこの選択肢の意味を変える場合に有効にしてください。",
     confirmRemoveQuestionMessage: "この質問をアンケートから削除しますか？",
     confirmRemoveOptionMessage: "この選択肢を質問から削除しますか？",
     confirmRemoveQuestionButtonLabel: "質問を削除",
@@ -479,19 +501,22 @@ export const editSurveyTranslations: Record<
     saveButton: "Сурамжылоону сактоо",
     deleteButton: "Сурамжылоону жок кылуу",
     title: "Сурамжылоону түзөтүү",
-    description: "Катышуучулар билдирүүлөргө добуш берип же жаңыларын түзө алышынан мурун көрсөтүлүүчү сурамжылоо кадамын жөндөңүз.",
-    optionalSurveyToggleLabel: "Катышуучуларга сурамжылоону өткөрүп жиберүүгө уруксат берүү",
+    description:
+      "Катышуучулар пикирлерге добуш берип же жаңы пикирлерди түзө алышынан мурун көрсөтүлүүчү сурамжылоо кадамын жөндөңүз.",
+    optionalSurveyToggleLabel:
+      "Катышуучуларга сурамжылоону өткөрүп жиберүүгө уруксат берүү",
     optionalSurveyToggleHint:
-      "Сурамжылоо кадамын өткөрүп жиберүүгө болот. Катышуучулар сурамжылоого жооп бербей эле добуш берип же билдирүү түзө алышат; алардын добуштары ар дайым талдоого кирет, ал эми суроолордун милдеттүү жөндөөлөрү эске алынбайт.",
+      "Сурамжылоо кадамын өткөрүп жиберүүгө болот. Катышуучулар сурамжылоого жооп бербей эле добуш берип же пикир түзө алышат; алардын добуштары ар дайым талдоого кирет, ал эми суроолордун милдеттүү жөндөөлөрү эске алынбайт.",
     requiredSurveyToggleHint:
-      "Сурамжылоо бар болсо, сурамжылоо кадамы милдеттүү. Айрым суроолор же бардык суроолор ыктыярдуу болсо да, катышуучулар добуш берүү же билдирүү түзүүдөн мурун бул кадамдан өтүшү керек. Бул кадамды аяктаган катышуучулардын добуштары гана талдоого кирет.",
+      "Сурамжылоо бар болсо, сурамжылоо кадамы милдеттүү. Айрым суроолор же бардык суроолор ыктыярдуу болсо да, катышуучулар добуш берүү же пикир түзүүдөн мурун бул кадамдан өтүшү керек. Бул кадамды аяктаган катышуучулардын добуштары гана талдоого кирет.",
     questionRequirementDisabledHint:
       "Сурамжылоо кадамын өткөрүп жиберүүгө болгондуктан, бул суроо ыктыярдуу деп эсептелет.",
     loadError: "Сурамжылоонун жөндөөлөрүн жүктөө ишке ашкан жок.",
-    validationError: "Сактоодон мурун сурамжылоонун бардык суроолорун толтуруңуз.",
+    validationError:
+      "Сактоодон мурун сурамжылоонун бардык суроолорун толтуруңуз.",
     saveError: "Сурамжылоонун жөндөөлөрүн сактоо ишке ашкан жок.",
     deleteError: "Сурамжылоону жок кылуу ишке ашкан жок.",
-    confirmDeleteMessage: "Бул сурамжылоону сүйлөшүүдөн өчүрөсүзбү?",
+    confirmDeleteMessage: "Бул сурамжылоону талкуудан өчүрөсүзбү?",
     changeSummaryTitle: "Өзгөрүүлөрдүн жыйынтыгы",
     addedQuestions: "Кошулган суроолор: {count}",
     removedQuestions: "Өчүрүлгөн суроолор: {count}",
@@ -501,7 +526,8 @@ export const editSurveyTranslations: Record<
     updatedOptions: "Жаңыртылган варианттар: {count}",
     noChangesSummary: "Сурамжылоодо азырынча өзгөрүү жок.",
     noSurveyTitle: "Азырынча сурамжылоо жок",
-    noSurveyDescription: "Суроолорду кошуңуз же сүйлөшүүнү сурамжылоосуз калтырыңыз.",
+    noSurveyDescription:
+      "Суроолорду кошуңуз же талкууну сурамжылоосуз калтырыңыз.",
     questionTitle: "Суроо {number}",
     removeLabel: "Өчүрүү",
     questionTypeLabel: "Суроонун түрү",
@@ -521,10 +547,14 @@ export const editSurveyTranslations: Record<
     choiceDisplayAuto: "Авто",
     choiceDisplayList: "Тизме",
     choiceDisplayDropdown: "Издөөгө боло турган ачылма тизме",
-    questionSemanticChangeLabel: "Бул суроого берилген жоопторду жараксыз кылуу",
-    questionSemanticChangeHint: "Жаңы текст суроонун маанисин өзгөрткөндө муну күйгүзүңүз.",
-    optionSemanticChangeLabel: "Бул вариантты колдонгон жоопторду жараксыз кылуу",
-    optionSemanticChangeHint: "Жаңы текст бул варианттын маанисин өзгөрткөндө муну күйгүзүңүз.",
+    questionSemanticChangeLabel:
+      "Бул суроого берилген жоопторду жараксыз кылуу",
+    questionSemanticChangeHint:
+      "Жаңы текст суроонун маанисин өзгөрткөндө муну күйгүзүңүз.",
+    optionSemanticChangeLabel:
+      "Бул вариантты колдонгон жоопторду жараксыз кылуу",
+    optionSemanticChangeHint:
+      "Жаңы текст бул варианттын маанисин өзгөрткөндө муну күйгүзүңүз.",
     confirmRemoveQuestionMessage: "Бул суроону сурамжылоодон өчүрөсүзбү?",
     confirmRemoveOptionMessage: "Бул вариантты суроодон өчүрөсүзбү?",
     confirmRemoveQuestionButtonLabel: "Суроону өчүрүү",
@@ -537,12 +567,13 @@ export const editSurveyTranslations: Record<
     saveButton: "Сохранить опрос",
     deleteButton: "Удалить опрос",
     title: "Редактировать опрос",
-    description: "Настройте шаг опроса, который показывается перед тем, как участники смогут голосовать за утверждения или создавать новые.",
+    description:
+      "Настройте шаг опроса, который показывается перед тем, как участники смогут голосовать по высказываниям или создавать новые.",
     optionalSurveyToggleLabel: "Разрешить участникам пропускать опрос",
     optionalSurveyToggleHint:
-      "Шаг опроса можно пропустить. Участники могут голосовать или создавать утверждения без ответов на опрос; их голоса всегда включаются в анализ, а настройки обязательности вопросов игнорируются.",
+      "Шаг опроса можно пропустить. Участники могут голосовать или создавать высказывания без ответов на опрос; их голоса всегда включаются в анализ, а настройки обязательности вопросов игнорируются.",
     requiredSurveyToggleHint:
-      "Если есть опрос, шаг опроса обязателен. Участники должны пройти его перед голосованием или созданием утверждений, даже если некоторые или все вопросы необязательные. В анализ включаются только голоса участников, которые завершили этот шаг.",
+      "Если есть опрос, шаг опроса обязателен. Участники должны пройти его перед голосованием или созданием высказываний, даже если некоторые или все вопросы необязательные. В анализ включаются только голоса участников, которые завершили этот шаг.",
     questionRequirementDisabledHint:
       "Этот вопрос считается необязательным, потому что шаг опроса можно пропустить.",
     loadError: "Не удалось загрузить настройки опроса.",
@@ -579,10 +610,14 @@ export const editSurveyTranslations: Record<
     choiceDisplayAuto: "Авто",
     choiceDisplayList: "Список",
     choiceDisplayDropdown: "Выпадающий список с поиском",
-    questionSemanticChangeLabel: "Сделать ответы на этот вопрос недействительными",
-    questionSemanticChangeHint: "Включите это, если новая формулировка меняет смысл вопроса.",
-    optionSemanticChangeLabel: "Сделать недействительными ответы с этим вариантом",
-    optionSemanticChangeHint: "Включите это, если новая формулировка меняет смысл этого варианта.",
+    questionSemanticChangeLabel:
+      "Сделать ответы на этот вопрос недействительными",
+    questionSemanticChangeHint:
+      "Включите это, если новая формулировка меняет смысл вопроса.",
+    optionSemanticChangeLabel:
+      "Сделать недействительными ответы с этим вариантом",
+    optionSemanticChangeHint:
+      "Включите это, если новая формулировка меняет смысл этого варианта.",
     confirmRemoveQuestionMessage: "Удалить этот вопрос из опроса?",
     confirmRemoveOptionMessage: "Удалить этот вариант из вопроса?",
     confirmRemoveQuestionButtonLabel: "Удалить вопрос",

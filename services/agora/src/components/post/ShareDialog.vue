@@ -12,7 +12,11 @@
 
       <div class="dialog-content">
         <div class="qr-code-container">
-          <img v-if="qrCodeDataUrl" :src="qrCodeDataUrl" alt="QR Code" />
+          <img
+            v-if="qrCodeDataUrl"
+            :src="qrCodeDataUrl"
+            :alt="t('qrCodeAlt')"
+          />
         </div>
 
         <ZKButton

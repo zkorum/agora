@@ -2,7 +2,7 @@
 title: "Превращение разочарования в коллективную силу"
 description: "Как Agora Citizen Network помогла превратить массовую мобилизацию в общие демократические требования во время забастовки #bloquonstout во Франции."
 author: "Команда Agora"
-date: "Сентябрь 2025"
+date: "2025-09-01"
 type: "case-study"
 thumbnail: "/images/bloquonstout-thumbnail.jpg"
 image: "/images/bloquonstout-thumbnail.jpg"

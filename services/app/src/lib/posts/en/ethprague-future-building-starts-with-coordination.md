@@ -2,7 +2,7 @@
 title: "Future Building Starts With Coordination: Broad Listening at ETHPrague"
 description: "Yuting Jiang presents Agora Citizen Network at ETHPrague, arguing that the hardest problem is not intelligence but coordination, and that broad listening can help communities turn  shared attention to shared decisions."
 author: "Yuting Jiang"
-date: "May 2026"
+date: "2026-05-01"
 type: "vision"
 thumbnail: "/images/resources/ethprague-broad-listening.jpg"
 image: "/images/resources/ethprague-broad-listening.jpg"

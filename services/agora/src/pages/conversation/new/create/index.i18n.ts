@@ -15,6 +15,9 @@ export interface CreateConversationTranslations {
   githubLabelPlaceholder: string;
   organizationUnavailable: string;
   missingProjectCreateCapability: string;
+  missingRequiredCsvFiles: string;
+  csvImportError: string;
+  polisImportError: string;
 }
 
 export const createConversationTranslations: Record<
@@ -35,9 +38,13 @@ export const createConversationTranslations: Record<
     githubRepositoryPlaceholder: "owner/repo",
     githubLabel: "Issue Label",
     githubLabelPlaceholder: "roadmap",
-    organizationUnavailable: "The selected organization is no longer available.",
+    organizationUnavailable:
+      "The selected organization is no longer available.",
     missingProjectCreateCapability:
       "You do not have permission to create conversations in this organization's listed projects.",
+    missingRequiredCsvFiles: "Missing required CSV files",
+    csvImportError: "Error while importing conversation from CSV",
+    polisImportError: "Error while trying to import conversation from Polis",
     viewImportStatus: "View Import Status",
   },
   ar: {
@@ -50,14 +57,17 @@ export const createConversationTranslations: Record<
     activeImportMessage:
       "لديك عملية استيراد قيد التقدم. يرجى الانتظار حتى تكتمل قبل بدء عملية جديدة.",
     viewImportStatus: "عرض حالة الاستيراد",
-    githubConfig: "GitHub Source",
-    githubRepository: "Repository",
+    githubConfig: "مصدر GitHub",
+    githubRepository: "المستودع",
     githubRepositoryPlaceholder: "owner/repo",
-    githubLabel: "Issue Label",
+    githubLabel: "تسمية المشكلة",
     githubLabelPlaceholder: "roadmap",
     organizationUnavailable: "المؤسسة المحددة لم تعد متاحة.",
     missingProjectCreateCapability:
       "ليست لديك صلاحية إنشاء محادثات في المشاريع المدرجة لهذه المؤسسة.",
+    missingRequiredCsvFiles: "ملفات CSV المطلوبة مفقودة",
+    csvImportError: "حدث خطأ أثناء استيراد المحادثة من CSV",
+    polisImportError: "حدث خطأ أثناء محاولة استيراد المحادثة من Polis",
   },
   es: {
     importButton: "Importar",
@@ -68,15 +78,18 @@ export const createConversationTranslations: Record<
     activeImportMessage:
       "Tiene una importación en progreso. Espere a que se complete antes de iniciar una nueva.",
     viewImportStatus: "Ver Estado de Importación",
-    githubConfig: "GitHub Source",
-    githubRepository: "Repository",
+    githubConfig: "Fuente de GitHub",
+    githubRepository: "Repositorio",
     githubRepositoryPlaceholder: "owner/repo",
-    githubLabel: "Issue Label",
+    githubLabel: "Etiqueta de incidencia",
     githubLabelPlaceholder: "roadmap",
     organizationUnavailable:
       "La organización seleccionada ya no está disponible.",
     missingProjectCreateCapability:
       "No tienes permiso para crear conversaciones en los proyectos listados de esta organización.",
+    missingRequiredCsvFiles: "Faltan los archivos CSV obligatorios",
+    csvImportError: "Error al importar la conversación desde CSV",
+    polisImportError: "Error al intentar importar la conversación desde Polis",
   },
   fa: {
     importButton: "وارد کردن",
@@ -88,14 +101,17 @@ export const createConversationTranslations: Record<
     activeImportMessage:
       "یک فرآیند وارد کردن در حال انجام است. لطفاً قبل از شروع فرآیند جدید صبر کنید تا تکمیل شود.",
     viewImportStatus: "مشاهده وضعیت وارد کردن",
-    githubConfig: "GitHub Source",
-    githubRepository: "Repository",
+    githubConfig: "منبع GitHub",
+    githubRepository: "مخزن",
     githubRepositoryPlaceholder: "owner/repo",
-    githubLabel: "Issue Label",
+    githubLabel: "برچسب ایشو",
     githubLabelPlaceholder: "roadmap",
     organizationUnavailable: "سازمان انتخاب‌شده دیگر در دسترس نیست.",
     missingProjectCreateCapability:
       "شما اجازه ایجاد گفتگو در پروژه‌های فهرست‌شده این سازمان را ندارید.",
+    missingRequiredCsvFiles: "فایل‌های CSV الزامی موجود نیستند",
+    csvImportError: "هنگام وارد کردن گفتگو از CSV خطایی رخ داد",
+    polisImportError: "هنگام تلاش برای وارد کردن گفتگو از Polis خطایی رخ داد",
   },
   he: {
     importButton: "ייבוא",
@@ -107,14 +123,17 @@ export const createConversationTranslations: Record<
     activeImportMessage:
       "יש לכם ייבוא בתהליך. אנא המתינו לסיומו לפני שתתחילו ייבוא חדש.",
     viewImportStatus: "צפייה בסטטוס ייבוא",
-    githubConfig: "GitHub Source",
-    githubRepository: "Repository",
+    githubConfig: "מקור GitHub",
+    githubRepository: "מאגר",
     githubRepositoryPlaceholder: "owner/repo",
-    githubLabel: "Issue Label",
+    githubLabel: "תווית משימה",
     githubLabelPlaceholder: "roadmap",
     organizationUnavailable: "הארגון שנבחר אינו זמין עוד.",
     missingProjectCreateCapability:
       "אין לך הרשאה ליצור שיחות בפרויקטים הרשומים של הארגון הזה.",
+    missingRequiredCsvFiles: "קובצי ה-CSV הנדרשים חסרים",
+    csvImportError: "אירעה שגיאה בייבוא השיחה מ-CSV",
+    polisImportError: "אירעה שגיאה בניסיון לייבא את השיחה מ-Polis",
   },
   fr: {
     importButton: "Importer",
@@ -125,15 +144,19 @@ export const createConversationTranslations: Record<
     activeImportMessage:
       "Vous avez un import en cours. Veuillez attendre qu'il soit terminé avant d'en démarrer un nouveau.",
     viewImportStatus: "Voir l'État de l'Import",
-    githubConfig: "GitHub Source",
-    githubRepository: "Repository",
+    githubConfig: "Source GitHub",
+    githubRepository: "Dépôt",
     githubRepositoryPlaceholder: "owner/repo",
-    githubLabel: "Issue Label",
+    githubLabel: "Étiquette de l'issue",
     githubLabelPlaceholder: "roadmap",
     organizationUnavailable:
       "L'organisation sélectionnée n'est plus disponible.",
     missingProjectCreateCapability:
       "Vous n'avez pas l'autorisation de créer des conversations dans les projets listés de cette organisation.",
+    missingRequiredCsvFiles: "Fichiers CSV requis manquants",
+    csvImportError: "Erreur lors de l'import de la conversation depuis un CSV",
+    polisImportError:
+      "Erreur lors de la tentative d'import de la conversation depuis Polis",
   },
   "zh-Hans": {
     importButton: "导入",
@@ -149,8 +172,10 @@ export const createConversationTranslations: Record<
     githubLabel: "Issue 标签",
     githubLabelPlaceholder: "roadmap",
     organizationUnavailable: "所选组织已不可用。",
-    missingProjectCreateCapability:
-      "你无权在该组织列出的项目中创建对话。",
+    missingProjectCreateCapability: "你无权在该组织列出的项目中创建对话。",
+    missingRequiredCsvFiles: "缺少必需的 CSV 文件",
+    csvImportError: "从 CSV 导入对话时出错",
+    polisImportError: "尝试从 Polis 导入对话时出错",
   },
   "zh-Hant": {
     importButton: "匯入",
@@ -166,8 +191,10 @@ export const createConversationTranslations: Record<
     githubLabel: "Issue 標籤",
     githubLabelPlaceholder: "roadmap",
     organizationUnavailable: "所選組織已無法使用。",
-    missingProjectCreateCapability:
-      "你沒有權限在此組織列出的專案中建立對話。",
+    missingProjectCreateCapability: "你沒有權限在此組織列出的專案中建立對話。",
+    missingRequiredCsvFiles: "缺少必要的 CSV 檔案",
+    csvImportError: "從 CSV 匯入對話時發生錯誤",
+    polisImportError: "嘗試從 Polis 匯入對話時發生錯誤",
   },
   ja: {
     importButton: "インポート",
@@ -187,6 +214,10 @@ export const createConversationTranslations: Record<
     organizationUnavailable: "選択した組織は利用できなくなりました。",
     missingProjectCreateCapability:
       "この組織の一覧掲載プロジェクトで会話を作成する権限がありません。",
+    missingRequiredCsvFiles: "必要な CSV ファイルがありません",
+    csvImportError: "CSV から会話をインポート中にエラーが発生しました",
+    polisImportError:
+      "Polis から会話をインポートしようとした際にエラーが発生しました",
   },
   ky: {
     importButton: "Импорттоо",
@@ -198,14 +229,17 @@ export const createConversationTranslations: Record<
     activeImportMessage:
       "Импорт жүрүп жатат. Жаңысын баштоодон мурун аяктаганча күтүңүз.",
     viewImportStatus: "Импорттун абалын көрүү",
-    githubConfig: "GitHub Source",
-    githubRepository: "Repository",
+    githubConfig: "GitHub булагы",
+    githubRepository: "Репозиторий",
     githubRepositoryPlaceholder: "owner/repo",
-    githubLabel: "Issue Label",
+    githubLabel: "Маселенин энбелгиси",
     githubLabelPlaceholder: "roadmap",
     organizationUnavailable: "Тандалган уюм жеткиликтүү эмес.",
     missingProjectCreateCapability:
-      "Бул уюмдун тизмеленген долбоорлорунда сүйлөшүү түзүүгө уруксатыңыз жок.",
+      "Бул уюмдун тизмеленген долбоорлорунда талкуу түзүүгө уруксатыңыз жок.",
+    missingRequiredCsvFiles: "Талап кылынган CSV файлдары жетишпейт",
+    csvImportError: "CSV файлынан талкууну импорттоодо ката кетти",
+    polisImportError: "Polis'тен талкууну импорттоо аракетинде ката кетти",
   },
   ru: {
     importButton: "Импорт",
@@ -217,13 +251,16 @@ export const createConversationTranslations: Record<
     activeImportMessage:
       "Импорт выполняется. Пожалуйста, дождитесь его завершения перед началом нового.",
     viewImportStatus: "Просмотреть статус импорта",
-    githubConfig: "GitHub Source",
-    githubRepository: "Repository",
+    githubConfig: "Источник: GitHub",
+    githubRepository: "Репозиторий",
     githubRepositoryPlaceholder: "owner/repo",
-    githubLabel: "Issue Label",
+    githubLabel: "Метка задачи",
     githubLabelPlaceholder: "roadmap",
     organizationUnavailable: "Выбранная организация больше недоступна.",
     missingProjectCreateCapability:
       "У вас нет разрешения создавать обсуждения в перечисленных проектах этой организации.",
+    missingRequiredCsvFiles: "Отсутствуют обязательные CSV-файлы",
+    csvImportError: "Ошибка при импорте обсуждения из CSV",
+    polisImportError: "Ошибка при попытке импортировать обсуждение из Polis",
   },
 };

@@ -2,7 +2,7 @@
 title: "如何使用 Agora 引导活动和协商项目"
 description: "一份关于在活动、会议、工作坊和较长期协商项目中使用 Agora 的实用指南。"
 author: "Agora 团队"
-date: "September 2025"
+date: "2025-09-01"
 type: "guide"
 thumbnail: "/images/facilitation-guide-thumbnail.jpg"
 image: "/images/facilitation-guide-thumbnail.jpg"

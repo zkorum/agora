@@ -2,7 +2,7 @@
 title: "Нааразылыкты жамааттык күчкө айландыруу"
 description: "Agora Citizen Network Франциядагы #bloquonstout иш таштоосунда массалык мобилизацияны жалпы демократиялык талаптарга кантип айландырганы."
 author: "Agora тобу"
-date: "Сентябрь 2025"
+date: "2025-09-01"
 type: "case-study"
 thumbnail: "/images/bloquonstout-thumbnail.jpg"
 image: "/images/bloquonstout-thumbnail.jpg"

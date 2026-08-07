@@ -5,8 +5,76 @@ import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
 import { unified } from "unified";
 
+import type { locales } from "$lib/paraglide/runtime";
+import { localizeHref, toLocale } from "$lib/paraglide/runtime";
+import { SITE_ORIGIN } from "$lib/seo";
+import { parseResourceDate } from "$logic/shared/resource-date";
+
+type Locale = (typeof locales)[number];
+
 function getString(value: unknown): string {
   return typeof value === "string" ? value : "";
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function localizeResourceHref({
+  href,
+  locale,
+}: {
+  href: string;
+  locale: Locale;
+}): string {
+  const isRootRelative = href.startsWith("/") && !href.startsWith("//");
+  let url: URL;
+
+  try {
+    url = new URL(href, SITE_ORIGIN);
+  } catch {
+    return href;
+  }
+
+  if (!isRootRelative && url.origin !== SITE_ORIGIN) return href;
+
+  const pathSegments = url.pathname.split("/").filter(Boolean);
+  if (toLocale(pathSegments[0]) !== undefined) return href;
+  if (pathSegments[0] !== "resources" || pathSegments.length < 2) return href;
+
+  return localizeHref(href, { locale });
+}
+
+function localizeResourceLinks({
+  node,
+  locale,
+}: {
+  node: unknown;
+  locale: Locale;
+}): void {
+  if (!isRecord(node)) return;
+
+  if (node.type === "element" && node.tagName === "a") {
+    const properties = node.properties;
+    if (isRecord(properties) && typeof properties.href === "string") {
+      properties.href = localizeResourceHref({
+        href: properties.href,
+        locale,
+      });
+    }
+  }
+
+  if (Array.isArray(node.children)) {
+    for (const child of node.children) {
+      localizeResourceLinks({ node: child, locale });
+    }
+  }
+}
+
+function rehypeLocalizeResourceLinks({ locale }: { locale: Locale }) {
+  return (tree: unknown): void => {
+    localizeResourceLinks({ node: tree, locale });
+  };
 }
 
 export type ResourceType = "vision" | "case-study" | "guide" | "tech";
@@ -17,7 +85,7 @@ export interface ResourcePost {
   title: string;
   description: string;
   author: string;
-  date: string;
+  date: Date;
   thumbnail: string;
   image: string;
   content: string;
@@ -29,7 +97,7 @@ export interface ResourcePostMeta {
   title: string;
   description: string;
   author: string;
-  date: string;
+  date: Date;
   thumbnail: string;
   image: string;
 }
@@ -111,7 +179,7 @@ export function getResourcePosts({
       title: getString(data.title),
       description: getString(data.description),
       author: getString(data.author),
-      date: getString(data.date),
+      date: parseResourceDate(data.date),
       thumbnail: getString(data.thumbnail),
       image: getString(data.image),
     });
@@ -131,16 +199,32 @@ export function getResourcePosts({
         title: getString(data.title),
         description: getString(data.description),
         author: getString(data.author),
-        date: getString(data.date),
+        date: parseResourceDate(data.date),
         thumbnail: getString(data.thumbnail),
         image: getString(data.image),
       });
     }
   }
 
-  return posts.sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-  );
+  return posts.sort((a, b) => b.date.getTime() - a.date.getTime());
+}
+
+export async function renderResourceMarkdown({
+  markdown,
+  locale,
+}: {
+  markdown: string;
+  locale: Locale;
+}): Promise<string> {
+  const result = await unified()
+    .use(remarkParse)
+    .use(remarkRehype, { allowDangerousHtml: true })
+    .use(rehypeRaw)
+    .use(rehypeLocalizeResourceLinks, { locale })
+    .use(rehypeStringify)
+    .process(markdown);
+
+  return String(result);
 }
 
 export async function getResourcePost({
@@ -148,7 +232,7 @@ export async function getResourcePost({
   locale,
 }: {
   slug: string;
-  locale: string;
+  locale: Locale;
 }): Promise<ResourcePost | null> {
   const path = `/src/lib/posts/${locale}/${slug}.md`;
   let raw = markdownFiles[path];
@@ -163,23 +247,19 @@ export async function getResourcePost({
 
   const { data, content: markdownContent } = matter(raw);
 
-  const result = await unified()
-    .use(remarkParse)
-    .use(remarkRehype, { allowDangerousHtml: true })
-    .use(rehypeRaw)
-    .use(rehypeStringify)
-    .process(markdownContent);
-
   return {
     slug,
     type: getResourceType(data.type, slug),
     title: getString(data.title),
     description: getString(data.description),
     author: getString(data.author),
-    date: getString(data.date),
+    date: parseResourceDate(data.date),
     thumbnail: getString(data.thumbnail),
     image: getString(data.image),
-    content: String(result),
+    content: await renderResourceMarkdown({
+      markdown: markdownContent,
+      locale,
+    }),
   };
 }
 

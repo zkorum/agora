@@ -19,6 +19,7 @@ export interface RarimoVerificationFormTranslations {
   credentialAlreadyLinked: string;
   copiedToClipboard: string;
   couldNotCopy: string;
+  qrCodeAlt: string;
 }
 
 export const rarimoVerificationFormTranslations: Record<
@@ -46,6 +47,7 @@ export const rarimoVerificationFormTranslations: Record<
       "This passport is already linked to another account",
     copiedToClipboard: "Copied link to clipboard",
     couldNotCopy: "Could not copy to clipboard",
+    qrCodeAlt: "QR code for identity verification",
   },
   ar: {
     download: "تحميل",
@@ -64,10 +66,10 @@ export const rarimoVerificationFormTranslations: Record<
     passportAlreadyLinked:
       "جواز السفر هذا مرتبط بالفعل بحساب رقمي آخر. يرجى تجربة جواز سفر آخر.",
     unexpectedError: "عفواً! خطأ غير متوقع - حاول تحديث الصفحة",
-    credentialAlreadyLinked:
-      "جواز السفر هذا مرتبط بالفعل بحساب آخر",
+    credentialAlreadyLinked: "جواز السفر هذا مرتبط بالفعل بحساب آخر",
     copiedToClipboard: "تم نسخ الرابط إلى الحافظة",
     couldNotCopy: "تعذر النسخ إلى الحافظة",
+    qrCodeAlt: "رمز الاستجابة السريعة للتحقق من الهوية",
   },
   es: {
     download: "Descargar",
@@ -87,12 +89,33 @@ export const rarimoVerificationFormTranslations: Record<
     passportAlreadyLinked:
       "Este pasaporte ya está vinculado a otra cuenta de Rarimo. Por favor, intente con uno diferente.",
     unexpectedError: "¡Ups! Error inesperado—intente refrescar la página",
-    credentialAlreadyLinked:
-      "Este pasaporte ya está vinculado a otra cuenta",
+    credentialAlreadyLinked: "Este pasaporte ya está vinculado a otra cuenta",
     copiedToClipboard: "Enlace copiado al portapapeles",
     couldNotCopy: "No se pudo copiar al portapapeles",
+    qrCodeAlt: "Código QR para verificar la identidad",
   },
-  fa: { download: "دانلود", claimAnonymousId: "شناسه ناشناس خود را دریافت کنید", comeBackAndVerify: "به اینجا برگردید و روی تأیید کلیک کنید", scanQrCode: "کد QR را با Rarimo اسکن کنید تا هویت خود را تأیید کنید", failedToGenerateLink: "تولید لینک تأیید ناموفق بود", loadingVerificationLink: "بارگذاری لینک تأیید", openLinkOnMobile: "یا لینک زیر را در مرورگر موبایل خود باز کنید:", copy: "کپی", waitingForVerification: "در انتظار تأیید...", verify: "تأیید", verificationSuccessful: "تأیید موفقیت‌آمیز", accountMerged: "موفقیت! حساب‌های شما ادغام شدند", verificationFailed: "تلاش تأیید ناموفق بود. لطفاً دوباره تلاش کنید.", passportAlreadyLinked: "این گذرنامه قبلاً به حساب Rarimo دیگری متصل شده است. لطفاً گذرنامه دیگری امتحان کنید.", unexpectedError: "خطای غیرمنتظره—صفحه را بازخوانی کنید", credentialAlreadyLinked: "این گذرنامه قبلاً به حساب دیگری متصل شده است", copiedToClipboard: "لینک در کلیپ‌بورد کپی شد", couldNotCopy: "کپی در کلیپ‌بورد امکان‌پذیر نبود" },
+  fa: {
+    download: "دانلود",
+    claimAnonymousId: "شناسه ناشناس خود را دریافت کنید",
+    comeBackAndVerify: "به اینجا برگردید و روی تأیید کلیک کنید",
+    scanQrCode: "کد QR را با Rarimo اسکن کنید تا هویت خود را تأیید کنید",
+    failedToGenerateLink: "تولید لینک تأیید ناموفق بود",
+    loadingVerificationLink: "بارگذاری لینک تأیید",
+    openLinkOnMobile: "یا لینک زیر را در مرورگر موبایل خود باز کنید:",
+    copy: "کپی",
+    waitingForVerification: "در انتظار تأیید...",
+    verify: "تأیید",
+    verificationSuccessful: "تأیید موفقیت‌آمیز",
+    accountMerged: "موفقیت! حساب‌های شما ادغام شدند",
+    verificationFailed: "تلاش تأیید ناموفق بود. لطفاً دوباره تلاش کنید.",
+    passportAlreadyLinked:
+      "این گذرنامه قبلاً به حساب Rarimo دیگری متصل شده است. لطفاً گذرنامه دیگری امتحان کنید.",
+    unexpectedError: "خطای غیرمنتظره—صفحه را بازخوانی کنید",
+    credentialAlreadyLinked: "این گذرنامه قبلاً به حساب دیگری متصل شده است",
+    copiedToClipboard: "لینک در کلیپ‌بورد کپی شد",
+    couldNotCopy: "کپی در کلیپ‌بورد امکان‌پذیر نبود",
+    qrCodeAlt: "کد QR برای تأیید هویت",
+  },
   fr: {
     download: "Télécharger",
     claimAnonymousId: "Réclamez votre ID anonyme",
@@ -112,10 +135,10 @@ export const rarimoVerificationFormTranslations: Record<
     passportAlreadyLinked:
       "Ce passeport est déjà lié à un autre compte Rarimo. Veuillez en essayer un différent.",
     unexpectedError: "Oups ! Erreur inattendue—essayez de rafraîchir la page",
-    credentialAlreadyLinked:
-      "Ce passeport est déjà associé à un autre compte",
+    credentialAlreadyLinked: "Ce passeport est déjà associé à un autre compte",
     copiedToClipboard: "Lien copié dans le presse-papiers",
     couldNotCopy: "Impossible de copier dans le presse-papiers",
+    qrCodeAlt: "Code QR pour la vérification d'identité",
   },
   "zh-Hans": {
     download: "下载",
@@ -137,6 +160,7 @@ export const rarimoVerificationFormTranslations: Record<
     credentialAlreadyLinked: "此护照已关联到另一个账户",
     copiedToClipboard: "已复制链接到剪贴板",
     couldNotCopy: "无法复制到剪贴板",
+    qrCodeAlt: "用于身份验证的二维码",
   },
   "zh-Hant": {
     download: "下載",
@@ -158,8 +182,30 @@ export const rarimoVerificationFormTranslations: Record<
     credentialAlreadyLinked: "此護照已關聯到另一個帳戶",
     copiedToClipboard: "已複製連結到剪貼簿",
     couldNotCopy: "無法複製到剪貼簿",
+    qrCodeAlt: "用於身分驗證的 QR 碼",
   },
-  he: { download: "הורדה", claimAnonymousId: "קבלו את הזהות האנונימית שלכם", comeBackAndVerify: "חזרו לכאן ולחצו על אימות", scanQrCode: "סרקו את קוד ה-QR עם Rarimo כדי לאמת את זהותכם", failedToGenerateLink: "יצירת קישור אימות נכשלה", loadingVerificationLink: "טוען קישור אימות", openLinkOnMobile: "או פתחו את הקישור הבא בדפדפן הנייד:", copy: "העתקה", waitingForVerification: "ממתין לאימות...", verify: "אימות", verificationSuccessful: "האימות הצליח", accountMerged: "הצלחה! החשבונות שלך מוזגו", verificationFailed: "ניסיון האימות נכשל. אנא נסו שוב.", passportAlreadyLinked: "דרכון זה כבר מקושר לחשבון Rarimo אחר. אנא נסו דרכון אחר.", unexpectedError: "אופס! שגיאה בלתי צפויה—נסו לרענן את הדף", credentialAlreadyLinked: "דרכון זה כבר מקושר לחשבון אחר", copiedToClipboard: "הקישור הועתק ללוח", couldNotCopy: "לא ניתן להעתיק ללוח" },
+  he: {
+    download: "הורדה",
+    claimAnonymousId: "קבלו את הזהות האנונימית שלכם",
+    comeBackAndVerify: "חזרו לכאן ולחצו על אימות",
+    scanQrCode: "סרקו את קוד ה-QR עם Rarimo כדי לאמת את זהותכם",
+    failedToGenerateLink: "יצירת קישור אימות נכשלה",
+    loadingVerificationLink: "טוען קישור אימות",
+    openLinkOnMobile: "או פתחו את הקישור הבא בדפדפן הנייד:",
+    copy: "העתקה",
+    waitingForVerification: "ממתין לאימות...",
+    verify: "אימות",
+    verificationSuccessful: "האימות הצליח",
+    accountMerged: "הצלחה! החשבונות שלך מוזגו",
+    verificationFailed: "ניסיון האימות נכשל. אנא נסו שוב.",
+    passportAlreadyLinked:
+      "דרכון זה כבר מקושר לחשבון Rarimo אחר. אנא נסו דרכון אחר.",
+    unexpectedError: "אופס! שגיאה בלתי צפויה—נסו לרענן את הדף",
+    credentialAlreadyLinked: "דרכון זה כבר מקושר לחשבון אחר",
+    copiedToClipboard: "הקישור הועתק ללוח",
+    couldNotCopy: "לא ניתן להעתיק ללוח",
+    qrCodeAlt: "קוד QR לאימות זהות",
+  },
   ja: {
     download: "ダウンロード",
     claimAnonymousId: "匿名 ID を取得",
@@ -183,6 +229,7 @@ export const rarimoVerificationFormTranslations: Record<
       "このパスポートはすでに別のアカウントにリンクされています",
     copiedToClipboard: "リンクをクリップボードにコピーしました",
     couldNotCopy: "クリップボードにコピーできませんでした",
+    qrCodeAlt: "本人確認用 QR コード",
   },
   ky: {
     download: "Жүктөп алуу",
@@ -191,32 +238,32 @@ export const rarimoVerificationFormTranslations: Record<
     scanQrCode: "Өзүңүздү тастыктоо үчүн Rarimo менен QR кодду сканерлеңиз",
     failedToGenerateLink: "Текшерүү шилтемесин түзүү ишке ашкан жок",
     loadingVerificationLink: "Текшерүү шилтемеси жүктөлүүдө",
-    openLinkOnMobile:
-      "Же мобилдик браузериңизде төмөнкү шилтемени ачыңыз:",
+    openLinkOnMobile: "Же мобилдик браузериңизде төмөнкү шилтемени ачыңыз:",
     copy: "Көчүрүү",
     waitingForVerification: "Текшерүү күтүлүүдө...",
     verify: "Текшерүү",
     verificationSuccessful: "Текшерүү ийгиликтүү",
     accountMerged: "Ийгилик! Аккаунттарыңыз бириктирилди",
-    verificationFailed: "Текшерүү аракети ишке ашкан жок. Кайра аракет кылыңыз.",
+    verificationFailed:
+      "Текшерүү аракети ишке ашкан жок. Кайра аракет кылыңыз.",
     passportAlreadyLinked:
       "Бул паспорт башка Rarimo аккаунтуна мурунтан эле байланган. Башка паспортту колдонуңуз.",
-    unexpectedError:
-      "Ой! Күтүлбөгөн ката — баракчаны жаңылаңыз",
+    unexpectedError: "Ой! Күтүлбөгөн ката — баракчаны жаңылаңыз",
     credentialAlreadyLinked:
       "Бул паспорт башка аккаунтка мурунтан эле байланган",
     copiedToClipboard: "Шилтеме алмашуу буферине көчүрүлдү",
     couldNotCopy: "Алмашуу буферине көчүрүү мүмкүн болбоду",
+    qrCodeAlt: "Өздүктү тастыктоо үчүн QR код",
   },
   ru: {
     download: "Скачать",
     claimAnonymousId: "Получите анонимный ID",
     comeBackAndVerify: "Вернитесь сюда и нажмите «Подтвердить»",
-    scanQrCode: "Отсканируйте QR-код с помощью Rarimo для подтверждения личности",
+    scanQrCode:
+      "Отсканируйте QR-код с помощью Rarimo для подтверждения личности",
     failedToGenerateLink: "Не удалось сгенерировать ссылку для проверки",
     loadingVerificationLink: "Загрузка ссылки для проверки",
-    openLinkOnMobile:
-      "Или откройте ссылку ниже в мобильном браузере:",
+    openLinkOnMobile: "Или откройте ссылку ниже в мобильном браузере:",
     copy: "Копировать",
     waitingForVerification: "Ожидание проверки...",
     verify: "Подтвердить",
@@ -225,11 +272,10 @@ export const rarimoVerificationFormTranslations: Record<
     verificationFailed: "Попытка проверки не удалась. Попробуйте снова.",
     passportAlreadyLinked:
       "Этот паспорт уже привязан к другому аккаунту Rarimo. Попробуйте другой.",
-    unexpectedError:
-      "Ой! Непредвиденная ошибка — попробуйте обновить страницу",
-    credentialAlreadyLinked:
-      "Этот паспорт уже привязан к другому аккаунту",
+    unexpectedError: "Ой! Непредвиденная ошибка — попробуйте обновить страницу",
+    credentialAlreadyLinked: "Этот паспорт уже привязан к другому аккаунту",
     copiedToClipboard: "Ссылка скопирована в буфер обмена",
     couldNotCopy: "Не удалось скопировать в буфер обмена",
+    qrCodeAlt: "QR-код для подтверждения личности",
   },
 };

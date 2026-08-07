@@ -2,7 +2,7 @@
   <div>
     <nav
       class="flexIcons container"
-      aria-label="Footer navigation"
+      :aria-label="t('footerNavigation')"
       role="navigation"
     >
       <RouterLink
@@ -10,7 +10,7 @@
         :key="iconItem.name"
         :to="iconItem.route"
         class="iconStyle navigation-link"
-        :aria-label="`Navigate to ${iconItem.name}`"
+        :aria-label="t('navigateTo', { destination: iconItem.name })"
         :aria-current="route.name === iconItem.route ? 'page' : undefined"
         @click="handleNavigationClick($event, iconItem.route)"
       >

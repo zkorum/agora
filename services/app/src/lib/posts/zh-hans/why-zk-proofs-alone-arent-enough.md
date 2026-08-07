@@ -2,19 +2,19 @@
 title: "为什么仅靠零知识证明不足以保护用户隐私"
 description: "零知识证明可以保护凭证证明本身，但公民平台还需要在身份、元数据、钱包、设备和开源基础设施层面共同保护隐私。"
 author: "Nicolas Gimenez"
-date: "2026年5月"
+date: "2024-09-01"
 type: "tech"
 thumbnail: "https://lh7-us.googleusercontent.com/docs/AHkbwyK44xfmb0zN95CAfiTWJ5ULJ_-8DpfWRTy8r23dsV6kahSE4C4X-cZ8W4Ed-n2MT0jfWuolbqR77m1-rt_yXV4xcoojPDahscs3bQ=w1200-h630-p"
 image: "https://lh7-us.googleusercontent.com/docs/AHkbwyK44xfmb0zN95CAfiTWJ5ULJ_-8DpfWRTy8r23dsV6kahSE4C4X-cZ8W4Ed-n2MT0jfWuolbqR77m1-rt_yXV4xcoojPDahscs3bQ=w1200-h630-p"
 ---
 
-零知识证明常被描述成隐私保护的完整答案。在公民科技中，这个承诺尤其有吸引力：一个人可以证明自己有资格参与、是唯一的真实个体、超过某个年龄，或居住在某个司法辖区，而无需公开完整身份证件。
+[零知识证明](https://en.wikipedia.org/wiki/Zero-knowledge_proof)常被描述成隐私保护的完整答案。在公民科技中，这个承诺尤其有吸引力：一个人可以证明自己有资格参与、是唯一的真实个体、超过某个年龄，或居住在某个司法辖区，而无需公开完整身份证件。
 
 这个承诺是真实的，但范围也比听起来更窄。
 
 零知识证明保护的是“证明”本身。它不会自动保护用户的 IP 地址、浏览器指纹、电话号码、电子邮件、钱包实现、设备、操作系统，也不会自动保护围绕证明产生的时间戳和行为信号。如果这些周边层没有被谨慎设计，验证方仍然可能知道用户是谁。
 
-本文改写自 2024 年 9 月向 NGI TrustChain 做的一次演示。核心观点很简单：零知识证明是私密公民参与的重要构件，但用户隐私是一种全栈属性。
+本文改写自 2024 年 9 月向 [NGI TrustChain](https://trustchain.ngi.eu/) 做的一次[演示](https://docs.google.com/presentation/d/e/2PACX-1vRKRJW4-ZUHso3o-KzzwemuezH7ifLENCpvJCr9552PlRHzOtyxetsLM-4ghHDwCA/pub?start=false&loop=false&delayms=3000)。核心观点很简单：零知识证明是私密公民参与的重要构件，但用户隐私是一种全栈属性。
 
 ## 为什么公民平台需要身份
 

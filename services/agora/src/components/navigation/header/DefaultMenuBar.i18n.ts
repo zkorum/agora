@@ -15,13 +15,13 @@ export const defaultMenuBarTranslations: Record<
     logIn: "تسجيل الدخول",
   },
   es: {
-    logIn: "Log in",
+    logIn: "Iniciar sesión",
   },
   fa: {
     logIn: "ورود",
   },
   fr: {
-    logIn: "Log in",
+    logIn: "Se connecter",
   },
   "zh-Hans": {
     logIn: "登录",

@@ -2,7 +2,7 @@
 title: "Agora менен иш-чараларды жана кеңешүү долбоорлорун кантип фасилитациялоо керек"
 description: "Agoraны иш-чараларда, конференцияларда, семинарларда жана узак мөөнөттүү кеңешүү долбоорлорунда колдонуу боюнча практикалык колдонмо."
 author: "Agora тобу"
-date: "Сентябрь 2025"
+date: "2025-09-01"
 type: "guide"
 thumbnail: "/images/facilitation-guide-thumbnail.jpg"
 image: "/images/facilitation-guide-thumbnail.jpg"

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import * as m from "$lib/paraglide/messages.js";
+
   interface Props {
     class?: string;
     colorMode?: "brand" | "light";
@@ -9,7 +11,7 @@
 
 <a
   href="mailto:hello@zkorum.com"
-  aria-label="Email"
+  aria-label={m.email_label()}
   class="{colorMode === 'light' ? 'text-inverse-foreground' : 'text-icon-email'}
     transition-opacity duration-200
     hover:opacity-70

@@ -8,7 +8,10 @@
       <div>{{ t("moderateConversation") }}</div>
     </div>
 
-    <div v-if="conversationItem?.displayContent.status === 'available'" class="postPreview">
+    <div
+      v-if="conversationItem?.displayContent.status === 'available'"
+      class="postPreview"
+    >
       <b>
         {{ conversationItem.displayContent.content.title }}
       </b>
@@ -77,10 +80,7 @@ import {
   updateConversationQueryCache,
 } from "src/utils/api/post/useConversationQuery";
 import { useInvalidateFeedQuery } from "src/utils/api/post/useFeedQuery";
-import {
-  moderationActionPostsMapping,
-  moderationReasonMapping,
-} from "src/utils/component/moderations";
+import { useModerationMappings } from "src/utils/component/moderations";
 import { getSingleRouteParam } from "src/utils/router/params";
 import { onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -109,11 +109,13 @@ const DEFAULT_MODERATION_ACTION = "lock";
 const moderationAction = ref<ConversationModerationAction>(
   DEFAULT_MODERATION_ACTION
 );
-const actionMapping = ref(moderationActionPostsMapping);
+const {
+  moderationActionPostsMapping: actionMapping,
+  moderationReasonMapping: reasonMapping,
+} = useModerationMappings();
 
 const DEFAULT_MODERATION_REASON = "misleading";
 const moderationReason = ref<ModerationReason>(DEFAULT_MODERATION_REASON);
-const reasonMapping = ref(moderationReasonMapping);
 
 const moderationExplanation = ref("");
 
@@ -181,7 +183,8 @@ function updateConversationModerationCache({
   }
 
   const fallbackConversation =
-    conversationItem.value?.conversationData.metadata.conversationSlugId === postSlugId
+    conversationItem.value?.conversationData.metadata.conversationSlugId ===
+    postSlugId
       ? conversationItem.value
       : undefined;
 

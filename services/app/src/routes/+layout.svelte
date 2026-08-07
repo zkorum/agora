@@ -23,15 +23,15 @@
 <svelte:head>
   <title>{title}</title>
   <meta name="description" content={description} />
-  <meta name="keywords" content="civic tech, social network, peace" />
-  <meta name="author" content="Agora Citizen Network" />
+  <meta name="keywords" content={m.meta_keywords()} />
+  <meta name="author" content={m.meta_author()} />
 
   <!-- Open Graph -->
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
   <meta property="og:url" content={page.url.href} />
   <meta property="og:type" content={ogType} />
-  <meta property="og:site_name" content="Agora" />
+  <meta property="og:site_name" content={m.brand_name()} />
   <meta property="og:image" content={ogImage} />
   <meta property="og:image:secure_url" content={ogImage} />
   <meta property="og:image:type" content={ogImageType} />

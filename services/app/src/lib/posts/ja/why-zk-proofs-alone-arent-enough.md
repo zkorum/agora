@@ -2,19 +2,19 @@
 title: "ゼロ知識証明だけではユーザーのプライバシーを守れない理由"
 description: "ゼロ知識証明は証明そのものを守れますが、市民参加プラットフォームには、アイデンティティ、メタデータ、ウォレット、デバイス、オープンソース基盤をまたぐプライバシー設計が必要です。"
 author: "Nicolas Gimenez"
-date: "2026年5月"
+date: "2024-09-01"
 type: "tech"
 thumbnail: "https://lh7-us.googleusercontent.com/docs/AHkbwyK44xfmb0zN95CAfiTWJ5ULJ_-8DpfWRTy8r23dsV6kahSE4C4X-cZ8W4Ed-n2MT0jfWuolbqR77m1-rt_yXV4xcoojPDahscs3bQ=w1200-h630-p"
 image: "https://lh7-us.googleusercontent.com/docs/AHkbwyK44xfmb0zN95CAfiTWJ5ULJ_-8DpfWRTy8r23dsV6kahSE4C4X-cZ8W4Ed-n2MT0jfWuolbqR77m1-rt_yXV4xcoojPDahscs3bQ=w1200-h630-p"
 ---
 
-ゼロ知識証明は、プライバシーへの完全な答えとして語られることがあります。市民技術の文脈では、その約束はとくに魅力的です。人は、身分証明書の中身をすべて明かすことなく、参加資格があること、一意の人物であること、一定年齢以上であること、あるいは特定の地域の住民であることを証明できます。
+[ゼロ知識証明](https://en.wikipedia.org/wiki/Zero-knowledge_proof)は、プライバシーへの完全な答えとして語られることがあります。市民技術の文脈では、その約束はとくに魅力的です。人は、身分証明書の中身をすべて明かすことなく、参加資格があること、一意の人物であること、一定年齢以上であること、あるいは特定の地域の住民であることを証明できます。
 
 この約束は本物です。ただし、聞こえ方よりも範囲は狭いです。
 
 ゼロ知識証明が守るのは証明です。ユーザーのIPアドレス、ブラウザ指紋、電話番号、メールアドレス、ウォレット実装、デバイス、OS、そして証明の周囲で作られる多くのタイムスタンプや行動シグナルを自動的に守るわけではありません。周辺レイヤーが慎重に設計されていなければ、検証者は依然としてユーザーが誰なのかを知ることができます。
 
-この記事は、2024年9月にNGI TrustChain向けに行ったプレゼンテーションをもとにしています。中心的な主張はシンプルです。ゼロ知識証明は、プライベートな市民参加のための重要な部品ですが、ユーザーのプライバシーはフルスタックの性質です。
+この記事は、2024年9月に[NGI TrustChain](https://trustchain.ngi.eu/)向けに行った[プレゼンテーション](https://docs.google.com/presentation/d/e/2PACX-1vRKRJW4-ZUHso3o-KzzwemuezH7ifLENCpvJCr9552PlRHzOtyxetsLM-4ghHDwCA/pub?start=false&loop=false&delayms=3000)をもとにしています。中心的な主張はシンプルです。ゼロ知識証明は、プライベートな市民参加のための重要な部品ですが、ユーザーのプライバシーはフルスタックの性質です。
 
 ## なぜ市民プラットフォームにアイデンティティが入るのか
 

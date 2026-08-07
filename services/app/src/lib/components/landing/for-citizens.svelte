@@ -49,7 +49,7 @@
       <div class="flex justify-center">
         <enhanced:img
           src="$lib/assets/screenshot-citizens.png"
-          alt="Phone mockup showing the citizen dialogue feed"
+          alt={m.citizens_phone_alt()}
           sizes="350px"
           class="w-[350px]"
         />
