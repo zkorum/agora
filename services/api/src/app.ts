@@ -131,6 +131,14 @@ const baseConfigSchema = sharedConfigSchema.extend({
                 return z.NEVER;
             }
         }),
+    PROJECT_DOCUMENTS_AWS_S3_REGION: z.string().optional(),
+    PROJECT_DOCUMENTS_AWS_S3_BUCKET_NAME: z.string().optional(),
+    PROJECT_DOCUMENTS_S3_PRESIGNED_URL_EXPIRY_SECONDS: z.coerce
+        .number()
+        .int()
+        .min(60)
+        .max(604800)
+        .default(600),
     IS_MAXDIFF_GITHUB_ORG_ONLY: z
         .string()
         .default("true")
@@ -246,9 +254,7 @@ const configSchema = baseConfigSchema.superRefine((value, ctx) => {
         });
     }
 
-    if (
-        value.SESSION_REFRESH_THRESHOLD_DAYS >= value.SESSION_LIFETIME_DAYS
-    ) {
+    if (value.SESSION_REFRESH_THRESHOLD_DAYS >= value.SESSION_LIFETIME_DAYS) {
         ctx.addIssue({
             code: "custom",
             path: ["SESSION_REFRESH_THRESHOLD_DAYS"],

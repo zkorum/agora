@@ -22,7 +22,11 @@
       <h2 class="project-details-aside__title">
         {{ t("projectContactTitle") }}
       </h2>
-      <ProjectContactCard :contact="contact" :language-code="languageCode" />
+      <ProjectContactCard
+        :contact="contact"
+        :language-code="languageCode"
+        layout="sidebar"
+      />
     </section>
   </aside>
 </template>

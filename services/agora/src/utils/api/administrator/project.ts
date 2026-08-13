@@ -1,18 +1,27 @@
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { PROJECT_DOCUMENT_UPLOAD_FIELD_NAMES } from "src/shared/projectDocument";
 import type {
   AdminProject,
+  AdminProjectDocument,
   AdminProjectOption,
   CreateProjectFailureReason,
   CreateProjectRequest,
+  DeleteProjectDocumentRequest,
   DeleteProjectRequest,
   GetProjectDetailsRequest,
+  ListProjectDocumentsRequest,
+  ListProjectDocumentsResponse,
+  ProjectDocumentUploadMetadata,
   UpdateProjectLanguageSettingsFailureReason,
   UpdateProjectLanguageSettingsRequest,
   UpdateProjectRequest,
   UpdateProjectSlugRequest,
 } from "src/shared/types/dto";
 import { Dto } from "src/shared/types/dto";
-import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
+import {
+  buildAuthorizationHeader,
+  FILE_UPLOAD_UCAN_LIFETIME_SECONDS,
+} from "src/utils/crypto/ucan/operation";
 import { useNotify } from "src/utils/ui/notify";
 
 import { api } from "../client";
@@ -46,7 +55,7 @@ const updateProjectLanguageSettingsFailureTranslationKeys: Record<
 };
 
 export function useBackendAdministratorProjectApi() {
-  const { buildEncodedUcan } = useCommonApi();
+  const { buildEncodedUcan, createRawAxiosRequestConfig } = useCommonApi();
   const { showNotifyMessage } = useNotify();
   const { t } = useComponentI18n<AdministratorProjectApiTranslations>(
     administratorProjectApiTranslations
@@ -263,11 +272,77 @@ export function useBackendAdministratorProjectApi() {
     }
   }
 
+  async function listProjectDocuments(
+    request: ListProjectDocumentsRequest
+  ): Promise<ListProjectDocumentsResponse> {
+    const params = Dto.listProjectDocumentsRequest.parse(request);
+    const url = "/api/v1/administrator/project/document/list";
+    const encodedUcan = await buildEncodedUcan(url, { method: "POST" });
+    const response = await api.post(url, params, {
+      headers: buildAuthorizationHeader(encodedUcan),
+    });
+    return Dto.listProjectDocumentsResponse.parse(response.data);
+  }
+
+  async function uploadProjectDocument({
+    metadata,
+    participantFile,
+    ownerFile,
+  }: {
+    metadata: ProjectDocumentUploadMetadata;
+    participantFile: File;
+    ownerFile: File | undefined;
+  }): Promise<AdminProjectDocument> {
+    const parsedMetadata = Dto.projectDocumentUploadMetadata.parse(metadata);
+    const formData = new FormData();
+    formData.append(
+      PROJECT_DOCUMENT_UPLOAD_FIELD_NAMES.PARTICIPANT_FILE,
+      participantFile
+    );
+    if (ownerFile !== undefined) {
+      formData.append(
+        PROJECT_DOCUMENT_UPLOAD_FIELD_NAMES.OWNER_FILE,
+        ownerFile
+      );
+    }
+    formData.append(
+      PROJECT_DOCUMENT_UPLOAD_FIELD_NAMES.METADATA,
+      JSON.stringify(parsedMetadata)
+    );
+    const url = "/api/v1/administrator/project/document/upload";
+    const encodedUcan = await buildEncodedUcan(
+      url,
+      { method: "POST" },
+      "create",
+      FILE_UPLOAD_UCAN_LIFETIME_SECONDS
+    );
+    const requestConfig = createRawAxiosRequestConfig({
+      encodedUcan,
+      timeoutProfile: "file-upload",
+    });
+    const response = await api.post(url, formData, requestConfig);
+    return Dto.uploadProjectDocumentResponse.parse(response.data).document;
+  }
+
+  async function deleteProjectDocument(
+    request: DeleteProjectDocumentRequest
+  ): Promise<void> {
+    const params = Dto.deleteProjectDocumentRequest.parse(request);
+    const url = "/api/v1/administrator/project/document/delete";
+    const encodedUcan = await buildEncodedUcan(url, { method: "POST" });
+    await api.post(url, params, {
+      headers: buildAuthorizationHeader(encodedUcan),
+    });
+  }
+
   return {
     deleteProject,
     createProject,
     getProjectDetails,
     getProjectOptions,
+    listProjectDocuments,
+    uploadProjectDocument,
+    deleteProjectDocument,
     updateProject,
     updateProjectLanguageSettings,
     updateProjectSlug,

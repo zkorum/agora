@@ -199,8 +199,10 @@ const project = computed<ProjectPageData>(() => ({
   bannerVariant: "blue",
   bannerImageUrl: `${localProjectAssetBaseUrl}/project-banner-en.png`,
   participantCount: 214,
+  participationCount: 492,
   voteCount: 2100,
   activityCount: 4,
+  documents: [],
   attributions: [
     {
       role: "sponsor",

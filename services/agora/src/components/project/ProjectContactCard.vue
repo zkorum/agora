@@ -1,5 +1,8 @@
 <template>
-  <section class="project-contact-card">
+  <section
+    class="project-contact-card"
+    :class="`project-contact-card--${layout}`"
+  >
     <div class="project-contact-card__header">
       <div
         class="project-contact-card__avatar"
@@ -30,7 +33,7 @@
         :href="safeEmailHref"
         :external="false"
         variant="outline"
-        :block="true"
+        :block="layout === 'sidebar'"
         :accessible-label="t('emailContactAriaLabel', { name: displayName })"
         :interactive="true"
       />
@@ -42,7 +45,7 @@
         :href="safeWebsiteHref"
         :external="true"
         variant="outline"
-        :block="true"
+        :block="layout === 'sidebar'"
         :accessible-label="t('contactPageAriaLabel', { name: displayName })"
         :interactive="true"
       />
@@ -66,6 +69,7 @@ import { getSafeProjectHref, getSafeProjectWebHref } from "./projectUrlSafety";
 const props = defineProps<{
   contact: ProjectContact;
   languageCode: SupportedDisplayLanguageCodes;
+  layout: "sidebar" | "wide";
 }>();
 
 const subtitle = computed(() => {
@@ -177,5 +181,30 @@ p {
 .project-contact-card__actions {
   display: grid;
   gap: 0.85rem;
+}
+
+.project-contact-card--wide {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+
+  .project-contact-card__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+}
+
+@container (max-width: 34rem) {
+  .project-contact-card--wide {
+    grid-template-columns: 1fr;
+
+    .project-contact-card__actions {
+      display: grid;
+      justify-content: flex-start;
+    }
+  }
 }
 </style>

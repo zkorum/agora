@@ -1,6 +1,6 @@
 <template>
   <section v-if="entries.length > 0" class="project-attribution-section">
-    <h2>{{ title }}</h2>
+    <ProjectSectionHeading :heading-id="undefined" :title="title" />
 
     <div class="project-attribution-section__list">
       <component
@@ -61,6 +61,7 @@ import { computed } from "vue";
 
 import { translateProjectPageText } from "./projectPageI18n";
 import type { ProjectAttribution } from "./projectPageTypes";
+import ProjectSectionHeading from "./ProjectSectionHeading.vue";
 import { getSafeProjectWebHref } from "./projectUrlSafety";
 
 type ProjectAttributionSectionEntry = Pick<
@@ -128,16 +129,6 @@ function logoStyle(color: string): { backgroundColor: string } {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-}
-
-h2 {
-  margin: 0;
-  color: $ink-light;
-  font-size: 0.78rem;
-  font-weight: var(--font-weight-bold);
-  letter-spacing: 0.08em;
-  line-height: 1.2;
-  text-transform: uppercase;
 }
 
 .project-attribution-section__list {

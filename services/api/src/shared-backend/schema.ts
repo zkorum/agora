@@ -27,6 +27,7 @@ import {
     ZodSupportedSpokenLanguageCodes,
 } from "@/shared/languages.js";
 import { projectOrganizationAttributionRoleValues } from "@/shared/types/project.js";
+import { PROJECT_DOCUMENT_CONTENT_TYPES } from "@/shared/projectDocument.js";
 // import { MAX_LENGTH_TITLE, MAX_LENGTH_OPINION, MAX_LENGTH_BODY } from "./shared/shared.js"; // unfortunately it breaks drizzle generate... :o TODO: find a way
 // WARNING: when you modify these limits, change this in shared.ts as well
 const MAX_LENGTH_TITLE = 140;
@@ -610,6 +611,18 @@ export const languageDetectionProviderEnum = pgEnum(
 export const displayLanguageCodeEnum = pgEnum(
     "display_language_code",
     ZodSupportedDisplayLanguageCodes.enum,
+);
+export const projectDocumentAudienceEnum = pgEnum(
+    "project_document_audience",
+    ["participant", "owner"],
+);
+export const projectDocumentFileStatusEnum = pgEnum(
+    "project_document_file_status",
+    ["pending", "available"],
+);
+export const projectDocumentContentTypeEnum = pgEnum(
+    "project_document_content_type",
+    PROJECT_DOCUMENT_CONTENT_TYPES,
 );
 export const spokenLanguageCodeEnum = pgEnum(
     "spoken_language_code",
@@ -1292,6 +1305,115 @@ export const projectTranslationTargetLanguageTable = pgTable(
     (table) => [
         uniqueIndex("project_translation_target_language_active_unique")
             .on(table.projectId, table.languageCode)
+            .where(isNull(table.deletedAt)),
+    ],
+);
+
+/** @service api */
+export const projectDocumentTable = pgTable(
+    "project_document",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        publicId: uuid("public_id").defaultRandom().notNull().unique(),
+        conversationId: integer("conversation_id")
+            .references(() => conversationTable.id)
+            .notNull(),
+        createdByUsername: varchar("created_by_username", {
+            length: MAX_LENGTH_USERNAME,
+        }).notNull(),
+        defaultLanguageCode: displayLanguageCodeEnum(
+            "default_language_code",
+        ).notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        publishedAt: timestamp("published_at", {
+            mode: "date",
+            precision: 0,
+        }),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
+    },
+    (table) => [
+        index("project_document_conversation_id_idx").on(table.conversationId),
+    ],
+);
+
+/** @service api */
+export const projectDocumentFileTable = pgTable(
+    "project_document_file",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        projectDocumentId: integer("project_document_id")
+            .references(() => projectDocumentTable.id)
+            .notNull(),
+        audience: projectDocumentAudienceEnum("audience").notNull(),
+        status: projectDocumentFileStatusEnum("status")
+            .notNull()
+            .default("pending"),
+        objectKey: text("object_key").notNull().unique(),
+        originalFileName: text("original_file_name").notNull(),
+        contentType: projectDocumentContentTypeEnum("content_type").notNull(),
+        byteSize: integer("byte_size").notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
+        objectDeletedAt: timestamp("object_deleted_at", {
+            mode: "date",
+            precision: 0,
+        }),
+    },
+    (table) => [
+        uniqueIndex("project_document_file_audience_active_unique")
+            .on(table.projectDocumentId, table.audience)
+            .where(isNull(table.deletedAt)),
+        index("project_document_file_deletion_queue_idx")
+            .on(table.projectDocumentId)
+            .where(
+                sql`${table.deletedAt} IS NOT NULL AND ${table.objectDeletedAt} IS NULL`,
+            ),
+        index("project_document_file_pending_created_idx")
+            .on(table.createdAt, table.projectDocumentId)
+            .where(
+                sql`${table.status} = 'pending' AND ${table.deletedAt} IS NULL`,
+            ),
+        check(
+            "project_document_file_byte_size_check",
+            sql`${table.byteSize} > 0 AND ${table.byteSize} <= 20971520`,
+        ),
+    ],
+);
+
+/** @service api */
+export const projectDocumentLocalizationTable = pgTable(
+    "project_document_localization",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        projectDocumentId: integer("project_document_id")
+            .references(() => projectDocumentTable.id)
+            .notNull(),
+        languageCode: displayLanguageCodeEnum("language_code").notNull(),
+        name: varchar("name", { length: MAX_LENGTH_TITLE }).notNull(),
+        downloadFileName: varchar("download_file_name", {
+            length: 255,
+        }).notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
+    },
+    (table) => [
+        uniqueIndex("project_document_localization_active_unique")
+            .on(table.projectDocumentId, table.languageCode)
             .where(isNull(table.deletedAt)),
     ],
 );

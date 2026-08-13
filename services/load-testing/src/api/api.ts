@@ -402,6 +402,89 @@ export const ApiV1AdministratorProjectCreatePostRequestLanguageSettingsTargetLan
 
 export type ApiV1AdministratorProjectCreatePostRequestLanguageSettingsTargetLanguageCodesEnum = typeof ApiV1AdministratorProjectCreatePostRequestLanguageSettingsTargetLanguageCodesEnum[keyof typeof ApiV1AdministratorProjectCreatePostRequestLanguageSettingsTargetLanguageCodesEnum];
 
+export interface ApiV1AdministratorProjectDocumentDeletePostRequest {
+    'projectSlug': string;
+    'documentId': string;
+}
+export interface ApiV1AdministratorProjectDocumentListPost200Response {
+    'documents': Array<ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInner>;
+    'conversationOptions': Array<ApiV1AdministratorProjectDocumentListPost200ResponseConversationOptionsInner>;
+}
+export interface ApiV1AdministratorProjectDocumentListPost200ResponseConversationOptionsInner {
+    'conversationSlugId': string;
+    'conversationTitle': string;
+}
+export interface ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInner {
+    'documentId': string;
+    'conversationSlugId': string;
+    'conversationTitle': string;
+    'defaultLanguageCode': ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInnerDefaultLanguageCodeEnum;
+    'localizations': Array<ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInnerLocalizationsInner>;
+    'participantFile': ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInnerParticipantFile;
+    'ownerFile'?: ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInnerParticipantFile;
+    'createdByUsername': string;
+    'createdAt': string;
+    'publishedAt': string;
+}
+
+export const ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInnerDefaultLanguageCodeEnum = {
+    En: 'en',
+    Es: 'es',
+    Fr: 'fr',
+    ZhHant: 'zh-Hant',
+    ZhHans: 'zh-Hans',
+    Ja: 'ja',
+    Ar: 'ar',
+    Fa: 'fa',
+    He: 'he',
+    Ky: 'ky',
+    Ru: 'ru',
+} as const;
+
+export type ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInnerDefaultLanguageCodeEnum = typeof ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInnerDefaultLanguageCodeEnum[keyof typeof ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInnerDefaultLanguageCodeEnum];
+
+export interface ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInnerLocalizationsInner {
+    'languageCode': ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInnerLocalizationsInnerLanguageCodeEnum;
+    'name': string;
+    'downloadFileName': string;
+}
+
+export const ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInnerLocalizationsInnerLanguageCodeEnum = {
+    En: 'en',
+    Es: 'es',
+    Fr: 'fr',
+    ZhHant: 'zh-Hant',
+    ZhHans: 'zh-Hans',
+    Ja: 'ja',
+    Ar: 'ar',
+    Fa: 'fa',
+    He: 'he',
+    Ky: 'ky',
+    Ru: 'ru',
+} as const;
+
+export type ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInnerLocalizationsInnerLanguageCodeEnum = typeof ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInnerLocalizationsInnerLanguageCodeEnum[keyof typeof ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInnerLocalizationsInnerLanguageCodeEnum];
+
+export interface ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInnerParticipantFile {
+    'originalFileName': string;
+    'contentType': ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInnerParticipantFileContentTypeEnum;
+    'byteSize': number;
+}
+
+export const ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInnerParticipantFileContentTypeEnum = {
+    TextHtml: 'text/html',
+    ApplicationPdf: 'application/pdf',
+    TextPlain: 'text/plain',
+    TextMarkdown: 'text/markdown',
+    TextCsv: 'text/csv',
+    ApplicationJson: 'application/json',
+} as const;
+
+export type ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInnerParticipantFileContentTypeEnum = typeof ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInnerParticipantFileContentTypeEnum[keyof typeof ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInnerParticipantFileContentTypeEnum];
+
+export interface ApiV1AdministratorProjectDocumentUploadPost200Response {
+    'document': ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInner;
+}
 export interface ApiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequest {
     'externalOrganizationId': number;
     'languageCode': ApiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequestLanguageCodeEnum;
@@ -5450,6 +5533,53 @@ export type ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInnerLan
 export interface ApiV1ProjectCreateOptionsListPostRequest {
     'postAsOrganization': string;
 }
+export interface ApiV1ProjectDocumentAccessPost200Response {
+    'url': string;
+    'expiresAt': string;
+    'downloadFileName': string;
+    'contentType': ApiV1ProjectDocumentAccessPost200ResponseContentTypeEnum;
+}
+
+export const ApiV1ProjectDocumentAccessPost200ResponseContentTypeEnum = {
+    TextHtml: 'text/html',
+    ApplicationPdf: 'application/pdf',
+    TextPlain: 'text/plain',
+    TextMarkdown: 'text/markdown',
+    TextCsv: 'text/csv',
+    ApplicationJson: 'application/json',
+} as const;
+
+export type ApiV1ProjectDocumentAccessPost200ResponseContentTypeEnum = typeof ApiV1ProjectDocumentAccessPost200ResponseContentTypeEnum[keyof typeof ApiV1ProjectDocumentAccessPost200ResponseContentTypeEnum];
+
+export interface ApiV1ProjectDocumentAccessPostRequest {
+    'projectSlug': string;
+    'documentId': string;
+    'languageCode': ApiV1ProjectDocumentAccessPostRequestLanguageCodeEnum;
+    'mode': ApiV1ProjectDocumentAccessPostRequestModeEnum;
+}
+
+export const ApiV1ProjectDocumentAccessPostRequestLanguageCodeEnum = {
+    En: 'en',
+    Es: 'es',
+    Fr: 'fr',
+    ZhHant: 'zh-Hant',
+    ZhHans: 'zh-Hans',
+    Ja: 'ja',
+    Ar: 'ar',
+    Fa: 'fa',
+    He: 'he',
+    Ky: 'ky',
+    Ru: 'ru',
+} as const;
+
+export type ApiV1ProjectDocumentAccessPostRequestLanguageCodeEnum = typeof ApiV1ProjectDocumentAccessPostRequestLanguageCodeEnum[keyof typeof ApiV1ProjectDocumentAccessPostRequestLanguageCodeEnum];
+export const ApiV1ProjectDocumentAccessPostRequestModeEnum = {
+    Inline: 'inline',
+    Download: 'download',
+} as const;
+
+export type ApiV1ProjectDocumentAccessPostRequestModeEnum = typeof ApiV1ProjectDocumentAccessPostRequestModeEnum[keyof typeof ApiV1ProjectDocumentAccessPostRequestModeEnum];
+
 export interface ApiV1ProjectPageActivitiesFetchPost200Response {
     'activities': Array<ApiV1ProjectPageFetchPost200ResponseActivitiesInner>;
     'nextActivityCursor'?: ApiV1ProjectPageFetchPost200ResponseNextActivityCursor;
@@ -5619,8 +5749,10 @@ export interface ApiV1ProjectPageFetchPost200ResponseProject {
     'bannerVariant': ApiV1ProjectPageFetchPost200ResponseProjectBannerVariantEnum;
     'bannerImageUrl'?: string;
     'participantCount': number;
+    'participationCount': number;
     'voteCount': number;
     'activityCount': number;
+    'documents': Array<ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInner>;
     'attributions': Array<ApiV1ProjectPageFetchPost200ResponseProjectAttributionsInner>;
     'contact'?: ApiV1ProjectPageFetchPost200ResponseProjectContact;
 }
@@ -5725,6 +5857,39 @@ export interface ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfC
     'subtitle'?: string;
     'bodyHtml'?: string;
 }
+export interface ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInner {
+    'documentId': string;
+    'languageCode': ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerLanguageCodeEnum;
+    'name': string;
+    'contentType': ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerContentTypeEnum;
+}
+
+export const ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerLanguageCodeEnum = {
+    En: 'en',
+    Es: 'es',
+    Fr: 'fr',
+    ZhHant: 'zh-Hant',
+    ZhHans: 'zh-Hans',
+    Ja: 'ja',
+    Ar: 'ar',
+    Fa: 'fa',
+    He: 'he',
+    Ky: 'ky',
+    Ru: 'ru',
+} as const;
+
+export type ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerLanguageCodeEnum = typeof ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerLanguageCodeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerLanguageCodeEnum];
+export const ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerContentTypeEnum = {
+    TextHtml: 'text/html',
+    ApplicationPdf: 'application/pdf',
+    TextPlain: 'text/plain',
+    TextMarkdown: 'text/markdown',
+    TextCsv: 'text/csv',
+    ApplicationJson: 'application/json',
+} as const;
+
+export type ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerContentTypeEnum = typeof ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerContentTypeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerContentTypeEnum];
+
 export interface ApiV1ProjectPageFetchPostRequest {
     'projectSlug': string;
     'activityLimit'?: number;
@@ -7607,6 +7772,114 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorProjectGetProjectDetailsPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1AdministratorProjectDocumentDeletePostRequest} apiV1AdministratorProjectDocumentDeletePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorProjectDocumentDeletePost: async (apiV1AdministratorProjectDocumentDeletePostRequest: ApiV1AdministratorProjectDocumentDeletePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1AdministratorProjectDocumentDeletePostRequest' is not null or undefined
+            assertParamExists('apiV1AdministratorProjectDocumentDeletePost', 'apiV1AdministratorProjectDocumentDeletePostRequest', apiV1AdministratorProjectDocumentDeletePostRequest)
+            const localVarPath = `/api/v1/administrator/project/document/delete`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorProjectDocumentDeletePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1AdministratorProjectGetProjectDetailsPostRequest} apiV1AdministratorProjectGetProjectDetailsPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorProjectDocumentListPost: async (apiV1AdministratorProjectGetProjectDetailsPostRequest: ApiV1AdministratorProjectGetProjectDetailsPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1AdministratorProjectGetProjectDetailsPostRequest' is not null or undefined
+            assertParamExists('apiV1AdministratorProjectDocumentListPost', 'apiV1AdministratorProjectGetProjectDetailsPostRequest', apiV1AdministratorProjectGetProjectDetailsPostRequest)
+            const localVarPath = `/api/v1/administrator/project/document/list`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorProjectGetProjectDetailsPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorProjectDocumentUploadPost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/v1/administrator/project/document/upload`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -9977,6 +10250,44 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @param {ApiV1ProjectDocumentAccessPostRequest} apiV1ProjectDocumentAccessPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ProjectDocumentAccessPost: async (apiV1ProjectDocumentAccessPostRequest: ApiV1ProjectDocumentAccessPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ProjectDocumentAccessPostRequest' is not null or undefined
+            assertParamExists('apiV1ProjectDocumentAccessPost', 'apiV1ProjectDocumentAccessPostRequest', apiV1ProjectDocumentAccessPostRequest)
+            const localVarPath = `/api/v1/project/document/access`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ProjectDocumentAccessPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {ApiV1ProjectPageFetchPostRequest} apiV1ProjectPageFetchPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -11578,6 +11889,41 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {ApiV1AdministratorProjectDocumentDeletePostRequest} apiV1AdministratorProjectDocumentDeletePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1AdministratorProjectDocumentDeletePost(apiV1AdministratorProjectDocumentDeletePostRequest: ApiV1AdministratorProjectDocumentDeletePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorProjectDocumentDeletePost(apiV1AdministratorProjectDocumentDeletePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorProjectDocumentDeletePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1AdministratorProjectGetProjectDetailsPostRequest} apiV1AdministratorProjectGetProjectDetailsPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1AdministratorProjectDocumentListPost(apiV1AdministratorProjectGetProjectDetailsPostRequest: ApiV1AdministratorProjectGetProjectDetailsPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AdministratorProjectDocumentListPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorProjectDocumentListPost(apiV1AdministratorProjectGetProjectDetailsPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorProjectDocumentListPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1AdministratorProjectDocumentUploadPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AdministratorProjectDocumentUploadPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorProjectDocumentUploadPost(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorProjectDocumentUploadPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {ApiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequest} apiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -12334,6 +12680,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {ApiV1ProjectDocumentAccessPostRequest} apiV1ProjectDocumentAccessPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ProjectDocumentAccessPost(apiV1ProjectDocumentAccessPostRequest: ApiV1ProjectDocumentAccessPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ProjectDocumentAccessPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ProjectDocumentAccessPost(apiV1ProjectDocumentAccessPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ProjectDocumentAccessPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {ApiV1ProjectPageFetchPostRequest} apiV1ProjectPageFetchPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -12949,6 +13307,32 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @param {ApiV1AdministratorProjectDocumentDeletePostRequest} apiV1AdministratorProjectDocumentDeletePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorProjectDocumentDeletePost(apiV1AdministratorProjectDocumentDeletePostRequest: ApiV1AdministratorProjectDocumentDeletePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.apiV1AdministratorProjectDocumentDeletePost(apiV1AdministratorProjectDocumentDeletePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1AdministratorProjectGetProjectDetailsPostRequest} apiV1AdministratorProjectGetProjectDetailsPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorProjectDocumentListPost(apiV1AdministratorProjectGetProjectDetailsPostRequest: ApiV1AdministratorProjectGetProjectDetailsPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AdministratorProjectDocumentListPost200Response> {
+            return localVarFp.apiV1AdministratorProjectDocumentListPost(apiV1AdministratorProjectGetProjectDetailsPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorProjectDocumentUploadPost(options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AdministratorProjectDocumentUploadPost200Response> {
+            return localVarFp.apiV1AdministratorProjectDocumentUploadPost(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @param {ApiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequest} apiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -13513,6 +13897,15 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @param {ApiV1ProjectDocumentAccessPostRequest} apiV1ProjectDocumentAccessPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ProjectDocumentAccessPost(apiV1ProjectDocumentAccessPostRequest: ApiV1ProjectDocumentAccessPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ProjectDocumentAccessPost200Response> {
+            return localVarFp.apiV1ProjectDocumentAccessPost(apiV1ProjectDocumentAccessPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @param {ApiV1ProjectPageFetchPostRequest} apiV1ProjectPageFetchPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -14030,6 +14423,35 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1AdministratorProjectDeleteProjectPost(apiV1AdministratorProjectGetProjectDetailsPostRequest: ApiV1AdministratorProjectGetProjectDetailsPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1AdministratorProjectDeleteProjectPost(apiV1AdministratorProjectGetProjectDetailsPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1AdministratorProjectDocumentDeletePostRequest} apiV1AdministratorProjectDocumentDeletePostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1AdministratorProjectDocumentDeletePost(apiV1AdministratorProjectDocumentDeletePostRequest: ApiV1AdministratorProjectDocumentDeletePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AdministratorProjectDocumentDeletePost(apiV1AdministratorProjectDocumentDeletePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1AdministratorProjectGetProjectDetailsPostRequest} apiV1AdministratorProjectGetProjectDetailsPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1AdministratorProjectDocumentListPost(apiV1AdministratorProjectGetProjectDetailsPostRequest: ApiV1AdministratorProjectGetProjectDetailsPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AdministratorProjectDocumentListPost(apiV1AdministratorProjectGetProjectDetailsPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1AdministratorProjectDocumentUploadPost(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AdministratorProjectDocumentUploadPost(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -14658,6 +15080,16 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1ProjectCreateOptionsListPost(apiV1ProjectCreateOptionsListPostRequest: ApiV1ProjectCreateOptionsListPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1ProjectCreateOptionsListPost(apiV1ProjectCreateOptionsListPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1ProjectDocumentAccessPostRequest} apiV1ProjectDocumentAccessPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1ProjectDocumentAccessPost(apiV1ProjectDocumentAccessPostRequest: ApiV1ProjectDocumentAccessPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ProjectDocumentAccessPost(apiV1ProjectDocumentAccessPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

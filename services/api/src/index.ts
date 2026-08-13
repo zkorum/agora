@@ -3,6 +3,7 @@ import {
     type GetConversationResponse,
     type ImportConversationResponse,
     type ImportCsvConversationResponse,
+    type ProjectDocumentUploadMetadata,
     type SurveyFormFetchResponse,
 } from "@/shared/types/dto.js";
 import {
@@ -49,6 +50,7 @@ import {
 import fs from "fs";
 import { Transform } from "node:stream";
 import pLimit from "p-limit";
+import { parseJSONObject } from "parse-json-object";
 import type { z } from "zod";
 import {
     config,
@@ -61,6 +63,7 @@ import * as authService from "@/service/auth.js";
 import * as authUtilService from "@/service/authUtil.js";
 import * as csvImportService from "@/service/csvImport.js";
 import * as feedService from "@/service/feed.js";
+import * as projectDocumentService from "@/service/projectDocument.js";
 import * as projectPageService from "@/service/projectPage.js";
 import * as postService from "@/service/post.js";
 import * as postEditService from "@/service/postEdit.js";
@@ -69,6 +72,10 @@ import * as premiumEntitlementService from "@/service/premiumEntitlement.js";
 import * as surveyService from "@/service/survey.js";
 import { useCommonPost } from "@/service/common.js";
 import { MAX_CSV_FILE_SIZE } from "@/shared-app-api/csvUpload.js";
+import {
+    MAX_PROJECT_DOCUMENT_FILE_SIZE,
+    PROJECT_DOCUMENT_UPLOAD_FIELD_NAMES,
+} from "@/shared/projectDocument.js";
 import { checkFeatureAccess } from "@/shared-app-api/featureAccess.js";
 import { zodCsvFiles } from "@/service/csvImport.js";
 import * as conversationExportService from "@/service/conversationExport/index.js";
@@ -314,10 +321,10 @@ server.register(fastifyCors, {
     },
 });
 
-// Register multipart plugin for file uploads (for CSV import)
+// Register multipart once for CSV imports and project documents.
 server.register(fastifyMultipart, {
     limits: {
-        fileSize: MAX_CSV_FILE_SIZE,
+        fileSize: Math.max(MAX_CSV_FILE_SIZE, MAX_PROJECT_DOCUMENT_FILE_SIZE),
         files: 3,
     },
 });
@@ -872,6 +879,55 @@ if (config.EXPORT_CONVOS_ENABLED) {
         });
     } catch (error) {
         log.error(error, "[API] Failed to validate S3 access");
+        process.exit(1);
+    }
+}
+
+const hasProjectDocumentBucket =
+    config.PROJECT_DOCUMENTS_AWS_S3_BUCKET_NAME !== undefined;
+const hasProjectDocumentRegion =
+    config.PROJECT_DOCUMENTS_AWS_S3_REGION !== undefined;
+let projectDocumentCleanupInterval: NodeJS.Timeout | undefined;
+let projectDocumentCleanupInProgress = false;
+
+function runProjectDocumentCleanup(): void {
+    if (projectDocumentCleanupInProgress) {
+        return;
+    }
+    projectDocumentCleanupInProgress = true;
+    void (async () => {
+        try {
+            await projectDocumentService.cleanupProjectDocumentStorage({ db });
+        } catch (error: unknown) {
+            log.error(error, "[ProjectDocument] Storage cleanup failed");
+        } finally {
+            projectDocumentCleanupInProgress = false;
+        }
+    })();
+}
+if (hasProjectDocumentBucket !== hasProjectDocumentRegion) {
+    log.error(
+        "[API] Both project document S3 bucket and region must be configured",
+    );
+    process.exit(1);
+}
+if (
+    config.PROJECT_DOCUMENTS_AWS_S3_BUCKET_NAME !== undefined &&
+    config.PROJECT_DOCUMENTS_AWS_S3_REGION !== undefined
+) {
+    try {
+        await validateS3Access({
+            bucketName: config.PROJECT_DOCUMENTS_AWS_S3_BUCKET_NAME,
+            region: config.PROJECT_DOCUMENTS_AWS_S3_REGION,
+        });
+        runProjectDocumentCleanup();
+        projectDocumentCleanupInterval = setInterval(
+            runProjectDocumentCleanup,
+            15 * 60 * 1000,
+        );
+        projectDocumentCleanupInterval.unref();
+    } catch (error: unknown) {
+        log.error(error, "[API] Failed to validate project document storage");
         process.exit(1);
     }
 }
@@ -2333,6 +2389,33 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
+        url: `/api/${apiVersion}/project/document/access`,
+        schema: {
+            body: Dto.accessProjectDocumentRequest,
+            response: {
+                200: Dto.accessProjectDocumentResponse,
+            },
+        },
+        handler: async (request) => {
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isGuestOrLoggedIn: true,
+                    },
+                },
+            );
+            return await projectDocumentService.accessProjectDocument({
+                db,
+                request: request.body,
+                userId: deviceStatus.userId,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
         url: `/api/${apiVersion}/project/conversation/fetch`,
         schema: {
             body: Dto.fetchProjectConversationPageRequest,
@@ -3548,6 +3631,17 @@ server.after(() => {
                 conversationSlugId: request.body.conversationSlugId,
                 userId: deviceStatus.userId,
             });
+            try {
+                await projectDocumentService.cleanupProjectDocumentStorage({
+                    db,
+                    conversationSlugId: request.body.conversationSlugId,
+                });
+            } catch (error: unknown) {
+                log.error(
+                    error,
+                    "[ProjectDocument] Conversation cleanup will be retried",
+                );
+            }
             reply.send();
         },
     });
@@ -5169,6 +5263,158 @@ server.after(() => {
                 db,
                 projectSlug: request.body.projectSlug,
             });
+            try {
+                await projectDocumentService.cleanupProjectDocumentStorage({
+                    db,
+                    projectSlug: request.body.projectSlug,
+                });
+            } catch (error: unknown) {
+                log.error(
+                    error,
+                    "[ProjectDocument] Project cleanup will be retried",
+                );
+            }
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/administrator/project/document/list`,
+        schema: {
+            body: Dto.listProjectDocumentsRequest,
+            response: {
+                200: Dto.listProjectDocumentsResponse,
+            },
+        },
+        handler: async (request) => {
+            await requireSiteOrgAdmin(request);
+            return await projectDocumentService.listProjectDocuments({
+                db,
+                projectSlug: request.body.projectSlug,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/administrator/project/document/upload`,
+        schema: {
+            consumes: ["multipart/form-data"],
+            response: {
+                200: Dto.uploadProjectDocumentResponse,
+            },
+        },
+        config: {
+            rateLimit: {
+                max: 5,
+                timeWindow: "1 minute",
+            },
+        },
+        handler: async (request) => {
+            const adminUserId = await requireSiteOrgAdmin(request);
+            const parts = request.parts({
+                limits: {
+                    fileSize: MAX_PROJECT_DOCUMENT_FILE_SIZE,
+                    files: 2,
+                    fields: 1,
+                    parts: 3,
+                },
+            });
+            let metadata: ProjectDocumentUploadMetadata | undefined;
+            let participantFile:
+                | projectDocumentService.ProjectDocumentFileUpload
+                | undefined;
+            let ownerFile:
+                | projectDocumentService.ProjectDocumentFileUpload
+                | undefined;
+            for await (const part of parts) {
+                if (part.type === "file") {
+                    const isParticipantFile =
+                        part.fieldname ===
+                        PROJECT_DOCUMENT_UPLOAD_FIELD_NAMES.PARTICIPANT_FILE;
+                    const isOwnerFile =
+                        part.fieldname ===
+                        PROJECT_DOCUMENT_UPLOAD_FIELD_NAMES.OWNER_FILE;
+                    if (
+                        (!isParticipantFile && !isOwnerFile) ||
+                        (isParticipantFile && participantFile !== undefined) ||
+                        (isOwnerFile && ownerFile !== undefined)
+                    ) {
+                        throw server.httpErrors.badRequest(
+                            "Unexpected project document file field",
+                        );
+                    }
+                    const buffer = await part.toBuffer();
+                    if (buffer.length > MAX_PROJECT_DOCUMENT_FILE_SIZE) {
+                        throw server.httpErrors.payloadTooLarge(
+                            "Project document exceeds the maximum file size",
+                        );
+                    }
+                    const uploadedFile = {
+                        buffer,
+                        originalFileName: part.filename,
+                        reportedContentType: part.mimetype,
+                    };
+                    if (isParticipantFile) {
+                        participantFile = uploadedFile;
+                    } else {
+                        ownerFile = uploadedFile;
+                    }
+                    continue;
+                }
+                if (
+                    part.fieldname !==
+                        PROJECT_DOCUMENT_UPLOAD_FIELD_NAMES.METADATA ||
+                    metadata !== undefined ||
+                    typeof part.value !== "string"
+                ) {
+                    throw server.httpErrors.badRequest(
+                        "Unexpected project document metadata field",
+                    );
+                }
+                const parsedMetadata = parseJSONObject(part.value);
+                if (parsedMetadata === undefined) {
+                    throw server.httpErrors.badRequest(
+                        "Project document metadata must be valid JSON",
+                    );
+                }
+                const parsedResult =
+                    Dto.projectDocumentUploadMetadata.safeParse(parsedMetadata);
+                if (!parsedResult.success) {
+                    throw server.httpErrors.badRequest(
+                        "Project document metadata is invalid",
+                    );
+                }
+                metadata = parsedResult.data;
+            }
+            if (metadata === undefined || participantFile === undefined) {
+                throw server.httpErrors.badRequest(
+                    "Participant document file and metadata are required",
+                );
+            }
+            return await projectDocumentService.uploadProjectDocument({
+                db,
+                metadata,
+                createdByUserId: adminUserId,
+                participantFile,
+                ownerFile,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/administrator/project/document/delete`,
+        schema: {
+            body: Dto.deleteProjectDocumentRequest,
+        },
+        handler: async (request) => {
+            await requireSiteOrgAdmin(request);
+            await projectDocumentService.deleteProjectDocument({
+                db,
+                projectSlug: request.body.projectSlug,
+                documentId: request.body.documentId,
+            });
         },
     });
 
@@ -6437,6 +6683,10 @@ const shutdown = async (signal: string) => {
         if (queueValkeyReconnectInterval !== undefined) {
             clearInterval(queueValkeyReconnectInterval);
             queueValkeyReconnectInterval = undefined;
+        }
+        if (projectDocumentCleanupInterval !== undefined) {
+            clearInterval(projectDocumentCleanupInterval);
+            projectDocumentCleanupInterval = undefined;
         }
 
         // Flush pending votes before shutdown

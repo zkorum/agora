@@ -373,8 +373,10 @@ const project = computed<ProjectPageData>(() => {
     bannerImageUrl:
       projectBannerImageUrlsByLanguage[activeScenarioLanguage.value],
     participantCount: 214,
+    participationCount: 492,
     voteCount: 2100,
     activityCount: 4,
+    documents: [],
     attributions: localizedAttributions.value,
     contact: {
       firstName: "Aida",

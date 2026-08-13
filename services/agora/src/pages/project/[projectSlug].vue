@@ -2,7 +2,9 @@
   <router-view v-if="!isProjectRootRoute" />
 
   <PageLoadingSpinner
-    v-else-if="projectPageQuery.isPending.value && projectPageData === undefined"
+    v-else-if="
+      projectPageQuery.isPending.value && projectPageData === undefined
+    "
   />
 
   <ErrorRetryBlock
@@ -34,14 +36,16 @@ import {
 import ProjectPageView from "src/components/project/ProjectPageView.vue";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
-import {
-  type SupportedDisplayLanguageCodes,
-} from "src/shared/languages";
-import type { ProjectPageActivity, ProjectPageActivityCursor } from "src/shared/types/dto";
+import { type SupportedDisplayLanguageCodes } from "src/shared/languages";
+import type {
+  ProjectPageActivity,
+  ProjectPageActivityCursor,
+} from "src/shared/types/dto";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLanguageStore } from "src/stores/language";
 import { useBackendProjectPageApi } from "src/utils/api/projectPage";
 import { getSingleRouteParam } from "src/utils/router/params";
+import { useNotify } from "src/utils/ui/notify";
 import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
@@ -50,6 +54,7 @@ const activityPageSize = 12;
 const route = useRoute();
 const { fetchProjectPage, fetchProjectPageActivities } =
   useBackendProjectPageApi();
+const { showNotifyMessage } = useNotify();
 const { isAuthInitialized, isGuestOrLoggedIn } = storeToRefs(
   useAuthenticationStore()
 );
@@ -60,10 +65,16 @@ const { changeDisplayLanguage } = languageStore;
 const projectSlug = computed(() =>
   getSingleRouteParam(route.params.projectSlug)
 );
-const isProjectRootRoute = computed(() => route.name === "/project/[projectSlug]");
+const isProjectRootRoute = computed(
+  () => route.name === "/project/[projectSlug]"
+);
 const activities = ref<ProjectPageActivity[]>([]);
 const nextActivityCursor = ref<ProjectPageActivityCursor | undefined>();
-const isLoadingMoreActivities = ref(false);
+const activePaginationRequestId = ref<number | undefined>();
+let latestPaginationRequestId = 0;
+const isLoadingMoreActivities = computed(
+  () => activePaginationRequestId.value !== undefined
+);
 const selectedLanguage = computed<SupportedDisplayLanguageCodes>({
   get: () => displayLanguage.value,
   set: (newLanguage) => {
@@ -112,8 +123,12 @@ watch(
   },
   { immediate: true }
 );
+watch([projectSlug, displayLanguage, isGuestOrLoggedIn], () => {
+  latestPaginationRequestId += 1;
+  activePaginationRequestId.value = undefined;
+});
 
-async function loadMoreActivities(done: () => void): Promise<void> {
+async function loadMoreActivities(): Promise<void> {
   const cursor = nextActivityCursor.value;
   const data = projectPageData.value;
   if (
@@ -121,25 +136,55 @@ async function loadMoreActivities(done: () => void): Promise<void> {
     data === undefined ||
     isLoadingMoreActivities.value
   ) {
-    done();
     return;
   }
 
-  isLoadingMoreActivities.value = true;
+  const requestIdentity = {
+    requestId: latestPaginationRequestId + 1,
+    projectSlug: projectSlug.value,
+    languageCode: displayLanguage.value,
+    authenticated: isGuestOrLoggedIn.value,
+    cursor,
+  };
+  latestPaginationRequestId = requestIdentity.requestId;
+  activePaginationRequestId.value = requestIdentity.requestId;
   try {
     const response = await fetchProjectPageActivities({
       request: {
-        projectSlug: projectSlug.value,
+        projectSlug: requestIdentity.projectSlug,
         activityLimit: activityPageSize,
-        activityCursor: cursor,
+        activityCursor: requestIdentity.cursor,
       },
-      authenticated: isGuestOrLoggedIn.value,
+      authenticated: requestIdentity.authenticated,
     });
+    if (
+      requestIdentity.projectSlug !== projectSlug.value ||
+      requestIdentity.languageCode !== displayLanguage.value ||
+      requestIdentity.authenticated !== isGuestOrLoggedIn.value ||
+      requestIdentity.cursor !== nextActivityCursor.value
+    ) {
+      return;
+    }
     activities.value = [...activities.value, ...response.activities];
     nextActivityCursor.value = response.nextActivityCursor;
+  } catch {
+    if (
+      requestIdentity.projectSlug !== projectSlug.value ||
+      requestIdentity.languageCode !== displayLanguage.value ||
+      requestIdentity.authenticated !== isGuestOrLoggedIn.value ||
+      requestIdentity.cursor !== nextActivityCursor.value
+    ) {
+      return;
+    }
+    showNotifyMessage({
+      message: t("activitiesLoadFailed"),
+      actionLabel: t("retryAction"),
+      onAction: () => void loadMoreActivities(),
+    });
   } finally {
-    isLoadingMoreActivities.value = false;
-    done();
+    if (activePaginationRequestId.value === requestIdentity.requestId) {
+      activePaginationRequestId.value = undefined;
+    }
   }
 }
 

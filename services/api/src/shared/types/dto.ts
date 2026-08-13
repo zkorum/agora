@@ -91,6 +91,7 @@ import {
 } from "./zod.js";
 import { zodEmail } from "./zod-email.js";
 import { zodPolisVoteRecord } from "./polis.js";
+import { PROJECT_DOCUMENT_CONTENT_TYPES } from "../projectDocument.js";
 import {
     ZodSupportedSpokenLanguageCodes,
     ZodSupportedDisplayLanguageCodes,
@@ -556,6 +557,78 @@ const zodProjectPageContact = z
         websiteUrl: zodHttpsUrl.optional(),
     })
     .strict();
+const zodProjectDocumentLocalization = z
+    .object({
+        languageCode: ZodSupportedDisplayLanguageCodes,
+        name: z.string().trim().min(1).max(MAX_LENGTH_TITLE),
+        downloadFileName: z.string().trim().min(1).max(255),
+    })
+    .strict();
+const zodProjectDocumentLocalizations = z
+    .array(zodProjectDocumentLocalization)
+    .min(1)
+    .refine(
+        (localizations) =>
+            new Set(
+                localizations.map((localization) => localization.languageCode),
+            ).size === localizations.length,
+        "Document localizations must use unique languages",
+    );
+const zodProjectDocumentUploadMetadata = z
+    .object({
+        projectSlug: zodProjectSlug,
+        conversationSlugId: zodSlugId,
+        defaultLanguageCode: ZodSupportedDisplayLanguageCodes,
+        localizations: zodProjectDocumentLocalizations,
+    })
+    .strict()
+    .refine(
+        ({ defaultLanguageCode, localizations }) =>
+            localizations.some(
+                (localization) =>
+                    localization.languageCode === defaultLanguageCode,
+            ),
+        {
+            message: "Document localizations must include the default language",
+            path: ["localizations"],
+        },
+    );
+const zodProjectDocumentContentType = z.enum(PROJECT_DOCUMENT_CONTENT_TYPES);
+const zodAdminProjectDocumentFile = z
+    .object({
+        originalFileName: z.string().trim().min(1),
+        contentType: zodProjectDocumentContentType,
+        byteSize: z.number().int().positive(),
+    })
+    .strict();
+const zodAdminProjectDocument = z
+    .object({
+        documentId: z.uuid(),
+        conversationSlugId: zodSlugId,
+        conversationTitle: zodConversationTitle,
+        defaultLanguageCode: ZodSupportedDisplayLanguageCodes,
+        localizations: zodProjectDocumentLocalizations,
+        participantFile: zodAdminProjectDocumentFile,
+        ownerFile: zodAdminProjectDocumentFile.optional(),
+        createdByUsername: zodUsername,
+        createdAt: zodDateTimeFlexible,
+        publishedAt: zodDateTimeFlexible,
+    })
+    .strict();
+const zodProjectDocumentConversationOption = z
+    .object({
+        conversationSlugId: zodSlugId,
+        conversationTitle: zodConversationTitle,
+    })
+    .strict();
+const zodProjectPageDocument = z
+    .object({
+        documentId: z.uuid(),
+        languageCode: ZodSupportedDisplayLanguageCodes,
+        name: z.string().trim().min(1).max(MAX_LENGTH_TITLE),
+        contentType: zodProjectDocumentContentType,
+    })
+    .strict();
 const zodProjectPageProject = z
     .object({
         slug: zodProjectSlug,
@@ -564,8 +637,10 @@ const zodProjectPageProject = z
         bannerVariant: z.enum(["blue", "purple", "green"]),
         bannerImageUrl: z.url().optional(),
         participantCount: z.number().int().nonnegative(),
+        participationCount: z.number().int().nonnegative(),
         voteCount: z.number().int().nonnegative(),
         activityCount: z.number().int().nonnegative(),
+        documents: z.array(zodProjectPageDocument),
         attributions: z.array(zodProjectPageAttribution),
         contact: zodProjectPageContact.optional(),
     })
@@ -1965,6 +2040,41 @@ export class Dto {
             project: zodAdminProject.optional(),
         })
         .strict();
+    static projectDocumentUploadMetadata = zodProjectDocumentUploadMetadata;
+    static uploadProjectDocumentResponse = z
+        .object({ document: zodAdminProjectDocument })
+        .strict();
+    static listProjectDocumentsRequest = z
+        .object({ projectSlug: zodProjectSlug })
+        .strict();
+    static listProjectDocumentsResponse = z
+        .object({
+            documents: z.array(zodAdminProjectDocument),
+            conversationOptions: z.array(zodProjectDocumentConversationOption),
+        })
+        .strict();
+    static deleteProjectDocumentRequest = z
+        .object({
+            projectSlug: zodProjectSlug,
+            documentId: z.uuid(),
+        })
+        .strict();
+    static accessProjectDocumentRequest = z
+        .object({
+            projectSlug: zodProjectSlug,
+            documentId: z.uuid(),
+            languageCode: ZodSupportedDisplayLanguageCodes,
+            mode: z.enum(["inline", "download"]),
+        })
+        .strict();
+    static accessProjectDocumentResponse = z
+        .object({
+            url: zodHttpsUrl,
+            expiresAt: zodDateTimeFlexible,
+            downloadFileName: z.string().trim().min(1).max(255),
+            contentType: zodProjectDocumentContentType,
+        })
+        .strict();
     static fetchProjectPageRequest = z
         .object({
             projectSlug: zodProjectSlug,
@@ -2697,6 +2807,34 @@ export type CreateProjectRequest = z.infer<typeof Dto.createProjectRequest>;
 export type CreateProjectResponse = z.infer<typeof Dto.createProjectResponse>;
 export type AdminProject = z.infer<typeof zodAdminProject>;
 export type AdminProjectOption = z.infer<typeof zodAdminProjectOption>;
+export type ProjectDocumentLocalization = z.infer<
+    typeof zodProjectDocumentLocalization
+>;
+export type ProjectDocumentUploadMetadata = z.infer<
+    typeof Dto.projectDocumentUploadMetadata
+>;
+export type AdminProjectDocument = z.infer<typeof zodAdminProjectDocument>;
+export type ProjectDocumentConversationOption = z.infer<
+    typeof zodProjectDocumentConversationOption
+>;
+export type UploadProjectDocumentResponse = z.infer<
+    typeof Dto.uploadProjectDocumentResponse
+>;
+export type ListProjectDocumentsRequest = z.infer<
+    typeof Dto.listProjectDocumentsRequest
+>;
+export type ListProjectDocumentsResponse = z.infer<
+    typeof Dto.listProjectDocumentsResponse
+>;
+export type DeleteProjectDocumentRequest = z.infer<
+    typeof Dto.deleteProjectDocumentRequest
+>;
+export type AccessProjectDocumentRequest = z.infer<
+    typeof Dto.accessProjectDocumentRequest
+>;
+export type AccessProjectDocumentResponse = z.infer<
+    typeof Dto.accessProjectDocumentResponse
+>;
 export type GetAllProjectsResponse = z.infer<typeof Dto.getAllProjectsResponse>;
 export type GetProjectOptionsResponse = z.infer<
     typeof Dto.getProjectOptionsResponse
@@ -2761,6 +2899,7 @@ export type ProjectPageActivityCursor = z.infer<
 export type ProjectPageActivity = z.infer<typeof zodProjectPageActivity>;
 export type ProjectPageAttribution = z.infer<typeof zodProjectPageAttribution>;
 export type ProjectPageContact = z.infer<typeof zodProjectPageContact>;
+export type ProjectPageDocument = z.infer<typeof zodProjectPageDocument>;
 export type ProjectPageProject = z.infer<typeof zodProjectPageProject>;
 export type ProjectPageLanguageOption = z.infer<
     typeof zodProjectPageLanguageOption

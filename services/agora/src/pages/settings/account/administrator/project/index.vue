@@ -465,6 +465,12 @@
           </div>
         </ZKCard>
 
+        <ProjectDocumentManager
+          :key="selectedProject.projectSlug"
+          :project-slug="selectedProject.projectSlug"
+          :display-language-options="displayLanguageOptions"
+        />
+
         <ZKCard padding="1rem" class="card-background">
           <AdminSectionHeader
             :title="t('attributionsTitle')"
@@ -766,6 +772,7 @@ import { copyToClipboard, useQuasar } from "quasar";
 import AdminSectionHeader from "src/components/administrator/AdminSectionHeader.vue";
 import ProjectBodyEditor from "src/components/administrator/project/ProjectBodyEditor.vue";
 import ProjectContentLocalizationEditor from "src/components/administrator/project/ProjectContentLocalizationEditor.vue";
+import ProjectDocumentManager from "src/components/administrator/project/ProjectDocumentManager.vue";
 import ProjectExternalOrganizationLocalizationEditor from "src/components/administrator/project/ProjectExternalOrganizationLocalizationEditor.vue";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import ConversationLanguageSettingDialog from "src/components/newConversation/dialog/ConversationLanguageSettingDialog.vue";

@@ -1,4 +1,6 @@
 import type {
+  AccessProjectDocumentRequest,
+  AccessProjectDocumentResponse,
   FetchProjectConversationPageRequest,
   FetchProjectConversationPageResponse,
   FetchProjectPageActivitiesRequest,
@@ -84,9 +86,22 @@ export function useBackendProjectPageApi() {
     return Dto.fetchProjectConversationPageResponse.parse(response.data);
   }
 
+  async function accessProjectDocument(
+    request: AccessProjectDocumentRequest
+  ): Promise<AccessProjectDocumentResponse> {
+    const params = Dto.accessProjectDocumentRequest.parse(request);
+    const url = "/api/v1/project/document/access";
+    const encodedUcan = await buildEncodedUcan(url, { method: "POST" });
+    const response = await api.post(url, params, {
+      headers: buildAuthorizationHeader(encodedUcan),
+    });
+    return Dto.accessProjectDocumentResponse.parse(response.data);
+  }
+
   return {
     fetchProjectPage,
     fetchProjectPageActivities,
     fetchProjectConversationPage,
+    accessProjectDocument,
   };
 }

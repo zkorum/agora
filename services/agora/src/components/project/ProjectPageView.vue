@@ -81,8 +81,16 @@
             <span>
               <q-icon name="mdi-account-outline" size="1rem" />
               {{
-                t("participantsJoined", {
+                t("uniqueParticipantsCount", {
                   count: project.participantCount,
+                })
+              }}
+            </span>
+            <span>
+              <q-icon name="mdi-account-multiple-outline" size="1rem" />
+              {{
+                t("participationsCount", {
+                  count: project.participationCount,
                 })
               }}
             </span>
@@ -101,7 +109,12 @@
           </div>
         </section>
 
-        <div class="project-page-view__content-grid">
+        <div
+          class="project-page-view__content-grid"
+          :class="{
+            'project-page-view__content-grid--without-aside': !hasAttributions,
+          }"
+        >
           <section
             class="project-page-view__activities"
             aria-labelledby="project-activities-title"
@@ -121,50 +134,88 @@
               </div>
             </div>
 
-            <q-infinite-scroll
-              :key="activityListKey"
-              :offset="1200"
-              :disable="!canLoadMoreActivities"
-              @load="onActivitiesLoad"
+            <div
+              v-if="activities.length > 0"
+              class="project-page-view__activity-list"
             >
-              <div
-                v-if="activities.length > 0"
-                class="project-page-view__activity-list"
-              >
-                <ProjectActivityCard
-                  v-for="activity in activities"
-                  :key="getProjectActivityIdentity(activity)"
-                  :activity="activity"
-                  :project-slug="project.slug"
-                  :language-code="selectedLanguage"
-                  :text-direction="projectTextDirection"
-                />
-              </div>
+              <ProjectActivityCard
+                v-for="activity in activities"
+                :key="getProjectActivityIdentity(activity)"
+                :activity="activity"
+                :project-slug="project.slug"
+                :language-code="selectedLanguage"
+                :text-direction="projectTextDirection"
+              />
+            </div>
 
-              <div
-                v-if="activities.length === 0"
-                class="project-page-view__empty-activities"
-              >
-                <q-icon name="mdi-forum-outline" size="2rem" />
-                <span>{{ t("emptyActivities") }}</span>
-              </div>
+            <div
+              v-if="activities.length === 0"
+              class="project-page-view__empty-activities"
+            >
+              <q-icon name="mdi-forum-outline" size="2rem" />
+              <span>{{ t("emptyActivities") }}</span>
+            </div>
 
-              <div
-                v-if="activities.length > 0 && !canLoadMoreActivities"
-                class="project-page-view__list-complete"
+            <div
+              v-if="activities.length > 0 && canLoadMoreActivities"
+              class="project-page-view__load-more"
+            >
+              <ZKButton
+                button-type="compactButton"
+                color="primary"
+                flat
+                :loading="isLoadingMoreActivities"
+                :disable="isLoadingMoreActivities"
+                @click="emit('loadMoreActivities')"
               >
-                <q-icon name="mdi-check" size="1.15rem" />
-                <span>{{ t("allActivitiesLoaded") }}</span>
-              </div>
-            </q-infinite-scroll>
+                {{ t("loadMoreActivities") }}
+              </ZKButton>
+            </div>
+
+            <div
+              v-if="activities.length > 0 && !canLoadMoreActivities"
+              class="project-page-view__list-complete"
+            >
+              <q-icon name="mdi-check" size="1.15rem" />
+              <span>{{ t("allActivitiesLoaded") }}</span>
+            </div>
           </section>
 
           <ProjectDetailsAside
+            v-if="hasAttributions"
             class="project-page-view__aside"
             :attributions="project.attributions"
-            :contact="project.contact"
+            :contact="undefined"
             :language-code="selectedLanguage"
           />
+
+          <div
+            v-if="project.documents.length > 0 || project.contact !== undefined"
+            class="project-page-view__supplemental"
+          >
+            <ProjectDocuments
+              v-if="project.documents.length > 0"
+              :project-slug="project.slug"
+              :documents="project.documents"
+              :language-code="selectedLanguage"
+            />
+
+            <section
+              v-if="project.contact !== undefined"
+              class="project-page-view__facilitator"
+              aria-labelledby="project-facilitator-title"
+            >
+              <ProjectSectionHeading
+                heading-id="project-facilitator-title"
+                :title="t('facilitatorTitle')"
+              />
+              <ProjectContactCard
+                :contact="project.contact"
+                :language-code="selectedLanguage"
+                layout="wide"
+              />
+            </section>
+          </div>
         </div>
 
         <ProjectPageFooter :language-code="selectedLanguage" />
@@ -175,6 +226,7 @@
 
 <script setup lang="ts">
 import ContentTranslationControl from "src/components/translation/ContentTranslationControl.vue";
+import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import ZKLiveStatusDot from "src/components/ui-library/ZKLiveStatusDot.vue";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
@@ -183,7 +235,9 @@ import { useProjectDisplayContent } from "src/utils/translation/useProjectDispla
 import { computed } from "vue";
 
 import ProjectActivityCard from "./ProjectActivityCard.vue";
+import ProjectContactCard from "./ProjectContactCard.vue";
 import ProjectDetailsAside from "./ProjectDetailsAside.vue";
+import ProjectDocuments from "./ProjectDocuments.vue";
 import ProjectLanguageSelect from "./ProjectLanguageSelect.vue";
 import ProjectPageFooter from "./ProjectPageFooter.vue";
 import {
@@ -196,6 +250,7 @@ import {
   type ProjectLanguageOption,
   type ProjectPageData,
 } from "./projectPageTypes";
+import ProjectSectionHeading from "./ProjectSectionHeading.vue";
 
 type ConsultationStatus = "none" | "live" | "closed";
 
@@ -207,7 +262,7 @@ const props = defineProps<{
   languageOptions: readonly ProjectLanguageOption[];
 }>();
 const emit = defineEmits<{
-  loadMoreActivities: [done: () => void];
+  loadMoreActivities: [];
 }>();
 
 const selectedLanguage = defineModel<SupportedDisplayLanguageCodes>(
@@ -253,28 +308,11 @@ const consultationStatusClass = computed(() => ({
   "project-page-view__consultation-pill--closed":
     consultationStatus.value === "closed",
 }));
-const canLoadMoreActivities = computed(
-  () => props.canLoadMoreActivities && !props.isLoadingMoreActivities
-);
+const canLoadMoreActivities = computed(() => props.canLoadMoreActivities);
+const hasAttributions = computed(() => props.project.attributions.length > 0);
 const hasMultipleLanguageOptions = computed(
   () => new Set(props.languageOptions.map((option) => option.value)).size > 1
 );
-const activityListKey = computed(() => {
-  const firstActivity = props.activities.at(0);
-  const lastActivity = props.activities.at(-1);
-
-  return [
-    props.project.slug,
-    props.activities.length,
-    firstActivity === undefined
-      ? "none"
-      : getProjectActivityIdentity(firstActivity),
-    lastActivity === undefined
-      ? "none"
-      : getProjectActivityIdentity(lastActivity),
-  ].join(":");
-});
-
 function t(
   key: keyof ProjectPageTranslations,
   params?: Readonly<Record<string, string | number>>
@@ -284,15 +322,6 @@ function t(
     key,
     params,
   });
-}
-
-function onActivitiesLoad(_index: number, done: () => void): void {
-  if (!props.canLoadMoreActivities || props.isLoadingMoreActivities) {
-    done();
-    return;
-  }
-
-  emit("loadMoreActivities", done);
 }
 </script>
 
@@ -485,14 +514,49 @@ h1 {
 .project-page-view__content-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
+  grid-template-areas:
+    "activities aside"
+    "supplemental aside";
   gap: clamp(1.4rem, 4vw, 2.7rem);
   align-items: start;
   margin-top: 2rem;
 }
 
+.project-page-view__content-grid--without-aside {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "activities"
+    "supplemental";
+}
+
 .project-page-view__activities,
 .project-page-view__aside {
   min-width: 0;
+}
+
+.project-page-view__activities {
+  grid-area: activities;
+}
+
+.project-page-view__aside {
+  grid-area: aside;
+}
+
+.project-page-view__supplemental {
+  display: flex;
+  grid-area: supplemental;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-block-start: 0.5rem;
+}
+
+.project-page-view__facilitator {
+  container-type: inline-size;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .project-page-view__section-heading {
@@ -524,7 +588,8 @@ h2 {
 }
 
 .project-page-view__empty-activities,
-.project-page-view__list-complete {
+.project-page-view__list-complete,
+.project-page-view__load-more {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -548,6 +613,10 @@ h2 {
   padding: 1.15rem 0 0.25rem;
 }
 
+.project-page-view__load-more {
+  padding-block-start: 1rem;
+}
+
 .project-page-view__aside {
   position: sticky;
   top: 5.2rem;
@@ -556,6 +625,10 @@ h2 {
 @media (max-width: 860px) {
   .project-page-view__content-grid {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "activities"
+      "supplemental"
+      "aside";
   }
 
   .project-page-view__aside {

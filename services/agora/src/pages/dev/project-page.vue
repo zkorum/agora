@@ -139,6 +139,7 @@ type BaseDevProjectData = Omit<
   | "contact"
   | "displayContent"
   | "participantCount"
+  | "participationCount"
   | "voteCount"
 >;
 
@@ -602,6 +603,7 @@ const baseProject = {
   dynamicTranslationEnabled: true,
   bannerVariant: "blue",
   bannerImageUrl: projectBannerImageUrlsByLanguage.en,
+  documents: [],
 } satisfies BaseDevProjectData;
 
 const selectedProjectLanguage = computed<ProjectPageLanguage>(() => {
@@ -709,6 +711,9 @@ const project = computed<ProjectPageData>(() => ({
   },
   bannerImageUrl: projectBannerImageUrlsByLanguage[selectedProjectLanguage.value],
   participantCount: calculateParticipantCount({ activities: activities.value }),
+  participationCount: calculateParticipationCount({
+    activities: activities.value,
+  }),
   voteCount: calculateVoteCount({ activities: activities.value }),
   activityCount: activities.value.length,
   contact: localizeContact({
@@ -1021,6 +1026,20 @@ function calculateParticipantCount({
   }
 
   return participantCount;
+}
+
+function calculateParticipationCount({
+  activities,
+}: {
+  activities: readonly ProjectActivity[];
+}): number {
+  let participationCount = 0;
+
+  for (const activity of activities) {
+    participationCount += activity.stats.participantCount;
+  }
+
+  return participationCount;
 }
 
 function calculateVoteCount({

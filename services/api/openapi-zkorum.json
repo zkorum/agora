@@ -3538,6 +3538,11 @@
                                                     "minimum": 0,
                                                     "maximum": 9007199254740991
                                                 },
+                                                "participationCount": {
+                                                    "type": "integer",
+                                                    "minimum": 0,
+                                                    "maximum": 9007199254740991
+                                                },
                                                 "voteCount": {
                                                     "type": "integer",
                                                     "minimum": 0,
@@ -3547,6 +3552,58 @@
                                                     "type": "integer",
                                                     "minimum": 0,
                                                     "maximum": 9007199254740991
+                                                },
+                                                "documents": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "documentId": {
+                                                                "type": "string",
+                                                                "format": "uuid",
+                                                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                            },
+                                                            "languageCode": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "en",
+                                                                    "es",
+                                                                    "fr",
+                                                                    "zh-Hant",
+                                                                    "zh-Hans",
+                                                                    "ja",
+                                                                    "ar",
+                                                                    "fa",
+                                                                    "he",
+                                                                    "ky",
+                                                                    "ru"
+                                                                ]
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "minLength": 1,
+                                                                "maxLength": 140
+                                                            },
+                                                            "contentType": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "text/html",
+                                                                    "application/pdf",
+                                                                    "text/plain",
+                                                                    "text/markdown",
+                                                                    "text/csv",
+                                                                    "application/json"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "documentId",
+                                                            "languageCode",
+                                                            "name",
+                                                            "contentType"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    }
                                                 },
                                                 "attributions": {
                                                     "type": "array",
@@ -3647,8 +3704,10 @@
                                                 "dynamicTranslationEnabled",
                                                 "bannerVariant",
                                                 "participantCount",
+                                                "participationCount",
                                                 "voteCount",
                                                 "activityCount",
+                                                "documents",
                                                 "attributions"
                                             ],
                                             "additionalProperties": false
@@ -5425,6 +5484,107 @@
                 }
             }
         },
+        "/api/v1/project/document/access": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "projectSlug": {
+                                        "type": "string",
+                                        "maxLength": 65,
+                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                    },
+                                    "documentId": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                    },
+                                    "languageCode": {
+                                        "type": "string",
+                                        "enum": [
+                                            "en",
+                                            "es",
+                                            "fr",
+                                            "zh-Hant",
+                                            "zh-Hans",
+                                            "ja",
+                                            "ar",
+                                            "fa",
+                                            "he",
+                                            "ky",
+                                            "ru"
+                                        ]
+                                    },
+                                    "mode": {
+                                        "type": "string",
+                                        "enum": [
+                                            "inline",
+                                            "download"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "projectSlug",
+                                    "documentId",
+                                    "languageCode",
+                                    "mode"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "url": {
+                                            "type": "string",
+                                            "format": "uri"
+                                        },
+                                        "expiresAt": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "downloadFileName": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 255
+                                        },
+                                        "contentType": {
+                                            "type": "string",
+                                            "enum": [
+                                                "text/html",
+                                                "application/pdf",
+                                                "text/plain",
+                                                "text/markdown",
+                                                "text/csv",
+                                                "application/json"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "url",
+                                        "expiresAt",
+                                        "downloadFileName",
+                                        "contentType"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/project/conversation/fetch": {
             "post": {
                 "requestBody": {
@@ -5732,6 +5892,11 @@
                                                     "minimum": 0,
                                                     "maximum": 9007199254740991
                                                 },
+                                                "participationCount": {
+                                                    "type": "integer",
+                                                    "minimum": 0,
+                                                    "maximum": 9007199254740991
+                                                },
                                                 "voteCount": {
                                                     "type": "integer",
                                                     "minimum": 0,
@@ -5741,6 +5906,58 @@
                                                     "type": "integer",
                                                     "minimum": 0,
                                                     "maximum": 9007199254740991
+                                                },
+                                                "documents": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "documentId": {
+                                                                "type": "string",
+                                                                "format": "uuid",
+                                                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                            },
+                                                            "languageCode": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "en",
+                                                                    "es",
+                                                                    "fr",
+                                                                    "zh-Hant",
+                                                                    "zh-Hans",
+                                                                    "ja",
+                                                                    "ar",
+                                                                    "fa",
+                                                                    "he",
+                                                                    "ky",
+                                                                    "ru"
+                                                                ]
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "minLength": 1,
+                                                                "maxLength": 140
+                                                            },
+                                                            "contentType": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "text/html",
+                                                                    "application/pdf",
+                                                                    "text/plain",
+                                                                    "text/markdown",
+                                                                    "text/csv",
+                                                                    "application/json"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "documentId",
+                                                            "languageCode",
+                                                            "name",
+                                                            "contentType"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    }
                                                 },
                                                 "attributions": {
                                                     "type": "array",
@@ -5841,8 +6058,10 @@
                                                 "dynamicTranslationEnabled",
                                                 "bannerVariant",
                                                 "participantCount",
+                                                "participationCount",
                                                 "voteCount",
                                                 "activityCount",
+                                                "documents",
                                                 "attributions"
                                             ],
                                             "additionalProperties": false
@@ -25186,6 +25405,457 @@
                                 },
                                 "required": [
                                     "projectSlug"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
+        },
+        "/api/v1/administrator/project/document/list": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "projectSlug": {
+                                        "type": "string",
+                                        "maxLength": 65,
+                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                    }
+                                },
+                                "required": [
+                                    "projectSlug"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "documents": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "documentId": {
+                                                        "type": "string",
+                                                        "format": "uuid",
+                                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                    },
+                                                    "conversationSlugId": {
+                                                        "type": "string",
+                                                        "maxLength": 10
+                                                    },
+                                                    "conversationTitle": {
+                                                        "type": "string",
+                                                        "minLength": 1,
+                                                        "maxLength": 140
+                                                    },
+                                                    "defaultLanguageCode": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "en",
+                                                            "es",
+                                                            "fr",
+                                                            "zh-Hant",
+                                                            "zh-Hans",
+                                                            "ja",
+                                                            "ar",
+                                                            "fa",
+                                                            "he",
+                                                            "ky",
+                                                            "ru"
+                                                        ]
+                                                    },
+                                                    "localizations": {
+                                                        "minItems": 1,
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "languageCode": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "en",
+                                                                        "es",
+                                                                        "fr",
+                                                                        "zh-Hant",
+                                                                        "zh-Hans",
+                                                                        "ja",
+                                                                        "ar",
+                                                                        "fa",
+                                                                        "he",
+                                                                        "ky",
+                                                                        "ru"
+                                                                    ]
+                                                                },
+                                                                "name": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 140
+                                                                },
+                                                                "downloadFileName": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 255
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "languageCode",
+                                                                "name",
+                                                                "downloadFileName"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        }
+                                                    },
+                                                    "participantFile": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "originalFileName": {
+                                                                "type": "string",
+                                                                "minLength": 1
+                                                            },
+                                                            "contentType": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "text/html",
+                                                                    "application/pdf",
+                                                                    "text/plain",
+                                                                    "text/markdown",
+                                                                    "text/csv",
+                                                                    "application/json"
+                                                                ]
+                                                            },
+                                                            "byteSize": {
+                                                                "type": "integer",
+                                                                "exclusiveMinimum": true,
+                                                                "maximum": 9007199254740991
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "originalFileName",
+                                                            "contentType",
+                                                            "byteSize"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    },
+                                                    "ownerFile": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "originalFileName": {
+                                                                "type": "string",
+                                                                "minLength": 1
+                                                            },
+                                                            "contentType": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "text/html",
+                                                                    "application/pdf",
+                                                                    "text/plain",
+                                                                    "text/markdown",
+                                                                    "text/csv",
+                                                                    "application/json"
+                                                                ]
+                                                            },
+                                                            "byteSize": {
+                                                                "type": "integer",
+                                                                "exclusiveMinimum": true,
+                                                                "maximum": 9007199254740991
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "originalFileName",
+                                                            "contentType",
+                                                            "byteSize"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    },
+                                                    "createdByUsername": {
+                                                        "type": "string",
+                                                        "pattern": "^[a-z0-9_]*$"
+                                                    },
+                                                    "createdAt": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "publishedAt": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "documentId",
+                                                    "conversationSlugId",
+                                                    "conversationTitle",
+                                                    "defaultLanguageCode",
+                                                    "localizations",
+                                                    "participantFile",
+                                                    "createdByUsername",
+                                                    "createdAt",
+                                                    "publishedAt"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        },
+                                        "conversationOptions": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "conversationSlugId": {
+                                                        "type": "string",
+                                                        "maxLength": 10
+                                                    },
+                                                    "conversationTitle": {
+                                                        "type": "string",
+                                                        "minLength": 1,
+                                                        "maxLength": 140
+                                                    }
+                                                },
+                                                "required": [
+                                                    "conversationSlugId",
+                                                    "conversationTitle"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "documents",
+                                        "conversationOptions"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/administrator/project/document/upload": {
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "document": {
+                                            "type": "object",
+                                            "properties": {
+                                                "documentId": {
+                                                    "type": "string",
+                                                    "format": "uuid",
+                                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                },
+                                                "conversationSlugId": {
+                                                    "type": "string",
+                                                    "maxLength": 10
+                                                },
+                                                "conversationTitle": {
+                                                    "type": "string",
+                                                    "minLength": 1,
+                                                    "maxLength": 140
+                                                },
+                                                "defaultLanguageCode": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "en",
+                                                        "es",
+                                                        "fr",
+                                                        "zh-Hant",
+                                                        "zh-Hans",
+                                                        "ja",
+                                                        "ar",
+                                                        "fa",
+                                                        "he",
+                                                        "ky",
+                                                        "ru"
+                                                    ]
+                                                },
+                                                "localizations": {
+                                                    "minItems": 1,
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "languageCode": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "en",
+                                                                    "es",
+                                                                    "fr",
+                                                                    "zh-Hant",
+                                                                    "zh-Hans",
+                                                                    "ja",
+                                                                    "ar",
+                                                                    "fa",
+                                                                    "he",
+                                                                    "ky",
+                                                                    "ru"
+                                                                ]
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "minLength": 1,
+                                                                "maxLength": 140
+                                                            },
+                                                            "downloadFileName": {
+                                                                "type": "string",
+                                                                "minLength": 1,
+                                                                "maxLength": 255
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "languageCode",
+                                                            "name",
+                                                            "downloadFileName"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    }
+                                                },
+                                                "participantFile": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "originalFileName": {
+                                                            "type": "string",
+                                                            "minLength": 1
+                                                        },
+                                                        "contentType": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "text/html",
+                                                                "application/pdf",
+                                                                "text/plain",
+                                                                "text/markdown",
+                                                                "text/csv",
+                                                                "application/json"
+                                                            ]
+                                                        },
+                                                        "byteSize": {
+                                                            "type": "integer",
+                                                            "exclusiveMinimum": true,
+                                                            "maximum": 9007199254740991
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "originalFileName",
+                                                        "contentType",
+                                                        "byteSize"
+                                                    ],
+                                                    "additionalProperties": false
+                                                },
+                                                "ownerFile": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "originalFileName": {
+                                                            "type": "string",
+                                                            "minLength": 1
+                                                        },
+                                                        "contentType": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "text/html",
+                                                                "application/pdf",
+                                                                "text/plain",
+                                                                "text/markdown",
+                                                                "text/csv",
+                                                                "application/json"
+                                                            ]
+                                                        },
+                                                        "byteSize": {
+                                                            "type": "integer",
+                                                            "exclusiveMinimum": true,
+                                                            "maximum": 9007199254740991
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "originalFileName",
+                                                        "contentType",
+                                                        "byteSize"
+                                                    ],
+                                                    "additionalProperties": false
+                                                },
+                                                "createdByUsername": {
+                                                    "type": "string",
+                                                    "pattern": "^[a-z0-9_]*$"
+                                                },
+                                                "createdAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "publishedAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "required": [
+                                                "documentId",
+                                                "conversationSlugId",
+                                                "conversationTitle",
+                                                "defaultLanguageCode",
+                                                "localizations",
+                                                "participantFile",
+                                                "createdByUsername",
+                                                "createdAt",
+                                                "publishedAt"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    },
+                                    "required": [
+                                        "document"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/administrator/project/document/delete": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "projectSlug": {
+                                        "type": "string",
+                                        "maxLength": 65,
+                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                    },
+                                    "documentId": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                    }
+                                },
+                                "required": [
+                                    "projectSlug",
+                                    "documentId"
                                 ],
                                 "additionalProperties": false
                             }

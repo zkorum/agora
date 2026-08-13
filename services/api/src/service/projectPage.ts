@@ -84,6 +84,8 @@ import {
     fetchConversationDisplayCountsByConversationId,
     type ConversationDisplayCounts,
 } from "./conversationDisplayCounts.js";
+import { fetchProjectPageDocuments } from "./projectDocument.js";
+import { fetchProjectParticipantCounts } from "./projectParticipantCounts.js";
 
 interface ProjectPageServiceParams {
     db: PostgresJsDatabase;
@@ -1484,26 +1486,31 @@ async function fetchProjectAggregateCounts({
 }): Promise<{
     activityCount: number;
     participantCount: number;
+    participationCount: number;
     voteCount: number;
 }> {
     const rows = await db
-        .select({ conversationId: conversationTable.id })
+        .select({
+            conversationId: conversationTable.id,
+            conversationType: conversationTable.conversationType,
+        })
         .from(conversationTable)
         .where(getProjectPageConversationWhereClause({ projectId }));
-    const countsByConversationId =
-        await fetchConversationDisplayCountsByConversationId({
+    const conversationIds = rows.map((row) => row.conversationId);
+    const [countsByConversationId, participantCounts] = await Promise.all([
+        fetchConversationDisplayCountsByConversationId({
             db,
-            conversationIds: rows.map((row) => row.conversationId),
-        });
-    let participantCount = 0;
+            conversationIds,
+        }),
+        fetchProjectParticipantCounts({ db, conversations: rows }),
+    ]);
     let voteCount = 0;
     for (const counts of countsByConversationId.values()) {
-        participantCount += counts.participantCount;
         voteCount += counts.voteCount;
     }
     return {
         activityCount: rows.length,
-        participantCount,
+        ...participantCounts,
         voteCount,
     };
 }
@@ -1985,39 +1992,50 @@ async function buildProjectShellPayload({
         effectiveLanguageCode: preferredContentLanguage,
         defaultLanguageCode,
     });
-    const [content, bannerImageUrl, aggregateCounts, attributions, contact] =
-        await Promise.all([
-            fetchResolvedProjectContent({
-                db,
-                project,
-                languageCandidateSet,
-                effectiveLanguageCode: preferredContentLanguage,
-                additionalLanguageCodes,
-                includeTranslationStatus: true,
-            }),
-            fetchResolvedBannerImageUrl({
-                db,
-                project,
-                languageCandidateSet,
-                effectiveLanguageCode: preferredContentLanguage,
-                baseImageServiceUrl,
-            }),
-            fetchProjectAggregateCounts({ db, projectId: project.projectId }),
-            fetchProjectAttributions({
-                db,
-                projectId: project.projectId,
-                effectiveLanguageCode: preferredContentLanguage,
-                defaultLanguageCode,
-                baseImageServiceUrl,
-            }),
-            fetchProjectContact({
-                db,
-                projectId: project.projectId,
-                baseImageServiceUrl,
-                effectiveLanguageCode: preferredContentLanguage,
-                defaultLanguageCode,
-            }),
-        ]);
+    const [
+        content,
+        bannerImageUrl,
+        aggregateCounts,
+        documents,
+        attributions,
+        contact,
+    ] = await Promise.all([
+        fetchResolvedProjectContent({
+            db,
+            project,
+            languageCandidateSet,
+            effectiveLanguageCode: preferredContentLanguage,
+            additionalLanguageCodes,
+            includeTranslationStatus: true,
+        }),
+        fetchResolvedBannerImageUrl({
+            db,
+            project,
+            languageCandidateSet,
+            effectiveLanguageCode: preferredContentLanguage,
+            baseImageServiceUrl,
+        }),
+        fetchProjectAggregateCounts({ db, projectId: project.projectId }),
+        fetchProjectPageDocuments({
+            db,
+            projectId: project.projectId,
+            displayLanguageCode: preferredContentLanguage,
+        }),
+        fetchProjectAttributions({
+            db,
+            projectId: project.projectId,
+            effectiveLanguageCode: preferredContentLanguage,
+            defaultLanguageCode,
+            baseImageServiceUrl,
+        }),
+        fetchProjectContact({
+            db,
+            projectId: project.projectId,
+            baseImageServiceUrl,
+            effectiveLanguageCode: preferredContentLanguage,
+            defaultLanguageCode,
+        }),
+    ]);
     const projectPayload: ProjectPageProject = {
         slug: project.projectSlug,
         displayContent: toProjectDisplayContent({
@@ -2030,8 +2048,10 @@ async function buildProjectShellPayload({
         bannerVariant: "blue",
         bannerImageUrl,
         participantCount: aggregateCounts.participantCount,
+        participationCount: aggregateCounts.participationCount,
         voteCount: aggregateCounts.voteCount,
         activityCount: aggregateCounts.activityCount,
+        documents,
         attributions,
         contact,
     };
