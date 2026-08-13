@@ -501,8 +501,12 @@ async function performSave(): Promise<void> {
       isIndexed: !isPrivate.value,
       participationMode: participationMode.value,
       requiresEventTicket: requiresEventTicket.value,
-      aiLabelingEnabled: aiLabelingEnabled.value,
-      preferredOpinionGroupCount: preferredOpinionGroupCount.value,
+      ...(conversationType.value === "polis"
+        ? {
+            aiLabelingEnabled: aiLabelingEnabled.value,
+            preferredOpinionGroupCount: preferredOpinionGroupCount.value,
+          }
+        : {}),
     });
 
     if (response.success) {
@@ -640,6 +644,7 @@ onMounted(async () => {
       preferredOpinionGroupCount: response.preferredOpinionGroupCount,
       surveyConfig: response.surveyConfig ?? null,
     });
+    conversationTypeConfig.value = response.conversationTypeConfig;
     editPermissions.value = response.editPermissions;
     currentProjectLanguageProject.value =
       response.projectLanguageProject === undefined

@@ -3920,6 +3920,7 @@ export interface ApiV1ConversationGetForEditPost200ResponseOneOf {
     'conversationSlugId': string;
     'conversationTitle': string;
     'conversationBody'?: string;
+    'conversationTypeConfig': ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfig;
     'contentLanguageMetadata': ApiV1ConversationFetchRecentPost200ResponseFeedItemListInnerConversationDataMetadataOneOfContentLanguageMetadata;
     'languageSetting': ApiV1ConversationFetchRecentPost200ResponseFeedItemListInnerConversationDataMetadataOneOfLanguageSetting;
     'multilingualSetting': ApiV1ConversationCreatePostRequestOneOfMultilingualSetting;
@@ -3969,6 +3970,37 @@ export const ApiV1ConversationGetForEditPost200ResponseOneOf1ReasonEnum = {
 } as const;
 
 export type ApiV1ConversationGetForEditPost200ResponseOneOf1ReasonEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOf1ReasonEnum];
+
+/**
+ * @type ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfig
+ */
+export type ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfig = ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf | ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf1;
+
+export interface ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf {
+    'conversationType': ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOfConversationTypeEnum;
+}
+
+export const ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOfConversationTypeEnum = {
+    Polis: 'polis',
+} as const;
+
+export type ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOfConversationTypeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOfConversationTypeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOfConversationTypeEnum];
+
+export interface ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf1 {
+    'conversationType': ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf1ConversationTypeEnum;
+    'rankingMode': ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf1RankingModeEnum;
+}
+
+export const ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf1ConversationTypeEnum = {
+    Ranking: 'ranking',
+} as const;
+
+export type ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf1ConversationTypeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf1ConversationTypeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf1ConversationTypeEnum];
+export const ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf1RankingModeEnum = {
+    Bws: 'bws',
+} as const;
+
+export type ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf1RankingModeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf1RankingModeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf1RankingModeEnum];
 
 export interface ApiV1ConversationGetForEditPost200ResponseOneOfEditPermissions {
     'canEditNormalSettings': boolean;

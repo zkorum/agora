@@ -218,7 +218,6 @@ export function useConversationDraft(
           store.conversationDraft = {
             ...store.conversationDraft,
             conversationType: "polis",
-            rankingMode: undefined,
           };
         }
         store.conversationDraft.isPrivate = newSnapshot.isPrivate;
@@ -450,8 +449,7 @@ export function useConversationDraft(
 
     // Check conversation type changes
     const hasConversationTypeChanges =
-      conversationType.value !== emptyDraft.conversationType ||
-      rankingMode.value !== emptyDraft.rankingMode;
+      conversationType.value !== emptyDraft.conversationType;
 
     // Check post-as settings changes
     const hasPostAsChanges =
@@ -520,7 +518,7 @@ export function useConversationDraft(
     inheritProjectLanguages.value = emptyDraft.inheritProjectLanguages;
     seedOpinions.value = [];
     conversationType.value = emptyDraft.conversationType;
-    rankingMode.value = emptyDraft.rankingMode;
+    rankingMode.value = undefined;
     isPrivate.value = emptyDraft.isPrivate;
     participationMode.value = emptyDraft.participationMode;
     requiresEventTicket.value = emptyDraft.requiresEventTicket;

@@ -62,11 +62,13 @@
   />
 
   <AiLabelingOptionsDialog
+    v-if="supportsOpinionGroupAnalysis"
     v-model:show-dialog="showAiLabelingDialog"
     v-model:ai-labeling-enabled="aiLabelingEnabled"
   />
 
   <AnalysisPreferenceDialog
+    v-if="supportsOpinionGroupAnalysis"
     v-model:show-dialog="showAnalysisPreferenceDialog"
     v-model:preferred-opinion-group-count="preferredOpinionGroupCount"
     :can-use-analysis-variants-preference="canUseAnalysisVariantsPreference"
@@ -216,6 +218,9 @@ const rankingMode = computed(() =>
     ? conversationTypeConfig.value.rankingMode
     : undefined
 );
+const supportsOpinionGroupAnalysis = computed(
+  () => conversationTypeConfig.value.conversationType === "polis"
+);
 const importSettings = defineModel<ConversationImportSettings>(
   "importSettings",
   { required: true }
@@ -274,6 +279,13 @@ const showAnalysisPreferenceDialog = ref(false);
 const showLanguageSettingDialog = ref(false);
 const showLoginRequirementDialog = ref(false);
 const showEventTicketRequirementDialog = ref(false);
+
+watch(supportsOpinionGroupAnalysis, (isSupported) => {
+  if (!isSupported) {
+    showAiLabelingDialog.value = false;
+    showAnalysisPreferenceDialog.value = false;
+  }
+});
 
 const showImportModeChangeConfirmation = ref(false);
 
@@ -669,7 +681,7 @@ const controlButtons = computed((): ControlButton[] => [
     icon: showAiLabelingDialog.value
       ? "pi pi-chevron-up"
       : "pi pi-chevron-down",
-    isVisible: true,
+    isVisible: supportsOpinionGroupAnalysis.value,
     clickHandler: toggleAiLabeling,
     clickable: true,
   },
@@ -679,7 +691,7 @@ const controlButtons = computed((): ControlButton[] => [
     icon: showAnalysisPreferenceDialog.value
       ? "pi pi-chevron-up"
       : "pi pi-chevron-down",
-    isVisible: conversationType.value === "polis",
+    isVisible: supportsOpinionGroupAnalysis.value,
     clickHandler: toggleAnalysisPreference,
     clickable: true,
   },

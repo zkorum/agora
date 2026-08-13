@@ -69,7 +69,6 @@ export const zodConversationTypeConfig = z.discriminatedUnion(
         z
             .object({
                 conversationType: z.literal("polis"),
-                rankingMode: z.undefined().optional(),
             })
             .strict(),
         z

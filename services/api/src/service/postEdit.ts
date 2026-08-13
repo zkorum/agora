@@ -31,6 +31,7 @@ import type {
     UpdateConversationRequest,
     UpdateConversationResponse,
 } from "@/shared/types/dto.js";
+import type { ConversationTypeConfig } from "@/shared/types/zod.js";
 import {
     getProjectLanguageSettings,
     hasProjectCapability,
@@ -112,6 +113,7 @@ export async function getConversationForEdit({
             isIndexed: conversationTable.isIndexed,
             participationMode: conversationTable.participationMode,
             conversationType: conversationTable.conversationType,
+            rankingMode: rankingConversationConfigTable.rankingMode,
             requiresEventTicket: conversationTable.requiresEventTicket,
             aiLabelingEnabled: polisConversationConfigTable.aiLabelingEnabled,
             preferredOpinionGroupCount:
@@ -157,6 +159,13 @@ export async function getConversationForEdit({
         .leftJoin(
             polisConversationConfigTable,
             eq(polisConversationConfigTable.id, conversationTable.polisConfigId),
+        )
+        .leftJoin(
+            rankingConversationConfigTable,
+            eq(
+                rankingConversationConfigTable.id,
+                conversationTable.rankingConfigId,
+            ),
         )
         .leftJoin(
             conversationModerationTable,
@@ -249,12 +258,25 @@ export async function getConversationForEdit({
         hasSurvey: surveyConfig !== undefined,
         now: new Date(),
     });
+    let conversationTypeConfig: ConversationTypeConfig;
+    if (conversation.conversationType === "ranking") {
+        if (conversation.rankingMode === null) {
+            throw new Error("Ranking conversation is missing its ranking mode");
+        }
+        conversationTypeConfig = {
+            conversationType: "ranking",
+            rankingMode: conversation.rankingMode,
+        };
+    } else {
+        conversationTypeConfig = { conversationType: "polis" };
+    }
 
     return {
         success: true,
         conversationSlugId: conversation.conversationSlugId,
         conversationTitle: conversation.conversationTitle,
         conversationBody: toUnionUndefined(conversation.conversationBody),
+        conversationTypeConfig,
         contentLanguageMetadata:
             conversationContentSourceMetadataToContentLanguageMetadataOutput({
                 sourceLanguageCode: conversation.sourceLanguageCode,

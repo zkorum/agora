@@ -19256,6 +19256,47 @@
                                                     "type": "string",
                                                     "maxLength": 60000
                                                 },
+                                                "conversationTypeConfig": {
+                                                    "oneOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "conversationType": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "polis"
+                                                                    ]
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "conversationType"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "conversationType": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "ranking"
+                                                                    ]
+                                                                },
+                                                                "rankingMode": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "bws"
+                                                                    ]
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "conversationType",
+                                                                "rankingMode"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        }
+                                                    ]
+                                                },
                                                 "contentLanguageMetadata": {
                                                     "type": "object",
                                                     "properties": {
@@ -20128,6 +20169,7 @@
                                                 "success",
                                                 "conversationSlugId",
                                                 "conversationTitle",
+                                                "conversationTypeConfig",
                                                 "contentLanguageMetadata",
                                                 "languageSetting",
                                                 "multilingualSetting",
