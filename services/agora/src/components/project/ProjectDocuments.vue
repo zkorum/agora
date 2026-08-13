@@ -1,5 +1,9 @@
 <template>
-  <section class="project-documents" aria-labelledby="project-documents-title">
+  <section
+    v-if="documents.length > 0"
+    class="project-documents"
+    aria-labelledby="project-documents-title"
+  >
     <ProjectSectionHeading
       heading-id="project-documents-title"
       :title="t({ key: 'documentsTitle' })"

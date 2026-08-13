@@ -194,7 +194,6 @@
             class="project-page-view__supplemental"
           >
             <ProjectDocuments
-              v-if="project.documents.length > 0"
               :project-slug="project.slug"
               :documents="project.documents"
               :language-code="selectedLanguage"
