@@ -19,6 +19,10 @@ services:
       TWILIO_SERVICE_SID: "CHANGEME"
       SERVER_DID_PROD: "did:web:agoracitizen.app"
       GOOGLE_APPLICATION_CREDENTIALS: "/secrets/service-account.json"
+      # Project document storage
+      PROJECT_DOCUMENTS_AWS_S3_REGION: "eu-west-1"
+      PROJECT_DOCUMENTS_AWS_S3_BUCKET_NAME: "agora-prod-documents"
+      PROJECT_DOCUMENTS_S3_PRESIGNED_URL_EXPIRY_SECONDS: "600"
       # MaxDiff GitHub integration
       IS_MAXDIFF_GITHUB_ORG_ONLY: "true"
       MAXDIFF_GITHUB_ALLOWED_ORGS: "Agora"
