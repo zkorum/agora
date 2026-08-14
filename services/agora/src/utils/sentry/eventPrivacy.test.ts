@@ -1,3 +1,4 @@
+import type { Event } from "@sentry/vue";
 import {
   isCefSharpCrawlerEvent,
   redactSentryBreadcrumb,
@@ -10,6 +11,69 @@ import { describe, expect, it } from "vitest";
 
 const crawlerValue =
   "Non-Error promise rejection captured with value: Object Not Found Matching Id:1, MethodName:update, ParamCount:4";
+const metaIosBridgeValue =
+  "undefined is not an object (evaluating 'window.webkit.messageHandlers')";
+
+interface MetaPageHideFrame {
+  filename?: string;
+  function?: string;
+  lineno?: number;
+  colno?: number;
+  in_app?: boolean;
+}
+
+interface CreateMetaPageHideEventParams {
+  value?: string;
+  mechanismType?: string;
+  handled?: boolean;
+  frames?: MetaPageHideFrame[];
+  includeAdditionalException?: boolean;
+}
+
+function createMetaPageHideFrames(): MetaPageHideFrame[] {
+  const filename = "app:///conversation/example/analysis";
+  return [
+    { filename, function: "?", lineno: 1, colno: 5421, in_app: true },
+    {
+      filename,
+      function: "sendPageHideMessage",
+      lineno: 1,
+      colno: 3712,
+      in_app: true,
+    },
+    {
+      filename,
+      function: "sendDataToNative",
+      lineno: 1,
+      colno: 1142,
+      in_app: true,
+    },
+  ];
+}
+
+function createMetaPageHideEvent({
+  value = metaIosBridgeValue,
+  mechanismType = "auto.browser.global_handlers.onerror",
+  handled = false,
+  frames = createMetaPageHideFrames(),
+  includeAdditionalException = false,
+}: CreateMetaPageHideEventParams = {}): Event {
+  return {
+    exception: {
+      values: [
+        {
+          type: "TypeError",
+          value,
+          mechanism: { type: mechanismType, handled },
+          stacktrace: { frames },
+        },
+        ...(includeAdditionalException
+          ? [{ type: "Error", value: "Application failure" }]
+          : []),
+      ],
+    },
+  };
+}
 
 describe("CefSharp crawler event detection", () => {
   it("recognizes the exact unhandled non-Error rejection", () => {
@@ -63,6 +127,105 @@ describe("CefSharp crawler event detection", () => {
     },
   ])("retains application and mixed events", (event) => {
     expect(isCefSharpCrawlerEvent(event)).toBe(false);
+  });
+});
+
+describe("Meta iOS bridge event detection", () => {
+  it("recognizes Meta's injected WKWebView page-hide failure", () => {
+    expect(shouldIgnoreSentryEvent(createMetaPageHideEvent())).toBe(true);
+  });
+
+  it("recognizes the semantic signature across Meta script revisions", () => {
+    const frames = createMetaPageHideFrames().map((frame, index) => ({
+      ...frame,
+      colno: 7000 - index,
+    }));
+
+    expect(shouldIgnoreSentryEvent(createMetaPageHideEvent({ frames }))).toBe(
+      true
+    );
+  });
+
+  it("accepts an unnamed initial page-hide callback", () => {
+    const frames = createMetaPageHideFrames();
+    const firstFrame = frames[0];
+    if (firstFrame !== undefined) {
+      firstFrame.function = undefined;
+    }
+
+    expect(shouldIgnoreSentryEvent(createMetaPageHideEvent({ frames }))).toBe(
+      true
+    );
+  });
+
+  it.each<{ name: string; event: Event }>([
+    {
+      name: "a similar application message",
+      event: createMetaPageHideEvent({
+        value: "Application failed while reading window.webkit.messageHandlers",
+      }),
+    },
+    {
+      name: "a handled exception",
+      event: createMetaPageHideEvent({ handled: true }),
+    },
+    {
+      name: "another capture mechanism",
+      event: createMetaPageHideEvent({ mechanismType: "onerror" }),
+    },
+    {
+      name: "an application asset source",
+      event: createMetaPageHideEvent({
+        frames: createMetaPageHideFrames().map((frame) => ({
+          ...frame,
+          filename: "app:///assets/application.js",
+        })),
+      }),
+    },
+    {
+      name: "different frame sources",
+      event: createMetaPageHideEvent({
+        frames: createMetaPageHideFrames().map((frame, index) =>
+          index === 1
+            ? { ...frame, filename: "app:///conversation/other/analysis" }
+            : frame
+        ),
+      }),
+    },
+    {
+      name: "a non-inline frame",
+      event: createMetaPageHideEvent({
+        frames: createMetaPageHideFrames().map((frame, index) =>
+          index === 1 ? { ...frame, lineno: 2 } : frame
+        ),
+      }),
+    },
+    {
+      name: "a changed bridge function",
+      event: createMetaPageHideEvent({
+        frames: createMetaPageHideFrames().map((frame, index) =>
+          index === 2 ? { ...frame, function: "applicationHandler" } : frame
+        ),
+      }),
+    },
+    {
+      name: "an additional application frame",
+      event: createMetaPageHideEvent({
+        frames: [
+          ...createMetaPageHideFrames(),
+          {
+            filename: "app:///assets/application.js",
+            function: "applicationHandler",
+          },
+        ],
+      }),
+    },
+    {
+      name: "an additional application exception",
+      event: createMetaPageHideEvent({ includeAdditionalException: true }),
+    },
+  ])("retains $name", ({ event }) => {
+    expect(shouldIgnoreSentryEvent(event)).toBe(false);
   });
 });
 

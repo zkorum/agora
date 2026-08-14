@@ -10,6 +10,9 @@ export const SENTRY_TRACE_PROPAGATION_TARGETS: RegExp[] = [
 
 const CEF_SHARP_CRAWLER_ERROR =
   /^Non-Error promise rejection captured with value: Object Not Found Matching Id:\d+, MethodName:[^,\s]+, ParamCount:\d+$/;
+const META_INJECTED_PAGE_HIDE_ERROR =
+  "undefined is not an object (evaluating 'window.webkit.messageHandlers')";
+const JAVASCRIPT_ASSET_PATH = /\.(?:c|m)?js(?:[?#]|$)/i;
 const RESIZE_OBSERVER_ERROR =
   /^ResizeObserver loop (?:limit exceeded|completed with undelivered notifications\.)$/;
 const httpMethodSchema = z.enum([
@@ -122,9 +125,54 @@ export function isCefSharpCrawlerEvent(event: Event): boolean {
   return !exception.stacktrace?.frames?.some((frame) => frame.in_app === true);
 }
 
+function isMetaInjectedPageHideError(event: Event): boolean {
+  const exceptions = event.exception?.values;
+  if (exceptions?.length !== 1) {
+    return false;
+  }
+
+  const exception = exceptions[0];
+  if (
+    exception === undefined ||
+    exception.type !== "TypeError" ||
+    exception.value !== META_INJECTED_PAGE_HIDE_ERROR ||
+    exception.mechanism?.handled !== false ||
+    exception.mechanism.type !== "auto.browser.global_handlers.onerror"
+  ) {
+    return false;
+  }
+
+  // Meta's injected inline script is attributed to the host document, so its
+  // frames can be incorrectly marked as application code.
+  const frames = exception.stacktrace?.frames;
+  if (frames?.length !== 3) {
+    return false;
+  }
+
+  const [pageHideFrame, sendPageHideFrame, sendDataFrame] = frames;
+  const documentPath = pageHideFrame?.filename;
+  if (
+    documentPath === undefined ||
+    JAVASCRIPT_ASSET_PATH.test(documentPath) ||
+    pageHideFrame.lineno !== 1 ||
+    sendPageHideFrame?.lineno !== 1 ||
+    sendDataFrame?.lineno !== 1 ||
+    sendPageHideFrame.filename !== documentPath ||
+    sendDataFrame.filename !== documentPath ||
+    (pageHideFrame.function !== undefined && pageHideFrame.function !== "?") ||
+    sendPageHideFrame.function !== "sendPageHideMessage" ||
+    sendDataFrame.function !== "sendDataToNative"
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
 export function shouldIgnoreSentryEvent(event: Event): boolean {
   return (
     isCefSharpCrawlerEvent(event) ||
+    isMetaInjectedPageHideError(event) ||
     isSingleNonAppExceptionMatching({ event, pattern: RESIZE_OBSERVER_ERROR })
   );
 }
