@@ -4,7 +4,7 @@
 -- conversations and fill missing local answers from the participant's latest
 -- valid project answer.
 --
--- V0084.2 must run first and normalize all nine reviewed exact-age questions.
+-- V0085.1 must run first and normalize all nine reviewed exact-age questions.
 
 SET LOCAL lock_timeout = '10s';
 
@@ -329,7 +329,7 @@ BEGIN
         RAISE EXCEPTION 'Amplify survey backfill found a legacy response in a surveyless target';
     END IF;
 
-    -- V0084.2 must already have converted every reviewed exact-age question.
+    -- V0085.1 must already have converted every reviewed exact-age question.
     IF EXISTS (
         SELECT 1
         FROM amplify_source_questions source
@@ -341,7 +341,7 @@ BEGIN
            OR age_question.display_order <> 0
            OR age_content.constraints <> '{"type":"choice","minSelections":1,"maxSelections":1}'::jsonb
     ) THEN
-        RAISE EXCEPTION 'Amplify survey backfill requires V0084.2 to run first';
+        RAISE EXCEPTION 'Amplify survey backfill requires V0085.1 to run first';
     END IF;
 END
 $$;

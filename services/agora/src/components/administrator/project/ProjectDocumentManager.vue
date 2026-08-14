@@ -10,189 +10,213 @@
       </div>
     </div>
 
-    <div class="document-manager__form">
-      <q-select
-        v-model="selectedConversationSlugId"
-        class="document-manager__full"
-        outlined
-        emit-value
-        map-options
-        :label="t('consultationLabel')"
-        :options="conversationSelectOptions"
+    <section class="document-manager__section">
+      <AdminSectionHeader
+        subsection
+        :title="t('chooseFilesTitle')"
+        :description="t('chooseFilesDescription')"
       />
-      <q-file
-        v-model="participantFile"
-        outlined
-        :accept="PROJECT_DOCUMENT_ACCEPT"
-        :label="t('participantFileLabel')"
-        :hint="t('participantFileHint')"
-        :max-file-size="MAX_PROJECT_DOCUMENT_FILE_SIZE"
-        @rejected="showFileError"
-      />
-      <q-file
-        v-model="ownerFile"
-        outlined
-        clearable
-        :accept="PROJECT_DOCUMENT_ACCEPT"
-        :label="t('ownerFileLabel')"
-        :hint="t('ownerFileHint')"
-        :max-file-size="MAX_PROJECT_DOCUMENT_FILE_SIZE"
-        @rejected="showFileError"
-      />
-      <q-select
-        v-model="defaultLanguageCode"
-        outlined
-        emit-value
-        map-options
-        :label="t('defaultLanguageLabel')"
-        :options="displayLanguageOptions"
-      />
-      <q-input
-        :model-value="defaultName"
-        outlined
-        :maxlength="MAX_LENGTH_TITLE"
-        :label="t('nameLabel')"
-        @update:model-value="defaultName = String($event ?? '')"
-      />
-      <q-input
-        :model-value="defaultDownloadFileName"
-        outlined
-        maxlength="255"
-        :label="t('downloadFileNameLabel')"
-        @update:model-value="defaultDownloadFileName = String($event ?? '')"
-      />
-    </div>
-
-    <div class="document-manager__translations">
-      <div class="document-manager__subtitle">
-        {{ t("additionalNamesTitle") }}
+      <div class="document-manager__file-grid">
+        <ProjectDocumentFilePicker
+          v-model="participantFile"
+          :label="t('participantFileLabel')"
+          :description="t('participantFileHint')"
+          :drop-label="t('dropFile')"
+          :remove-label="t('removeFile')"
+          :accept="PROJECT_DOCUMENT_ACCEPT"
+          :max-file-size="MAX_PROJECT_DOCUMENT_FILE_SIZE"
+          :disable="isUploading"
+          @rejected="showFileError"
+        />
+        <ProjectDocumentFilePicker
+          v-model="ownerFile"
+          :label="t('ownerFileLabel')"
+          :description="t('ownerFileHint')"
+          :drop-label="t('dropFile')"
+          :remove-label="t('removeFile')"
+          :accept="PROJECT_DOCUMENT_ACCEPT"
+          :max-file-size="MAX_PROJECT_DOCUMENT_FILE_SIZE"
+          :disable="isUploading"
+          @rejected="showFileError"
+        />
       </div>
-      <div
-        v-for="(localization, index) in additionalLocalizations"
-        :key="localization.languageCode"
-        class="document-manager__translation-row"
-      >
+      <p class="document-manager__hint">
+        {{ t("allowedFormats", { size: MAX_PROJECT_DOCUMENT_FILE_SIZE_MB }) }}
+      </p>
+    </section>
+
+    <section class="document-manager__section">
+      <AdminSectionHeader
+        subsection
+        :title="t('detailsTitle')"
+        :description="t('detailsDescription')"
+      />
+      <div class="document-manager__details-grid">
         <q-select
-          :model-value="localization.languageCode"
+          v-model="defaultLanguageCode"
           outlined
           emit-value
           map-options
-          :label="t('languageLabel')"
-          :options="translationLanguageOptions(localization.languageCode)"
-          @update:model-value="
-            updateLocalizationLanguage({ index, value: $event })
-          "
+          :disable="isUploading"
+          :label="t('defaultLanguageLabel')"
+          :options="displayLanguageOptions"
         />
         <q-input
-          :model-value="localization.name"
+          :model-value="defaultName"
           outlined
+          :disable="isUploading"
           :maxlength="MAX_LENGTH_TITLE"
           :label="t('nameLabel')"
-          @update:model-value="updateLocalizationName({ index, value: $event })"
+          @update:model-value="defaultName = String($event ?? '')"
         />
         <q-input
-          :model-value="localization.downloadFileName"
+          :model-value="defaultDownloadFileName"
           outlined
+          :disable="isUploading"
           maxlength="255"
           :label="t('downloadFileNameLabel')"
-          @update:model-value="
-            updateLocalizationDownloadFileName({ index, value: $event })
-          "
-        />
-        <q-btn
-          flat
-          color="negative"
-          no-caps
-          :label="t('remove')"
-          @click="removeLocalization(index)"
+          @update:model-value="defaultDownloadFileName = String($event ?? '')"
         />
       </div>
-      <q-btn
-        outline
-        color="primary"
-        no-caps
-        :disable="availableLanguageOptions.length === 0"
-        :label="t('addName')"
-        @click="addLocalization"
-      />
-    </div>
 
-    <p class="document-manager__hint">
-      {{ t("allowedFormats", { size: MAX_PROJECT_DOCUMENT_FILE_SIZE_MB }) }}
-    </p>
-    <p
-      v-if="participantFile !== null && uploadValidationError !== undefined"
-      class="text-negative"
-    >
-      {{ uploadValidationError }}
-    </p>
-    <q-btn
-      color="primary"
-      no-caps
-      :disable="!canUpload"
-      :loading="isUploading"
-      :label="t('upload')"
-      @click="upload"
-    />
-
-    <div v-if="isLoading" class="document-manager__loading">
-      <q-spinner color="primary" size="2rem" />
-    </div>
-    <div v-else-if="hasLoadError" class="document-manager__load-error">
-      <span>{{ t("loadFailed") }}</span>
-      <q-btn
-        flat
-        color="primary"
-        no-caps
-        :label="t('retry')"
-        @click="refreshDocuments"
-      />
-    </div>
-    <p v-else-if="documents.length === 0" class="document-manager__empty">
-      {{ t("empty") }}
-    </p>
-    <div v-else class="document-manager__list">
-      <div
-        v-for="document in documents"
-        :key="document.documentId"
-        class="document-manager__document"
-      >
-        <div>
-          <div class="document-manager__document-name">
-            {{ documentDefaultName(document) }}
-          </div>
-          <div class="document-manager__document-meta">
-            {{ document.conversationTitle }} ·
-            {{ document.participantFile.originalFileName }} ·
-            {{ formatFileSize(document.participantFile.byteSize) }}
-          </div>
-          <div class="document-manager__document-languages">
-            {{ document.createdByUsername }} ·
-            {{ formatPublishedAt(document.publishedAt) }}
-          </div>
-          <div
-            v-if="document.ownerFile !== undefined"
-            class="document-manager__document-languages"
-          >
-            {{ t("ownerVersionAvailable") }}
-          </div>
-          <div class="document-manager__document-languages">
-            {{
-              document.localizations
-                .map((item) => languageLabel(item.languageCode))
-                .join(", ")
-            }}
-          </div>
+      <div class="document-manager__translations">
+        <div class="document-manager__subheading">
+          {{ t("additionalNamesTitle") }}
+        </div>
+        <div
+          v-for="(localization, index) in additionalLocalizations"
+          :key="localization.languageCode"
+          class="document-manager__translation-row"
+        >
+          <q-select
+            :model-value="localization.languageCode"
+            outlined
+            emit-value
+            map-options
+            :disable="isUploading"
+            :label="t('languageLabel')"
+            :options="translationLanguageOptions(localization.languageCode)"
+            @update:model-value="
+              updateLocalizationLanguage({ index, value: $event })
+            "
+          />
+          <q-input
+            :model-value="localization.name"
+            outlined
+            :disable="isUploading"
+            :maxlength="MAX_LENGTH_TITLE"
+            :label="t('nameLabel')"
+            @update:model-value="
+              updateLocalizationName({ index, value: $event })
+            "
+          />
+          <q-input
+            :model-value="localization.downloadFileName"
+            outlined
+            :disable="isUploading"
+            maxlength="255"
+            :label="t('downloadFileNameLabel')"
+            @update:model-value="
+              updateLocalizationDownloadFileName({ index, value: $event })
+            "
+          />
+          <q-btn
+            flat
+            color="negative"
+            no-caps
+            :disable="isUploading"
+            :label="t('remove')"
+            @click="removeLocalization(index)"
+          />
         </div>
         <q-btn
-          flat
-          color="negative"
+          outline
+          color="primary"
           no-caps
-          :loading="deletingDocumentIds.has(document.documentId)"
-          :label="t('remove')"
-          :aria-label="`${t('remove')}: ${documentDefaultName(document)}`"
-          @click="requestRemoveDocument(document)"
+          :disable="isUploading || availableLanguageOptions.length === 0"
+          :label="t('addName')"
+          @click="addLocalization"
         />
+      </div>
+    </section>
+
+    <div class="document-manager__actions">
+      <p
+        v-if="participantFile !== null && uploadValidationError !== undefined"
+        class="text-negative"
+        role="alert"
+      >
+        {{ uploadValidationError }}
+      </p>
+      <q-btn
+        color="primary"
+        no-caps
+        :disable="!canUpload"
+        :loading="isUploading"
+        :label="t('upload')"
+        @click="upload"
+      />
+    </div>
+
+    <div class="document-manager__results">
+      <div v-if="isLoading" class="document-manager__loading">
+        <q-spinner color="primary" size="2rem" />
+      </div>
+      <div v-else-if="hasLoadError" class="document-manager__load-error">
+        <span>{{ t("loadFailed") }}</span>
+        <q-btn
+          flat
+          color="primary"
+          no-caps
+          :label="t('retry')"
+          @click="refreshDocuments"
+        />
+      </div>
+      <p v-else-if="documents.length === 0" class="document-manager__empty">
+        {{ t("empty") }}
+      </p>
+      <div v-else class="document-manager__list">
+        <div
+          v-for="document in documents"
+          :key="document.documentId"
+          class="document-manager__document"
+        >
+          <div>
+            <div class="document-manager__document-name">
+              {{ documentDefaultName(document) }}
+            </div>
+            <div class="document-manager__document-meta">
+              {{ document.participantFile.originalFileName }} ·
+              {{ formatFileSize(document.participantFile.byteSize) }}
+            </div>
+            <div class="document-manager__document-languages">
+              {{ document.createdByUsername }} ·
+              {{ formatPublishedAt(document.publishedAt) }}
+            </div>
+            <div
+              v-if="document.ownerFile !== undefined"
+              class="document-manager__document-languages"
+            >
+              {{ t("ownerVersionAvailable") }}
+            </div>
+            <div class="document-manager__document-languages">
+              {{
+                document.localizations
+                  .map((item) => languageLabel(item.languageCode))
+                  .join(", ")
+              }}
+            </div>
+          </div>
+          <q-btn
+            flat
+            color="negative"
+            no-caps
+            :loading="deletingDocumentIds.has(document.documentId)"
+            :label="t('remove')"
+            :aria-label="`${t('remove')}: ${documentDefaultName(document)}`"
+            @click="requestRemoveDocument(document)"
+          />
+        </div>
       </div>
     </div>
 
@@ -210,6 +234,7 @@
 
 <script setup lang="ts">
 import AdminSectionHeader from "src/components/administrator/AdminSectionHeader.vue";
+import ProjectDocumentFilePicker from "src/components/administrator/project/ProjectDocumentFilePicker.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
@@ -225,10 +250,10 @@ import {
 import { MAX_LENGTH_TITLE } from "src/shared/shared";
 import type {
   AdminProjectDocument,
-  ProjectDocumentConversationOption,
   ProjectDocumentLocalization,
 } from "src/shared/types/dto";
 import { useBackendAdministratorProjectApi } from "src/utils/api/administrator/project";
+import { formatFileSize } from "src/utils/format";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 
@@ -255,8 +280,6 @@ const { deleteProjectDocument, listProjectDocuments, uploadProjectDocument } =
   useBackendAdministratorProjectApi();
 
 const documents = ref<AdminProjectDocument[]>([]);
-const conversationOptions = ref<ProjectDocumentConversationOption[]>([]);
-const selectedConversationSlugId = ref<string | null>(null);
 const participantFile = ref<File | null>(null);
 const ownerFile = ref<File | null>(null);
 const defaultLanguageCode = ref<SupportedDisplayLanguageCodes>("en");
@@ -291,12 +314,6 @@ const availableLanguageOptions = computed(() =>
   props.displayLanguageOptions.filter(
     (option) => !usedLanguageCodes.value.has(option.value)
   )
-);
-const conversationSelectOptions = computed(() =>
-  conversationOptions.value.map((conversation) => ({
-    label: conversation.conversationTitle,
-    value: conversation.conversationSlugId,
-  }))
 );
 const uploadValidationError = computed<string | undefined>(() => {
   const participant = participantFile.value;
@@ -352,10 +369,7 @@ const uploadValidationError = computed<string | undefined>(() => {
   return undefined;
 });
 const canUpload = computed(
-  () =>
-    !isUploading.value &&
-    selectedConversationSlugId.value !== null &&
-    uploadValidationError.value === undefined
+  () => !isUploading.value && uploadValidationError.value === undefined
 );
 
 watch(
@@ -485,15 +499,6 @@ function documentDefaultName(document: AdminProjectDocument): string {
   );
 }
 
-function formatFileSize(byteSize: number): string {
-  return new Intl.NumberFormat(undefined, {
-    style: "unit",
-    unit: byteSize >= 1024 * 1024 ? "megabyte" : "kilobyte",
-    unitDisplay: "short",
-    maximumFractionDigits: 1,
-  }).format(byteSize / (byteSize >= 1024 * 1024 ? 1024 * 1024 : 1024));
-}
-
 function formatPublishedAt(publishedAt: Date): string {
   return new Intl.DateTimeFormat(undefined, {
     dateStyle: "medium",
@@ -526,17 +531,6 @@ async function refreshDocuments(): Promise<void> {
     });
     if (requestId !== latestDocumentsRequest) return;
     documents.value = response.documents;
-    conversationOptions.value = response.conversationOptions;
-    if (
-      selectedConversationSlugId.value === null ||
-      !response.conversationOptions.some(
-        (conversation) =>
-          conversation.conversationSlugId === selectedConversationSlugId.value
-      )
-    ) {
-      selectedConversationSlugId.value =
-        response.conversationOptions.at(0)?.conversationSlugId ?? null;
-    }
   } catch (error) {
     console.error(error);
     if (requestId === latestDocumentsRequest) {
@@ -551,13 +545,7 @@ async function refreshDocuments(): Promise<void> {
 
 async function upload(): Promise<void> {
   const selectedParticipantFile = participantFile.value;
-  const conversationSlugId = selectedConversationSlugId.value;
-  if (
-    !canUpload.value ||
-    selectedParticipantFile === null ||
-    conversationSlugId === null
-  )
-    return;
+  if (!canUpload.value || selectedParticipantFile === null) return;
   isUploading.value = true;
   const projectSlug = props.projectSlug;
   try {
@@ -566,7 +554,6 @@ async function upload(): Promise<void> {
       ownerFile: ownerFile.value ?? undefined,
       metadata: {
         projectSlug,
-        conversationSlugId,
         defaultLanguageCode: defaultLanguageCode.value,
         localizations: [
           {
@@ -634,10 +621,6 @@ async function removePendingDocument(): Promise<void> {
 </script>
 
 <style scoped lang="scss">
-.document-manager {
-  margin-block: 1rem;
-}
-
 .document-manager__warning {
   display: flex;
   gap: 0.75rem;
@@ -653,24 +636,37 @@ async function removePendingDocument(): Promise<void> {
   margin: 0.25rem 0 0;
 }
 
-.document-manager__form {
+.document-manager__section {
+  margin-block-start: 1.25rem;
+}
+
+.document-manager__section + .document-manager__section {
+  margin-block-start: 1.5rem;
+  padding-block-start: 1.25rem;
+  border-block-start: 1px solid #e9e9f1;
+}
+
+.document-manager__file-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
   gap: 1rem;
   margin-block-start: 1rem;
 }
 
-.document-manager__full {
-  grid-column: 1 / -1;
+.document-manager__details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
+  margin-block-start: 1rem;
 }
 
 .document-manager__translations {
   display: grid;
   gap: 0.75rem;
-  margin-block: 1rem;
+  margin-block-start: 1.25rem;
 }
 
-.document-manager__subtitle,
+.document-manager__subheading,
 .document-manager__document-name {
   font-weight: 700;
 }
@@ -692,7 +688,24 @@ async function removePendingDocument(): Promise<void> {
 }
 
 .document-manager__hint {
-  margin-block: 0.5rem 1rem;
+  margin-block: 0.75rem 0;
+}
+
+.document-manager__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-block-start: 1.25rem;
+}
+
+.document-manager__actions p,
+.document-manager__empty {
+  margin: 0;
+}
+
+.document-manager__results {
+  margin-block-start: 1.25rem;
 }
 
 .document-manager__loading {
@@ -713,7 +726,6 @@ async function removePendingDocument(): Promise<void> {
 .document-manager__list {
   display: grid;
   gap: 0.75rem;
-  margin-block-start: 1.25rem;
 }
 
 .document-manager__document {
@@ -736,9 +748,12 @@ async function removePendingDocument(): Promise<void> {
 }
 
 @media (max-width: 700px) {
-  .document-manager__form,
   .document-manager__translation-row {
     grid-template-columns: 1fr;
+  }
+
+  .document-manager__file-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .document-manager__document {

@@ -206,6 +206,53 @@ EXPORT_CONVOS_ENABLED=false
 
 When disabled, export API endpoints will return 404 Not Found.
 
+### Project Document Storage
+
+Project documents use a dedicated private S3 bucket. Do not reuse the
+conversation export bucket: export lifecycle rules delete objects after 30
+days, while project documents remain available until an administrator removes
+them.
+
+Create one bucket per deployment environment, enable S3 Block Public Access
+and default encryption, and leave static website hosting disabled. Do not add
+an expiry lifecycle rule for the `projects/` prefix.
+
+Configure the API deployment with:
+
+```bash
+PROJECT_DOCUMENTS_AWS_S3_REGION=us-east-1
+PROJECT_DOCUMENTS_AWS_S3_BUCKET_NAME=agora-project-documents-production
+PROJECT_DOCUMENTS_S3_PRESIGNED_URL_EXPIRY_SECONDS=600
+```
+
+The API role needs the following policy, with the bucket name changed for the
+deployment environment:
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "s3:ListBucket",
+            "Resource": "arn:aws:s3:::agora-project-documents-production"
+        },
+        {
+            "Effect": "Allow",
+            "Action": ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"],
+            "Resource": "arn:aws:s3:::agora-project-documents-production/projects/*"
+        }
+    ]
+}
+```
+
+The API uploads objects under
+`projects/<project-id>/documents/<document-id>/participant` and
+`projects/<project-id>/documents/<document-id>/owner`. S3 remains private; the
+API checks access before issuing a short-lived presigned download URL. The API
+also checks bucket access during startup when both project-document S3
+variables are configured.
+
 ## Test
 
 ```bash

@@ -3631,17 +3631,6 @@ server.after(() => {
                 conversationSlugId: request.body.conversationSlugId,
                 userId: deviceStatus.userId,
             });
-            try {
-                await projectDocumentService.cleanupProjectDocumentStorage({
-                    db,
-                    conversationSlugId: request.body.conversationSlugId,
-                });
-            } catch (error: unknown) {
-                log.error(
-                    error,
-                    "[ProjectDocument] Conversation cleanup will be retried",
-                );
-            }
             reply.send();
         },
     });

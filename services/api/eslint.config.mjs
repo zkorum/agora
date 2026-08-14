@@ -19,6 +19,12 @@ export default tseslint.config(
                 tsconfigRootDir: import.meta.dirname,
             },
         },
+        rules: {
+            "@typescript-eslint/no-unnecessary-condition": [
+                "error",
+                { allowConstantLoopConditions: "only-allowed-literals" },
+            ],
+        },
     },
     // {
     //     files: ["**/*.json"],

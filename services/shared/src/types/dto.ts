@@ -577,7 +577,6 @@ const zodProjectDocumentLocalizations = z
 const zodProjectDocumentUploadMetadata = z
     .object({
         projectSlug: zodProjectSlug,
-        conversationSlugId: zodSlugId,
         defaultLanguageCode: ZodSupportedDisplayLanguageCodes,
         localizations: zodProjectDocumentLocalizations,
     })
@@ -604,8 +603,6 @@ const zodAdminProjectDocumentFile = z
 const zodAdminProjectDocument = z
     .object({
         documentId: z.uuid(),
-        conversationSlugId: zodSlugId,
-        conversationTitle: zodConversationTitle,
         defaultLanguageCode: ZodSupportedDisplayLanguageCodes,
         localizations: zodProjectDocumentLocalizations,
         participantFile: zodAdminProjectDocumentFile,
@@ -613,12 +610,6 @@ const zodAdminProjectDocument = z
         createdByUsername: zodUsername,
         createdAt: zodDateTimeFlexible,
         publishedAt: zodDateTimeFlexible,
-    })
-    .strict();
-const zodProjectDocumentConversationOption = z
-    .object({
-        conversationSlugId: zodSlugId,
-        conversationTitle: zodConversationTitle,
     })
     .strict();
 const zodProjectPageDocument = z
@@ -2051,7 +2042,6 @@ export class Dto {
     static listProjectDocumentsResponse = z
         .object({
             documents: z.array(zodAdminProjectDocument),
-            conversationOptions: z.array(zodProjectDocumentConversationOption),
         })
         .strict();
     static deleteProjectDocumentRequest = z
@@ -2815,9 +2805,6 @@ export type ProjectDocumentUploadMetadata = z.infer<
     typeof Dto.projectDocumentUploadMetadata
 >;
 export type AdminProjectDocument = z.infer<typeof zodAdminProjectDocument>;
-export type ProjectDocumentConversationOption = z.infer<
-    typeof zodProjectDocumentConversationOption
->;
 export type UploadProjectDocumentResponse = z.infer<
     typeof Dto.uploadProjectDocumentResponse
 >;

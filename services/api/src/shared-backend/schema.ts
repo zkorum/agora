@@ -1315,8 +1315,8 @@ export const projectDocumentTable = pgTable(
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
         publicId: uuid("public_id").defaultRandom().notNull().unique(),
-        conversationId: integer("conversation_id")
-            .references(() => conversationTable.id)
+        projectId: integer("project_id")
+            .references(() => projectTable.id)
             .notNull(),
         createdByUsername: varchar("created_by_username", {
             length: MAX_LENGTH_USERNAME,
@@ -1337,7 +1337,7 @@ export const projectDocumentTable = pgTable(
         deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
     },
     (table) => [
-        index("project_document_conversation_id_idx").on(table.conversationId),
+        index("project_document_project_id_idx").on(table.projectId),
     ],
 );
 

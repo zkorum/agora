@@ -467,6 +467,7 @@
 
         <ProjectDocumentManager
           :key="selectedProject.projectSlug"
+          class="card-background"
           :project-slug="selectedProject.projectSlug"
           :display-language-options="displayLanguageOptions"
         />

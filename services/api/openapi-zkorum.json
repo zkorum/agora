@@ -25501,15 +25501,6 @@
                                                         "format": "uuid",
                                                         "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                                                     },
-                                                    "conversationSlugId": {
-                                                        "type": "string",
-                                                        "maxLength": 10
-                                                    },
-                                                    "conversationTitle": {
-                                                        "type": "string",
-                                                        "minLength": 1,
-                                                        "maxLength": 140
-                                                    },
                                                     "defaultLanguageCode": {
                                                         "type": "string",
                                                         "enum": [
@@ -25644,8 +25635,6 @@
                                                 },
                                                 "required": [
                                                     "documentId",
-                                                    "conversationSlugId",
-                                                    "conversationTitle",
                                                     "defaultLanguageCode",
                                                     "localizations",
                                                     "participantFile",
@@ -25655,33 +25644,10 @@
                                                 ],
                                                 "additionalProperties": false
                                             }
-                                        },
-                                        "conversationOptions": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "conversationSlugId": {
-                                                        "type": "string",
-                                                        "maxLength": 10
-                                                    },
-                                                    "conversationTitle": {
-                                                        "type": "string",
-                                                        "minLength": 1,
-                                                        "maxLength": 140
-                                                    }
-                                                },
-                                                "required": [
-                                                    "conversationSlugId",
-                                                    "conversationTitle"
-                                                ],
-                                                "additionalProperties": false
-                                            }
                                         }
                                     },
                                     "required": [
-                                        "documents",
-                                        "conversationOptions"
+                                        "documents"
                                     ],
                                     "additionalProperties": false
                                 }
@@ -25708,15 +25674,6 @@
                                                     "type": "string",
                                                     "format": "uuid",
                                                     "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-                                                },
-                                                "conversationSlugId": {
-                                                    "type": "string",
-                                                    "maxLength": 10
-                                                },
-                                                "conversationTitle": {
-                                                    "type": "string",
-                                                    "minLength": 1,
-                                                    "maxLength": 140
                                                 },
                                                 "defaultLanguageCode": {
                                                     "type": "string",
@@ -25852,8 +25809,6 @@
                                             },
                                             "required": [
                                                 "documentId",
-                                                "conversationSlugId",
-                                                "conversationTitle",
                                                 "defaultLanguageCode",
                                                 "localizations",
                                                 "participantFile",

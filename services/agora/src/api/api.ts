@@ -408,16 +408,9 @@ export interface ApiV1AdministratorProjectDocumentDeletePostRequest {
 }
 export interface ApiV1AdministratorProjectDocumentListPost200Response {
     'documents': Array<ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInner>;
-    'conversationOptions': Array<ApiV1AdministratorProjectDocumentListPost200ResponseConversationOptionsInner>;
-}
-export interface ApiV1AdministratorProjectDocumentListPost200ResponseConversationOptionsInner {
-    'conversationSlugId': string;
-    'conversationTitle': string;
 }
 export interface ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInner {
     'documentId': string;
-    'conversationSlugId': string;
-    'conversationTitle': string;
     'defaultLanguageCode': ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInnerDefaultLanguageCodeEnum;
     'localizations': Array<ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInnerLocalizationsInner>;
     'participantFile': ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInnerParticipantFile;

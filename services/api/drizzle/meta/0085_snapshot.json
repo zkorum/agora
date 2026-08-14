@@ -1,5 +1,5 @@
 {
-  "id": "f3e56c2e-07ae-4d67-83c6-b51ba72fd713",
+  "id": "0e4c0620-5a60-47b8-96a4-745494444687",
   "prevId": "a5b98081-ed35-488d-b2d4-8f64135d8604",
   "version": "7",
   "dialect": "postgresql",
@@ -10225,8 +10225,8 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "conversation_id": {
-          "name": "conversation_id",
+        "project_id": {
+          "name": "project_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -10264,11 +10264,11 @@
         }
       },
       "indexes": {
-        "project_document_conversation_id_idx": {
-          "name": "project_document_conversation_id_idx",
+        "project_document_project_id_idx": {
+          "name": "project_document_project_id_idx",
           "columns": [
             {
-              "expression": "conversation_id",
+              "expression": "project_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -10281,12 +10281,12 @@
         }
       },
       "foreignKeys": {
-        "project_document_conversation_id_conversation_id_fk": {
-          "name": "project_document_conversation_id_conversation_id_fk",
+        "project_document_project_id_project_id_fk": {
+          "name": "project_document_project_id_project_id_fk",
           "tableFrom": "project_document",
-          "tableTo": "conversation",
+          "tableTo": "project",
           "columnsFrom": [
-            "conversation_id"
+            "project_id"
           ],
           "columnsTo": [
             "id"

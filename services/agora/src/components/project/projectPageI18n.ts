@@ -108,7 +108,7 @@ export const projectPageTranslations: Readonly<
     activitiesTitle: "Activities",
     documentsTitle: "Project Documents",
     documentsAccessHint:
-      "Available to project owners and people who participated in the consultation.",
+      "Available to project owners and people who participated in any consultation in this project.",
     viewDocument: "View",
     downloadDocument: "Download",
     reloadDocument: "Reload",

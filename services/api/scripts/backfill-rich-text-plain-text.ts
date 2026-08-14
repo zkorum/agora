@@ -533,7 +533,7 @@ async function backfillTarget({
     }
 
     let updatedCount = 0;
-    for (;;) {
+    while (true) {
         const rows = await target.readBatch(db);
 
         if (rows.length === 0) {
@@ -560,7 +560,7 @@ async function backfillRankingItemLanguageMetadata({
 }): Promise<number> {
     let processedCount = 0;
     let lastSeenId = 0;
-    for (;;) {
+    while (true) {
         const rows: RankingItemLanguageBackfillRow[] = await db
             .select({
                 id: rankingItemContentTable.id,
