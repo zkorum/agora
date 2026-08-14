@@ -15497,7 +15497,7 @@ export const privacyPolicyContent = {
               },
               {
                 tag: "li",
-                children: [" 15 天后，您的帳戶資料將從我們的資料庫中永久刪除 "],
+                children: [" 15 天後，您的帳戶資料將從我們的資料庫中永久刪除 "],
               },
               {
                 tag: "li",

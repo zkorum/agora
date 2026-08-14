@@ -53,10 +53,10 @@ export const preferencesDialogTestTranslations: Record<
     openPreferencesDialogButton: "打开偏好设置对话框",
   },
   "zh-Hant": {
-    preferencesDialog: "偏好設置對話框",
+    preferencesDialog: "偏好設定對話框",
     preferencesDialogDescription:
-      "測试用戶在創建賬戶後選擇語言和主題偏好的對話框。",
-    openPreferencesDialogButton: "打開偏好設置對話框",
+      "測試用戶在創建帳戶後選擇語言和主題偏好的對話框。",
+    openPreferencesDialogButton: "打開偏好設定對話框",
   },
   ja: {
     preferencesDialog: "設定ダイアログ",
