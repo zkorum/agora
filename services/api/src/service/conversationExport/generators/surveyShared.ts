@@ -520,7 +520,9 @@ export async function loadSurveyExportContext({
                 ),
     });
     responseRows.sort(
-        (left, right) => left.createdAt.getTime() - right.createdAt.getTime(),
+        (left, right) =>
+            left.createdAt.getTime() - right.createdAt.getTime() ||
+            left.responseId - right.responseId,
     );
 
     const responseIds = responseRows.map((response) => response.responseId);

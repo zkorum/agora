@@ -190,8 +190,8 @@ BEGIN
         RAISE EXCEPTION 'Age-group backfill found mismatched HTML and plain-text exact-age values';
     END IF;
 
-    -- The standard Age group template has no under-18 bucket. Abort instead
-    -- of silently misclassifying an answer that cannot be represented.
+    -- Preserve reviewed under-18 answers in their own bucket rather than
+    -- silently misclassifying or discarding them.
     IF EXISTS (
         SELECT 1
         FROM age_group_migration_raw_answers answer
@@ -201,12 +201,12 @@ BEGIN
           AND CASE
               WHEN answer.answer_value ~ '^[0-9]+$'
                   THEN answer.answer_value::numeric BETWEEN
-                      greatest(18, question.original_minimum_age)
+                      greatest(1, question.original_minimum_age)
                       AND least(120, question.original_maximum_age)
               ELSE false
           END IS NOT TRUE
     ) THEN
-        RAISE EXCEPTION 'Age-group backfill found an exact-age answer outside the standard 18-120 age-group range';
+        RAISE EXCEPTION 'Age-group backfill found an exact-age answer outside the supported 1-120 age-group range';
     END IF;
 
     IF EXISTS (
@@ -240,12 +240,13 @@ SELECT
 FROM age_group_migration_questions question
 CROSS JOIN (
     VALUES
-        (0, '18-24', 18, 24),
-        (1, '25-34', 25, 34),
-        (2, '35-44', 35, 44),
-        (3, '45-54', 45, 54),
-        (4, '55-64', 55, 64),
-        (5, '65+', 65, 120)
+        (0, '<18', 1, 17),
+        (1, '18-24', 18, 24),
+        (2, '25-34', 25, 34),
+        (3, '35-44', 35, 44),
+        (4, '45-54', 45, 54),
+        (5, '55-64', 55, 64),
+        (6, '65+', 65, 120)
 ) AS option(display_order, option_text, minimum_age, maximum_age);
 
 CREATE TEMP TABLE age_group_migration_option_slugs AS
@@ -303,7 +304,7 @@ WHERE slug_rank = 1;
 DO $$
 BEGIN
     IF (SELECT COUNT(*) FROM age_group_migration_option_slugs)
-        <> (SELECT COUNT(*) * 6 FROM age_group_migration_questions) THEN
+        <> (SELECT COUNT(*) * 7 FROM age_group_migration_questions) THEN
         RAISE EXCEPTION 'Age-group backfill could not allocate every option slug';
     END IF;
 END

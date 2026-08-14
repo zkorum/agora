@@ -388,6 +388,7 @@ SELECT
     question.conversation_id,
     question.age_question_id AS question_id,
     option.id AS option_id,
+    option.display_order,
     content.option_text AS canonical_value
 FROM amplify_current_source_questions question
 JOIN survey_question_option option
@@ -395,7 +396,7 @@ JOIN survey_question_option option
    AND option.current_content_id IS NOT NULL
 JOIN survey_question_option_content content
     ON content.id = option.current_content_id
-WHERE content.option_text IN ('18-24', '25-34', '35-44', '45-54', '55-64', '65+');
+WHERE content.option_text IN ('<18', '18-24', '25-34', '35-44', '45-54', '55-64', '65+');
 
 CREATE TEMP TABLE amplify_gender_option_values AS
 SELECT
@@ -419,12 +420,12 @@ BEGIN
         SELECT question_id
         FROM amplify_age_option_values
         GROUP BY question_id
-        HAVING COUNT(*) <> 6
+        HAVING COUNT(*) <> 7
     ) OR (
         EXISTS (SELECT 1 FROM amplify_backfill_enabled)
         AND (SELECT COUNT(DISTINCT question_id) FROM amplify_age_option_values) <> 9
     ) THEN
-        RAISE EXCEPTION 'Amplify survey backfill did not resolve six age groups for every source survey';
+        RAISE EXCEPTION 'Amplify survey backfill did not resolve seven age groups for every source survey';
     END IF;
 
     IF EXISTS (
@@ -434,7 +435,7 @@ BEGIN
             ON option.survey_question_id = source.age_question_id
            AND option.current_content_id IS NOT NULL
         GROUP BY source.age_question_id
-        HAVING COUNT(*) <> 6
+        HAVING COUNT(*) <> 7
     ) THEN
         RAISE EXCEPTION 'Amplify survey backfill found an unreviewed active age-group option';
     END IF;
@@ -448,9 +449,25 @@ BEGIN
         SELECT question_id
         FROM amplify_age_option_values
         GROUP BY question_id
-        HAVING COUNT(DISTINCT canonical_value) <> 6
+        HAVING COUNT(DISTINCT canonical_value) <> 7
     ) THEN
         RAISE EXCEPTION 'Amplify survey backfill found a duplicate or missing canonical age group';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1
+        FROM amplify_age_option_values
+        WHERE display_order <> CASE canonical_value
+            WHEN '<18' THEN 0
+            WHEN '18-24' THEN 1
+            WHEN '25-34' THEN 2
+            WHEN '35-44' THEN 3
+            WHEN '45-54' THEN 4
+            WHEN '55-64' THEN 5
+            WHEN '65+' THEN 6
+        END
+    ) THEN
+        RAISE EXCEPTION 'Amplify survey backfill found an invalid age-group display order';
     END IF;
 
     IF EXISTS (SELECT 1 FROM amplify_backfill_enabled) AND EXISTS (
@@ -520,7 +537,7 @@ WITH inserted AS (
 SELECT id AS survey_config_id, conversation_id
 FROM inserted;
 
-CREATE TEMP TABLE amplify_clone_question_seed AS
+CREATE TEMP TABLE amplify_clone_question_base AS
 SELECT
     target.target_conversation_id,
     config.survey_config_id AS target_survey_config_id,
@@ -529,17 +546,7 @@ SELECT
     CASE
         WHEN source_question.id = source.age_question_id THEN 'age_group'
         ELSE 'gender'
-    END AS dimension,
-    'q' || substr(
-        md5(
-            'amplify-survey-question:' ||
-            target.target_conversation_id::text ||
-            ':' ||
-            source_question.id::text
-        ),
-        1,
-        7
-    ) AS question_slug_id
+    END AS dimension
 FROM amplify_copy_targets target
 JOIN amplify_inserted_configs config
     ON config.conversation_id = target.target_conversation_id
@@ -547,6 +554,55 @@ JOIN amplify_current_source_questions source
     ON source.conversation_id = target.source_conversation_id
 JOIN survey_question source_question
     ON source_question.id IN (source.age_question_id, source.gender_question_id);
+
+CREATE TEMP TABLE amplify_clone_question_seed AS
+WITH candidates AS (
+    SELECT
+        base.*,
+        attempt.number AS attempt,
+        'q' || substr(
+            md5(
+                'amplify-survey-question:' ||
+                base.target_conversation_id::text ||
+                ':' ||
+                base.source_question_id::text ||
+                ':' ||
+                attempt.number::text
+            ),
+            1,
+            7
+        ) AS question_slug_id
+    FROM amplify_clone_question_base base
+    CROSS JOIN generate_series(0, 255) AS attempt(number)
+),
+available AS (
+    SELECT
+        candidate.*,
+        COUNT(*) OVER (PARTITION BY candidate.question_slug_id) AS generated_collision_count
+    FROM candidates candidate
+    LEFT JOIN survey_question existing
+        ON existing.slug_id = candidate.question_slug_id
+    WHERE existing.id IS NULL
+),
+ranked AS (
+    SELECT
+        available.*,
+        ROW_NUMBER() OVER (
+            PARTITION BY available.target_conversation_id, available.source_question_id
+            ORDER BY available.attempt
+        ) AS slug_rank
+    FROM available
+    WHERE available.generated_collision_count = 1
+)
+SELECT
+    target_conversation_id,
+    target_survey_config_id,
+    source_question_id,
+    display_order,
+    dimension,
+    question_slug_id
+FROM ranked
+WHERE slug_rank = 1;
 
 DO $$
 BEGIN
@@ -678,30 +734,74 @@ SET current_content_id = content.content_id
 FROM amplify_cloned_question_contents content
 WHERE target.id = content.target_question_id;
 
-CREATE TEMP TABLE amplify_clone_option_seed AS
+CREATE TEMP TABLE amplify_clone_option_base AS
 SELECT
     cloned.target_conversation_id,
     cloned.target_question_id,
     cloned.source_question_id,
     source_option.id AS source_option_id,
-    source_option.display_order,
-    'o' || substr(
-        md5(
-            'amplify-survey-option:' ||
-            cloned.target_conversation_id::text ||
-            ':' ||
-            source_option.id::text
-        ),
-        1,
-        7
-    ) AS option_slug_id
+    source_option.display_order
 FROM amplify_cloned_questions cloned
 JOIN survey_question_option source_option
     ON source_option.survey_question_id = cloned.source_question_id
    AND source_option.current_content_id IS NOT NULL;
 
+CREATE TEMP TABLE amplify_clone_option_seed AS
+WITH candidates AS (
+    SELECT
+        base.*,
+        attempt.number AS attempt,
+        'o' || substr(
+            md5(
+                'amplify-survey-option:' ||
+                base.target_conversation_id::text ||
+                ':' ||
+                base.source_option_id::text ||
+                ':' ||
+                attempt.number::text
+            ),
+            1,
+            7
+        ) AS option_slug_id
+    FROM amplify_clone_option_base base
+    CROSS JOIN generate_series(0, 255) AS attempt(number)
+),
+available AS (
+    SELECT
+        candidate.*,
+        COUNT(*) OVER (PARTITION BY candidate.option_slug_id) AS generated_collision_count
+    FROM candidates candidate
+    LEFT JOIN survey_question_option existing
+        ON existing.slug_id = candidate.option_slug_id
+    WHERE existing.id IS NULL
+),
+ranked AS (
+    SELECT
+        available.*,
+        ROW_NUMBER() OVER (
+            PARTITION BY available.target_question_id, available.source_option_id
+            ORDER BY available.attempt
+        ) AS slug_rank
+    FROM available
+    WHERE available.generated_collision_count = 1
+)
+SELECT
+    target_conversation_id,
+    target_question_id,
+    source_question_id,
+    source_option_id,
+    display_order,
+    option_slug_id
+FROM ranked
+WHERE slug_rank = 1;
+
 DO $$
 BEGIN
+    IF (SELECT COUNT(*) FROM amplify_clone_option_seed)
+        <> (SELECT COUNT(*) FROM amplify_clone_option_base) THEN
+        RAISE EXCEPTION 'Amplify survey backfill could not allocate every cloned option slug';
+    END IF;
+
     IF EXISTS (
         SELECT option_slug_id
         FROM amplify_clone_option_seed
