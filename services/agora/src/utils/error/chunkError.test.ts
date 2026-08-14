@@ -23,6 +23,10 @@ describe("chunk load error detection", () => {
 });
 
 describe("chunk reload safety", () => {
+  const chunkError = new Error(
+    "Failed to fetch dynamically imported module: /assets/page.js"
+  );
+
   beforeEach(() => {
     vi.stubEnv("DEV", false);
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
@@ -37,7 +41,7 @@ describe("chunk reload safety", () => {
     vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
     const getItem = vi.spyOn(Storage.prototype, "getItem");
 
-    expect(reloadForChunkError()).toBe(false);
+    expect(reloadForChunkError({ error: chunkError })).toBe("blocked");
     expect(getItem).not.toHaveBeenCalled();
   });
 
@@ -47,7 +51,7 @@ describe("chunk reload safety", () => {
       throw new DOMException("Storage disabled", "SecurityError");
     });
 
-    expect(reloadForChunkError()).toBe(false);
+    expect(reloadForChunkError({ error: chunkError })).toBe("blocked");
   });
 
   it("does not reload when the cooldown marker cannot be stored", () => {
@@ -57,7 +61,7 @@ describe("chunk reload safety", () => {
       throw new DOMException("Storage disabled", "SecurityError");
     });
 
-    expect(reloadForChunkError()).toBe(false);
+    expect(reloadForChunkError({ error: chunkError })).toBe("blocked");
   });
 
   it("does not reload again during the cooldown", () => {
@@ -66,7 +70,36 @@ describe("chunk reload safety", () => {
     vi.spyOn(Storage.prototype, "getItem").mockReturnValue("1");
     const setItem = vi.spyOn(Storage.prototype, "setItem");
 
-    expect(reloadForChunkError()).toBe(false);
+    expect(reloadForChunkError({ error: chunkError })).toBe("blocked");
     expect(setItem).not.toHaveBeenCalled();
+  });
+
+  it("coalesces only the same error and retries it after the cooldown", () => {
+    vi.spyOn(navigator, "onLine", "get").mockReturnValue(true);
+    const now = vi.spyOn(Date, "now").mockReturnValue(20_000);
+    vi.spyOn(Storage.prototype, "getItem")
+      .mockReturnValueOnce(null)
+      .mockReturnValue("20000");
+
+    expect(
+      reloadForChunkError({
+        error: chunkError,
+        navigateTo: window.location.href,
+      })
+    ).toBe("started");
+
+    now.mockReturnValue(29_999);
+    expect(reloadForChunkError({ error: chunkError })).toBe("pending");
+    expect(reloadForChunkError({ error: new Error(chunkError.message) })).toBe(
+      "blocked"
+    );
+
+    now.mockReturnValue(30_000);
+    expect(
+      reloadForChunkError({
+        error: chunkError,
+        navigateTo: window.location.href,
+      })
+    ).toBe("started");
   });
 });

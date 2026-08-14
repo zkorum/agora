@@ -10,7 +10,11 @@ const CHUNK_ERROR_PATTERNS = [
 const RELOAD_KEY = "chunk-reload";
 const RELOAD_COOLDOWN_MS = 10_000;
 
-export function isChunkLoadError(error: unknown): boolean {
+export type ChunkReloadResult = "blocked" | "pending" | "started";
+
+const recoveryStartedAtByError = new WeakMap<Error, number>();
+
+export function isChunkLoadError(error: unknown): error is Error {
   if (!(error instanceof Error)) return false;
   return CHUNK_ERROR_PATTERNS.some((pattern) =>
     error.message.includes(pattern)
@@ -19,44 +23,60 @@ export function isChunkLoadError(error: unknown): boolean {
 
 /**
  * Attempts recovery from a chunk load error by reloading the page.
- * Returns false when reloading is unsafe or was attempted too recently.
+ * Coalesces duplicate delivery of the same error while navigation starts,
+ * while the persisted cooldown detects failures that survive a reload.
  * When `navigateTo` is provided, navigates to that URL instead of reloading.
  */
 export function reloadForChunkError({
+  error,
   navigateTo,
-}: { navigateTo?: string } = {}): boolean {
+}: {
+  error: Error;
+  navigateTo?: string;
+}): ChunkReloadResult {
   if (import.meta.env.DEV) {
     console.warn("[ChunkRecovery] Suppressed chunk reload in dev mode");
-    return false;
-  }
-  if (!navigator.onLine) {
-    console.warn("[ChunkRecovery] Reload skipped while offline");
-    return false;
+    return "blocked";
   }
 
   const now = Date.now();
+  const recoveryStartedAt = recoveryStartedAtByError.get(error);
+  if (recoveryStartedAt !== undefined) {
+    const elapsedSinceRecovery = now - recoveryStartedAt;
+    if (
+      elapsedSinceRecovery >= 0 &&
+      elapsedSinceRecovery < RELOAD_COOLDOWN_MS
+    ) {
+      return "pending";
+    }
+    recoveryStartedAtByError.delete(error);
+  }
+
+  if (!navigator.onLine) {
+    console.warn("[ChunkRecovery] Reload skipped while offline");
+    return "blocked";
+  }
+
   try {
     const lastReload = sessionStorage.getItem(RELOAD_KEY);
     if (lastReload !== null) {
       const elapsedSinceReload = now - Number(lastReload);
-      if (
-        elapsedSinceReload >= 0 &&
-        elapsedSinceReload < RELOAD_COOLDOWN_MS
-      ) {
+      if (elapsedSinceReload >= 0 && elapsedSinceReload < RELOAD_COOLDOWN_MS) {
         console.warn("[ChunkRecovery] Reload skipped during cooldown");
-        return false;
+        return "blocked";
       }
     }
     sessionStorage.setItem(RELOAD_KEY, String(now));
   } catch {
     console.warn("[ChunkRecovery] Reload skipped without session storage");
-    return false;
+    return "blocked";
   }
 
+  recoveryStartedAtByError.set(error, now);
   if (navigateTo) {
     window.location.href = navigateTo;
   } else {
     window.location.reload();
   }
-  return true;
+  return "started";
 }

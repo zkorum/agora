@@ -280,7 +280,7 @@ export default defineRouter(function (/* { store, ssrContext } */) {
 
   Router.onError((error, to) => {
     if (isChunkLoadError(error)) {
-      reloadForChunkError({ navigateTo: to.fullPath });
+      reloadForChunkError({ error, navigateTo: to.fullPath });
     }
   });
 
