@@ -1,19 +1,31 @@
 <template>
-  <q-dialog v-model="showDialog" position="bottom">
+  <q-dialog v-model="showDialog" position="bottom" :persistent="persistent">
     <ZKBottomDialogContainer>
       <div class="confirm-dialog">
         <div class="dialog-header">
           <h3 v-if="title" class="dialog-title">{{ title }}</h3>
-          <p v-if="message || $slots.default" class="dialog-message">
-            <slot>{{ message }}</slot>
-          </p>
+          <div v-if="$slots.default" class="dialog-message">
+            <slot />
+          </div>
+          <p v-else-if="message" class="dialog-message">{{ message }}</p>
         </div>
 
-        <div class="dialog-actions">
+        <div
+          class="dialog-actions"
+          :class="{ 'dialog-actions--three': alternateText !== undefined }"
+        >
+          <PrimeButton
+            v-if="alternateText !== undefined"
+            :label="alternateText"
+            :severity="alternateSeverity"
+            outlined
+            class="alternate-button"
+            @click="handleAlternate"
+          />
           <PrimeButton
             :label="cancelText"
-            severity="secondary"
-            outlined
+            :severity="cancelSeverity"
+            :outlined="cancelOutlined"
             class="cancel-button"
             @click="handleCancel"
           />
@@ -47,6 +59,11 @@ const props = withDefaults(defineProps<Props>(), {
   message: undefined,
   confirmText: "Confirm",
   cancelText: "Cancel",
+  cancelSeverity: "secondary",
+  cancelOutlined: true,
+  alternateText: undefined,
+  alternateSeverity: "primary",
+  persistent: false,
   variant: "default",
 });
 
@@ -57,12 +74,18 @@ interface Props {
   message?: string;
   confirmText?: string;
   cancelText?: string;
+  cancelSeverity?: "primary" | "secondary";
+  cancelOutlined?: boolean;
+  alternateText?: string;
+  alternateSeverity?: "primary" | "secondary";
+  persistent?: boolean;
   variant?: "default" | "destructive" | "warning";
 }
 
 interface Emits {
   (e: "confirm"): void;
   (e: "cancel"): void;
+  (e: "alternate"): void;
   (e: "dialogClosed"): void;
 }
 
@@ -75,9 +98,7 @@ const confirmSeverityByVariant = {
   NonNullable<Props["variant"]>,
   "primary" | "danger" | "warn"
 >;
-const confirmSeverity = computed(
-  () => confirmSeverityByVariant[props.variant]
-);
+const confirmSeverity = computed(() => confirmSeverityByVariant[props.variant]);
 
 /**
  * Handle confirm button click
@@ -94,6 +115,11 @@ const handleCancel = (): void => {
   emit("cancel");
   showDialog.value = false;
 };
+
+function handleAlternate(): void {
+  emit("alternate");
+  showDialog.value = false;
+}
 
 /**
  * Handle dialog close
@@ -143,6 +169,7 @@ watch(showDialog, (newValue) => {
   justify-content: stretch;
 
   .cancel-button,
+  .alternate-button,
   .confirm-button {
     flex: 1;
   }
@@ -158,6 +185,10 @@ watch(showDialog, (newValue) => {
       border-color: $warning;
       filter: brightness(0.96);
     }
+  }
+
+  &.dialog-actions--three {
+    flex-direction: column;
   }
 }
 </style>

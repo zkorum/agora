@@ -1,51 +1,71 @@
 <template>
-  <Teleport to="body">
-    <Transition name="action-dialog">
-      <div v-if="showDialog" class="action-dialog-overlay" @click.self="showDialog = false">
-        <div class="action-dialog-sheet" @click.self="showDialog = false">
-          <ZKBottomDialogContainer>
-          <div class="action-dialog">
-            <div v-if="title || message" class="dialog-header">
-              <h3 v-if="title" class="dialog-title">{{ title }}</h3>
-              <p v-if="message" class="dialog-message">{{ message }}</p>
-            </div>
+  <q-dialog
+    v-model="showDialog"
+    position="bottom"
+    :aria-label="title ?? 'Actions'"
+  >
+    <ZKBottomDialogContainer>
+      <div class="action-dialog">
+        <div v-if="title || message" class="dialog-header">
+          <h3 v-if="title" class="dialog-title">{{ title }}</h3>
+          <p v-if="message" class="dialog-message">{{ message }}</p>
+        </div>
 
-            <div class="action-list">
-              <template v-for="(action, index) in actions" :key="action.id">
-                <!-- Separator before destructive actions -->
-                <div
-                  v-if="action.variant === 'destructive' && index > 0"
-                  class="action-separator"
-                />
-                <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
-                <!-- Action dialog items should be keyboard navigable for users with motor disabilities -->
-                <div
-                  class="action-item"
-                  :class="getActionVariantClass(action)"
-                  @click="handleActionClick(action)"
-                >
-                  <q-icon :name="action.icon" size="20px" class="action-icon" />
-                  <div class="action-content">
-                    <div class="action-label">{{ action.label }}</div>
-                    <div v-if="action.description" class="action-description">
-                      {{ action.description }}
-                    </div>
-                  </div>
-                  <q-icon
-                    v-if="action.trailingIcon !== undefined"
-                    :name="action.trailingIcon"
-                    size="20px"
-                    class="action-trailing-icon"
-                  />
+        <div class="action-list">
+          <template v-for="(action, index) in actions" :key="action.id">
+            <div
+              v-if="action.variant === 'destructive' && index > 0"
+              class="action-separator"
+            />
+            <div
+              v-if="action.trailingControl?.type === 'switch'"
+              class="action-item"
+              :class="getActionVariantClass(action)"
+            >
+              <q-icon :name="action.icon" size="20px" class="action-icon" />
+              <div class="action-content">
+                <div class="action-label">{{ action.label }}</div>
+                <div v-if="action.description" class="action-description">
+                  {{ action.description }}
                 </div>
-              </template>
+              </div>
+              <ZKSwitch
+                :model-value="action.trailingControl.checked"
+                :disable="action.disabled === true"
+                :aria-label="action.label"
+                :track-width="48"
+                :track-height="28"
+                :thumb-size="24"
+                @update:model-value="handleActionClick(action)"
+              />
             </div>
-          </div>
-          </ZKBottomDialogContainer>
+            <button
+              v-else
+              type="button"
+              class="action-item"
+              :class="getActionVariantClass(action)"
+              :disabled="action.disabled === true"
+              @click="handleActionClick(action)"
+            >
+              <q-icon :name="action.icon" size="20px" class="action-icon" />
+              <div class="action-content">
+                <div class="action-label">{{ action.label }}</div>
+                <div v-if="action.description" class="action-description">
+                  {{ action.description }}
+                </div>
+              </div>
+              <q-icon
+                v-if="action.trailingIcon !== undefined"
+                :name="action.trailingIcon"
+                size="20px"
+                class="action-trailing-icon"
+              />
+            </button>
+          </template>
         </div>
       </div>
-    </Transition>
-  </Teleport>
+    </ZKBottomDialogContainer>
+  </q-dialog>
 </template>
 
 <script setup lang="ts">
@@ -53,6 +73,7 @@ import type { ContentAction } from "src/utils/actions/core/types";
 import { watch } from "vue";
 
 import ZKBottomDialogContainer from "./ZKBottomDialogContainer.vue";
+import ZKSwitch from "./ZKSwitch.vue";
 
 interface Props {
   actions: ContentAction[];
@@ -90,8 +111,13 @@ const getActionVariantClass = (action: ContentAction): string => {
  * Handle action click
  */
 const handleActionClick = (action: ContentAction): void => {
+  if (action.disabled === true) {
+    return;
+  }
   emit("actionSelected", action);
-  showDialog.value = false;
+  if (action.closeOnSelect !== false) {
+    showDialog.value = false;
+  }
 };
 
 /**
@@ -110,48 +136,6 @@ watch(showDialog, (newValue) => {
 </script>
 
 <style scoped lang="scss">
-.action-dialog-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 6000;
-  background: rgba(0, 0, 0, 0.3);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
-
-.action-dialog-sheet {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-}
-
-// Backdrop fades, sheet slides up from below
-.action-dialog-enter-active {
-  transition: opacity 0.3s ease;
-
-  .action-dialog-sheet {
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-}
-
-.action-dialog-leave-active {
-  transition: opacity 0.2s ease;
-
-  .action-dialog-sheet {
-    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-}
-
-.action-dialog-enter-from,
-.action-dialog-leave-to {
-  opacity: 0;
-
-  .action-dialog-sheet {
-    transform: translateY(100%);
-  }
-}
-
 .action-dialog {
   display: flex;
   flex-direction: column;
@@ -187,6 +171,7 @@ watch(showDialog, (newValue) => {
 }
 
 .action-item {
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -194,7 +179,14 @@ watch(showDialog, (newValue) => {
   border-radius: 8px;
   cursor: pointer;
   border: 1px solid transparent;
+  background: transparent;
+  text-align: start;
   @include hover-effects($hover-background-color);
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
 }
 
 .action-icon {

@@ -210,6 +210,14 @@ export default defineRouter(function (/* { store, ssrContext } */) {
   });
 
   Router.beforeEach((to, from) => {
+    if (
+      !import.meta.env.DEV &&
+      typeof to.name === "string" &&
+      to.name.startsWith("/dev/")
+    ) {
+      return { name: "/" };
+    }
+
     // Redirect parent layout routes to their default child route.
     // Without this, navigating to the parent route renders the layout
     // but leaves <router-view> empty (no child component rendered).

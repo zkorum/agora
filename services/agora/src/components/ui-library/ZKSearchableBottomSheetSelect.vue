@@ -59,6 +59,30 @@
         </q-input>
       </div>
 
+      <div
+        v-if="multiple && showBulkActions"
+        class="zk-drawer-select__bulk-actions"
+      >
+        <q-btn
+          flat
+          dense
+          no-caps
+          color="primary"
+          :label="selectAllLabel"
+          :disable="!canSelectAll"
+          @click="selectAllEnabledOptions"
+        />
+        <q-btn
+          flat
+          dense
+          no-caps
+          color="primary"
+          :label="clearAllLabel"
+          :disable="selectedValues.length === 0"
+          @click="clearAllOptions"
+        />
+      </div>
+
       <q-list class="zk-drawer-select__options" separator>
         <q-item
           v-for="option in filteredOptions"
@@ -121,6 +145,9 @@ const props = withDefaults(
     maxValues?: number;
     closeOnSelect?: boolean;
     selectedCountLabel?: ({ count }: { count: number }) => string;
+    showBulkActions?: boolean;
+    selectAllLabel?: string;
+    clearAllLabel?: string;
     hideTrigger?: boolean;
     showBackButton?: boolean;
     disable?: boolean;
@@ -139,6 +166,9 @@ const props = withDefaults(
     maxValues: undefined,
     closeOnSelect: undefined,
     selectedCountLabel: undefined,
+    showBulkActions: false,
+    selectAllLabel: "Select all",
+    clearAllLabel: "Clear all",
     hideTrigger: false,
     showBackButton: false,
     disable: false,
@@ -176,7 +206,9 @@ const chevronIcon = computed(() => {
 });
 
 const selectedValues = computed<readonly TValue[]>(() => {
-  return Array.isArray(modelValue.value) ? modelValue.value : [modelValue.value];
+  return Array.isArray(modelValue.value)
+    ? modelValue.value
+    : [modelValue.value];
 });
 
 const selectedSummary = computed(() => {
@@ -232,6 +264,16 @@ const filteredOptions = computed(() => {
     return searchableText.includes(query);
   });
 });
+const enabledOptions = computed(() =>
+  props.options.filter((option) => option.disabled !== true)
+);
+const canSelectAll = computed(
+  () =>
+    enabledOptions.value.length > 0 &&
+    (props.maxValues === undefined ||
+      enabledOptions.value.length <= props.maxValues) &&
+    enabledOptions.value.some((option) => !isSelected(option.value))
+);
 
 function selectOption(
   option: ZKSearchableBottomSheetSelectOption<TValue>
@@ -295,10 +337,23 @@ function isOptionDisabled(
 
 function nextMultipleValue(value: TValue): readonly TValue[] {
   if (selectedValues.value.includes(value)) {
-    return selectedValues.value.filter((selectedValue) => selectedValue !== value);
+    return selectedValues.value.filter(
+      (selectedValue) => selectedValue !== value
+    );
   }
 
   return [...selectedValues.value, value];
+}
+
+function selectAllEnabledOptions(): void {
+  if (!canSelectAll.value) {
+    return;
+  }
+  modelValue.value = enabledOptions.value.map((option) => option.value);
+}
+
+function clearAllOptions(): void {
+  modelValue.value = [];
 }
 
 watch(showDialog, (isOpen) => {
@@ -343,6 +398,14 @@ watch(showDialog, (isOpen) => {
 .zk-drawer-select--disabled {
   cursor: not-allowed;
   opacity: 0.55;
+}
+
+.zk-drawer-select__bulk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  padding-block: 0.25rem 0.75rem;
 }
 
 .zk-drawer-select--pill {

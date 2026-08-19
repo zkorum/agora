@@ -8,8 +8,14 @@ export interface BaseContentAction {
   id: string;
   label: string;
   description?: string;
+  disabled?: boolean;
+  closeOnSelect?: boolean;
   icon: string;
   trailingIcon?: string;
+  trailingControl?: {
+    type: "switch";
+    checked: boolean;
+  };
   variant?: "default" | "destructive" | "warning" | "positive";
 }
 

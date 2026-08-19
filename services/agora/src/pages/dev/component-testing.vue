@@ -4,6 +4,18 @@
   </Teleport>
 
   <div class="container">
+    <SpaLink to="/dev/conversation-updates" class="route-card">
+      <div class="route-card-header">
+        <i class="pi pi-envelope section-icon"></i>
+        <span>Email Updates</span>
+      </div>
+      <p class="route-card-description">
+        Test the non-sending facilitator composer, onboarding checkbox,
+        burger-menu preferences, personalized preview, and full immutable email
+        history.
+      </p>
+    </SpaLink>
+
     <SpaLink to="/dev/long-rich-text-disclosure" class="route-card">
       <div class="route-card-header">
         <i class="pi pi-align-left section-icon"></i>
@@ -54,8 +66,8 @@
         <span>MaxDiff translation</span>
       </div>
       <p class="route-card-description">
-        Test ranking-item display content, translated result updates, item dialogs,
-        and active candidate-card text freezing.
+        Test ranking-item display content, translated result updates, item
+        dialogs, and active candidate-card text freezing.
       </p>
     </SpaLink>
 

@@ -12,34 +12,17 @@
     </template>
 
     <template #footer>
-      <StepperLayout
-        :submit-call-back="handleBackToConversation"
-        :current-step="1"
-        :total-steps="1"
-        :enable-next-button="true"
-        :show-next-button="true"
-        :show-loading-button="false"
-        :show-stepper="false"
-      >
-        <template #header>
-          <InfoHeader
-            :title="t('title')"
-            :description="t('description')"
-            icon-name="mdi-check-circle-outline"
-          />
-        </template>
-
-        <template #body>
-          <q-btn
-            flat
-            no-caps
-            color="primary"
-            class="complete-card__secondary-action"
-            :label="t('reviewAnswersLabel')"
-            @click="handleReviewAnswers"
-          />
-        </template>
-      </StepperLayout>
+      <ConversationOnboardingCompleteStep
+        v-model:conversation-updates-checked="conversationUpdatesChecked"
+        :title="t('title')"
+        :description="t('description')"
+        :review-answers-label="t('reviewAnswersLabel')"
+        :show-conversation-updates-preference="false"
+        scope-kind="no-project"
+        :is-saving="false"
+        @continue="handleBackToConversation"
+        @review-answers="handleReviewAnswers"
+      />
     </template>
   </OnboardingLayout>
 </template>
@@ -47,8 +30,7 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import ConversationSurveyOnboardingHero from "src/components/onboarding/backgrounds/ConversationSurveyOnboardingHero.vue";
-import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
-import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
+import ConversationOnboardingCompleteStep from "src/components/onboarding/ConversationOnboardingCompleteStep.vue";
 import { useConversationOnboardingExit } from "src/composables/conversation/useConversationOnboardingExit";
 import { useConversationOnboardingRoute } from "src/composables/conversation/useConversationOnboardingRoute";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
@@ -56,7 +38,7 @@ import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
 import { getConversationSurveySummaryPath } from "src/utils/survey/navigation";
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import {
@@ -78,10 +60,13 @@ const conversationQuery = useConversationQuery({
   enabled: computed(() => isAuthInitialized.value),
 });
 
-const conversationData = computed(() => conversationQuery.data.value?.conversationData);
+const conversationData = computed(
+  () => conversationQuery.data.value?.conversationData
+);
 const conversationDisplayContent = computed(
   () => conversationQuery.data.value?.displayContent
 );
+const conversationUpdatesChecked = ref(true);
 
 async function handleBackToConversation(): Promise<void> {
   await exitToConversation({
@@ -99,9 +84,3 @@ async function handleReviewAnswers(): Promise<void> {
   });
 }
 </script>
-
-<style scoped lang="scss">
-.complete-card__secondary-action {
-  align-self: flex-start;
-}
-</style>

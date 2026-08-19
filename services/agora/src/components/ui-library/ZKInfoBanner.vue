@@ -1,16 +1,18 @@
 <template>
-  <div class="zk-info-banner">
+  <div class="zk-info-banner" :class="`zk-info-banner--${variant}`">
     <ZKIcon
-      name="mdi:information-outline"
+      :name="
+        variant === 'warning' ? 'mdi:alert-outline' : 'mdi:information-outline'
+      "
       size="1.25rem"
-      color="var(--p-blue-600)"
+      :color="variant === 'warning' ? '#8a5a00' : 'var(--p-blue-600)'"
     />
     <div class="banner-content">
       <span class="banner-text">{{ message }}</span>
       <PrimeButton
         v-if="actionLabel"
         :label="actionLabel"
-        severity="info"
+        :severity="variant === 'warning' ? 'warn' : 'info'"
         size="small"
         @click="emit('action')"
       />
@@ -29,7 +31,10 @@ defineOptions({
   },
 });
 
-defineProps<Props>();
+withDefaults(defineProps<Props>(), {
+  actionLabel: undefined,
+  variant: "info",
+});
 
 const emit = defineEmits<{
   action: [];
@@ -38,6 +43,7 @@ const emit = defineEmits<{
 export interface Props {
   message: string;
   actionLabel?: string;
+  variant?: "info" | "warning";
 }
 </script>
 
@@ -50,6 +56,15 @@ export interface Props {
   background-color: var(--p-blue-50);
   border: 1px solid var(--p-blue-200);
   border-radius: 8px;
+}
+
+.zk-info-banner--warning {
+  background-color: #fff4df;
+  border-color: #f3d59b;
+
+  .banner-text {
+    color: #8a5a00;
+  }
 }
 
 .banner-content {

@@ -303,6 +303,20 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/dev/conversation-updates': RouteRecordInfo<
+      '/dev/conversation-updates',
+      '/dev/conversation-updates',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/dev/conversation-updates-new-conversation': RouteRecordInfo<
+      '/dev/conversation-updates-new-conversation',
+      '/dev/conversation-updates-new-conversation',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/dev/long-rich-text-disclosure': RouteRecordInfo<
       '/dev/long-rich-text-disclosure',
       '/dev/long-rich-text-disclosure',
@@ -980,6 +994,18 @@ declare module 'vue-router/auto-routes' {
     'src/pages/dev/conversation-project-context.vue': {
       routes:
         | '/dev/conversation-project-context'
+      views:
+        | never
+    }
+    'src/pages/dev/conversation-updates.vue': {
+      routes:
+        | '/dev/conversation-updates'
+      views:
+        | never
+    }
+    'src/pages/dev/conversation-updates-new-conversation.vue': {
+      routes:
+        | '/dev/conversation-updates-new-conversation'
       views:
         | never
     }
