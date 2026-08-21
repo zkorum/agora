@@ -77,6 +77,14 @@
             :desktop-collapsed-line-count="4"
           />
 
+          <div class="project-page-view__mobile-details">
+            <ProjectMobileDetails
+              :attributions="project.attributions"
+              :contact="project.contact"
+              :language-code="selectedLanguage"
+            />
+          </div>
+
           <div class="project-page-view__stats">
             <span>
               <q-icon name="mdi-account-outline" size="1rem" />
@@ -112,7 +120,8 @@
         <div
           class="project-page-view__content-grid"
           :class="{
-            'project-page-view__content-grid--without-aside': !hasAttributions,
+            'project-page-view__content-grid--without-aside':
+              !hasProjectDetails,
           }"
         >
           <section
@@ -182,39 +191,20 @@
           </section>
 
           <ProjectDetailsAside
-            v-if="hasAttributions"
+            v-if="hasProjectDetails"
             class="project-page-view__aside"
             :attributions="project.attributions"
-            :contact="undefined"
+            :contact="project.contact"
             :language-code="selectedLanguage"
           />
 
-          <div
-            v-if="project.documents.length > 0 || project.contact !== undefined"
+          <ProjectDocuments
+            v-if="project.documents.length > 0"
             class="project-page-view__supplemental"
-          >
-            <ProjectDocuments
-              :project-slug="project.slug"
-              :documents="project.documents"
-              :language-code="selectedLanguage"
-            />
-
-            <section
-              v-if="project.contact !== undefined"
-              class="project-page-view__facilitator"
-              aria-labelledby="project-facilitator-title"
-            >
-              <ProjectSectionHeading
-                heading-id="project-facilitator-title"
-                :title="t('facilitatorTitle')"
-              />
-              <ProjectContactCard
-                :contact="project.contact"
-                :language-code="selectedLanguage"
-                layout="wide"
-              />
-            </section>
-          </div>
+            :project-slug="project.slug"
+            :documents="project.documents"
+            :language-code="selectedLanguage"
+          />
         </div>
 
         <ProjectPageFooter :language-code="selectedLanguage" />
@@ -234,10 +224,10 @@ import { useProjectDisplayContent } from "src/utils/translation/useProjectDispla
 import { computed } from "vue";
 
 import ProjectActivityCard from "./ProjectActivityCard.vue";
-import ProjectContactCard from "./ProjectContactCard.vue";
 import ProjectDetailsAside from "./ProjectDetailsAside.vue";
 import ProjectDocuments from "./ProjectDocuments.vue";
 import ProjectLanguageSelect from "./ProjectLanguageSelect.vue";
+import ProjectMobileDetails from "./ProjectMobileDetails.vue";
 import ProjectPageFooter from "./ProjectPageFooter.vue";
 import {
   type ProjectPageTranslations,
@@ -249,7 +239,6 @@ import {
   type ProjectLanguageOption,
   type ProjectPageData,
 } from "./projectPageTypes";
-import ProjectSectionHeading from "./ProjectSectionHeading.vue";
 
 type ConsultationStatus = "none" | "live" | "closed";
 
@@ -308,7 +297,10 @@ const consultationStatusClass = computed(() => ({
     consultationStatus.value === "closed",
 }));
 const canLoadMoreActivities = computed(() => props.canLoadMoreActivities);
-const hasAttributions = computed(() => props.project.attributions.length > 0);
+const hasProjectDetails = computed(
+  () =>
+    props.project.attributions.length > 0 || props.project.contact !== undefined
+);
 const hasMultipleLanguageOptions = computed(
   () => new Set(props.languageOptions.map((option) => option.value)).size > 1
 );
@@ -490,6 +482,10 @@ h1 {
   }
 }
 
+.project-page-view__mobile-details {
+  display: none;
+}
+
 .project-page-view__stats {
   display: flex;
   flex-wrap: wrap;
@@ -542,20 +538,9 @@ h1 {
 }
 
 .project-page-view__supplemental {
-  display: flex;
   grid-area: supplemental;
   min-width: 0;
-  flex-direction: column;
-  gap: 1.5rem;
   margin-block-start: 0.5rem;
-}
-
-.project-page-view__facilitator {
-  container-type: inline-size;
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 0.75rem;
 }
 
 .project-page-view__section-heading {
@@ -622,16 +607,20 @@ h2 {
 }
 
 @media (max-width: 860px) {
+  .project-page-view__mobile-details {
+    display: block;
+    margin-block-start: 1rem;
+  }
+
   .project-page-view__content-grid {
     grid-template-columns: 1fr;
     grid-template-areas:
       "activities"
-      "supplemental"
-      "aside";
+      "supplemental";
   }
 
   .project-page-view__aside {
-    position: static;
+    display: none;
   }
 }
 

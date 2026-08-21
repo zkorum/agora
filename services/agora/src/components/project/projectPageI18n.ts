@@ -5,6 +5,7 @@ import {
 } from "src/shared/languages";
 
 type PluralizableProjectPageTranslationKey =
+  | "projectDetailsSummary"
   | "uniqueParticipantsCount"
   | "participationsCount"
   | "activitiesCount"
@@ -19,6 +20,7 @@ type ProjectPageCountTranslations = Readonly<
 const pluralizableProjectPageTranslationKeys: Readonly<
   Record<PluralizableProjectPageTranslationKey, true>
 > = {
+  projectDetailsSummary: true,
   uniqueParticipantsCount: true,
   participationsCount: true,
   activitiesCount: true,
@@ -58,11 +60,11 @@ export interface ProjectPageTranslations {
   activitiesLoadFailed: string;
   allActivitiesLoaded: string;
   projectDetailsAriaLabel: string;
+  projectDetailsSummary: string;
   sponsorsTitle: string;
   projectOwnersTitle: string;
   partnersTitle: string;
   projectContactTitle: string;
-  facilitatorTitle: string;
   poweredBy: string;
   homeAriaLabel: string;
   contentOwnedByProjectOwners: string;
@@ -121,11 +123,11 @@ export const projectPageTranslations: Readonly<
     activitiesLoadFailed: "More activities could not be loaded.",
     allActivitiesLoaded: "All activities loaded",
     projectDetailsAriaLabel: "Project details",
+    projectDetailsSummary: "{name} & {count} others",
     sponsorsTitle: "Sponsors",
     projectOwnersTitle: "Project Owners",
     partnersTitle: "Partners",
     projectContactTitle: "Contact",
-    facilitatorTitle: "Facilitator",
     poweredBy: "Powered by",
     homeAriaLabel: "Go to Agora Citizen Network home",
     contentOwnedByProjectOwners:
@@ -181,11 +183,11 @@ export const projectPageTranslations: Readonly<
     activitiesLoadFailed: "No se pudieron cargar más actividades.",
     allActivitiesLoaded: "Todas las actividades cargadas",
     projectDetailsAriaLabel: "Detalles del proyecto",
+    projectDetailsSummary: "{name} y {count} más",
     sponsorsTitle: "Patrocinadores",
     projectOwnersTitle: "Responsables del proyecto",
     partnersTitle: "Socios",
     projectContactTitle: "Contacto",
-    facilitatorTitle: "Facilitación",
     poweredBy: "Con tecnología de",
     homeAriaLabel: "Ir al inicio de Agora Citizen Network",
     contentOwnedByProjectOwners:
@@ -241,11 +243,11 @@ export const projectPageTranslations: Readonly<
     activitiesLoadFailed: "Les activités suivantes n'ont pas pu être chargées.",
     allActivitiesLoaded: "Toutes les activités sont chargées",
     projectDetailsAriaLabel: "Détails du projet",
+    projectDetailsSummary: "{name} et {count} autres",
     sponsorsTitle: "Financeurs",
     projectOwnersTitle: "Porteurs du projet",
     partnersTitle: "Partenaires",
     projectContactTitle: "Contact",
-    facilitatorTitle: "Facilitateur",
     poweredBy: "Propulsé par",
     homeAriaLabel: "Aller à l'accueil d'Agora Citizen Network",
     contentOwnedByProjectOwners:
@@ -300,11 +302,11 @@ export const projectPageTranslations: Readonly<
     activitiesLoadFailed: "无法加载更多活动。",
     allActivitiesLoaded: "所有活动已加载",
     projectDetailsAriaLabel: "项目详情",
+    projectDetailsSummary: "{name}及其他 {count} 个",
     sponsorsTitle: "赞助方",
     projectOwnersTitle: "项目负责人",
     partnersTitle: "合作伙伴",
     projectContactTitle: "联系人",
-    facilitatorTitle: "协调人",
     poweredBy: "技术支持",
     homeAriaLabel: "前往 Agora Citizen Network 首页",
     contentOwnedByProjectOwners: "项目内容归项目负责人所有",
@@ -358,11 +360,11 @@ export const projectPageTranslations: Readonly<
     activitiesLoadFailed: "無法載入更多活動。",
     allActivitiesLoaded: "所有活動已載入",
     projectDetailsAriaLabel: "專案詳情",
+    projectDetailsSummary: "{name}及其他 {count} 個",
     sponsorsTitle: "贊助方",
     projectOwnersTitle: "專案負責人",
     partnersTitle: "合作夥伴",
     projectContactTitle: "聯絡人",
-    facilitatorTitle: "協調人",
     poweredBy: "技術支援",
     homeAriaLabel: "前往 Agora Citizen Network 首頁",
     contentOwnedByProjectOwners: "專案內容歸專案負責人所有",
@@ -417,11 +419,11 @@ export const projectPageTranslations: Readonly<
     activitiesLoadFailed: "追加のアクティビティを読み込めませんでした。",
     allActivitiesLoaded: "すべてのアクティビティを読み込みました",
     projectDetailsAriaLabel: "プロジェクト詳細",
+    projectDetailsSummary: "{name}ほか{count}件",
     sponsorsTitle: "スポンサー",
     projectOwnersTitle: "プロジェクトオーナー",
     partnersTitle: "パートナー",
     projectContactTitle: "連絡先",
-    facilitatorTitle: "ファシリテーター",
     poweredBy: "提供",
     homeAriaLabel: "Agora Citizen Network ホームへ移動",
     contentOwnedByProjectOwners:
@@ -476,11 +478,11 @@ export const projectPageTranslations: Readonly<
     activitiesLoadFailed: "تعذر تحميل المزيد من الأنشطة.",
     allActivitiesLoaded: "تم تحميل جميع الأنشطة",
     projectDetailsAriaLabel: "تفاصيل المشروع",
+    projectDetailsSummary: "{name} و{count} آخرون",
     sponsorsTitle: "الرعاة",
     projectOwnersTitle: "مالكو المشروع",
     partnersTitle: "الشركاء",
     projectContactTitle: "جهة الاتصال",
-    facilitatorTitle: "المُيسّر",
     poweredBy: "مدعوم من",
     homeAriaLabel: "الانتقال إلى الصفحة الرئيسية لـ Agora Citizen Network",
     contentOwnedByProjectOwners: "محتوى المشروع مملوك لمالكي المشروع",
@@ -534,11 +536,11 @@ export const projectPageTranslations: Readonly<
     activitiesLoadFailed: "فعالیت‌های بیشتری بارگذاری نشد.",
     allActivitiesLoaded: "همه فعالیت‌ها بارگذاری شدند",
     projectDetailsAriaLabel: "جزئیات پروژه",
+    projectDetailsSummary: "{name} و {count} مورد دیگر",
     sponsorsTitle: "حامیان مالی",
     projectOwnersTitle: "مالکان پروژه",
     partnersTitle: "شرکا",
     projectContactTitle: "تماس",
-    facilitatorTitle: "تسهیل‌گر",
     poweredBy: "قدرت‌گرفته از",
     homeAriaLabel: "رفتن به صفحه اصلی Agora Citizen Network",
     contentOwnedByProjectOwners: "محتوای پروژه متعلق به مالکان پروژه است",
@@ -592,11 +594,11 @@ export const projectPageTranslations: Readonly<
     activitiesLoadFailed: "לא ניתן לטעון פעילויות נוספות.",
     allActivitiesLoaded: "כל הפעילויות נטענו",
     projectDetailsAriaLabel: "פרטי הפרויקט",
+    projectDetailsSummary: "{name} ועוד {count}",
     sponsorsTitle: "נותני חסות",
     projectOwnersTitle: "בעלי הפרויקט",
     partnersTitle: "שותפים",
     projectContactTitle: "איש קשר",
-    facilitatorTitle: "מנחה",
     poweredBy: "מופעל על ידי",
     homeAriaLabel: "מעבר לדף הבית של Agora Citizen Network",
     contentOwnedByProjectOwners: "תוכן הפרויקט שייך לבעלי הפרויקט",
@@ -650,11 +652,11 @@ export const projectPageTranslations: Readonly<
     activitiesLoadFailed: "Кошумча иш-чаралар жүктөлгөн жок.",
     allActivitiesLoaded: "Бардык иш-чаралар жүктөлдү",
     projectDetailsAriaLabel: "Долбоор тууралуу маалымат",
+    projectDetailsSummary: "{name} жана дагы {count}",
     sponsorsTitle: "Демөөрчүлөр",
     projectOwnersTitle: "Долбоор ээлери",
     partnersTitle: "Өнөктөштөр",
     projectContactTitle: "Байланыш",
-    facilitatorTitle: "Фасилитатор",
     poweredBy: "Түзгөн",
     homeAriaLabel: "Agora Citizen Network башкы бетине өтүү",
     contentOwnedByProjectOwners: "Долбоордун мазмуну Долбоор ээлерине таандык",
@@ -709,11 +711,11 @@ export const projectPageTranslations: Readonly<
     activitiesLoadFailed: "Не удалось загрузить больше активностей.",
     allActivitiesLoaded: "Все активности загружены",
     projectDetailsAriaLabel: "Информация о проекте",
+    projectDetailsSummary: "{name} и ещё {count}",
     sponsorsTitle: "Спонсоры",
     projectOwnersTitle: "Владельцы проекта",
     partnersTitle: "Партнеры",
     projectContactTitle: "Контакт",
-    facilitatorTitle: "Фасилитатор",
     poweredBy: "Работает на",
     homeAriaLabel: "Перейти на главную Agora Citizen Network",
     contentOwnedByProjectOwners:
@@ -746,6 +748,10 @@ const projectPageCountTranslations: Readonly<
   >
 > = {
   en: {
+    projectDetailsSummary: {
+      one: "{name} & {count} other",
+      other: "{name} & {count} others",
+    },
     uniqueParticipantsCount: {
       one: "{count} unique participant",
       other: "{count} unique participants",
@@ -763,6 +769,7 @@ const projectPageCountTranslations: Readonly<
     },
   },
   es: {
+    projectDetailsSummary: { other: "{name} y {count} más" },
     uniqueParticipantsCount: {
       one: "{count} participante único",
       other: "{count} participantes únicos",
@@ -783,6 +790,10 @@ const projectPageCountTranslations: Readonly<
     },
   },
   fr: {
+    projectDetailsSummary: {
+      one: "{name} et {count} autre",
+      other: "{name} et {count} autres",
+    },
     uniqueParticipantsCount: {
       one: "{count} participant unique",
       other: "{count} participants uniques",
@@ -803,6 +814,7 @@ const projectPageCountTranslations: Readonly<
     },
   },
   "zh-Hans": {
+    projectDetailsSummary: { other: "{name}及其他 {count} 个" },
     uniqueParticipantsCount: { other: "{count} 位独立参与者" },
     participationsCount: { other: "{count} 次对话参与" },
     activitiesCount: { other: "{count} 个活动" },
@@ -811,6 +823,7 @@ const projectPageCountTranslations: Readonly<
     participantsCount: { other: "{count} 位参与者" },
   },
   "zh-Hant": {
+    projectDetailsSummary: { other: "{name}及其他 {count} 個" },
     uniqueParticipantsCount: { other: "{count} 位不重複參與者" },
     participationsCount: { other: "{count} 次對話參與" },
     activitiesCount: { other: "{count} 個活動" },
@@ -819,6 +832,7 @@ const projectPageCountTranslations: Readonly<
     participantsCount: { other: "{count} 位參與者" },
   },
   ja: {
+    projectDetailsSummary: { other: "{name}ほか{count}件" },
     uniqueParticipantsCount: { other: "{count}人のユニーク参加者" },
     participationsCount: { other: "{count}件の会話参加" },
     activitiesCount: { other: "{count}件のアクティビティ" },
@@ -827,6 +841,7 @@ const projectPageCountTranslations: Readonly<
     participantsCount: { other: "{count}人の参加者" },
   },
   ar: {
+    projectDetailsSummary: { other: "{name} و{count} آخرون" },
     uniqueParticipantsCount: {
       one: "{count} مشارك فريد",
       two: "{count} مشاركان فريدان",
@@ -871,6 +886,7 @@ const projectPageCountTranslations: Readonly<
     },
   },
   fa: {
+    projectDetailsSummary: { other: "{name} و {count} مورد دیگر" },
     uniqueParticipantsCount: { other: "{count} شرکت‌کننده منحصربه‌فرد" },
     participationsCount: { other: "{count} مشارکت در گفتگوها" },
     activitiesCount: { other: "{count} فعالیت" },
@@ -879,6 +895,7 @@ const projectPageCountTranslations: Readonly<
     participantsCount: { other: "{count} شرکت‌کننده" },
   },
   he: {
+    projectDetailsSummary: { other: "{name} ועוד {count}" },
     uniqueParticipantsCount: {
       one: "{count} משתתף ייחודי",
       other: "{count} משתתפים ייחודיים",
@@ -893,6 +910,7 @@ const projectPageCountTranslations: Readonly<
     participantsCount: { one: "{count} משתתף", other: "{count} משתתפים" },
   },
   ky: {
+    projectDetailsSummary: { other: "{name} жана дагы {count}" },
     uniqueParticipantsCount: { other: "{count} уникалдуу катышуучу" },
     participationsCount: { other: "{count} талкууга катышуу" },
     activitiesCount: { other: "{count} иш-чара" },
@@ -901,6 +919,7 @@ const projectPageCountTranslations: Readonly<
     participantsCount: { other: "{count} катышуучу" },
   },
   ru: {
+    projectDetailsSummary: { other: "{name} и ещё {count}" },
     uniqueParticipantsCount: {
       one: "{count} уникальный участник",
       few: "{count} уникальных участника",

@@ -105,88 +105,15 @@
       </div>
     </div>
 
-    <div
-      v-if="hasMobileProjectDetails"
-      class="project-conversation-header-card__mobile-project-details"
-    >
-      <button
-        type="button"
-        class="project-conversation-header-card__mobile-project-details-button"
-        :class="{
-          'project-conversation-header-card__mobile-project-details-button--without-logos':
-            !hasMobileProjectDetailLogos,
-        }"
-        @click="showMobileProjectDetails = true"
-      >
-        <span
-          v-if="hasMobileProjectDetailLogos"
-          class="project-conversation-header-card__mobile-project-details-logos"
-          aria-hidden="true"
-        >
-          <span
-            v-for="entry in mobileAttributionPreviewEntries"
-            :key="`${entry.role}-${entry.displayName}`"
-            class="project-conversation-header-card__mobile-project-details-logo"
-            :class="{
-              'project-conversation-header-card__mobile-project-details-logo--image':
-                entry.imageUrl !== undefined,
-            }"
-            :style="
-              entry.imageUrl === undefined
-                ? logoStyle(entry.accentColor)
-                : undefined
-            "
-          >
-            <OrganizationImage
-              v-if="entry.imageUrl !== undefined"
-              class="project-conversation-header-card__mobile-project-details-logo-image"
-              height="100%"
-              :organization-image-url="entry.imageUrl"
-              :organization-name="entry.displayName"
-            />
-            <template v-else>{{ entry.initials }}</template>
-          </span>
-
-          <span
-            v-if="mobileAttributionHiddenCount > 0"
-            class="project-conversation-header-card__mobile-project-details-logo project-conversation-header-card__mobile-project-details-logo--more"
-          >
-            +{{ mobileAttributionHiddenCount }}
-          </span>
-        </span>
-
-        <span
-          class="project-conversation-header-card__mobile-project-details-summary"
-        >
-          {{ mobileProjectDetailsSummary }}
-        </span>
-
-        <q-icon
-          :name="breadcrumbIcon"
-          size="1.1rem"
-          class="project-conversation-header-card__mobile-project-details-chevron"
-          aria-hidden="true"
-        />
-      </button>
-    </div>
-
-    <q-dialog v-model="showMobileProjectDetails" position="bottom">
-      <ZKBottomDialogContainer
-        :title="t({ key: 'projectDetailsAriaLabel' })"
-        show-close-button
-      >
-        <ProjectDetailsAside
-          :attributions="project.attributions"
-          :contact="project.contact"
-          :language-code="selectedLanguage"
-        />
-      </ZKBottomDialogContainer>
-    </q-dialog>
+    <ProjectMobileDetails
+      :attributions="project.attributions"
+      :contact="project.contact"
+      :language-code="selectedLanguage"
+    />
   </article>
 </template>
 
 <script setup lang="ts">
-import OrganizationImage from "src/components/account/OrganizationImage.vue";
 import ConversationTitle from "src/components/features/conversation/ConversationTitle.vue";
 import {
   type UserIdentityCardTranslations,
@@ -196,7 +123,6 @@ import PostMetadata from "src/components/post/display/PostMetadata.vue";
 import ContentTranslationControl from "src/components/translation/ContentTranslationControl.vue";
 import ContentMetadataLine from "src/components/ui-library/ContentMetadataLine.vue";
 import SpaLink from "src/components/ui-library/SpaLink.vue";
-import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import ZKChip from "src/components/ui-library/ZKChip.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import {
@@ -211,15 +137,15 @@ import type {
   ParticipationMode,
 } from "src/shared/types/zod";
 import { useConversationDisplayContent } from "src/utils/translation/useConversationDisplayContent";
-import { computed, ref } from "vue";
+import { computed } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 
-import ProjectDetailsAside from "./ProjectDetailsAside.vue";
+import ProjectMobileDetails from "./ProjectMobileDetails.vue";
 import {
   type ProjectPageTranslations,
   translateProjectPageText,
 } from "./projectPageI18n";
-import type { ProjectAttribution, ProjectPageData } from "./projectPageTypes";
+import type { ProjectPageData } from "./projectPageTypes";
 
 interface ProjectConversationStatusBadge {
   key: string;
@@ -240,7 +166,6 @@ const emit = defineEmits<{
   conversationDeleted: [];
 }>();
 
-const showMobileProjectDetails = ref(false);
 const selectedSupportedLanguage = computed(
   () => parseSupportedDisplayLanguageOrUndefined(props.selectedLanguage) ?? "en"
 );
@@ -280,68 +205,9 @@ const {
   initialDisplayContent,
   fallbackPayload,
 });
-const projectOwnerAttributions = computed(() =>
-  filterAttributions("project_owner")
-);
-const sponsorAttributions = computed(() => filterAttributions("sponsor"));
-const partnerAttributions = computed(() => filterAttributions("partner"));
-const orderedAttributions = computed(() => [
-  ...sponsorAttributions.value,
-  ...projectOwnerAttributions.value,
-  ...partnerAttributions.value,
-]);
-const mobileAttributionPreviewEntries = computed(() =>
-  orderedAttributions.value.slice(0, 4)
-);
-const hasMobileProjectDetailLogos = computed(
-  () => mobileAttributionPreviewEntries.value.length > 0
-);
-const mobileAttributionHiddenCount = computed(() =>
-  Math.max(
-    orderedAttributions.value.length -
-      mobileAttributionPreviewEntries.value.length,
-    0
-  )
-);
-const hasMobileProjectDetails = computed(
-  () =>
-    props.project.attributions.length > 0 || props.project.contact !== undefined
-);
-const mobileProjectDetailsSummary = computed(() => {
-  const leadEntry =
-    projectOwnerAttributions.value.at(0) ?? orderedAttributions.value.at(0);
-  if (leadEntry !== undefined) {
-    const otherCount = orderedAttributions.value.length - 1;
-    if (otherCount <= 0) {
-      return leadEntry.displayName;
-    }
-
-    return `${leadEntry.displayName} & ${otherCount.toString()} others`;
-  }
-
-  return projectContactName.value;
-});
-const projectContactName = computed(() => {
-  const contact = props.project.contact;
-  if (contact === undefined) return "";
-
-  return [contact.firstName, contact.lastName]
-    .filter((part): part is string => part !== undefined)
-    .join(" ");
-});
 const participationStatusBadge = computed<ProjectConversationStatusBadge>(() =>
   getParticipationStatusBadge(props.conversationData.metadata.participationMode)
 );
-
-function filterAttributions(
-  role: ProjectAttribution["role"]
-): readonly ProjectAttribution[] {
-  return props.project.attributions.filter((entry) => entry.role === role);
-}
-
-function logoStyle(color: string): { backgroundColor: string } {
-  return { backgroundColor: color };
-}
 
 function getParticipationStatusBadge(
   participationMode: ParticipationMode
@@ -527,90 +393,6 @@ function t({
 .project-conversation-header-card__conversation-body :deep(.textBreak) {
   font-size: 1rem;
   line-height: 1.65;
-}
-
-.project-conversation-header-card__mobile-project-details {
-  display: none;
-  padding: 0;
-  border: 1px solid $sky-lighter;
-  border-radius: 12px;
-  background: $app-background-color;
-  box-shadow: 0 0.35rem 1rem rgba(10, 7, 20, 0.04);
-}
-
-.project-conversation-header-card__mobile-project-details-button {
-  width: 100%;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.65rem;
-  padding: 0.65rem 0.75rem;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  text-align: start;
-  cursor: pointer;
-}
-
-.project-conversation-header-card__mobile-project-details-button--without-logos {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.project-conversation-header-card__mobile-project-details-logos {
-  display: flex;
-  min-width: 4.1rem;
-}
-
-.project-conversation-header-card__mobile-project-details-logo {
-  width: 1.55rem;
-  height: 1.55rem;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  border: 1px solid $sky-lighter;
-  border-radius: 0.35rem;
-  color: white;
-  font-size: 0.55rem;
-  font-weight: var(--font-weight-bold);
-  box-shadow: 0 0 0 2px $app-background-color;
-
-  & + & {
-    margin-inline-start: -0.35rem;
-  }
-}
-
-.project-conversation-header-card__mobile-project-details-logo--image,
-.project-conversation-header-card__mobile-project-details-logo--more {
-  background: white;
-  color: $ink-light;
-}
-
-.project-conversation-header-card__mobile-project-details-logo-image {
-  width: 100%;
-  max-width: 100%;
-  display: block;
-  object-fit: contain;
-}
-
-.project-conversation-header-card__mobile-project-details-summary {
-  overflow: hidden;
-  color: $ink-light;
-  font-size: 0.84rem;
-  font-weight: var(--font-weight-bold);
-  line-height: 1.25;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.project-conversation-header-card__mobile-project-details-chevron {
-  color: $sky-dark;
-}
-
-@media (max-width: 860px) {
-  .project-conversation-header-card__mobile-project-details {
-    display: grid;
-  }
 }
 
 @media (max-width: 520px) {
