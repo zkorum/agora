@@ -1990,6 +1990,92 @@ def _fetch_previous_selected_view_snapshots_by_pair(
     return previous_by_pair
 
 
+def _persist_conversation_view_snapshot_rows(
+    session: Session,
+    *,
+    pairs: list[tuple[int, int]],
+    snapshot_id_by_conversation_id: dict[int, int],
+    vote_count_by_conversation_id: dict[int, int],
+    participant_count_by_conversation_id: dict[int, int],
+    selected_by_pair: dict[tuple[int, int], _CheckpointCandidateOption | None],
+    survey_aggregate_snapshot_id_by_conversation_id: dict[int, int],
+    premium_analysis_conversation_ids: set[int],
+    ai_generation_expected: bool,
+) -> dict[tuple[int, int], _PersistedConversationViewSnapshot]:
+    unique_pairs = sorted(set(pairs))
+    if not unique_pairs:
+        return {}
+
+    conversation_ids = sorted({conversation_id for conversation_id, _spec_id in unique_pairs})
+    state_by_conversation_id = _fetch_conversation_view_snapshot_state_by_id(
+        session,
+        conversation_ids=conversation_ids,
+    )
+    counters_by_conversation_id = _fetch_conversation_view_snapshot_counters_by_id(
+        session,
+        conversation_ids=conversation_ids,
+    )
+
+    view_snapshot_values: list[dict[str, object]] = []
+    for pair in unique_pairs:
+        conversation_id, opinion_group_spec_id = pair
+        selected = selected_by_pair[pair]
+        state = state_by_conversation_id[conversation_id]
+        counters = counters_by_conversation_id[conversation_id]
+        view_snapshot_values.append(
+            {
+                "conversation_id": conversation_id,
+                "opinion_group_spec_id": opinion_group_spec_id,
+                "analysis_snapshot_id": snapshot_id_by_conversation_id[conversation_id],
+                "survey_aggregate_snapshot_id": (
+                    survey_aggregate_snapshot_id_by_conversation_id.get(conversation_id)
+                ),
+                "conversation_content_id": state.conversation_content_id,
+                "view_reason": ConversationViewSnapshotReasonEnum.analysis_completed,
+                "preferred_opinion_group_count": state.preferred_opinion_group_count
+                if conversation_id in premium_analysis_conversation_ids
+                else None,
+                "is_closed": state.is_closed,
+                "opinion_count": counters.opinion_count,
+                "vote_count": vote_count_by_conversation_id[conversation_id],
+                "participant_count": participant_count_by_conversation_id[conversation_id],
+                "total_opinion_count": counters.total_opinion_count,
+                "total_vote_count": counters.total_vote_count,
+                "total_participant_count": counters.total_participant_count,
+                "moderated_opinion_count": counters.moderated_opinion_count,
+                "hidden_opinion_count": counters.hidden_opinion_count,
+                "activated_at": None
+                if state.ai_labeling_enabled and ai_generation_expected and selected is not None
+                else func.now(),
+            }
+        )
+
+    view_rows = session.execute(
+        sqlalchemy_insert(ConversationViewSnapshot)
+        .values(view_snapshot_values)
+        .returning(
+            ConversationViewSnapshot.id,
+            ConversationViewSnapshot.conversation_id,
+            ConversationViewSnapshot.opinion_group_spec_id,
+        )
+    ).all()
+    view_snapshot_id_by_pair = {
+        (row.conversation_id, row.opinion_group_spec_id): row.id for row in view_rows
+    }
+
+    return {
+        pair: _PersistedConversationViewSnapshot(
+            view_snapshot_id=view_snapshot_id_by_pair[pair],
+            selected_candidate=selected_by_pair[pair],
+            conversation_state=state_by_conversation_id[pair[0]],
+            opinion_count=counters_by_conversation_id[pair[0]].opinion_count,
+            vote_count=vote_count_by_conversation_id[pair[0]],
+            participant_count=participant_count_by_conversation_id[pair[0]],
+        )
+        for pair in unique_pairs
+    }
+
+
 def _persist_conversation_view_snapshots(
     session: Session,
     *,
@@ -2020,14 +2106,6 @@ def _persist_conversation_view_snapshots(
     if not pairs:
         return {}, {}
 
-    state_by_conversation_id = _fetch_conversation_view_snapshot_state_by_id(
-        session,
-        conversation_ids=[claim.conversation_id for claim in claims],
-    )
-    counters_by_conversation_id = _fetch_conversation_view_snapshot_counters_by_id(
-        session,
-        conversation_ids=[claim.conversation_id for claim in claims],
-    )
     # The view snapshot is the consistency boundary for counts and analysis.
     # A selected candidate only controls display/checkpoint/AI-label side effects.
     selected_by_pair: dict[tuple[int, int], _CheckpointCandidateOption | None] = {}
@@ -2036,66 +2114,26 @@ def _persist_conversation_view_snapshots(
         selected = _select_checkpoint_candidate(options)
         selected_by_pair[pair] = selected
 
-    view_snapshot_values: list[dict[str, object]] = []
-    for pair, selected in selected_by_pair.items():
-        conversation_id, opinion_group_spec_id = pair
-        state = state_by_conversation_id[conversation_id]
-        counters = counters_by_conversation_id[conversation_id]
-        input_snapshot = prepared_input_snapshots_by_conversation_id[conversation_id]
-        view_snapshot_values.append(
-            {
-                "conversation_id": conversation_id,
-                "opinion_group_spec_id": opinion_group_spec_id,
-                "analysis_snapshot_id": snapshot_id_by_conversation_id[conversation_id],
-                "survey_aggregate_snapshot_id": (
-                    survey_aggregate_snapshot_id_by_conversation_id.get(conversation_id)
-                ),
-                "conversation_content_id": state.conversation_content_id,
-                "view_reason": ConversationViewSnapshotReasonEnum.analysis_completed,
-                "preferred_opinion_group_count": state.preferred_opinion_group_count
-                if conversation_id in premium_analysis_conversation_ids
-                else None,
-                "is_closed": state.is_closed,
-                "opinion_count": counters.opinion_count,
-                "vote_count": len(input_snapshot.votes),
-                "participant_count": len(input_snapshot.participants),
-                "total_opinion_count": counters.total_opinion_count,
-                "total_vote_count": counters.total_vote_count,
-                "total_participant_count": counters.total_participant_count,
-                "moderated_opinion_count": counters.moderated_opinion_count,
-                "hidden_opinion_count": counters.hidden_opinion_count,
-                "activated_at": None
-                if state.ai_labeling_enabled and ai_generation_expected and selected is not None
-                else func.now(),
-            }
-        )
-
-    view_rows = session.execute(
-        sqlalchemy_insert(ConversationViewSnapshot)
-        .values(view_snapshot_values)
-        .returning(
-            ConversationViewSnapshot.id,
-            ConversationViewSnapshot.conversation_id,
-            ConversationViewSnapshot.opinion_group_spec_id,
-        )
-    ).all()
-    view_snapshot_id_by_pair = {
-        (row.conversation_id, row.opinion_group_spec_id): row.id for row in view_rows
-    }
-
-    return {
-        pair: _PersistedConversationViewSnapshot(
-            view_snapshot_id=view_snapshot_id_by_pair[pair],
-            selected_candidate=selected,
-            conversation_state=state_by_conversation_id[pair[0]],
-            opinion_count=counters_by_conversation_id[pair[0]].opinion_count,
-            vote_count=len(prepared_input_snapshots_by_conversation_id[pair[0]].votes),
-            participant_count=len(
-                prepared_input_snapshots_by_conversation_id[pair[0]].participants
-            ),
-        )
-        for pair, selected in selected_by_pair.items()
-    }, displayable_options_by_pair
+    persisted_view_snapshots_by_pair = _persist_conversation_view_snapshot_rows(
+        session,
+        pairs=pairs,
+        snapshot_id_by_conversation_id=snapshot_id_by_conversation_id,
+        vote_count_by_conversation_id={
+            conversation_id: len(snapshot.votes)
+            for conversation_id, snapshot in prepared_input_snapshots_by_conversation_id.items()
+        },
+        participant_count_by_conversation_id={
+            conversation_id: len(snapshot.participants)
+            for conversation_id, snapshot in prepared_input_snapshots_by_conversation_id.items()
+        },
+        selected_by_pair=selected_by_pair,
+        survey_aggregate_snapshot_id_by_conversation_id=(
+            survey_aggregate_snapshot_id_by_conversation_id
+        ),
+        premium_analysis_conversation_ids=premium_analysis_conversation_ids,
+        ai_generation_expected=ai_generation_expected,
+    )
+    return persisted_view_snapshots_by_pair, displayable_options_by_pair
 
 
 def _queue_conversation_analysis_updated_events_for_view_snapshots(
@@ -3183,6 +3221,7 @@ def persist_empty_vote_matrix_results_batch(
     *,
     claims: list[ClaimedWorkItem],
     stored_input_snapshots_by_conversation_id: dict[int, StoredInputSnapshot],
+    prepared_input_snapshots_by_conversation_id: dict[int, PreparedInputSnapshot],
 ) -> list[int]:
     if not claims:
         return []
@@ -3296,6 +3335,36 @@ def persist_empty_vote_matrix_results_batch(
             ]
         )
         session.execute(candidate_insert)
+
+        pairs = [(claim.conversation_id, claim.opinion_group_spec_id) for claim in claims]
+        persisted_view_snapshots_by_pair = _persist_conversation_view_snapshot_rows(
+            session,
+            pairs=pairs,
+            snapshot_id_by_conversation_id=snapshot_id_by_conversation_id,
+            vote_count_by_conversation_id={
+                claim.conversation_id: len(
+                    prepared_input_snapshots_by_conversation_id[claim.conversation_id].votes
+                )
+                for claim in claims
+            },
+            participant_count_by_conversation_id={
+                claim.conversation_id: len(
+                    prepared_input_snapshots_by_conversation_id[claim.conversation_id].participants
+                )
+                for claim in claims
+            },
+            selected_by_pair={pair: None for pair in pairs},
+            survey_aggregate_snapshot_id_by_conversation_id={},
+            premium_analysis_conversation_ids=premium_analysis_conversation_ids,
+            ai_generation_expected=False,
+        )
+        _queue_conversation_analysis_updated_events_for_view_snapshots(
+            session,
+            conversation_view_snapshot_ids=[
+                view_snapshot.view_snapshot_id
+                for view_snapshot in persisted_view_snapshots_by_pair.values()
+            ],
+        )
 
         completed_generation = case(
             {claim.id: claim.data_generation for claim in claims},

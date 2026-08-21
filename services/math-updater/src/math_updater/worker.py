@@ -1576,6 +1576,7 @@ def _run_worker_once() -> None:
                     primary_engine,
                     claims=empty_claims,
                     stored_input_snapshots_by_conversation_id=stored_snapshots,
+                    prepared_input_snapshots_by_conversation_id=snapshots_by_conversation_id,
                 )
             except SQLAlchemyError as error:
                 log_database_error(
@@ -1595,6 +1596,9 @@ def _run_worker_once() -> None:
                                 primary_engine,
                                 claims=[claim],
                                 stored_input_snapshots_by_conversation_id=stored_snapshots,
+                                prepared_input_snapshots_by_conversation_id=(
+                                    snapshots_by_conversation_id
+                                ),
                             )
                         )
                     except SQLAlchemyError as isolated_error:
