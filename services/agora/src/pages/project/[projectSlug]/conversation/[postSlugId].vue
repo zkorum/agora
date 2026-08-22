@@ -100,7 +100,11 @@
     </ProjectConversationView>
 
     <FloatingBottomContainer
-      v-if="hasConversationData && !isMaxDiffConversation"
+      v-if="
+        hasConversationData &&
+        projectConversationData !== undefined &&
+        !isMaxDiffConversation
+      "
       :anchor-element="actionBarElement ?? undefined"
       :respect-drawer-offset="false"
     >

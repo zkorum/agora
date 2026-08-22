@@ -40,6 +40,7 @@ import { useLanguageStore } from "./stores/language";
 import { useBackendAuthApi } from "./utils/api/auth";
 import { createAuthInitializationController } from "./utils/auth/authInitialization";
 import { useHtmlNodeCssPatch } from "./utils/css/htmlNodeCssPatch";
+import { shouldUseDrawerLayout } from "./utils/router/appLayout";
 import {
   isConversationRouteName,
   isProjectRouteName,
@@ -125,20 +126,7 @@ useRealtimeSSE({
   subscribedConversationSlugId: realtimeConversationSlugId,
   subscribedTopics: realtimeTopics,
 });
-const nonDrawerRoutePatterns = [
-  "/onboarding/",
-  "/project/[projectSlug]",
-  "/verify/",
-  "/welcome",
-  "/conversation/[postSlugId].onboarding",
-  "/[...all]",
-];
-
-const isDrawerLayout = computed(() => {
-  const name = String(route.name ?? "");
-  if (name.includes(".embed")) return false;
-  return !nonDrawerRoutePatterns.some((pattern) => name.startsWith(pattern));
-});
+const isDrawerLayout = computed(() => shouldUseDrawerLayout(route.name));
 
 const { showNotifyMessage, showPersistentNotifyMessage } = useNotify();
 
