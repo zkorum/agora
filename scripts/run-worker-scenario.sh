@@ -10,6 +10,7 @@ fi
 worker="$1"
 scenario="$2"
 repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+runtime="python"
 
 case "$worker" in
   math-updater)
@@ -32,6 +33,11 @@ case "$worker" in
     scenario_file="$service_dir/scenarios/env.$scenario"
     module="content_translation_worker.worker"
     ;;
+  conversation-email-update-worker)
+    service_dir="$repo_root/services/conversation-email-update-worker"
+    scenario_file="$service_dir/scenarios/env.$scenario"
+    runtime="node"
+    ;;
   *)
     echo "Unknown worker: $worker" >&2
     exit 2
@@ -52,4 +58,8 @@ fi
 . "$scenario_file"
 set +a
 
-PYTHONUNBUFFERED=1 uv run python -m "$module"
+if [ "$runtime" = "node" ]; then
+  exec pnpm start:dev
+fi
+
+PYTHONUNBUFFERED=1 exec uv run python -m "$module"

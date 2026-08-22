@@ -61,6 +61,14 @@ describe("installed Replay DOM masking", () => {
 });
 
 describe("Replay URL privacy", () => {
+  it("redacts recipient action tokens to a fixed path", () => {
+    expect(
+      sanitizeReplayUrl(
+        "https://agoracitizen.network/email-updates/preferences/secret-token"
+      )
+    ).toBe("/email-updates/preferences/[redacted]");
+  });
+
   it.each([
     {
       input:
@@ -73,8 +81,7 @@ describe("Replay URL privacy", () => {
       expected: "https://staging.zkorum.com/project/private-project",
     },
     {
-      input:
-        "https://agoracitizen.app/conversation/private-slug?token=secret",
+      input: "https://agoracitizen.app/conversation/private-slug?token=secret",
       expected: "https://agoracitizen.app/conversation/private-slug",
     },
     {
@@ -203,6 +210,25 @@ describe("Replay custom recording event privacy", () => {
           category: "console",
           message: "private console output",
           data: { arguments: ["private"] },
+        },
+      },
+    };
+
+    expect(sanitizeReplayRecordingEvent(event)).toBeNull();
+  });
+
+  it("drops recording events containing recipient action paths", () => {
+    const event: ReplayFrameEvent = {
+      type: 5,
+      timestamp: 1_700_000_000_002,
+      data: {
+        tag: "performanceSpan",
+        payload: {
+          op: "navigation.push",
+          description: "/email-updates/report/secret-token",
+          startTimestamp: 10,
+          endTimestamp: 10,
+          data: { previous: "/safe" },
         },
       },
     };
@@ -349,6 +375,16 @@ describe("Replay custom recording event privacy", () => {
 });
 
 describe("Replay metadata event privacy", () => {
+  it("drops replay metadata captured on recipient action routes", () => {
+    const event: Event & { type: "replay_event"; urls: string[] } = {
+      type: "replay_event",
+      urls: [
+        "https://agoracitizen.network/email-updates/unsubscribe/secret-token",
+      ],
+    };
+    expect(sanitizeReplayEvent(event)).toBeNull();
+  });
+
   it("removes visited URLs and unsafe scoped metadata", () => {
     const event: Event & { type: "replay_event"; urls: string[] } = {
       type: "replay_event",

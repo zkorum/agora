@@ -32,9 +32,11 @@ interface MergeGuestIntoVerifiedUserProps {
  * Merge a guest user account into a verified user account
  *
  * Strategy:
- * 1. Transfer all data from guest to verified user by updating userId/authorId
+ * 1. Transfer mergeable data from guest to verified user by updating userId/authorId
  * 2. For records with unique constraints that conflict: do nothing (keep verified user's data)
  * 3. Soft-delete the guest user (cleanup scripts will eventually delete guest's remaining data)
+ *
+ * Authentication credentials are identity records and are never transferred.
  *
  * This function should be called within a transaction for atomicity.
  */
@@ -73,12 +75,7 @@ export async function mergeGuestIntoVerifiedUser({
     const sourceEmails = await db
         .select({ id: emailTable.id })
         .from(emailTable)
-        .where(
-            and(
-                eq(emailTable.userId, guestUserId),
-                eq(emailTable.isDeleted, false),
-            ),
-        )
+        .where(eq(emailTable.userId, guestUserId))
         .limit(1);
     const sourcePassports = await db
         .select({ id: zkPassportTable.id })
@@ -90,7 +87,7 @@ export async function mergeGuestIntoVerifiedUser({
         sourceEmails.length > 0 ||
         sourcePassports.length > 0
     ) {
-        throw new Error("Cannot merge a registered source user");
+        throw new Error("Cannot merge a source user with credentials");
     }
 
     log.info(
@@ -116,43 +113,37 @@ export async function mergeGuestIntoVerifiedUser({
                 : [guestUserId, verifiedUserId],
     });
 
-    // 2. Transfer emails
-    await db
-        .update(emailTable)
-        .set({ userId: verifiedUserId })
-        .where(eq(emailTable.userId, guestUserId));
-
-    // 3. Transfer event tickets (no unique constraint, multiple tickets per user allowed)
+    // 2. Transfer event tickets (no unique constraint, multiple tickets per user allowed)
     await db
         .update(eventTicketTable)
         .set({ userId: verifiedUserId })
         .where(eq(eventTicketTable.userId, guestUserId));
 
-    // 4. Transfer phone verification (no unique constraint on userId)
+    // 3. Transfer phone verification (no unique constraint on userId)
     await db
         .update(phoneTable)
         .set({ userId: verifiedUserId })
         .where(eq(phoneTable.userId, guestUserId));
 
-    // 5. Transfer zkPassport/Rarimo (no unique constraint on userId)
+    // 4. Transfer zkPassport/Rarimo (no unique constraint on userId)
     await db
         .update(zkPassportTable)
         .set({ userId: verifiedUserId })
         .where(eq(zkPassportTable.userId, guestUserId));
 
-    // 6. Transfer opinions (uses authorId, not userId)
+    // 5. Transfer opinions (uses authorId, not userId)
     await db
         .update(opinionTable)
         .set({ authorId: verifiedUserId })
         .where(eq(opinionTable.authorId, guestUserId));
 
-    // 7. Transfer notifications (uses userId)
+    // 6. Transfer notifications (uses userId)
     await db
         .update(notificationTable)
         .set({ userId: verifiedUserId })
         .where(eq(notificationTable.userId, guestUserId));
 
-    // 8. Transfer followed topics (unique constraint: userId + topicId)
+    // 7. Transfer followed topics (unique constraint: userId + topicId)
     // Get guest topics, insert as verified user, skip conflicts
     const guestFollowedTopics = await db
         .select()
@@ -175,7 +166,7 @@ export async function mergeGuestIntoVerifiedUser({
             .onConflictDoNothing();
     }
 
-    // 9. Transfer user spoken languages (unique constraint: userId + languageCode)
+    // 8. Transfer user spoken languages (unique constraint: userId + languageCode)
     const guestSpokenLanguages = await db
         .select()
         .from(userSpokenLanguagesTable)
@@ -191,7 +182,7 @@ export async function mergeGuestIntoVerifiedUser({
             .onConflictDoNothing();
     }
 
-    // 10. Transfer user display language if the verified user has none.
+    // 9. Transfer user display language if the verified user has none.
     const guestDisplayLanguage = await db
         .select()
         .from(userDisplayLanguageTable)
@@ -211,7 +202,7 @@ export async function mergeGuestIntoVerifiedUser({
             .onConflictDoNothing();
     }
 
-    // 11. Transfer organization memberships (unique constraint: userId + organizationId)
+    // 10. Transfer organization memberships (unique constraint: userId + organizationId)
     const guestOrgMappings = await db
         .select()
         .from(organizationMembershipTable)
@@ -232,7 +223,7 @@ export async function mergeGuestIntoVerifiedUser({
             .onConflictDoNothing();
     }
 
-    // 12. Transfer votes (uses authorId, unique constraint: authorId + opinionId)
+    // 11. Transfer votes (uses authorId, unique constraint: authorId + opinionId)
     const guestVotes = await db
         .select()
         .from(voteTable)
@@ -251,7 +242,7 @@ export async function mergeGuestIntoVerifiedUser({
             .onConflictDoNothing();
     }
 
-    // 13. Reconcile conversation counters for all affected conversations
+    // 12. Reconcile conversation counters for all affected conversations
     // This ensures vote counts, opinion counts, and participant counts are updated
     const conversationIdsSet = new Set<number>();
 
@@ -319,7 +310,7 @@ export async function mergeGuestIntoVerifiedUser({
         });
     }
 
-    // 14. Soft-delete the guest user
+    // 13. Soft-delete the guest user
     await db
         .update(userTable)
         .set({

@@ -107,6 +107,7 @@ launch_worker_tab() {
 # kitty --session kitty_openapi_session.conf
 launch_tab "App" "make dev-app"
 launch_tab "API" "make dev-api"
+launch_tab "Email-Update-Worker" "make dev-conversation-email-update-worker"
 launch_worker_tab "math-updater" "Math-Updater" "dev-math-updater" "dev-math-updater-scenario"
 launch_worker_tab "ai-description-retry-worker" "AI-Description-Retry" "dev-ai-description-retry-worker" "dev-ai-description-retry-worker-scenario"
 launch_worker_tab "description-translation-retry-worker" "Description-Translation-Retry" "dev-description-translation-retry-worker" "dev-description-translation-retry-worker-scenario"
@@ -116,3 +117,4 @@ launch_tab "Scoring-Worker" "make dev-scoring-worker"
 launch_tab "OpenAPI" "make dev-generate"
 launch_tab "Shared" "make dev-sync"
 launch_tab "Shared-App-API" "make dev-sync-app-api"
+launch_tab "Shared-Backend" "make dev-sync-ts-backend"

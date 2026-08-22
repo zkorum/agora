@@ -66,6 +66,18 @@
             :allow-project-selection="false"
             :detected-language-code="visibleDetectedLanguageCode"
           />
+          <CreateConversationUpdatesSettings
+            :model-value="conversationUpdatesOverride"
+            :scope-kind="
+              selectedProjectSlug === undefined ? 'no-project' : 'project'
+            "
+            :project-title="currentProjectLanguageProject?.title"
+            :scope-default-enabled="conversationUpdatesScopeDefault"
+            :has-entitlement="
+              conversationUpdatesConfiguration?.canConfigure === true
+            "
+            @update:model-value="updateConversationUpdatesConfiguration"
+          />
         </template>
       </NewConversationControlBar>
 
@@ -78,18 +90,18 @@
         <span>{{ t("premiumEditRestrictedBanner") }}</span>
       </ZKCard>
 
-        <div class="contentFlexStyle">
-          <div v-if="isSurveyFeatureAllowed" class="surveyActionRow">
-            <q-btn
-              flat
-              no-caps
-              color="primary"
-              :label="responseSurveyButtonLabel"
-              @click="openSurveyEditor"
-            />
-          </div>
+      <div class="contentFlexStyle">
+        <div v-if="isSurveyFeatureAllowed" class="surveyActionRow">
+          <q-btn
+            flat
+            no-caps
+            color="primary"
+            :label="responseSurveyButtonLabel"
+            @click="openSurveyEditor"
+          />
+        </div>
 
-          <div ref="titleInputRef">
+        <div ref="titleInputRef">
           <div v-if="validationState.title.showError" class="titleErrorMessage">
             <q-icon name="mdi-alert-circle" class="titleErrorIcon" />
             {{ validationState.title.error }}
@@ -125,7 +137,6 @@
               @update:is-over-limit="(v: boolean) => (isBodyOverLimit = v)"
             />
           </div>
-
         </div>
       </div>
     </div>
@@ -138,6 +149,7 @@ import Editor from "src/components/editor/Editor.vue";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import CreateConversationProjectLanguageSettings from "src/components/newConversation/CreateConversationProjectLanguageSettings.vue";
+import CreateConversationUpdatesSettings from "src/components/newConversation/CreateConversationUpdatesSettings.vue";
 import NewConversationControlBar from "src/components/newConversation/NewConversationControlBar.vue";
 import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
@@ -148,8 +160,12 @@ import {
 } from "src/composables/conversation/draft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
-import { MAX_LENGTH_CONVERSATION_BODY, MAX_LENGTH_TITLE } from "src/shared/shared";
+import {
+  MAX_LENGTH_CONVERSATION_BODY,
+  MAX_LENGTH_TITLE,
+} from "src/shared/shared";
 import type {
+  ConversationEmailUpdateConfigurationResponse,
   ConversationLanguageSettingsSource,
   GetConversationForEditResponse,
 } from "src/shared/types/dto";
@@ -162,6 +178,7 @@ import type {
   ProjectLanguageSettings,
   SurveyConfig,
 } from "src/shared/types/zod";
+import { useBackendConversationEmailUpdatesApi } from "src/utils/api/conversationUpdates/conversationEmailUpdates";
 import { useBackendPostEditApi } from "src/utils/api/post/postEdit";
 import { useUpdateConversationMutation } from "src/utils/api/post/useConversationMutations";
 import { getConversationEditReturnPath } from "src/utils/router/conversationEditReturn";
@@ -216,18 +233,14 @@ type CurrentProjectLanguageProject = {
   languageSettings: ProjectLanguageSettings;
 };
 const editPermissions = ref<EditPermissions | null>(null);
-const detectedLanguageCode = ref<
-  ContentLanguageMetadataOutput["detectedDisplayLanguageCode"]
->(null);
-const detectedSourceLanguageCode = ref<
-  ContentLanguageMetadataOutput["detectedSourceLanguageCode"]
->(null);
-const detectedRawLanguageCode = ref<
-  ContentLanguageMetadataOutput["detectedRawLanguageCode"]
->(null);
-const autoDetectionStatus = ref<
-  ContentLanguageMetadataOutput["autoDetectionStatus"]
->("not_attempted");
+const detectedLanguageCode =
+  ref<ContentLanguageMetadataOutput["detectedDisplayLanguageCode"]>(null);
+const detectedSourceLanguageCode =
+  ref<ContentLanguageMetadataOutput["detectedSourceLanguageCode"]>(null);
+const detectedRawLanguageCode =
+  ref<ContentLanguageMetadataOutput["detectedRawLanguageCode"]>(null);
+const autoDetectionStatus =
+  ref<ContentLanguageMetadataOutput["autoDetectionStatus"]>("not_attempted");
 
 const titleInputRef = ref<HTMLDivElement>();
 
@@ -339,7 +352,8 @@ const hasUnsavedChanges = computed(() => {
 
   if (
     selectedProjectSlug.value !== originalState.value.selectedProjectSlug ||
-    inheritProjectLanguages.value !== originalState.value.inheritProjectLanguages ||
+    inheritProjectLanguages.value !==
+      originalState.value.inheritProjectLanguages ||
     effectiveLanguageSettingsSource.value !==
       originalState.value.languageSettingsSource
   ) {
@@ -384,6 +398,21 @@ const {
   updateContent,
   initializeFromData,
 } = useConversationDraft({ syncToStore: false });
+type ConversationUpdatesConfiguration = Extract<
+  Extract<
+    ConversationEmailUpdateConfigurationResponse,
+    { success: true }
+  >["configuration"],
+  { target: "conversation" }
+>;
+const conversationEmailUpdatesApi = useBackendConversationEmailUpdatesApi();
+const conversationUpdatesConfiguration = ref<
+  ConversationUpdatesConfiguration | undefined
+>(undefined);
+const conversationUpdatesOverride = ref<boolean | undefined>(undefined);
+const conversationUpdatesScopeDefault = computed(
+  () => conversationUpdatesConfiguration.value?.scopeDefaultEnabled ?? false
+);
 
 function getConversationTypeConfig(): ConversationTypeConfig {
   if (conversationType.value === "ranking") {
@@ -409,12 +438,12 @@ const currentProjectLanguageProject = ref<
   CurrentProjectLanguageProject | undefined
 >(undefined);
 
-const effectiveLanguageSettingsSource = computed<ConversationLanguageSettingsSource>(
-  () =>
+const effectiveLanguageSettingsSource =
+  computed<ConversationLanguageSettingsSource>(() =>
     selectedProjectSlug.value !== undefined && inheritProjectLanguages.value
       ? "project_inherited"
       : "conversation_override"
-);
+  );
 
 const canShowStoredAutoDetection = computed(() => {
   return (
@@ -427,7 +456,9 @@ const visibleDetectedLanguageCode = computed(() =>
   canShowStoredAutoDetection.value ? detectedLanguageCode.value : undefined
 );
 const visibleDetectedSourceLanguageCode = computed(() =>
-  canShowStoredAutoDetection.value ? detectedSourceLanguageCode.value : undefined
+  canShowStoredAutoDetection.value
+    ? detectedSourceLanguageCode.value
+    : undefined
 );
 const visibleDetectedRawLanguageCode = computed(() =>
   canShowStoredAutoDetection.value ? detectedRawLanguageCode.value : undefined
@@ -590,6 +621,71 @@ async function openSurveyEditor(): Promise<void> {
   });
 }
 
+function applyConversationUpdatesConfiguration(
+  configuration: ConversationUpdatesConfiguration
+): void {
+  conversationUpdatesConfiguration.value = configuration;
+  if (configuration.setting === "inherit") {
+    conversationUpdatesOverride.value = undefined;
+    return;
+  }
+  conversationUpdatesOverride.value = configuration.setting === "enabled";
+}
+
+async function loadConversationUpdatesConfiguration(): Promise<void> {
+  try {
+    const response = await conversationEmailUpdatesApi.getConfiguration({
+      target: "conversation",
+      conversationSlugId,
+    });
+    if (!response.success || response.configuration.target !== "conversation") {
+      return;
+    }
+    applyConversationUpdatesConfiguration(response.configuration);
+  } catch (error) {
+    console.error(
+      "Failed to load conversation Email Update configuration",
+      error
+    );
+  }
+}
+
+async function updateConversationUpdatesConfiguration(
+  override: boolean | undefined
+): Promise<void> {
+  const previousConfiguration = conversationUpdatesConfiguration.value;
+  const previousOverride = conversationUpdatesOverride.value;
+  if (
+    previousConfiguration === undefined ||
+    !previousConfiguration.canConfigure
+  ) {
+    return;
+  }
+  conversationUpdatesOverride.value = override;
+  try {
+    const response = await conversationEmailUpdatesApi.updateConfiguration({
+      target: "conversation",
+      conversationSlugId,
+      setting:
+        override === undefined ? "inherit" : override ? "enabled" : "disabled",
+    });
+    if (!response.success || response.configuration.target !== "conversation") {
+      conversationUpdatesOverride.value = previousOverride;
+      showNotifyMessage("The Email Update setting could not be saved.");
+      return;
+    }
+    applyConversationUpdatesConfiguration(response.configuration);
+  } catch (error) {
+    console.error(
+      "Failed to save conversation Email Update configuration",
+      error
+    );
+    conversationUpdatesConfiguration.value = previousConfiguration;
+    conversationUpdatesOverride.value = previousOverride;
+    showNotifyMessage("The Email Update setting could not be saved.");
+  }
+}
+
 onMounted(async () => {
   try {
     if (!conversationSlugId) {
@@ -627,7 +723,8 @@ onMounted(async () => {
       response.contentLanguageMetadata.detectedSourceLanguageCode;
     detectedRawLanguageCode.value =
       response.contentLanguageMetadata.detectedRawLanguageCode;
-    autoDetectionStatus.value = response.contentLanguageMetadata.autoDetectionStatus;
+    autoDetectionStatus.value =
+      response.contentLanguageMetadata.autoDetectionStatus;
 
     initializeFromData({
       title: response.conversationTitle,
@@ -652,7 +749,8 @@ onMounted(async () => {
         : {
             slug: response.projectLanguageProject.projectSlug,
             title: response.projectLanguageProject.projectTitle,
-            defaultLanguageCode: response.projectLanguageProject.defaultLanguageCode,
+            defaultLanguageCode:
+              response.projectLanguageProject.defaultLanguageCode,
             languageSettings: response.projectLanguageProject.languageSettings,
           };
 
@@ -675,6 +773,8 @@ onMounted(async () => {
       preferredOpinionGroupCount: response.preferredOpinionGroupCount,
       surveyConfig: response.surveyConfig ?? null,
     };
+
+    await loadConversationUpdatesConfiguration();
 
     isDataLoaded.value = true;
   } catch (error) {
@@ -776,5 +876,4 @@ onMounted(async () => {
   font-size: 1rem;
   color: $color-text-weak;
 }
-
 </style>

@@ -1,0 +1,30 @@
+{
+    "include": [
+        "src/*.ts",
+        "src/devExercise/**/*.ts",
+        "src/shared-backend/**/*.ts",
+        "src/shared/languages.ts",
+        "src/shared/projectDocument.ts",
+        "src/shared/types/project.ts"
+    ],
+    "exclude": ["node_modules", "dist"],
+    "compilerOptions": {
+        "target": "ES2022",
+        "lib": ["ES2023", "DOM"],
+        "module": "Node16",
+        "moduleResolution": "Node16",
+        "baseUrl": "src",
+        "paths": {
+            "@/*": ["*"]
+        },
+        "outDir": "dist",
+        "noEmit": true,
+        "verbatimModuleSyntax": true,
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "strict": true,
+        "noFallthroughCasesInSwitch": true,
+        "skipLibCheck": true
+    }
+}

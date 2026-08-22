@@ -25,6 +25,7 @@ Agora Citizen Network is a privacy-preserving social platform using zero-knowled
 - **`services/app`** (SvelteKit) - Landing page
 - **`services/agora`** (Vue/Quasar) - Main frontend application
 - **`services/api`** (Fastify) - Backend API
+- **`services/conversation-email-update-worker`** (TypeScript) - Conversation Email Updates delivery and SES event worker
 - **`services/import-worker`** (Python) - Conversation import worker
 - **`services/math-updater`** (Python) - Opinion-group analysis worker
 - **`services/scoring-worker`** (Python) - Solidago scoring worker for MaxDiff rankings
@@ -110,6 +111,9 @@ make dev-landing
 # Backend API (Fastify)
 make dev-api
 
+# Conversation Email Updates worker (TypeScript)
+make dev-conversation-email-update-worker
+
 # Math updater worker (opinion-group analysis)
 make dev-math-updater
 
@@ -172,6 +176,9 @@ cd services/app && pnpm test:e2e       # Playwright (E2E tests)
 
 # Backend API
 cd services/api && pnpm lint && pnpm test
+
+# Conversation Email Updates worker
+cd services/conversation-email-update-worker && pnpm build && pnpm typecheck && pnpm lint && pnpm test
 
 # Math updater
 cd services/math-updater && pnpm lint && pnpm test
@@ -281,7 +288,7 @@ pnpm db:undo
 
 ### Migration Authoring Rules
 
-- For schema changes, edit only `services/api/src/shared-backend/schema.ts` and use `pnpm db:*` commands to generate/apply migrations. Do not manually edit generated Drizzle SQL files or Flyway SQL files for normal schema changes.
+- For schema changes, edit only `services/shared-backend/src/schema.ts`, run `make sync-ts-backend`, and use the API's `pnpm db:*` commands to generate/apply migrations. Do not manually edit generated API/worker copies, Drizzle SQL files, or Flyway SQL files for normal schema changes.
 - If a migration command is interactive or destructive, such as dropping/regenerating migrations, ask the user to run it or explicitly approve it first.
 - Creating Flyway SQL by hand is allowed for data backfills only. Backfill means changing existing data, not changing schema structure.
 - Hand-written Flyway SQL is also allowed for database features not representable in `schema.ts`, such as PostgreSQL functions/triggers/NOTIFY behavior.
@@ -293,6 +300,7 @@ pnpm db:undo
 # Build images for each service
 cd services/agora && pnpm image:build
 cd services/api && pnpm image:build
+cd services/conversation-email-update-worker && pnpm image:build
 cd services/math-updater && pnpm image:build
 ```
 
@@ -305,6 +313,7 @@ Frontend (Vue/Quasar) → OpenAPI Client → API (Fastify)
                                            ↓
                                     PostgreSQL (primary + read replica)
                                            ↑              ↑
+Conversation Email Update worker ──────────┤              │
 API → Valkey import queue → Import-worker ─┘              │
 API → Valkey analysis dirty set → Math-updater ───────────┤
 API → Valkey scoring dirty set → Scoring-worker ──────────┘
@@ -315,6 +324,7 @@ API → Valkey scoring dirty set → Scoring-worker ─────────�
 - **app** (`services/app/`): SvelteKit landing page (Svelte 5, Bits UI, Tailwind CSS v4)
 - **agora** (`services/agora/`): Vue 3 + Quasar main frontend with Pinia state management
 - **api** (`services/api/`): Fastify backend with Drizzle ORM, handles auth/conversations/voting
+- **conversation-email-update-worker** (`services/conversation-email-update-worker/`): Independent TypeScript worker for durable Conversation Email Updates delivery and SES event processing
 - **import-worker** (`services/import-worker/`): Python worker for Polis URL and CSV conversation imports
 - **math-updater** (`services/math-updater/`): Python worker for opinion-group analysis and AI label generation
 - **scoring-worker** (`services/scoring-worker/`): Python worker running Solidago algorithm for MaxDiff community rankings via Valkey dirty set
@@ -326,13 +336,13 @@ Shared code is distributed via **rsync** (not npm linking) because Drizzle ORM r
 
 - `services/shared/` → synced to TypeScript services and used for generated Python constants
 - `services/shared-app-api/` → synced to frontend + API (UCAN, auth)
-- `services/api/src/shared-backend/schema.ts` → source schema for API and generated Python SQLAlchemy models
+- `services/shared-backend/src/` → canonical TypeScript backend source synced into API and explicit TypeScript workers; its `schema.ts` also generates Python SQLAlchemy models
 
 Files generated from shared directories have warning comments at the top. Always edit source files in `services/shared*/src/`, never the synced copies.
 
 ### Database Layer
 
-- **ORM**: Drizzle with TypeScript schema in `services/api/src/shared-backend/schema.ts`
+- **ORM**: Drizzle with canonical TypeScript schema in `services/shared-backend/src/schema.ts`; API and worker copies are generated
 - **Read replicas**: Automatic routing via `withReplicas()` - SELECTs use replica, writes use primary
 - **Migrations**: Flyway-based versioned migrations in `services/api/database/flyway/`
 - **Connection**: Supports both direct connection strings and AWS Secrets Manager
@@ -444,8 +454,10 @@ Authorization headers built via `buildAuthorizationHeader(encodedUcan)` in front
 - `services/app/vite.config.ts`: Vite plugins (Tailwind, SvelteKit)
 - `services/app/svelte.config.js`: SvelteKit adapter configuration
 - `services/api/src/index.ts`: Main backend entry point, route registration
-- `services/api/src/shared-backend/schema.ts`: Database schema (all tables)
-- `services/api/src/shared-backend/db.ts`: Database connection with read replica routing
+- `services/shared-backend/src/schema.ts`: Canonical database schema (all tables)
+- `services/shared-backend/src/db.ts`: Canonical database connection utilities with read replica routing
+- `services/api/src/shared-backend/`: Generated complete shared-backend copy; never edit directly
+- `services/conversation-email-update-worker/src/shared-backend/`: Generated worker subset; never edit directly
 - `services/agora/src/stores/`: Pinia state management
 - `services/agora/src/utils/api/`: Frontend API wrapper layer
 - `services/math-updater/src/index.ts`: Background job worker
@@ -893,11 +905,12 @@ The frontend has a dedicated component testing page at `/dev/component-testing` 
 
 ### Adding a Database Table
 
-1. Edit `services/api/src/shared-backend/schema.ts` to add table definition
-2. Run `cd services/api && pnpm db:generate` to create migration
-3. Review generated SQL in `services/api/drizzle/`
-4. Run `pnpm db:migrate` to apply migration
-5. Import new table in service code: `import { newTable } from '@/shared-backend/schema'`
+1. Edit `services/shared-backend/src/schema.ts` to add the table definition
+2. Run `make sync-ts-backend`
+3. Run `cd services/api && pnpm db:generate` to create the migration
+4. Review generated SQL in `services/api/drizzle/`
+5. Run `pnpm db:migrate` to apply the migration
+6. Import the table in consumer code: `import { newTable } from '@/shared-backend/schema'`
 
 ### Working with Shared Code
 
@@ -908,7 +921,7 @@ The frontend has a dedicated component testing page at `/dev/component-testing` 
 
 ### Scoring Worker Schema Codegen
 
-The scoring worker's SQLAlchemy models (`services/scoring-worker/src/scoring_worker/generated_models.py`) are auto-generated from `services/api/src/shared-backend/schema.ts`. **Never hand-write table definitions in the Python code.**
+The scoring worker's SQLAlchemy models (`services/scoring-worker/src/scoring_worker/generated_models.py`) are auto-generated from `services/shared-backend/src/schema.ts`. **Never hand-write table definitions in the Python code.**
 
 To add a table to the scoring worker:
 

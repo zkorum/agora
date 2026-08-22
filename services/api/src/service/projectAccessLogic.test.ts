@@ -11,7 +11,7 @@ describe("hasCapabilityForProject", () => {
     const capabilityGrants: OrganizationCapabilityGrant[] = [
         {
             organizationId: 10,
-            capability: "conversation_update",
+            capability: "conversation_edit",
         },
         {
             organizationId: 11,
@@ -56,7 +56,7 @@ describe("hasCapabilityForProject", () => {
                 capabilityGrants,
                 projectOwnerships,
                 projectId: 2,
-                capability: "conversation_update",
+                capability: "conversation_edit",
             }),
         ).toBe(false);
     });
@@ -69,11 +69,11 @@ describe("getProjectIdsWithCapabilityFromGrants", () => {
                 capabilityGrants: [
                     {
                         organizationId: 10,
-                        capability: "conversation_update",
+                        capability: "conversation_edit",
                     },
                     {
                         organizationId: 11,
-                        capability: "conversation_update",
+                        capability: "conversation_edit",
                     },
                     {
                         organizationId: 12,
@@ -81,11 +81,11 @@ describe("getProjectIdsWithCapabilityFromGrants", () => {
                     },
                     {
                         organizationId: 13,
-                        capability: "conversation_update",
+                        capability: "conversation_edit",
                     },
                     {
                         organizationId: 14,
-                        capability: "conversation_update",
+                        capability: "conversation_edit",
                     },
                 ],
                 projectOwnerships: [
@@ -94,7 +94,7 @@ describe("getProjectIdsWithCapabilityFromGrants", () => {
                     { projectId: 2, organizationId: 12 },
                     { projectId: 3, organizationId: 13 },
                 ],
-                capability: "conversation_update",
+                capability: "conversation_edit",
             }),
         ).toEqual([1, 3]);
     });

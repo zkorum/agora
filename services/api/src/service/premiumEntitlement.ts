@@ -70,6 +70,7 @@ const premiumFeatureSortValues = {
     event_ticket: 1,
     analysis_variants: 2,
     dynamic_translation: 3,
+    conversation_email_update: 4,
 } satisfies Record<PremiumFeature, number>;
 
 export type PremiumEntitlementSubject =

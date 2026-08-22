@@ -57,7 +57,7 @@ const baselineAllProjectCapabilities = [
     "project_delete",
     "project_manage_owner_organizations",
     "conversation_create",
-    "conversation_update",
+    "conversation_edit",
     "conversation_delete",
     "conversation_view_private_results",
     "conversation_export_owner_data",
@@ -248,7 +248,9 @@ export async function getOrCreateDefaultProjectForOrganization({
     const existingRows = await db
         .select({ projectId: projectTable.id })
         .from(projectTable)
-        .where(eq(projectTable.autoProvisionedForOrganizationId, organizationId))
+        .where(
+            eq(projectTable.autoProvisionedForOrganizationId, organizationId),
+        )
         .limit(1);
     const existing = existingRows.at(0);
     if (existing !== undefined) {
@@ -281,7 +283,9 @@ export async function getOrCreateDefaultProjectForOrganization({
         .returning({ projectId: projectTable.id });
     const inserted = insertedRows.at(0);
     if (inserted === undefined) {
-        throw httpErrors.internalServerError("Failed to create default project");
+        throw httpErrors.internalServerError(
+            "Failed to create default project",
+        );
     }
 
     const insertedContentRows = await db
@@ -360,7 +364,9 @@ export async function resolveConversationCreateTarget({
             capability: "conversation_create",
         });
         if (!canCreate) {
-            throw httpErrors.forbidden("Missing conversation_create capability");
+            throw httpErrors.forbidden(
+                "Missing conversation_create capability",
+            );
         }
         return { ...organization, ...project };
     }
@@ -370,7 +376,10 @@ export async function resolveConversationCreateTarget({
         .from(organizationTable)
         .innerJoin(
             organizationMembershipTable,
-            eq(organizationMembershipTable.organizationId, organizationTable.id),
+            eq(
+                organizationMembershipTable.organizationId,
+                organizationTable.id,
+            ),
         )
         .where(
             and(
@@ -463,17 +472,26 @@ async function resolveExplicitConversationCreateTarget({
         .innerJoin(
             projectOrganizationOwnershipTable,
             and(
-                eq(projectOrganizationOwnershipTable.projectId, projectTable.id),
+                eq(
+                    projectOrganizationOwnershipTable.projectId,
+                    projectTable.id,
+                ),
                 isNull(projectOrganizationOwnershipTable.deletedAt),
             ),
         )
         .innerJoin(
             organizationTable,
-            eq(organizationTable.id, projectOrganizationOwnershipTable.organizationId),
+            eq(
+                organizationTable.id,
+                projectOrganizationOwnershipTable.organizationId,
+            ),
         )
         .innerJoin(
             organizationMembershipTable,
-            eq(organizationMembershipTable.organizationId, organizationTable.id),
+            eq(
+                organizationMembershipTable.organizationId,
+                organizationTable.id,
+            ),
         )
         .where(
             and(
@@ -526,7 +544,10 @@ export async function getConversationCreateProjectOptions({
         .from(organizationTable)
         .innerJoin(
             organizationMembershipTable,
-            eq(organizationMembershipTable.organizationId, organizationTable.id),
+            eq(
+                organizationMembershipTable.organizationId,
+                organizationTable.id,
+            ),
         )
         .where(
             and(
@@ -562,13 +583,19 @@ export async function getConversationCreateProjectOptions({
         .innerJoin(
             projectOrganizationOwnershipTable,
             and(
-                eq(projectOrganizationOwnershipTable.projectId, projectTable.id),
+                eq(
+                    projectOrganizationOwnershipTable.projectId,
+                    projectTable.id,
+                ),
                 isNull(projectOrganizationOwnershipTable.deletedAt),
             ),
         )
         .innerJoin(
             organizationTable,
-            eq(organizationTable.id, projectOrganizationOwnershipTable.organizationId),
+            eq(
+                organizationTable.id,
+                projectOrganizationOwnershipTable.organizationId,
+            ),
         )
         .leftJoin(
             projectContentTable,
@@ -598,8 +625,10 @@ export async function getConversationCreateProjectOptions({
             ? []
             : await db
                   .select({
-                      projectId: projectTranslationTargetLanguageTable.projectId,
-                      languageCode: projectTranslationTargetLanguageTable.languageCode,
+                      projectId:
+                          projectTranslationTargetLanguageTable.projectId,
+                      languageCode:
+                          projectTranslationTargetLanguageTable.languageCode,
                   })
                   .from(projectTranslationTargetLanguageTable)
                   .where(
@@ -608,7 +637,9 @@ export async function getConversationCreateProjectOptions({
                               projectTranslationTargetLanguageTable.projectId,
                               projectIds,
                           ),
-                          isNull(projectTranslationTargetLanguageTable.deletedAt),
+                          isNull(
+                              projectTranslationTargetLanguageTable.deletedAt,
+                          ),
                       ),
                   );
     const targetLanguageCodesByProjectId = new Map<
@@ -619,7 +650,10 @@ export async function getConversationCreateProjectOptions({
         const languageCodes =
             targetLanguageCodesByProjectId.get(targetLanguage.projectId) ?? [];
         languageCodes.push(targetLanguage.languageCode);
-        targetLanguageCodesByProjectId.set(targetLanguage.projectId, languageCodes);
+        targetLanguageCodesByProjectId.set(
+            targetLanguage.projectId,
+            languageCodes,
+        );
     }
 
     return {
@@ -657,7 +691,9 @@ export async function getProjectLanguageSettings({
             projectContentTable,
             eq(projectContentTable.id, projectTable.currentContentId),
         )
-        .where(and(eq(projectTable.id, projectId), isNull(projectTable.deletedAt)))
+        .where(
+            and(eq(projectTable.id, projectId), isNull(projectTable.deletedAt)),
+        )
         .limit(1);
     const project = projectRows.at(0);
     if (project === undefined) {
@@ -665,7 +701,9 @@ export async function getProjectLanguageSettings({
     }
 
     const targetLanguageRows = await db
-        .select({ languageCode: projectTranslationTargetLanguageTable.languageCode })
+        .select({
+            languageCode: projectTranslationTargetLanguageTable.languageCode,
+        })
         .from(projectTranslationTargetLanguageTable)
         .where(
             and(
@@ -699,12 +737,16 @@ export async function hasProjectCapability({
         .select({
             projectId: projectOrganizationOwnershipTable.projectId,
             organizationId: organizationMembershipTable.organizationId,
-            capability: organizationMembershipAllProjectCapabilityTable.capability,
+            capability:
+                organizationMembershipAllProjectCapabilityTable.capability,
         })
         .from(organizationMembershipTable)
         .innerJoin(
             organizationTable,
-            eq(organizationTable.id, organizationMembershipTable.organizationId),
+            eq(
+                organizationTable.id,
+                organizationMembershipTable.organizationId,
+            ),
         )
         .innerJoin(
             organizationMembershipAllProjectCapabilityTable,
@@ -783,12 +825,16 @@ export async function getProjectIdsWithCapability({
         .select({
             projectId: projectOrganizationOwnershipTable.projectId,
             organizationId: organizationMembershipTable.organizationId,
-            capability: organizationMembershipAllProjectCapabilityTable.capability,
+            capability:
+                organizationMembershipAllProjectCapabilityTable.capability,
         })
         .from(organizationMembershipTable)
         .innerJoin(
             organizationTable,
-            eq(organizationTable.id, organizationMembershipTable.organizationId),
+            eq(
+                organizationTable.id,
+                organizationMembershipTable.organizationId,
+            ),
         )
         .innerJoin(
             organizationMembershipAllProjectCapabilityTable,

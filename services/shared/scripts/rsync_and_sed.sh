@@ -10,7 +10,7 @@ SERVICES_DIR="$(dirname "$SHARED_DIR")"
 
 # List of TypeScript services to sync to. Python services consume generated
 # artifacts instead of synced TypeScript source.
-ALL_SERVICES=("agora" "api" "load-testing")
+ALL_SERVICES=("agora" "api" "conversation-email-update-worker" "load-testing")
 
 # Warning comment to add to synced files
 COMMENT="/** **** WARNING: GENERATED FROM SHARED DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/"

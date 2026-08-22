@@ -39,9 +39,7 @@ import {
 } from "./comment.js";
 import { fetchPostBySlugId } from "./post.js";
 import { createCommentModerationPropertyObject } from "./moderation.js";
-import {
-    getOrganizationMembershipsByUserId,
-} from "./administrator/organization.js";
+import { getOrganizationMembershipsByUserId } from "./administrator/organization.js";
 import { getProjectIdsWithCapability } from "./projectAccess.js";
 import type { ImportPolisResults } from "@/shared/types/polis.js";
 import { generateUUID } from "@/crypto.js";
@@ -161,7 +159,10 @@ export async function getUserComments({
                           or(
                               lt(opinionTable.createdAt, lastCursor.createdAt),
                               and(
-                                  eq(opinionTable.createdAt, lastCursor.createdAt),
+                                  eq(
+                                      opinionTable.createdAt,
+                                      lastCursor.createdAt,
+                                  ),
                                   lt(opinionTable.id, lastCursor.opinionId),
                               ),
                           ),
@@ -309,7 +310,7 @@ export async function getUserPosts({
         const projectIds = await getProjectIdsWithCapability({
             db,
             userId,
-            capability: "conversation_update",
+            capability: "conversation_edit",
         });
         if (projectIds.length === 0) {
             return new Map();

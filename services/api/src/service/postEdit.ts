@@ -107,7 +107,8 @@ export async function getConversationForEdit({
             conversationTitle: conversationContentTable.title,
             conversationBody: conversationContentTable.body,
             sourceLanguageCode: conversationContentTable.sourceLanguageCode,
-            sourceRawLanguageCode: conversationContentTable.sourceRawLanguageCode,
+            sourceRawLanguageCode:
+                conversationContentTable.sourceRawLanguageCode,
             sourceLanguageConfidence:
                 conversationContentTable.sourceLanguageConfidence,
             isIndexed: conversationTable.isIndexed,
@@ -158,7 +159,10 @@ export async function getConversationForEdit({
         )
         .leftJoin(
             polisConversationConfigTable,
-            eq(polisConversationConfigTable.id, conversationTable.polisConfigId),
+            eq(
+                polisConversationConfigTable.id,
+                conversationTable.polisConfigId,
+            ),
         )
         .leftJoin(
             rankingConversationConfigTable,
@@ -194,7 +198,7 @@ export async function getConversationForEdit({
         db,
         userId,
         projectId: conversation.projectId,
-        capability: "conversation_update",
+        capability: "conversation_edit",
     });
     if (!canUpdateConversation) {
         return { success: false, reason: "not_author" };
@@ -222,7 +226,8 @@ export async function getConversationForEdit({
                   projectTitle: conversation.projectTitle,
                   defaultLanguageCode:
                       sourceLanguageToDisplayLanguage({
-                          sourceLanguageCode: conversation.projectSourceLanguageCode,
+                          sourceLanguageCode:
+                              conversation.projectSourceLanguageCode,
                       }) ?? getImplicitDefaultDisplayLanguage(),
                   languageSettings: {
                       dynamicTranslationEnabled:
@@ -283,11 +288,12 @@ export async function getConversationForEdit({
                 sourceRawLanguageCode: conversation.sourceRawLanguageCode,
                 sourceLanguageConfidence: conversation.sourceLanguageConfidence,
             }),
-        languageSetting: conversationContentSourceMetadataToLanguageSettingOutput({
-            sourceLanguageCode: conversation.sourceLanguageCode,
-            sourceRawLanguageCode: conversation.sourceRawLanguageCode,
-            sourceLanguageConfidence: conversation.sourceLanguageConfidence,
-        }),
+        languageSetting:
+            conversationContentSourceMetadataToLanguageSettingOutput({
+                sourceLanguageCode: conversation.sourceLanguageCode,
+                sourceRawLanguageCode: conversation.sourceRawLanguageCode,
+                sourceLanguageConfidence: conversation.sourceLanguageConfidence,
+            }),
         multilingualSetting: editMultilingualSetting,
         languageSettingsSource: conversation.languageSettingsSource,
         projectLanguageProject,
@@ -391,7 +397,8 @@ export async function updateConversation({
                 isIndexed: conversationTable.isIndexed,
                 participationMode: conversationTable.participationMode,
                 requiresEventTicket: conversationTable.requiresEventTicket,
-                aiLabelingEnabled: polisConversationConfigTable.aiLabelingEnabled,
+                aiLabelingEnabled:
+                    polisConversationConfigTable.aiLabelingEnabled,
                 isClosed: conversationTable.isClosed,
                 currentPreferredOpinionGroupCount:
                     polisConversationConfigTable.preferredOpinionGroupCount,
@@ -437,7 +444,10 @@ export async function updateConversation({
             )
             .leftJoin(
                 polisConversationConfigTable,
-                eq(polisConversationConfigTable.id, conversationTable.polisConfigId),
+                eq(
+                    polisConversationConfigTable.id,
+                    conversationTable.polisConfigId,
+                ),
             )
             .leftJoin(
                 rankingConversationConfigTable,
@@ -473,7 +483,7 @@ export async function updateConversation({
             db: tx,
             userId,
             projectId: conversation.projectId,
-            capability: "conversation_update",
+            capability: "conversation_edit",
         });
         if (!canUpdateConversation) {
             return { success: false, reason: "not_author" } as const;
@@ -510,13 +520,15 @@ export async function updateConversation({
                       conversationId,
                   })) ?? null)
                 : surveyConfig;
-        const surveyLanguageDetectionCorpus = buildSurveyLanguageDetectionCorpus({
-            surveyConfig: effectiveSurveyConfig,
-        });
-        const currentMultilingualSetting = await getConversationMultilingualSetting({
-            db: tx,
-            conversationId,
-        });
+        const surveyLanguageDetectionCorpus =
+            buildSurveyLanguageDetectionCorpus({
+                surveyConfig: effectiveSurveyConfig,
+            });
+        const currentMultilingualSetting =
+            await getConversationMultilingualSetting({
+                db: tx,
+                conversationId,
+            });
         const inheritedProjectLanguageSettings =
             languageSettingsSource === "project_inherited"
                 ? await getProjectLanguageSettings({
@@ -569,25 +581,31 @@ export async function updateConversation({
         let blockSourceLanguageMetadataPromise:
             | Promise<ContentLanguageMetadata>
             | undefined;
-        const getBlockSourceLanguageMetadata = (): Promise<ContentLanguageMetadata> => {
-            blockSourceLanguageMetadataPromise ??= resolveContentLanguageMetadata({
-                text: buildContentBlockLanguageDetectionCorpus({
-                    conversationCorpus: buildConversationLanguageDetectionCorpus({
-                        conversationTitle,
-                        bodyPlainText,
-                    }),
-                    surveyConfig: effectiveSurveyConfig,
-                }),
-                googleText: buildGoogleConversationLanguageDetectionCorpus({
-                    conversationTitle,
-                    bodyPlainText,
-                    supplementalPlainText: surveyLanguageDetectionCorpus,
-                }),
-                googleCloudCredentials,
-                useGoogleLanguageDetection: requestedDynamicTranslationEnabled,
-            });
-            return blockSourceLanguageMetadataPromise;
-        };
+        const getBlockSourceLanguageMetadata =
+            (): Promise<ContentLanguageMetadata> => {
+                blockSourceLanguageMetadataPromise ??=
+                    resolveContentLanguageMetadata({
+                        text: buildContentBlockLanguageDetectionCorpus({
+                            conversationCorpus:
+                                buildConversationLanguageDetectionCorpus({
+                                    conversationTitle,
+                                    bodyPlainText,
+                                }),
+                            surveyConfig: effectiveSurveyConfig,
+                        }),
+                        googleText:
+                            buildGoogleConversationLanguageDetectionCorpus({
+                                conversationTitle,
+                                bodyPlainText,
+                                supplementalPlainText:
+                                    surveyLanguageDetectionCorpus,
+                            }),
+                        googleCloudCredentials,
+                        useGoogleLanguageDetection:
+                            requestedDynamicTranslationEnabled,
+                    });
+                return blockSourceLanguageMetadataPromise;
+            };
 
         if (contentChanged) {
             const premiumFeatures = await getPremiumFeaturesInConversation({
@@ -668,9 +686,11 @@ export async function updateConversation({
             participationMode !== conversation.participationMode ||
             (requiresEventTicket ?? null) !==
                 conversation.requiresEventTicket ||
-            updatedAiLabelingEnabled !== (conversation.aiLabelingEnabled ?? true) ||
+            updatedAiLabelingEnabled !==
+                (conversation.aiLabelingEnabled ?? true) ||
             preferredOpinionGroupCountChanged ||
-            languageSettingsSource !== conversation.currentLanguageSettingsSource;
+            languageSettingsSource !==
+                conversation.currentLanguageSettingsSource;
 
         if (
             preferredOpinionGroupCount !== undefined &&
@@ -755,10 +775,16 @@ export async function updateConversation({
                 .update(polisConversationConfigTable)
                 .set({
                     aiLabelingEnabled: updatedAiLabelingEnabled,
-                    preferredOpinionGroupCount: updatedPreferredOpinionGroupCount,
+                    preferredOpinionGroupCount:
+                        updatedPreferredOpinionGroupCount,
                     updatedAt: now,
                 })
-                .where(eq(polisConversationConfigTable.id, conversation.polisConfigId));
+                .where(
+                    eq(
+                        polisConversationConfigTable.id,
+                        conversation.polisConfigId,
+                    ),
+                );
         }
 
         let surveySources: SurveyQuestionContentSource[] = [];
@@ -777,7 +803,9 @@ export async function updateConversation({
                 sourceLanguageMetadata,
             });
             surveySources = surveyUpdateEffect.currentQuestionSources;
-            if (shouldRecomputeAnalysisForSurveyConfigChange(surveyUpdateEffect)) {
+            if (
+                shouldRecomputeAnalysisForSurveyConfigChange(surveyUpdateEffect)
+            ) {
                 analysisRefreshScheduled =
                     await scheduleConversationAnalysisForSurveyChange({
                         db: tx,
@@ -791,7 +819,9 @@ export async function updateConversation({
             });
         }
 
-        let refreshedSourceLanguageMetadata: ContentLanguageMetadata | undefined;
+        let refreshedSourceLanguageMetadata:
+            | ContentLanguageMetadata
+            | undefined;
         if (
             !contentChanged &&
             requestedDynamicTranslationEnabled &&
@@ -816,12 +846,15 @@ export async function updateConversation({
                     );
             } else {
                 refreshedSourceLanguageMetadata =
-                    await refreshCurrentConversationOwnedContentLanguageMetadata({
-                        db: tx,
-                        conversationId,
-                        googleCloudCredentials,
-                        useGoogleLanguageDetection: requestedDynamicTranslationEnabled,
-                    });
+                    await refreshCurrentConversationOwnedContentLanguageMetadata(
+                        {
+                            db: tx,
+                            conversationId,
+                            googleCloudCredentials,
+                            useGoogleLanguageDetection:
+                                requestedDynamicTranslationEnabled,
+                        },
+                    );
             }
         }
 
@@ -830,7 +863,8 @@ export async function updateConversation({
             (contentChanged || surveyConfig !== undefined
                 ? await getBlockSourceLanguageMetadata()
                 : {
-                      sourceLanguageCode: conversation.currentSourceLanguageCode,
+                      sourceLanguageCode:
+                          conversation.currentSourceLanguageCode,
                       sourceRawLanguageCode:
                           conversation.currentSourceRawLanguageCode,
                       sourceLanguageProvider:
@@ -850,10 +884,11 @@ export async function updateConversation({
             inheritedProjectLanguageSettings === undefined
                 ? getConversationOverrideTranslationTargetLanguagePolicy({
                       multilingualSettings: effectiveMultilingualSetting,
-                      detectedTargetLanguageCode: sourceLanguageToDisplayLanguage({
-                          sourceLanguageCode:
-                              updatedSourceLanguageMetadata.sourceLanguageCode,
-                      }),
+                      detectedTargetLanguageCode:
+                          sourceLanguageToDisplayLanguage({
+                              sourceLanguageCode:
+                                  updatedSourceLanguageMetadata.sourceLanguageCode,
+                          }),
                   })
                 : getProjectTranslationTargetLanguagePolicy({
                       languageSettings: inheritedProjectLanguageSettings,
@@ -862,7 +897,8 @@ export async function updateConversation({
             db: tx,
             conversationId,
             setting: {
-                dynamicTranslationEnabled: targetLanguagePolicy.dynamicTranslationEnabled,
+                dynamicTranslationEnabled:
+                    targetLanguagePolicy.dynamicTranslationEnabled,
                 additionalLanguageCodes:
                     targetLanguagePolicy.effectiveTargetLanguageCodes,
             },
@@ -900,12 +936,14 @@ export async function updateConversation({
             conversationSlugId: data.conversationSlugId,
             projectId: conversation.projectId,
             languageSettingsSource,
-            dynamicTranslationEnabled: targetLanguagePolicy.dynamicTranslationEnabled,
+            dynamicTranslationEnabled:
+                targetLanguagePolicy.dynamicTranslationEnabled,
             contentId: newContentId ?? conversation.currentContentId,
             publicId: newContentPublicId ?? conversation.currentContentPublicId,
             title: conversationTitle,
             body: sanitizedBody ?? null,
-            sourceLanguageCode: updatedSourceLanguageMetadata.sourceLanguageCode,
+            sourceLanguageCode:
+                updatedSourceLanguageMetadata.sourceLanguageCode,
             sourceRawLanguageCode:
                 updatedSourceLanguageMetadata.sourceRawLanguageCode,
             sourceLanguageProvider:

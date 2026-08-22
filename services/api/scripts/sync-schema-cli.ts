@@ -6,7 +6,7 @@
  * Usage:
  *   npx tsx scripts/sync-schema-cli.ts \
  *     --service scoring-worker \
- *     --schema-ts src/shared-backend/schema.ts \
+ *     --schema-ts ../shared-backend/src/schema.ts \
  *     --sql /tmp/agora-schema.sql \
  *     --output ../scoring-worker/src/scoring_worker/generated_models.py
  */

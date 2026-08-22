@@ -38,23 +38,36 @@
       href="icons/favicon-16x16.png"
     />
     <link rel="icon" type="image/ico" href="favicon.ico" />
-    <!-- Privacy-friendly analytics by Plausible -->
-    <script
-      async
-      src="https://plausible.io/js/pa-6dsPzZJSXW55Io0bOSu7E.js"
-    ></script>
-    <script>
-      ((window.plausible =
-        window.plausible ||
-        function () {
-          (plausible.q = plausible.q || []).push(arguments);
-        }),
-        (plausible.init =
-          plausible.init ||
-          function (i) {
-            plausible.o = i || {};
-          }));
-      plausible.init();
+    <script type="module">
+      import { isEmailUpdateRecipientActionPath } from "/src/utils/privacy/emailUpdateRecipientPath";
+
+      if (!isEmailUpdateRecipientActionPath(location.pathname)) {
+        ((window.plausible =
+          window.plausible ||
+          function () {
+            (plausible.q = plausible.q || []).push(arguments);
+          }),
+          (plausible.init =
+            plausible.init ||
+            function (i) {
+              plausible.o = i || {};
+            }));
+        plausible.init({
+          autoCapturePageviews: false,
+          transformRequest(payload) {
+            return isEmailUpdateRecipientActionPath(location.pathname)
+              ? null
+              : payload;
+          },
+        });
+        plausible("pageview");
+
+        const plausibleScript = document.createElement("script");
+        plausibleScript.async = true;
+        plausibleScript.src =
+          "https://plausible.io/js/pa-6dsPzZJSXW55Io0bOSu7E.js";
+        document.head.append(plausibleScript);
+      }
     </script>
   </head>
 

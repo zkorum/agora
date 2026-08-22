@@ -48,10 +48,7 @@
             <q-icon name="mdi-open-in-new" size="1rem" />
           </SpaLink>
           <ul>
-            <li
-              v-for="conversation in conversations"
-              :key="conversation.id"
-            >
+            <li v-for="conversation in conversations" :key="conversation.id">
               <SpaLink
                 :to="conversation.href"
                 class="email-preview__conversation-link"
@@ -72,12 +69,10 @@
 
     <q-card-section class="email-preview__footer">
       <div class="email-preview__preference-links">
-        <span v-if="scopeKind === 'project'">
-          {{ t("unsubscribeFrom", { name: scopeLabel }) }}
+        <span v-if="unsubscribeScopeName !== undefined">
+          {{ t("unsubscribeFrom", { name: unsubscribeScopeName }) }}
         </span>
-        <span v-for="conversation in conversations" :key="conversation.id">
-          {{ t("unsubscribeFrom", { name: conversation.title }) }}
-        </span>
+        <span>{{ t("managePreferences") }}</span>
       </div>
     </q-card-section>
   </q-card>
@@ -95,6 +90,7 @@ import {
   type ConversationUpdateEmailPreviewTranslations,
   conversationUpdateEmailPreviewTranslations,
 } from "./ConversationUpdateEmailPreview.i18n";
+import { getConversationUpdateUnsubscribeScopeName } from "./conversationUpdateLogic";
 
 const props = defineProps<{
   subject: string;
@@ -113,6 +109,13 @@ const { t } = useComponentI18n<ConversationUpdateEmailPreviewTranslations>(
 
 const formattedAudience = computed(() =>
   new Intl.NumberFormat().format(props.audienceEstimate)
+);
+const unsubscribeScopeName = computed(() =>
+  getConversationUpdateUnsubscribeScopeName({
+    scopeKind: props.scopeKind,
+    scopeLabel: props.scopeLabel,
+    conversations: props.conversations,
+  })
 );
 </script>
 

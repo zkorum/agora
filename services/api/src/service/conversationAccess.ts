@@ -23,7 +23,7 @@ export async function getConversationViewAccessLevelForConversation({
         db,
         userId,
         projectId,
-        capability: "conversation_update",
+        capability: "conversation_edit",
     });
     return canUpdateConversation ? "owner" : "public";
 }

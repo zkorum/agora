@@ -366,6 +366,8 @@ function getFeatureLabel(value: PremiumFeature): string {
       return t("analysisVariantsFeature");
     case "dynamic_translation":
       return t("dynamicTranslationFeature");
+    case "conversation_email_update":
+      return t("conversationEmailUpdateFeature");
   }
 }
 

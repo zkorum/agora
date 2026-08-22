@@ -1,0 +1,3916 @@
+import {
+    and,
+    countDistinct,
+    desc,
+    eq,
+    exists,
+    gt,
+    gte,
+    inArray,
+    isNotNull,
+    isNull,
+    lte,
+    ne,
+    notExists,
+    or,
+} from "drizzle-orm";
+import { union } from "drizzle-orm/pg-core";
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { getPrimaryDatabase } from "@/shared-backend/db.js";
+import {
+    conversationEmailUpdateConversationTable,
+    conversationEmailUpdateDeliveryTable,
+    conversationEmailUpdateEmailSuppressionTable,
+    conversationEmailUpdateRecipientConversationTable,
+    conversationEmailUpdateRecipientTable,
+    conversationEmailUpdateScopeSafetyBlockTable,
+    conversationEmailUpdateTable,
+    conversationEmailUpdateTestAttemptTable,
+    conversationEmailUpdateUserComplaintSuppressionTable,
+    conversationEmailUpdateUserConversationPreferenceTable,
+    conversationEmailUpdateUserGlobalSettingTable,
+    conversationEmailUpdateUserProjectPreferenceTable,
+    conversationContentTable,
+    conversationTable,
+    emailTable,
+    maxdiffComparisonTable,
+    maxdiffResultTable,
+    opinionTable,
+    organizationMembershipAllProjectCapabilityTable,
+    organizationMembershipTable,
+    organizationTable,
+    premiumFeatureEntitlementTable,
+    projectContactTable,
+    projectOrganizationOwnershipTable,
+    projectTable,
+    userDisplayLanguageTable,
+    userTable,
+    voteContentTable,
+    voteTable,
+} from "@/shared-backend/schema.js";
+import type {
+    ConversationEmailUpdateAudienceEstimateRequest,
+    ConversationEmailUpdateAudienceEstimateResponse,
+    ConversationEmailUpdateConfigurationRequest,
+    ConversationEmailUpdateConfigurationResponse,
+    ConversationEmailUpdateConfigurationUpdateRequest,
+    ConversationEmailUpdateConfigurationUpdateResponse,
+    ConversationEmailUpdateConversationSummaryRequest,
+    ConversationEmailUpdateConversationSummaryResponse,
+    ConversationEmailUpdateHistoryDetailRequest,
+    ConversationEmailUpdateHistoryDetailResponse,
+    ConversationEmailUpdateHistoryListRequest,
+    ConversationEmailUpdateHistoryListResponse,
+    ConversationEmailUpdateHistoryRecord,
+    ConversationEmailUpdateHistorySummary,
+    ConversationEmailUpdatePreferenceGroup,
+    ConversationEmailUpdatePreferenceUpdateRequest,
+    ConversationEmailUpdatePreferenceUpdateResponse,
+    ConversationEmailUpdatePreferencesRequest,
+    ConversationEmailUpdatePreferencesResponse,
+    ConversationEmailUpdateScope,
+    ConversationEmailUpdateSelection,
+    ConversationEmailUpdateSendRequest,
+    ConversationEmailUpdateSendResponse,
+    ConversationEmailUpdateSendTestRequest,
+    ConversationEmailUpdateSendTestResponse,
+    ConversationEmailUpdateTestStatusRequest,
+    ConversationEmailUpdateTestStatusResponse,
+    ConversationEmailUpdateWorkspaceRequest,
+    ConversationEmailUpdateWorkspaceResponse,
+} from "@/shared/types/dto.js";
+import {
+    decideConversationEmailFinalSend,
+    decideConversationEmailTestRateLimit,
+    resolveConversationEmailOnboardingAction,
+    resolveConversationEmailPreference,
+    resolveConversationEmailSendingAvailability,
+} from "./conversationEmailUpdatePolicy.js";
+import { normalizeUserRichTextInput } from "./richText.js";
+
+const NO_PROJECT_TITLE = "No Project";
+
+interface AuthenticatedRequest<Request> {
+    userId: string;
+    request: Request;
+}
+
+export interface ConversationEmailUpdateService {
+    getWorkspace: (
+        params: AuthenticatedRequest<ConversationEmailUpdateWorkspaceRequest>,
+    ) => Promise<ConversationEmailUpdateWorkspaceResponse>;
+    listHistory: (
+        params: AuthenticatedRequest<ConversationEmailUpdateHistoryListRequest>,
+    ) => Promise<ConversationEmailUpdateHistoryListResponse>;
+    getHistoryDetail: (
+        params: AuthenticatedRequest<ConversationEmailUpdateHistoryDetailRequest>,
+    ) => Promise<ConversationEmailUpdateHistoryDetailResponse>;
+    estimateAudience: (
+        params: AuthenticatedRequest<ConversationEmailUpdateAudienceEstimateRequest>,
+    ) => Promise<ConversationEmailUpdateAudienceEstimateResponse>;
+    sendTest: (
+        params: AuthenticatedRequest<ConversationEmailUpdateSendTestRequest>,
+    ) => Promise<ConversationEmailUpdateSendTestResponse>;
+    getTestStatus: (
+        params: AuthenticatedRequest<ConversationEmailUpdateTestStatusRequest>,
+    ) => Promise<ConversationEmailUpdateTestStatusResponse>;
+    send: (
+        params: AuthenticatedRequest<ConversationEmailUpdateSendRequest>,
+    ) => Promise<ConversationEmailUpdateSendResponse>;
+    getPreferences: (
+        params: AuthenticatedRequest<ConversationEmailUpdatePreferencesRequest>,
+    ) => Promise<ConversationEmailUpdatePreferencesResponse>;
+    updatePreference: (
+        params: AuthenticatedRequest<ConversationEmailUpdatePreferenceUpdateRequest>,
+    ) => Promise<ConversationEmailUpdatePreferenceUpdateResponse>;
+    getConfiguration: (
+        params: AuthenticatedRequest<ConversationEmailUpdateConfigurationRequest>,
+    ) => Promise<ConversationEmailUpdateConfigurationResponse>;
+    updateConfiguration: (
+        params: AuthenticatedRequest<ConversationEmailUpdateConfigurationUpdateRequest>,
+    ) => Promise<ConversationEmailUpdateConfigurationUpdateResponse>;
+    getConversationSummary: (
+        params: AuthenticatedRequest<ConversationEmailUpdateConversationSummaryRequest>,
+    ) => Promise<ConversationEmailUpdateConversationSummaryResponse>;
+}
+
+type AuthorizedConversationDao = Awaited<
+    ReturnType<typeof listAuthorizedConversations>
+>[number];
+type PreferenceProjectDao = Awaited<
+    ReturnType<typeof queryPreferenceProjects>
+>[number];
+type PreferenceConversationDao = Awaited<
+    ReturnType<typeof queryPreferenceConversations>
+>[number];
+type HistoryDao = Awaited<ReturnType<typeof loadHistoryRows>>[number];
+type HistoryConversationDao = Awaited<
+    ReturnType<typeof loadHistoryConversations>
+>[number];
+type ConfigurationProjectDao = Awaited<
+    ReturnType<typeof queryProjectConfigurationRows>
+>[number];
+type ConfigurationConversationDao = Awaited<
+    ReturnType<typeof queryConversationConfigurationRows>
+>[number];
+type DisplayLanguage =
+    (typeof userDisplayLanguageTable.$inferSelect)["languageCode"];
+
+export interface RequiredOwnerSnapshot {
+    userId: string;
+    emailCredentialId: number;
+    email: string;
+    displayLanguage: DisplayLanguage;
+}
+
+export function resolveCompleteOwnerSnapshots({
+    requiredOwnerUserIds,
+    candidates,
+}: {
+    requiredOwnerUserIds: readonly string[];
+    candidates: readonly RequiredOwnerSnapshot[];
+}): RequiredOwnerSnapshot[] | undefined {
+    const requiredIds = [...new Set(requiredOwnerUserIds)];
+    const candidateByUserId = new Map<string, RequiredOwnerSnapshot>();
+    for (const candidate of candidates) {
+        if (candidateByUserId.has(candidate.userId)) return undefined;
+        candidateByUserId.set(candidate.userId, candidate);
+    }
+    const snapshots = requiredIds.flatMap((userId) => {
+        const candidate = candidateByUserId.get(userId);
+        return candidate === undefined ? [] : [candidate];
+    });
+    return snapshots.length === requiredIds.length ? snapshots : undefined;
+}
+
+interface BuildPreferenceGroupsParams {
+    globalPaused: boolean;
+    projectRows: readonly PreferenceProjectDao[];
+    conversationRows: readonly PreferenceConversationDao[];
+}
+
+export function buildConversationEmailPreferenceGroups({
+    globalPaused,
+    projectRows,
+    conversationRows,
+}: BuildPreferenceGroupsParams): ConversationEmailUpdatePreferenceGroup[] {
+    const projectById = new Map(
+        projectRows.map((row) => [row.project_id, row]),
+    );
+    const conversationByProject = new Map<
+        number,
+        PreferenceConversationDao[]
+    >();
+    const noProjectRows: PreferenceConversationDao[] = [];
+    for (const row of conversationRows) {
+        if (row.scope_kind === "no_project") {
+            noProjectRows.push(row);
+            continue;
+        }
+        const rows = conversationByProject.get(row.project_id) ?? [];
+        rows.push(row);
+        conversationByProject.set(row.project_id, rows);
+    }
+
+    const projectIds = new Set([
+        ...projectRows.map((row) => row.project_id),
+        ...conversationByProject.keys(),
+    ]);
+    const groups: ConversationEmailUpdatePreferenceGroup[] = [];
+    for (const projectId of [...projectIds].sort(
+        (left, right) => left - right,
+    )) {
+        const project = projectById.get(projectId);
+        const children = conversationByProject.get(projectId) ?? [];
+        const firstChild = children.at(0);
+        if (project === undefined && firstChild === undefined) continue;
+        const projectEnabled = project?.enabled;
+        groups.push({
+            kind: "project",
+            projectSlug:
+                project?.project_slug ?? firstChild?.project_slug ?? "",
+            projectTitle:
+                project?.project_title ?? firstChild?.project_title ?? "",
+            state:
+                projectEnabled === undefined
+                    ? "undisclosed"
+                    : projectEnabled
+                      ? "enabled"
+                      : "disabled",
+            resolvedEnabled: !globalPaused && projectEnabled === true,
+            availability:
+                (project?.available ??
+                children.some((conversation) => conversation.available))
+                    ? "available"
+                    : "temporarily_unavailable",
+            conversations: children
+                .sort((left, right) =>
+                    left.conversation_title.localeCompare(
+                        right.conversation_title,
+                    ),
+                )
+                .map((row) => ({
+                    conversationSlugId: row.conversation_slug_id,
+                    conversationTitle: row.conversation_title,
+                    state: row.enabled ? "enabled" : "disabled",
+                    resolvedEnabled: resolveConversationEmailPreference({
+                        globalPaused,
+                        projectEnabled,
+                        conversationEnabled: row.enabled,
+                        scopeKind: "project",
+                    }),
+                    availability: row.available
+                        ? "available"
+                        : "temporarily_unavailable",
+                })),
+        });
+    }
+    if (noProjectRows.length > 0) {
+        groups.push({
+            kind: "no_project",
+            availability: noProjectRows.some((row) => row.available)
+                ? "available"
+                : "temporarily_unavailable",
+            conversations: noProjectRows
+                .sort((left, right) =>
+                    left.conversation_title.localeCompare(
+                        right.conversation_title,
+                    ),
+                )
+                .map((row) => ({
+                    conversationSlugId: row.conversation_slug_id,
+                    conversationTitle: row.conversation_title,
+                    state: row.enabled ? "enabled" : "disabled",
+                    resolvedEnabled: resolveConversationEmailPreference({
+                        globalPaused,
+                        projectEnabled: undefined,
+                        conversationEnabled: row.enabled,
+                        scopeKind: "no_project",
+                    }),
+                    availability: row.available
+                        ? "available"
+                        : "temporarily_unavailable",
+                })),
+        });
+    }
+    return groups;
+}
+
+function isUniqueViolation(error: unknown): boolean {
+    return (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "23505"
+    );
+}
+
+function normalizeContactEmail(email: string | null): string | undefined {
+    const normalized = email?.trim().toLowerCase();
+    return normalized === undefined || normalized === ""
+        ? undefined
+        : normalized;
+}
+
+function getProjectScopeKind(
+    autoProvisionedForOrganizationId: number | null,
+): "project" | "no_project" {
+    return autoProvisionedForOrganizationId === null ? "project" : "no_project";
+}
+
+async function getPrimaryEmail({
+    db,
+    userId,
+}: {
+    db: PostgresJsDatabase;
+    userId: string;
+}) {
+    const rows = await db
+        .select({ credential_id: emailTable.id, email: emailTable.email })
+        .from(emailTable)
+        .innerJoin(
+            userTable,
+            and(
+                eq(userTable.id, emailTable.userId),
+                eq(userTable.isDeleted, false),
+            ),
+        )
+        .where(
+            and(
+                eq(emailTable.userId, userId),
+                eq(emailTable.type, "primary"),
+                eq(emailTable.isDeleted, false),
+            ),
+        )
+        .limit(1);
+    return rows.at(0);
+}
+
+async function listAuthorizedConversations({
+    db,
+    userId,
+    now,
+}: {
+    db: PostgresJsDatabase;
+    userId: string;
+    now: Date;
+}) {
+    const authorizedProject = db
+        .selectDistinctOn([projectTable.id], {
+            projectId: projectTable.id,
+            organizationId: projectOrganizationOwnershipTable.organizationId,
+            entitlementId: premiumFeatureEntitlementTable.id,
+        })
+        .from(projectTable)
+        .innerJoin(
+            projectOrganizationOwnershipTable,
+            and(
+                eq(
+                    projectOrganizationOwnershipTable.projectId,
+                    projectTable.id,
+                ),
+                isNull(projectOrganizationOwnershipTable.deletedAt),
+            ),
+        )
+        .innerJoin(
+            organizationTable,
+            and(
+                eq(
+                    organizationTable.id,
+                    projectOrganizationOwnershipTable.organizationId,
+                ),
+                isNull(organizationTable.deletedAt),
+            ),
+        )
+        .innerJoin(
+            organizationMembershipTable,
+            and(
+                eq(
+                    organizationMembershipTable.organizationId,
+                    projectOrganizationOwnershipTable.organizationId,
+                ),
+                eq(organizationMembershipTable.userId, userId),
+                isNull(organizationMembershipTable.deletedAt),
+            ),
+        )
+        .innerJoin(
+            userTable,
+            and(
+                eq(userTable.id, organizationMembershipTable.userId),
+                eq(userTable.isDeleted, false),
+            ),
+        )
+        .innerJoin(
+            organizationMembershipAllProjectCapabilityTable,
+            and(
+                eq(
+                    organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
+                    organizationMembershipTable.id,
+                ),
+                eq(
+                    organizationMembershipAllProjectCapabilityTable.capability,
+                    "conversation_email_update",
+                ),
+            ),
+        )
+        .innerJoin(
+            premiumFeatureEntitlementTable,
+            and(
+                eq(
+                    premiumFeatureEntitlementTable.organizationId,
+                    projectOrganizationOwnershipTable.organizationId,
+                ),
+                eq(
+                    premiumFeatureEntitlementTable.feature,
+                    "conversation_email_update",
+                ),
+                lte(premiumFeatureEntitlementTable.startsAt, now),
+                isNull(premiumFeatureEntitlementTable.revokedAt),
+                or(
+                    isNull(premiumFeatureEntitlementTable.expiresAt),
+                    gt(premiumFeatureEntitlementTable.expiresAt, now),
+                ),
+            ),
+        )
+        .where(isNull(projectTable.deletedAt))
+        .orderBy(
+            projectTable.id,
+            projectOrganizationOwnershipTable.organizationId,
+            premiumFeatureEntitlementTable.id,
+        )
+        .as("authorized_project");
+
+    const rows = await db
+        .select({
+            project_id: projectTable.id,
+            project_slug: projectTable.slug,
+            project_title: projectTable.title,
+            auto_provisioned_for_organization_id:
+                projectTable.autoProvisionedForOrganizationId,
+            project_default_enabled:
+                projectTable.conversationEmailUpdateDefaultEnabled,
+            conversation_id: conversationTable.id,
+            conversation_slug_id: conversationTable.slugId,
+            conversation_title: conversationContentTable.title,
+            participation_mode: conversationTable.participationMode,
+            conversation_override:
+                conversationTable.conversationEmailUpdateEnabledOverride,
+            contact_first_name: projectContactTable.firstName,
+            contact_last_name: projectContactTable.lastName,
+            contact_email: projectContactTable.email,
+            authorizing_organization_id: authorizedProject.organizationId,
+            authorizing_entitlement_id: authorizedProject.entitlementId,
+            safety_blocked: exists(
+                db
+                    .select({
+                        id: conversationEmailUpdateScopeSafetyBlockTable.id,
+                    })
+                    .from(conversationEmailUpdateScopeSafetyBlockTable)
+                    .where(
+                        and(
+                            isNull(
+                                conversationEmailUpdateScopeSafetyBlockTable.liftedAt,
+                            ),
+                            or(
+                                and(
+                                    eq(
+                                        conversationEmailUpdateScopeSafetyBlockTable.targetKind,
+                                        "organization",
+                                    ),
+                                    eq(
+                                        conversationEmailUpdateScopeSafetyBlockTable.organizationId,
+                                        authorizedProject.organizationId,
+                                    ),
+                                ),
+                                and(
+                                    eq(
+                                        conversationEmailUpdateScopeSafetyBlockTable.targetKind,
+                                        "project",
+                                    ),
+                                    eq(
+                                        conversationEmailUpdateScopeSafetyBlockTable.projectId,
+                                        projectTable.id,
+                                    ),
+                                ),
+                                and(
+                                    eq(
+                                        conversationEmailUpdateScopeSafetyBlockTable.targetKind,
+                                        "conversation",
+                                    ),
+                                    eq(
+                                        conversationEmailUpdateScopeSafetyBlockTable.conversationId,
+                                        conversationTable.id,
+                                    ),
+                                ),
+                                and(
+                                    eq(
+                                        conversationEmailUpdateScopeSafetyBlockTable.targetKind,
+                                        "facilitator",
+                                    ),
+                                    eq(
+                                        conversationEmailUpdateScopeSafetyBlockTable.facilitatorUserId,
+                                        userId,
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ),
+            ),
+        })
+        .from(authorizedProject)
+        .innerJoin(
+            projectTable,
+            eq(projectTable.id, authorizedProject.projectId),
+        )
+        .innerJoin(
+            conversationTable,
+            and(
+                eq(conversationTable.projectId, projectTable.id),
+                isNotNull(conversationTable.currentContentId),
+            ),
+        )
+        .innerJoin(
+            conversationContentTable,
+            eq(conversationContentTable.id, conversationTable.currentContentId),
+        )
+        .leftJoin(
+            projectContactTable,
+            and(
+                eq(projectContactTable.projectId, projectTable.id),
+                isNull(projectContactTable.deletedAt),
+            ),
+        )
+        .where(
+            or(
+                isNotNull(projectTable.autoProvisionedForOrganizationId),
+                eq(projectTable.directoryVisibility, "listed"),
+            ),
+        )
+        .orderBy(projectTable.slug, conversationTable.slugId);
+
+    return rows.map((row) => {
+        const contactName =
+            `${row.contact_first_name ?? ""} ${row.contact_last_name ?? ""}`.trim();
+        return {
+            project_id: row.project_id,
+            project_slug: row.project_slug,
+            project_title: row.project_title,
+            scope_kind: getProjectScopeKind(
+                row.auto_provisioned_for_organization_id,
+            ),
+            project_default_enabled: row.project_default_enabled,
+            conversation_id: row.conversation_id,
+            conversation_slug_id: row.conversation_slug_id,
+            conversation_title: row.conversation_title,
+            participation_mode: row.participation_mode,
+            conversation_override: row.conversation_override,
+            contact_name: contactName === "" ? null : contactName,
+            contact_email: row.contact_email,
+            authorizing_organization_id: row.authorizing_organization_id,
+            authorizing_entitlement_id: row.authorizing_entitlement_id,
+            safety_blocked: row.safety_blocked === true,
+        };
+    });
+}
+
+async function listHistoryVisibleProjects({
+    db,
+    userId,
+}: {
+    db: PostgresJsDatabase;
+    userId: string;
+}) {
+    const rows = await db
+        .selectDistinctOn([projectTable.id], {
+            project_id: projectTable.id,
+            project_slug: projectTable.slug,
+            auto_provisioned_for_organization_id:
+                projectTable.autoProvisionedForOrganizationId,
+        })
+        .from(projectTable)
+        .innerJoin(
+            projectOrganizationOwnershipTable,
+            and(
+                eq(
+                    projectOrganizationOwnershipTable.projectId,
+                    projectTable.id,
+                ),
+                isNull(projectOrganizationOwnershipTable.deletedAt),
+            ),
+        )
+        .innerJoin(
+            organizationTable,
+            and(
+                eq(
+                    organizationTable.id,
+                    projectOrganizationOwnershipTable.organizationId,
+                ),
+                isNull(organizationTable.deletedAt),
+            ),
+        )
+        .innerJoin(
+            organizationMembershipTable,
+            and(
+                eq(
+                    organizationMembershipTable.organizationId,
+                    projectOrganizationOwnershipTable.organizationId,
+                ),
+                eq(organizationMembershipTable.userId, userId),
+                isNull(organizationMembershipTable.deletedAt),
+            ),
+        )
+        .innerJoin(
+            userTable,
+            and(
+                eq(userTable.id, organizationMembershipTable.userId),
+                eq(userTable.isDeleted, false),
+            ),
+        )
+        .innerJoin(
+            organizationMembershipAllProjectCapabilityTable,
+            and(
+                eq(
+                    organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
+                    organizationMembershipTable.id,
+                ),
+                eq(
+                    organizationMembershipAllProjectCapabilityTable.capability,
+                    "conversation_email_update",
+                ),
+            ),
+        )
+        .where(
+            and(
+                isNull(projectTable.deletedAt),
+                or(
+                    isNotNull(projectTable.autoProvisionedForOrganizationId),
+                    eq(projectTable.directoryVisibility, "listed"),
+                ),
+            ),
+        )
+        .orderBy(
+            projectTable.id,
+            projectOrganizationOwnershipTable.organizationId,
+        );
+    return rows.map((row) => ({
+        project_id: row.project_id,
+        project_slug: row.project_slug,
+        scope_kind: getProjectScopeKind(
+            row.auto_provisioned_for_organization_id,
+        ),
+    }));
+}
+
+function isSendingEnabled({
+    row,
+    operationallyEnabled,
+}: {
+    row: AuthorizedConversationDao;
+    operationallyEnabled: boolean;
+}): boolean {
+    return resolveConversationEmailSendingAvailability({
+        operationallyEnabled,
+        featureAvailable: true,
+        safetyBlocked: row.safety_blocked,
+        configuredEnabled:
+            row.conversation_override ?? row.project_default_enabled,
+        hasParticipantContactEmail:
+            normalizeContactEmail(row.contact_email) !== undefined,
+    }).available;
+}
+
+interface ResolvedSelection {
+    project: AuthorizedConversationDao;
+    conversations: AuthorizedConversationDao[];
+}
+
+type ResolveSelectionResult =
+    | { success: true; value: ResolvedSelection }
+    | {
+          success: false;
+          reason: "scope_not_found" | "conversation_not_in_scope";
+      };
+
+function resolveSelection({
+    rows,
+    selection,
+}: {
+    rows: readonly AuthorizedConversationDao[];
+    selection: ConversationEmailUpdateSelection;
+}): ResolveSelectionResult {
+    if (selection.kind === "project") {
+        const scopeRows = rows.filter(
+            (row) =>
+                row.scope_kind === "project" &&
+                row.project_slug === selection.projectSlug,
+        );
+        const project = scopeRows.at(0);
+        if (project === undefined) {
+            return { success: false, reason: "scope_not_found" };
+        }
+        const requestedIds = new Set(selection.conversationSlugIds);
+        const conversations = scopeRows.filter((row) =>
+            requestedIds.has(row.conversation_slug_id),
+        );
+        if (
+            requestedIds.size !== selection.conversationSlugIds.length ||
+            conversations.length !== requestedIds.size
+        ) {
+            return { success: false, reason: "conversation_not_in_scope" };
+        }
+        return { success: true, value: { project, conversations } };
+    }
+    const conversation = rows.find(
+        (row) =>
+            row.scope_kind === "no_project" &&
+            row.conversation_slug_id === selection.conversationSlugId,
+    );
+    return conversation === undefined
+        ? { success: false, reason: "conversation_not_in_scope" }
+        : {
+              success: true,
+              value: { project: conversation, conversations: [conversation] },
+          };
+}
+
+async function countEligibleAudience({
+    db,
+    selection,
+    cutoffAt,
+}: {
+    db: PostgresJsDatabase;
+    selection: ResolvedSelection;
+    cutoffAt: Date;
+}): Promise<number> {
+    const conversationIds = selection.conversations.map(
+        (row) => row.conversation_id,
+    );
+    const voteParticipation = db
+        .select({
+            userId: voteTable.authorId,
+            conversationId: opinionTable.conversationId,
+        })
+        .from(voteContentTable)
+        .innerJoin(voteTable, eq(voteTable.id, voteContentTable.voteId))
+        .innerJoin(opinionTable, eq(opinionTable.id, voteTable.opinionId))
+        .where(
+            and(
+                inArray(opinionTable.conversationId, conversationIds),
+                lte(voteContentTable.createdAt, cutoffAt),
+            ),
+        );
+    const maxdiffParticipation = db
+        .select({
+            userId: maxdiffResultTable.participantId,
+            conversationId: maxdiffResultTable.conversationId,
+        })
+        .from(maxdiffComparisonTable)
+        .innerJoin(
+            maxdiffResultTable,
+            eq(maxdiffResultTable.id, maxdiffComparisonTable.maxdiffResultId),
+        )
+        .where(
+            and(
+                inArray(maxdiffResultTable.conversationId, conversationIds),
+                lte(maxdiffComparisonTable.createdAt, cutoffAt),
+            ),
+        );
+    const participation = union(voteParticipation, maxdiffParticipation).as(
+        "participation",
+    );
+    const preferenceCondition =
+        selection.project.scope_kind === "project"
+            ? and(
+                  eq(
+                      conversationEmailUpdateUserProjectPreferenceTable.enabled,
+                      true,
+                  ),
+                  or(
+                      isNull(
+                          conversationEmailUpdateUserConversationPreferenceTable.enabled,
+                      ),
+                      ne(
+                          conversationEmailUpdateUserConversationPreferenceTable.enabled,
+                          false,
+                      ),
+                  ),
+              )
+            : eq(
+                  conversationEmailUpdateUserConversationPreferenceTable.enabled,
+                  true,
+              );
+    const rows = await db
+        .select({ eligible_count: countDistinct(participation.userId) })
+        .from(participation)
+        .innerJoin(
+            userTable,
+            and(
+                eq(userTable.id, participation.userId),
+                eq(userTable.isDeleted, false),
+            ),
+        )
+        .innerJoin(
+            emailTable,
+            and(
+                eq(emailTable.userId, participation.userId),
+                eq(emailTable.type, "primary"),
+                eq(emailTable.isDeleted, false),
+            ),
+        )
+        .leftJoin(
+            conversationEmailUpdateUserGlobalSettingTable,
+            eq(
+                conversationEmailUpdateUserGlobalSettingTable.userId,
+                participation.userId,
+            ),
+        )
+        .leftJoin(
+            conversationEmailUpdateUserProjectPreferenceTable,
+            and(
+                eq(
+                    conversationEmailUpdateUserProjectPreferenceTable.userId,
+                    participation.userId,
+                ),
+                eq(
+                    conversationEmailUpdateUserProjectPreferenceTable.projectId,
+                    selection.project.project_id,
+                ),
+            ),
+        )
+        .leftJoin(
+            conversationEmailUpdateUserConversationPreferenceTable,
+            and(
+                eq(
+                    conversationEmailUpdateUserConversationPreferenceTable.userId,
+                    participation.userId,
+                ),
+                eq(
+                    conversationEmailUpdateUserConversationPreferenceTable.conversationId,
+                    participation.conversationId,
+                ),
+            ),
+        )
+        .where(
+            and(
+                isNull(conversationEmailUpdateUserGlobalSettingTable.pausedAt),
+                notExists(
+                    db
+                        .select({
+                            id: conversationEmailUpdateUserComplaintSuppressionTable.id,
+                        })
+                        .from(
+                            conversationEmailUpdateUserComplaintSuppressionTable,
+                        )
+                        .where(
+                            and(
+                                eq(
+                                    conversationEmailUpdateUserComplaintSuppressionTable.userId,
+                                    participation.userId,
+                                ),
+                                isNull(
+                                    conversationEmailUpdateUserComplaintSuppressionTable.liftedAt,
+                                ),
+                            ),
+                        ),
+                ),
+                notExists(
+                    db
+                        .select({
+                            id: conversationEmailUpdateEmailSuppressionTable.id,
+                        })
+                        .from(conversationEmailUpdateEmailSuppressionTable)
+                        .where(
+                            and(
+                                eq(
+                                    conversationEmailUpdateEmailSuppressionTable.canonicalEmail,
+                                    emailTable.email,
+                                ),
+                                isNull(
+                                    conversationEmailUpdateEmailSuppressionTable.liftedAt,
+                                ),
+                            ),
+                        ),
+                ),
+                preferenceCondition,
+            ),
+        );
+    return rows.at(0)?.eligible_count ?? 0;
+}
+
+async function countOwnerCopies({
+    db,
+    projectId,
+}: {
+    db: PostgresJsDatabase;
+    projectId: number;
+}): Promise<number> {
+    const rows = await db
+        .select({
+            owner_count: countDistinct(organizationMembershipTable.userId),
+        })
+        .from(organizationMembershipTable)
+        .innerJoin(
+            projectOrganizationOwnershipTable,
+            and(
+                eq(
+                    projectOrganizationOwnershipTable.organizationId,
+                    organizationMembershipTable.organizationId,
+                ),
+                eq(projectOrganizationOwnershipTable.projectId, projectId),
+                isNull(projectOrganizationOwnershipTable.deletedAt),
+            ),
+        )
+        .innerJoin(
+            organizationTable,
+            and(
+                eq(
+                    organizationTable.id,
+                    organizationMembershipTable.organizationId,
+                ),
+                isNull(organizationTable.deletedAt),
+            ),
+        )
+        .innerJoin(
+            organizationMembershipAllProjectCapabilityTable,
+            and(
+                eq(
+                    organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
+                    organizationMembershipTable.id,
+                ),
+                eq(
+                    organizationMembershipAllProjectCapabilityTable.capability,
+                    "conversation_email_update",
+                ),
+            ),
+        )
+        .innerJoin(
+            userTable,
+            and(
+                eq(userTable.id, organizationMembershipTable.userId),
+                eq(userTable.isDeleted, false),
+            ),
+        )
+        .innerJoin(
+            emailTable,
+            and(
+                eq(emailTable.userId, organizationMembershipTable.userId),
+                eq(emailTable.type, "primary"),
+                eq(emailTable.isDeleted, false),
+            ),
+        )
+        .where(
+            and(
+                isNull(organizationMembershipTable.deletedAt),
+                notExists(
+                    db
+                        .select({
+                            id: conversationEmailUpdateUserComplaintSuppressionTable.id,
+                        })
+                        .from(
+                            conversationEmailUpdateUserComplaintSuppressionTable,
+                        )
+                        .where(
+                            and(
+                                eq(
+                                    conversationEmailUpdateUserComplaintSuppressionTable.userId,
+                                    organizationMembershipTable.userId,
+                                ),
+                                isNull(
+                                    conversationEmailUpdateUserComplaintSuppressionTable.liftedAt,
+                                ),
+                            ),
+                        ),
+                ),
+                notExists(
+                    db
+                        .select({
+                            id: conversationEmailUpdateEmailSuppressionTable.id,
+                        })
+                        .from(conversationEmailUpdateEmailSuppressionTable)
+                        .where(
+                            and(
+                                eq(
+                                    conversationEmailUpdateEmailSuppressionTable.canonicalEmail,
+                                    emailTable.email,
+                                ),
+                                isNull(
+                                    conversationEmailUpdateEmailSuppressionTable.liftedAt,
+                                ),
+                            ),
+                        ),
+                ),
+            ),
+        );
+    return rows.at(0)?.owner_count ?? 0;
+}
+
+async function resolveRequiredOwnerCopies({
+    db,
+    projectId,
+    conversationIds,
+    facilitatorUserId,
+}: {
+    db: PostgresJsDatabase;
+    projectId: number;
+    conversationIds: readonly number[];
+    facilitatorUserId: string;
+}): Promise<RequiredOwnerSnapshot[] | undefined> {
+    const ownerships = await db
+        .select({
+            organizationId: projectOrganizationOwnershipTable.organizationId,
+        })
+        .from(projectOrganizationOwnershipTable)
+        .innerJoin(
+            organizationTable,
+            and(
+                eq(
+                    organizationTable.id,
+                    projectOrganizationOwnershipTable.organizationId,
+                ),
+                isNull(organizationTable.deletedAt),
+            ),
+        )
+        .where(
+            and(
+                eq(projectOrganizationOwnershipTable.projectId, projectId),
+                isNull(projectOrganizationOwnershipTable.deletedAt),
+            ),
+        )
+        .orderBy(projectOrganizationOwnershipTable.organizationId)
+        .for("update", { of: projectOrganizationOwnershipTable });
+    const organizationIds = ownerships.map((row) => row.organizationId);
+    if (organizationIds.length === 0) return undefined;
+
+    const activeSafetyBlocks = await db
+        .select({ id: conversationEmailUpdateScopeSafetyBlockTable.id })
+        .from(conversationEmailUpdateScopeSafetyBlockTable)
+        .where(
+            and(
+                isNull(conversationEmailUpdateScopeSafetyBlockTable.liftedAt),
+                or(
+                    and(
+                        eq(
+                            conversationEmailUpdateScopeSafetyBlockTable.targetKind,
+                            "organization",
+                        ),
+                        inArray(
+                            conversationEmailUpdateScopeSafetyBlockTable.organizationId,
+                            organizationIds,
+                        ),
+                    ),
+                    and(
+                        eq(
+                            conversationEmailUpdateScopeSafetyBlockTable.targetKind,
+                            "project",
+                        ),
+                        eq(
+                            conversationEmailUpdateScopeSafetyBlockTable.projectId,
+                            projectId,
+                        ),
+                    ),
+                    and(
+                        eq(
+                            conversationEmailUpdateScopeSafetyBlockTable.targetKind,
+                            "conversation",
+                        ),
+                        inArray(
+                            conversationEmailUpdateScopeSafetyBlockTable.conversationId,
+                            conversationIds,
+                        ),
+                    ),
+                    and(
+                        eq(
+                            conversationEmailUpdateScopeSafetyBlockTable.targetKind,
+                            "facilitator",
+                        ),
+                        eq(
+                            conversationEmailUpdateScopeSafetyBlockTable.facilitatorUserId,
+                            facilitatorUserId,
+                        ),
+                    ),
+                ),
+            ),
+        )
+        .limit(1);
+    if (activeSafetyBlocks.length > 0) return undefined;
+
+    const memberships = await db
+        .select({
+            userId: organizationMembershipTable.userId,
+        })
+        .from(organizationMembershipTable)
+        .innerJoin(
+            organizationMembershipAllProjectCapabilityTable,
+            and(
+                eq(
+                    organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
+                    organizationMembershipTable.id,
+                ),
+                eq(
+                    organizationMembershipAllProjectCapabilityTable.capability,
+                    "conversation_email_update",
+                ),
+            ),
+        )
+        .where(
+            and(
+                inArray(
+                    organizationMembershipTable.organizationId,
+                    organizationIds,
+                ),
+                isNull(organizationMembershipTable.deletedAt),
+            ),
+        )
+        .orderBy(organizationMembershipTable.id)
+        .for("update", { of: organizationMembershipTable });
+    const requiredOwnerUserIds = [
+        ...new Set(memberships.map((row) => row.userId)),
+    ];
+    if (requiredOwnerUserIds.length === 0) return undefined;
+
+    const accounts = await db
+        .select({
+            userId: userTable.id,
+            emailCredentialId: emailTable.id,
+            email: emailTable.email,
+            displayLanguage: userDisplayLanguageTable.languageCode,
+        })
+        .from(userTable)
+        .innerJoin(
+            emailTable,
+            and(
+                eq(emailTable.userId, userTable.id),
+                eq(emailTable.type, "primary"),
+                eq(emailTable.isDeleted, false),
+            ),
+        )
+        .leftJoin(
+            userDisplayLanguageTable,
+            eq(userDisplayLanguageTable.userId, userTable.id),
+        )
+        .where(
+            and(
+                inArray(userTable.id, requiredOwnerUserIds),
+                eq(userTable.isDeleted, false),
+            ),
+        )
+        .orderBy(userTable.id)
+        .for("update", { of: [userTable, emailTable] });
+    const complaintRows = await db
+        .select({
+            userId: conversationEmailUpdateUserComplaintSuppressionTable.userId,
+        })
+        .from(conversationEmailUpdateUserComplaintSuppressionTable)
+        .where(
+            and(
+                inArray(
+                    conversationEmailUpdateUserComplaintSuppressionTable.userId,
+                    requiredOwnerUserIds,
+                ),
+                isNull(
+                    conversationEmailUpdateUserComplaintSuppressionTable.liftedAt,
+                ),
+            ),
+        );
+    const accountEmails = accounts.map((row) => row.email);
+    const suppressedEmailRows =
+        accountEmails.length === 0
+            ? []
+            : await db
+                  .select({
+                      email: conversationEmailUpdateEmailSuppressionTable.canonicalEmail,
+                  })
+                  .from(conversationEmailUpdateEmailSuppressionTable)
+                  .where(
+                      and(
+                          inArray(
+                              conversationEmailUpdateEmailSuppressionTable.canonicalEmail,
+                              accountEmails,
+                          ),
+                          isNull(
+                              conversationEmailUpdateEmailSuppressionTable.liftedAt,
+                          ),
+                      ),
+                  );
+    const complainedUserIds = new Set(complaintRows.map((row) => row.userId));
+    const suppressedEmails = new Set(
+        suppressedEmailRows.map((row) => row.email),
+    );
+    return resolveCompleteOwnerSnapshots({
+        requiredOwnerUserIds,
+        candidates: accounts.flatMap((account) =>
+            complainedUserIds.has(account.userId) ||
+            suppressedEmails.has(account.email)
+                ? []
+                : [
+                      {
+                          userId: account.userId,
+                          emailCredentialId: account.emailCredentialId,
+                          email: account.email,
+                          displayLanguage: account.displayLanguage ?? "en",
+                      },
+                  ],
+        ),
+    });
+}
+
+async function estimateResolvedSelection({
+    db,
+    selection,
+    cutoffAt,
+}: {
+    db: PostgresJsDatabase;
+    selection: ResolvedSelection;
+    cutoffAt: Date;
+}): Promise<{
+    estimatedEligibleRecipientCount: number;
+    requiredOwnerCopyCount: number;
+}> {
+    const [estimatedEligibleRecipientCount, requiredOwnerCopyCount] =
+        await Promise.all([
+            countEligibleAudience({ db, selection, cutoffAt }),
+            countOwnerCopies({
+                db,
+                projectId: selection.project.project_id,
+            }),
+        ]);
+    return { estimatedEligibleRecipientCount, requiredOwnerCopyCount };
+}
+
+function groupScopes({
+    rows,
+    estimates,
+    operationalSendingEnabled,
+}: {
+    rows: readonly AuthorizedConversationDao[];
+    estimates: ReadonlyMap<number, number>;
+    operationalSendingEnabled: boolean;
+}): ConversationEmailUpdateScope[] {
+    const projectRows = new Map<number, AuthorizedConversationDao[]>();
+    const noProjectRows: AuthorizedConversationDao[] = [];
+    for (const row of rows) {
+        if (row.scope_kind === "no_project") {
+            noProjectRows.push(row);
+            continue;
+        }
+        const current = projectRows.get(row.project_id) ?? [];
+        current.push(row);
+        projectRows.set(row.project_id, current);
+    }
+    const scopes: ConversationEmailUpdateScope[] = [];
+    for (const rowsInProject of projectRows.values()) {
+        const project = rowsInProject.at(0);
+        const participantContactEmail = normalizeContactEmail(
+            project?.contact_email ?? null,
+        );
+        if (project === undefined || participantContactEmail === undefined) {
+            continue;
+        }
+        scopes.push({
+            kind: "project",
+            projectSlug: project.project_slug,
+            title: project.project_title,
+            participantContactEmail,
+            conversations: rowsInProject.map((row) => ({
+                conversationSlugId: row.conversation_slug_id,
+                title: row.conversation_title,
+                participationMode: row.participation_mode,
+                estimatedEligibleRecipientCount:
+                    estimates.get(row.conversation_id) ?? 0,
+                sendingEnabled: isSendingEnabled({
+                    row,
+                    operationallyEnabled: operationalSendingEnabled,
+                }),
+            })),
+        });
+    }
+    if (noProjectRows.length > 0) {
+        scopes.push({
+            kind: "no_project",
+            title: NO_PROJECT_TITLE,
+            conversations: noProjectRows.flatMap((row) => {
+                const participantContactEmail = normalizeContactEmail(
+                    row.contact_email,
+                );
+                return participantContactEmail === undefined
+                    ? []
+                    : [
+                          {
+                              conversationSlugId: row.conversation_slug_id,
+                              title: row.conversation_title,
+                              participationMode: row.participation_mode,
+                              estimatedEligibleRecipientCount:
+                                  estimates.get(row.conversation_id) ?? 0,
+                              sendingEnabled: isSendingEnabled({
+                                  row,
+                                  operationallyEnabled:
+                                      operationalSendingEnabled,
+                              }),
+                              participantContactEmail,
+                          },
+                      ];
+            }),
+        });
+    }
+    return scopes;
+}
+
+function historyBase(
+    row: HistoryDao,
+): Omit<
+    ConversationEmailUpdateHistorySummary,
+    "status" | "reason" | "conversations"
+> {
+    return {
+        updateId: row.update_id,
+        subject: row.subject,
+        acceptedAt: row.accepted_at,
+        audienceEstimate: row.audience_estimate,
+        ownerCopyCount: row.owner_copy_count,
+        scope:
+            row.scope_kind === "listed_project"
+                ? {
+                      kind: "project",
+                      title: row.project_title,
+                      projectSlug: row.project_slug,
+                  }
+                : { kind: "no_project", title: NO_PROJECT_TITLE },
+    };
+}
+
+function mapHistorySummary({
+    row,
+    conversations,
+}: {
+    row: HistoryDao;
+    conversations: HistoryConversationDao[];
+}): ConversationEmailUpdateHistorySummary {
+    const base = {
+        ...historyBase(row),
+        conversations: conversations.map((conversation) => ({
+            conversationSlugId: conversation.conversation_slug_id,
+            title: conversation.conversation_title,
+        })),
+    };
+    if (row.status === "failed") {
+        return {
+            ...base,
+            status: row.status,
+            reason: row.failure_reason ?? "materialization_failed",
+        };
+    }
+    if (row.status === "stopping" || row.status === "stopped") {
+        return {
+            ...base,
+            status: row.status,
+            reason: row.stop_reason ?? "legal_or_abuse_block",
+        };
+    }
+    return { ...base, status: row.status };
+}
+
+function mapHistoryRecord({
+    row,
+    conversations,
+}: {
+    row: HistoryDao;
+    conversations: HistoryConversationDao[];
+}): ConversationEmailUpdateHistoryRecord {
+    return {
+        ...mapHistorySummary({ row, conversations }),
+        bodyHtml: row.body_html,
+    };
+}
+
+async function loadHistoryConversations({
+    db,
+    updateIds,
+}: {
+    db: PostgresJsDatabase;
+    updateIds: number[];
+}) {
+    if (updateIds.length === 0) return [];
+    return await db
+        .select({
+            update_id: conversationEmailUpdateConversationTable.updateId,
+            conversation_slug_id: conversationTable.slugId,
+            conversation_title:
+                conversationEmailUpdateConversationTable.conversationTitleSnapshot,
+        })
+        .from(conversationEmailUpdateConversationTable)
+        .innerJoin(
+            conversationTable,
+            eq(
+                conversationTable.id,
+                conversationEmailUpdateConversationTable.conversationId,
+            ),
+        )
+        .where(
+            inArray(
+                conversationEmailUpdateConversationTable.updateId,
+                updateIds,
+            ),
+        )
+        .orderBy(
+            conversationEmailUpdateConversationTable.updateId,
+            conversationTable.slugId,
+        );
+}
+
+async function loadHistoryRows({
+    db,
+    authorizedProjectIds,
+}: {
+    db: PostgresJsDatabase;
+    authorizedProjectIds: number[];
+}) {
+    if (authorizedProjectIds.length === 0) return [];
+    return await db
+        .select({
+            internal_update_id: conversationEmailUpdateTable.id,
+            update_id: conversationEmailUpdateTable.publicId,
+            project_id: conversationEmailUpdateTable.projectId,
+            project_slug: projectTable.slug,
+            scope_kind: conversationEmailUpdateTable.scopeKind,
+            project_title: conversationEmailUpdateTable.projectTitleSnapshot,
+            subject: conversationEmailUpdateTable.subject,
+            body_html: conversationEmailUpdateTable.bodyHtml,
+            accepted_at: conversationEmailUpdateDeliveryTable.acceptedAt,
+            audience_estimate:
+                conversationEmailUpdateDeliveryTable.displayedParticipantEstimate,
+            owner_copy_count:
+                conversationEmailUpdateDeliveryTable.requiredOwnerCopyCount,
+            status: conversationEmailUpdateDeliveryTable.status,
+            failure_reason: conversationEmailUpdateDeliveryTable.failureReason,
+            stop_reason: conversationEmailUpdateDeliveryTable.stopReason,
+        })
+        .from(conversationEmailUpdateTable)
+        .innerJoin(
+            conversationEmailUpdateDeliveryTable,
+            eq(
+                conversationEmailUpdateDeliveryTable.updateId,
+                conversationEmailUpdateTable.id,
+            ),
+        )
+        .innerJoin(
+            projectTable,
+            eq(projectTable.id, conversationEmailUpdateTable.projectId),
+        )
+        .where(
+            inArray(
+                conversationEmailUpdateTable.projectId,
+                authorizedProjectIds,
+            ),
+        )
+        .orderBy(
+            desc(conversationEmailUpdateDeliveryTable.acceptedAt),
+            desc(conversationEmailUpdateTable.id),
+        );
+}
+
+function getPreferenceScopeKind({
+    autoProvisionedForOrganizationId,
+    directoryVisibility,
+}: {
+    autoProvisionedForOrganizationId: number | null;
+    directoryVisibility: "listed" | "unlisted";
+}): "project" | "no_project" | "unavailable" {
+    if (autoProvisionedForOrganizationId !== null) return "no_project";
+    return directoryVisibility === "listed" ? "project" : "unavailable";
+}
+
+async function queryPreferenceProjects({
+    db,
+    userId,
+    now,
+}: {
+    db: PostgresJsDatabase;
+    userId: string;
+    now: Date;
+}) {
+    const rows = await db
+        .select({
+            project_id: projectTable.id,
+            project_slug: projectTable.slug,
+            project_title: projectTable.title,
+            enabled: conversationEmailUpdateUserProjectPreferenceTable.enabled,
+            deleted_at: projectTable.deletedAt,
+            directory_visibility: projectTable.directoryVisibility,
+            auto_provisioned_for_organization_id:
+                projectTable.autoProvisionedForOrganizationId,
+            contact_email: projectContactTable.email,
+            feature_available: exists(
+                db
+                    .select({ id: projectOrganizationOwnershipTable.id })
+                    .from(projectOrganizationOwnershipTable)
+                    .innerJoin(
+                        premiumFeatureEntitlementTable,
+                        and(
+                            eq(
+                                premiumFeatureEntitlementTable.organizationId,
+                                projectOrganizationOwnershipTable.organizationId,
+                            ),
+                            eq(
+                                premiumFeatureEntitlementTable.feature,
+                                "conversation_email_update",
+                            ),
+                            lte(premiumFeatureEntitlementTable.startsAt, now),
+                            isNull(premiumFeatureEntitlementTable.revokedAt),
+                            or(
+                                isNull(
+                                    premiumFeatureEntitlementTable.expiresAt,
+                                ),
+                                gt(
+                                    premiumFeatureEntitlementTable.expiresAt,
+                                    now,
+                                ),
+                            ),
+                        ),
+                    )
+                    .where(
+                        and(
+                            eq(
+                                projectOrganizationOwnershipTable.projectId,
+                                projectTable.id,
+                            ),
+                            isNull(projectOrganizationOwnershipTable.deletedAt),
+                            notExists(
+                                db
+                                    .select({
+                                        id: conversationEmailUpdateScopeSafetyBlockTable.id,
+                                    })
+                                    .from(
+                                        conversationEmailUpdateScopeSafetyBlockTable,
+                                    )
+                                    .where(
+                                        and(
+                                            eq(
+                                                conversationEmailUpdateScopeSafetyBlockTable.targetKind,
+                                                "organization",
+                                            ),
+                                            eq(
+                                                conversationEmailUpdateScopeSafetyBlockTable.organizationId,
+                                                projectOrganizationOwnershipTable.organizationId,
+                                            ),
+                                            isNull(
+                                                conversationEmailUpdateScopeSafetyBlockTable.liftedAt,
+                                            ),
+                                        ),
+                                    ),
+                            ),
+                        ),
+                    ),
+            ),
+            safety_blocked: exists(
+                db
+                    .select({
+                        id: conversationEmailUpdateScopeSafetyBlockTable.id,
+                    })
+                    .from(conversationEmailUpdateScopeSafetyBlockTable)
+                    .where(
+                        and(
+                            eq(
+                                conversationEmailUpdateScopeSafetyBlockTable.targetKind,
+                                "project",
+                            ),
+                            eq(
+                                conversationEmailUpdateScopeSafetyBlockTable.projectId,
+                                projectTable.id,
+                            ),
+                            isNull(
+                                conversationEmailUpdateScopeSafetyBlockTable.liftedAt,
+                            ),
+                        ),
+                    ),
+            ),
+        })
+        .from(conversationEmailUpdateUserProjectPreferenceTable)
+        .innerJoin(
+            projectTable,
+            eq(
+                projectTable.id,
+                conversationEmailUpdateUserProjectPreferenceTable.projectId,
+            ),
+        )
+        .leftJoin(
+            projectContactTable,
+            and(
+                eq(projectContactTable.projectId, projectTable.id),
+                isNull(projectContactTable.deletedAt),
+            ),
+        )
+        .where(
+            eq(
+                conversationEmailUpdateUserProjectPreferenceTable.userId,
+                userId,
+            ),
+        )
+        .orderBy(projectTable.id);
+    return rows.map((row) => ({
+        project_id: row.project_id,
+        project_slug: row.project_slug,
+        project_title: row.project_title,
+        enabled: row.enabled,
+        available:
+            row.deleted_at === null &&
+            row.directory_visibility === "listed" &&
+            row.auto_provisioned_for_organization_id === null &&
+            row.contact_email !== null &&
+            row.feature_available === true &&
+            row.safety_blocked !== true,
+    }));
+}
+
+async function queryPreferenceConversations({
+    db,
+    userId,
+    now,
+}: {
+    db: PostgresJsDatabase;
+    userId: string;
+    now: Date;
+}) {
+    const rows = await db
+        .select({
+            project_id: projectTable.id,
+            project_slug: projectTable.slug,
+            project_title: projectTable.title,
+            auto_provisioned_for_organization_id:
+                projectTable.autoProvisionedForOrganizationId,
+            directory_visibility: projectTable.directoryVisibility,
+            project_deleted_at: projectTable.deletedAt,
+            conversation_id: conversationTable.id,
+            conversation_slug_id: conversationTable.slugId,
+            conversation_title: conversationContentTable.title,
+            current_content_id: conversationTable.currentContentId,
+            enabled:
+                conversationEmailUpdateUserConversationPreferenceTable.enabled,
+            contact_email: projectContactTable.email,
+            feature_available: exists(
+                db
+                    .select({ id: projectOrganizationOwnershipTable.id })
+                    .from(projectOrganizationOwnershipTable)
+                    .innerJoin(
+                        premiumFeatureEntitlementTable,
+                        and(
+                            eq(
+                                premiumFeatureEntitlementTable.organizationId,
+                                projectOrganizationOwnershipTable.organizationId,
+                            ),
+                            eq(
+                                premiumFeatureEntitlementTable.feature,
+                                "conversation_email_update",
+                            ),
+                            lte(premiumFeatureEntitlementTable.startsAt, now),
+                            isNull(premiumFeatureEntitlementTable.revokedAt),
+                            or(
+                                isNull(
+                                    premiumFeatureEntitlementTable.expiresAt,
+                                ),
+                                gt(
+                                    premiumFeatureEntitlementTable.expiresAt,
+                                    now,
+                                ),
+                            ),
+                        ),
+                    )
+                    .where(
+                        and(
+                            eq(
+                                projectOrganizationOwnershipTable.projectId,
+                                projectTable.id,
+                            ),
+                            isNull(projectOrganizationOwnershipTable.deletedAt),
+                            notExists(
+                                db
+                                    .select({
+                                        id: conversationEmailUpdateScopeSafetyBlockTable.id,
+                                    })
+                                    .from(
+                                        conversationEmailUpdateScopeSafetyBlockTable,
+                                    )
+                                    .where(
+                                        and(
+                                            eq(
+                                                conversationEmailUpdateScopeSafetyBlockTable.targetKind,
+                                                "organization",
+                                            ),
+                                            eq(
+                                                conversationEmailUpdateScopeSafetyBlockTable.organizationId,
+                                                projectOrganizationOwnershipTable.organizationId,
+                                            ),
+                                            isNull(
+                                                conversationEmailUpdateScopeSafetyBlockTable.liftedAt,
+                                            ),
+                                        ),
+                                    ),
+                            ),
+                        ),
+                    ),
+            ),
+            safety_blocked: exists(
+                db
+                    .select({
+                        id: conversationEmailUpdateScopeSafetyBlockTable.id,
+                    })
+                    .from(conversationEmailUpdateScopeSafetyBlockTable)
+                    .where(
+                        and(
+                            isNull(
+                                conversationEmailUpdateScopeSafetyBlockTable.liftedAt,
+                            ),
+                            or(
+                                and(
+                                    eq(
+                                        conversationEmailUpdateScopeSafetyBlockTable.targetKind,
+                                        "project",
+                                    ),
+                                    eq(
+                                        conversationEmailUpdateScopeSafetyBlockTable.projectId,
+                                        projectTable.id,
+                                    ),
+                                ),
+                                and(
+                                    eq(
+                                        conversationEmailUpdateScopeSafetyBlockTable.targetKind,
+                                        "conversation",
+                                    ),
+                                    eq(
+                                        conversationEmailUpdateScopeSafetyBlockTable.conversationId,
+                                        conversationTable.id,
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ),
+            ),
+        })
+        .from(conversationEmailUpdateUserConversationPreferenceTable)
+        .innerJoin(
+            conversationTable,
+            eq(
+                conversationTable.id,
+                conversationEmailUpdateUserConversationPreferenceTable.conversationId,
+            ),
+        )
+        .innerJoin(
+            projectTable,
+            eq(projectTable.id, conversationTable.projectId),
+        )
+        .leftJoin(
+            conversationContentTable,
+            eq(conversationContentTable.id, conversationTable.currentContentId),
+        )
+        .leftJoin(
+            projectContactTable,
+            and(
+                eq(projectContactTable.projectId, projectTable.id),
+                isNull(projectContactTable.deletedAt),
+            ),
+        )
+        .where(
+            eq(
+                conversationEmailUpdateUserConversationPreferenceTable.userId,
+                userId,
+            ),
+        )
+        .orderBy(projectTable.id, conversationTable.id);
+    return rows.map((row) => ({
+        project_id: row.project_id,
+        project_slug: row.project_slug,
+        project_title: row.project_title,
+        scope_kind: getPreferenceScopeKind({
+            autoProvisionedForOrganizationId:
+                row.auto_provisioned_for_organization_id,
+            directoryVisibility: row.directory_visibility,
+        }),
+        conversation_id: row.conversation_id,
+        conversation_slug_id: row.conversation_slug_id,
+        conversation_title: row.conversation_title ?? row.conversation_slug_id,
+        enabled: row.enabled,
+        available:
+            row.project_deleted_at === null &&
+            row.current_content_id !== null &&
+            (row.auto_provisioned_for_organization_id !== null ||
+                row.directory_visibility === "listed") &&
+            row.contact_email !== null &&
+            row.feature_available === true &&
+            row.safety_blocked !== true,
+    }));
+}
+
+async function loadPreferenceRows({
+    db,
+    userId,
+    now,
+}: {
+    db: PostgresJsDatabase;
+    userId: string;
+    now: Date;
+}): Promise<{
+    globalPaused: boolean;
+    projectRows: PreferenceProjectDao[];
+    conversationRows: PreferenceConversationDao[];
+}> {
+    const [globalRows, projectRows, conversationRows] = await Promise.all([
+        db
+            .select({
+                pausedAt:
+                    conversationEmailUpdateUserGlobalSettingTable.pausedAt,
+            })
+            .from(conversationEmailUpdateUserGlobalSettingTable)
+            .where(
+                eq(
+                    conversationEmailUpdateUserGlobalSettingTable.userId,
+                    userId,
+                ),
+            )
+            .limit(1),
+        queryPreferenceProjects({ db, userId, now }),
+        queryPreferenceConversations({ db, userId, now }),
+    ]);
+    return {
+        globalPaused:
+            globalRows.at(0)?.pausedAt !== null && globalRows.length > 0,
+        projectRows,
+        conversationRows,
+    };
+}
+
+async function queryProjectConfigurationRows({
+    db,
+    projectSlug,
+    now,
+}: {
+    db: PostgresJsDatabase;
+    projectSlug: string;
+    now: Date;
+}) {
+    const rows = await db
+        .select({
+            project_id: projectTable.id,
+            project_slug: projectTable.slug,
+            default_enabled: projectTable.conversationEmailUpdateDefaultEnabled,
+            contact_email: projectContactTable.email,
+            safety_blocked: exists(
+                db
+                    .select({
+                        id: conversationEmailUpdateScopeSafetyBlockTable.id,
+                    })
+                    .from(conversationEmailUpdateScopeSafetyBlockTable)
+                    .where(
+                        and(
+                            eq(
+                                conversationEmailUpdateScopeSafetyBlockTable.targetKind,
+                                "project",
+                            ),
+                            eq(
+                                conversationEmailUpdateScopeSafetyBlockTable.projectId,
+                                projectTable.id,
+                            ),
+                            isNull(
+                                conversationEmailUpdateScopeSafetyBlockTable.liftedAt,
+                            ),
+                        ),
+                    ),
+            ),
+            feature_available: exists(
+                db
+                    .select({ id: projectOrganizationOwnershipTable.id })
+                    .from(projectOrganizationOwnershipTable)
+                    .innerJoin(
+                        premiumFeatureEntitlementTable,
+                        and(
+                            eq(
+                                premiumFeatureEntitlementTable.organizationId,
+                                projectOrganizationOwnershipTable.organizationId,
+                            ),
+                            eq(
+                                premiumFeatureEntitlementTable.feature,
+                                "conversation_email_update",
+                            ),
+                            lte(premiumFeatureEntitlementTable.startsAt, now),
+                            isNull(premiumFeatureEntitlementTable.revokedAt),
+                            or(
+                                isNull(
+                                    premiumFeatureEntitlementTable.expiresAt,
+                                ),
+                                gt(
+                                    premiumFeatureEntitlementTable.expiresAt,
+                                    now,
+                                ),
+                            ),
+                        ),
+                    )
+                    .where(
+                        and(
+                            eq(
+                                projectOrganizationOwnershipTable.projectId,
+                                projectTable.id,
+                            ),
+                            isNull(projectOrganizationOwnershipTable.deletedAt),
+                            notExists(
+                                db
+                                    .select({
+                                        id: conversationEmailUpdateScopeSafetyBlockTable.id,
+                                    })
+                                    .from(
+                                        conversationEmailUpdateScopeSafetyBlockTable,
+                                    )
+                                    .where(
+                                        and(
+                                            eq(
+                                                conversationEmailUpdateScopeSafetyBlockTable.targetKind,
+                                                "organization",
+                                            ),
+                                            eq(
+                                                conversationEmailUpdateScopeSafetyBlockTable.organizationId,
+                                                projectOrganizationOwnershipTable.organizationId,
+                                            ),
+                                            isNull(
+                                                conversationEmailUpdateScopeSafetyBlockTable.liftedAt,
+                                            ),
+                                        ),
+                                    ),
+                            ),
+                        ),
+                    ),
+            ),
+        })
+        .from(projectTable)
+        .leftJoin(
+            projectContactTable,
+            and(
+                eq(projectContactTable.projectId, projectTable.id),
+                isNull(projectContactTable.deletedAt),
+            ),
+        )
+        .where(
+            and(
+                eq(projectTable.slug, projectSlug),
+                isNull(projectTable.deletedAt),
+                or(
+                    isNotNull(projectTable.autoProvisionedForOrganizationId),
+                    eq(projectTable.directoryVisibility, "listed"),
+                ),
+            ),
+        )
+        .limit(1);
+    return rows.map((row) => ({
+        ...row,
+        safety_blocked: row.safety_blocked === true,
+        feature_available: row.feature_available === true,
+    }));
+}
+
+async function getProjectConfigurationRow({
+    db,
+    projectSlug,
+    now,
+}: {
+    db: PostgresJsDatabase;
+    projectSlug: string;
+    now: Date;
+}): Promise<ConfigurationProjectDao | undefined> {
+    const rows = await queryProjectConfigurationRows({ db, projectSlug, now });
+    return rows.at(0);
+}
+
+async function queryConversationConfigurationRows({
+    db,
+    conversationSlugId,
+    now,
+}: {
+    db: PostgresJsDatabase;
+    conversationSlugId: string;
+    now: Date;
+}) {
+    const rows = await db
+        .select({
+            project_id: projectTable.id,
+            project_slug: projectTable.slug,
+            default_enabled: projectTable.conversationEmailUpdateDefaultEnabled,
+            contact_email: projectContactTable.email,
+            auto_provisioned_for_organization_id:
+                projectTable.autoProvisionedForOrganizationId,
+            conversation_id: conversationTable.id,
+            conversation_slug_id: conversationTable.slugId,
+            override_enabled:
+                conversationTable.conversationEmailUpdateEnabledOverride,
+            has_history: exists(
+                db
+                    .select({ id: conversationEmailUpdateConversationTable.id })
+                    .from(conversationEmailUpdateConversationTable)
+                    .where(
+                        eq(
+                            conversationEmailUpdateConversationTable.conversationId,
+                            conversationTable.id,
+                        ),
+                    ),
+            ),
+            safety_blocked: exists(
+                db
+                    .select({
+                        id: conversationEmailUpdateScopeSafetyBlockTable.id,
+                    })
+                    .from(conversationEmailUpdateScopeSafetyBlockTable)
+                    .where(
+                        and(
+                            isNull(
+                                conversationEmailUpdateScopeSafetyBlockTable.liftedAt,
+                            ),
+                            or(
+                                and(
+                                    eq(
+                                        conversationEmailUpdateScopeSafetyBlockTable.targetKind,
+                                        "project",
+                                    ),
+                                    eq(
+                                        conversationEmailUpdateScopeSafetyBlockTable.projectId,
+                                        projectTable.id,
+                                    ),
+                                ),
+                                and(
+                                    eq(
+                                        conversationEmailUpdateScopeSafetyBlockTable.targetKind,
+                                        "conversation",
+                                    ),
+                                    eq(
+                                        conversationEmailUpdateScopeSafetyBlockTable.conversationId,
+                                        conversationTable.id,
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ),
+            ),
+            feature_available: exists(
+                db
+                    .select({ id: projectOrganizationOwnershipTable.id })
+                    .from(projectOrganizationOwnershipTable)
+                    .innerJoin(
+                        premiumFeatureEntitlementTable,
+                        and(
+                            eq(
+                                premiumFeatureEntitlementTable.organizationId,
+                                projectOrganizationOwnershipTable.organizationId,
+                            ),
+                            eq(
+                                premiumFeatureEntitlementTable.feature,
+                                "conversation_email_update",
+                            ),
+                            lte(premiumFeatureEntitlementTable.startsAt, now),
+                            isNull(premiumFeatureEntitlementTable.revokedAt),
+                            or(
+                                isNull(
+                                    premiumFeatureEntitlementTable.expiresAt,
+                                ),
+                                gt(
+                                    premiumFeatureEntitlementTable.expiresAt,
+                                    now,
+                                ),
+                            ),
+                        ),
+                    )
+                    .where(
+                        and(
+                            eq(
+                                projectOrganizationOwnershipTable.projectId,
+                                projectTable.id,
+                            ),
+                            isNull(projectOrganizationOwnershipTable.deletedAt),
+                            notExists(
+                                db
+                                    .select({
+                                        id: conversationEmailUpdateScopeSafetyBlockTable.id,
+                                    })
+                                    .from(
+                                        conversationEmailUpdateScopeSafetyBlockTable,
+                                    )
+                                    .where(
+                                        and(
+                                            eq(
+                                                conversationEmailUpdateScopeSafetyBlockTable.targetKind,
+                                                "organization",
+                                            ),
+                                            eq(
+                                                conversationEmailUpdateScopeSafetyBlockTable.organizationId,
+                                                projectOrganizationOwnershipTable.organizationId,
+                                            ),
+                                            isNull(
+                                                conversationEmailUpdateScopeSafetyBlockTable.liftedAt,
+                                            ),
+                                        ),
+                                    ),
+                            ),
+                        ),
+                    ),
+            ),
+        })
+        .from(conversationTable)
+        .innerJoin(
+            projectTable,
+            and(
+                eq(projectTable.id, conversationTable.projectId),
+                isNull(projectTable.deletedAt),
+            ),
+        )
+        .leftJoin(
+            projectContactTable,
+            and(
+                eq(projectContactTable.projectId, projectTable.id),
+                isNull(projectContactTable.deletedAt),
+            ),
+        )
+        .where(
+            and(
+                eq(conversationTable.slugId, conversationSlugId),
+                isNotNull(conversationTable.currentContentId),
+                or(
+                    isNotNull(projectTable.autoProvisionedForOrganizationId),
+                    eq(projectTable.directoryVisibility, "listed"),
+                ),
+            ),
+        )
+        .limit(1);
+    return rows.map((row) => ({
+        project_id: row.project_id,
+        project_slug: row.project_slug,
+        default_enabled: row.default_enabled,
+        contact_email: row.contact_email,
+        conversation_id: row.conversation_id,
+        conversation_slug_id: row.conversation_slug_id,
+        override_enabled: row.override_enabled,
+        scope_kind: getProjectScopeKind(
+            row.auto_provisioned_for_organization_id,
+        ),
+        has_history: row.has_history === true,
+        safety_blocked: row.safety_blocked === true,
+        feature_available: row.feature_available === true,
+    }));
+}
+
+async function getConversationConfigurationRow({
+    db,
+    conversationSlugId,
+    now,
+}: {
+    db: PostgresJsDatabase;
+    conversationSlugId: string;
+    now: Date;
+}): Promise<ConfigurationConversationDao | undefined> {
+    const rows = await queryConversationConfigurationRows({
+        db,
+        conversationSlugId,
+        now,
+    });
+    return rows.at(0);
+}
+
+async function isSiteOrgAdmin({
+    db,
+    userId,
+}: {
+    db: PostgresJsDatabase;
+    userId: string;
+}): Promise<boolean> {
+    const rows = await db
+        .select({ allowed: userTable.isSiteOrgAdmin })
+        .from(userTable)
+        .where(and(eq(userTable.id, userId), eq(userTable.isDeleted, false)))
+        .limit(1);
+    return rows.at(0)?.allowed ?? false;
+}
+
+async function hasConversationEditCapability({
+    db,
+    userId,
+    projectId,
+}: {
+    db: PostgresJsDatabase;
+    userId: string;
+    projectId: number;
+}): Promise<boolean> {
+    const rows = await db
+        .select({ id: projectOrganizationOwnershipTable.id })
+        .from(projectOrganizationOwnershipTable)
+        .innerJoin(
+            organizationMembershipTable,
+            and(
+                eq(
+                    organizationMembershipTable.organizationId,
+                    projectOrganizationOwnershipTable.organizationId,
+                ),
+                eq(organizationMembershipTable.userId, userId),
+                isNull(organizationMembershipTable.deletedAt),
+            ),
+        )
+        .innerJoin(
+            organizationMembershipAllProjectCapabilityTable,
+            and(
+                eq(
+                    organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
+                    organizationMembershipTable.id,
+                ),
+                eq(
+                    organizationMembershipAllProjectCapabilityTable.capability,
+                    "conversation_edit",
+                ),
+            ),
+        )
+        .where(
+            and(
+                eq(projectOrganizationOwnershipTable.projectId, projectId),
+                isNull(projectOrganizationOwnershipTable.deletedAt),
+            ),
+        )
+        .limit(1);
+    return rows.length > 0;
+}
+
+async function lockUser({
+    db,
+    userId,
+}: {
+    db: PostgresJsDatabase;
+    userId: string;
+}): Promise<void> {
+    await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .where(eq(userTable.id, userId))
+        .for("update");
+}
+
+async function lockProject({
+    db,
+    projectId,
+}: {
+    db: PostgresJsDatabase;
+    projectId: number;
+}): Promise<boolean> {
+    const rows = await db
+        .select({ id: projectTable.id })
+        .from(projectTable)
+        .where(eq(projectTable.id, projectId))
+        .for("update");
+    return rows.length === 1;
+}
+
+async function hasActiveDelivery({
+    db,
+    projectId,
+}: {
+    db: PostgresJsDatabase;
+    projectId: number;
+}): Promise<boolean> {
+    const rows = await db
+        .select({ id: conversationEmailUpdateDeliveryTable.id })
+        .from(conversationEmailUpdateDeliveryTable)
+        .where(
+            and(
+                eq(conversationEmailUpdateDeliveryTable.projectId, projectId),
+                inArray(conversationEmailUpdateDeliveryTable.status, [
+                    "preparing",
+                    "queued",
+                    "sending",
+                    "stopping",
+                ]),
+            ),
+        )
+        .limit(1);
+    return rows.length > 0;
+}
+
+function mapConfiguration({
+    row,
+    canConfigure,
+    operationalSendingEnabled,
+}: {
+    row: ConfigurationConversationDao;
+    canConfigure: boolean;
+    operationalSendingEnabled: boolean;
+}): ConversationEmailUpdateConfigurationResponse {
+    const participantContactEmail = normalizeContactEmail(row.contact_email);
+    const setting =
+        row.override_enabled === null
+            ? "inherit"
+            : row.override_enabled
+              ? "enabled"
+              : "disabled";
+    return {
+        success: true,
+        configuration: {
+            target: "conversation",
+            conversationSlugId: row.conversation_slug_id,
+            canConfigure,
+            scopeKind: row.scope_kind,
+            scopeDefaultEnabled: row.default_enabled,
+            setting,
+            sendingEnabled:
+                operationalSendingEnabled &&
+                row.feature_available &&
+                !row.safety_blocked &&
+                participantContactEmail !== undefined &&
+                (row.override_enabled ?? row.default_enabled),
+            hasHistory: row.has_history,
+            participantContactEmail,
+        },
+    };
+}
+
+export function createConversationEmailUpdateService({
+    db,
+    sendingEnabled,
+}: {
+    db: PostgresJsDatabase;
+    sendingEnabled: boolean;
+}): ConversationEmailUpdateService {
+    const estimateAudience = async ({
+        userId,
+        request,
+    }: AuthenticatedRequest<ConversationEmailUpdateAudienceEstimateRequest>): Promise<ConversationEmailUpdateAudienceEstimateResponse> => {
+        try {
+            if (!sendingEnabled) {
+                return { success: false, reason: "sending_disabled" };
+            }
+            const now = new Date();
+            const rows = await listAuthorizedConversations({
+                db,
+                userId,
+                now,
+            });
+            const resolved = resolveSelection({
+                rows,
+                selection: request.selection,
+            });
+            if (!resolved.success) return resolved;
+            if (
+                resolved.value.conversations.some(
+                    (row) =>
+                        !isSendingEnabled({
+                            row,
+                            operationallyEnabled: sendingEnabled,
+                        }),
+                )
+            ) {
+                return { success: false, reason: "sending_disabled" };
+            }
+            const estimate = await estimateResolvedSelection({
+                db,
+                selection: resolved.value,
+                cutoffAt: now,
+            });
+            return { success: true, ...estimate };
+        } catch {
+            return { success: false, reason: "audience_unavailable" };
+        }
+    };
+
+    const getConfigurationWithDatabase = async ({
+        database,
+        userId,
+        request,
+    }: AuthenticatedRequest<ConversationEmailUpdateConfigurationRequest> & {
+        database: PostgresJsDatabase;
+    }): Promise<ConversationEmailUpdateConfigurationResponse> => {
+        try {
+            const now = new Date();
+            if (request.target === "project") {
+                const [row, canConfigure] = await Promise.all([
+                    getProjectConfigurationRow({
+                        db: database,
+                        projectSlug: request.projectSlug,
+                        now,
+                    }),
+                    isSiteOrgAdmin({ db: database, userId }),
+                ]);
+                if (row === undefined) {
+                    return { success: false, reason: "target_not_found" };
+                }
+                if (!row.feature_available) {
+                    return { success: false, reason: "feature_not_available" };
+                }
+                return {
+                    success: true,
+                    configuration: {
+                        target: "project",
+                        projectSlug: row.project_slug,
+                        canConfigure,
+                        defaultEnabled: row.default_enabled,
+                        participantContactEmail: normalizeContactEmail(
+                            row.contact_email,
+                        ),
+                    },
+                };
+            }
+            const row = await getConversationConfigurationRow({
+                db: database,
+                conversationSlugId: request.conversationSlugId,
+                now,
+            });
+            if (row === undefined) {
+                return { success: false, reason: "target_not_found" };
+            }
+            if (!row.feature_available) {
+                return { success: false, reason: "feature_not_available" };
+            }
+            const canConfigure = await hasConversationEditCapability({
+                db: database,
+                userId,
+                projectId: row.project_id,
+            });
+            return mapConfiguration({
+                row,
+                canConfigure,
+                operationalSendingEnabled: sendingEnabled,
+            });
+        } catch {
+            return { success: false, reason: "configuration_unavailable" };
+        }
+    };
+    const getConfiguration = async ({
+        userId,
+        request,
+    }: AuthenticatedRequest<ConversationEmailUpdateConfigurationRequest>): Promise<ConversationEmailUpdateConfigurationResponse> =>
+        await getConfigurationWithDatabase({ database: db, userId, request });
+
+    return {
+        getWorkspace: async ({ userId, request }) => {
+            try {
+                const now = new Date();
+                const allRows = await listAuthorizedConversations({
+                    db,
+                    userId,
+                    now,
+                });
+                let rows = allRows;
+                let initialSelection:
+                    | ConversationEmailUpdateSelection
+                    | undefined;
+                if (request.context.kind === "project") {
+                    const projectSlug = request.context.projectSlug;
+                    rows = allRows.filter(
+                        (row) =>
+                            row.scope_kind === "project" &&
+                            row.project_slug === projectSlug,
+                    );
+                } else if (request.context.kind === "conversation") {
+                    const conversationSlugId =
+                        request.context.conversationSlugId;
+                    const selected = allRows.find(
+                        (row) =>
+                            row.conversation_slug_id === conversationSlugId,
+                    );
+                    rows =
+                        selected === undefined
+                            ? []
+                            : allRows.filter((row) =>
+                                  selected.scope_kind === "project"
+                                      ? row.project_id === selected.project_id
+                                      : row.scope_kind === "no_project",
+                              );
+                    initialSelection =
+                        selected?.scope_kind === "project"
+                            ? {
+                                  kind: "project",
+                                  projectSlug: selected.project_slug,
+                                  conversationSlugIds: [
+                                      selected.conversation_slug_id,
+                                  ],
+                              }
+                            : selected?.scope_kind === "no_project"
+                              ? {
+                                    kind: "no_project",
+                                    conversationSlugId:
+                                        selected.conversation_slug_id,
+                                }
+                              : undefined;
+                }
+                if (rows.length === 0) {
+                    if (request.context.kind === "global") {
+                        return {
+                            success: false,
+                            reason: "feature_not_available",
+                        };
+                    }
+                    if (request.context.kind === "conversation") {
+                        const context = await getConversationConfigurationRow({
+                            db,
+                            conversationSlugId:
+                                request.context.conversationSlugId,
+                            now,
+                        });
+                        return context === undefined
+                            ? { success: false, reason: "context_not_found" }
+                            : {
+                                  success: false,
+                                  reason: "feature_not_available",
+                              };
+                    }
+                    const contextRows = await db
+                        .select({ id: projectTable.id })
+                        .from(projectTable)
+                        .where(
+                            and(
+                                eq(
+                                    projectTable.slug,
+                                    request.context.projectSlug,
+                                ),
+                                isNull(projectTable.deletedAt),
+                                eq(projectTable.directoryVisibility, "listed"),
+                                isNull(
+                                    projectTable.autoProvisionedForOrganizationId,
+                                ),
+                            ),
+                        )
+                        .limit(1);
+                    return contextRows.length === 0
+                        ? { success: false, reason: "context_not_found" }
+                        : {
+                              success: false,
+                              reason: "feature_not_available",
+                          };
+                }
+                const estimateEntries = await Promise.all(
+                    rows.map(async (row) => {
+                        const count = await countEligibleAudience({
+                            db,
+                            selection: {
+                                project: row,
+                                conversations: [row],
+                            },
+                            cutoffAt: now,
+                        });
+                        return [row.conversation_id, count] as const;
+                    }),
+                );
+                const scopes = groupScopes({
+                    rows,
+                    estimates: new Map(estimateEntries),
+                    operationalSendingEnabled: sendingEnabled,
+                });
+                if (scopes.length === 0) {
+                    return { success: false, reason: "feature_not_available" };
+                }
+                return {
+                    success: true,
+                    resolvedContext: request.context,
+                    initialSelection,
+                    scopes,
+                };
+            } catch {
+                return { success: false, reason: "workspace_unavailable" };
+            }
+        },
+
+        listHistory: async ({ userId, request }) => {
+            try {
+                const authorizedProjects = await listHistoryVisibleProjects({
+                    db,
+                    userId,
+                });
+                let projectIds = [
+                    ...new Set(authorizedProjects.map((row) => row.project_id)),
+                ];
+                if (request.context.kind === "project") {
+                    const projectSlug = request.context.projectSlug;
+                    projectIds = [
+                        ...new Set(
+                            authorizedProjects
+                                .filter(
+                                    (row) =>
+                                        row.scope_kind === "project" &&
+                                        row.project_slug === projectSlug,
+                                )
+                                .map((row) => row.project_id),
+                        ),
+                    ];
+                } else if (request.context.kind === "conversation") {
+                    const conversationSlugId =
+                        request.context.conversationSlugId;
+                    const conversationRows = await db
+                        .select({ project_id: conversationTable.projectId })
+                        .from(conversationTable)
+                        .where(
+                            and(
+                                eq(
+                                    conversationTable.slugId,
+                                    conversationSlugId,
+                                ),
+                                inArray(
+                                    conversationTable.projectId,
+                                    projectIds,
+                                ),
+                            ),
+                        )
+                        .limit(1);
+                    projectIds = conversationRows.map((row) => row.project_id);
+                }
+                if (projectIds.length === 0) {
+                    return { success: false, reason: "context_not_found" };
+                }
+                let rows = await loadHistoryRows({
+                    db,
+                    authorizedProjectIds: projectIds,
+                });
+                if (request.context.kind === "conversation") {
+                    const conversationSlugId =
+                        request.context.conversationSlugId;
+                    const updateConversations = await loadHistoryConversations({
+                        db,
+                        updateIds: rows.map((row) => row.internal_update_id),
+                    });
+                    const visibleIds = new Set(
+                        updateConversations
+                            .filter(
+                                (row) =>
+                                    row.conversation_slug_id ===
+                                    conversationSlugId,
+                            )
+                            .map((row) => row.update_id),
+                    );
+                    rows = rows.filter((row) =>
+                        visibleIds.has(row.internal_update_id),
+                    );
+                }
+                const startIndex =
+                    request.cursor === undefined
+                        ? 0
+                        : rows.findIndex(
+                              (row) => row.update_id === request.cursor,
+                          ) + 1;
+                if (request.cursor !== undefined && startIndex === 0) {
+                    return { success: false, reason: "invalid_cursor" };
+                }
+                const page = rows.slice(startIndex, startIndex + request.limit);
+                const conversations = await loadHistoryConversations({
+                    db,
+                    updateIds: page.map((row) => row.internal_update_id),
+                });
+                return {
+                    success: true,
+                    items: page.map((row) =>
+                        mapHistoryRecord({
+                            row,
+                            conversations: conversations.filter(
+                                (conversation) =>
+                                    conversation.update_id ===
+                                    row.internal_update_id,
+                            ),
+                        }),
+                    ),
+                    nextCursor:
+                        startIndex + page.length < rows.length
+                            ? page.at(-1)?.update_id
+                            : undefined,
+                };
+            } catch {
+                return { success: false, reason: "history_unavailable" };
+            }
+        },
+
+        getHistoryDetail: async ({ userId, request }) => {
+            try {
+                const authorizedProjects = await listHistoryVisibleProjects({
+                    db,
+                    userId,
+                });
+                const rows = await loadHistoryRows({
+                    db,
+                    authorizedProjectIds: [
+                        ...new Set(
+                            authorizedProjects.map((row) => row.project_id),
+                        ),
+                    ],
+                });
+                const row = rows.find(
+                    (candidate) => candidate.update_id === request.updateId,
+                );
+                if (row === undefined) {
+                    return { success: false, reason: "update_not_found" };
+                }
+                const conversations = await loadHistoryConversations({
+                    db,
+                    updateIds: [row.internal_update_id],
+                });
+                return {
+                    success: true,
+                    record: mapHistoryRecord({ row, conversations }),
+                };
+            } catch {
+                return { success: false, reason: "history_unavailable" };
+            }
+        },
+
+        estimateAudience,
+
+        sendTest: async ({ userId, request }) => {
+            if (!sendingEnabled) {
+                return { success: false, reason: "sending_disabled" };
+            }
+            const normalized = normalizeUserRichTextInput({
+                html: request.bodyHtml,
+                validationMode: "conversation_email_update",
+            });
+            if (!normalized.success) {
+                return { success: false, reason: "content_invalid" };
+            }
+            try {
+                const now = new Date();
+                const result = await getPrimaryDatabase(db).transaction(
+                    async (tx) => {
+                        await lockUser({ db: tx, userId });
+                        const [accessRows, requesterEmail] = await Promise.all([
+                            listAuthorizedConversations({
+                                db: tx,
+                                userId,
+                                now,
+                            }),
+                            getPrimaryEmail({ db: tx, userId }),
+                        ]);
+                        if (requesterEmail === undefined) {
+                            return {
+                                success: false,
+                                reason: "no_verified_test_email",
+                            } as const;
+                        }
+                        const resolved = resolveSelection({
+                            rows: accessRows,
+                            selection: request.selection,
+                        });
+                        if (!resolved.success) return resolved;
+                        if (
+                            resolved.value.conversations.some(
+                                (row) =>
+                                    !isSendingEnabled({
+                                        row,
+                                        operationallyEnabled: sendingEnabled,
+                                    }),
+                            )
+                        ) {
+                            return {
+                                success: false,
+                                reason: "sending_disabled",
+                            } as const;
+                        }
+                        const contactEmail = normalizeContactEmail(
+                            resolved.value.project.contact_email,
+                        );
+                        if (contactEmail === undefined) {
+                            return {
+                                success: false,
+                                reason: "missing_participant_contact_email",
+                            } as const;
+                        }
+                        try {
+                            await estimateResolvedSelection({
+                                db: tx,
+                                selection: resolved.value,
+                                cutoffAt: now,
+                            });
+                        } catch {
+                            return {
+                                success: false,
+                                reason: "audience_unavailable",
+                            } as const;
+                        }
+                        const recentAttempts = await tx
+                            .select({
+                                createdAt:
+                                    conversationEmailUpdateTestAttemptTable.createdAt,
+                            })
+                            .from(conversationEmailUpdateTestAttemptTable)
+                            .where(
+                                and(
+                                    eq(
+                                        conversationEmailUpdateTestAttemptTable.requestedByUserId,
+                                        userId,
+                                    ),
+                                    gte(
+                                        conversationEmailUpdateTestAttemptTable.createdAt,
+                                        new Date(
+                                            now.getTime() -
+                                                24 * 60 * 60 * 1_000,
+                                        ),
+                                    ),
+                                ),
+                            );
+                        const rateLimit = decideConversationEmailTestRateLimit({
+                            now,
+                            attemptCreatedAt: recentAttempts.map(
+                                (attempt) => attempt.createdAt,
+                            ),
+                        });
+                        if (!rateLimit.allowed) {
+                            return {
+                                success: false,
+                                reason: "test_rate_limited",
+                                retryAt: rateLimit.retryAt,
+                            } as const;
+                        }
+                        const updateRows = await tx
+                            .insert(conversationEmailUpdateTable)
+                            .values({
+                                projectId: resolved.value.project.project_id,
+                                scopeKind:
+                                    resolved.value.project.scope_kind ===
+                                    "project"
+                                        ? "listed_project"
+                                        : "no_project",
+                                createdByUserId: userId,
+                                authorizingOrganizationId:
+                                    resolved.value.project
+                                        .authorizing_organization_id,
+                                authorizingPremiumFeatureId:
+                                    resolved.value.project
+                                        .authorizing_entitlement_id,
+                                projectTitleSnapshot:
+                                    resolved.value.project.project_title,
+                                replyToNameSnapshot:
+                                    resolved.value.project.contact_name ??
+                                    resolved.value.project.project_title,
+                                replyToEmailSnapshot: contactEmail,
+                                subject: request.subject.trim(),
+                                bodyHtml: normalized.content.html,
+                                bodyPlainText: normalized.content.plainText,
+                            })
+                            .returning({
+                                id: conversationEmailUpdateTable.id,
+                                publicId: conversationEmailUpdateTable.publicId,
+                            });
+                        const update = updateRows.at(0);
+                        if (update === undefined) {
+                            return {
+                                success: false,
+                                reason: "test_delivery_failed",
+                            } as const;
+                        }
+                        await tx
+                            .insert(conversationEmailUpdateConversationTable)
+                            .values(
+                                resolved.value.conversations.map((row) => ({
+                                    updateId: update.id,
+                                    projectId: row.project_id,
+                                    conversationId: row.conversation_id,
+                                    conversationTitleSnapshot:
+                                        row.conversation_title,
+                                })),
+                            );
+                        const attemptRows = await tx
+                            .insert(conversationEmailUpdateTestAttemptTable)
+                            .values({
+                                updateId: update.id,
+                                requestedByUserId: userId,
+                                destinationEmailCredentialId:
+                                    requesterEmail.credential_id,
+                                destinationEmailSnapshot: requesterEmail.email,
+                                status: "pending",
+                            })
+                            .returning({
+                                publicId:
+                                    conversationEmailUpdateTestAttemptTable.publicId,
+                            });
+                        const attempt = attemptRows.at(0);
+                        return attempt === undefined
+                            ? ({
+                                  success: false,
+                                  reason: "test_delivery_failed",
+                              } as const)
+                            : ({
+                                  success: true,
+                                  updateId: update.publicId,
+                                  testAttemptId: attempt.publicId,
+                              } as const);
+                    },
+                );
+                if (!result.success) return result;
+                return {
+                    success: true,
+                    updateId: result.updateId,
+                    testAttemptId: result.testAttemptId,
+                    status: "pending",
+                };
+            } catch {
+                return { success: false, reason: "test_delivery_failed" };
+            }
+        },
+
+        getTestStatus: async ({ userId, request }) => {
+            try {
+                const rows = await getPrimaryDatabase(db)
+                    .select({
+                        attempt_id: conversationEmailUpdateTestAttemptTable.id,
+                        attempt_public_id:
+                            conversationEmailUpdateTestAttemptTable.publicId,
+                        update_id:
+                            conversationEmailUpdateTestAttemptTable.updateId,
+                        update_public_id: conversationEmailUpdateTable.publicId,
+                        project_id: conversationEmailUpdateTable.projectId,
+                        authorizing_organization_id:
+                            conversationEmailUpdateTable.authorizingOrganizationId,
+                        requested_by_user_id:
+                            conversationEmailUpdateTestAttemptTable.requestedByUserId,
+                        status: conversationEmailUpdateTestAttemptTable.status,
+                        finished_at:
+                            conversationEmailUpdateTestAttemptTable.finishedAt,
+                    })
+                    .from(conversationEmailUpdateTestAttemptTable)
+                    .innerJoin(
+                        conversationEmailUpdateTable,
+                        eq(
+                            conversationEmailUpdateTable.id,
+                            conversationEmailUpdateTestAttemptTable.updateId,
+                        ),
+                    )
+                    .where(
+                        and(
+                            eq(
+                                conversationEmailUpdateTestAttemptTable.publicId,
+                                request.testAttemptId,
+                            ),
+                            eq(
+                                conversationEmailUpdateTestAttemptTable.requestedByUserId,
+                                userId,
+                            ),
+                        ),
+                    )
+                    .limit(1);
+                const attempt = rows.at(0);
+                if (attempt === undefined) {
+                    return { success: false, reason: "test_not_found" };
+                }
+                if (attempt.status === "provider_accepted") {
+                    if (attempt.finished_at === null) {
+                        return {
+                            success: false,
+                            reason: "test_status_unavailable",
+                        };
+                    }
+                    return {
+                        success: true,
+                        status: {
+                            state: "provider_accepted",
+                            providerAcceptedAt: attempt.finished_at,
+                        },
+                    };
+                }
+                if (
+                    attempt.status === "retryable_rejected" ||
+                    attempt.status === "permanent_rejected" ||
+                    attempt.status === "unknown"
+                ) {
+                    return {
+                        success: true,
+                        status: {
+                            state: "failed",
+                            reason: attempt.status,
+                        },
+                    };
+                }
+                return { success: true, status: { state: attempt.status } };
+            } catch {
+                return { success: false, reason: "test_status_unavailable" };
+            }
+        },
+
+        send: async ({ userId, request }) => {
+            if (!sendingEnabled) {
+                return { success: false, reason: "sending_disabled" };
+            }
+            try {
+                const result = await getPrimaryDatabase(db).transaction(
+                    async (tx) => {
+                        const attemptRows = await tx
+                            .select({
+                                attempt_id:
+                                    conversationEmailUpdateTestAttemptTable.id,
+                                attempt_public_id:
+                                    conversationEmailUpdateTestAttemptTable.publicId,
+                                update_id:
+                                    conversationEmailUpdateTestAttemptTable.updateId,
+                                update_public_id:
+                                    conversationEmailUpdateTable.publicId,
+                                project_id:
+                                    conversationEmailUpdateTable.projectId,
+                                authorizing_organization_id:
+                                    conversationEmailUpdateTable.authorizingOrganizationId,
+                                authorizing_entitlement_id:
+                                    conversationEmailUpdateTable.authorizingPremiumFeatureId,
+                                reply_to_name:
+                                    conversationEmailUpdateTable.replyToNameSnapshot,
+                                reply_to_email:
+                                    conversationEmailUpdateTable.replyToEmailSnapshot,
+                                requested_by_user_id:
+                                    conversationEmailUpdateTestAttemptTable.requestedByUserId,
+                                status: conversationEmailUpdateTestAttemptTable.status,
+                                finished_at:
+                                    conversationEmailUpdateTestAttemptTable.finishedAt,
+                            })
+                            .from(conversationEmailUpdateTestAttemptTable)
+                            .innerJoin(
+                                conversationEmailUpdateTable,
+                                eq(
+                                    conversationEmailUpdateTable.id,
+                                    conversationEmailUpdateTestAttemptTable.updateId,
+                                ),
+                            )
+                            .where(
+                                and(
+                                    eq(
+                                        conversationEmailUpdateTestAttemptTable.publicId,
+                                        request.testAttemptId,
+                                    ),
+                                    eq(
+                                        conversationEmailUpdateTable.publicId,
+                                        request.updateId,
+                                    ),
+                                    eq(
+                                        conversationEmailUpdateTestAttemptTable.requestedByUserId,
+                                        userId,
+                                    ),
+                                ),
+                            )
+                            .for("update", {
+                                of: [
+                                    conversationEmailUpdateTestAttemptTable,
+                                    conversationEmailUpdateTable,
+                                ],
+                            });
+                        const attempt = attemptRows.at(0);
+                        if (attempt === undefined) {
+                            return {
+                                success: false,
+                                reason: "test_not_found",
+                            } as const;
+                        }
+                        if (
+                            !(await lockProject({
+                                db: tx,
+                                projectId: attempt.project_id,
+                            }))
+                        ) {
+                            return {
+                                success: false,
+                                reason: "sending_disabled",
+                            } as const;
+                        }
+                        const existing = await tx
+                            .select({
+                                id: conversationEmailUpdateDeliveryTable.id,
+                            })
+                            .from(conversationEmailUpdateDeliveryTable)
+                            .where(
+                                eq(
+                                    conversationEmailUpdateDeliveryTable.acceptedTestAttemptId,
+                                    attempt.attempt_id,
+                                ),
+                            )
+                            .limit(1);
+                        const activeDelivery = await hasActiveDelivery({
+                            db: tx,
+                            projectId: attempt.project_id,
+                        });
+                        const now = new Date();
+                        const accessRows = await listAuthorizedConversations({
+                            db: tx,
+                            userId,
+                            now,
+                        });
+                        const selectedRows = await tx
+                            .select({
+                                conversation_id:
+                                    conversationEmailUpdateConversationTable.conversationId,
+                            })
+                            .from(conversationEmailUpdateConversationTable)
+                            .where(
+                                eq(
+                                    conversationEmailUpdateConversationTable.updateId,
+                                    attempt.update_id,
+                                ),
+                            );
+                        const selectedIds = new Set(
+                            selectedRows.map((row) => row.conversation_id),
+                        );
+                        const conversations = accessRows.filter(
+                            (row) =>
+                                row.project_id === attempt.project_id &&
+                                row.authorizing_organization_id ===
+                                    attempt.authorizing_organization_id &&
+                                selectedIds.has(row.conversation_id),
+                        );
+                        const project = conversations.at(0);
+                        const everyConversationSendingEnabled =
+                            project !== undefined &&
+                            conversations.length === selectedIds.size &&
+                            conversations.every((row) =>
+                                isSendingEnabled({
+                                    row,
+                                    operationallyEnabled: sendingEnabled,
+                                }),
+                            );
+                        const currentContactEmail = normalizeContactEmail(
+                            project?.contact_email ?? null,
+                        );
+                        const sendDecision = decideConversationEmailFinalSend({
+                            testStatus: attempt.status,
+                            testUsed: existing.length > 0,
+                            activeDelivery,
+                            testedBasis: {
+                                authorizingOrganizationId:
+                                    attempt.authorizing_organization_id,
+                                authorizingEntitlementId:
+                                    attempt.authorizing_entitlement_id,
+                                replyToName: attempt.reply_to_name,
+                                replyToEmail: attempt.reply_to_email,
+                                conversationIds: selectedRows.map(
+                                    (row) => row.conversation_id,
+                                ),
+                            },
+                            currentBasis:
+                                project === undefined ||
+                                currentContactEmail === undefined
+                                    ? undefined
+                                    : {
+                                          authorizingOrganizationId:
+                                              project.authorizing_organization_id,
+                                          authorizingEntitlementId:
+                                              project.authorizing_entitlement_id,
+                                          replyToName:
+                                              project.contact_name ??
+                                              project.project_title,
+                                          replyToEmail: currentContactEmail,
+                                          conversationIds: conversations.map(
+                                              (row) => row.conversation_id,
+                                          ),
+                                      },
+                            everyConversationSendingEnabled,
+                        });
+                        if (!sendDecision.allowed) {
+                            const reason =
+                                sendDecision.reason === "test_used" ||
+                                sendDecision.reason ===
+                                    "delivery_already_active" ||
+                                sendDecision.reason === "test_not_accepted"
+                                    ? sendDecision.reason
+                                    : "sending_disabled";
+                            return {
+                                success: false,
+                                reason,
+                            } as const;
+                        }
+                        if (project === undefined) {
+                            return {
+                                success: false,
+                                reason: "sending_disabled",
+                            } as const;
+                        }
+                        const selection = { project, conversations };
+                        const ownerSnapshots = await resolveRequiredOwnerCopies(
+                            {
+                                db: tx,
+                                projectId: attempt.project_id,
+                                conversationIds: conversations.map(
+                                    (row) => row.conversation_id,
+                                ),
+                                facilitatorUserId: userId,
+                            },
+                        );
+                        if (
+                            ownerSnapshots === undefined ||
+                            ownerSnapshots.length === 0
+                        ) {
+                            return {
+                                success: false,
+                                reason: "required_owner_copy_unavailable",
+                            } as const;
+                        }
+                        const acceptanceParticipantEstimate =
+                            await countEligibleAudience({
+                                db: tx,
+                                selection,
+                                cutoffAt: now,
+                            });
+                        const deliveryRows = await tx
+                            .insert(conversationEmailUpdateDeliveryTable)
+                            .values({
+                                updateId: attempt.update_id,
+                                projectId: attempt.project_id,
+                                acceptedTestAttemptId: attempt.attempt_id,
+                                acceptedByUserId: userId,
+                                status: "preparing",
+                                audienceCutoffAt: now,
+                                displayedParticipantEstimate:
+                                    acceptanceParticipantEstimate,
+                                acceptanceParticipantEstimate:
+                                    acceptanceParticipantEstimate,
+                                requiredOwnerCopyCount: ownerSnapshots.length,
+                                acceptedAt: now,
+                            })
+                            .returning({
+                                id: conversationEmailUpdateDeliveryTable.id,
+                            });
+                        if (deliveryRows.length === 0) {
+                            return {
+                                success: false,
+                                reason: "audience_unavailable",
+                            } as const;
+                        }
+                        const delivery = deliveryRows.at(0);
+                        if (delivery === undefined) {
+                            throw new Error(
+                                "Accepted delivery insert returned no row",
+                            );
+                        }
+                        const insertedOwners = await tx
+                            .insert(conversationEmailUpdateRecipientTable)
+                            .values(
+                                ownerSnapshots.map(
+                                    (
+                                        owner,
+                                    ): typeof conversationEmailUpdateRecipientTable.$inferInsert => ({
+                                        deliveryId: delivery.id,
+                                        userId: owner.userId,
+                                        kind: "conversation_owner_copy",
+                                        status: "pending",
+                                        materializedEmailCredentialId:
+                                            owner.emailCredentialId,
+                                        materializedEmailSnapshot: owner.email,
+                                        displayLanguage: owner.displayLanguage,
+                                    }),
+                                ),
+                            )
+                            .returning({
+                                id: conversationEmailUpdateRecipientTable.id,
+                            });
+                        if (insertedOwners.length !== ownerSnapshots.length) {
+                            throw new Error(
+                                "Required owner snapshot insert was incomplete",
+                            );
+                        }
+                        await tx
+                            .insert(
+                                conversationEmailUpdateRecipientConversationTable,
+                            )
+                            .values(
+                                insertedOwners.flatMap((owner) =>
+                                    conversations.map((conversation) => ({
+                                        recipientId: owner.id,
+                                        deliveryId: delivery.id,
+                                        updateId: attempt.update_id,
+                                        conversationId:
+                                            conversation.conversation_id,
+                                    })),
+                                ),
+                            );
+                        const historyRows = await loadHistoryRows({
+                            db: tx,
+                            authorizedProjectIds: [attempt.project_id],
+                        });
+                        const historyRow = historyRows.find(
+                            (candidate) =>
+                                candidate.update_id === request.updateId,
+                        );
+                        if (historyRow === undefined) {
+                            return {
+                                success: false,
+                                reason: "audience_unavailable",
+                            } as const;
+                        }
+                        const historyConversations =
+                            await loadHistoryConversations({
+                                db: tx,
+                                updateIds: [historyRow.internal_update_id],
+                            });
+                        return {
+                            success: true,
+                            record: mapHistoryRecord({
+                                row: historyRow,
+                                conversations: historyConversations,
+                            }),
+                        } as const;
+                    },
+                );
+                if (!result.success) return result;
+                return result;
+            } catch (error: unknown) {
+                return {
+                    success: false,
+                    reason: isUniqueViolation(error)
+                        ? "delivery_already_active"
+                        : "audience_unavailable",
+                };
+            }
+        },
+
+        getPreferences: async ({ userId, request }) => {
+            try {
+                if ((await getPrimaryEmail({ db, userId })) === undefined) {
+                    return {
+                        success: false,
+                        reason: "verified_email_required",
+                    };
+                }
+                const rows = await loadPreferenceRows({
+                    db,
+                    userId,
+                    now: new Date(),
+                });
+                let groups = buildConversationEmailPreferenceGroups(rows);
+                if (request.search !== undefined) {
+                    const search = request.search.toLocaleLowerCase();
+                    groups = groups.filter((group) =>
+                        group.kind === "project"
+                            ? group.projectTitle
+                                  .toLocaleLowerCase()
+                                  .includes(search) ||
+                              group.conversations.some((conversation) =>
+                                  conversation.conversationTitle
+                                      .toLocaleLowerCase()
+                                      .includes(search),
+                              )
+                            : group.conversations.some((conversation) =>
+                                  conversation.conversationTitle
+                                      .toLocaleLowerCase()
+                                      .includes(search),
+                              ),
+                    );
+                }
+                const cursorFor = (
+                    group: ConversationEmailUpdatePreferenceGroup,
+                ): string =>
+                    group.kind === "project"
+                        ? `project:${group.projectSlug}`
+                        : "no-project";
+                const startIndex =
+                    request.cursor === undefined
+                        ? 0
+                        : groups.findIndex(
+                              (group) => cursorFor(group) === request.cursor,
+                          ) + 1;
+                if (request.cursor !== undefined && startIndex === 0) {
+                    return {
+                        success: false,
+                        reason: "preferences_unavailable",
+                    };
+                }
+                const page = groups.slice(
+                    startIndex,
+                    startIndex + request.limit,
+                );
+                const lastGroup = page.at(-1);
+                return {
+                    success: true,
+                    globalPaused: rows.globalPaused,
+                    groups: page,
+                    nextCursor:
+                        startIndex + page.length < groups.length &&
+                        lastGroup !== undefined
+                            ? cursorFor(lastGroup)
+                            : undefined,
+                };
+            } catch {
+                return { success: false, reason: "preferences_unavailable" };
+            }
+        },
+
+        updatePreference: async ({ userId, request }) => {
+            try {
+                return await getPrimaryDatabase(db).transaction(async (tx) => {
+                    await lockUser({ db: tx, userId });
+                    if (
+                        (await getPrimaryEmail({ db: tx, userId })) ===
+                        undefined
+                    ) {
+                        return {
+                            success: false,
+                            reason: "verified_email_required",
+                        };
+                    }
+                    const now = new Date();
+                    if (request.operation === "set_global_pause") {
+                        await tx
+                            .insert(
+                                conversationEmailUpdateUserGlobalSettingTable,
+                            )
+                            .values({
+                                userId,
+                                pausedAt: request.paused ? now : null,
+                                updatedAt: now,
+                            })
+                            .onConflictDoUpdate({
+                                target: conversationEmailUpdateUserGlobalSettingTable.userId,
+                                set: {
+                                    pausedAt: request.paused ? now : null,
+                                    updatedAt: now,
+                                },
+                            });
+                        return {
+                            success: true,
+                            result: {
+                                operation: request.operation,
+                                globalPaused: request.paused,
+                            },
+                        };
+                    }
+                    if (request.operation === "set_project_preference") {
+                        const projectRows = await tx
+                            .select({ id: projectTable.id })
+                            .from(projectTable)
+                            .where(
+                                and(
+                                    eq(projectTable.slug, request.projectSlug),
+                                    isNull(projectTable.deletedAt),
+                                    eq(
+                                        projectTable.directoryVisibility,
+                                        "listed",
+                                    ),
+                                    isNull(
+                                        projectTable.autoProvisionedForOrganizationId,
+                                    ),
+                                ),
+                            )
+                            .limit(1);
+                        const project = projectRows.at(0);
+                        if (project === undefined) {
+                            return {
+                                success: false,
+                                reason: "project_not_found",
+                            };
+                        }
+                        const config = await getProjectConfigurationRow({
+                            db: tx,
+                            projectSlug: request.projectSlug,
+                            now,
+                        });
+                        if (
+                            config?.feature_available !== true ||
+                            config.safety_blocked
+                        ) {
+                            return {
+                                success: false,
+                                reason: "feature_not_available",
+                            };
+                        }
+                        await tx
+                            .insert(
+                                conversationEmailUpdateUserProjectPreferenceTable,
+                            )
+                            .values({
+                                userId,
+                                projectId: project.id,
+                                enabled: request.enabled,
+                                choiceAt: now,
+                                choiceSource: request.source,
+                            })
+                            .onConflictDoUpdate({
+                                target: [
+                                    conversationEmailUpdateUserProjectPreferenceTable.userId,
+                                    conversationEmailUpdateUserProjectPreferenceTable.projectId,
+                                ],
+                                set: {
+                                    enabled: request.enabled,
+                                    choiceAt: now,
+                                    choiceSource: request.source,
+                                },
+                            });
+                        return {
+                            success: true,
+                            result: {
+                                operation: request.operation,
+                                projectSlug: request.projectSlug,
+                                state: request.enabled ? "enabled" : "disabled",
+                            },
+                        };
+                    }
+                    const config = await getConversationConfigurationRow({
+                        db: tx,
+                        conversationSlugId: request.conversationSlugId,
+                        now,
+                    });
+                    if (config === undefined) {
+                        return {
+                            success: false,
+                            reason: "conversation_not_found",
+                        };
+                    }
+                    if (!config.feature_available || config.safety_blocked) {
+                        return {
+                            success: false,
+                            reason: "feature_not_available",
+                        };
+                    }
+                    let projectPreference:
+                        | { projectSlug: string; state: "enabled" }
+                        | undefined;
+                    let conversationIds = [config.conversation_id];
+                    if (request.enabled && config.scope_kind === "project") {
+                        const preferences = await tx
+                            .select({
+                                enabled:
+                                    conversationEmailUpdateUserProjectPreferenceTable.enabled,
+                            })
+                            .from(
+                                conversationEmailUpdateUserProjectPreferenceTable,
+                            )
+                            .where(
+                                and(
+                                    eq(
+                                        conversationEmailUpdateUserProjectPreferenceTable.userId,
+                                        userId,
+                                    ),
+                                    eq(
+                                        conversationEmailUpdateUserProjectPreferenceTable.projectId,
+                                        config.project_id,
+                                    ),
+                                ),
+                            )
+                            .limit(1);
+                        if (preferences.at(0)?.enabled !== true) {
+                            await tx
+                                .insert(
+                                    conversationEmailUpdateUserProjectPreferenceTable,
+                                )
+                                .values({
+                                    userId,
+                                    projectId: config.project_id,
+                                    enabled: true,
+                                    choiceAt: now,
+                                    choiceSource: request.source,
+                                })
+                                .onConflictDoUpdate({
+                                    target: [
+                                        conversationEmailUpdateUserProjectPreferenceTable.userId,
+                                        conversationEmailUpdateUserProjectPreferenceTable.projectId,
+                                    ],
+                                    set: {
+                                        enabled: true,
+                                        choiceAt: now,
+                                        choiceSource: request.source,
+                                    },
+                                });
+                            projectPreference = {
+                                projectSlug: config.project_slug,
+                                state: "enabled",
+                            };
+                            const siblings = await tx
+                                .select({ id: conversationTable.id })
+                                .from(conversationTable)
+                                .where(
+                                    and(
+                                        eq(
+                                            conversationTable.projectId,
+                                            config.project_id,
+                                        ),
+                                        isNotNull(
+                                            conversationTable.currentContentId,
+                                        ),
+                                    ),
+                                );
+                            conversationIds = siblings.map((row) => row.id);
+                        }
+                    }
+                    for (const conversationId of conversationIds) {
+                        const enabled =
+                            conversationId === config.conversation_id
+                                ? request.enabled
+                                : false;
+                        await tx
+                            .insert(
+                                conversationEmailUpdateUserConversationPreferenceTable,
+                            )
+                            .values({
+                                userId,
+                                conversationId,
+                                enabled,
+                                choiceAt: now,
+                                choiceSource: request.source,
+                            })
+                            .onConflictDoUpdate({
+                                target: [
+                                    conversationEmailUpdateUserConversationPreferenceTable.userId,
+                                    conversationEmailUpdateUserConversationPreferenceTable.conversationId,
+                                ],
+                                set: {
+                                    enabled,
+                                    choiceAt: now,
+                                    choiceSource: request.source,
+                                },
+                            });
+                    }
+                    const changedRows = await tx
+                        .select({
+                            id: conversationTable.id,
+                            slugId: conversationTable.slugId,
+                        })
+                        .from(conversationTable)
+                        .where(inArray(conversationTable.id, conversationIds));
+                    return {
+                        success: true,
+                        result: {
+                            operation: request.operation,
+                            projectPreference,
+                            conversationPreferences: changedRows.map((row) => ({
+                                conversationSlugId: row.slugId,
+                                state:
+                                    row.id === config.conversation_id &&
+                                    request.enabled
+                                        ? ("enabled" as const)
+                                        : ("disabled" as const),
+                            })),
+                        },
+                    };
+                });
+            } catch {
+                return {
+                    success: false,
+                    reason: "preference_conflict",
+                };
+            }
+        },
+
+        getConfiguration,
+
+        updateConfiguration: async ({ userId, request }) => {
+            try {
+                return await getPrimaryDatabase(db).transaction(async (tx) => {
+                    const now = new Date();
+                    if (request.target === "project") {
+                        const initialRow = await getProjectConfigurationRow({
+                            db: tx,
+                            projectSlug: request.projectSlug,
+                            now,
+                        });
+                        if (
+                            initialRow === undefined ||
+                            !(await lockProject({
+                                db: tx,
+                                projectId: initialRow.project_id,
+                            }))
+                        ) {
+                            return {
+                                success: false,
+                                reason: "target_not_found",
+                            };
+                        }
+                        const row = await getProjectConfigurationRow({
+                            db: tx,
+                            projectSlug: request.projectSlug,
+                            now,
+                        });
+                        if (row?.project_id !== initialRow.project_id) {
+                            return {
+                                success: false,
+                                reason: "target_not_found",
+                            };
+                        }
+                        const allowed = await isSiteOrgAdmin({
+                            db: tx,
+                            userId,
+                        });
+                        if (!row.feature_available || !allowed) {
+                            return {
+                                success: false,
+                                reason: "feature_not_available",
+                            };
+                        }
+                        if (
+                            request.defaultEnabled &&
+                            normalizeContactEmail(row.contact_email) ===
+                                undefined
+                        ) {
+                            return {
+                                success: false,
+                                reason: "missing_participant_contact_email",
+                            };
+                        }
+                        if (
+                            await hasActiveDelivery({
+                                db: tx,
+                                projectId: row.project_id,
+                            })
+                        ) {
+                            return {
+                                success: false,
+                                reason: "active_delivery_conflict",
+                            };
+                        }
+                        await tx
+                            .update(projectTable)
+                            .set({
+                                conversationEmailUpdateDefaultEnabled:
+                                    request.defaultEnabled,
+                                conversationEmailUpdateDefaultUpdatedAt: now,
+                                conversationEmailUpdateDefaultUpdatedByUserId:
+                                    userId,
+                            })
+                            .where(eq(projectTable.id, row.project_id));
+                    } else {
+                        const initialRow =
+                            await getConversationConfigurationRow({
+                                db: tx,
+                                conversationSlugId: request.conversationSlugId,
+                                now,
+                            });
+                        if (
+                            initialRow === undefined ||
+                            !(await lockProject({
+                                db: tx,
+                                projectId: initialRow.project_id,
+                            }))
+                        ) {
+                            return {
+                                success: false,
+                                reason: "target_not_found",
+                            };
+                        }
+                        const row = await getConversationConfigurationRow({
+                            db: tx,
+                            conversationSlugId: request.conversationSlugId,
+                            now,
+                        });
+                        if (row?.project_id !== initialRow.project_id) {
+                            return {
+                                success: false,
+                                reason: "target_not_found",
+                            };
+                        }
+                        const allowed = await hasConversationEditCapability({
+                            db: tx,
+                            userId,
+                            projectId: row.project_id,
+                        });
+                        if (!row.feature_available || !allowed) {
+                            return {
+                                success: false,
+                                reason: "feature_not_available",
+                            };
+                        }
+                        const effectiveEnabled =
+                            request.setting === "enabled" ||
+                            (request.setting === "inherit" &&
+                                row.default_enabled);
+                        if (
+                            effectiveEnabled &&
+                            normalizeContactEmail(row.contact_email) ===
+                                undefined
+                        ) {
+                            return {
+                                success: false,
+                                reason: "missing_participant_contact_email",
+                            };
+                        }
+                        if (
+                            await hasActiveDelivery({
+                                db: tx,
+                                projectId: row.project_id,
+                            })
+                        ) {
+                            return {
+                                success: false,
+                                reason: "active_delivery_conflict",
+                            };
+                        }
+                        await tx
+                            .update(conversationTable)
+                            .set({
+                                conversationEmailUpdateEnabledOverride:
+                                    request.setting === "inherit"
+                                        ? null
+                                        : request.setting === "enabled",
+                                conversationEmailUpdateOverrideUpdatedAt: now,
+                                conversationEmailUpdateOverrideUpdatedByUserId:
+                                    userId,
+                            })
+                            .where(
+                                eq(conversationTable.id, row.conversation_id),
+                            );
+                    }
+                    const configuration = await getConfigurationWithDatabase({
+                        database: tx,
+                        userId,
+                        request,
+                    });
+                    return configuration.success
+                        ? configuration
+                        : { success: false, reason: "configuration_conflict" };
+                });
+            } catch {
+                return { success: false, reason: "configuration_conflict" };
+            }
+        },
+
+        getConversationSummary: async ({ userId, request }) => {
+            try {
+                const now = new Date();
+                const row = await getConversationConfigurationRow({
+                    db,
+                    conversationSlugId: request.conversationSlugId,
+                    now,
+                });
+                if (row === undefined) {
+                    return {
+                        success: false,
+                        reason: "conversation_not_found",
+                    };
+                }
+                if (!row.feature_available) {
+                    return {
+                        success: false,
+                        reason: "feature_not_available",
+                    };
+                }
+                const [accessRows, primaryEmail, preferenceRows] =
+                    await Promise.all([
+                        listAuthorizedConversations({
+                            db,
+                            userId,
+                            now,
+                        }),
+                        getPrimaryEmail({ db, userId }),
+                        loadPreferenceRows({
+                            db,
+                            userId,
+                            now,
+                        }),
+                    ]);
+                const canCompose = accessRows.some(
+                    (access) =>
+                        access.conversation_id === row.conversation_id &&
+                        isSendingEnabled({
+                            row: access,
+                            operationallyEnabled: sendingEnabled,
+                        }),
+                );
+                const conversationPreference =
+                    preferenceRows.conversationRows.find(
+                        (preference) =>
+                            preference.conversation_id === row.conversation_id,
+                    )?.enabled;
+                const projectPreference = preferenceRows.projectRows.find(
+                    (preference) => preference.project_id === row.project_id,
+                )?.enabled;
+                const state =
+                    conversationPreference === undefined
+                        ? "undisclosed"
+                        : conversationPreference
+                          ? "enabled"
+                          : "disabled";
+                const availability =
+                    resolveConversationEmailSendingAvailability({
+                        operationallyEnabled: sendingEnabled,
+                        featureAvailable: row.feature_available,
+                        safetyBlocked: row.safety_blocked,
+                        configuredEnabled:
+                            row.override_enabled ?? row.default_enabled,
+                        hasParticipantContactEmail:
+                            normalizeContactEmail(row.contact_email) !==
+                            undefined,
+                    });
+                return {
+                    success: true,
+                    authoringAction: canCompose
+                        ? "compose"
+                        : row.has_history
+                          ? "history"
+                          : "none",
+                    participantPreference:
+                        primaryEmail === undefined
+                            ? undefined
+                            : {
+                                  state,
+                                  resolvedEnabled:
+                                      resolveConversationEmailPreference({
+                                          globalPaused:
+                                              preferenceRows.globalPaused,
+                                          projectEnabled: projectPreference,
+                                          conversationEnabled:
+                                              conversationPreference,
+                                          scopeKind: row.scope_kind,
+                                      }),
+                                  onboardingAction:
+                                      resolveConversationEmailOnboardingAction({
+                                          hasVerifiedEmail: true,
+                                          preferenceState: state,
+                                          availability,
+                                          scope:
+                                              row.scope_kind === "project"
+                                                  ? {
+                                                        kind: "project",
+                                                        projectSlug:
+                                                            row.project_slug,
+                                                    }
+                                                  : {
+                                                        kind: "no_project",
+                                                        conversationSlugId:
+                                                            row.conversation_slug_id,
+                                                    },
+                                      }),
+                              },
+                };
+            } catch {
+                return { success: false, reason: "summary_unavailable" };
+            }
+        },
+    };
+}

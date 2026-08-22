@@ -1,4 +1,8 @@
 import type { Breadcrumb, Event } from "@sentry/vue";
+import {
+  containsEmailUpdateRecipientActionPath,
+  isEmailUpdateRecipientActionPath,
+} from "src/utils/privacy/emailUpdateRecipientPath";
 import { z } from "zod";
 
 type SentryTransactionEvent = Event & { type: "transaction" };
@@ -177,6 +181,13 @@ export function shouldIgnoreSentryEvent(event: Event): boolean {
   );
 }
 
+export function shouldSuppressSentryTelemetry(value: unknown): boolean {
+  return (
+    isEmailUpdateRecipientActionPath(window.location.pathname) ||
+    containsEmailUpdateRecipientActionPath(value)
+  );
+}
+
 function sanitizeSentryContexts(
   contexts: Event["contexts"]
 ): Event["contexts"] | undefined {
@@ -219,6 +230,9 @@ function sanitizeNetworkBreadcrumbData(
 export function redactSentryBreadcrumb(
   breadcrumb: Breadcrumb
 ): Breadcrumb | null {
+  if (shouldSuppressSentryTelemetry(breadcrumb)) {
+    return null;
+  }
   if (
     breadcrumb.category === "console" ||
     breadcrumb.category?.startsWith("ui.") === true

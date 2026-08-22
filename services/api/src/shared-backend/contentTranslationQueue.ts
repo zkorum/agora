@@ -1,3 +1,4 @@
+/** **** WARNING: GENERATED FROM SHARED-BACKEND DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/
 import { Script } from "@valkey/valkey-glide";
 import type { BaseLogger } from "pino";
 import type { Valkey } from "./valkey.js";

@@ -116,7 +116,7 @@ import { useConversationSurveyState } from "src/composables/conversation/useConv
 import { useSurveyNavigation } from "src/composables/conversation/useSurveyNavigation";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
-import { htmlToCountedText } from "src/shared/shared";
+import { htmlToCountedText } from "src/shared/richText";
 import type {
   ParticipationBlockedReason,
   SurveyQuestionFormItem,
@@ -139,7 +139,8 @@ import {
 } from "./summary.i18n";
 
 const router = useRouter();
-const { routeConversationSlugId, routeContext } = useConversationOnboardingRoute();
+const { routeConversationSlugId, routeContext } =
+  useConversationOnboardingRoute();
 const { safeNavigateBack } = useGoBackButtonHandler();
 const { showNotifyMessage } = useNotify();
 const { exitToConversation } = useConversationOnboardingExit();

@@ -170,12 +170,14 @@ export const zodPremiumFeature = z.enum([
     "event_ticket",
     "analysis_variants",
     "dynamic_translation",
+    "conversation_email_update",
 ]);
 export const zodGrantablePremiumFeature = z.enum([
     "survey",
     "event_ticket",
     "analysis_variants",
     "dynamic_translation",
+    "conversation_email_update",
 ]);
 export const zodParticipationBlockedReason = z.enum([
     "conversation_locked",

@@ -1,3 +1,4 @@
+/** **** WARNING: GENERATED FROM SHARED-BACKEND DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/
 /**
  * Shared Google Cloud Translation helpers.
  * The model routing here is intentionally content-aware so short labels/options

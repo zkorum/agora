@@ -22,6 +22,7 @@ export interface AdministratorPremiumEntitlementsTranslations {
   eventTicketFeature: string;
   analysisVariantsFeature: string;
   dynamicTranslationFeature: string;
+  conversationEmailUpdateFeature: string;
 }
 
 const en: AdministratorPremiumEntitlementsTranslations = {
@@ -46,6 +47,7 @@ const en: AdministratorPremiumEntitlementsTranslations = {
   eventTicketFeature: "Event ticket",
   analysisVariantsFeature: "Analysis variants (2-6 groups)",
   dynamicTranslationFeature: "Dynamic Translation",
+  conversationEmailUpdateFeature: "Email Updates",
 };
 
 const ar: AdministratorPremiumEntitlementsTranslations = {
@@ -70,6 +72,7 @@ const ar: AdministratorPremiumEntitlementsTranslations = {
   eventTicketFeature: "تذكرة فعالية",
   analysisVariantsFeature: "خيارات التحليل (2-6 مجموعات)",
   dynamicTranslationFeature: "الترجمة الديناميكية",
+  conversationEmailUpdateFeature: "تحديثات البريد الإلكتروني",
 };
 
 const es: AdministratorPremiumEntitlementsTranslations = {
@@ -94,6 +97,7 @@ const es: AdministratorPremiumEntitlementsTranslations = {
   eventTicketFeature: "Entrada para evento",
   analysisVariantsFeature: "Variantes de análisis (2-6 grupos)",
   dynamicTranslationFeature: "Traducción dinámica",
+  conversationEmailUpdateFeature: "Actualizaciones por correo electrónico",
 };
 
 const fa: AdministratorPremiumEntitlementsTranslations = {
@@ -118,6 +122,7 @@ const fa: AdministratorPremiumEntitlementsTranslations = {
   eventTicketFeature: "بلیت رویداد",
   analysisVariantsFeature: "گزینه‌های تحلیل (۲ تا ۶ گروه)",
   dynamicTranslationFeature: "ترجمه پویا",
+  conversationEmailUpdateFeature: "به‌روزرسانی‌های ایمیلی",
 };
 
 const fr: AdministratorPremiumEntitlementsTranslations = {
@@ -142,6 +147,7 @@ const fr: AdministratorPremiumEntitlementsTranslations = {
   eventTicketFeature: "Billet d’événement",
   analysisVariantsFeature: "Variantes d’analyse (2 à 6 groupes)",
   dynamicTranslationFeature: "Traduction dynamique",
+  conversationEmailUpdateFeature: "Suivi des conversations par e-mail",
 };
 
 const he: AdministratorPremiumEntitlementsTranslations = {
@@ -166,6 +172,7 @@ const he: AdministratorPremiumEntitlementsTranslations = {
   eventTicketFeature: "כרטיס לאירוע",
   analysisVariantsFeature: "גרסאות ניתוח (2-6 קבוצות)",
   dynamicTranslationFeature: "תרגום דינמי",
+  conversationEmailUpdateFeature: "עדכונים בדוא״ל",
 };
 
 const ja: AdministratorPremiumEntitlementsTranslations = {
@@ -190,6 +197,7 @@ const ja: AdministratorPremiumEntitlementsTranslations = {
   eventTicketFeature: "イベントチケット",
   analysisVariantsFeature: "分析バリエーション（2～6グループ）",
   dynamicTranslationFeature: "動的翻訳",
+  conversationEmailUpdateFeature: "メール更新",
 };
 
 const ky: AdministratorPremiumEntitlementsTranslations = {
@@ -214,6 +222,7 @@ const ky: AdministratorPremiumEntitlementsTranslations = {
   eventTicketFeature: "Иш-чарага билет",
   analysisVariantsFeature: "Анализ варианттары (2-6 топ)",
   dynamicTranslationFeature: "Динамикалык котормо",
+  conversationEmailUpdateFeature: "Электрондук почта жаңыртуулары",
 };
 
 const ru: AdministratorPremiumEntitlementsTranslations = {
@@ -238,6 +247,7 @@ const ru: AdministratorPremiumEntitlementsTranslations = {
   eventTicketFeature: "Билет на мероприятие",
   analysisVariantsFeature: "Варианты анализа (2-6 групп)",
   dynamicTranslationFeature: "Динамический перевод",
+  conversationEmailUpdateFeature: "Обновления по электронной почте",
 };
 
 const zhHans: AdministratorPremiumEntitlementsTranslations = {
@@ -262,6 +272,7 @@ const zhHans: AdministratorPremiumEntitlementsTranslations = {
   eventTicketFeature: "活动门票",
   analysisVariantsFeature: "分析方案（2-6 个群组）",
   dynamicTranslationFeature: "动态翻译",
+  conversationEmailUpdateFeature: "电子邮件更新",
 };
 
 const zhHant: AdministratorPremiumEntitlementsTranslations = {
@@ -286,6 +297,7 @@ const zhHant: AdministratorPremiumEntitlementsTranslations = {
   eventTicketFeature: "活動票券",
   analysisVariantsFeature: "分析方案（2-6 個群組）",
   dynamicTranslationFeature: "動態翻譯",
+  conversationEmailUpdateFeature: "電子郵件更新",
 };
 
 export const administratorPremiumEntitlementsTranslations: Record<

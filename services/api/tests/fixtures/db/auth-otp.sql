@@ -1,4 +1,4 @@
--- WARNING: GENERATED FROM services/api/src/shared-backend/schema.ts. DO NOT EDIT.
+-- WARNING: GENERATED FROM services/shared-backend/src/schema.ts. DO NOT EDIT.
 -- Regenerate with: make sync-api-test-db-fixtures
 
 CREATE TYPE "public"."auth_type" AS ENUM('register', 'login_known_device', 'login_new_device', 'merge', 'restore_deleted', 'restore_and_merge');
@@ -68,6 +68,7 @@ CREATE TABLE "email" (
 	"email_reachability" "email_reachability",
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "email_user_id_id_unique" UNIQUE("user_id","id"),
 	CONSTRAINT "email_canonical_check" CHECK ("email"."email" = lower(btrim("email"."email")))
 );
 
@@ -153,6 +154,8 @@ CREATE TABLE "zk_passport" (
 CREATE INDEX "device_user_session_expiry_idx" ON "device" USING btree ("user_id","session_expiry");
 
 CREATE UNIQUE INDEX "email_active_unique" ON "email" USING btree ("email") WHERE "email"."is_deleted" = false;
+
+CREATE UNIQUE INDEX "email_active_primary_user_unique" ON "email" USING btree ("user_id") WHERE "email"."type" = 'primary' AND "email"."is_deleted" = false;
 
 CREATE INDEX "email_idx" ON "email" USING btree ("email");
 

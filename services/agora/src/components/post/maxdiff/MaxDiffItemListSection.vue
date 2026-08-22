@@ -84,7 +84,7 @@ import AnalysisSectionWrapper from "src/components/post/analysis/common/Analysis
 import AnalysisTitleHeader from "src/components/post/analysis/common/AnalysisTitleHeader.vue";
 import CompactFadeContainer from "src/components/post/analysis/common/CompactFadeContainer.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
-import { htmlToCountedText } from "src/shared/shared";
+import { htmlToCountedText } from "src/shared/richText";
 import type { RankingItemDisplayedContent } from "src/shared/types/zod";
 import { computed, ref } from "vue";
 

@@ -349,7 +349,7 @@ export function generateSqlAlchemyModels({
     }
 
     let out = "";
-    out += "# WARNING: GENERATED FROM services/api/src/shared-backend/schema.ts\n";
+    out += "# WARNING: GENERATED FROM services/shared-backend/src/schema.ts\n";
     out += "# DO NOT MODIFY -- Re-generate with: make sync\n";
     out += `# Service: ${service}\n\n`;
     out += "from __future__ import annotations\n\n";

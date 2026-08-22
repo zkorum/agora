@@ -64,7 +64,8 @@ import Button from "primevue/button";
 import Card from "primevue/card";
 import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { htmlToCountedText, MAX_LENGTH_OPINION } from "src/shared/shared";
+import { htmlToCountedText } from "src/shared/richText";
+import { MAX_LENGTH_OPINION } from "src/shared/shared";
 import { defineAsyncComponent, ref, watch } from "vue";
 
 import {

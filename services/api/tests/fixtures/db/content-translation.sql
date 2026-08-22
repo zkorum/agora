@@ -1,4 +1,4 @@
--- WARNING: GENERATED FROM services/api/src/shared-backend/schema.ts. DO NOT EDIT.
+-- WARNING: GENERATED FROM services/shared-backend/src/schema.ts. DO NOT EDIT.
 -- Regenerate with: make sync-api-test-db-fixtures
 
 CREATE TYPE "public"."content_translation_source_kind" AS ENUM('conversation', 'opinion', 'survey_question', 'project', 'ranking_item');
@@ -111,6 +111,9 @@ CREATE TABLE "conversation" (
 	"polis_config_id" integer,
 	"ranking_config_id" integer,
 	"dynamic_translation_enabled" boolean DEFAULT false NOT NULL,
+	"conversation_email_update_enabled_override" boolean,
+	"conversation_email_update_override_updated_at" timestamp (0),
+	"conversation_email_update_override_updated_by_user_id" uuid,
 	"language_settings_source" "conversation_language_settings_source" DEFAULT 'conversation_override' NOT NULL,
 	"is_indexed" boolean DEFAULT true NOT NULL,
 	"participation_mode" "participation_mode" DEFAULT 'account_required' NOT NULL,
@@ -126,7 +129,9 @@ CREATE TABLE "conversation" (
 	CONSTRAINT "conversation_current_content_id_unique" UNIQUE("current_content_id"),
 	CONSTRAINT "conversation_polis_config_id_unique" UNIQUE("polis_config_id"),
 	CONSTRAINT "conversation_ranking_config_id_unique" UNIQUE("ranking_config_id"),
-	CONSTRAINT "conversation_subtype_config_check" CHECK ((("conversation"."conversation_type" = 'polis' AND "conversation"."polis_config_id" IS NOT NULL AND "conversation"."ranking_config_id" IS NULL) OR ("conversation"."conversation_type" = 'ranking' AND "conversation"."ranking_config_id" IS NOT NULL AND "conversation"."polis_config_id" IS NULL)))
+	CONSTRAINT "conversation_project_id_id_unique" UNIQUE("project_id","id"),
+	CONSTRAINT "conversation_subtype_config_check" CHECK ((("conversation"."conversation_type" = 'polis' AND "conversation"."polis_config_id" IS NOT NULL AND "conversation"."ranking_config_id" IS NULL) OR ("conversation"."conversation_type" = 'ranking' AND "conversation"."ranking_config_id" IS NOT NULL AND "conversation"."polis_config_id" IS NULL))),
+	CONSTRAINT "conversation_email_update_override_audit_check" CHECK (("conversation"."conversation_email_update_override_updated_at" IS NULL) = ("conversation"."conversation_email_update_override_updated_by_user_id" IS NULL))
 );
 
 CREATE TABLE "conversation_translation_target_language" (

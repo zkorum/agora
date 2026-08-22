@@ -99,20 +99,6 @@
               </section>
             </div>
           </q-expansion-item>
-
-          <div
-            v-if="simulationMode && isActiveStatus(record.status)"
-            class="history-card__actions"
-          >
-            <q-btn
-              flat
-              dense
-              no-caps
-              color="primary"
-              :label="`Simulate ${getAdvanceLabel(record.status)}`"
-              @click="emit('advance', record.id)"
-            />
-          </div>
         </q-item-section>
       </q-item>
     </q-list>
@@ -132,11 +118,6 @@ import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 
 defineProps<{
   records: readonly ConversationUpdateHistoryRecord[];
-  simulationMode: boolean;
-}>();
-
-const emit = defineEmits<{
-  advance: [recordId: string];
 }>();
 
 function getStatusLabel(status: ConversationUpdateStatus): string {
@@ -175,33 +156,6 @@ function getStatusColor(
       return "warning";
     case "stopped":
       return "muted";
-  }
-}
-
-function isActiveStatus(status: ConversationUpdateStatus): boolean {
-  return (
-    status === "preparing" ||
-    status === "queued" ||
-    status === "sending" ||
-    status === "stopping"
-  );
-}
-
-function getAdvanceLabel(status: ConversationUpdateStatus): string {
-  switch (status) {
-    case "preparing":
-      return "finish preparation";
-    case "queued":
-      return "start sending";
-    case "sending":
-      return "complete";
-    case "stopping":
-      return "finish stopping";
-    case "completed":
-    case "completed_with_failures":
-    case "failed":
-    case "stopped":
-      return "advance";
   }
 }
 

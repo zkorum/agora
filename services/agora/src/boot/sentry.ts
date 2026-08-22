@@ -1,10 +1,12 @@
 import * as Sentry from "@sentry/vue";
+import { isEmailUpdateRecipientActionPath } from "src/utils/privacy/emailUpdateRecipientPath";
 import {
   redactSentryBreadcrumb,
   redactSentryEvent,
   redactSentryTransaction,
   SENTRY_TRACE_PROPAGATION_TARGETS,
   shouldIgnoreSentryEvent,
+  shouldSuppressSentryTelemetry,
 } from "src/utils/sentry/eventPrivacy";
 import { createPiniaStateAttachment } from "src/utils/sentry/piniaState";
 import {
@@ -20,6 +22,10 @@ import {
 import { defineBoot } from "#q-app/wrappers";
 
 export default defineBoot(({ app, router, store }) => {
+  if (isEmailUpdateRecipientActionPath(window.location.pathname)) {
+    return;
+  }
+
   Sentry.init({
     app,
     dsn: "https://1a115ad14fb74824a573dce151352b58@o4510068006780928.ingest.de.sentry.io/4510068713979984",
@@ -28,9 +34,16 @@ export default defineBoot(({ app, router, store }) => {
     // Note: users who want to maintain their privacy are encouraged to use Tor
     sendDefaultPii: false,
     beforeBreadcrumb: redactSentryBreadcrumb,
-    beforeSendTransaction: redactSentryTransaction,
+    beforeSendTransaction(event) {
+      return shouldSuppressSentryTelemetry(event)
+        ? null
+        : redactSentryTransaction(event);
+    },
     beforeSend(event, hint) {
-      if (shouldIgnoreSentryEvent(event)) {
+      if (
+        shouldSuppressSentryTelemetry(event) ||
+        shouldIgnoreSentryEvent(event)
+      ) {
         return null;
       }
       if (isStackOverflowEvent(event)) {
@@ -63,7 +76,9 @@ export default defineBoot(({ app, router, store }) => {
         networkResponseHeaders: [],
         attachRawBodyFromRequest: false,
         beforeAddRecordingEvent: sanitizeReplayRecordingEvent,
-        beforeErrorSampling: (event) => !shouldIgnoreSentryEvent(event),
+        beforeErrorSampling: (event) =>
+          !shouldSuppressSentryTelemetry(event) &&
+          !shouldIgnoreSentryEvent(event),
       }),
     ],
     tracesSampleRate: 0.1,

@@ -1,3 +1,8 @@
+import {
+  isEmailUpdateRecipientActionPath,
+  redactEmailUpdateRecipientActionPaths,
+} from "src/utils/privacy/emailUpdateRecipientPath";
+
 export type BrowserLogLevel = "debug" | "info" | "log" | "warn" | "error";
 
 export type BrowserLogMetadataValue = string | number | boolean | null;
@@ -69,7 +74,10 @@ function normalizeMetadata(
     Object.entries(metadata).map(([key, value]) => [
       key,
       typeof value === "string"
-        ? truncate({ value, maxLength: MAX_METADATA_LENGTH })
+        ? truncate({
+            value: redactEmailUpdateRecipientActionPaths(value),
+            maxLength: MAX_METADATA_LENGTH,
+          })
         : value,
     ])
   );
@@ -87,7 +95,10 @@ export function serializeBrowserLogValue(value: unknown): string {
 }
 
 export function logBrowserEvent(event: BrowserLogEvent): void {
-  if (!import.meta.env.DEV) {
+  if (
+    !import.meta.env.DEV ||
+    isEmailUpdateRecipientActionPath(window.location.pathname)
+  ) {
     return;
   }
 
@@ -95,15 +106,21 @@ export function logBrowserEvent(event: BrowserLogEvent): void {
     schemaVersion: 1,
     timestamp: new Date().toISOString(),
     sequence,
-    url: window.location.href,
-    route: browserRoute(),
+    url: redactEmailUpdateRecipientActionPaths(window.location.href),
+    route: redactEmailUpdateRecipientActionPaths(browserRoute()),
     level: event.level,
     category: event.category,
-    message: truncate({ value: event.message, maxLength: MAX_MESSAGE_LENGTH }),
+    message: truncate({
+      value: redactEmailUpdateRecipientActionPaths(event.message),
+      maxLength: MAX_MESSAGE_LENGTH,
+    }),
     stack:
       event.stack === undefined
         ? undefined
-        : truncate({ value: event.stack, maxLength: MAX_STACK_LENGTH }),
+        : truncate({
+            value: redactEmailUpdateRecipientActionPaths(event.stack),
+            maxLength: MAX_STACK_LENGTH,
+          }),
     metadata: normalizeMetadata(event.metadata),
   };
   sequence += 1;

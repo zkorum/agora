@@ -1,0 +1,29 @@
+IMAGE ?= quay.io/zkorum/agora-conversation-email-update-worker
+TAG ?= latest
+TAG_ARG := $(or $(word 2,$(MAKECMDGOALS)),$(TAG))
+
+all: dev
+
+dev:
+	pnpm start:dev
+
+build:
+	pnpm build
+
+lint:
+	pnpm lint
+
+typecheck:
+	pnpm typecheck
+
+test:
+	pnpm test
+
+image-buildx:
+	docker buildx build --pull --platform linux/amd64 -f Dockerfile -t $(IMAGE):$(TAG_ARG) .
+
+image-push:
+	docker push $(IMAGE):$(TAG_ARG)
+
+%:
+	@:

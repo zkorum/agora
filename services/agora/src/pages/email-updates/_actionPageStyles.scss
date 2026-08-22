@@ -1,0 +1,74 @@
+.email-update-action-page {
+  padding: 1.5rem 1rem 5rem;
+}
+
+.action-card {
+  display: grid;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  background: white;
+  border: 1px solid #bdbdbd;
+  border-radius: 20px;
+  box-shadow: 0 10px 35px rgba(50, 40, 90, 0.06);
+}
+
+.action-card h1,
+.action-card h2,
+.action-card p {
+  margin: 0;
+}
+
+.action-card h1 {
+  font-size: 1.55rem;
+  font-weight: var(--font-weight-bold);
+  line-height: 1.25;
+}
+
+.action-card h2 {
+  font-size: 1.05rem;
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.35;
+}
+
+.action-description,
+.action-note {
+  color: #424242;
+  line-height: 1.55;
+}
+
+.action-state {
+  display: grid;
+  place-items: center;
+  min-height: 16rem;
+  text-align: center;
+}
+
+.action-state .action-card {
+  width: 100%;
+}
+
+.action-home-link {
+  color: var(--q-primary);
+  font-weight: var(--font-weight-semibold);
+  text-decoration: underline;
+  text-underline-offset: 0.2rem;
+}
+
+.action-button-row {
+  width: min(100%, 20rem);
+}
+
+.action-error {
+  color: var(--q-negative);
+  line-height: 1.45;
+}
+
+@media (min-width: 600px) {
+  .email-update-action-page {
+    padding-block-start: 2.5rem;
+  }
+
+  .action-card {
+    padding: 2rem;
+  }
+}

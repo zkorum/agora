@@ -12,6 +12,7 @@ export interface SettingsTranslations {
   deleteGuestAccount: string;
   profile: string;
   contentPreference: string;
+  emailUpdates: string;
   sessions: string;
   roadmap: string;
   language: string;
@@ -48,6 +49,7 @@ export const settingsTranslations: Record<
     deleteGuestAccount: "Delete Guest Account",
     profile: "Profile",
     contentPreference: "Content Preference",
+    emailUpdates: "Email Updates",
     sessions: "Sessions",
     roadmap: "Product Roadmap",
     language: "Language",
@@ -82,6 +84,7 @@ export const settingsTranslations: Record<
     deleteGuestAccount: "حذف حساب الضيف",
     profile: "الملف الشخصي",
     contentPreference: "تفضيلات المحتوى",
+    emailUpdates: "تحديثات البريد الإلكتروني",
     sessions: "الجلسات",
     roadmap: "خارطة طريق المنتج",
     language: "اللغة",
@@ -115,6 +118,7 @@ export const settingsTranslations: Record<
     deleteGuestAccount: "Eliminar cuenta de invitado",
     profile: "Perfil",
     contentPreference: "Preferencia de contenido",
+    emailUpdates: "Seguimiento de conversaciones por correo",
     sessions: "Sesiones",
     roadmap: "Roadmap del producto",
     language: "Idioma",
@@ -150,6 +154,7 @@ export const settingsTranslations: Record<
     deleteGuestAccount: "حذف حساب مهمان",
     profile: "پروفایل",
     contentPreference: "تنظیمات محتوا",
+    emailUpdates: "به‌روزرسانی‌های ایمیلی",
     sessions: "نشست‌ها",
     roadmap: "نقشه راه محصول",
     language: "زبان",
@@ -185,6 +190,7 @@ export const settingsTranslations: Record<
     deleteGuestAccount: "מחיקת חשבון אורח",
     profile: "פרופיל",
     contentPreference: "העדפות תוכן",
+    emailUpdates: "עדכונים באימייל",
     sessions: "הפעלות",
     roadmap: "מפת דרכים של המוצר",
     language: "שפה",
@@ -218,6 +224,7 @@ export const settingsTranslations: Record<
     deleteGuestAccount: "Supprimer le compte invité",
     profile: "Profil",
     contentPreference: "Préférence de contenu",
+    emailUpdates: "Suivi des conversations par e-mail",
     sessions: "Sessions",
     roadmap: "Roadmap Produit",
     language: "Langue",
@@ -253,6 +260,7 @@ export const settingsTranslations: Record<
     deleteGuestAccount: "删除访客账户",
     profile: "个人资料",
     contentPreference: "内容偏好",
+    emailUpdates: "电子邮件更新",
     sessions: "会话",
     roadmap: "产品路线图",
     language: "语言",
@@ -286,6 +294,7 @@ export const settingsTranslations: Record<
     deleteGuestAccount: "刪除訪客帳戶",
     profile: "個人資料",
     contentPreference: "內容偏好",
+    emailUpdates: "電子郵件更新",
     sessions: "工作階段",
     roadmap: "產品路線圖",
     language: "語言",
@@ -319,6 +328,7 @@ export const settingsTranslations: Record<
     deleteGuestAccount: "ゲストアカウントを削除",
     profile: "プロフィール",
     contentPreference: "コンテンツ設定",
+    emailUpdates: "メール更新",
     sessions: "セッション",
     roadmap: "製品ロードマップ",
     language: "言語",
@@ -354,6 +364,7 @@ export const settingsTranslations: Record<
     deleteGuestAccount: "Конок каттоо эсебин жок кылуу",
     profile: "Профиль",
     contentPreference: "Мазмун тандоолору",
+    emailUpdates: "Электрондук почта жаңыртуулары",
     sessions: "Сеанстар",
     roadmap: "Продукт жол картасы",
     language: "Тил",
@@ -389,6 +400,7 @@ export const settingsTranslations: Record<
     deleteGuestAccount: "Удалить гостевой аккаунт",
     profile: "Профиль",
     contentPreference: "Настройки контента",
+    emailUpdates: "Обновления по электронной почте",
     sessions: "Сеансы",
     roadmap: "Дорожная карта продукта",
     language: "Язык",

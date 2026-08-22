@@ -14,6 +14,7 @@ export interface CreateConversationUpdatesSettingsTranslations {
   overridesDescription: string;
   projectDefault: string;
   projectFallback: string;
+  useDefault: string;
 }
 
 const en: CreateConversationUpdatesSettingsTranslations = {
@@ -32,6 +33,7 @@ const en: CreateConversationUpdatesSettingsTranslations = {
     "Overrides the {defaultValue} default from {scopeLabel}.",
   projectDefault: "project default",
   projectFallback: "the project",
+  useDefault: "Use {source}",
 };
 
 export const createConversationUpdatesSettingsTranslations: Record<
@@ -56,6 +58,7 @@ export const createConversationUpdatesSettingsTranslations: Record<
       "يتجاوز الإعداد الافتراضي {defaultValue} من {scopeLabel}.",
     projectDefault: "الإعداد الافتراضي للمشروع",
     projectFallback: "المشروع",
+    useDefault: "استخدام {source}",
   },
   es: {
     controlLabel: "Actualizaciones por correo: {value} ({source})",
@@ -75,6 +78,7 @@ export const createConversationUpdatesSettingsTranslations: Record<
       "Anula el valor predeterminado {defaultValue} de {scopeLabel}.",
     projectDefault: "valor predeterminado del proyecto",
     projectFallback: "el proyecto",
+    useDefault: "Usar {source}",
   },
   fa: {
     controlLabel: "به‌روزرسانی‌های ایمیلی: {value} ({source})",
@@ -93,6 +97,7 @@ export const createConversationUpdatesSettingsTranslations: Record<
       "پیش‌فرض {defaultValue} در {scopeLabel} را تغییر می‌دهد.",
     projectDefault: "پیش‌فرض پروژه",
     projectFallback: "پروژه",
+    useDefault: "استفاده از {source}",
   },
   fr: {
     controlLabel: "Mises à jour par e-mail : {value} ({source})",
@@ -112,6 +117,7 @@ export const createConversationUpdatesSettingsTranslations: Record<
       "Remplace le réglage {defaultValue} de {scopeLabel}.",
     projectDefault: "réglage par défaut du projet",
     projectFallback: "le projet",
+    useDefault: "Utiliser {source}",
   },
   he: {
     controlLabel: "עדכוני דוא״ל: {value} ({source})",
@@ -130,6 +136,7 @@ export const createConversationUpdatesSettingsTranslations: Record<
       "החלפת ברירת המחדל {defaultValue} של {scopeLabel}.",
     projectDefault: "ברירת המחדל של הפרויקט",
     projectFallback: "הפרויקט",
+    useDefault: "שימוש ב{source}",
   },
   ja: {
     controlLabel: "メール更新：{value}（{source}）",
@@ -148,6 +155,7 @@ export const createConversationUpdatesSettingsTranslations: Record<
       "{scopeLabel}の既定値「{defaultValue}」を上書きします。",
     projectDefault: "プロジェクトの既定値",
     projectFallback: "プロジェクト",
+    useDefault: "{source}を使用",
   },
   ky: {
     controlLabel: "Электрондук жаңыртуулар: {value} ({source})",
@@ -167,6 +175,7 @@ export const createConversationUpdatesSettingsTranslations: Record<
       "{scopeLabel} аймагындагы {defaultValue} демейки маанисин өзгөртөт.",
     projectDefault: "долбоордун демейки жөндөөсү",
     projectFallback: "долбоор",
+    useDefault: "{source} колдонуу",
   },
   ru: {
     controlLabel: "Почтовые обновления: {value} ({source})",
@@ -186,6 +195,7 @@ export const createConversationUpdatesSettingsTranslations: Record<
       "Переопределяется значение «{defaultValue}» из области «{scopeLabel}».",
     projectDefault: "настройка проекта по умолчанию",
     projectFallback: "проект",
+    useDefault: "Использовать {source}",
   },
   "zh-Hans": {
     controlLabel: "电子邮件更新：{value}（{source}）",
@@ -202,6 +212,7 @@ export const createConversationUpdatesSettingsTranslations: Record<
     overridesDescription: "覆盖{scopeLabel}的{defaultValue}默认值。",
     projectDefault: "项目默认值",
     projectFallback: "项目",
+    useDefault: "使用{source}",
   },
   "zh-Hant": {
     controlLabel: "電子郵件更新：{value}（{source}）",
@@ -218,5 +229,6 @@ export const createConversationUpdatesSettingsTranslations: Record<
     overridesDescription: "覆寫{scopeLabel}的{defaultValue}預設值。",
     projectDefault: "專案預設值",
     projectFallback: "專案",
+    useDefault: "使用{source}",
   },
 };

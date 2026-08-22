@@ -70,9 +70,7 @@ import {
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import { log } from "@/app.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
-import {
-    getConversationViewAccessLevelForConversation,
-} from "@/service/conversationAccess.js";
+import { getConversationViewAccessLevelForConversation } from "@/service/conversationAccess.js";
 import { requireProjectCapability } from "@/service/projectAccess.js";
 import {
     buildSurveyAggregateResultRows,
@@ -196,10 +194,7 @@ interface SurveyAnalysisRefreshContextBase {
 }
 
 export type SurveyAnalysisRefreshContext = SurveyAnalysisRefreshContextBase &
-    (
-        | { conversationType: "polis" }
-        | { conversationType: "ranking" }
-    );
+    ({ conversationType: "polis" } | { conversationType: "ranking" });
 
 export function buildSurveyAnalysisRefreshContext({
     conversationId,
@@ -337,7 +332,10 @@ async function hasParticipantAnalysisInput({
             .from(maxdiffResultTable)
             .innerJoin(
                 maxdiffComparisonTable,
-                eq(maxdiffComparisonTable.maxdiffResultId, maxdiffResultTable.id),
+                eq(
+                    maxdiffComparisonTable.maxdiffResultId,
+                    maxdiffResultTable.id,
+                ),
             )
             .where(
                 and(
@@ -637,7 +635,8 @@ function storedSurveyAnswerToAnswerDraft({
             return {
                 questionType: question.questionType,
                 textValueHtml: storedAnswer.textValueHtml ?? "",
-                textValuePlainText: getStoredSurveyAnswerPlainText(storedAnswer),
+                textValuePlainText:
+                    getStoredSurveyAnswerPlainText(storedAnswer),
             };
         case "choice":
             return {
@@ -1574,7 +1573,8 @@ async function insertSurveyQuestion({
             optionText: option.optionText,
             sourceLanguageCode: sourceLanguageMetadata.sourceLanguageCode,
             sourceRawLanguageCode: sourceLanguageMetadata.sourceRawLanguageCode,
-            sourceLanguageProvider: sourceLanguageMetadata.sourceLanguageProvider,
+            sourceLanguageProvider:
+                sourceLanguageMetadata.sourceLanguageProvider,
             sourceLanguageConfidence:
                 sourceLanguageMetadata.sourceLanguageConfidence,
         });
@@ -1591,7 +1591,8 @@ async function insertSurveyQuestion({
         sourceLanguageCode: sourceLanguageMetadata.sourceLanguageCode,
         sourceRawLanguageCode: sourceLanguageMetadata.sourceRawLanguageCode,
         sourceLanguageProvider: sourceLanguageMetadata.sourceLanguageProvider,
-        sourceLanguageConfidence: sourceLanguageMetadata.sourceLanguageConfidence,
+        sourceLanguageConfidence:
+            sourceLanguageMetadata.sourceLanguageConfidence,
         options: optionSources,
     };
 }
@@ -1753,7 +1754,9 @@ async function replaceSurveyConfigById({
                     surveyQuestionId: existingQuestion.id,
                     questionText: question.questionText,
                     constraints: question.constraints,
-                    ...contentLanguageMetadataUpdateValues(sourceLanguageMetadata),
+                    ...contentLanguageMetadataUpdateValues(
+                        sourceLanguageMetadata,
+                    ),
                     createdAt: now,
                 })
                 .returning({ id: surveyQuestionContentTable.id });
@@ -1816,7 +1819,9 @@ async function replaceSurveyConfigById({
                     .values({
                         surveyQuestionOptionId: insertedOption[0].id,
                         optionText: option.optionText,
-                        ...contentLanguageMetadataUpdateValues(sourceLanguageMetadata),
+                        ...contentLanguageMetadataUpdateValues(
+                            sourceLanguageMetadata,
+                        ),
                         createdAt: now,
                     })
                     .returning({ id: surveyQuestionOptionContentTable.id });
@@ -1853,7 +1858,9 @@ async function replaceSurveyConfigById({
                     .values({
                         surveyQuestionOptionId: insertedOption[0].id,
                         optionText: option.optionText,
-                        ...contentLanguageMetadataUpdateValues(sourceLanguageMetadata),
+                        ...contentLanguageMetadataUpdateValues(
+                            sourceLanguageMetadata,
+                        ),
                         createdAt: now,
                     })
                     .returning({ id: surveyQuestionOptionContentTable.id });
@@ -1878,7 +1885,9 @@ async function replaceSurveyConfigById({
                     .values({
                         surveyQuestionOptionId: existingOption.id,
                         optionText: option.optionText,
-                        ...contentLanguageMetadataUpdateValues(sourceLanguageMetadata),
+                        ...contentLanguageMetadataUpdateValues(
+                            sourceLanguageMetadata,
+                        ),
                         createdAt: now,
                     })
                     .returning({ id: surveyQuestionOptionContentTable.id });
@@ -2050,15 +2059,17 @@ export async function setSurveyConfigForConversation({
 
         const currentQuestionSources: SurveyQuestionContentSource[] = [];
         for (const question of normalizedSurveyConfig.questions) {
-            currentQuestionSources.push(await insertSurveyQuestion({
-                db,
-                conversationSlugId,
-                surveyConfigId: insertedSurveyConfig[0].id,
-                conversationId,
-                question,
-                now,
-                sourceLanguageMetadata: surveySourceLanguageMetadata,
-            }));
+            currentQuestionSources.push(
+                await insertSurveyQuestion({
+                    db,
+                    conversationSlugId,
+                    surveyConfigId: insertedSurveyConfig[0].id,
+                    conversationId,
+                    question,
+                    now,
+                    sourceLanguageMetadata: surveySourceLanguageMetadata,
+                }),
+            );
         }
         return {
             previousRequiresSurvey,
@@ -2176,9 +2187,7 @@ export async function fetchSurveyForm({
         questions: activeSurveyConfig.questions.map((question) =>
             deriveSurveyQuestionFormItem({
                 question,
-                storedAnswer: surveyState.answersByQuestionId.get(
-                    question.id,
-                ),
+                storedAnswer: surveyState.answersByQuestionId.get(question.id),
                 surveyIsOptional: activeSurveyConfig.isOptional,
             }),
         ),
@@ -2511,11 +2520,13 @@ export async function fetchSurveyAggregatedResults({
     });
     if (conversation.conversationType === "ranking") {
         const primaryDb = getPrimaryDatabase(db);
-        const accessLevel = await getConversationViewAccessLevelForConversation({
-            db: primaryDb,
-            userId,
-            projectId: conversation.projectId,
-        });
+        const accessLevel = await getConversationViewAccessLevelForConversation(
+            {
+                db: primaryDb,
+                userId,
+                projectId: conversation.projectId,
+            },
+        );
         const context = await primaryDb.transaction(
             async (tx) =>
                 await loadSurveyExportContext({
@@ -2564,7 +2575,10 @@ export async function fetchSurveyAggregatedResults({
         db,
         conversationId: conversation.conversationId,
     });
-    if (checkpointViewSnapshotId === undefined && activeSurveyConfig === undefined) {
+    if (
+        checkpointViewSnapshotId === undefined &&
+        activeSurveyConfig === undefined
+    ) {
         return {
             hasSurvey: false,
             accessLevel,
@@ -2663,9 +2677,7 @@ export async function fetchSurveyCompletionCounts({
         projectId: conversation.projectId,
     });
     if (accessLevel !== "owner") {
-        throw httpErrors.forbidden(
-            "Missing conversation_update capability",
-        );
+        throw httpErrors.forbidden("Missing conversation_edit capability");
     }
 
     const context = await loadSurveyExportContext({
@@ -2816,13 +2828,15 @@ export async function saveSurveyAnswer({
                 nextSurveyGateStatus: nextSurveyGate.status,
                 isOptional: activeSurveyConfig.isOptional,
             })
-                ? await scheduleConversationAnalysisForParticipantSurveyTransition({
-                      db: transactionDb,
-                      conversation,
-                      participantId,
-                      previousSurveyGateStatus: previousSurveyGate.status,
-                      nextSurveyGateStatus: nextSurveyGate.status,
-                  })
+                ? await scheduleConversationAnalysisForParticipantSurveyTransition(
+                      {
+                          db: transactionDb,
+                          conversation,
+                          participantId,
+                          previousSurveyGateStatus: previousSurveyGate.status,
+                          nextSurveyGateStatus: nextSurveyGate.status,
+                      },
+                  )
                 : false;
 
         return { nextSurveyState, nextSurveyGate, analysisRefreshScheduled };
@@ -3167,13 +3181,15 @@ export async function withdrawSurveyResponse({
                 nextSurveyGateStatus: nextSurveyGate.status,
                 isOptional: activeSurveyConfig.isOptional,
             })
-                ? await scheduleConversationAnalysisForParticipantSurveyTransition({
-                      db: tx,
-                      conversation,
-                      participantId,
-                      previousSurveyGateStatus: previousSurveyGate.status,
-                      nextSurveyGateStatus: nextSurveyGate.status,
-                  })
+                ? await scheduleConversationAnalysisForParticipantSurveyTransition(
+                      {
+                          db: tx,
+                          conversation,
+                          participantId,
+                          previousSurveyGateStatus: previousSurveyGate.status,
+                          nextSurveyGateStatus: nextSurveyGate.status,
+                      },
+                  )
                 : false;
         return { nextSurveyGate, analysisRefreshScheduled };
     });
@@ -3221,8 +3237,8 @@ export async function updateSurveyConfigByAuthor({
         db,
         userId,
         projectId: conversation.projectId,
-        capability: "conversation_update",
-        message: "Missing conversation_update capability",
+        capability: "conversation_edit",
+        message: "Missing conversation_edit capability",
     });
     const existingSurveyConfig = await getActiveSurveyConfigRecord({
         db,
@@ -3269,7 +3285,9 @@ export async function updateSurveyConfigByAuthor({
             conversationId: conversation.conversationId,
         });
         if (activeSurveyConfig === undefined) {
-            throw httpErrors.internalServerError("Survey config was not persisted");
+            throw httpErrors.internalServerError(
+                "Survey config was not persisted",
+            );
         }
 
         await queueConversationSurveyUpdatedEvent({
@@ -3278,7 +3296,9 @@ export async function updateSurveyConfigByAuthor({
             configChanged: true,
         });
         const analysisRefreshScheduled =
-            shouldRecomputeAnalysisForSurveyConfigChange(surveyConfigUpdateEffect) &&
+            shouldRecomputeAnalysisForSurveyConfigChange(
+                surveyConfigUpdateEffect,
+            ) &&
             (await scheduleConversationAnalysisForSurveyChange({
                 db: tx,
                 conversation: analysisRefreshContext,
@@ -3331,8 +3351,8 @@ export async function deleteSurveyConfigByAuthor({
         db,
         userId,
         projectId: conversation.projectId,
-        capability: "conversation_update",
-        message: "Missing conversation_update capability",
+        capability: "conversation_edit",
+        message: "Missing conversation_edit capability",
     });
     const analysisRefreshContext = buildSurveyAnalysisRefreshContext({
         conversationId: conversation.conversationId,
@@ -3358,7 +3378,9 @@ export async function deleteSurveyConfigByAuthor({
             configChanged: true,
         });
         const analysisRefreshScheduled =
-            shouldRecomputeAnalysisForSurveyConfigChange(surveyConfigUpdateEffect) &&
+            shouldRecomputeAnalysisForSurveyConfigChange(
+                surveyConfigUpdateEffect,
+            ) &&
             (await scheduleConversationAnalysisForSurveyChange({
                 db: tx,
                 conversation: analysisRefreshContext,

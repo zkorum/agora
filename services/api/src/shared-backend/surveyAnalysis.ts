@@ -1,12 +1,11 @@
+/** **** WARNING: GENERATED FROM SHARED-BACKEND DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/
 import { and, asc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { z } from "zod";
 import {
     countPlainTextCharacters,
     hasVisiblePlainText,
-    htmlToCountedTextResult,
 } from "../shared/shared.js";
-import { log } from "../app.js";
 import {
     surveyAnswerOptionTable,
     surveyAnswerTable,
@@ -27,17 +26,6 @@ export type SurveyGateStatus =
     | "needs_update"
     | "complete_valid"
     | "withdrawn";
-
-function surveyHtmlToCountedText(html: string): string {
-    const result = htmlToCountedTextResult(html);
-    if (result.usedFallback) {
-        log.warn(
-            result.error,
-            `[SurveyAnalysis] HTML-to-text conversion failed; using best-effort text (HTML length: ${String(html.length)})`,
-        );
-    }
-    return result.plainText;
-}
 
 const surveyQuestionConstraintsSchema = z.union([
     z
@@ -82,6 +70,7 @@ export interface SurveyQuestionAnalysisRecord {
 export interface SurveyStoredAnswerAnalysisRecord {
     answeredQuestionSemanticVersion: number;
     textValueHtml: string | null;
+    textValuePlainText: string | null;
     optionSlugIds: string[];
 }
 
@@ -98,9 +87,7 @@ export function isSurveyAnswerPassedForAnalysis({
 
     return (
         answer.optionSlugIds.length === 0 &&
-        !hasVisiblePlainText(
-            surveyHtmlToCountedText(answer.textValueHtml ?? ""),
-        )
+        !hasVisiblePlainText(answer.textValuePlainText ?? "")
     );
 }
 
@@ -175,7 +162,7 @@ function validateSurveyAnswerContentForAnalysis({
                 return false;
             }
 
-            const plainText = surveyHtmlToCountedText(textValueHtml);
+            const plainText = answer.textValuePlainText ?? "";
             const plainTextLength =
                 countPlainTextCharacters(plainText).characterCount;
             const minPlainTextLength = Math.max(
@@ -506,6 +493,7 @@ export async function getEligibleParticipantIdsForAnalysis({
             answeredQuestionSemanticVersion:
                 surveyAnswerTable.answeredQuestionSemanticVersion,
             textValueHtml: surveyAnswerTable.textValueHtml,
+            textValuePlainText: surveyAnswerTable.textValuePlainText,
         })
         .from(surveyAnswerTable)
         .where(
@@ -562,6 +550,7 @@ export async function getEligibleParticipantIdsForAnalysis({
             answeredQuestionSemanticVersion:
                 answer.answeredQuestionSemanticVersion,
             textValueHtml: answer.textValueHtml,
+            textValuePlainText: answer.textValuePlainText,
             optionSlugIds: optionSlugIdsByAnswerId.get(answer.answerId) ?? [],
         });
         answersByResponseId.set(answer.responseId, answersByQuestionId);

@@ -1,7 +1,10 @@
 import type { ContentActionContext } from "src/utils/actions/core/types";
 import { describe, expect, it, vi } from "vitest";
 
-import { createConversationUpdatePreferenceAction } from "./conversationUpdatePreferenceAction";
+import {
+  createConversationUpdatePreferenceAction,
+  getConversationUpdatePreferenceDisplay,
+} from "./conversationUpdatePreferenceAction";
 
 const context: ContentActionContext = {
   isOwner: false,
@@ -16,15 +19,30 @@ const context: ContentActionContext = {
 };
 
 describe("createConversationUpdatePreferenceAction", () => {
+  it("uses explicit saved state instead of resolved delivery state", () => {
+    expect(getConversationUpdatePreferenceDisplay("enabled")).toEqual({
+      enabled: true,
+      description: "On for this conversation",
+    });
+    expect(getConversationUpdatePreferenceDisplay("disabled")).toEqual({
+      enabled: false,
+      description: "Off for this conversation",
+    });
+    expect(getConversationUpdatePreferenceDisplay("undisclosed")).toEqual({
+      enabled: false,
+      description: "No conversation preference saved",
+    });
+  });
+
   it("uses a switch for the saved preference", () => {
     const enabledAction = createConversationUpdatePreferenceAction({
-      label: "Email updates for this conversation",
+      label: "Receive email updates for this conversation",
       enabled: true,
       description: undefined,
       onToggle: vi.fn(),
     });
     const disabledAction = createConversationUpdatePreferenceAction({
-      label: "Email updates for this conversation",
+      label: "Receive email updates for this conversation",
       enabled: false,
       description: undefined,
       onToggle: vi.fn(),
@@ -43,7 +61,7 @@ describe("createConversationUpdatePreferenceAction", () => {
 
   it("describes a conversation-only opt-in", () => {
     const action = createConversationUpdatePreferenceAction({
-      label: "Email updates for this conversation",
+      label: "Receive email updates for this conversation",
       enabled: false,
       description: "Turn on updates for this conversation only",
       onToggle: vi.fn(),
@@ -58,7 +76,7 @@ describe("createConversationUpdatePreferenceAction", () => {
   it("runs the supplied toggle handler", async () => {
     const onToggle = vi.fn();
     const action = createConversationUpdatePreferenceAction({
-      label: "Email updates for this conversation",
+      label: "Receive email updates for this conversation",
       enabled: false,
       description: undefined,
       onToggle,

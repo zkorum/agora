@@ -757,7 +757,7 @@ export async function closeConversation({
         db,
         userId,
         projectId: conversation[0].projectId,
-        capability: "conversation_update",
+        capability: "conversation_edit",
     });
     if (!canUpdateConversation) {
         return { success: false, reason: "not_allowed" };
@@ -870,7 +870,7 @@ export async function openConversation({
         db,
         userId,
         projectId: conversation[0].projectId,
-        capability: "conversation_update",
+        capability: "conversation_edit",
     });
     if (!canUpdateConversation) {
         return { success: false, reason: "not_allowed" };

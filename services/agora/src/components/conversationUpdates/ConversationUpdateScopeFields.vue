@@ -23,6 +23,7 @@
       :model-value="conversationSelectionModel"
       :options="conversationOptions"
       label="Included conversations"
+      placeholder="Select at least one conversation (required)"
       dialog-title="Choose conversations"
       :dialog-subtitle="conversationDialogSubtitle"
       search-mode="always"
@@ -95,12 +96,11 @@ const conversationOptions = computed(
     currentScope.value?.conversations.map((conversation) => ({
       label: conversation.title,
       value: conversation.id,
-      caption:
-        props.updatesDisabledConversationIds.includes(conversation.id)
-          ? "Email Updates disabled for this conversation"
-          : `About ${new Intl.NumberFormat().format(
-              conversation.eligibleParticipantCount
-            )} participants before email consent filters`,
+      caption: props.updatesDisabledConversationIds.includes(conversation.id)
+        ? "Email Updates disabled for this conversation"
+        : `About ${new Intl.NumberFormat().format(
+            conversation.eligibleParticipantCount
+          )} participants before email consent filters`,
       disabled: props.updatesDisabledConversationIds.includes(conversation.id),
     })) ?? []
 );

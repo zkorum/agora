@@ -7,6 +7,7 @@ This directory contains all Agora services and shared code packages.
 - **agora/** - Frontend Vue.js application
 - **app/** - Public SvelteKit landing page
 - **api/** - Main Fastify backend API
+- **conversation-email-update-worker/** - TypeScript worker for Conversation Email Updates delivery and SES events
 - **import-worker/** - Python worker for conversation imports
 - **math-updater/** - Python worker for opinion-group analysis
 - **ai-description-retry-worker/** - Python worker for AI label/summary retry and backlog work
@@ -24,7 +25,7 @@ Shared across TypeScript services and used as a source for generated Python arti
 
 **Contents:** Common types, Zod schemas, DTOs, constants, utilities
 
-**Syncs to:** agora, api, load-testing. Selected constants and schemas are also converted into Python generated files by `make sync-python-artifacts`.
+**Syncs to:** agora, api, conversation-email-update-worker, load-testing. Selected constants and schemas are also converted into Python generated files by `make sync-python-artifacts`.
 
 **Usage:** `make sync` or `make dev-sync`
 
@@ -37,6 +38,15 @@ Shared between **frontend and API** only
 
 **Usage:** `make sync-app-api` or `make dev-sync-app-api`
 
+### services/shared-backend
+Canonical TypeScript backend source and database schema.
+
+**Contents:** Drizzle schema, database/config/logging utilities, backend queue helpers, and SNS ingress parsing
+
+**Syncs to:** the complete tree is copied to API; a dependency-filtered subset including the complete schema is copied to conversation-email-update-worker. Python models are generated directly from the canonical schema.
+
+**Usage:** `make sync-ts-backend` or `make dev-sync-ts-backend`
+
 ### services/shared-analysis-worker
 Shared Python package consumed by analysis and description Python workers.
 
@@ -44,7 +54,7 @@ Shared Python package consumed by analysis and description Python workers.
 
 **Used by:** math-updater, ai-description-retry-worker, description-translation-retry-worker
 
-**Usage:** edit source Python code directly in `services/shared-analysis-worker/src/`; regenerate `generated_*.py` with `make sync-python-artifacts` after relevant `services/shared` or API schema/type changes
+**Usage:** edit source Python code directly in `services/shared-analysis-worker/src/`; regenerate `generated_*.py` with `make sync-python-artifacts` after relevant `services/shared` or canonical shared-backend schema/type changes
 
 ## Development Workflow
 
@@ -52,20 +62,22 @@ Shared Python package consumed by analysis and description Python workers.
 
 1. **After modifying `services/shared/src/`:** Run `make sync`
 2. **After modifying `services/shared-app-api/src/`:** Run `make sync-app-api`
-3. **After modifying `services/api/src/shared-backend/schema.ts`:** Run `make sync-python-artifacts` if Python generated models are affected
-4. **After modifying shared-analysis-worker Python logic:** Edit `services/shared-analysis-worker/src/` directly, then run the affected worker checks
+3. **After modifying `services/shared-backend/src/`:** Run `make sync-ts-backend`
+4. **After modifying `services/shared-backend/src/schema.ts`:** Run `make sync-python-artifacts` if Python generated models are affected
+5. **After modifying shared-analysis-worker Python logic:** Edit `services/shared-analysis-worker/src/` directly, then run the affected worker checks
 
 ### Watch Mode
 
 For automatic syncing during development:
 - `make dev-sync` - Watch universal shared
 - `make dev-sync-app-api` - Watch app-api shared
+- `make dev-sync-ts-backend` - Watch canonical backend shared source
 
 ### Important Notes
 
 - **Never modify synced files directly!** Always edit source files in `shared*/src/`
 - Synced files contain warning comments at the top
-- Synced files are in `.gitignore` for each service
+- Treat synced consumer files as generated even when they are committed for builds or review
 
 ## Architecture Diagram
 
@@ -73,13 +85,19 @@ For automatic syncing during development:
 services/shared (Universal Types)
     ├──> services/agora/src/shared/
     ├──> services/api/src/shared/
+    ├──> services/conversation-email-update-worker/src/shared/
     └──> services/load-testing/src/shared/
 
 services/shared-app-api (Frontend + API)
     ├──> services/agora/src/shared-app-api/
     └──> services/api/src/shared-app-api/
 
-services/api/src/shared-backend/schema.ts + services/shared generated artifacts
+services/shared-backend/src/
+    ├──> services/api/src/shared-backend/
+    ├──> services/conversation-email-update-worker/src/shared-backend/
+    └──> Python model generation from services/shared-backend/src/schema.ts
+
+services/shared-backend/src/schema.ts + services/shared generated artifacts
     ├──> services/import-worker/src/import_worker/generated_*.py
     ├──> services/content-translation-worker/src/content_translation_worker/generated_*.py
     ├──> services/shared-analysis-worker/src/agora_analysis_worker_shared/generated_*.py

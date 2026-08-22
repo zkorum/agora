@@ -98,6 +98,7 @@
 import { storeToRefs } from "pinia";
 import { copyToClipboard, useQuasar } from "quasar";
 import PreParticipationIntentionDialog from "src/components/authentication/intention/PreParticipationIntentionDialog.vue";
+import { createConversationUpdatePreferenceAction } from "src/components/conversationUpdates/conversationUpdatePreferenceAction";
 import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue";
 import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
 import ZKActionDialog from "src/components/ui-library/ZKActionDialog.vue";
@@ -106,6 +107,7 @@ import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
 import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
 import { useShareActions } from "src/composables/share/useShareActions";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { ConversationEmailUpdateConversationSummaryResponse } from "src/shared/types/dto";
 import type {
   ConversationTypeConfig,
   ExternalSourceConfig,
@@ -114,6 +116,7 @@ import type {
 import { useAuthenticationStore } from "src/stores/authentication";
 import type { ContentAction } from "src/utils/actions/core/types";
 import { useContentActions } from "src/utils/actions/definitions/content-actions";
+import { useBackendConversationEmailUpdatesApi } from "src/utils/api/conversationUpdates/conversationEmailUpdates";
 import { useMaxDiffApi } from "src/utils/api/maxdiff/maxdiff";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 import {
@@ -136,26 +139,29 @@ import {
   postMetadataTranslations,
 } from "./PostMetadata.i18n";
 
-const props = withDefaults(defineProps<{
-  authorVerified: boolean;
-  posterUserName: string;
-  authorUsername: string;
-  createdAt: Date;
-  isEdited: boolean;
-  postSlugId: string;
-  organizationUrl: string;
-  organizationName: string;
-  participationMode: ParticipationMode;
-  isClosed: boolean;
-  conversationTitle: string;
-  conversationTypeConfig: ConversationTypeConfig;
-  externalSourceConfig: ExternalSourceConfig | null;
-  showIdentityCard?: boolean;
-  projectSlug?: string;
-}>(), {
-  showIdentityCard: true,
-  projectSlug: undefined,
-});
+const props = withDefaults(
+  defineProps<{
+    authorVerified: boolean;
+    posterUserName: string;
+    authorUsername: string;
+    createdAt: Date;
+    isEdited: boolean;
+    postSlugId: string;
+    organizationUrl: string;
+    organizationName: string;
+    participationMode: ParticipationMode;
+    isClosed: boolean;
+    conversationTitle: string;
+    conversationTypeConfig: ConversationTypeConfig;
+    externalSourceConfig: ExternalSourceConfig | null;
+    showIdentityCard?: boolean;
+    projectSlug?: string;
+  }>(),
+  {
+    showIdentityCard: true,
+    projectSlug: undefined,
+  }
+);
 
 const emit = defineEmits<{
   openModerationHistory: [];
@@ -170,6 +176,7 @@ const { isEmbeddedMode } = useEmbedMode();
 const postActions = useContentActions();
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
+const conversationEmailUpdatesApi = useBackendConversationEmailUpdatesApi();
 
 const { muteUser } = useBackendUserMuteApi();
 const { invalidateFeed } = useInvalidateFeedQuery();
@@ -264,10 +271,7 @@ async function moderatePostCallback() {
 }
 
 async function moderationHistoryCallback() {
-  if (
-    route.name == "/conversation/[postSlugId]/" ||
-    isEmbeddedMode()
-  ) {
+  if (route.name == "/conversation/[postSlugId]/" || isEmbeddedMode()) {
     emit("openModerationHistory");
   } else if (props.projectSlug !== undefined) {
     await router.push({
@@ -344,9 +348,7 @@ function shareCallback() {
       notify.showCopiedToClipboard();
     },
     openQrCodeCallback: async () => {
-      const { default: ShareDialog } = await import(
-        "../ShareDialog.vue"
-      );
+      const { default: ShareDialog } = await import("../ShareDialog.vue");
       $q.dialog({
         component: ShareDialog,
         componentProps: {
@@ -391,7 +393,18 @@ async function conversationDeletedCallback(): Promise<void> {
   }
 }
 
-function clickedMoreIcon() {
+type ConversationEmailUpdateSummary = Extract<
+  ConversationEmailUpdateConversationSummaryResponse,
+  { success: true }
+>;
+
+const conversationEmailUpdateSummary = ref<
+  ConversationEmailUpdateSummary | undefined
+>(undefined);
+const isSavingConversationEmailUpdatePreference = ref(false);
+let conversationEmailUpdateSummaryRequestId = 0;
+
+async function clickedMoreIcon(): Promise<void> {
   const showSyncGitHub =
     isMaxDiffConversation.value &&
     props.externalSourceConfig?.sourceType === "github_issue";
@@ -422,17 +435,157 @@ function clickedMoreIcon() {
       isConversationClosed: props.isClosed,
       isConversationExportAvailable: !isRankingConversation.value,
       conversationDeletedCallback,
-    },
+    }
   );
 
   if (props.projectSlug !== undefined) {
-    postActions.dialogState.value.actions = postActions.dialogState.value.actions.map(
-      (action) =>
+    postActions.dialogState.value.actions =
+      postActions.dialogState.value.actions.map((action) =>
         regularAppToolActionIds.has(action.id)
           ? { ...action, trailingIcon: "mdi-open-in-new" }
-          : action,
+          : action
+      );
+  }
+
+  await loadConversationUpdateActions();
+}
+
+async function loadConversationUpdateActions(): Promise<void> {
+  const requestId = ++conversationEmailUpdateSummaryRequestId;
+  try {
+    const response = await conversationEmailUpdatesApi.getConversationSummary({
+      conversationSlugId: props.postSlugId,
+    });
+    if (requestId !== conversationEmailUpdateSummaryRequestId) {
+      return;
+    }
+    conversationEmailUpdateSummary.value = response.success
+      ? response
+      : undefined;
+  } catch (error) {
+    if (requestId !== conversationEmailUpdateSummaryRequestId) {
+      return;
+    }
+    console.error("Failed to load Email Update conversation summary", error);
+    conversationEmailUpdateSummary.value = undefined;
+  }
+  addConversationUpdateActions();
+}
+
+function addConversationUpdateActions(): void {
+  const existingActions = postActions.dialogState.value.actions.filter(
+    (action) =>
+      action.id !== "conversationEmailUpdates" &&
+      action.id !== "manageConversationEmailUpdates"
+  );
+  const additions: ContentAction[] = [];
+  const summary = conversationEmailUpdateSummary.value;
+
+  if (
+    summary?.authoringAction !== undefined &&
+    summary.authoringAction !== "none"
+  ) {
+    const destinationTab = summary.authoringAction;
+    additions.push({
+      id: "manageConversationEmailUpdates",
+      label: t("emailUpdatesLabel"),
+      icon: "mdi-email-edit-outline",
+      handler: () => {
+        openConversationEmailUpdates(destinationTab);
+      },
+      isVisible: () => true,
+    });
+  }
+
+  const participantPreference = summary?.participantPreference;
+  if (participantPreference !== undefined) {
+    const enabled = participantPreference.resolvedEnabled;
+    const description =
+      participantPreference.state === "enabled"
+        ? t("emailUpdatesPreferenceOn")
+        : participantPreference.state === "disabled"
+          ? t("emailUpdatesPreferenceOff")
+          : t("emailUpdatesPreferenceUndisclosed");
+    additions.push(
+      createConversationUpdatePreferenceAction({
+        label: t("receiveEmailUpdatesLabel"),
+        enabled,
+        description,
+        disabled: isSavingConversationEmailUpdatePreference.value,
+        onToggle: () => {
+          void updateConversationUpdatePreference(!enabled);
+        },
+      })
     );
   }
+
+  const destructiveIndex = existingActions.findIndex(
+    (action) => action.variant === "destructive"
+  );
+  if (destructiveIndex === -1) {
+    postActions.dialogState.value.actions = [...existingActions, ...additions];
+    return;
+  }
+  postActions.dialogState.value.actions = [
+    ...existingActions.slice(0, destructiveIndex),
+    ...additions,
+    ...existingActions.slice(destructiveIndex),
+  ];
+}
+
+async function updateConversationUpdatePreference(
+  enabled: boolean
+): Promise<void> {
+  if (isSavingConversationEmailUpdatePreference.value) {
+    return;
+  }
+  const previousSummary = conversationEmailUpdateSummary.value;
+  const previousPreference = previousSummary?.participantPreference;
+  if (previousSummary === undefined || previousPreference === undefined) {
+    return;
+  }
+  conversationEmailUpdateSummaryRequestId += 1;
+  isSavingConversationEmailUpdatePreference.value = true;
+  conversationEmailUpdateSummary.value = {
+    ...previousSummary,
+    participantPreference: {
+      ...previousPreference,
+      state: enabled ? "enabled" : "disabled",
+    },
+  };
+  addConversationUpdateActions();
+
+  try {
+    const response = await conversationEmailUpdatesApi.updatePreference({
+      operation: "set_conversation_preference",
+      conversationSlugId: props.postSlugId,
+      enabled,
+      source: "menu",
+    });
+    if (!response.success) {
+      await loadConversationUpdateActions();
+      notify.showNotifyMessage(t("emailUpdatesPreferenceSaveError"));
+      return;
+    }
+    await loadConversationUpdateActions();
+  } catch (error) {
+    console.error("Failed to update Email Update preference", error);
+    await loadConversationUpdateActions();
+    notify.showNotifyMessage(t("emailUpdatesPreferenceSaveError"));
+  } finally {
+    isSavingConversationEmailUpdatePreference.value = false;
+    addConversationUpdateActions();
+  }
+}
+
+function openConversationEmailUpdates(tab: "compose" | "history"): void {
+  void router.push({
+    path: "/email-updates/",
+    query: {
+      tab,
+      conversationSlugId: props.postSlugId,
+    },
+  });
 }
 
 const regularAppToolActionIds = new Set([
@@ -442,7 +595,9 @@ const regularAppToolActionIds = new Set([
   "userReports",
 ]);
 
-function openRegularAppRouteInNewTab(to: Parameters<typeof router.resolve>[0]): void {
+function openRegularAppRouteInNewTab(
+  to: Parameters<typeof router.resolve>[0]
+): void {
   const resolved = router.resolve(to);
   window.open(resolved.href, "_blank", "noopener,noreferrer");
 }

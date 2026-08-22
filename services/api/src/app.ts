@@ -11,6 +11,11 @@ import { sharedConfigSchema } from "./shared-backend/config.js";
 export type Environment = "development" | "production" | "staging" | "test";
 
 const defaultPort = 8080;
+const environmentBoolean = (defaultValue: boolean) =>
+    z
+        .enum(["true", "false"])
+        .default(defaultValue ? "true" : "false")
+        .transform((value) => value === "true");
 
 const baseConfigSchema = sharedConfigSchema.extend({
     CORS_ORIGIN_LIST: z
@@ -74,6 +79,13 @@ const baseConfigSchema = sharedConfigSchema.extend({
     EMAIL_FROM_ADDRESS: z
         .email()
         .default("noreply@notify.agoracitizen.network"),
+    CONVERSATION_EMAIL_UPDATE_EXPECTED_SNS_TOPIC_ARN: z
+        .string()
+        .regex(/^arn:aws(?:-us-gov|-cn)?:sns:[a-z0-9-]+:\d{12}:[A-Za-z0-9-_]+$/)
+        .optional(),
+    CONVERSATION_EMAIL_UPDATES_ENABLED: environmentBoolean(false),
+    CONVERSATION_EMAIL_UPDATES_KILL_SWITCH: environmentBoolean(true),
+    CONVERSATION_EMAIL_UPDATE_SNS_SIMULATOR_ENABLED: environmentBoolean(false),
     SPECIALLY_AUTHORIZED_EMAILS: z.string().min(1).optional(),
     SESSION_LIFETIME_DAYS: z.coerce.number().int().min(1).default(30),
     SESSION_REFRESH_THRESHOLD_DAYS: z.coerce.number().int().min(1).default(7),
@@ -262,6 +274,17 @@ const configSchema = baseConfigSchema.superRefine((value, ctx) => {
                 "SESSION_REFRESH_THRESHOLD_DAYS must be less than SESSION_LIFETIME_DAYS",
         });
     }
+    if (
+        value.CONVERSATION_EMAIL_UPDATE_SNS_SIMULATOR_ENABLED &&
+        value.NODE_ENV !== "development"
+    ) {
+        ctx.addIssue({
+            code: "custom",
+            path: ["CONVERSATION_EMAIL_UPDATE_SNS_SIMULATOR_ENABLED"],
+            message:
+                "The Conversation Email Updates SNS simulator is development-only",
+        });
+    }
 });
 
 export const config = configSchema.parse(process.env);
@@ -342,6 +365,9 @@ function envToLogger(env: Environment) {
 
 export const server = Fastify({
     logger: envToLogger(config.NODE_ENV),
+    // Production traffic arrives from the private nginx container. Public
+    // peers remain untrusted, so their forwarding headers are ignored.
+    trustProxy: ["loopback", "uniquelocal"],
 });
 
 export const log = server.log;

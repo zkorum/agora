@@ -1,7 +1,4 @@
 /** **** WARNING: GENERATED FROM SHARED DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/
-import { decode } from "html-entities";
-import sanitizeHtml from "sanitize-html";
-
 // WARNING: this is also used in schema.ts and cannot be imported there so it was copy-pasted
 // IF YOU CHANGE THESE VALUES ALSO CHANGE THEM IN SCHEMA.TS
 export const MAX_LENGTH_OPTION = 30;
@@ -15,6 +12,8 @@ export const MAX_LENGTH_OPINION = 280;
 export const MAX_LENGTH_OPINION_HTML_OUTPUT = 3000; // Old value for database retro-compatibility of existing data
 export const MAX_BYTES_RICH_TEXT_HTML = 16_384;
 export const MAX_BYTES_CONVERSATION_BODY_HTML = 60_000;
+export const MAX_LENGTH_CONVERSATION_EMAIL_UPDATE = 10_000;
+export const MAX_BYTES_CONVERSATION_EMAIL_UPDATE_HTML = 16_384;
 export const MAX_LENGTH_SURVEY_QUESTION = 500;
 export const MAX_LENGTH_SURVEY_OPTION = 200;
 export const PUBLIC_AGGREGATE_SUPPRESSION_THRESHOLD = 5;
@@ -38,24 +37,16 @@ export function toUnionUndefined<T>(
     return value;
 }
 
-interface ValidateHtmlStringCharacterCountReturn {
-    isValid: boolean;
-    characterCount: number;
-}
-
 interface CountHtmlPlainTextCharactersReturn {
     characterCount: number;
 }
 
 export type RichTextValidationMode =
     | "conversation"
+    | "conversation_email_update"
     | "opinion"
     | "ranking_item"
     | "survey";
-type RichTextCharacterValidationMode = Exclude<
-    RichTextValidationMode,
-    "survey"
->;
 export const richTextSizeValidationFailureReasons = [
     "plain_text_too_long",
     "html_too_long",
@@ -89,125 +80,6 @@ const graphemeSegmenter = new Intl.Segmenter(undefined, {
     granularity: "grapheme",
 });
 
-function normalizeCountedText(value: string): string {
-    return value.replace(/\n+/g, "\n").replace(/^\n+|\n+$/g, "");
-}
-
-export function convertHtmlToCountedText(htmlString: string): string {
-    const textWithNewlines = htmlString
-        .replace(/<\/(?:p|li|div|h[1-6])>/gi, "\n")
-        .replace(/<br\s*\/?>/gi, "\n");
-
-    const plainText = sanitizeHtml(textWithNewlines, {
-        allowedTags: [],
-        allowedAttributes: {},
-    });
-    return normalizeCountedText(decode(plainText));
-}
-
-function decodeBasicHtmlEntities(value: string): string {
-    return value.replace(
-        /&#(\d+);?|&#x([\da-f]+);?|&(amp|apos|gt|lt|nbsp|quot);/gi,
-        (
-            entity,
-            decimal: string | undefined,
-            hexadecimal: string | undefined,
-            named: string | undefined,
-        ) => {
-            if (named !== undefined) {
-                switch (named.toLowerCase()) {
-                    case "amp":
-                        return "&";
-                    case "apos":
-                        return "'";
-                    case "gt":
-                        return ">";
-                    case "lt":
-                        return "<";
-                    case "nbsp":
-                        return "\u00a0";
-                    case "quot":
-                        return '"';
-                }
-            }
-
-            const codePoint = Number.parseInt(
-                decimal ?? hexadecimal ?? "",
-                decimal === undefined ? 16 : 10,
-            );
-            if (
-                !Number.isInteger(codePoint) ||
-                codePoint < 0 ||
-                codePoint > 0x10ffff ||
-                (codePoint >= 0xd800 && codePoint <= 0xdfff)
-            ) {
-                return entity;
-            }
-            return String.fromCodePoint(codePoint);
-        },
-    );
-}
-
-export function convertHtmlToCountedTextFallback(htmlString: string): string {
-    const textWithNewlines = htmlString
-        .replace(/<\/(?:p|li|div|h[1-6])>/gi, "\n")
-        .replace(/<br\s*\/?>/gi, "\n")
-        .replace(/<[^>]*>/g, "")
-        .replace(/<[^>]*$/, "");
-    return normalizeCountedText(decodeBasicHtmlEntities(textWithNewlines));
-}
-
-export type HtmlToCountedTextResult =
-    | {
-          usedFallback: false;
-          plainText: string;
-      }
-    | {
-          usedFallback: true;
-          plainText: string;
-          error: unknown;
-      };
-
-export function convertHtmlToCountedTextWithFallback({
-    htmlString,
-    primaryConverter,
-}: {
-    htmlString: string;
-    primaryConverter: (value: string) => string;
-}): HtmlToCountedTextResult {
-    try {
-        return {
-            usedFallback: false,
-            plainText: primaryConverter(htmlString),
-        };
-    } catch (error: unknown) {
-        return {
-            usedFallback: true,
-            plainText: convertHtmlToCountedTextFallback(htmlString),
-            error,
-        };
-    }
-}
-
-export function htmlToCountedTextResult(
-    htmlString: string,
-): HtmlToCountedTextResult {
-    return convertHtmlToCountedTextWithFallback({
-        htmlString,
-        primaryConverter: convertHtmlToCountedText,
-    });
-}
-
-export function htmlToCountedText(htmlString: string): string {
-    return htmlToCountedTextResult(htmlString).plainText;
-}
-
-export function countHtmlPlainTextCharacters(
-    htmlString: string,
-): CountHtmlPlainTextCharactersReturn {
-    return countPlainTextCharacters(htmlToCountedText(htmlString));
-}
-
 export function countPlainTextCharacters(
     plainText: string,
 ): CountHtmlPlainTextCharactersReturn {
@@ -219,6 +91,12 @@ export function countPlainTextCharacters(
     return {
         characterCount,
     };
+}
+
+export function countUnicodeCodePoints(value: string): number {
+    let count = 0;
+    for (const _character of value) count += 1;
+    return count;
 }
 
 export function countUtf8Bytes(value: string): number {
@@ -256,44 +134,6 @@ export function hasVisiblePlainText(plainText: string): boolean {
     );
 }
 
-export function validateHtmlStringCharacterCountWithLimit({
-    htmlString,
-    maxCharacterCount,
-}: {
-    htmlString: string;
-    maxCharacterCount: number;
-}): ValidateHtmlStringCharacterCountReturn {
-    const { characterCount } = countHtmlPlainTextCharacters(htmlString);
-    return {
-        isValid: characterCount <= maxCharacterCount,
-        characterCount,
-    };
-}
-
-export function validateHtmlStringCharacterCount(
-    htmlString: string,
-    mode: RichTextCharacterValidationMode,
-): ValidateHtmlStringCharacterCountReturn {
-    const characterLimit = getRichTextCharacterLimit(mode);
-    return validateHtmlStringCharacterCountWithLimit({
-        htmlString,
-        maxCharacterCount: characterLimit,
-    });
-}
-
-function getRichTextCharacterLimit(
-    mode: RichTextCharacterValidationMode,
-): number {
-    switch (mode) {
-        case "conversation":
-            return MAX_LENGTH_CONVERSATION_BODY;
-        case "opinion":
-            return MAX_LENGTH_OPINION;
-        case "ranking_item":
-            return MAX_LENGTH_BODY;
-    }
-}
-
 function getRichTextValidationLimits(mode: RichTextValidationMode): {
     characterLimit: number | undefined;
     htmlByteLimit: number;
@@ -303,6 +143,11 @@ function getRichTextValidationLimits(mode: RichTextValidationMode): {
             return {
                 characterLimit: MAX_LENGTH_CONVERSATION_BODY,
                 htmlByteLimit: MAX_BYTES_CONVERSATION_BODY_HTML,
+            };
+        case "conversation_email_update":
+            return {
+                characterLimit: MAX_LENGTH_CONVERSATION_EMAIL_UPDATE,
+                htmlByteLimit: MAX_BYTES_CONVERSATION_EMAIL_UPDATE_HTML,
             };
         case "opinion":
             return {
@@ -343,22 +188,6 @@ export function validateRichTextHtmlByteCount({
     return { success: true };
 }
 
-export function validateRichTextInput({
-    htmlString,
-    mode,
-}: {
-    htmlString: string;
-    mode: RichTextValidationMode;
-}): RichTextValidationSuccess | RichTextValidationFailure {
-    const htmlValidation = validateRichTextHtmlByteCount({ htmlString, mode });
-    if (!htmlValidation.success) {
-        return htmlValidation;
-    }
-
-    const plainText = htmlToCountedText(htmlString);
-    return validateRichTextInputWithPlainText({ htmlString, plainText, mode });
-}
-
 export function validateRichTextInputWithPlainText({
     htmlString,
     plainText,
@@ -374,7 +203,10 @@ export function validateRichTextInputWithPlainText({
     }
 
     const { characterLimit } = getRichTextValidationLimits(mode);
-    if (mode === "opinion" && !hasVisiblePlainText(plainText)) {
+    if (
+        (mode === "opinion" || mode === "conversation_email_update") &&
+        !hasVisiblePlainText(plainText)
+    ) {
         return {
             success: false,
             reason: "plain_text_empty",
@@ -385,11 +217,18 @@ export function validateRichTextInputWithPlainText({
 
     const { characterCount } = countPlainTextCharacters(plainText);
 
-    if (characterLimit !== undefined && characterCount > characterLimit) {
+    const constrainedCharacterCount =
+        mode === "conversation_email_update"
+            ? Math.max(characterCount, countUnicodeCodePoints(plainText))
+            : characterCount;
+    if (
+        characterLimit !== undefined &&
+        constrainedCharacterCount > characterLimit
+    ) {
         return {
             success: false,
             reason: "plain_text_too_long",
-            count: characterCount,
+            count: constrainedCharacterCount,
             limit: characterLimit,
         };
     }

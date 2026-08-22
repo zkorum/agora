@@ -1,8 +1,3 @@
-export type ConversationUpdatePreferenceState =
-  | "disabled"
-  | "enabled"
-  | "undisclosed";
-
 export type ConversationUpdateStatus =
   | "completed"
   | "completed_with_failures"
@@ -43,13 +38,8 @@ export interface ConversationUpdateScopeSummary {
   readonly conversations: readonly ConversationUpdateConversationSummary[];
 }
 
-export interface ConversationUpdatePreferenceSummary {
-  readonly conversationId: string;
-  readonly conversationTitle: string;
-  readonly state: ConversationUpdatePreferenceState;
-}
-
 export interface ConversationUpdateHistoryConversation {
+  readonly id: string;
   readonly title: string;
   readonly href: string;
 }
@@ -58,6 +48,7 @@ interface ConversationUpdateHistoryRecordBase {
   readonly id: string;
   readonly subject: string;
   readonly bodyHtml: string;
+  readonly scopeId: string;
   readonly scopeKind: ConversationUpdateScopeSummary["kind"];
   readonly scopeLabel: string;
   readonly scopeHref: string | undefined;

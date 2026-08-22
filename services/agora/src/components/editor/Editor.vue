@@ -121,7 +121,8 @@ import { EditorContent, useEditor } from "@tiptap/vue-3";
 import { BubbleMenu } from "@tiptap/vue-3/menus";
 import Divider from "primevue/divider";
 import { useQuasar } from "quasar";
-import { countPlainTextCharacters, htmlToCountedText } from "src/shared/shared";
+import { htmlToCountedText } from "src/shared/richText";
+import { countPlainTextCharacters } from "src/shared/shared";
 import { processUserGeneratedHtml } from "src/shared-app-api/html";
 import { computed, onUnmounted, ref, watch } from "vue";
 

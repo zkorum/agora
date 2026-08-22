@@ -1,4 +1,4 @@
-# WARNING: GENERATED FROM services/api/src/shared-backend/schema.ts
+# WARNING: GENERATED FROM services/shared-backend/src/schema.ts
 # DO NOT MODIFY -- Re-generate with: make sync
 # Service: shared-analysis-worker
 
@@ -300,6 +300,7 @@ class PremiumFeature(StrEnum):
     event_ticket = "event_ticket"
     analysis_variants = "analysis_variants"
     dynamic_translation = "dynamic_translation"
+    conversation_email_update = "conversation_email_update"
 
 
 class RankingItemLifecycleStatus(StrEnum):
@@ -503,6 +504,20 @@ class Conversation(Base):
     polis_config_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     ranking_config_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     dynamic_translation_enabled: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    conversation_email_update_enabled_override: Mapped[bool | None] = mapped_column(
+        Boolean,
+        nullable=True,
+    )
+    conversation_email_update_override_updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True,
+    )
+    conversation_email_update_override_updated_by_user_id: Mapped[
+        uuid_pkg.UUID | None
+    ] = mapped_column(
+        Uuid,
+        nullable=True,
+    )
     language_settings_source: Mapped[ConversationLanguageSettingsSource] = mapped_column(
         SaEnum(
             ConversationLanguageSettingsSource,

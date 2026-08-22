@@ -1,7 +1,7 @@
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
 import { log } from "@/app.js";
+import { htmlToCountedTextResult } from "@/shared/richText.js";
 import {
-    htmlToCountedTextResult,
     removeNonDisplayControlCharacters,
     validateRichTextHtmlByteCount,
     validateRichTextInputWithPlainText,
@@ -10,8 +10,7 @@ import {
     type RichTextValidationMode,
 } from "@/shared/shared.js";
 
-const NUMERIC_CHARACTER_REFERENCE_REGEX =
-    /&#(?:(\d+)|x([\da-f]+));?/gi;
+const NUMERIC_CHARACTER_REFERENCE_REGEX = /&#(?:(\d+)|x([\da-f]+));?/gi;
 const BIDI_CHARACTER_REFERENCE_REGEX = /&(?:lrm|rlm);/gi;
 
 function removeEncodedControlCharacters(value: string): string {
@@ -81,7 +80,9 @@ interface NormalizeUserRichTextSuccess {
 }
 
 export function normalizeUserRichTextInput(
-    params: NormalizeUserRichTextInputParams<"opinion">,
+    params: NormalizeUserRichTextInputParams<
+        "opinion" | "conversation_email_update"
+    >,
 ): NormalizeUserRichTextSuccess | RichTextValidationFailure;
 export function normalizeUserRichTextInput(
     params: NormalizeUserRichTextInputParams<"conversation" | "ranking_item">,
@@ -90,9 +91,7 @@ export function normalizeUserRichTextInput(
     | RichTextValidationFailure<RichTextSizeValidationFailureReason>;
 export function normalizeUserRichTextInput(
     params: NormalizeUserRichTextInputParams<"survey">,
-):
-    | NormalizeUserRichTextSuccess
-    | RichTextValidationFailure<"html_too_long">;
+): NormalizeUserRichTextSuccess | RichTextValidationFailure<"html_too_long">;
 export function normalizeUserRichTextInput({
     html,
     validationMode,

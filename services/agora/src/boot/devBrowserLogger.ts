@@ -1,4 +1,5 @@
 import { logBrowserEvent, serializeBrowserLogValue } from "src/utils/devLogger";
+import { redactEmailUpdateRecipientActionPaths } from "src/utils/privacy/emailUpdateRecipientPath";
 
 import { defineBoot } from "#q-app/wrappers";
 
@@ -107,8 +108,8 @@ export default defineBoot(({ router }) => {
       category: "navigation",
       message: "route_change",
       metadata: {
-        from: from.fullPath,
-        to: to.fullPath,
+        from: redactEmailUpdateRecipientActionPaths(from.fullPath),
+        to: redactEmailUpdateRecipientActionPaths(to.fullPath),
       },
     });
   });

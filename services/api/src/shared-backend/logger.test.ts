@@ -1,3 +1,4 @@
+/** **** WARNING: GENERATED FROM SHARED-BACKEND DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/
 import { describe, expect, it, vi } from "vitest";
 import { DrizzleFastifyLogger } from "./logger.js";
 

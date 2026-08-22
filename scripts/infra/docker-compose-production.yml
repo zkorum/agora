@@ -28,11 +28,39 @@ services:
       MAXDIFF_GITHUB_ALLOWED_ORGS: "Agora"
       GITHUB_WEBHOOK_SECRET: "CHANGEME"
       GITHUB_ACCESS_TOKEN: "CHANGEME"
+      CONVERSATION_EMAIL_UPDATE_EXPECTED_SNS_TOPIC_ARN: "arn:aws:sns:eu-west-1:072815346327:conversation-updates-ses-events"
+      CONVERSATION_EMAIL_UPDATES_ENABLED: "false"
+      CONVERSATION_EMAIL_UPDATES_KILL_SWITCH: "true"
     volumes:
       - ./<name of service account>.json:/secrets/service-account.json:ro
     expose:
       - "8080"
     restart: unless-stopped
+  conversation-email-update-worker:
+    container_name: agora_conversation_email_update_worker
+    image: quay.io/zkorum/agora-conversation-email-update-worker:1.0.0
+    environment:
+      CONNECTION_STRING: "postgres://postgres:CHANGEME@postgres:5432/agora"
+      NODE_ENV: "production"
+      CONVERSATION_EMAIL_UPDATES_ENABLED: "false"
+      CONVERSATION_EMAIL_UPDATES_KILL_SWITCH: "true"
+      CONVERSATION_EMAIL_UPDATE_SES_REGION: "eu-west-1"
+      CONVERSATION_EMAIL_UPDATE_EMAIL_FROM_ADDRESS: "conversation@updates.agoracitizen.network"
+      CONVERSATION_EMAIL_UPDATE_SES_CONFIGURATION_SET: "conversation-updates"
+      CONVERSATION_EMAIL_UPDATE_SITE_BASE_URL: "https://www.agoracitizen.app"
+      CONVERSATION_EMAIL_UPDATE_WORKER_POLL_INTERVAL_MS: "1000"
+      CONVERSATION_EMAIL_UPDATE_WORKER_BATCH_SIZE: "25"
+      CONVERSATION_EMAIL_UPDATE_WORKER_CONCURRENCY: "4"
+      CONVERSATION_EMAIL_UPDATE_WORKER_SENDS_PER_SECOND: "5"
+      CONVERSATION_EMAIL_UPDATE_WORKER_LEASE_SECONDS: "120"
+      CONVERSATION_EMAIL_UPDATE_REQUEST_TIMEOUT_MS: "20000"
+    stop_grace_period: 3m
+    restart: unless-stopped
+    logging:
+      driver: awslogs
+      options:
+        <<: *aws-logging-options
+        awslogs-stream: conversation-email-update-worker
   scoring-worker:
     container_name: agora_scoring_worker
     image: quay.io/zkorum/agora-scoring-worker:1.0.0

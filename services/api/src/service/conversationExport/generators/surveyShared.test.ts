@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { htmlToCountedText } from "@/shared/shared.js";
+import { htmlToCountedText } from "@/shared/richText.js";
 import { createExportParticipantMap } from "./participantMap.js";
 import {
     buildSurveyAggregateResultRows,
@@ -177,20 +177,20 @@ describe("buildSurveyParticipantResponseRows", () => {
                 "question-slug-id": "qMono001",
                 "question-order": 1,
                 "question-type": "choice",
-            "question-text": "Where are you from?",
-            "is-required": 1,
-            "is-public-aggregate-suppression-enabled": 1,
-            "question-semantic-version": 1,
+                "question-text": "Where are you from?",
+                "is-required": 1,
+                "is-public-aggregate-suppression-enabled": 1,
+                "question-semantic-version": 1,
             },
             {
                 "question-id": 1,
                 "question-slug-id": "qText001",
                 "question-order": 2,
                 "question-type": "free_text",
-            "question-text": "Anything else?",
-            "is-required": 0,
-            "is-public-aggregate-suppression-enabled": 0,
-            "question-semantic-version": 1,
+                "question-text": "Anything else?",
+                "is-required": 0,
+                "is-public-aggregate-suppression-enabled": 0,
+                "question-semantic-version": 1,
             },
         ]);
         expect(buildSurveyQuestionOptionRows({ context })).toEqual([

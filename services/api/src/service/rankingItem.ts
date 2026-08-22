@@ -10,10 +10,7 @@ import { encode } from "html-entities";
 import { generateRandomSlugId } from "@/crypto.js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
-import {
-    computeItemSnapshot,
-    lockRankingScoringConfig,
-} from "./maxdiff.js";
+import { computeItemSnapshot, lockRankingScoringConfig } from "./maxdiff.js";
 import type {
     MaxDiffItem,
     MaxDiffItemsFetchResponse,
@@ -160,7 +157,9 @@ export async function normalizeProviderRankingItemContent({
         context: "provider ranking title",
     });
     const sanitizedBodyHtml =
-        bodyHtml != null ? processUserGeneratedHtml(bodyHtml, true, "output") : null;
+        bodyHtml != null
+            ? processUserGeneratedHtml(bodyHtml, true, "output")
+            : null;
     const bodyPlainText =
         sanitizedBodyHtml !== null
             ? htmlToCountedTextWithWarning({
@@ -374,7 +373,8 @@ export async function createRankingItem({
             sourceLanguageProvider:
                 normalizedContent.sourceLanguageMetadata.sourceLanguageProvider,
             sourceLanguageConfidence:
-                normalizedContent.sourceLanguageMetadata.sourceLanguageConfidence,
+                normalizedContent.sourceLanguageMetadata
+                    .sourceLanguageConfidence,
         },
     };
 }
@@ -415,8 +415,10 @@ export async function fetchRankingItems({
             title: rankingItemContentTable.title,
             body: rankingItemContentTable.body,
             sourceLanguageCode: rankingItemContentTable.sourceLanguageCode,
-            sourceRawLanguageCode: rankingItemContentTable.sourceRawLanguageCode,
-            sourceLanguageProvider: rankingItemContentTable.sourceLanguageProvider,
+            sourceRawLanguageCode:
+                rankingItemContentTable.sourceRawLanguageCode,
+            sourceLanguageProvider:
+                rankingItemContentTable.sourceLanguageProvider,
             sourceLanguageConfidence:
                 rankingItemContentTable.sourceLanguageConfidence,
             lifecycleStatus: rankingItemTable.lifecycleStatus,
@@ -458,30 +460,31 @@ export async function fetchRankingItems({
         sourceLanguageProvider: r.sourceLanguageProvider,
         sourceLanguageConfidence: r.sourceLanguageConfidence,
     }));
-    const displayContentByContentId = await buildRankingItemDisplayContentByContentId({
-        db,
-        sources,
-        preferences: displayPreferences,
-    });
+    const displayContentByContentId =
+        await buildRankingItemDisplayContentByContentId({
+            db,
+            sources,
+            preferences: displayPreferences,
+        });
 
     const items: MaxDiffItem[] = rows.map((r) => {
-            const displayContent = displayContentByContentId.get(r.contentId);
-            if (displayContent === undefined) {
-                throw httpErrors.internalServerError(
-                    "Failed to build ranking item display content",
-                );
-            }
-            return {
-                slugId: r.slugId,
-                displayContent,
-                lifecycleStatus: r.lifecycleStatus,
-                externalUrl: r.externalUrl,
-                snapshotScore: r.snapshotScore,
-                snapshotRank: r.snapshotRank,
-                snapshotParticipantCount: r.snapshotParticipantCount,
-                createdAt: r.createdAt.toISOString(),
-            };
-        });
+        const displayContent = displayContentByContentId.get(r.contentId);
+        if (displayContent === undefined) {
+            throw httpErrors.internalServerError(
+                "Failed to build ranking item display content",
+            );
+        }
+        return {
+            slugId: r.slugId,
+            displayContent,
+            lifecycleStatus: r.lifecycleStatus,
+            externalUrl: r.externalUrl,
+            snapshotScore: r.snapshotScore,
+            snapshotRank: r.snapshotRank,
+            snapshotParticipantCount: r.snapshotParticipantCount,
+            createdAt: r.createdAt.toISOString(),
+        };
+    });
 
     return { items };
 }
@@ -520,8 +523,8 @@ export async function updateRankingItemLifecycle({
         db,
         userId: requestingUserId,
         projectId: conversation.projectId,
-        capability: "conversation_update",
-        message: "Missing conversation_update capability",
+        capability: "conversation_edit",
+        message: "Missing conversation_edit capability",
     });
 
     const now = new Date();
@@ -599,7 +602,9 @@ export async function updateRankingItemLifecycle({
             `[RankingItem] Item ${itemSlugId} transitioned to ${newStatus} with snapshot: score=${String(transition.snapshot.snapshotScore)}, rank=${String(transition.snapshot.snapshotRank)}`,
         );
     } else {
-        log.info(`[RankingItem] Item ${itemSlugId} transitioned to ${newStatus}`);
+        log.info(
+            `[RankingItem] Item ${itemSlugId} transitioned to ${newStatus}`,
+        );
     }
 
     markRankingScoringDirty({ valkey, conversationId, conversationSlugId });

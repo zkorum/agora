@@ -1,3 +1,4 @@
+/** **** WARNING: GENERATED FROM SHARED-BACKEND DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/
 /**
  * Utility functions for shared-backend
  */

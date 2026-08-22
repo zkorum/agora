@@ -6,38 +6,44 @@ import type { RouteNamedMap } from "vue-router/auto-routes";
 type RouteName = keyof RouteNamedMap;
 
 const onboardingRoutes = [
-    "/onboarding/step1-login/",
-    "/onboarding/step1-signup/",
-    "/onboarding/step2-signup/",
-    "/onboarding/step3-email-1/",
-    "/onboarding/step3-email-2/",
-    "/onboarding/step3-passport/",
-    "/onboarding/step3-phone-1/",
-    "/onboarding/step3-phone-2/",
-    "/onboarding/step4-username/",
-    "/verify/identity/",
-    "/verify/hard/",
-    "/verify/email/",
-    "/verify/email-code/",
-    "/verify/phone/",
-    "/verify/phone-code/",
-    "/verify/passport/",
-  ] satisfies ReadonlyArray<RouteName>;
+  "/onboarding/step1-login/",
+  "/onboarding/step1-signup/",
+  "/onboarding/step2-signup/",
+  "/onboarding/step3-email-1/",
+  "/onboarding/step3-email-2/",
+  "/onboarding/step3-passport/",
+  "/onboarding/step3-phone-1/",
+  "/onboarding/step3-phone-2/",
+  "/onboarding/step4-username/",
+  "/verify/identity/",
+  "/verify/hard/",
+  "/verify/email/",
+  "/verify/email-code/",
+  "/verify/phone/",
+  "/verify/phone-code/",
+  "/verify/passport/",
+] satisfies ReadonlyArray<RouteName>;
 
 // Login/onboarding pages that logged-in users should never see.
 // Excludes step4-username (reached right after isLoggedIn becomes true during signup)
 // and /verify/* pages (used for credential upgrades on gated conversations).
 const loginAndOnboardingRoutes = [
-    "/welcome/",
-    "/onboarding/step1-login/",
-    "/onboarding/step1-signup/",
-    "/onboarding/step2-signup/",
-    "/onboarding/step3-email-1/",
-    "/onboarding/step3-email-2/",
-    "/onboarding/step3-passport/",
-    "/onboarding/step3-phone-1/",
-    "/onboarding/step3-phone-2/",
-  ] satisfies ReadonlyArray<RouteName>;
+  "/welcome/",
+  "/onboarding/step1-login/",
+  "/onboarding/step1-signup/",
+  "/onboarding/step2-signup/",
+  "/onboarding/step3-email-1/",
+  "/onboarding/step3-email-2/",
+  "/onboarding/step3-passport/",
+  "/onboarding/step3-phone-1/",
+  "/onboarding/step3-phone-2/",
+] satisfies ReadonlyArray<RouteName>;
+
+const emailUpdateRecipientActionRoutes = [
+  "/email-updates/unsubscribe/[token]",
+  "/email-updates/preferences/[token]",
+  "/email-updates/report/[token]",
+] satisfies ReadonlyArray<RouteName>;
 
 function routeNameMatches({
   routeName,
@@ -107,11 +113,22 @@ export function useRouterGuard() {
     ] satisfies ReadonlyArray<RouteName>;
 
     if (
-      !routeNameMatches({ routeName: toName, routeNames: unauthenticatedRoutes }) &&
+      !routeNameMatches({
+        routeName: toName,
+        routeNames: unauthenticatedRoutes,
+      }) &&
+      !isEmailUpdateRecipientActionRoute(toName) &&
       !isDevRouteAllowed(toName)
     ) {
       await router.push({ name: "/" });
     }
+  }
+
+  function isEmailUpdateRecipientActionRoute(toName: RouteRecordName): boolean {
+    return routeNameMatches({
+      routeName: toName,
+      routeNames: emailUpdateRecipientActionRoutes,
+    });
   }
 
   function isDevRouteAllowed(toName: RouteRecordName): boolean {
@@ -141,7 +158,10 @@ export function useRouterGuard() {
         return "ignore";
       }
 
-      if (routeNameMatches({ routeName: toName, routeNames: onboardingRoutes }) && toName != "/") {
+      if (
+        routeNameMatches({ routeName: toName, routeNames: onboardingRoutes }) &&
+        toName != "/"
+      ) {
         return "home";
       }
     }
@@ -153,7 +173,10 @@ export function useRouterGuard() {
     const authStore = useAuthenticationStore();
     if (
       authStore.isLoggedIn &&
-      routeNameMatches({ routeName: toName, routeNames: loginAndOnboardingRoutes })
+      routeNameMatches({
+        routeName: toName,
+        routeNames: loginAndOnboardingRoutes,
+      })
     ) {
       return "home";
     }

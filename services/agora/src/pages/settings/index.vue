@@ -150,20 +150,34 @@ const credentialSettings = computed<SettingsInterface[]>(() => {
   return items;
 });
 
-const accountSettings = computed<SettingsInterface[]>(() => [
-  {
-    type: "navigation",
-    label: t("profile"),
-    to: "/settings/account/profile/",
-    style: "none",
-  },
-  {
-    type: "navigation",
-    label: t("contentPreference"),
-    to: "/settings/account/content-preference/",
-    style: "none",
-  },
-]);
+const accountSettings = computed<SettingsInterface[]>(() => {
+  const emailUpdatesSettings: SettingsInterface[] =
+    credentials.value.email === null
+      ? []
+      : [
+          {
+            type: "navigation",
+            label: t("emailUpdates"),
+            to: "/settings/account/email-updates/",
+            style: "none",
+          },
+        ];
+  return [
+    {
+      type: "navigation",
+      label: t("profile"),
+      to: "/settings/account/profile/",
+      style: "none",
+    },
+    {
+      type: "navigation",
+      label: t("contentPreference"),
+      to: "/settings/account/content-preference/",
+      style: "none",
+    },
+    ...emailUpdatesSettings,
+  ];
+});
 
 const featuredSlug = processEnv.VITE_FEATURED_CONVERSATION_SLUG;
 const { hasCompletedRanking } = useFeaturedBannerVisibility();

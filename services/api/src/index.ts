@@ -51,7 +51,7 @@ import fs from "fs";
 import { Transform } from "node:stream";
 import pLimit from "p-limit";
 import { parseJSONObject } from "parse-json-object";
-import type { z } from "zod";
+import { z } from "zod";
 import {
     config,
     log,
@@ -293,6 +293,17 @@ import {
     logActiveConversationBodyLimits,
     logConversationBodyLimitCompatibility,
 } from "./service/conversationTextMaintenance.js";
+import { createConversationEmailUpdateService } from "./service/conversationEmailUpdate.js";
+import {
+    createConversationEmailUpdateActionService,
+    registerConversationEmailUpdateActionRoutes,
+} from "./service/conversationEmailUpdateAction.js";
+import { createConversationEmailUpdateSnsIngressService } from "./service/conversationEmailUpdateSns.js";
+import {
+    CONVERSATION_EMAIL_UPDATE_SIMULATOR_TOPIC_ARN,
+    conversationEmailUpdateSimulatorRateLimitKey,
+    createConversationEmailUpdateSnsSimulator,
+} from "./service/conversationEmailUpdateSnsSimulator.js";
 
 server.register(fastifySensible);
 server.register(fastifyAuth);
@@ -373,6 +384,11 @@ const githubWebhookRateLimitConfig = {
     max: 60,
     timeWindow: 60 * 1000,
     groupId: "maxdiff-github-webhook",
+};
+const conversationEmailUpdateSnsRateLimitConfig = {
+    max: 60,
+    timeWindow: 60 * 1000,
+    groupId: "conversation-email-update-sns",
 };
 const surveyResultsRateLimitConfig = {
     max: 60,
@@ -500,6 +516,29 @@ server.setErrorHandler((error: FastifyError, _request, reply) => {
 // await node.waitForPeers([Protocols.LightPush]);
 
 const db = await createDb(config, log);
+const conversationEmailUpdateService = createConversationEmailUpdateService({
+    db,
+    sendingEnabled:
+        config.CONVERSATION_EMAIL_UPDATES_ENABLED &&
+        !config.CONVERSATION_EMAIL_UPDATES_KILL_SWITCH,
+});
+const conversationEmailUpdateActionService =
+    createConversationEmailUpdateActionService({ db });
+const conversationEmailUpdateSnsIngressService =
+    config.CONVERSATION_EMAIL_UPDATE_EXPECTED_SNS_TOPIC_ARN === undefined
+        ? undefined
+        : createConversationEmailUpdateSnsIngressService({
+              db,
+              expectedTopicArn:
+                  config.CONVERSATION_EMAIL_UPDATE_EXPECTED_SNS_TOPIC_ARN,
+          });
+const conversationEmailUpdateSnsSimulator =
+    config.CONVERSATION_EMAIL_UPDATE_SNS_SIMULATOR_ENABLED
+        ? createConversationEmailUpdateSnsSimulator({
+              db,
+              topicArn: CONVERSATION_EMAIL_UPDATE_SIMULATOR_TOPIC_ARN,
+          })
+        : undefined;
 logActiveConversationBodyLimits();
 void logConversationBodyLimitCompatibility({ db });
 
@@ -1755,9 +1794,18 @@ async function verifyUcanAndKnownDeviceStatus(
 }
 
 const apiVersion = "v1";
+server.register((actionServer, _options, done) => {
+    registerConversationEmailUpdateActionRoutes({
+        server: actionServer,
+        service: conversationEmailUpdateActionService,
+        apiVersion,
+    });
+    done();
+});
 const REALTIME_REPLAY_BATCH_LIMIT = 100;
 const REALTIME_REPLAY_MAX_EVENTS = 1_000;
 const GITHUB_WEBHOOK_PATH = `/api/${apiVersion}/webhook/github`;
+const CONVERSATION_EMAIL_UPDATE_SNS_WEBHOOK_PATH = `/api/${apiVersion}/webhook/conversation-email-update/sns`;
 const rawRequestBodies = new WeakMap<FastifyRequest, Buffer>();
 
 type RawRequestBodyCaptureStream = Transform & {
@@ -1830,6 +1878,18 @@ async function requireSiteOrgAdmin(request: FastifyRequest): Promise<string> {
     return deviceStatus.userId;
 }
 
+async function requireAuthenticatedUserId(
+    request: FastifyRequest,
+): Promise<string> {
+    const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(db, request, {
+        expectedKnownDeviceStatus: {
+            isRegistered: true,
+            isLoggedIn: true,
+        },
+    });
+    return deviceStatus.userId;
+}
+
 function checkConversationExportEnabled(): void {
     if (!config.EXPORT_CONVOS_ENABLED) {
         throw server.httpErrors.serviceUnavailable(
@@ -1838,7 +1898,83 @@ function checkConversationExportEnabled(): void {
     }
 }
 
+function parseSnsRequestBody(rawPayload: unknown): unknown {
+    if (typeof rawPayload !== "string") return rawPayload;
+    try {
+        const parsedPayload: unknown = JSON.parse(rawPayload);
+        return parsedPayload;
+    } catch {
+        throw server.httpErrors.badRequest("Invalid SNS JSON payload");
+    }
+}
+
 server.after(() => {
+    if (conversationEmailUpdateSnsSimulator !== undefined) {
+        const simulator = conversationEmailUpdateSnsSimulator;
+        server.withTypeProvider<ZodTypeProvider>().route({
+            method: "POST",
+            url: `/api/${apiVersion}/dev/conversation/email-update/sns/simulate`,
+            config: {
+                rateLimit: {
+                    max: 60,
+                    timeWindow: 60 * 1000,
+                    groupId: "conversation-email-update-sns-simulator",
+                    keyGenerator: (request) =>
+                        conversationEmailUpdateSimulatorRateLimitKey(
+                            request.headers.authorization,
+                        ),
+                },
+            },
+            schema: {
+                body: Dto.conversationEmailUpdateSnsSimulatorRequest,
+                response: {
+                    200: Dto.conversationEmailUpdateSnsSimulatorResponse,
+                },
+            },
+            handler: async (request) => {
+                if (
+                    config.NODE_ENV !== "development" ||
+                    !config.CONVERSATION_EMAIL_UPDATE_SNS_SIMULATOR_ENABLED
+                ) {
+                    throw server.httpErrors.notFound();
+                }
+                await requireSiteOrgAdmin(request);
+                return await simulator.simulate(request.body);
+            },
+        });
+    }
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: CONVERSATION_EMAIL_UPDATE_SNS_WEBHOOK_PATH,
+        config: { rateLimit: conversationEmailUpdateSnsRateLimitConfig },
+        schema: {
+            body: z.unknown(),
+            security: [],
+        },
+        handler: async (request, reply) => {
+            if (conversationEmailUpdateSnsIngressService === undefined) {
+                throw server.httpErrors.serviceUnavailable(
+                    "Conversation Email Updates SNS ingress is not configured",
+                );
+            }
+            const result =
+                await conversationEmailUpdateSnsIngressService.ingest(
+                    parseSnsRequestBody(request.body),
+                );
+            if (result.kind === "subscription_confirmation") {
+                const confirmationResponse = await fetch(result.subscribeUrl, {
+                    redirect: "error",
+                    signal: AbortSignal.timeout(5_000),
+                });
+                if (!confirmationResponse.ok) {
+                    throw new Error("Unable to confirm SNS subscription");
+                }
+            }
+            await reply.status(204).send();
+        },
+    });
+
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
         url: `/api/${apiVersion}/auth/check-login-status`,
@@ -6633,6 +6769,222 @@ server.after(() => {
             await conversationExportService.deleteConversationExport({
                 db: db,
                 exportSlugId: request.body.exportSlugId,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/email-update/workspace/get`,
+        schema: {
+            body: Dto.conversationEmailUpdateWorkspaceRequest,
+            response: {
+                200: Dto.conversationEmailUpdateWorkspaceResponse,
+            },
+        },
+        handler: async (request) => {
+            const userId = await requireAuthenticatedUserId(request);
+            return conversationEmailUpdateService.getWorkspace({
+                userId,
+                request: request.body,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/email-update/history/list`,
+        schema: {
+            body: Dto.conversationEmailUpdateHistoryListRequest,
+            response: {
+                200: Dto.conversationEmailUpdateHistoryListResponse,
+            },
+        },
+        handler: async (request) => {
+            const userId = await requireAuthenticatedUserId(request);
+            return conversationEmailUpdateService.listHistory({
+                userId,
+                request: request.body,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/email-update/history/detail`,
+        schema: {
+            body: Dto.conversationEmailUpdateHistoryDetailRequest,
+            response: {
+                200: Dto.conversationEmailUpdateHistoryDetailResponse,
+            },
+        },
+        handler: async (request) => {
+            const userId = await requireAuthenticatedUserId(request);
+            return conversationEmailUpdateService.getHistoryDetail({
+                userId,
+                request: request.body,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/email-update/audience/estimate`,
+        schema: {
+            body: Dto.conversationEmailUpdateAudienceEstimateRequest,
+            response: {
+                200: Dto.conversationEmailUpdateAudienceEstimateResponse,
+            },
+        },
+        handler: async (request) => {
+            const userId = await requireAuthenticatedUserId(request);
+            return conversationEmailUpdateService.estimateAudience({
+                userId,
+                request: request.body,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/email-update/test/send`,
+        schema: {
+            body: Dto.conversationEmailUpdateSendTestRequest,
+            response: {
+                200: Dto.conversationEmailUpdateSendTestResponse,
+            },
+        },
+        handler: async (request) => {
+            const userId = await requireAuthenticatedUserId(request);
+            return conversationEmailUpdateService.sendTest({
+                userId,
+                request: request.body,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/email-update/test/status`,
+        schema: {
+            body: Dto.conversationEmailUpdateTestStatusRequest,
+            response: {
+                200: Dto.conversationEmailUpdateTestStatusResponse,
+            },
+        },
+        handler: async (request) => {
+            const userId = await requireAuthenticatedUserId(request);
+            return await conversationEmailUpdateService.getTestStatus({
+                userId,
+                request: request.body,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/email-update/send`,
+        schema: {
+            body: Dto.conversationEmailUpdateSendRequest,
+            response: {
+                200: Dto.conversationEmailUpdateSendResponse,
+            },
+        },
+        handler: async (request) => {
+            const userId = await requireAuthenticatedUserId(request);
+            return conversationEmailUpdateService.send({
+                userId,
+                request: request.body,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/email-update/preferences/get`,
+        schema: {
+            body: Dto.conversationEmailUpdatePreferencesRequest,
+            response: {
+                200: Dto.conversationEmailUpdatePreferencesResponse,
+            },
+        },
+        handler: async (request) => {
+            const userId = await requireAuthenticatedUserId(request);
+            return conversationEmailUpdateService.getPreferences({
+                userId,
+                request: request.body,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/email-update/preferences/update`,
+        schema: {
+            body: Dto.conversationEmailUpdatePreferenceUpdateRequest,
+            response: {
+                200: Dto.conversationEmailUpdatePreferenceUpdateResponse,
+            },
+        },
+        handler: async (request) => {
+            const userId = await requireAuthenticatedUserId(request);
+            return conversationEmailUpdateService.updatePreference({
+                userId,
+                request: request.body,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/email-update/configuration/get`,
+        schema: {
+            body: Dto.conversationEmailUpdateConfigurationRequest,
+            response: {
+                200: Dto.conversationEmailUpdateConfigurationResponse,
+            },
+        },
+        handler: async (request) => {
+            const userId = await requireAuthenticatedUserId(request);
+            return conversationEmailUpdateService.getConfiguration({
+                userId,
+                request: request.body,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/email-update/configuration/update`,
+        schema: {
+            body: Dto.conversationEmailUpdateConfigurationUpdateRequest,
+            response: {
+                200: Dto.conversationEmailUpdateConfigurationUpdateResponse,
+            },
+        },
+        handler: async (request) => {
+            const userId = await requireAuthenticatedUserId(request);
+            return conversationEmailUpdateService.updateConfiguration({
+                userId,
+                request: request.body,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/email-update/summary/get`,
+        schema: {
+            body: Dto.conversationEmailUpdateConversationSummaryRequest,
+            response: {
+                200: Dto.conversationEmailUpdateConversationSummaryResponse,
+            },
+        },
+        handler: async (request) => {
+            const userId = await requireAuthenticatedUserId(request);
+            return conversationEmailUpdateService.getConversationSummary({
+                userId,
+                request: request.body,
             });
         },
     });

@@ -6,6 +6,7 @@ import {
   redactSentryTransaction,
   SENTRY_TRACE_PROPAGATION_TARGETS,
   shouldIgnoreSentryEvent,
+  shouldSuppressSentryTelemetry,
 } from "src/utils/sentry/eventPrivacy";
 import { describe, expect, it } from "vitest";
 
@@ -281,6 +282,18 @@ describe("ignored Sentry events", () => {
 });
 
 describe("Sentry breadcrumb redaction", () => {
+  it("drops navigation breadcrumbs containing recipient bearer paths", () => {
+    expect(
+      redactSentryBreadcrumb({
+        category: "navigation",
+        data: {
+          from: "/safe",
+          to: "/email-updates/preferences/secret-token",
+        },
+      })
+    ).toBeNull();
+  });
+
   it("drops console and UI breadcrumbs that may contain user data", () => {
     expect(redactSentryBreadcrumb({ category: "console" })).toBeNull();
     expect(redactSentryBreadcrumb({ category: "ui.click" })).toBeNull();
@@ -341,6 +354,22 @@ describe("Sentry breadcrumb redaction", () => {
 });
 
 describe("Sentry error event redaction", () => {
+  it("suppresses telemetry while the current route contains a bearer token", () => {
+    window.history.replaceState({}, "", "/email-updates/report/secret-token");
+    expect(shouldSuppressSentryTelemetry({ message: "failure" })).toBe(true);
+    window.history.replaceState({}, "", "/");
+  });
+
+  it("suppresses events that captured a recipient bearer path", () => {
+    expect(
+      shouldSuppressSentryTelemetry({
+        request: {
+          url: "https://agoracitizen.network/email-updates/unsubscribe/secret-token",
+        },
+      })
+    ).toBe(true);
+  });
+
   it("removes requests and extras while allowlisting technical contexts", () => {
     const event = redactSentryEvent({
       request: {

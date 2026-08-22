@@ -157,18 +157,6 @@
 import { storeToRefs } from "pinia";
 import Button from "primevue/button";
 import PreParticipationIntentionDialog from "src/components/authentication/intention/PreParticipationIntentionDialog.vue";
-
-import {
-  type ConversationReviewTranslations,
-  conversationReviewTranslations,
-} from "./index.i18n";
-
-defineOptions({
-  components: {
-    PrimeButton: Button,
-  },
-});
-
 import ConversationTitle from "src/components/features/conversation/ConversationTitle.vue";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
@@ -182,10 +170,8 @@ import { useCreateSurveyAccess } from "src/composables/conversation/useCreateSur
 import type { SeedOpinionCreateFailure } from "src/composables/conversation/usePublishConversationDraft";
 import { usePublishConversationDraft } from "src/composables/conversation/usePublishConversationDraft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  type RichTextValidationFailure,
-  validateRichTextInput,
-} from "src/shared/shared";
+import { validateRichTextInput } from "src/shared/richText";
+import { type RichTextValidationFailure } from "src/shared/shared";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
@@ -203,6 +189,17 @@ import {
   ref,
 } from "vue";
 import { useRouter } from "vue-router";
+
+import {
+  type ConversationReviewTranslations,
+  conversationReviewTranslations,
+} from "./index.i18n";
+
+defineOptions({
+  components: {
+    PrimeButton: Button,
+  },
+});
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 const router = useRouter();

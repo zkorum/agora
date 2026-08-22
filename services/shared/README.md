@@ -8,6 +8,7 @@ This package contains code shared across:
 
 - `services/agora` - Frontend app
 - `services/api` - Main Fastify API
+- `services/conversation-email-update-worker` - Conversation Email Updates worker
 - `services/load-testing` - Load-testing client
 
 Python services consume generated artifacts derived from shared TypeScript sources instead of synced TypeScript files.
@@ -30,5 +31,5 @@ This will copy the shared code to TypeScript services. If shared constants or sc
 ## Other Shared Packages
 
 - `services/shared-app-api`: Shared between frontend + API only (UCAN, DID, etc.)
-- `services/api/src/shared-backend`: API-owned backend utilities and schema used to generate Python worker artifacts
+- `services/shared-backend`: Canonical backend utilities and schema synced to API and explicit TypeScript workers and used to generate Python worker artifacts
 - `services/shared-analysis-worker`: Shared Python package used by analysis and description workers; receives generated artifacts from `services/shared` and API schema sources

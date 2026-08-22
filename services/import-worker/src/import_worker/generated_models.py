@@ -1,4 +1,4 @@
-# WARNING: GENERATED FROM services/api/src/shared-backend/schema.ts
+# WARNING: GENERATED FROM services/shared-backend/src/schema.ts
 # DO NOT MODIFY -- Re-generate with: make sync
 # Service: import-worker
 
@@ -473,6 +473,20 @@ class Conversation(Base):
     polis_config_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     ranking_config_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     dynamic_translation_enabled: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    conversation_email_update_enabled_override: Mapped[bool | None] = mapped_column(
+        Boolean,
+        nullable=True,
+    )
+    conversation_email_update_override_updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True,
+    )
+    conversation_email_update_override_updated_by_user_id: Mapped[
+        uuid_pkg.UUID | None
+    ] = mapped_column(
+        Uuid,
+        nullable=True,
+    )
     language_settings_source: Mapped[ConversationLanguageSettingsSource] = mapped_column(
         SaEnum(
             ConversationLanguageSettingsSource,
@@ -770,6 +784,20 @@ class Project(Base):
     auto_provisioned_for_organization_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     dynamic_translation_enabled: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    conversation_email_update_default_enabled: Mapped[bool] = mapped_column(
+        Boolean,
+        server_default="false",
+    )
+    conversation_email_update_default_updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True,
+    )
+    conversation_email_update_default_updated_by_user_id: Mapped[
+        uuid_pkg.UUID | None
+    ] = mapped_column(
+        Uuid,
+        nullable=True,
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

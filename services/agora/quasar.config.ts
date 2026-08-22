@@ -157,7 +157,11 @@ export default defineConfig((ctx) => {
   // Build the boot files array
   // Note: VITE_STAGING must be set in the shell environment (not just .env files)
   // because this code runs before Vite loads .env files
-  const boot: string[] = ["chunkErrorRecovery"];
+  const boot: string[] = [
+    "chunkErrorRecovery",
+    "recipientActionPrivacy",
+    "plausible",
+  ];
   if (ctx.prod && process.env.VITE_STAGING !== "true") {
     boot.push("sentry");
   }

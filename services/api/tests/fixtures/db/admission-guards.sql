@@ -1,4 +1,4 @@
--- WARNING: GENERATED FROM services/api/src/shared-backend/schema.ts. DO NOT EDIT.
+-- WARNING: GENERATED FROM services/shared-backend/src/schema.ts. DO NOT EDIT.
 -- Regenerate with: make sync-api-test-db-fixtures
 
 CREATE TYPE "public"."export_cancellation_reason_enum" AS ENUM('duplicate_in_batch', 'cooldown_active');

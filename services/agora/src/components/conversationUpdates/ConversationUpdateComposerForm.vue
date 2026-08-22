@@ -34,8 +34,7 @@
         :model-value="subject"
         outlined
         label="Subject"
-        maxlength="120"
-        counter
+        :hint="`Maximum ${String(CONVERSATION_EMAIL_UPDATE_SUBJECT_MAX_LENGTH)} Unicode characters`"
         @update:model-value="updateSubject"
       />
 
@@ -49,8 +48,7 @@
           min-height="12rem"
           :disabled="false"
           :single-line="false"
-          :max-length="5000"
-          @update:is-over-limit="bodyIsOverLimit = $event"
+          :max-length="CONVERSATION_EMAIL_UPDATE_PLAIN_TEXT_MAX_LENGTH"
         />
       </div>
 
@@ -84,6 +82,7 @@
         color="primary"
         icon="mdi-email-fast-outline"
         :label="testButtonLabel"
+        :loading="testPending"
         :disable="!canTest"
         @click="emit('test')"
       />
@@ -91,7 +90,7 @@
         button-type="standardButton"
         color="primary"
         icon-right="mdi-arrow-right"
-        :label="simulationMode ? 'Simulate review and send' : 'Review and send'"
+        label="Review and send"
         :disable="!canSend"
         @click="emit('send')"
       />
@@ -107,12 +106,18 @@ import { hasConversationUpdatesPartialEmailReach } from "src/components/newConve
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKCheckbox from "src/components/ui-library/ZKCheckbox.vue";
 import ZKInfoBanner from "src/components/ui-library/ZKInfoBanner.vue";
-import { computed, ref, watch } from "vue";
+import { validateRichTextInput } from "src/shared/richText";
+import {
+  CONVERSATION_EMAIL_UPDATE_PLAIN_TEXT_MAX_LENGTH,
+  CONVERSATION_EMAIL_UPDATE_SUBJECT_MAX_LENGTH,
+  zodConversationEmailUpdateSubject,
+} from "src/shared/types/dto";
+import { computed, watch } from "vue";
 
 const props = defineProps<{
   scopes: readonly ConversationUpdateScopeSummary[];
   updatesDisabledConversationIds: readonly string[];
-  simulationMode: boolean;
+  testPending: boolean;
   notice: string | undefined;
   hasSuccessfulTest: boolean;
   relatedConversationOwnerCount: number;
@@ -136,18 +141,19 @@ const bodyPlainText = defineModel<string>("bodyPlainText", { required: true });
 const contentConfirmed = defineModel<boolean>("contentConfirmed", {
   required: true,
 });
-const bodyIsOverLimit = ref(false);
-
 const canTest = computed(
   () =>
+    !props.testPending &&
     selectedConversationIds.value.length > 0 &&
     selectedConversationIds.value.every(
       (conversationId) =>
         !props.updatesDisabledConversationIds.includes(conversationId)
     ) &&
-    subject.value.trim().length > 0 &&
-    bodyPlainText.value.trim().length > 0 &&
-    !bodyIsOverLimit.value
+    zodConversationEmailUpdateSubject.safeParse(subject.value).success &&
+    validateRichTextInput({
+      htmlString: bodyHtml.value,
+      mode: "conversation_email_update",
+    }).success
 );
 const canSend = computed(
   () => canTest.value && props.hasSuccessfulTest && contentConfirmed.value
@@ -186,16 +192,9 @@ const testRequirementMessage = computed(() =>
     ? "This exact email version passed its test. Changing the scope, Reply-To, subject, or message requires another successful test."
     : "Send a successful test email for this exact version before reviewing the real send."
 );
-const testButtonLabel = computed(() => {
-  if (props.simulationMode) {
-    return props.hasSuccessfulTest
-      ? "Simulate another test email"
-      : "Simulate test email";
-  }
-  return props.hasSuccessfulTest
-    ? "Send another test email"
-    : "Send test email";
-});
+const testButtonLabel = computed(() =>
+  props.hasSuccessfulTest ? "Send another test email" : "Send test email"
+);
 
 watch([selectedScopeId, selectedConversationIds, subject, bodyHtml], () => {
   contentConfirmed.value = false;

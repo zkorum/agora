@@ -69,6 +69,7 @@ describe("validateSurveyAnswerForAnalysis", () => {
         const answer: SurveyStoredAnswerAnalysisRecord = {
             answeredQuestionSemanticVersion: 1,
             textValueHtml: null,
+            textValuePlainText: null,
             optionSlugIds: ["yes"],
         };
 
@@ -87,6 +88,7 @@ describe("validateSurveyAnswerForAnalysis", () => {
                 answer: {
                     answeredQuestionSemanticVersion: 1,
                     textValueHtml: "34",
+                    textValuePlainText: "34",
                     optionSlugIds: [],
                 },
             }),
@@ -98,6 +100,7 @@ describe("validateSurveyAnswerForAnalysis", () => {
                 answer: {
                     answeredQuestionSemanticVersion: 1,
                     textValueHtml: "0",
+                    textValuePlainText: "0",
                     optionSlugIds: [],
                 },
             }),
@@ -109,6 +112,7 @@ describe("validateSurveyAnswerForAnalysis", () => {
                 answer: {
                     answeredQuestionSemanticVersion: 1,
                     textValueHtml: "34.5",
+                    textValuePlainText: "34.5",
                     optionSlugIds: [],
                 },
             }),
@@ -122,23 +126,25 @@ describe("validateSurveyAnswerForAnalysis", () => {
                 answer: {
                     answeredQuestionSemanticVersion: 1,
                     textValueHtml: "<p>👨‍👩‍👧‍👦</p>",
+                    textValuePlainText: "👨‍👩‍👧‍👦",
                     optionSlugIds: [],
                 },
             }),
         ).toBe(true);
     });
 
-    it("uses canonical plain-text extraction for rich-text limits", () => {
+    it("counts canonical plain-text list markers toward rich-text limits", () => {
         expect(
             validateSurveyAnswerForAnalysis({
                 question: requiredRichTextQuestion,
                 answer: {
                     answeredQuestionSemanticVersion: 1,
                     textValueHtml: "<ul><li><p>A</p></li></ul>",
+                    textValuePlainText: "- A",
                     optionSlugIds: [],
                 },
             }),
-        ).toBe(true);
+        ).toBe(false);
     });
 
     it("rejects rich-text answers without visible text", () => {
@@ -148,6 +154,7 @@ describe("validateSurveyAnswerForAnalysis", () => {
                 answer: {
                     answeredQuestionSemanticVersion: 1,
                     textValueHtml: "<p>\u200B</p>",
+                    textValuePlainText: "\u200B",
                     optionSlugIds: [],
                 },
             }),
@@ -167,6 +174,7 @@ describe("deriveSurveyGateStatusForAnalysis", () => {
                         {
                             answeredQuestionSemanticVersion: 2,
                             textValueHtml: null,
+                            textValuePlainText: null,
                             optionSlugIds: ["yes"],
                         },
                     ],
@@ -187,6 +195,7 @@ describe("deriveSurveyGateStatusForAnalysis", () => {
                         {
                             answeredQuestionSemanticVersion: 1,
                             textValueHtml: null,
+                            textValuePlainText: null,
                             optionSlugIds: ["yes"],
                         },
                     ],
@@ -218,6 +227,7 @@ describe("deriveSurveyGateStatusForAnalysis", () => {
                         {
                             answeredQuestionSemanticVersion: 1,
                             textValueHtml: null,
+                            textValuePlainText: null,
                             optionSlugIds: [],
                         },
                     ],
@@ -243,6 +253,7 @@ describe("deriveSurveyGateStatusForAnalysis", () => {
                         {
                             answeredQuestionSemanticVersion: 1,
                             textValueHtml: null,
+                            textValuePlainText: null,
                             optionSlugIds: ["a"],
                         },
                     ],

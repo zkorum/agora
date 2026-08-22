@@ -107,7 +107,7 @@ import type {
   LanguageTextDirection,
   SupportedDisplayLanguageCodes,
 } from "src/shared/languages";
-import { htmlToCountedText } from "src/shared/shared";
+import { htmlToCountedText } from "src/shared/richText";
 import type { LocalizedContentTranslationStatus } from "src/shared/types/zod";
 import { useConversationContentQuery } from "src/utils/api/contentTranslation/useContentTranslationQueries";
 import type { ContentTranslationDisplayMode } from "src/utils/translation/contentTranslation";

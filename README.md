@@ -45,6 +45,8 @@ For detailed information about each service, licenses, and documentation, see [C
 
 **[API](./services/api)** - A Fastify application supported by a PostgreSQL database. Main backend API handling user requests, authentication, voting, and conversation management.
 
+**[Conversation Email Update Worker](./services/conversation-email-update-worker)** - Independent TypeScript worker for durable Conversation Email Updates delivery and SES event processing.
+
 **[Math Updater](./services/math-updater)** - Python background worker that runs <a href="https://github.com/polis-community/red-dwarf"><u>red-dwarf</u></a> opinion-group analysis and generates AI-powered cluster insights using LLM models.
 
 **[AI Description Retry Worker](./services/ai-description-retry-worker)** - Python worker that retries and backfills AI-generated opinion-group labels and summaries requested by analysis views.
@@ -62,6 +64,8 @@ For detailed information about each service, licenses, and documentation, see [C
 **[Shared](./services/shared)** - Common TypeScript code synced to TypeScript services and used as a source for generated Python worker artifacts.
 
 **[Shared App-API](./services/shared-app-api)** - TypeScript code shared specifically between the frontend (agora) and API service.
+
+**[Shared Backend](./services/shared-backend)** - Canonical Drizzle schema and TypeScript backend source synced into API and explicit TypeScript workers.
 
 **[Shared Analysis Worker](./services/shared-analysis-worker)** - Shared Python package used by analysis and description workers for generated models/types, queue helpers, retry logic, AI providers, and red-dwarf integration.
 
@@ -86,6 +90,7 @@ Please read the README for the service you are working on. Start with `/services
 | Landing page | `make dev-landing` |
 | Agora frontend | `make dev-app` |
 | API | `make dev-api` |
+| Conversation email update worker | `make dev-conversation-email-update-worker` |
 | Math updater | `make dev-math-updater` |
 | AI description retry worker | `make dev-ai-description-retry-worker` |
 | Description translation retry worker | `make dev-description-translation-retry-worker` |
@@ -120,10 +125,11 @@ Use `rg` directly for searches, for example `rg "error|failed" .local/logs/lates
 
 Some typescript source files are shared directly without using npm packages - by copy-pasting using rsync.
 
-Use these commands to automatically rsync shared files to back and front:
+Use these commands to automatically rsync universal and backend shared files:
 
 ```
 make dev-sync
+make dev-sync-ts-backend
 ```
 
 ### OpenAPI

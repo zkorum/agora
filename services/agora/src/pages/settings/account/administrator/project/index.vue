@@ -360,6 +360,27 @@
       </ZKCard>
 
       <template v-if="selectedProject !== undefined">
+        <ProjectConversationUpdatesActivation
+          v-model="selectedProjectConversationUpdatesEnabled"
+          activation-kind="listed-project"
+          :project-title="selectedProject.projectTitle"
+          :has-participant-contact-email="
+            selectedProjectConversationUpdatesConfiguration?.participantContactEmail !==
+            undefined
+          "
+          :has-entitlement="
+            selectedProjectConversationUpdatesConfiguration?.canConfigure ===
+            true
+          "
+          @edit-contact="scrollToManageContact"
+        />
+
+        <ZKInfoBanner
+          v-if="conversationUpdatesConfigurationError !== undefined"
+          :message="conversationUpdatesConfigurationError"
+          variant="warning"
+        />
+
         <ZKCard padding="1rem" class="card-background">
           <AdminSectionHeader
             :title="t('basicsTitle')"
@@ -599,7 +620,11 @@
           </div>
         </ZKCard>
 
-        <ZKCard padding="1rem" class="card-background">
+        <ZKCard
+          id="project-contact-settings"
+          padding="1rem"
+          class="card-background"
+        >
           <AdminSectionHeader
             :title="t('contactTitle')"
             :description="t('contactDescription')"
@@ -773,6 +798,7 @@ import { copyToClipboard, useQuasar } from "quasar";
 import AdminSectionHeader from "src/components/administrator/AdminSectionHeader.vue";
 import ProjectBodyEditor from "src/components/administrator/project/ProjectBodyEditor.vue";
 import ProjectContentLocalizationEditor from "src/components/administrator/project/ProjectContentLocalizationEditor.vue";
+import ProjectConversationUpdatesActivation from "src/components/administrator/project/ProjectConversationUpdatesActivation.vue";
 import ProjectDocumentManager from "src/components/administrator/project/ProjectDocumentManager.vue";
 import ProjectExternalOrganizationLocalizationEditor from "src/components/administrator/project/ProjectExternalOrganizationLocalizationEditor.vue";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
@@ -780,6 +806,7 @@ import ConversationLanguageSettingDialog from "src/components/newConversation/di
 import ConversationLanguageSettingsRow from "src/components/newConversation/dialog/ConversationLanguageSettingsRow.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
+import ZKInfoBanner from "src/components/ui-library/ZKInfoBanner.vue";
 import ZKSelect from "src/components/ui-library/ZKSelect.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
@@ -793,6 +820,7 @@ import type {
   AdminOrganizationOption,
   AdminProject,
   AdminProjectOption,
+  ConversationEmailUpdateConfigurationResponse,
   CreateProjectAttributionRequest,
   CreateProjectRequest,
   UpdateProjectRequest,
@@ -810,6 +838,7 @@ import {
 import { useLanguageStore } from "src/stores/language";
 import { useBackendAdministratorOrganizationApi } from "src/utils/api/administrator/organization";
 import { useBackendAdministratorProjectApi } from "src/utils/api/administrator/project";
+import { useBackendConversationEmailUpdatesApi } from "src/utils/api/conversationUpdates/conversationEmailUpdates";
 import { useNotify } from "src/utils/ui/notify";
 import { isOptionalHttpsUrl } from "src/utils/url";
 import {
@@ -871,6 +900,29 @@ const { showNotifyMessage, showCopiedToClipboard } = useNotify();
 const organizationList = ref<AdminOrganizationOption[]>([]);
 const projectOptionList = ref<AdminProjectOption[]>([]);
 const selectedProject = ref<AdminProject | undefined>(undefined);
+type ProjectConversationUpdatesConfiguration = Extract<
+  Extract<
+    ConversationEmailUpdateConfigurationResponse,
+    { success: true }
+  >["configuration"],
+  { target: "project" }
+>;
+const conversationEmailUpdatesApi = useBackendConversationEmailUpdatesApi();
+const selectedProjectConversationUpdatesConfiguration = ref<
+  ProjectConversationUpdatesConfiguration | undefined
+>(undefined);
+const conversationUpdatesConfigurationError = ref<string | undefined>(
+  undefined
+);
+let conversationUpdatesConfigurationRequestId = 0;
+const selectedProjectConversationUpdatesEnabled = computed({
+  get: () =>
+    selectedProjectConversationUpdatesConfiguration.value?.defaultEnabled ??
+    false,
+  set: (enabled: boolean) => {
+    void updateSelectedProjectConversationUpdatesDefault(enabled);
+  },
+});
 const isLoadingOrganizations = ref(false);
 const isLoadingProjects = ref(false);
 const projectTitle = ref("");
@@ -1045,6 +1097,13 @@ const selectedProjectPublicUrl = computed(() => {
 
   return `${window.location.origin}/project/${encodeURIComponent(project.projectSlug)}`;
 });
+
+function scrollToManageContact(): void {
+  document.getElementById("project-contact-settings")?.scrollIntoView({
+    behavior: "smooth",
+    block: "center",
+  });
+}
 
 const forwardIcon = computed(() =>
   $q.lang.rtl ? "mdi-chevron-left" : "mdi-chevron-right"
@@ -1424,6 +1483,71 @@ watch(activeTab, async (tab) => {
 watch(selectedProjectSlug, async (projectSlug) => {
   await refreshSelectedProjectDetails(projectSlug);
 });
+
+watch(selectedProject, async (project) => {
+  const requestId = ++conversationUpdatesConfigurationRequestId;
+  selectedProjectConversationUpdatesConfiguration.value = undefined;
+  conversationUpdatesConfigurationError.value = undefined;
+  if (project === undefined) {
+    return;
+  }
+  try {
+    const response = await conversationEmailUpdatesApi.getConfiguration({
+      target: "project",
+      projectSlug: project.projectSlug,
+    });
+    if (requestId !== conversationUpdatesConfigurationRequestId) {
+      return;
+    }
+    if (!response.success || response.configuration.target !== "project") {
+      conversationUpdatesConfigurationError.value =
+        "Email Update configuration is unavailable for this project.";
+      return;
+    }
+    selectedProjectConversationUpdatesConfiguration.value =
+      response.configuration;
+  } catch (error) {
+    console.error("Failed to load project Email Update configuration", error);
+    if (requestId === conversationUpdatesConfigurationRequestId) {
+      conversationUpdatesConfigurationError.value =
+        "Email Update configuration is unavailable for this project.";
+    }
+  }
+});
+
+async function updateSelectedProjectConversationUpdatesDefault(
+  enabled: boolean
+): Promise<void> {
+  const configuration = selectedProjectConversationUpdatesConfiguration.value;
+  if (configuration === undefined || !configuration.canConfigure) {
+    return;
+  }
+  selectedProjectConversationUpdatesConfiguration.value = {
+    ...configuration,
+    defaultEnabled: enabled,
+  };
+  conversationUpdatesConfigurationError.value = undefined;
+  try {
+    const response = await conversationEmailUpdatesApi.updateConfiguration({
+      target: "project",
+      projectSlug: configuration.projectSlug,
+      defaultEnabled: enabled,
+    });
+    if (!response.success || response.configuration.target !== "project") {
+      selectedProjectConversationUpdatesConfiguration.value = configuration;
+      conversationUpdatesConfigurationError.value =
+        "The Email Update default could not be saved.";
+      return;
+    }
+    selectedProjectConversationUpdatesConfiguration.value =
+      response.configuration;
+  } catch (error) {
+    console.error("Failed to save project Email Update configuration", error);
+    selectedProjectConversationUpdatesConfiguration.value = configuration;
+    conversationUpdatesConfigurationError.value =
+      "The Email Update default could not be saved.";
+  }
+}
 
 watch(selectedProject, (project) => {
   isPopulatingManageProject = true;

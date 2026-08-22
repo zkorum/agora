@@ -1,5 +1,5 @@
 <template>
-  <RouterLink
+  <SpaLink
     v-if="item.type === 'navigation'"
     :to="item.to"
     class="settings-item settings-item--link"
@@ -12,7 +12,7 @@
       :show-separator="showSeparator"
       :border-radius="borderRadius"
     />
-  </RouterLink>
+  </SpaLink>
   <button
     v-else
     type="button"
@@ -34,6 +34,7 @@
 import type { SettingsInterface } from "src/utils/component/settings/settings";
 
 import MenuItem from "./MenuItem.vue";
+import SpaLink from "./SpaLink.vue";
 
 const props = defineProps<{
   item: SettingsInterface;

@@ -29,6 +29,14 @@
         :label="reviewAnswersLabel"
         @click="emit('reviewAnswers')"
       />
+      <ZKButton
+        v-if="continueWithoutSavingLabel !== undefined"
+        button-type="compactButton"
+        flat
+        color="primary"
+        :label="continueWithoutSavingLabel"
+        @click="emit('continueWithoutSaving')"
+      />
     </template>
   </StepperLayout>
 </template>
@@ -44,6 +52,7 @@ defineProps<{
   title: string;
   description: string;
   reviewAnswersLabel: string;
+  continueWithoutSavingLabel: string | undefined;
   showConversationUpdatesPreference: boolean;
   scopeKind: ConversationUpdateScopeSummary["kind"];
   isSaving: boolean;
@@ -51,6 +60,7 @@ defineProps<{
 
 const emit = defineEmits<{
   continue: [];
+  continueWithoutSaving: [];
   reviewAnswers: [];
 }>();
 

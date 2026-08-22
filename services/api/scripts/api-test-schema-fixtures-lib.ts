@@ -13,7 +13,7 @@ interface GenerateApiTestSchemaFixturesParams {
 }
 
 const GENERATED_WARNING =
-    "-- WARNING: GENERATED FROM services/api/src/shared-backend/schema.ts. DO NOT EDIT.\n" +
+    "-- WARNING: GENERATED FROM services/shared-backend/src/schema.ts. DO NOT EDIT.\n" +
     "-- Regenerate with: make sync-api-test-db-fixtures\n";
 
 export function parseApiTestSchemaFixtureConfig(

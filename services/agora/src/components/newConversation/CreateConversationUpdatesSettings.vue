@@ -11,26 +11,29 @@
         :title="t('emailUpdates')"
         :subtitle="dialogSubtitle"
       >
-        <div class="conversation-updates-settings__list">
-          <ConversationLanguageSettingsRow
-            :title="t('emailUpdates')"
-            :value="settingValue"
-            :description="settingDescription"
-            :icon="undefined"
-            :disabled="false"
-            :clickable="false"
+        <q-list
+          separator
+          class="conversation-updates-settings__list"
+        >
+          <q-item
+            v-for="option in settingOptions"
+            :key="option.id"
+            clickable
+            @click="selectSetting(option.value)"
           >
-            <template #actions>
-              <q-toggle
-                :model-value="displayEnabled"
-                :aria-label="
-                  t('enableAriaLabel', { conversationTitle })
-                "
-                @update:model-value="updateEnabled"
+            <q-item-section>
+              <q-item-label>{{ option.title }}</q-item-label>
+              <q-item-label caption>{{ option.description }}</q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-radio
+                :model-value="settingMode"
+                :val="option.id"
+                :aria-label="option.title"
               />
-            </template>
-          </ConversationLanguageSettingsRow>
-        </div>
+            </q-item-section>
+          </q-item>
+        </q-list>
       </ZKBottomDialogContainer>
     </q-dialog>
   </template>
@@ -38,7 +41,6 @@
 
 <script setup lang="ts">
 import ConversationControlButton from "src/components/newConversation/ConversationControlButton.vue";
-import ConversationLanguageSettingsRow from "src/components/newConversation/dialog/ConversationLanguageSettingsRow.vue";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { computed, ref } from "vue";
@@ -49,48 +51,84 @@ import {
 } from "./CreateConversationUpdatesSettings.i18n";
 
 const props = defineProps<{
-  conversationTitle: string;
   scopeKind: "project" | "no-project";
   projectTitle: string | undefined;
   scopeDefaultEnabled: boolean;
-  inheritsScopeDefault: boolean;
   hasEntitlement: boolean;
 }>();
 
-const enabled = defineModel<boolean>({ required: true });
+type SettingMode = "inherit" | "off" | "on";
+interface SettingOption {
+  id: SettingMode;
+  title: string;
+  description: string;
+  value: boolean | undefined;
+}
+
+const override = defineModel<boolean | undefined>({ required: true });
 const showDialog = ref(false);
 const { t } = useComponentI18n<CreateConversationUpdatesSettingsTranslations>(
   createConversationUpdatesSettingsTranslations
 );
 
 const shouldShow = computed(() => props.hasEntitlement);
-const displayEnabled = computed(() => enabled.value);
-const settingValue = computed(() =>
-  displayEnabled.value ? t("on") : t("off")
+const displayEnabled = computed(
+  () => override.value ?? props.scopeDefaultEnabled
 );
+const settingMode = computed<SettingMode>(() => {
+  if (override.value === undefined) {
+    return "inherit";
+  }
+  return override.value ? "on" : "off";
+});
 const dialogSubtitle = computed(() => t("manualUpdatesSubtitle"));
 const controlLabel = computed(() => {
-  const value = enabled.value ? t("on") : t("off");
+  const value = displayEnabled.value ? t("on") : t("off");
   const inheritedSource =
     props.scopeKind === "project"
       ? t("projectDefault")
       : t("noProjectDefault");
-  const source = props.inheritsScopeDefault ? inheritedSource : t("override");
+  const source = override.value === undefined ? inheritedSource : t("override");
   return t("controlLabel", { value, source });
 });
-const settingDescription = computed(() => {
+const settingOptions = computed<readonly SettingOption[]>(() => {
   const defaultValue = props.scopeDefaultEnabled ? t("on") : t("off");
   const scopeLabel =
     props.scopeKind === "project"
       ? (props.projectTitle ?? t("projectFallback"))
       : t("noProjectGroup");
-  if (props.inheritsScopeDefault) {
-    return t("inheritsDescription", { defaultValue, scopeLabel });
-  }
-  return t("overridesDescription", { defaultValue, scopeLabel });
+  const defaultSource =
+    props.scopeKind === "project"
+      ? t("projectDefault")
+      : t("noProjectDefault");
+  const overrideDescription = t("overridesDescription", {
+    defaultValue,
+    scopeLabel,
+  });
+  return [
+    {
+      id: "inherit",
+      title: t("useDefault", { source: defaultSource }),
+      description: t("inheritsDescription", { defaultValue, scopeLabel }),
+      value: undefined,
+    },
+    {
+      id: "on",
+      title: t("on"),
+      description: overrideDescription,
+      value: true,
+    },
+    {
+      id: "off",
+      title: t("off"),
+      description: overrideDescription,
+      value: false,
+    },
+  ];
 });
-function updateEnabled(value: boolean): void {
-  enabled.value = value;
+
+function selectSetting(value: boolean | undefined): void {
+  override.value = value;
   showDialog.value = false;
 }
 </script>
@@ -101,5 +139,10 @@ function updateEnabled(value: boolean): void {
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 18px;
   background: white;
+
+  .q-item {
+    min-height: 4.25rem;
+    padding-block: 0.75rem;
+  }
 }
 </style>

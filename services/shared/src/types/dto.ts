@@ -97,9 +97,15 @@ import {
     ZodSupportedDisplayLanguageCodes,
 } from "../languages.js";
 import {
+    MAX_BYTES_CONVERSATION_EMAIL_UPDATE_HTML,
+    MAX_LENGTH_CONVERSATION_EMAIL_UPDATE,
     MAX_LENGTH_DESCRIPTION_CREATOR,
     MAX_LENGTH_NAME_CREATOR,
     MAX_LENGTH_TITLE,
+    countUnicodeCodePoints,
+    countUtf8Bytes,
+    hasVisiblePlainText,
+    removeNonDisplayControlCharacters,
 } from "../shared.js";
 
 const zodConversationEditPermissions = z
@@ -636,6 +642,328 @@ const zodProjectPageProject = z
         contact: zodProjectPageContact.optional(),
     })
     .strict();
+
+export const CONVERSATION_EMAIL_UPDATE_SUBJECT_MAX_LENGTH = 140;
+export const CONVERSATION_EMAIL_UPDATE_HTML_MAX_BYTES =
+    MAX_BYTES_CONVERSATION_EMAIL_UPDATE_HTML;
+export const CONVERSATION_EMAIL_UPDATE_PLAIN_TEXT_MAX_LENGTH =
+    MAX_LENGTH_CONVERSATION_EMAIL_UPDATE;
+
+function isSafeEmailSubject(subject: string): boolean {
+    return (
+        removeNonDisplayControlCharacters(subject) === subject &&
+        !/[\t\n\r\u2028\u2029]/u.test(subject)
+    );
+}
+
+export const zodConversationEmailUpdateSubject = z
+    .string()
+    .trim()
+    .refine(hasVisiblePlainText, "Email subject must contain visible text")
+    .refine(
+        (subject) =>
+            countUnicodeCodePoints(subject) <=
+            CONVERSATION_EMAIL_UPDATE_SUBJECT_MAX_LENGTH,
+        `Email subject must contain at most ${CONVERSATION_EMAIL_UPDATE_SUBJECT_MAX_LENGTH.toString()} Unicode characters`,
+    )
+    .refine(
+        isSafeEmailSubject,
+        "Email subject contains unsafe control characters",
+    );
+
+const zodConversationEmailUpdatePreferenceState = z.enum([
+    "disabled",
+    "enabled",
+    "undisclosed",
+]);
+const zodConversationEmailUpdatePreferenceChoice = z.enum([
+    "disabled",
+    "enabled",
+]);
+const zodConversationEmailUpdateAvailability = z.enum([
+    "available",
+    "temporarily_unavailable",
+]);
+const zodConversationEmailUpdateCursor = z.string().trim().min(1).max(200);
+const zodConversationEmailUpdateConversationBase = z
+    .object({
+        conversationSlugId: zodSlugId,
+        title: zodConversationTitle,
+        participationMode: zodParticipationMode,
+        estimatedEligibleRecipientCount: z.number().int().nonnegative(),
+        sendingEnabled: z.boolean(),
+    })
+    .strict();
+const zodConversationEmailUpdateScope = z.discriminatedUnion("kind", [
+    z
+        .object({
+            kind: z.literal("project"),
+            projectSlug: zodProjectSlug,
+            title: z.string().trim().min(1).max(MAX_LENGTH_TITLE),
+            participantContactEmail: zodEmail,
+            conversations: z
+                .array(zodConversationEmailUpdateConversationBase)
+                .min(1),
+        })
+        .strict(),
+    z
+        .object({
+            kind: z.literal("no_project"),
+            title: z.string().trim().min(1).max(MAX_LENGTH_TITLE),
+            conversations: z
+                .array(
+                    zodConversationEmailUpdateConversationBase
+                        .extend({ participantContactEmail: zodEmail })
+                        .strict(),
+                )
+                .min(1),
+        })
+        .strict(),
+]);
+const zodConversationEmailUpdateSelection = z.discriminatedUnion("kind", [
+    z
+        .object({
+            kind: z.literal("project"),
+            projectSlug: zodProjectSlug,
+            conversationSlugIds: z
+                .array(zodSlugId)
+                .min(1)
+                .max(1_000)
+                .refine(
+                    (values) => new Set(values).size === values.length,
+                    "Conversation selection contains duplicates",
+                ),
+        })
+        .strict(),
+    z
+        .object({
+            kind: z.literal("no_project"),
+            conversationSlugId: zodSlugId,
+        })
+        .strict(),
+]);
+const zodConversationEmailUpdateContext = z.discriminatedUnion("kind", [
+    z.object({ kind: z.literal("global") }).strict(),
+    z
+        .object({
+            kind: z.literal("project"),
+            projectSlug: zodProjectSlug,
+        })
+        .strict(),
+    z
+        .object({
+            kind: z.literal("conversation"),
+            conversationSlugId: zodSlugId,
+        })
+        .strict(),
+]);
+const zodConversationEmailUpdateHistorySummaryBase = z
+    .object({
+        updateId: z.uuid(),
+        subject: zodConversationEmailUpdateSubject,
+        acceptedAt: zodDateTimeFlexible,
+        audienceEstimate: z.number().int().nonnegative(),
+        ownerCopyCount: z.number().int().nonnegative(),
+        scope: z.discriminatedUnion("kind", [
+            z
+                .object({
+                    kind: z.literal("project"),
+                    title: z.string().trim().min(1).max(MAX_LENGTH_TITLE),
+                    projectSlug: zodProjectSlug,
+                })
+                .strict(),
+            z
+                .object({
+                    kind: z.literal("no_project"),
+                    title: z.string().trim().min(1).max(MAX_LENGTH_TITLE),
+                })
+                .strict(),
+        ]),
+        conversations: z
+            .array(
+                z
+                    .object({
+                        conversationSlugId: zodSlugId,
+                        title: zodConversationTitle,
+                    })
+                    .strict(),
+            )
+            .min(1),
+    })
+    .strict();
+export const zodConversationEmailUpdateHistorySummary = z.discriminatedUnion(
+    "status",
+    [
+        zodConversationEmailUpdateHistorySummaryBase
+            .extend({
+                status: z.enum([
+                    "preparing",
+                    "queued",
+                    "sending",
+                    "completed",
+                    "completed_with_failures",
+                ]),
+            })
+            .strict(),
+        zodConversationEmailUpdateHistorySummaryBase
+            .extend({
+                status: z.enum(["stopping", "stopped"]),
+                reason: z.enum(["global_kill_switch", "legal_or_abuse_block"]),
+            })
+            .strict(),
+        zodConversationEmailUpdateHistorySummaryBase
+            .extend({
+                status: z.literal("failed"),
+                reason: z.enum([
+                    "materialization_failed",
+                    "no_eligible_participants",
+                    "required_owner_copy_not_accepted",
+                    "no_participant_provider_accepted",
+                ]),
+            })
+            .strict(),
+    ],
+);
+const zodConversationEmailUpdateHistoryRecordBase =
+    zodConversationEmailUpdateHistorySummaryBase
+        .extend({
+            bodyHtml: z
+                .string()
+                .min(1)
+                .max(CONVERSATION_EMAIL_UPDATE_HTML_MAX_BYTES),
+        })
+        .strict();
+const zodConversationEmailUpdateHistoryRecord = z.discriminatedUnion("status", [
+    zodConversationEmailUpdateHistoryRecordBase
+        .extend({
+            status: z.enum([
+                "preparing",
+                "queued",
+                "sending",
+                "completed",
+                "completed_with_failures",
+            ]),
+        })
+        .strict(),
+    zodConversationEmailUpdateHistoryRecordBase
+        .extend({
+            status: z.enum(["stopping", "stopped"]),
+            reason: z.enum(["global_kill_switch", "legal_or_abuse_block"]),
+        })
+        .strict(),
+    zodConversationEmailUpdateHistoryRecordBase
+        .extend({
+            status: z.literal("failed"),
+            reason: z.enum([
+                "materialization_failed",
+                "no_eligible_participants",
+                "required_owner_copy_not_accepted",
+                "no_participant_provider_accepted",
+            ]),
+        })
+        .strict(),
+]);
+const zodConversationEmailUpdatePreferenceConversation = z
+    .object({
+        conversationSlugId: zodSlugId,
+        conversationTitle: zodConversationTitle,
+        state: zodConversationEmailUpdatePreferenceChoice,
+        resolvedEnabled: z.boolean(),
+        availability: zodConversationEmailUpdateAvailability,
+    })
+    .strict();
+const zodConversationEmailUpdatePreferenceGroup = z.discriminatedUnion("kind", [
+    z
+        .object({
+            kind: z.literal("project"),
+            projectSlug: zodProjectSlug,
+            projectTitle: z.string().trim().min(1).max(MAX_LENGTH_TITLE),
+            state: zodConversationEmailUpdatePreferenceState,
+            resolvedEnabled: z.boolean(),
+            availability: zodConversationEmailUpdateAvailability,
+            conversations: z.array(
+                zodConversationEmailUpdatePreferenceConversation,
+            ),
+        })
+        .strict(),
+    z
+        .object({
+            kind: z.literal("no_project"),
+            availability: zodConversationEmailUpdateAvailability,
+            conversations: z.array(
+                zodConversationEmailUpdatePreferenceConversation,
+            ),
+        })
+        .strict(),
+]);
+const zodConversationEmailUpdateConfiguration = z.discriminatedUnion("target", [
+    z
+        .object({
+            target: z.literal("project"),
+            projectSlug: zodProjectSlug,
+            canConfigure: z.boolean(),
+            defaultEnabled: z.boolean(),
+            participantContactEmail: zodEmail.optional(),
+        })
+        .strict(),
+    z
+        .object({
+            target: z.literal("conversation"),
+            conversationSlugId: zodSlugId,
+            canConfigure: z.boolean(),
+            scopeKind: z.enum(["project", "no_project"]),
+            scopeDefaultEnabled: z.boolean(),
+            setting: z.enum(["inherit", "enabled", "disabled"]),
+            sendingEnabled: z.boolean(),
+            hasHistory: z.boolean(),
+            participantContactEmail: zodEmail.optional(),
+        })
+        .strict(),
+]);
+const zodConversationEmailUpdateActionToken = z
+    .string()
+    .min(22)
+    .max(128)
+    .regex(/^[A-Za-z0-9_-]+$/);
+const zodConversationEmailUpdateActionConversation = z
+    .object({
+        conversationSlugId: zodSlugId,
+        title: zodConversationTitle,
+    })
+    .strict();
+const zodConversationEmailUpdateActionScope = z.discriminatedUnion("kind", [
+    z
+        .object({
+            kind: z.literal("project"),
+            projectSlug: zodProjectSlug,
+            title: z.string().trim().min(1).max(MAX_LENGTH_TITLE),
+            conversations: z
+                .array(zodConversationEmailUpdateActionConversation)
+                .min(1),
+        })
+        .strict(),
+    z
+        .object({
+            kind: z.literal("no_project"),
+            conversations: z
+                .array(zodConversationEmailUpdateActionConversation)
+                .min(1),
+        })
+        .strict(),
+]);
+const zodConversationEmailUpdateActionUnavailable = z
+    .object({
+        success: z.literal(false),
+        reason: z.literal("unavailable"),
+    })
+    .strict();
+const zodConversationEmailUpdateActionMutationResponse = z.discriminatedUnion(
+    "success",
+    [
+        z.object({ success: z.literal(true) }).strict(),
+        zodConversationEmailUpdateActionUnavailable,
+    ],
+);
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Dto {
@@ -2656,6 +2984,637 @@ export class Dto {
     static maxdiffGitHubPreviewResponse = z.object({
         issues: z.array(Dto.maxdiffGitHubPreviewItem),
     });
+
+    static conversationEmailUpdateWorkspaceRequest = z
+        .object({
+            context: zodConversationEmailUpdateContext,
+        })
+        .strict();
+    static conversationEmailUpdateWorkspaceResponse = z.discriminatedUnion(
+        "success",
+        [
+            z
+                .object({
+                    success: z.literal(true),
+                    resolvedContext: zodConversationEmailUpdateContext,
+                    initialSelection:
+                        zodConversationEmailUpdateSelection.optional(),
+                    scopes: z.array(zodConversationEmailUpdateScope),
+                })
+                .strict(),
+            z
+                .object({
+                    success: z.literal(false),
+                    reason: z.enum([
+                        "context_not_found",
+                        "feature_not_available",
+                        "workspace_unavailable",
+                    ]),
+                })
+                .strict(),
+        ],
+    );
+    static conversationEmailUpdateHistoryListRequest = z
+        .object({
+            context: zodConversationEmailUpdateContext,
+            cursor: zodConversationEmailUpdateCursor.optional(),
+            limit: z.number().int().min(1).max(50).optional().default(20),
+        })
+        .strict();
+    static conversationEmailUpdateHistoryListResponse = z.discriminatedUnion(
+        "success",
+        [
+            z
+                .object({
+                    success: z.literal(true),
+                    items: z.array(zodConversationEmailUpdateHistoryRecord),
+                    nextCursor: zodConversationEmailUpdateCursor.optional(),
+                })
+                .strict(),
+            z
+                .object({
+                    success: z.literal(false),
+                    reason: z.enum([
+                        "context_not_found",
+                        "invalid_cursor",
+                        "history_unavailable",
+                    ]),
+                })
+                .strict(),
+        ],
+    );
+    static conversationEmailUpdateHistoryDetailRequest = z
+        .object({ updateId: z.uuid() })
+        .strict();
+    static conversationEmailUpdateHistoryDetailResponse = z.discriminatedUnion(
+        "success",
+        [
+            z
+                .object({
+                    success: z.literal(true),
+                    record: zodConversationEmailUpdateHistoryRecord,
+                })
+                .strict(),
+            z
+                .object({
+                    success: z.literal(false),
+                    reason: z.enum(["update_not_found", "history_unavailable"]),
+                })
+                .strict(),
+        ],
+    );
+    static conversationEmailUpdateAudienceEstimateRequest = z
+        .object({
+            selection: zodConversationEmailUpdateSelection,
+        })
+        .strict();
+    static conversationEmailUpdateAudienceEstimateResponse =
+        z.discriminatedUnion("success", [
+            z
+                .object({
+                    success: z.literal(true),
+                    estimatedEligibleRecipientCount: z
+                        .number()
+                        .int()
+                        .nonnegative(),
+                    requiredOwnerCopyCount: z.number().int().nonnegative(),
+                })
+                .strict(),
+            z
+                .object({
+                    success: z.literal(false),
+                    reason: z.enum([
+                        "scope_not_found",
+                        "conversation_not_in_scope",
+                        "sending_disabled",
+                        "audience_unavailable",
+                    ]),
+                })
+                .strict(),
+        ]);
+    static conversationEmailUpdateSendTestRequest = z
+        .object({
+            selection: zodConversationEmailUpdateSelection,
+            subject: zodConversationEmailUpdateSubject,
+            bodyHtml: z
+                .string()
+                .min(1)
+                .max(CONVERSATION_EMAIL_UPDATE_HTML_MAX_BYTES)
+                .refine(
+                    (html) =>
+                        countUtf8Bytes(html) <=
+                        CONVERSATION_EMAIL_UPDATE_HTML_MAX_BYTES,
+                    "Email body HTML exceeds the UTF-8 byte limit",
+                ),
+        })
+        .strict();
+    static conversationEmailUpdateSendTestResponse = z.discriminatedUnion(
+        "success",
+        [
+            z
+                .object({
+                    success: z.literal(true),
+                    updateId: z.uuid(),
+                    testAttemptId: z.uuid(),
+                    status: z.literal("pending"),
+                })
+                .strict(),
+            z
+                .object({
+                    success: z.literal(false),
+                    reason: z.enum([
+                        "scope_not_found",
+                        "conversation_not_in_scope",
+                        "content_invalid",
+                        "missing_participant_contact_email",
+                        "no_verified_test_email",
+                        "sending_disabled",
+                        "audience_unavailable",
+                        "test_delivery_failed",
+                    ]),
+                })
+                .strict(),
+            z
+                .object({
+                    success: z.literal(false),
+                    reason: z.literal("test_rate_limited"),
+                    retryAt: zodDateTimeFlexible,
+                })
+                .strict(),
+        ],
+    );
+    static conversationEmailUpdateTestStatusRequest = z
+        .object({ testAttemptId: z.uuid() })
+        .strict();
+    static conversationEmailUpdateTestStatusResponse = z.discriminatedUnion(
+        "success",
+        [
+            z
+                .object({
+                    success: z.literal(true),
+                    status: z.discriminatedUnion("state", [
+                        z
+                            .object({
+                                state: z.enum([
+                                    "pending",
+                                    "claimed",
+                                    "attempting",
+                                ]),
+                            })
+                            .strict(),
+                        z
+                            .object({
+                                state: z.literal("provider_accepted"),
+                                providerAcceptedAt: zodDateTimeFlexible,
+                            })
+                            .strict(),
+                        z
+                            .object({
+                                state: z.literal("failed"),
+                                reason: z.enum([
+                                    "retryable_rejected",
+                                    "permanent_rejected",
+                                    "unknown",
+                                ]),
+                            })
+                            .strict(),
+                    ]),
+                })
+                .strict(),
+            z
+                .object({
+                    success: z.literal(false),
+                    reason: z.enum([
+                        "test_not_found",
+                        "test_status_unavailable",
+                    ]),
+                })
+                .strict(),
+        ],
+    );
+    static conversationEmailUpdateSendRequest = z
+        .object({
+            updateId: z.uuid(),
+            testAttemptId: z.uuid(),
+            contentPolicyAcknowledged: z.literal(true),
+        })
+        .strict();
+    static conversationEmailUpdateSendResponse = z.discriminatedUnion(
+        "success",
+        [
+            z
+                .object({
+                    success: z.literal(true),
+                    record: zodConversationEmailUpdateHistoryRecord,
+                })
+                .strict(),
+            z
+                .object({
+                    success: z.literal(false),
+                    reason: z.enum([
+                        "test_not_found",
+                        "test_not_accepted",
+                        "test_used",
+                        "sending_disabled",
+                        "audience_unavailable",
+                        "delivery_already_active",
+                        "required_owner_copy_unavailable",
+                    ]),
+                })
+                .strict(),
+        ],
+    );
+    static conversationEmailUpdatePreferencesRequest = z
+        .object({
+            search: z.string().trim().min(1).max(100).optional(),
+            cursor: zodConversationEmailUpdateCursor.optional(),
+            limit: z.number().int().min(1).max(50).optional().default(20),
+        })
+        .strict();
+    static conversationEmailUpdatePreferencesResponse = z.discriminatedUnion(
+        "success",
+        [
+            z
+                .object({
+                    success: z.literal(true),
+                    globalPaused: z.boolean(),
+                    groups: z.array(zodConversationEmailUpdatePreferenceGroup),
+                    nextCursor: zodConversationEmailUpdateCursor.optional(),
+                })
+                .strict(),
+            z
+                .object({
+                    success: z.literal(false),
+                    reason: z.enum([
+                        "verified_email_required",
+                        "preferences_unavailable",
+                    ]),
+                })
+                .strict(),
+        ],
+    );
+    static conversationEmailUpdatePreferenceUpdateRequest =
+        z.discriminatedUnion("operation", [
+            z
+                .object({
+                    operation: z.literal("set_global_pause"),
+                    paused: z.boolean(),
+                })
+                .strict(),
+            z
+                .object({
+                    operation: z.literal("set_project_preference"),
+                    projectSlug: zodProjectSlug,
+                    enabled: z.boolean(),
+                    source: z.enum(["onboarding", "menu", "settings"]),
+                })
+                .strict(),
+            z
+                .object({
+                    operation: z.literal("set_conversation_preference"),
+                    conversationSlugId: zodSlugId,
+                    enabled: z.boolean(),
+                    source: z.enum(["onboarding", "menu", "settings"]),
+                })
+                .strict(),
+        ]);
+    static conversationEmailUpdatePreferenceUpdateResponse =
+        z.discriminatedUnion("success", [
+            z
+                .object({
+                    success: z.literal(true),
+                    result: z.discriminatedUnion("operation", [
+                        z
+                            .object({
+                                operation: z.literal("set_global_pause"),
+                                globalPaused: z.boolean(),
+                            })
+                            .strict(),
+                        z
+                            .object({
+                                operation: z.literal("set_project_preference"),
+                                projectSlug: zodProjectSlug,
+                                state: zodConversationEmailUpdatePreferenceChoice,
+                            })
+                            .strict(),
+                        z
+                            .object({
+                                operation: z.literal(
+                                    "set_conversation_preference",
+                                ),
+                                projectPreference: z
+                                    .object({
+                                        projectSlug: zodProjectSlug,
+                                        state: zodConversationEmailUpdatePreferenceChoice,
+                                    })
+                                    .strict()
+                                    .optional(),
+                                conversationPreferences: z.array(
+                                    z
+                                        .object({
+                                            conversationSlugId: zodSlugId,
+                                            state: zodConversationEmailUpdatePreferenceChoice,
+                                        })
+                                        .strict(),
+                                ),
+                            })
+                            .strict(),
+                    ]),
+                })
+                .strict(),
+            z
+                .object({
+                    success: z.literal(false),
+                    reason: z.enum([
+                        "project_not_found",
+                        "conversation_not_found",
+                        "feature_not_available",
+                        "verified_email_required",
+                        "preference_conflict",
+                    ]),
+                })
+                .strict(),
+        ]);
+    static conversationEmailUpdateConfigurationRequest = z.discriminatedUnion(
+        "target",
+        [
+            z
+                .object({
+                    target: z.literal("project"),
+                    projectSlug: zodProjectSlug,
+                })
+                .strict(),
+            z
+                .object({
+                    target: z.literal("conversation"),
+                    conversationSlugId: zodSlugId,
+                })
+                .strict(),
+        ],
+    );
+    static conversationEmailUpdateConfigurationResponse = z.discriminatedUnion(
+        "success",
+        [
+            z
+                .object({
+                    success: z.literal(true),
+                    configuration: zodConversationEmailUpdateConfiguration,
+                })
+                .strict(),
+            z
+                .object({
+                    success: z.literal(false),
+                    reason: z.enum([
+                        "target_not_found",
+                        "feature_not_available",
+                        "configuration_unavailable",
+                    ]),
+                })
+                .strict(),
+        ],
+    );
+    static conversationEmailUpdateConfigurationUpdateRequest =
+        z.discriminatedUnion("target", [
+            z
+                .object({
+                    target: z.literal("project"),
+                    projectSlug: zodProjectSlug,
+                    defaultEnabled: z.boolean(),
+                })
+                .strict(),
+            z
+                .object({
+                    target: z.literal("conversation"),
+                    conversationSlugId: zodSlugId,
+                    setting: z.enum(["inherit", "enabled", "disabled"]),
+                })
+                .strict(),
+        ]);
+    static conversationEmailUpdateConfigurationUpdateResponse =
+        z.discriminatedUnion("success", [
+            z
+                .object({
+                    success: z.literal(true),
+                    configuration: zodConversationEmailUpdateConfiguration,
+                })
+                .strict(),
+            z
+                .object({
+                    success: z.literal(false),
+                    reason: z.enum([
+                        "target_not_found",
+                        "feature_not_available",
+                        "missing_participant_contact_email",
+                        "active_delivery_conflict",
+                        "configuration_conflict",
+                    ]),
+                })
+                .strict(),
+        ]);
+    static conversationEmailUpdateConversationSummaryRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+        })
+        .strict();
+    static conversationEmailUpdateConversationSummaryResponse =
+        z.discriminatedUnion("success", [
+            z
+                .object({
+                    success: z.literal(true),
+                    authoringAction: z.enum(["none", "compose", "history"]),
+                    participantPreference: z
+                        .object({
+                            state: zodConversationEmailUpdatePreferenceState,
+                            resolvedEnabled: z.boolean(),
+                            onboardingAction: z
+                                .discriminatedUnion("operation", [
+                                    z
+                                        .object({
+                                            operation: z.literal(
+                                                "set_project_preference",
+                                            ),
+                                            projectSlug: zodProjectSlug,
+                                            initialEnabled: z.boolean(),
+                                        })
+                                        .strict(),
+                                    z
+                                        .object({
+                                            operation: z.literal(
+                                                "set_conversation_preference",
+                                            ),
+                                            conversationSlugId: zodSlugId,
+                                            initialEnabled: z.boolean(),
+                                        })
+                                        .strict(),
+                                ])
+                                .optional(),
+                        })
+                        .strict()
+                        .optional(),
+                })
+                .strict(),
+            z
+                .object({
+                    success: z.literal(false),
+                    reason: z.enum([
+                        "conversation_not_found",
+                        "feature_not_available",
+                        "summary_unavailable",
+                    ]),
+                })
+                .strict(),
+        ]);
+    static conversationEmailUpdateActionResolveRequest = z
+        .object({ token: zodConversationEmailUpdateActionToken })
+        .strict();
+    static conversationEmailUpdateActionResolveResponse = z.union([
+        z.discriminatedUnion("action", [
+            z
+                .object({
+                    success: z.literal(true),
+                    action: z.literal("unsubscribe_project"),
+                    scope: z
+                        .object({
+                            kind: z.literal("project"),
+                            projectSlug: zodProjectSlug,
+                            title: z
+                                .string()
+                                .trim()
+                                .min(1)
+                                .max(MAX_LENGTH_TITLE),
+                        })
+                        .strict(),
+                })
+                .strict(),
+            z
+                .object({
+                    success: z.literal(true),
+                    action: z.literal("unsubscribe_conversation"),
+                    scope: zodConversationEmailUpdateActionConversation
+                        .extend({ kind: z.literal("conversation") })
+                        .strict(),
+                })
+                .strict(),
+            z
+                .object({
+                    success: z.literal(true),
+                    action: z.literal("manage_preferences"),
+                    scope: zodConversationEmailUpdateActionScope,
+                })
+                .strict(),
+            z
+                .object({
+                    success: z.literal(true),
+                    action: z.literal("report"),
+                    subject: zodConversationEmailUpdateSubject,
+                    scope: zodConversationEmailUpdateActionScope,
+                })
+                .strict(),
+        ]),
+        zodConversationEmailUpdateActionUnavailable,
+    ]);
+    static conversationEmailUpdateActionUnsubscribeRequest = z
+        .object({ token: zodConversationEmailUpdateActionToken })
+        .strict();
+    static conversationEmailUpdateActionUnsubscribeResponse =
+        zodConversationEmailUpdateActionMutationResponse;
+    static conversationEmailUpdateActionManageOptOutRequest = z
+        .object({
+            token: zodConversationEmailUpdateActionToken,
+            target: z.discriminatedUnion("kind", [
+                z
+                    .object({
+                        kind: z.literal("project"),
+                        projectSlug: zodProjectSlug,
+                    })
+                    .strict(),
+                z
+                    .object({
+                        kind: z.literal("conversation"),
+                        conversationSlugId: zodSlugId,
+                    })
+                    .strict(),
+            ]),
+        })
+        .strict();
+    static conversationEmailUpdateActionManageOptOutResponse =
+        zodConversationEmailUpdateActionMutationResponse;
+    static conversationEmailUpdateActionReportRequest = z
+        .object({
+            token: zodConversationEmailUpdateActionToken,
+            reason: z.enum(["spam", "abuse", "unrelated_content", "other"]),
+            details: z.string().trim().min(1).max(2_000).optional(),
+        })
+        .strict();
+    static conversationEmailUpdateActionReportResponse =
+        zodConversationEmailUpdateActionMutationResponse;
+    static conversationEmailUpdateActionOneClickParams = z
+        .object({ token: zodConversationEmailUpdateActionToken })
+        .strict();
+    static conversationEmailUpdateActionOneClickBody = z.literal(
+        "List-Unsubscribe=One-Click",
+    );
+    static conversationEmailUpdateActionOneClickResponse =
+        zodConversationEmailUpdateActionMutationResponse;
+    static conversationEmailUpdateSnsSimulatorRequest = z
+        .object({
+            target: z.discriminatedUnion("kind", [
+                z
+                    .object({
+                        kind: z.literal("test"),
+                        testAttemptId: z.uuid(),
+                    })
+                    .strict(),
+                z
+                    .object({
+                        kind: z.literal("delivery"),
+                        deliveryAttemptId: z.uuid(),
+                    })
+                    .strict(),
+            ]),
+            event: z.discriminatedUnion("type", [
+                z.object({ type: z.literal("send") }).strict(),
+                z.object({ type: z.literal("delivery") }).strict(),
+                z
+                    .object({
+                        type: z.literal("bounce"),
+                        bounceType: z.enum(["Permanent", "Transient"]),
+                    })
+                    .strict(),
+                z.object({ type: z.literal("complaint") }).strict(),
+                z.object({ type: z.literal("delivery_delay") }).strict(),
+                z.object({ type: z.literal("reject") }).strict(),
+                z.object({ type: z.literal("rendering_failure") }).strict(),
+            ]),
+            idempotencyKey: z
+                .string()
+                .trim()
+                .min(1)
+                .max(100)
+                .regex(/^[A-Za-z0-9_-]+$/)
+                .optional(),
+        })
+        .strict();
+    static conversationEmailUpdateSnsSimulatorResponse = z.discriminatedUnion(
+        "success",
+        [
+            z
+                .object({
+                    success: z.literal(true),
+                    result: z.enum(["stored", "duplicate"]),
+                })
+                .strict(),
+            z
+                .object({
+                    success: z.literal(false),
+                    reason: z.enum([
+                        "attempt_not_found",
+                        "provider_message_not_available",
+                    ]),
+                })
+                .strict(),
+        ],
+    );
 }
 
 export type PostFetch200 = z.infer<typeof Dto.postFetch200>;
@@ -3076,6 +4035,129 @@ export type MaxDiffItemsFetchResponse = z.infer<
     typeof Dto.maxdiffItemsFetchResponse
 >;
 export type MaxDiffSyncResponse = z.infer<typeof Dto.maxdiffSyncResponse>;
+export type ConversationEmailUpdateWorkspaceRequest = z.infer<
+    typeof Dto.conversationEmailUpdateWorkspaceRequest
+>;
+export type ConversationEmailUpdateWorkspaceResponse = z.infer<
+    typeof Dto.conversationEmailUpdateWorkspaceResponse
+>;
+export type ConversationEmailUpdateHistoryListRequest = z.infer<
+    typeof Dto.conversationEmailUpdateHistoryListRequest
+>;
+export type ConversationEmailUpdateHistoryListRequestInput = z.input<
+    typeof Dto.conversationEmailUpdateHistoryListRequest
+>;
+export type ConversationEmailUpdateHistoryListResponse = z.infer<
+    typeof Dto.conversationEmailUpdateHistoryListResponse
+>;
+export type ConversationEmailUpdateHistoryDetailRequest = z.infer<
+    typeof Dto.conversationEmailUpdateHistoryDetailRequest
+>;
+export type ConversationEmailUpdateHistoryDetailResponse = z.infer<
+    typeof Dto.conversationEmailUpdateHistoryDetailResponse
+>;
+export type ConversationEmailUpdateAudienceEstimateRequest = z.infer<
+    typeof Dto.conversationEmailUpdateAudienceEstimateRequest
+>;
+export type ConversationEmailUpdateAudienceEstimateResponse = z.infer<
+    typeof Dto.conversationEmailUpdateAudienceEstimateResponse
+>;
+export type ConversationEmailUpdateSendTestRequest = z.infer<
+    typeof Dto.conversationEmailUpdateSendTestRequest
+>;
+export type ConversationEmailUpdateSendTestResponse = z.infer<
+    typeof Dto.conversationEmailUpdateSendTestResponse
+>;
+export type ConversationEmailUpdateTestStatusRequest = z.infer<
+    typeof Dto.conversationEmailUpdateTestStatusRequest
+>;
+export type ConversationEmailUpdateTestStatusResponse = z.infer<
+    typeof Dto.conversationEmailUpdateTestStatusResponse
+>;
+export type ConversationEmailUpdateSendRequest = z.infer<
+    typeof Dto.conversationEmailUpdateSendRequest
+>;
+export type ConversationEmailUpdateSendResponse = z.infer<
+    typeof Dto.conversationEmailUpdateSendResponse
+>;
+export type ConversationEmailUpdatePreferencesRequest = z.infer<
+    typeof Dto.conversationEmailUpdatePreferencesRequest
+>;
+export type ConversationEmailUpdatePreferencesRequestInput = z.input<
+    typeof Dto.conversationEmailUpdatePreferencesRequest
+>;
+export type ConversationEmailUpdatePreferencesResponse = z.infer<
+    typeof Dto.conversationEmailUpdatePreferencesResponse
+>;
+export type ConversationEmailUpdatePreferenceUpdateRequest = z.infer<
+    typeof Dto.conversationEmailUpdatePreferenceUpdateRequest
+>;
+export type ConversationEmailUpdatePreferenceUpdateResponse = z.infer<
+    typeof Dto.conversationEmailUpdatePreferenceUpdateResponse
+>;
+export type ConversationEmailUpdateConfigurationRequest = z.infer<
+    typeof Dto.conversationEmailUpdateConfigurationRequest
+>;
+export type ConversationEmailUpdateConfigurationResponse = z.infer<
+    typeof Dto.conversationEmailUpdateConfigurationResponse
+>;
+export type ConversationEmailUpdateConfigurationUpdateRequest = z.infer<
+    typeof Dto.conversationEmailUpdateConfigurationUpdateRequest
+>;
+export type ConversationEmailUpdateConfigurationUpdateResponse = z.infer<
+    typeof Dto.conversationEmailUpdateConfigurationUpdateResponse
+>;
+export type ConversationEmailUpdateConversationSummaryRequest = z.infer<
+    typeof Dto.conversationEmailUpdateConversationSummaryRequest
+>;
+export type ConversationEmailUpdateConversationSummaryResponse = z.infer<
+    typeof Dto.conversationEmailUpdateConversationSummaryResponse
+>;
+export type ConversationEmailUpdateSnsSimulatorRequest = z.infer<
+    typeof Dto.conversationEmailUpdateSnsSimulatorRequest
+>;
+export type ConversationEmailUpdateSnsSimulatorResponse = z.infer<
+    typeof Dto.conversationEmailUpdateSnsSimulatorResponse
+>;
+export type ConversationEmailUpdateHistoryRecord = z.infer<
+    typeof zodConversationEmailUpdateHistoryRecord
+>;
+export type ConversationEmailUpdateHistorySummary = z.infer<
+    typeof zodConversationEmailUpdateHistorySummary
+>;
+export type ConversationEmailUpdateScope = z.infer<
+    typeof zodConversationEmailUpdateScope
+>;
+export type ConversationEmailUpdateSelection = z.infer<
+    typeof zodConversationEmailUpdateSelection
+>;
+export type ConversationEmailUpdatePreferenceGroup = z.infer<
+    typeof zodConversationEmailUpdatePreferenceGroup
+>;
+export type ConversationEmailUpdateActionResolveRequest = z.infer<
+    typeof Dto.conversationEmailUpdateActionResolveRequest
+>;
+export type ConversationEmailUpdateActionResolveResponse = z.infer<
+    typeof Dto.conversationEmailUpdateActionResolveResponse
+>;
+export type ConversationEmailUpdateActionUnsubscribeRequest = z.infer<
+    typeof Dto.conversationEmailUpdateActionUnsubscribeRequest
+>;
+export type ConversationEmailUpdateActionUnsubscribeResponse = z.infer<
+    typeof Dto.conversationEmailUpdateActionUnsubscribeResponse
+>;
+export type ConversationEmailUpdateActionManageOptOutRequest = z.infer<
+    typeof Dto.conversationEmailUpdateActionManageOptOutRequest
+>;
+export type ConversationEmailUpdateActionManageOptOutResponse = z.infer<
+    typeof Dto.conversationEmailUpdateActionManageOptOutResponse
+>;
+export type ConversationEmailUpdateActionReportRequest = z.infer<
+    typeof Dto.conversationEmailUpdateActionReportRequest
+>;
+export type ConversationEmailUpdateActionReportResponse = z.infer<
+    typeof Dto.conversationEmailUpdateActionReportResponse
+>;
 
 // Export SSE types
 export * from "./sse.js";

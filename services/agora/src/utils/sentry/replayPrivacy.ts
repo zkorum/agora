@@ -4,6 +4,11 @@ import type {
   ReplayFrameEvent,
   ReplaySpanFrame,
 } from "@sentry/vue";
+import {
+  containsEmailUpdateRecipientActionPath,
+  isEmailUpdateRecipientActionPath,
+  redactEmailUpdateRecipientActionPaths,
+} from "src/utils/privacy/emailUpdateRecipientPath";
 import { redactSentryEvent } from "src/utils/sentry/eventPrivacy";
 
 export const SENTRY_REPLAY_MASK_ATTRIBUTES = [
@@ -69,6 +74,9 @@ function isFirstPartyHostname(hostname: string): boolean {
 }
 
 export function sanitizeReplayUrl(value: string): string {
+  if (containsEmailUpdateRecipientActionPath(value)) {
+    return redactEmailUpdateRecipientActionPaths(value);
+  }
   const trimmedValue = value.trim();
   const isRelativeRoute = /^(?:\/(?!\/)|\.\.?\/)/.test(trimmedValue);
 
@@ -208,7 +216,9 @@ function sanitizeReplaySpan(span: ReplaySpanFrame): ReplaySpanFrame {
       description: sanitizeReplayUrl(span.description),
       data: {
         previous:
-          typeof previous === "string" ? sanitizeReplayUrl(previous) : undefined,
+          typeof previous === "string"
+            ? sanitizeReplayUrl(previous)
+            : undefined,
       },
     };
   }
@@ -224,6 +234,12 @@ function sanitizeReplaySpan(span: ReplaySpanFrame): ReplaySpanFrame {
 export function sanitizeReplayRecordingEvent(
   event: ReplayFrameEvent
 ): ReplayFrameEvent | null {
+  if (
+    isEmailUpdateRecipientActionPath(window.location.pathname) ||
+    containsEmailUpdateRecipientActionPath(event)
+  ) {
+    return null;
+  }
   if (event.data.tag === "breadcrumb") {
     const payload = sanitizeReplayBreadcrumb(event.data.payload);
     return payload === null
@@ -242,7 +258,13 @@ export function sanitizeReplayRecordingEvent(
   return event;
 }
 
-export function sanitizeReplayEvent(event: Event): Event {
+export function sanitizeReplayEvent(event: Event): Event | null {
+  if (
+    isEmailUpdateRecipientActionPath(window.location.pathname) ||
+    containsEmailUpdateRecipientActionPath(event)
+  ) {
+    return null;
+  }
   if (!isReplayMetadataEvent(event)) {
     return event;
   }

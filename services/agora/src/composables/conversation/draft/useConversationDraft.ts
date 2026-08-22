@@ -8,10 +8,8 @@
  */
 
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  MAX_LENGTH_CONVERSATION_BODY,
-  validateHtmlStringCharacterCount,
-} from "src/shared/shared";
+import { validateHtmlStringCharacterCount } from "src/shared/richText";
+import { MAX_LENGTH_CONVERSATION_BODY } from "src/shared/shared";
 import type {
   ConversationMultilingualSetting,
   ConversationType,

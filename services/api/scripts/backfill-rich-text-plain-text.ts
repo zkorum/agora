@@ -20,7 +20,7 @@ import {
     rankingItemContentTranslationTable,
     surveyAnswerTable,
 } from "../src/shared-backend/schema.js";
-import { htmlToCountedTextResult } from "../src/shared/shared.js";
+import { htmlToCountedTextResult } from "../src/shared/richText.js";
 import {
     contentLanguageMetadataUpdateValues,
     resolveContentLanguageMetadata,
@@ -102,7 +102,9 @@ interface RankingItemLanguageBackfillRow {
     bodyPlainText: string | null;
 }
 
-function rowsWithHtml(rows: { id: number; html: string | null }[]): BackfillRow[] {
+function rowsWithHtml(
+    rows: { id: number; html: string | null }[],
+): BackfillRow[] {
     return rows.flatMap((row) =>
         row.html === null ? [] : [{ id: row.id, html: row.html }],
     );
@@ -300,7 +302,9 @@ const targets: BackfillTarget[] = [
                 .set({ translatedBodyPlainText: null })
                 .where(
                     and(
-                        isNull(conversationContentTranslationTable.translatedBody),
+                        isNull(
+                            conversationContentTranslationTable.translatedBody,
+                        ),
                         isNotNull(
                             conversationContentTranslationTable.translatedBodyPlainText,
                         ),
@@ -337,7 +341,10 @@ const targets: BackfillTarget[] = [
                 .where(
                     and(
                         eq(conversationContentTranslationTable.id, row.id),
-                        eq(conversationContentTranslationTable.translatedBody, row.html),
+                        eq(
+                            conversationContentTranslationTable.translatedBody,
+                            row.html,
+                        ),
                         isNull(
                             conversationContentTranslationTable.translatedBodyPlainText,
                         ),
@@ -372,8 +379,12 @@ const targets: BackfillTarget[] = [
                     .from(projectContentTranslationTable)
                     .where(
                         and(
-                            isNull(projectContentTranslationTable.translatedBodyPlainText),
-                            isNotNull(projectContentTranslationTable.translatedBody),
+                            isNull(
+                                projectContentTranslationTable.translatedBodyPlainText,
+                            ),
+                            isNotNull(
+                                projectContentTranslationTable.translatedBody,
+                            ),
                         ),
                     )
                     .orderBy(asc(projectContentTranslationTable.id))
@@ -386,8 +397,13 @@ const targets: BackfillTarget[] = [
                 .where(
                     and(
                         eq(projectContentTranslationTable.id, row.id),
-                        eq(projectContentTranslationTable.translatedBody, row.html),
-                        isNull(projectContentTranslationTable.translatedBodyPlainText),
+                        eq(
+                            projectContentTranslationTable.translatedBody,
+                            row.html,
+                        ),
+                        isNull(
+                            projectContentTranslationTable.translatedBodyPlainText,
+                        ),
                     ),
                 );
         },
@@ -408,7 +424,9 @@ const targets: BackfillTarget[] = [
                             isNull(
                                 opinionContentTranslationTable.translatedContentPlainText,
                             ),
-                            isNotNull(opinionContentTranslationTable.translatedContent),
+                            isNotNull(
+                                opinionContentTranslationTable.translatedContent,
+                            ),
                         ),
                     )
                     .orderBy(asc(opinionContentTranslationTable.id))
@@ -417,11 +435,16 @@ const targets: BackfillTarget[] = [
         updatePlainText: async (db, row) => {
             await db
                 .update(opinionContentTranslationTable)
-                .set({ translatedContentPlainText: htmlToCountedText(row.html) })
+                .set({
+                    translatedContentPlainText: htmlToCountedText(row.html),
+                })
                 .where(
                     and(
                         eq(opinionContentTranslationTable.id, row.id),
-                        eq(opinionContentTranslationTable.translatedContent, row.html),
+                        eq(
+                            opinionContentTranslationTable.translatedContent,
+                            row.html,
+                        ),
                         isNull(
                             opinionContentTranslationTable.translatedContentPlainText,
                         ),
@@ -437,7 +460,9 @@ const targets: BackfillTarget[] = [
                 .set({ translatedBodyPlainText: null })
                 .where(
                     and(
-                        isNull(rankingItemContentTranslationTable.translatedBodyHtml),
+                        isNull(
+                            rankingItemContentTranslationTable.translatedBodyHtml,
+                        ),
                         isNotNull(
                             rankingItemContentTranslationTable.translatedBodyPlainText,
                         ),
@@ -488,7 +513,9 @@ const targets: BackfillTarget[] = [
 ];
 
 function requireBackfillEnv({ env }: { env: NodeJS.ProcessEnv }): void {
-    const missingKeys = REQUIRED_ENV_KEYS.filter((key) => !isNonEmptyString(env[key]));
+    const missingKeys = REQUIRED_ENV_KEYS.filter(
+        (key) => !isNonEmptyString(env[key]),
+    );
 
     if (missingKeys.length === 0) {
         return;
@@ -588,16 +615,20 @@ async function backfillRankingItemLanguageMetadata({
                 title: row.title,
                 bodyPlainText: row.bodyPlainText,
             });
-            const sourceLanguageMetadata = await resolveContentLanguageMetadata({
-                text: corpus,
-                googleText: corpus,
-                googleCloudCredentials,
-                useGoogleLanguageDetection: true,
-            });
+            const sourceLanguageMetadata = await resolveContentLanguageMetadata(
+                {
+                    text: corpus,
+                    googleText: corpus,
+                    googleCloudCredentials,
+                    useGoogleLanguageDetection: true,
+                },
+            );
 
             await db
                 .update(rankingItemContentTable)
-                .set(contentLanguageMetadataUpdateValues(sourceLanguageMetadata))
+                .set(
+                    contentLanguageMetadataUpdateValues(sourceLanguageMetadata),
+                )
                 .where(
                     and(
                         eq(rankingItemContentTable.id, row.id),
@@ -621,8 +652,10 @@ async function main(): Promise<void> {
         googleCloudServiceAccountAwsSecretKey: undefined,
         awsSecretRegion: undefined,
         googleApplicationCredentialsPath: config.GOOGLE_APPLICATION_CREDENTIALS,
-        googleCloudTranslationLocation: config.GOOGLE_CLOUD_TRANSLATION_LOCATION,
-        googleCloudTranslationEndpoint: config.GOOGLE_CLOUD_TRANSLATION_ENDPOINT,
+        googleCloudTranslationLocation:
+            config.GOOGLE_CLOUD_TRANSLATION_LOCATION,
+        googleCloudTranslationEndpoint:
+            config.GOOGLE_CLOUD_TRANSLATION_ENDPOINT,
         log,
     });
     const client = await createPostgresClient(config, log);

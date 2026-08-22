@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
     MAX_BYTES_RICH_TEXT_HTML,
+    countPlainTextCharacters,
+} from "@/shared/shared.js";
+import {
     convertHtmlToCountedTextWithFallback,
     countHtmlPlainTextCharacters,
-    countPlainTextCharacters,
     validateRichTextInput,
-} from "@/shared/shared.js";
+} from "@/shared/richText.js";
 import { Dto } from "@/shared/types/dto.js";
 import {
     zodSurveyAnswerDraft,
@@ -28,7 +30,7 @@ describe("rich-text normalization", () => {
         });
     });
 
-    it("preserves list-item boundaries in canonical plain text", () => {
+    it("preserves list semantics in canonical plain text", () => {
         expect(
             normalizeUserRichTextInput({
                 html: "<ul><li>A</li><li>B</li></ul>",
@@ -38,9 +40,99 @@ describe("rich-text normalization", () => {
             success: true,
             content: {
                 html: "<ul><li>A</li><li>B</li></ul>",
-                plainText: "A\nB",
+                plainText: "- A\n- B",
             },
         });
+    });
+
+    it("preserves paragraphs and ordered nested lists", () => {
+        expect(
+            normalizeUserRichTextInput({
+                html: "<p>Tasks:</p><ol><li>Register</li><li>Vote<ul><li>Early</li></ul></li></ol>",
+                validationMode: "conversation_email_update",
+            }),
+        ).toEqual({
+            success: true,
+            content: {
+                html: "<p>Tasks:</p><ol><li>Register</li><li>Vote<ul><li>Early</li></ul></li></ol>",
+                plainText: "Tasks:\n\n1. Register\n2. Vote\n    - Early",
+            },
+        });
+    });
+
+    it("uses the Conversation Update 10,000-character limit", () => {
+        const text = "a".repeat(10_000);
+        expect(
+            normalizeUserRichTextInput({
+                html: `<p>${text}</p>`,
+                validationMode: "conversation_email_update",
+            }),
+        ).toEqual({
+            success: true,
+            content: { html: `<p>${text}</p>`, plainText: text },
+        });
+
+        expect(
+            normalizeUserRichTextInput({
+                html: `<p>${text}a</p>`,
+                validationMode: "conversation_email_update",
+            }),
+        ).toEqual({
+            success: false,
+            reason: "plain_text_too_long",
+            count: 10_001,
+            limit: 10_000,
+        });
+    });
+
+    it("keeps Conversation Update validation within the database text limit", () => {
+        const text = "a\u0301".repeat(5_200);
+        expect(
+            normalizeUserRichTextInput({
+                html: `<p>${text}</p>`,
+                validationMode: "conversation_email_update",
+            }),
+        ).toEqual({
+            success: false,
+            reason: "plain_text_too_long",
+            count: 10_400,
+            limit: 10_000,
+        });
+    });
+
+    it("rejects unsafe Conversation Update subjects", () => {
+        const parseRequest = (subject: string) =>
+            Dto.conversationEmailUpdateSendTestRequest.parse({
+                selection: {
+                    kind: "no_project",
+                    conversationSlugId: "abcdefghij",
+                },
+                subject,
+                bodyHtml: "<p>Body</p>",
+            });
+
+        expect(() =>
+            parseRequest("Update\r\nBcc: attacker@example.com"),
+        ).toThrow();
+        expect(() => parseRequest("safe\u202Etxt")).toThrow();
+        expect(() => parseRequest("\u200B")).toThrow();
+        expect(() => parseRequest("first\u2028second")).toThrow();
+        expect(() => parseRequest("first\u2029second")).toThrow();
+        expect(() => parseRequest("😀".repeat(140))).not.toThrow();
+        expect(() => parseRequest("😀".repeat(141))).toThrow();
+    });
+
+    it("enforces the Conversation Update HTML limit in UTF-8 bytes", () => {
+        expect(() =>
+            Dto.conversationEmailUpdateSendTestRequest.parse({
+                selection: {
+                    kind: "no_project",
+                    conversationSlugId: "conversation",
+                },
+                subject: "Update",
+                bodyHtml: "é".repeat(9_000),
+            }),
+        ).toThrow();
     });
 
     it("returns best-effort text when the primary converter throws", () => {

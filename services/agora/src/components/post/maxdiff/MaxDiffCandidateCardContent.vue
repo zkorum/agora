@@ -29,7 +29,7 @@
 <script setup lang="ts">
 import ContentTranslationControl from "src/components/translation/ContentTranslationControl.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
-import { htmlToCountedText } from "src/shared/shared";
+import { htmlToCountedText } from "src/shared/richText";
 import type { MaxDiffCandidateDisplayItem } from "src/utils/maxdiffCandidateDisplay";
 import { useRankingItemDisplayContent } from "src/utils/translation/useRankingItemDisplayContent";
 import { computed, nextTick, useTemplateRef, watch } from "vue";
