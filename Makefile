@@ -1,6 +1,7 @@
 all: dev
 
 LOG_RUNNER := node scripts/dev-log-runner.mjs
+OPENAPI_GENERATOR_IMAGE := openapitools/openapi-generator-cli:v7.24.0
 LOAD_TEST_CONVERSATIONS := $(or $(CONVERSATION_SLUG_IDS),$(conversations))
 CONTENT_TRANSLATION_WORKER_DEV_SCENARIO ?= simulated-success
 
@@ -19,13 +20,13 @@ PYTHON_TYPECHECK_PATTERNS := \
 
 generate:
 	docker run --rm \
-		-v ${PWD}:/local openapitools/openapi-generator-cli generate \
+		-v ${PWD}:/local $(OPENAPI_GENERATOR_IMAGE) generate \
 		-i /local/services/api/openapi-zkorum.json \
 		-g typescript-axios \
 		--global-property apiDocs=false,modelDocs=false \
 		-o /local/services/agora/src/api
 	docker run --rm \
-		-v ${PWD}:/local openapitools/openapi-generator-cli generate \
+		-v ${PWD}:/local $(OPENAPI_GENERATOR_IMAGE) generate \
 		-i /local/services/api/openapi-zkorum.json \
 		-g typescript-axios \
 		--global-property apiDocs=false,modelDocs=false \

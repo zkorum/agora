@@ -195,6 +195,7 @@ export function createConversationEmailUpdateWorker({
             subject: rendered.subject,
             html: rendered.html,
             text: rendered.text,
+            replyToName: work.replyToName,
             replyToEmail: work.replyToEmail,
             unsubscribeUrl: undefined,
             tags: {
@@ -240,6 +241,7 @@ export function createConversationEmailUpdateWorker({
             subject: rendered.subject,
             html: rendered.html,
             text: rendered.text,
+            replyToName: authorized.replyToName,
             replyToEmail: authorized.replyToEmail,
             unsubscribeUrl: authorized.unsubscribeUrl,
             tags: {

@@ -9,6 +9,7 @@ import {
     inArray,
     isNotNull,
     isNull,
+    lt,
     lte,
     ne,
     notExists,
@@ -143,7 +144,8 @@ type PreferenceProjectDao = Awaited<
 type PreferenceConversationDao = Awaited<
     ReturnType<typeof queryPreferenceConversations>
 >[number];
-type HistoryDao = Awaited<ReturnType<typeof loadHistoryRows>>[number];
+type HistoryDao = Awaited<ReturnType<typeof queryVisibleHistoryRows>>[number];
+type HistoryContext = ConversationEmailUpdateHistoryListRequest["context"];
 type HistoryConversationDao = Awaited<
     ReturnType<typeof loadHistoryConversations>
 >[number];
@@ -573,92 +575,121 @@ async function listAuthorizedConversations({
     });
 }
 
-async function listHistoryVisibleProjects({
+function historyProjectVisibilityPredicate({
     db,
     userId,
 }: {
     db: PostgresJsDatabase;
     userId: string;
 }) {
+    return and(
+        isNull(projectTable.deletedAt),
+        or(
+            isNotNull(projectTable.autoProvisionedForOrganizationId),
+            eq(projectTable.directoryVisibility, "listed"),
+        ),
+        exists(
+            db
+                .select({ id: projectOrganizationOwnershipTable.id })
+                .from(projectOrganizationOwnershipTable)
+                .innerJoin(
+                    organizationTable,
+                    and(
+                        eq(
+                            organizationTable.id,
+                            projectOrganizationOwnershipTable.organizationId,
+                        ),
+                        isNull(organizationTable.deletedAt),
+                    ),
+                )
+                .innerJoin(
+                    organizationMembershipTable,
+                    and(
+                        eq(
+                            organizationMembershipTable.organizationId,
+                            projectOrganizationOwnershipTable.organizationId,
+                        ),
+                        eq(organizationMembershipTable.userId, userId),
+                        isNull(organizationMembershipTable.deletedAt),
+                    ),
+                )
+                .innerJoin(
+                    userTable,
+                    and(
+                        eq(userTable.id, organizationMembershipTable.userId),
+                        eq(userTable.isDeleted, false),
+                    ),
+                )
+                .innerJoin(
+                    organizationMembershipAllProjectCapabilityTable,
+                    and(
+                        eq(
+                            organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
+                            organizationMembershipTable.id,
+                        ),
+                        eq(
+                            organizationMembershipAllProjectCapabilityTable.capability,
+                            "conversation_email_update",
+                        ),
+                    ),
+                )
+                .where(
+                    and(
+                        eq(
+                            projectOrganizationOwnershipTable.projectId,
+                            projectTable.id,
+                        ),
+                        isNull(projectOrganizationOwnershipTable.deletedAt),
+                    ),
+                ),
+        ),
+    );
+}
+
+async function isHistoryContextVisible({
+    db,
+    userId,
+    context,
+}: {
+    db: PostgresJsDatabase;
+    userId: string;
+    context: HistoryContext;
+}): Promise<boolean> {
+    const visibility = historyProjectVisibilityPredicate({ db, userId });
+    if (context.kind === "conversation") {
+        const rows = await db
+            .select({ id: conversationTable.id })
+            .from(conversationTable)
+            .innerJoin(
+                projectTable,
+                eq(projectTable.id, conversationTable.projectId),
+            )
+            .where(
+                and(
+                    visibility,
+                    eq(conversationTable.slugId, context.conversationSlugId),
+                ),
+            )
+            .limit(1);
+        return rows.length > 0;
+    }
+
     const rows = await db
-        .selectDistinctOn([projectTable.id], {
-            project_id: projectTable.id,
-            project_slug: projectTable.slug,
-            auto_provisioned_for_organization_id:
-                projectTable.autoProvisionedForOrganizationId,
-        })
+        .select({ id: projectTable.id })
         .from(projectTable)
-        .innerJoin(
-            projectOrganizationOwnershipTable,
-            and(
-                eq(
-                    projectOrganizationOwnershipTable.projectId,
-                    projectTable.id,
-                ),
-                isNull(projectOrganizationOwnershipTable.deletedAt),
-            ),
-        )
-        .innerJoin(
-            organizationTable,
-            and(
-                eq(
-                    organizationTable.id,
-                    projectOrganizationOwnershipTable.organizationId,
-                ),
-                isNull(organizationTable.deletedAt),
-            ),
-        )
-        .innerJoin(
-            organizationMembershipTable,
-            and(
-                eq(
-                    organizationMembershipTable.organizationId,
-                    projectOrganizationOwnershipTable.organizationId,
-                ),
-                eq(organizationMembershipTable.userId, userId),
-                isNull(organizationMembershipTable.deletedAt),
-            ),
-        )
-        .innerJoin(
-            userTable,
-            and(
-                eq(userTable.id, organizationMembershipTable.userId),
-                eq(userTable.isDeleted, false),
-            ),
-        )
-        .innerJoin(
-            organizationMembershipAllProjectCapabilityTable,
-            and(
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
-                    organizationMembershipTable.id,
-                ),
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.capability,
-                    "conversation_email_update",
-                ),
-            ),
-        )
         .where(
             and(
-                isNull(projectTable.deletedAt),
-                or(
-                    isNotNull(projectTable.autoProvisionedForOrganizationId),
-                    eq(projectTable.directoryVisibility, "listed"),
-                ),
+                visibility,
+                context.kind === "project"
+                    ? and(
+                          eq(projectTable.slug, context.projectSlug),
+                          isNull(projectTable.autoProvisionedForOrganizationId),
+                      )
+                    : undefined,
             ),
         )
-        .orderBy(
-            projectTable.id,
-            projectOrganizationOwnershipTable.organizationId,
-        );
-    return rows.map((row) => ({
-        project_id: row.project_id,
-        project_slug: row.project_slug,
-        scope_kind: getProjectScopeKind(
-            row.auto_provisioned_for_organization_id,
-        ),
-    }));
+        .limit(1);
+    return rows.length > 0;
 }
 
 function isSendingEnabled({
@@ -1417,55 +1448,189 @@ async function loadHistoryConversations({
         );
 }
 
-async function loadHistoryRows({
+const historyRowSelection = {
+    internal_update_id: conversationEmailUpdateTable.id,
+    update_id: conversationEmailUpdateTable.publicId,
+    project_slug: projectTable.slug,
+    scope_kind: conversationEmailUpdateTable.scopeKind,
+    project_title: conversationEmailUpdateTable.projectTitleSnapshot,
+    subject: conversationEmailUpdateTable.subject,
+    body_html: conversationEmailUpdateTable.bodyHtml,
+    accepted_at: conversationEmailUpdateDeliveryTable.acceptedAt,
+    audience_estimate:
+        conversationEmailUpdateDeliveryTable.displayedParticipantEstimate,
+    owner_copy_count:
+        conversationEmailUpdateDeliveryTable.requiredOwnerCopyCount,
+    status: conversationEmailUpdateDeliveryTable.status,
+    failure_reason: conversationEmailUpdateDeliveryTable.failureReason,
+    stop_reason: conversationEmailUpdateDeliveryTable.stopReason,
+};
+
+function historyContextPredicate({
     db,
-    authorizedProjectIds,
+    context,
 }: {
     db: PostgresJsDatabase;
-    authorizedProjectIds: number[];
+    context: HistoryContext;
 }) {
-    if (authorizedProjectIds.length === 0) return [];
-    return await db
+    if (context.kind === "project") {
+        return and(
+            eq(projectTable.slug, context.projectSlug),
+            isNull(projectTable.autoProvisionedForOrganizationId),
+        );
+    }
+    if (context.kind === "conversation") {
+        return exists(
+            db
+                .select({
+                    update_id:
+                        conversationEmailUpdateConversationTable.updateId,
+                })
+                .from(conversationEmailUpdateConversationTable)
+                .innerJoin(
+                    conversationTable,
+                    eq(
+                        conversationTable.id,
+                        conversationEmailUpdateConversationTable.conversationId,
+                    ),
+                )
+                .where(
+                    and(
+                        eq(
+                            conversationEmailUpdateConversationTable.updateId,
+                            conversationEmailUpdateDeliveryTable.updateId,
+                        ),
+                        eq(
+                            conversationTable.slugId,
+                            context.conversationSlugId,
+                        ),
+                    ),
+                ),
+        );
+    }
+    return undefined;
+}
+
+function historyAccessPredicate({
+    db,
+    userId,
+    context,
+}: {
+    db: PostgresJsDatabase;
+    userId: string;
+    context: HistoryContext;
+}) {
+    return and(
+        historyProjectVisibilityPredicate({ db, userId }),
+        historyContextPredicate({ db, context }),
+    );
+}
+
+interface HistoryCursorPosition {
+    acceptedAt: Date;
+    internalUpdateId: number;
+}
+
+async function resolveHistoryCursorPosition({
+    db,
+    userId,
+    context,
+    cursor,
+}: {
+    db: PostgresJsDatabase;
+    userId: string;
+    context: HistoryContext;
+    cursor: string;
+}): Promise<HistoryCursorPosition | undefined> {
+    const rows = await db
         .select({
-            internal_update_id: conversationEmailUpdateTable.id,
-            update_id: conversationEmailUpdateTable.publicId,
-            project_id: conversationEmailUpdateTable.projectId,
-            project_slug: projectTable.slug,
-            scope_kind: conversationEmailUpdateTable.scopeKind,
-            project_title: conversationEmailUpdateTable.projectTitleSnapshot,
-            subject: conversationEmailUpdateTable.subject,
-            body_html: conversationEmailUpdateTable.bodyHtml,
-            accepted_at: conversationEmailUpdateDeliveryTable.acceptedAt,
-            audience_estimate:
-                conversationEmailUpdateDeliveryTable.displayedParticipantEstimate,
-            owner_copy_count:
-                conversationEmailUpdateDeliveryTable.requiredOwnerCopyCount,
-            status: conversationEmailUpdateDeliveryTable.status,
-            failure_reason: conversationEmailUpdateDeliveryTable.failureReason,
-            stop_reason: conversationEmailUpdateDeliveryTable.stopReason,
+            acceptedAt: conversationEmailUpdateDeliveryTable.acceptedAt,
+            internalUpdateId: conversationEmailUpdateDeliveryTable.updateId,
         })
-        .from(conversationEmailUpdateTable)
+        .from(conversationEmailUpdateDeliveryTable)
         .innerJoin(
-            conversationEmailUpdateDeliveryTable,
+            conversationEmailUpdateTable,
             eq(
-                conversationEmailUpdateDeliveryTable.updateId,
                 conversationEmailUpdateTable.id,
+                conversationEmailUpdateDeliveryTable.updateId,
             ),
         )
         .innerJoin(
             projectTable,
-            eq(projectTable.id, conversationEmailUpdateTable.projectId),
+            eq(projectTable.id, conversationEmailUpdateDeliveryTable.projectId),
         )
         .where(
-            inArray(
-                conversationEmailUpdateTable.projectId,
-                authorizedProjectIds,
+            and(
+                historyAccessPredicate({ db, userId, context }),
+                eq(conversationEmailUpdateTable.publicId, cursor),
+            ),
+        )
+        .limit(1);
+    return rows.at(0);
+}
+
+async function queryVisibleHistoryRows({
+    db,
+    userId,
+    context,
+    cursorPosition,
+    publicUpdateId,
+    limit,
+}: {
+    db: PostgresJsDatabase;
+    userId: string;
+    context: HistoryContext;
+    cursorPosition: HistoryCursorPosition | undefined;
+    publicUpdateId: string | undefined;
+    limit: number;
+}) {
+    const keysetPredicate =
+        cursorPosition === undefined
+            ? undefined
+            : or(
+                  lt(
+                      conversationEmailUpdateDeliveryTable.acceptedAt,
+                      cursorPosition.acceptedAt,
+                  ),
+                  and(
+                      eq(
+                          conversationEmailUpdateDeliveryTable.acceptedAt,
+                          cursorPosition.acceptedAt,
+                      ),
+                      lt(
+                          conversationEmailUpdateDeliveryTable.updateId,
+                          cursorPosition.internalUpdateId,
+                      ),
+                  ),
+              );
+    return await db
+        .select(historyRowSelection)
+        .from(conversationEmailUpdateDeliveryTable)
+        .innerJoin(
+            conversationEmailUpdateTable,
+            eq(
+                conversationEmailUpdateTable.id,
+                conversationEmailUpdateDeliveryTable.updateId,
+            ),
+        )
+        .innerJoin(
+            projectTable,
+            eq(projectTable.id, conversationEmailUpdateDeliveryTable.projectId),
+        )
+        .where(
+            and(
+                historyAccessPredicate({ db, userId, context }),
+                keysetPredicate,
+                publicUpdateId === undefined
+                    ? undefined
+                    : eq(conversationEmailUpdateTable.publicId, publicUpdateId),
             ),
         )
         .orderBy(
             desc(conversationEmailUpdateDeliveryTable.acceptedAt),
-            desc(conversationEmailUpdateTable.id),
-        );
+            desc(conversationEmailUpdateDeliveryTable.updateId),
+        )
+        .limit(limit);
 }
 
 function getPreferenceScopeKind({
@@ -1999,7 +2164,10 @@ async function queryConversationConfigurationRows({
                 conversationTable.conversationEmailUpdateEnabledOverride,
             has_history: exists(
                 db
-                    .select({ id: conversationEmailUpdateConversationTable.id })
+                    .select({
+                        conversationId:
+                            conversationEmailUpdateConversationTable.conversationId,
+                    })
                     .from(conversationEmailUpdateConversationTable)
                     .where(
                         eq(
@@ -2566,84 +2734,41 @@ export function createConversationEmailUpdateService({
 
         listHistory: async ({ userId, request }) => {
             try {
-                const authorizedProjects = await listHistoryVisibleProjects({
+                const contextVisible = await isHistoryContextVisible({
                     db,
                     userId,
+                    context: request.context,
                 });
-                let projectIds = [
-                    ...new Set(authorizedProjects.map((row) => row.project_id)),
-                ];
-                if (request.context.kind === "project") {
-                    const projectSlug = request.context.projectSlug;
-                    projectIds = [
-                        ...new Set(
-                            authorizedProjects
-                                .filter(
-                                    (row) =>
-                                        row.scope_kind === "project" &&
-                                        row.project_slug === projectSlug,
-                                )
-                                .map((row) => row.project_id),
-                        ),
-                    ];
-                } else if (request.context.kind === "conversation") {
-                    const conversationSlugId =
-                        request.context.conversationSlugId;
-                    const conversationRows = await db
-                        .select({ project_id: conversationTable.projectId })
-                        .from(conversationTable)
-                        .where(
-                            and(
-                                eq(
-                                    conversationTable.slugId,
-                                    conversationSlugId,
-                                ),
-                                inArray(
-                                    conversationTable.projectId,
-                                    projectIds,
-                                ),
-                            ),
-                        )
-                        .limit(1);
-                    projectIds = conversationRows.map((row) => row.project_id);
-                }
-                if (projectIds.length === 0) {
+                if (!contextVisible) {
                     return { success: false, reason: "context_not_found" };
                 }
-                let rows = await loadHistoryRows({
-                    db,
-                    authorizedProjectIds: projectIds,
-                });
-                if (request.context.kind === "conversation") {
-                    const conversationSlugId =
-                        request.context.conversationSlugId;
-                    const updateConversations = await loadHistoryConversations({
-                        db,
-                        updateIds: rows.map((row) => row.internal_update_id),
-                    });
-                    const visibleIds = new Set(
-                        updateConversations
-                            .filter(
-                                (row) =>
-                                    row.conversation_slug_id ===
-                                    conversationSlugId,
-                            )
-                            .map((row) => row.update_id),
-                    );
-                    rows = rows.filter((row) =>
-                        visibleIds.has(row.internal_update_id),
-                    );
-                }
-                const startIndex =
+
+                const cursorPosition =
                     request.cursor === undefined
-                        ? 0
-                        : rows.findIndex(
-                              (row) => row.update_id === request.cursor,
-                          ) + 1;
-                if (request.cursor !== undefined && startIndex === 0) {
+                        ? undefined
+                        : await resolveHistoryCursorPosition({
+                              db,
+                              userId,
+                              context: request.context,
+                              cursor: request.cursor,
+                          });
+                if (
+                    request.cursor !== undefined &&
+                    cursorPosition === undefined
+                ) {
                     return { success: false, reason: "invalid_cursor" };
                 }
-                const page = rows.slice(startIndex, startIndex + request.limit);
+
+                const rows = await queryVisibleHistoryRows({
+                    db,
+                    userId,
+                    context: request.context,
+                    cursorPosition,
+                    publicUpdateId: undefined,
+                    limit: request.limit + 1,
+                });
+                const hasNextPage = rows.length > request.limit;
+                const page = rows.slice(0, request.limit);
                 const conversations = await loadHistoryConversations({
                     db,
                     updateIds: page.map((row) => row.internal_update_id),
@@ -2660,10 +2785,9 @@ export function createConversationEmailUpdateService({
                             ),
                         }),
                     ),
-                    nextCursor:
-                        startIndex + page.length < rows.length
-                            ? page.at(-1)?.update_id
-                            : undefined,
+                    nextCursor: hasNextPage
+                        ? page.at(-1)?.update_id
+                        : undefined,
                 };
             } catch {
                 return { success: false, reason: "history_unavailable" };
@@ -2672,21 +2796,15 @@ export function createConversationEmailUpdateService({
 
         getHistoryDetail: async ({ userId, request }) => {
             try {
-                const authorizedProjects = await listHistoryVisibleProjects({
+                const rows = await queryVisibleHistoryRows({
                     db,
                     userId,
+                    context: { kind: "global" },
+                    cursorPosition: undefined,
+                    publicUpdateId: request.updateId,
+                    limit: 1,
                 });
-                const rows = await loadHistoryRows({
-                    db,
-                    authorizedProjectIds: [
-                        ...new Set(
-                            authorizedProjects.map((row) => row.project_id),
-                        ),
-                    ],
-                });
-                const row = rows.find(
-                    (candidate) => candidate.update_id === request.updateId,
-                );
+                const row = rows.at(0);
                 if (row === undefined) {
                     return { success: false, reason: "update_not_found" };
                 }
@@ -2991,6 +3109,13 @@ export function createConversationEmailUpdateService({
                                     conversationEmailUpdateTestAttemptTable.updateId,
                                 update_public_id:
                                     conversationEmailUpdateTable.publicId,
+                                scope_kind:
+                                    conversationEmailUpdateTable.scopeKind,
+                                project_title:
+                                    conversationEmailUpdateTable.projectTitleSnapshot,
+                                subject: conversationEmailUpdateTable.subject,
+                                body_html:
+                                    conversationEmailUpdateTable.bodyHtml,
                                 project_id:
                                     conversationEmailUpdateTable.projectId,
                                 authorizing_organization_id:
@@ -3081,14 +3206,25 @@ export function createConversationEmailUpdateService({
                             .select({
                                 conversation_id:
                                     conversationEmailUpdateConversationTable.conversationId,
+                                conversation_slug_id: conversationTable.slugId,
+                                conversation_title:
+                                    conversationEmailUpdateConversationTable.conversationTitleSnapshot,
                             })
                             .from(conversationEmailUpdateConversationTable)
+                            .innerJoin(
+                                conversationTable,
+                                eq(
+                                    conversationTable.id,
+                                    conversationEmailUpdateConversationTable.conversationId,
+                                ),
+                            )
                             .where(
                                 eq(
                                     conversationEmailUpdateConversationTable.updateId,
                                     attempt.update_id,
                                 ),
-                            );
+                            )
+                            .orderBy(conversationTable.slugId);
                         const selectedIds = new Set(
                             selectedRows.map((row) => row.conversation_id),
                         );
@@ -3201,7 +3337,7 @@ export function createConversationEmailUpdateService({
                                 status: "preparing",
                                 audienceCutoffAt: now,
                                 displayedParticipantEstimate:
-                                    acceptanceParticipantEstimate,
+                                    request.displayedParticipantEstimate,
                                 acceptanceParticipantEstimate:
                                     acceptanceParticipantEstimate,
                                 requiredOwnerCopyCount: ownerSnapshots.length,
@@ -3209,6 +3345,8 @@ export function createConversationEmailUpdateService({
                             })
                             .returning({
                                 id: conversationEmailUpdateDeliveryTable.id,
+                                acceptedAt:
+                                    conversationEmailUpdateDeliveryTable.acceptedAt,
                             });
                         if (deliveryRows.length === 0) {
                             return {
@@ -3263,35 +3401,34 @@ export function createConversationEmailUpdateService({
                                     })),
                                 ),
                             );
-                        const historyRows = await loadHistoryRows({
-                            db: tx,
-                            authorizedProjectIds: [attempt.project_id],
-                        });
-                        const historyRow = historyRows.find(
-                            (candidate) =>
-                                candidate.update_id === request.updateId,
-                        );
-                        if (historyRow === undefined) {
-                            return {
-                                success: false,
-                                reason: "audience_unavailable",
-                            } as const;
-                        }
-                        const historyConversations =
-                            await loadHistoryConversations({
-                                db: tx,
-                                updateIds: [historyRow.internal_update_id],
-                            });
-                        return {
-                            success: true,
-                            record: mapHistoryRecord({
-                                row: historyRow,
-                                conversations: historyConversations,
-                            }),
-                        } as const;
+                        const record: ConversationEmailUpdateHistoryRecord = {
+                            updateId: attempt.update_public_id,
+                            subject: attempt.subject,
+                            acceptedAt: delivery.acceptedAt,
+                            audienceEstimate:
+                                request.displayedParticipantEstimate,
+                            ownerCopyCount: ownerSnapshots.length,
+                            scope:
+                                attempt.scope_kind === "listed_project"
+                                    ? {
+                                          kind: "project",
+                                          title: attempt.project_title,
+                                          projectSlug: project.project_slug,
+                                      }
+                                    : {
+                                          kind: "no_project",
+                                          title: NO_PROJECT_TITLE,
+                                      },
+                            conversations: selectedRows.map((row) => ({
+                                conversationSlugId: row.conversation_slug_id,
+                                title: row.conversation_title,
+                            })),
+                            bodyHtml: attempt.body_html,
+                            status: "preparing",
+                        };
+                        return { success: true, record } as const;
                     },
                 );
-                if (!result.success) return result;
                 return result;
             } catch (error: unknown) {
                 return {

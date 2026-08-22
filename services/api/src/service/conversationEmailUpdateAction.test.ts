@@ -388,11 +388,8 @@ describe("conversation email update action service", () => {
                 "token_hash" varchar(64) NOT NULL UNIQUE,
                 "recipient_id" bigint NOT NULL,
                 "action" text NOT NULL,
-                "project_id" integer,
-                "conversation_id" integer,
                 "expires_at" timestamp NOT NULL,
-                "last_used_at" timestamp,
-                "revoked_at" timestamp
+                "last_used_at" timestamp
             );
             CREATE TABLE "conversation_email_update_user_project_preference" (
                 "user_id" uuid NOT NULL,
@@ -417,11 +414,7 @@ describe("conversation email update action service", () => {
                 "recipient_id" bigint NOT NULL UNIQUE,
                 "reason" text NOT NULL,
                 "details" text,
-                "status" text NOT NULL,
-                "created_at" timestamp NOT NULL DEFAULT now(),
-                "reviewed_by_user_id" uuid,
-                "reviewed_at" timestamp,
-                "resolution_notes" text
+                "created_at" timestamp NOT NULL DEFAULT now()
             );
         `);
     }, 120_000);
@@ -456,8 +449,6 @@ describe("conversation email update action service", () => {
         token,
         action,
         scopeKind,
-        tokenProjectId,
-        tokenConversationId,
         representedConversationIds,
     }: {
         token: string;
@@ -467,8 +458,6 @@ describe("conversation email update action service", () => {
             | "manage_preferences"
             | "report";
         scopeKind: "listed_project" | "no_project";
-        tokenProjectId: number | undefined;
-        tokenConversationId: number | undefined;
         representedConversationIds: number[];
     }): Promise<void> {
         await sqlClient`
@@ -493,11 +482,19 @@ describe("conversation email update action service", () => {
                 ("id", "delivery_id", "user_id", "kind")
             VALUES (40, 30, ${USER_ID}, 'participant')
         `;
-        await sqlClient`
-            INSERT INTO "conversation_email_update_conversation"
-                ("update_id", "conversation_id", "conversation_title_snapshot")
-            VALUES (20, 10, 'Frozen first'), (20, 11, 'Frozen second')
-        `;
+        const selectedConversationIds =
+            scopeKind === "no_project" ? representedConversationIds : [10, 11];
+        for (const conversationId of selectedConversationIds) {
+            await sqlClient`
+                INSERT INTO "conversation_email_update_conversation"
+                    ("update_id", "conversation_id", "conversation_title_snapshot")
+                VALUES (
+                    20,
+                    ${conversationId},
+                    ${conversationId === 10 ? "Frozen first" : "Frozen second"}
+                )
+            `;
+        }
         for (const conversationId of representedConversationIds) {
             await sqlClient`
                 INSERT INTO "conversation_email_update_recipient_conversation"
@@ -507,14 +504,12 @@ describe("conversation email update action service", () => {
         }
         await sqlClient`
             INSERT INTO "conversation_email_update_action_token"
-                ("id", "token_hash", "recipient_id", "action", "project_id", "conversation_id", "expires_at")
+                ("id", "token_hash", "recipient_id", "action", "expires_at")
             VALUES (
                 50,
                 ${hashConversationEmailUpdateActionToken(token)},
                 40,
                 ${action},
-                ${tokenProjectId ?? null},
-                ${tokenConversationId ?? null},
                 '2100-01-01'
             )
         `;
@@ -525,8 +520,6 @@ describe("conversation email update action service", () => {
             token: TOKEN,
             action: "manage_preferences",
             scopeKind: "listed_project",
-            tokenProjectId: undefined,
-            tokenConversationId: undefined,
             representedConversationIds: [10],
         });
 
@@ -584,8 +577,6 @@ describe("conversation email update action service", () => {
             token: TOKEN,
             action: "unsubscribe_project",
             scopeKind: "listed_project",
-            tokenProjectId: 1,
-            tokenConversationId: undefined,
             representedConversationIds: [10],
         });
         await db
@@ -625,14 +616,12 @@ describe("conversation email update action service", () => {
         expect(tokens.at(0)?.lastUsedAt).toBeInstanceOf(Date);
     });
 
-    it("directly unsubscribes only the bound No Project conversation", async () => {
+    it("directly unsubscribes the sole No Project conversation", async () => {
         await seedAction({
             token: TOKEN,
             action: "unsubscribe_conversation",
             scopeKind: "no_project",
-            tokenProjectId: undefined,
-            tokenConversationId: 10,
-            representedConversationIds: [10, 11],
+            representedConversationIds: [10],
         });
         await db
             .insert(conversationEmailUpdateUserConversationPreferenceTable)
@@ -674,13 +663,29 @@ describe("conversation email update action service", () => {
         ]);
     });
 
-    it("uses the same unavailable response for invalid, expired, and revoked tokens", async () => {
+    it("rejects an invalid multi-conversation No Project scope", async () => {
+        await seedAction({
+            token: TOKEN,
+            action: "unsubscribe_conversation",
+            scopeKind: "no_project",
+            representedConversationIds: [10, 11],
+        });
+
+        expect(await service.resolve({ token: TOKEN })).toEqual({
+            success: false,
+            reason: "unavailable",
+        });
+        expect(await service.unsubscribe({ token: TOKEN })).toEqual({
+            success: false,
+            reason: "unavailable",
+        });
+    });
+
+    it("uses the same unavailable response for invalid and expired tokens", async () => {
         await seedAction({
             token: TOKEN,
             action: "unsubscribe_project",
             scopeKind: "listed_project",
-            tokenProjectId: 1,
-            tokenConversationId: undefined,
             representedConversationIds: [10],
         });
         const expected = { success: false, reason: "unavailable" };
@@ -695,11 +700,6 @@ describe("conversation email update action service", () => {
             SET "expires_at" = '2000-01-01'
         `;
         expect(await service.resolve({ token: TOKEN })).toEqual(expected);
-        await sqlClient`
-            UPDATE "conversation_email_update_action_token"
-            SET "expires_at" = '2100-01-01', "revoked_at" = now()
-        `;
-        expect(await service.resolve({ token: TOKEN })).toEqual(expected);
     });
 
     it("records at most one confidential report per recipient", async () => {
@@ -707,8 +707,6 @@ describe("conversation email update action service", () => {
             token: TOKEN,
             action: "report",
             scopeKind: "no_project",
-            tokenProjectId: undefined,
-            tokenConversationId: undefined,
             representedConversationIds: [10],
         });
 
@@ -735,7 +733,6 @@ describe("conversation email update action service", () => {
                 recipientId: 40n,
                 reason: "spam",
                 details: "First report",
-                status: "pending",
             },
         ]);
     });

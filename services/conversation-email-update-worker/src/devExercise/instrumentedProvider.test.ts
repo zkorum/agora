@@ -50,6 +50,7 @@ function message({
         subject: "Local update",
         html: "<p>Local body</p>",
         text: "Local body",
+        replyToName: "Project contact",
         replyToEmail: "owner@local.test",
         tags:
             kind === "test"

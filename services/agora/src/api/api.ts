@@ -3285,7 +3285,7 @@ export type ApiV1ConversationEmailUpdateHistoryDetailPost200Response = ApiV1Conv
 
 export interface ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOf {
     'success': boolean;
-    'record': ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecord;
+    'record': ApiV1ConversationEmailUpdateHistoryListPost200ResponseOneOfItemsInner;
 }
 export interface ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOf1 {
     'success': boolean;
@@ -3298,86 +3298,6 @@ export const ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOf1Reaso
 } as const;
 
 export type ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOf1ReasonEnum = typeof ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOf1ReasonEnum];
-
-/**
- * @type ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecord
- */
-export type ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecord = ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecordOneOf | ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecordOneOf1 | ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecordOneOf2;
-
-export interface ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecordOneOf {
-    'updateId': string;
-    'subject': string;
-    'acceptedAt': string;
-    'audienceEstimate': number;
-    'ownerCopyCount': number;
-    'scope': ApiV1ConversationEmailUpdateHistoryListPost200ResponseOneOfItemsInnerOneOfScope;
-    'conversations': Array<ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2ScopeOneOfConversationsInner>;
-    'bodyHtml': string;
-    'status': ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecordOneOfStatusEnum;
-}
-
-export const ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecordOneOfStatusEnum = {
-    Preparing: 'preparing',
-    Queued: 'queued',
-    Sending: 'sending',
-    Completed: 'completed',
-    CompletedWithFailures: 'completed_with_failures',
-} as const;
-
-export type ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecordOneOfStatusEnum = typeof ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecordOneOfStatusEnum[keyof typeof ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecordOneOfStatusEnum];
-
-export interface ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecordOneOf1 {
-    'updateId': string;
-    'subject': string;
-    'acceptedAt': string;
-    'audienceEstimate': number;
-    'ownerCopyCount': number;
-    'scope': ApiV1ConversationEmailUpdateHistoryListPost200ResponseOneOfItemsInnerOneOfScope;
-    'conversations': Array<ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2ScopeOneOfConversationsInner>;
-    'bodyHtml': string;
-    'status': ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecordOneOf1StatusEnum;
-    'reason': ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecordOneOf1ReasonEnum;
-}
-
-export const ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecordOneOf1StatusEnum = {
-    Stopping: 'stopping',
-    Stopped: 'stopped',
-} as const;
-
-export type ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecordOneOf1StatusEnum = typeof ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecordOneOf1StatusEnum[keyof typeof ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecordOneOf1StatusEnum];
-export const ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecordOneOf1ReasonEnum = {
-    GlobalKillSwitch: 'global_kill_switch',
-    LegalOrAbuseBlock: 'legal_or_abuse_block',
-} as const;
-
-export type ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecordOneOf1ReasonEnum = typeof ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecordOneOf1ReasonEnum[keyof typeof ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecordOneOf1ReasonEnum];
-
-export interface ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecordOneOf2 {
-    'updateId': string;
-    'subject': string;
-    'acceptedAt': string;
-    'audienceEstimate': number;
-    'ownerCopyCount': number;
-    'scope': ApiV1ConversationEmailUpdateHistoryListPost200ResponseOneOfItemsInnerOneOfScope;
-    'conversations': Array<ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2ScopeOneOfConversationsInner>;
-    'bodyHtml': string;
-    'status': ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecordOneOf2StatusEnum;
-    'reason': ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecordOneOf2ReasonEnum;
-}
-
-export const ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecordOneOf2StatusEnum = {
-    Failed: 'failed',
-} as const;
-
-export type ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecordOneOf2StatusEnum = typeof ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecordOneOf2StatusEnum[keyof typeof ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecordOneOf2StatusEnum];
-export const ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecordOneOf2ReasonEnum = {
-    MaterializationFailed: 'materialization_failed',
-    NoEligibleParticipants: 'no_eligible_participants',
-    RequiredOwnerCopyNotAccepted: 'required_owner_copy_not_accepted',
-    NoParticipantProviderAccepted: 'no_participant_provider_accepted',
-} as const;
-
-export type ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecordOneOf2ReasonEnum = typeof ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecordOneOf2ReasonEnum[keyof typeof ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOfRecordOneOf2ReasonEnum];
 
 export interface ApiV1ConversationEmailUpdateHistoryDetailPostRequest {
     'updateId': string;
@@ -3418,6 +3338,7 @@ export interface ApiV1ConversationEmailUpdateHistoryListPost200ResponseOneOfItem
     'ownerCopyCount': number;
     'scope': ApiV1ConversationEmailUpdateHistoryListPost200ResponseOneOfItemsInnerOneOfScope;
     'conversations': Array<ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2ScopeOneOfConversationsInner>;
+    'bodyHtml': string;
     'status': ApiV1ConversationEmailUpdateHistoryListPost200ResponseOneOfItemsInnerOneOfStatusEnum;
 }
 
@@ -3439,6 +3360,7 @@ export interface ApiV1ConversationEmailUpdateHistoryListPost200ResponseOneOfItem
     'ownerCopyCount': number;
     'scope': ApiV1ConversationEmailUpdateHistoryListPost200ResponseOneOfItemsInnerOneOfScope;
     'conversations': Array<ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2ScopeOneOfConversationsInner>;
+    'bodyHtml': string;
     'status': ApiV1ConversationEmailUpdateHistoryListPost200ResponseOneOfItemsInnerOneOf1StatusEnum;
     'reason': ApiV1ConversationEmailUpdateHistoryListPost200ResponseOneOfItemsInnerOneOf1ReasonEnum;
 }
@@ -3464,6 +3386,7 @@ export interface ApiV1ConversationEmailUpdateHistoryListPost200ResponseOneOfItem
     'ownerCopyCount': number;
     'scope': ApiV1ConversationEmailUpdateHistoryListPost200ResponseOneOfItemsInnerOneOfScope;
     'conversations': Array<ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2ScopeOneOfConversationsInner>;
+    'bodyHtml': string;
     'status': ApiV1ConversationEmailUpdateHistoryListPost200ResponseOneOfItemsInnerOneOf2StatusEnum;
     'reason': ApiV1ConversationEmailUpdateHistoryListPost200ResponseOneOfItemsInnerOneOf2ReasonEnum;
 }
@@ -3791,6 +3714,7 @@ export type ApiV1ConversationEmailUpdateSendPost200ResponseOneOfReasonEnum = typ
 export interface ApiV1ConversationEmailUpdateSendPostRequest {
     'updateId': string;
     'testAttemptId': string;
+    'displayedParticipantEstimate': number;
     'contentPolicyAcknowledged': boolean;
 }
 /**

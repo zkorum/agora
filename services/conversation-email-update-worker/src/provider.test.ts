@@ -61,6 +61,7 @@ describe("conversation email SES provider", () => {
             subject: "Update",
             html: "<p>Body</p>",
             text: "Body",
+            replyToName: "Project contact",
             replyToEmail: "contact@example.com",
             tags: { message_type: "conversation_update" },
             unsubscribeUrl: "https://www.agoracitizen.app/unsubscribe/token",
@@ -77,7 +78,9 @@ describe("conversation email SES provider", () => {
         expect(command.input.Destination).toEqual({
             ToAddresses: ["participant@example.com"],
         });
-        expect(command.input.ReplyToAddresses).toEqual(["contact@example.com"]);
+        expect(command.input.ReplyToAddresses).toEqual([
+            '"Project contact" <contact@example.com>',
+        ]);
         expect(command.input.Content?.Simple?.Subject).toEqual({
             Data: "Update",
             Charset: "UTF-8",
@@ -101,6 +104,52 @@ describe("conversation email SES provider", () => {
         ]);
     });
 
+    it.each([
+        {
+            name: 'Project \\ "contact"',
+            expected: '"Project \\\\ \\"contact\\"" <contact@example.com>',
+        },
+        {
+            name: "Équipe citoyenne",
+            expected:
+                "=?UTF-8?B?w4lxdWlwZSBjaXRveWVubmU=?= <contact@example.com>",
+        },
+    ])("formats the Reply-To mailbox for $name", async ({ name, expected }) => {
+        let replyToAddresses: string[] | undefined;
+        const sendCommand = vi.fn(
+            (params: {
+                command: SendEmailCommand;
+                abortSignal: AbortSignal;
+            }) => {
+                replyToAddresses = params.command.input.ReplyToAddresses;
+                return Promise.resolve({
+                    MessageId: "ses-message-id",
+                    $metadata: {},
+                });
+            },
+        );
+        const provider = createConversationEmailProvider({
+            region: "eu-west-1",
+            fromAddress: "conversation@updates.agoracitizen.network",
+            configurationSetName: "conversation-updates",
+            requestTimeoutMs: 1_000,
+            sendCommand,
+        });
+
+        await provider.send({
+            to: "participant@example.com",
+            subject: "Update",
+            html: "<p>Body</p>",
+            text: "Body",
+            replyToName: name,
+            replyToEmail: "contact@example.com",
+            tags: {},
+            unsubscribeUrl: undefined,
+        });
+
+        expect(replyToAddresses).toEqual([expected]);
+    });
+
     it("rejects unsafe subjects before calling SES", async () => {
         const sendCommand = vi.fn(() =>
             Promise.resolve({ MessageId: "unexpected", $metadata: {} }),
@@ -119,6 +168,7 @@ describe("conversation email SES provider", () => {
                 subject: "Update\r\nBcc: attacker@example.com",
                 html: "<p>Body</p>",
                 text: "Body",
+                replyToName: "Project contact",
                 replyToEmail: "contact@example.com",
                 tags: { message_type: "conversation_update" },
                 unsubscribeUrl: undefined,

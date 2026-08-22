@@ -76,6 +76,7 @@ export interface ClaimedTestWork {
     bodyHtml: string;
     bodyPlainText: string;
     projectTitle: string;
+    replyToName: string;
     replyToEmail: string;
     language: SupportedDisplayLanguageCodes;
 }
@@ -105,7 +106,10 @@ function updateIncludesConversation({
     if (conversationId === undefined) return undefined;
     return exists(
         db
-            .select({ id: conversationEmailUpdateConversationTable.id })
+            .select({
+                conversationId:
+                    conversationEmailUpdateConversationTable.conversationId,
+            })
             .from(conversationEmailUpdateConversationTable)
             .where(
                 and(
@@ -238,6 +242,7 @@ export async function claimTestAttempts({
                 bodyHtml: conversationEmailUpdateTable.bodyHtml,
                 bodyPlainText: conversationEmailUpdateTable.bodyPlainText,
                 projectTitle: conversationEmailUpdateTable.projectTitleSnapshot,
+                replyToName: conversationEmailUpdateTable.replyToNameSnapshot,
                 replyToEmail: conversationEmailUpdateTable.replyToEmailSnapshot,
                 language: sql<SupportedDisplayLanguageCodes>`coalesce(${userDisplayLanguageTable.languageCode}, ${ENGLISH_DISPLAY_LANGUAGE})`,
             })
@@ -380,7 +385,10 @@ export async function authorizeTestAttempt({
             ),
         );
     const scopedConversation = db
-        .select({ id: conversationEmailUpdateConversationTable.id })
+        .select({
+            conversationId:
+                conversationEmailUpdateConversationTable.conversationId,
+        })
         .from(conversationEmailUpdateConversationTable)
         .where(
             and(
@@ -671,7 +679,10 @@ export async function getUpdateConversationLinks({
     siteBaseUrl: string;
 }): Promise<ConversationLink[]> {
     const recipientScope = db
-        .select({ id: conversationEmailUpdateRecipientConversationTable.id })
+        .select({
+            conversationId:
+                conversationEmailUpdateRecipientConversationTable.conversationId,
+        })
         .from(conversationEmailUpdateRecipientConversationTable)
         .where(
             and(
@@ -759,7 +770,10 @@ async function isScopeBlocked({
     facilitatorUserId: string;
 }): Promise<boolean> {
     const scopedConversation = db
-        .select({ id: conversationEmailUpdateConversationTable.id })
+        .select({
+            conversationId:
+                conversationEmailUpdateConversationTable.conversationId,
+        })
         .from(conversationEmailUpdateConversationTable)
         .where(
             and(
@@ -1990,6 +2004,7 @@ export interface AuthorizedRecipient {
     bodyHtml: string;
     bodyPlainText: string;
     projectTitle: string;
+    replyToName: string;
     replyToEmail: string;
     language: SupportedDisplayLanguageCodes;
     kind: "participant" | "conversation_owner_copy";
@@ -2004,7 +2019,6 @@ export interface AuthorizedRecipient {
               unsubscribeHash: string;
               manageHash: string;
               reportHash: string;
-              conversationId: number | undefined;
           }
         | undefined;
 }
@@ -2066,6 +2080,8 @@ export async function authorizeRecipientSend({
                     bodyPlainText: conversationEmailUpdateTable.bodyPlainText,
                     projectTitle:
                         conversationEmailUpdateTable.projectTitleSnapshot,
+                    replyToName:
+                        conversationEmailUpdateTable.replyToNameSnapshot,
                     replyToEmail:
                         conversationEmailUpdateTable.replyToEmailSnapshot,
                     projectId: conversationEmailUpdateTable.projectId,
@@ -2280,7 +2296,8 @@ export async function authorizeRecipientSend({
             }
             const conversationPreference = await tx
                 .select({
-                    id: conversationEmailUpdateRecipientConversationTable.id,
+                    conversationId:
+                        conversationEmailUpdateRecipientConversationTable.conversationId,
                 })
                 .from(conversationEmailUpdateRecipientConversationTable)
                 .leftJoin(
@@ -2382,31 +2399,10 @@ export async function authorizeRecipientSend({
             const unsubscribe = createActionToken();
             const manage = createActionToken();
             const report = createActionToken();
-            const conversationId = (
-                await tx
-                    .select({
-                        conversationId:
-                            conversationEmailUpdateRecipientConversationTable.conversationId,
-                    })
-                    .from(conversationEmailUpdateRecipientConversationTable)
-                    .where(
-                        eq(
-                            conversationEmailUpdateRecipientConversationTable.recipientId,
-                            recipient.recipientId,
-                        ),
-                    )
-                    .orderBy(
-                        asc(
-                            conversationEmailUpdateRecipientConversationTable.conversationId,
-                        ),
-                    )
-                    .limit(1)
-            ).at(0)?.conversationId;
             actionTokens = {
                 unsubscribeHash: unsubscribe.hash,
                 manageHash: manage.hash,
                 reportHash: report.hash,
-                conversationId,
             };
             const actionUrls = buildConversationEmailActionUrls({
                 siteBaseUrl,
@@ -2433,6 +2429,7 @@ export async function authorizeRecipientSend({
             bodyHtml: recipient.bodyHtml,
             bodyPlainText: recipient.bodyPlainText,
             projectTitle: recipient.projectTitle,
+            replyToName: recipient.replyToName,
             replyToEmail: recipient.replyToEmail,
             language: recipient.language,
             kind: recipient.kind,
@@ -2524,30 +2521,18 @@ async function markRecipientAttempting({
                     authorized.scopeKind === "listed_project"
                         ? "unsubscribe_project"
                         : "unsubscribe_conversation",
-                projectId:
-                    authorized.scopeKind === "listed_project"
-                        ? authorized.projectId
-                        : null,
-                conversationId:
-                    authorized.scopeKind === "no_project"
-                        ? authorized.actionTokens.conversationId
-                        : null,
                 expiresAt: sql<Date>`now() + interval '365 days'`,
             },
             {
                 tokenHash: authorized.actionTokens.manageHash,
                 recipientId: authorized.recipientId,
                 action: "manage_preferences",
-                projectId: null,
-                conversationId: null,
                 expiresAt: sql<Date>`now() + interval '90 days'`,
             },
             {
                 tokenHash: authorized.actionTokens.reportHash,
                 recipientId: authorized.recipientId,
                 action: "report",
-                projectId: null,
-                conversationId: null,
                 expiresAt: sql<Date>`now() + interval '90 days'`,
             },
         ]);
@@ -2881,14 +2866,13 @@ export async function aggregateDeliveryStateInTransaction({
         await tx
             .select({
                 status: conversationEmailUpdateDeliveryTable.status,
-                failureReason:
-                    conversationEmailUpdateDeliveryTable.failureReason,
             })
             .from(conversationEmailUpdateDeliveryTable)
             .where(eq(conversationEmailUpdateDeliveryTable.id, deliveryId))
             .for("update")
     ).at(0);
     if (delivery === undefined) return;
+    if (delivery.status !== "sending" && delivery.status !== "stopping") return;
     const groups = await tx
         .select({
             kind: conversationEmailUpdateRecipientTable.kind,
@@ -2965,18 +2949,10 @@ export async function aggregateDeliveryStateInTransaction({
             );
         return;
     }
-    const recomputableTerminal =
-        delivery.status === "completed_with_failures" ||
-        (delivery.status === "failed" &&
-            (delivery.failureReason === "required_owner_copy_not_accepted" ||
-                delivery.failureReason === "no_participant_provider_accepted"));
-    if (delivery.status !== "sending" && !recomputableTerminal) return;
+    if (delivery.status === "stopping") return;
     const ownerGate = decideOwnerGate({
-        deliveryStatus: delivery.status,
-        failureReason: delivery.failureReason,
         ownerOutstanding,
         ownerFailed,
-        participantOutstanding,
     });
     if (ownerGate.kind === "fail") {
         await tx
@@ -2991,39 +2967,12 @@ export async function aggregateDeliveryStateInTransaction({
             .where(
                 and(
                     eq(conversationEmailUpdateDeliveryTable.id, deliveryId),
-                    inArray(conversationEmailUpdateDeliveryTable.status, [
-                        "sending",
-                        "failed",
-                        "completed_with_failures",
-                    ]),
+                    eq(conversationEmailUpdateDeliveryTable.status, "sending"),
                 ),
             );
         return;
     }
     if (ownerGate.kind === "wait") return;
-    if (ownerGate.kind === "reactivate") {
-        await tx
-            .update(conversationEmailUpdateDeliveryTable)
-            .set({
-                status: "sending",
-                failureReason: null,
-                failedAt: null,
-                completedAt: null,
-                dispatchTurnAt: currentTimestamp(),
-                updatedAt: currentTimestamp(),
-            })
-            .where(
-                and(
-                    eq(conversationEmailUpdateDeliveryTable.id, deliveryId),
-                    eq(conversationEmailUpdateDeliveryTable.status, "failed"),
-                    eq(
-                        conversationEmailUpdateDeliveryTable.failureReason,
-                        "required_owner_copy_not_accepted",
-                    ),
-                ),
-            );
-        return;
-    }
     if (participantOutstanding > 0) return;
     const terminalStatus = decideTerminalDeliveryStatus({
         participantAccepted,
@@ -3045,25 +2994,7 @@ export async function aggregateDeliveryStateInTransaction({
         .where(
             and(
                 eq(conversationEmailUpdateDeliveryTable.id, deliveryId),
-                inArray(conversationEmailUpdateDeliveryTable.status, [
-                    "sending",
-                    "failed",
-                    "completed_with_failures",
-                ]),
-                or(
-                    eq(conversationEmailUpdateDeliveryTable.status, "sending"),
-                    inArray(
-                        conversationEmailUpdateDeliveryTable.failureReason,
-                        [
-                            "required_owner_copy_not_accepted",
-                            "no_participant_provider_accepted",
-                        ],
-                    ),
-                    eq(
-                        conversationEmailUpdateDeliveryTable.status,
-                        "completed_with_failures",
-                    ),
-                ),
+                eq(conversationEmailUpdateDeliveryTable.status, "sending"),
             ),
         );
 }

@@ -35955,6 +35955,11 @@
                                                                             "additionalProperties": false
                                                                         }
                                                                     },
+                                                                    "bodyHtml": {
+                                                                        "type": "string",
+                                                                        "minLength": 1,
+                                                                        "maxLength": 16384
+                                                                    },
                                                                     "status": {
                                                                         "type": "string",
                                                                         "enum": [
@@ -35974,6 +35979,7 @@
                                                                     "ownerCopyCount",
                                                                     "scope",
                                                                     "conversations",
+                                                                    "bodyHtml",
                                                                     "status"
                                                                 ],
                                                                 "additionalProperties": false
@@ -36080,6 +36086,11 @@
                                                                             "additionalProperties": false
                                                                         }
                                                                     },
+                                                                    "bodyHtml": {
+                                                                        "type": "string",
+                                                                        "minLength": 1,
+                                                                        "maxLength": 16384
+                                                                    },
                                                                     "status": {
                                                                         "type": "string",
                                                                         "enum": [
@@ -36103,6 +36114,7 @@
                                                                     "ownerCopyCount",
                                                                     "scope",
                                                                     "conversations",
+                                                                    "bodyHtml",
                                                                     "status",
                                                                     "reason"
                                                                 ],
@@ -36210,6 +36222,11 @@
                                                                             "additionalProperties": false
                                                                         }
                                                                     },
+                                                                    "bodyHtml": {
+                                                                        "type": "string",
+                                                                        "minLength": 1,
+                                                                        "maxLength": 16384
+                                                                    },
                                                                     "status": {
                                                                         "type": "string",
                                                                         "enum": [
@@ -36234,6 +36251,7 @@
                                                                     "ownerCopyCount",
                                                                     "scope",
                                                                     "conversations",
+                                                                    "bodyHtml",
                                                                     "status",
                                                                     "reason"
                                                                 ],
@@ -37262,6 +37280,11 @@
                                         "format": "uuid",
                                         "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                                     },
+                                    "displayedParticipantEstimate": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 2147483647
+                                    },
                                     "contentPolicyAcknowledged": {
                                         "type": "boolean",
                                         "enum": [
@@ -37272,6 +37295,7 @@
                                 "required": [
                                     "updateId",
                                     "testAttemptId",
+                                    "displayedParticipantEstimate",
                                     "contentPolicyAcknowledged"
                                 ],
                                 "additionalProperties": false

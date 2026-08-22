@@ -65,6 +65,7 @@ export interface ConversationEmailProviderMessage {
     subject: string;
     html: string;
     text: string;
+    replyToName: string;
     replyToEmail: string;
     tags: Readonly<Record<string, string>>;
     unsubscribeUrl: string | undefined;
@@ -88,8 +89,36 @@ function toHeaderAddress({
     name: string;
     email: string;
 }): string {
-    const safeName = name.replaceAll(/[\r\n"]/g, " ").trim();
-    return `"${safeName}" <${email}>`;
+    const safeName = removeNonDisplayControlCharacters(name)
+        .replaceAll(/[\r\n]/g, " ")
+        .trim();
+    if (safeName.length === 0) return email;
+    if (/^[\x20-\x7e]+$/u.test(safeName)) {
+        const escapedName = safeName.replaceAll(/([\\"])/g, "\\$1");
+        return `"${escapedName}" <${email}>`;
+    }
+
+    const chunks: string[] = [];
+    let chunk = "";
+    for (const character of safeName) {
+        if (
+            chunk.length > 0 &&
+            Buffer.byteLength(chunk + character, "utf8") > 45
+        ) {
+            chunks.push(chunk);
+            chunk = character;
+        } else {
+            chunk += character;
+        }
+    }
+    chunks.push(chunk);
+    const encodedName = chunks
+        .map(
+            (value) =>
+                `=?UTF-8?B?${Buffer.from(value, "utf8").toString("base64")}?=`,
+        )
+        .join(" ");
+    return `${encodedName} <${email}>`;
 }
 
 function isSafeProviderSubject(subject: string): boolean {
@@ -173,7 +202,12 @@ export function createConversationEmailProvider({
                     email: fromAddress,
                 }),
                 Destination: { ToAddresses: [message.to] },
-                ReplyToAddresses: [message.replyToEmail],
+                ReplyToAddresses: [
+                    toHeaderAddress({
+                        name: message.replyToName,
+                        email: message.replyToEmail,
+                    }),
+                ],
                 ConfigurationSetName: configurationSetName,
                 EmailTags: Object.entries(message.tags).map(
                     ([Name, Value]) => ({

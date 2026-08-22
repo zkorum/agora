@@ -134,56 +134,35 @@ describe("conversation email send finalization", () => {
 });
 
 describe("mandatory owner gate", () => {
-    it("keeps participants pending when any owner outcome is terminal", () => {
+    it("continues after every owner is accepted", () => {
         expect(
             decideOwnerGate({
-                deliveryStatus: "sending",
-                failureReason: null,
-                ownerOutstanding: 1,
-                ownerFailed: 1,
-                participantOutstanding: 12,
-            }),
-        ).toEqual({ kind: "fail" });
-    });
-
-    it("reactivates sending after late SNS accepts every owner", () => {
-        expect(
-            decideOwnerGate({
-                deliveryStatus: "failed",
-                failureReason: "required_owner_copy_not_accepted",
                 ownerOutstanding: 0,
                 ownerFailed: 0,
-                participantOutstanding: 12,
             }),
-        ).toEqual({ kind: "reactivate" });
+        ).toEqual({ kind: "continue" });
     });
 
-    it("reactivates so remaining retryable owners can finish", () => {
+    it("waits while an owner remains outstanding", () => {
         expect(
             decideOwnerGate({
-                deliveryStatus: "failed",
-                failureReason: "required_owner_copy_not_accepted",
                 ownerOutstanding: 1,
                 ownerFailed: 0,
-                participantOutstanding: 12,
             }),
-        ).toEqual({ kind: "reactivate" });
+        ).toEqual({ kind: "wait" });
     });
 
-    it("does not reactivate while another owner remains unknown", () => {
+    it("fails while an owner remains terminal", () => {
         expect(
             decideOwnerGate({
-                deliveryStatus: "failed",
-                failureReason: "required_owner_copy_not_accepted",
                 ownerOutstanding: 1,
                 ownerFailed: 1,
-                participantOutstanding: 12,
             }),
         ).toEqual({ kind: "fail" });
     });
 });
 
-describe("late acceptance delivery recomputation", () => {
+describe("initial terminal delivery status", () => {
     it("fails when every participant is skipped", () => {
         expect(
             decideTerminalDeliveryStatus({
@@ -193,7 +172,7 @@ describe("late acceptance delivery recomputation", () => {
         ).toBe("failed");
     });
 
-    it("upgrades a failed sole participant after SNS acceptance", () => {
+    it("completes after the sole participant is accepted", () => {
         expect(
             decideTerminalDeliveryStatus({
                 participantAccepted: 1,
@@ -202,7 +181,7 @@ describe("late acceptance delivery recomputation", () => {
         ).toBe("completed");
     });
 
-    it("keeps completed-with-failures while another participant failed", () => {
+    it("completes with failures when another participant failed", () => {
         expect(
             decideTerminalDeliveryStatus({
                 participantAccepted: 1,

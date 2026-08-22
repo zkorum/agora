@@ -58,6 +58,7 @@
               :test-pending="activeTestOperationId !== undefined"
               :notice="notice"
               :has-successful-test="hasSuccessfulTest"
+              :audience-estimate-available="audienceEstimateAvailable"
               :related-conversation-owner-count="relatedConversationOwnerCount"
               @test="sendTest"
               @send="showSendDialog = true"
@@ -196,6 +197,7 @@ const resolvedContext = ref<
   ConversationEmailUpdateWorkspaceRequest["context"] | undefined
 >(undefined);
 const audienceEstimate = ref(0);
+const audienceEstimateAvailable = ref(false);
 const relatedConversationOwnerCount = ref(0);
 let audienceRequestId = 0;
 let historyRequestId = 0;
@@ -350,6 +352,7 @@ function resetScopeState(): void {
   hasLoadedHistory.value = false;
   resolvedContext.value = undefined;
   audienceEstimate.value = 0;
+  audienceEstimateAvailable.value = false;
   relatedConversationOwnerCount.value = 0;
 }
 
@@ -398,6 +401,7 @@ async function loadWorkspace(): Promise<void> {
 }
 
 async function loadAudienceEstimate(): Promise<void> {
+  audienceEstimateAvailable.value = false;
   const scope = currentScope.value;
   if (scope === undefined) {
     audienceEstimate.value = 0;
@@ -429,6 +433,7 @@ async function loadAudienceEstimate(): Promise<void> {
     }
     audienceEstimate.value = response.estimatedEligibleRecipientCount;
     relatedConversationOwnerCount.value = response.requiredOwnerCopyCount;
+    audienceEstimateAvailable.value = true;
   } catch (error) {
     console.error("Failed to estimate Email Update audience", error);
     if (requestId === audienceRequestId && generation === workspaceGeneration) {
@@ -699,6 +704,7 @@ async function sendUpdate(): Promise<void> {
     updateId === undefined ||
     testAttemptId === undefined ||
     !hasSuccessfulTest.value ||
+    !audienceEstimateAvailable.value ||
     !contentConfirmed.value
   ) {
     return;
@@ -707,6 +713,7 @@ async function sendUpdate(): Promise<void> {
     const response = await emailUpdatesApi.send({
       updateId,
       testAttemptId,
+      displayedParticipantEstimate: audienceEstimate.value,
       contentPolicyAcknowledged: true,
     });
     if (generation !== workspaceGeneration) {

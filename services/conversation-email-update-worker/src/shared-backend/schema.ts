@@ -22,7 +22,7 @@ import {
     foreignKey,
     primaryKey,
 } from "drizzle-orm/pg-core";
-import { eq, inArray, isNotNull, isNull, type SQL } from "drizzle-orm";
+import { isNotNull, isNull, type SQL } from "drizzle-orm";
 import { sql } from "drizzle-orm/sql";
 import {
     ZodSupportedDisplayLanguageCodes,
@@ -825,11 +825,6 @@ export const conversationEmailUpdateActionEnum = pgEnum(
 export const conversationEmailUpdateReportReasonEnum = pgEnum(
     "conversation_email_update_report_reason",
     ["spam", "abuse", "unrelated_content", "other"],
-);
-
-export const conversationEmailUpdateReportStatusEnum = pgEnum(
-    "conversation_email_update_report_status",
-    ["pending", "reviewing", "resolved", "dismissed"],
 );
 
 export const surveyQuestionTypeEnum = pgEnum("survey_question_type", [
@@ -5926,6 +5921,7 @@ export const conversationEmailUpdateEmailSuppressionTable = pgTable(
     ],
 );
 
+// Emergency blocks are managed through audited operator intervention.
 /** @service api */
 export const conversationEmailUpdateScopeSafetyBlockTable = pgTable(
     "conversation_email_update_scope_safety_block",
@@ -6074,7 +6070,6 @@ export const conversationEmailUpdateTable = pgTable(
 export const conversationEmailUpdateConversationTable = pgTable(
     "conversation_email_update_conversation",
     {
-        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
         updateId: integer("update_id").notNull(),
         projectId: integer("project_id").notNull(),
         conversationId: integer("conversation_id").notNull(),
@@ -6086,10 +6081,7 @@ export const conversationEmailUpdateConversationTable = pgTable(
             .notNull(),
     },
     (table) => [
-        unique("conversation_email_update_scope_unique").on(
-            table.updateId,
-            table.conversationId,
-        ),
+        primaryKey({ columns: [table.updateId, table.conversationId] }),
         foreignKey({
             columns: [table.projectId, table.updateId],
             foreignColumns: [
@@ -6105,6 +6097,7 @@ export const conversationEmailUpdateConversationTable = pgTable(
         }),
         index("conversation_email_update_scope_conversation_idx").on(
             table.conversationId,
+            table.updateId,
         ),
     ],
 );
@@ -6295,6 +6288,15 @@ export const conversationEmailUpdateDeliveryTable = pgTable(
             table.dispatchTurnAt,
             table.id,
         ),
+        index("conversation_email_update_delivery_project_history_idx").on(
+            table.projectId,
+            table.acceptedAt.desc(),
+            table.updateId.desc(),
+        ),
+        index("conversation_email_update_delivery_history_idx").on(
+            table.acceptedAt.desc(),
+            table.updateId.desc(),
+        ),
         check(
             "conversation_email_update_delivery_counts_check",
             sql`${table.displayedParticipantEstimate} >= 0 AND ${table.acceptanceParticipantEstimate} >= 0 AND ${table.materializedParticipantCount} >= 0 AND ${table.requiredOwnerCopyCount} > 0 AND ${table.frequencyCappedCount} >= 0 AND ${table.ineligibleCount} >= 0 AND ${table.materializationAttemptCount} BETWEEN 0 AND 5`,
@@ -6440,9 +6442,6 @@ export const conversationEmailUpdateRecipientTable = pgTable(
 export const conversationEmailUpdateRecipientConversationTable = pgTable(
     "conversation_email_update_recipient_conversation",
     {
-        id: bigint("id", { mode: "bigint" })
-            .primaryKey()
-            .generatedAlwaysAsIdentity(),
         recipientId: bigint("recipient_id", { mode: "bigint" }).notNull(),
         deliveryId: integer("delivery_id").notNull(),
         updateId: integer("update_id").notNull(),
@@ -6452,10 +6451,7 @@ export const conversationEmailUpdateRecipientConversationTable = pgTable(
             .notNull(),
     },
     (table) => [
-        unique("conversation_email_update_recipient_scope_unique").on(
-            table.recipientId,
-            table.conversationId,
-        ),
+        primaryKey({ columns: [table.recipientId, table.conversationId] }),
         foreignKey({
             columns: [table.deliveryId, table.recipientId],
             foreignColumns: [
@@ -6480,7 +6476,12 @@ export const conversationEmailUpdateRecipientConversationTable = pgTable(
             ],
             name: "email_update_recipient_scope_update_fk",
         }),
-        index("conversation_email_update_recipient_scope_conversation_idx").on(
+        index("conversation_email_update_recipient_scope_delivery_idx").on(
+            table.deliveryId,
+            table.updateId,
+        ),
+        index("conversation_email_update_recipient_scope_update_idx").on(
+            table.updateId,
             table.conversationId,
         ),
     ],
@@ -6652,10 +6653,6 @@ export const conversationEmailUpdateActionTokenTable = pgTable(
             .notNull()
             .references(() => conversationEmailUpdateRecipientTable.id),
         action: conversationEmailUpdateActionEnum("action").notNull(),
-        projectId: integer("project_id").references(() => projectTable.id),
-        conversationId: integer("conversation_id").references(
-            () => conversationTable.id,
-        ),
         createdAt: timestamp("created_at", { mode: "date", precision: 0 })
             .defaultNow()
             .notNull(),
@@ -6664,31 +6661,10 @@ export const conversationEmailUpdateActionTokenTable = pgTable(
             precision: 0,
         }).notNull(),
         lastUsedAt: timestamp("last_used_at", { mode: "date", precision: 0 }),
-        revokedAt: timestamp("revoked_at", { mode: "date", precision: 0 }),
     },
     (table) => [
         index("conversation_email_update_action_recipient_idx").on(
             table.recipientId,
-        ),
-        check(
-            "conversation_email_update_action_target_check",
-            sqlOr(
-                sqlAnd(
-                    eq(table.action, "unsubscribe_project"),
-                    isNotNull(table.projectId),
-                    isNull(table.conversationId),
-                ),
-                sqlAnd(
-                    eq(table.action, "unsubscribe_conversation"),
-                    isNull(table.projectId),
-                    isNotNull(table.conversationId),
-                ),
-                sqlAnd(
-                    inArray(table.action, ["manage_preferences", "report"]),
-                    isNull(table.projectId),
-                    isNull(table.conversationId),
-                ),
-            ),
         ),
         check(
             "conversation_email_update_action_expiry_check",
@@ -6714,33 +6690,14 @@ export const conversationEmailUpdateReportTable = pgTable(
             .references(() => conversationEmailUpdateRecipientTable.id),
         reason: conversationEmailUpdateReportReasonEnum("reason").notNull(),
         details: text("details"),
-        status: conversationEmailUpdateReportStatusEnum("status").notNull(),
         createdAt: timestamp("created_at", { mode: "date", precision: 0 })
             .defaultNow()
             .notNull(),
-        reviewedByUserId: uuid("reviewed_by_user_id").references(
-            () => userTable.id,
-        ),
-        reviewedAt: timestamp("reviewed_at", { mode: "date", precision: 0 }),
-        resolutionNotes: text("resolution_notes"),
     },
     (table) => [
-        index("conversation_email_update_report_triage_idx").on(
-            table.status,
-            table.createdAt,
-            table.id,
-        ),
-        check(
-            "conversation_email_update_report_review_check",
-            sql`((${table.status} = 'pending' AND ${table.reviewedByUserId} IS NULL AND ${table.reviewedAt} IS NULL) OR (${table.status} IN ('reviewing', 'resolved', 'dismissed') AND ${table.reviewedByUserId} IS NOT NULL AND ${table.reviewedAt} IS NOT NULL))`,
-        ),
         check(
             "conversation_email_update_report_details_check",
             sql`${table.details} IS NULL OR (length(btrim(${table.details})) > 0 AND length(${table.details}) <= 2000)`,
-        ),
-        check(
-            "conversation_email_update_report_reviewed_at_check",
-            sql`${table.reviewedAt} IS NULL OR ${table.reviewedAt} >= ${table.createdAt}`,
         ),
     ],
 );

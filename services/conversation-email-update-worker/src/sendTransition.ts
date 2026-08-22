@@ -19,45 +19,16 @@ export type RecipientStatus =
     | "unknown";
 
 export type OwnerGateDecision =
-    | { kind: "continue" }
-    | { kind: "wait" }
-    | { kind: "fail" }
-    | { kind: "reactivate" };
+    { kind: "continue" } | { kind: "wait" } | { kind: "fail" };
 
 export function decideOwnerGate({
-    deliveryStatus,
-    failureReason,
     ownerOutstanding,
     ownerFailed,
-    participantOutstanding,
 }: {
-    deliveryStatus:
-        | "preparing"
-        | "queued"
-        | "sending"
-        | "stopping"
-        | "stopped"
-        | "completed"
-        | "completed_with_failures"
-        | "failed";
-    failureReason:
-        | "materialization_failed"
-        | "no_eligible_participants"
-        | "required_owner_copy_not_accepted"
-        | "no_participant_provider_accepted"
-        | null;
     ownerOutstanding: number;
     ownerFailed: number;
-    participantOutstanding: number;
 }): OwnerGateDecision {
     if (ownerFailed > 0) return { kind: "fail" };
-    if (
-        deliveryStatus === "failed" &&
-        failureReason === "required_owner_copy_not_accepted" &&
-        participantOutstanding > 0
-    ) {
-        return { kind: "reactivate" };
-    }
     if (ownerOutstanding > 0) return { kind: "wait" };
     return { kind: "continue" };
 }

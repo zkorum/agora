@@ -6,6 +6,7 @@ const message = {
     subject: "Update",
     html: "<p>Update</p>",
     text: "Update",
+    replyToName: "Project contact",
     replyToEmail: "facilitator@example.com",
     tags: { conversation_update_attempt_id: "attempt-1" },
     unsubscribeUrl: undefined,

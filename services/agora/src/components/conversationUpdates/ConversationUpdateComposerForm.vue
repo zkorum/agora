@@ -120,6 +120,7 @@ const props = defineProps<{
   testPending: boolean;
   notice: string | undefined;
   hasSuccessfulTest: boolean;
+  audienceEstimateAvailable: boolean;
   relatedConversationOwnerCount: number;
 }>();
 
@@ -156,7 +157,11 @@ const canTest = computed(
     }).success
 );
 const canSend = computed(
-  () => canTest.value && props.hasSuccessfulTest && contentConfirmed.value
+  () =>
+    canTest.value &&
+    props.hasSuccessfulTest &&
+    props.audienceEstimateAvailable &&
+    contentConfirmed.value
 );
 const selectedConversations = computed(() => {
   const selectedIds = new Set(selectedConversationIds.value);

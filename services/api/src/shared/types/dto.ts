@@ -670,7 +670,11 @@ export const zodConversationEmailUpdateSubject = z
     .refine(
         isSafeEmailSubject,
         "Email subject contains unsafe control characters",
-    );
+    )
+    .meta({
+        minLength: 1,
+        maxLength: CONVERSATION_EMAIL_UPDATE_SUBJECT_MAX_LENGTH,
+    });
 
 const zodConversationEmailUpdatePreferenceState = z.enum([
     "disabled",
@@ -3197,6 +3201,11 @@ export class Dto {
         .object({
             updateId: z.uuid(),
             testAttemptId: z.uuid(),
+            displayedParticipantEstimate: z
+                .number()
+                .int()
+                .nonnegative()
+                .max(2_147_483_647),
             contentPolicyAcknowledged: z.literal(true),
         })
         .strict();

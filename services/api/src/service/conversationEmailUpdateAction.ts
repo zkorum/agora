@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { and, eq, gt, isNull } from "drizzle-orm";
+import { and, eq, gt } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
@@ -157,9 +157,6 @@ async function loadAction({
         .select({
             token_id: conversationEmailUpdateActionTokenTable.id,
             action: conversationEmailUpdateActionTokenTable.action,
-            token_project_id: conversationEmailUpdateActionTokenTable.projectId,
-            token_conversation_id:
-                conversationEmailUpdateActionTokenTable.conversationId,
             recipient_id: conversationEmailUpdateRecipientTable.id,
             recipient_user_id: conversationEmailUpdateRecipientTable.userId,
             recipient_kind: conversationEmailUpdateRecipientTable.kind,
@@ -204,7 +201,6 @@ async function loadAction({
                     tokenHash,
                 ),
                 gt(conversationEmailUpdateActionTokenTable.expiresAt, now),
-                isNull(conversationEmailUpdateActionTokenTable.revokedAt),
             ),
         )
         .limit(1)
@@ -222,23 +218,12 @@ type ActionRow = NonNullable<Awaited<ReturnType<typeof loadAction>>>;
 function hasValidActionBinding(action: ActionRow): boolean {
     if (action.recipient_kind !== "participant") return false;
     if (action.action === "unsubscribe_project") {
-        return (
-            action.update_scope_kind === "listed_project" &&
-            action.token_project_id === action.update_project_id &&
-            action.token_conversation_id === null
-        );
+        return action.update_scope_kind === "listed_project";
     }
     if (action.action === "unsubscribe_conversation") {
-        return (
-            action.update_scope_kind === "no_project" &&
-            action.token_project_id === null &&
-            action.token_conversation_id !== null
-        );
+        return action.update_scope_kind === "no_project";
     }
-    return (
-        action.token_project_id === null &&
-        action.token_conversation_id === null
-    );
+    return true;
 }
 
 async function loadRecipientConversations({
@@ -301,6 +286,24 @@ async function loadBoundScope({
 }): Promise<ConversationEmailUpdateActionScope | undefined> {
     const conversations = await loadRecipientConversations({ db, action });
     if (conversations.length === 0) return undefined;
+    if (action.update_scope_kind === "no_project") {
+        const selectedConversations = await db
+            .select({
+                conversationId:
+                    conversationEmailUpdateConversationTable.conversationId,
+            })
+            .from(conversationEmailUpdateConversationTable)
+            .where(
+                eq(
+                    conversationEmailUpdateConversationTable.updateId,
+                    action.update_id,
+                ),
+            )
+            .limit(2);
+        if (selectedConversations.length !== 1 || conversations.length !== 1) {
+            return undefined;
+        }
+    }
     return action.update_scope_kind === "listed_project"
         ? {
               kind: "project",
@@ -442,10 +445,7 @@ export function createConversationEmailUpdateActionService({
             });
             if (scope === undefined) return unavailable;
             if (action.action === "unsubscribe_conversation") {
-                const conversation = scope.conversations.find(
-                    (item) =>
-                        item.conversationId === action.token_conversation_id,
-                );
+                const conversation = scope.conversations.at(0);
                 return conversation === undefined
                     ? unavailable
                     : {
@@ -505,15 +505,12 @@ export function createConversationEmailUpdateActionService({
                         now,
                     });
                 } else {
-                    const conversations = await loadRecipientConversations({
+                    const scope = await loadBoundScope({
                         db: tx,
                         action,
                     });
-                    const conversation = conversations.find(
-                        (item) =>
-                            item.conversationId ===
-                            action.token_conversation_id,
-                    );
+                    if (scope?.kind !== "no_project") return unavailable;
+                    const conversation = scope.conversations.at(0);
                     if (conversation === undefined) return unavailable;
                     await disableConversation({
                         db: tx,
@@ -609,7 +606,6 @@ export function createConversationEmailUpdateActionService({
                         recipientId: action.recipient_id,
                         reason: request.reason,
                         details: request.details,
-                        status: "pending",
                     })
                     .onConflictDoNothing({
                         target: conversationEmailUpdateReportTable.recipientId,

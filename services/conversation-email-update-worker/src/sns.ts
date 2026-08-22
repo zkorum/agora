@@ -303,6 +303,16 @@ export async function applySnsInboxItem({
                         ? event.bounce.bounceType
                         : undefined,
             });
+            if (
+                suppressions.emailReason !== undefined ||
+                suppressions.suppressUserForComplaint
+            ) {
+                await tx
+                    .select({ id: userTable.id })
+                    .from(userTable)
+                    .where(eq(userTable.id, correlatedTest.requestedByUserId))
+                    .for("update");
+            }
             if (suppressions.emailReason !== undefined) {
                 await tx
                     .insert(conversationEmailUpdateEmailSuppressionTable)
