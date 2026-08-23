@@ -29,6 +29,7 @@ export default tseslint.config(
             "src/shared/",
             "src/shared-backend/",
             "eslint.config.mjs",
+            "assertProductionBuild.mjs",
             "vite.config.ts",
         ],
     },

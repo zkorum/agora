@@ -1,5 +1,13 @@
 import { randomUUID } from "node:crypto";
-import { chmod, mkdir, open, readFile, rename, rm } from "node:fs/promises";
+import {
+    chmod,
+    link,
+    mkdir,
+    open,
+    readFile,
+    rename,
+    rm,
+} from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import {
@@ -31,6 +39,9 @@ export interface ExerciseArtifactStore {
     }) => Promise<ExerciseManifest>;
     writeReport: (report: ExerciseReport) => Promise<string>;
     readReport: (namespace: string) => Promise<ExerciseReport>;
+    readReportIfExists: (
+        namespace: string,
+    ) => Promise<ExerciseReport | undefined>;
     writeCapturedMessage: (params: {
         namespace: string;
         sequence: number;
@@ -128,9 +139,20 @@ export function createExerciseArtifactStore(): ExerciseArtifactStore {
                 updatedAt: timestamp,
             });
             await mkdir(storageDirectory, { recursive: true, mode: 0o700 });
-            let handle;
+            const temporaryPath = `${path}.${randomUUID()}.tmp`;
+            const handle = await open(temporaryPath, "wx", 0o600);
             try {
-                handle = await open(path, "wx", 0o600);
+                await handle.writeFile(
+                    `${JSON.stringify(manifest, undefined, 2)}\n`,
+                    "utf8",
+                );
+                await handle.sync();
+            } finally {
+                await handle.close();
+            }
+            try {
+                await link(temporaryPath, path);
+                await chmod(path, 0o600);
             } catch (error: unknown) {
                 const parsed = nodeErrorSchema.safeParse(error);
                 if (parsed.success && parsed.data.code === "EEXIST") {
@@ -139,16 +161,8 @@ export function createExerciseArtifactStore(): ExerciseArtifactStore {
                     );
                 }
                 throw error;
-            }
-            try {
-                await handle.writeFile(
-                    `${JSON.stringify(manifest, undefined, 2)}\n`,
-                    "utf8",
-                );
-                await handle.sync();
-                await chmod(path, 0o600);
             } finally {
-                await handle.close();
+                await rm(temporaryPath, { force: true });
             }
             return manifest;
         },
@@ -183,6 +197,18 @@ export function createExerciseArtifactStore(): ExerciseArtifactStore {
         readReport: async (namespace) => {
             const raw = await readFile(reportPath(namespace), "utf8");
             return exerciseReportSchema.parse(JSON.parse(raw));
+        },
+        readReportIfExists: async (namespace) => {
+            try {
+                const raw = await readFile(reportPath(namespace), "utf8");
+                return exerciseReportSchema.parse(JSON.parse(raw));
+            } catch (error: unknown) {
+                const parsed = nodeErrorSchema.safeParse(error);
+                if (parsed.success && parsed.data.code === "ENOENT") {
+                    return undefined;
+                }
+                throw error;
+            }
         },
         writeCapturedMessage: async ({ namespace, sequence, message }) => {
             const path = `${storageDirectory}/${namespace}.message-${sequence.toString().padStart(4, "0")}.json`;

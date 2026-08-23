@@ -64,3 +64,32 @@ describe("Conversation Email Updates simulator configuration", () => {
         ).toThrow();
     });
 });
+
+describe("Conversation Email Updates observability configuration", () => {
+    it("bounds the heartbeat interval", () => {
+        expect(
+            parseConversationEmailWorkerEnvironment({
+                CONVERSATION_EMAIL_UPDATE_WORKER_HEARTBEAT_INTERVAL_MS: "60000",
+            }).CONVERSATION_EMAIL_UPDATE_WORKER_HEARTBEAT_INTERVAL_MS,
+        ).toBe(60_000);
+        expect(() =>
+            parseConversationEmailWorkerEnvironment({
+                CONVERSATION_EMAIL_UPDATE_WORKER_HEARTBEAT_INTERVAL_MS: "59999",
+            }),
+        ).toThrow();
+        expect(() =>
+            parseConversationEmailWorkerEnvironment({
+                CONVERSATION_EMAIL_UPDATE_WORKER_HEARTBEAT_INTERVAL_MS:
+                    "3600001",
+            }),
+        ).toThrow();
+    });
+
+    it("rejects worker identifiers that could contain contact data", () => {
+        expect(() =>
+            parseConversationEmailWorkerEnvironment({
+                CONVERSATION_EMAIL_UPDATE_WORKER_ID: "operator@example.com",
+            }),
+        ).toThrow();
+    });
+});

@@ -6,14 +6,14 @@ function validEnvironment(): NodeJS.ProcessEnv {
         NODE_ENV: "development",
         AGORA_DEV_MODE: "true",
         CONNECTION_STRING:
-            "postgresql://postgres:postgres@127.0.0.1:5432/agora_email_exercise",
+            "postgresql://postgres:postgres@127.0.0.1:5432/agora_email_exercise_test",
         CONVERSATION_EMAIL_UPDATES_ENABLED: "true",
         CONVERSATION_EMAIL_UPDATES_KILL_SWITCH: "false",
         CONVERSATION_EMAIL_UPDATE_PROVIDER: "simulated",
         CONVERSATION_EMAIL_UPDATE_SIMULATOR_ENABLED: "true",
         CONVERSATION_EMAIL_UPDATE_SITE_BASE_URL: "http://127.0.0.1:8080",
         CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_EXPECTED_DB_NAME:
-            "agora_email_exercise",
+            "agora_email_exercise_test",
         CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_DATABASE_MARKER: "m".repeat(32),
         CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_CONVERSATION_SLUG_ID: "Ab12Cd34",
         CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_PARTICIPANT_COUNT: "12",
@@ -63,6 +63,9 @@ describe("development exercise environment guard", () => {
             { CONVERSATION_EMAIL_UPDATE_SITE_BASE_URL: "https://example.com" },
         ],
         ["database override", { DB_HOST: "127.0.0.1" }],
+        ["libpq database override", { PGDATABASE: "other" }],
+        ["libpq service file", { PGSERVICEFILE: "/tmp/pg_service.conf" }],
+        ["generic database URL", { DATABASE_URL: "postgresql://other" }],
         ["AWS environment", { AWS_PROFILE: "development" }],
         ["SES region", { CONVERSATION_EMAIL_UPDATE_SES_REGION: "eu-west-1" }],
     ])("rejects %s configuration", (_label, override) => {
@@ -88,6 +91,14 @@ describe("development exercise environment guard", () => {
             () => {
                 const environment = validEnvironment();
                 delete environment.CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_PARTICIPANT_COUNT;
+                return environment;
+            },
+        ],
+        [
+            "database marker",
+            () => {
+                const environment = validEnvironment();
+                delete environment.CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_DATABASE_MARKER;
                 return environment;
             },
         ],
@@ -117,6 +128,13 @@ describe("development exercise environment guard", () => {
         [
             "fractional participants",
             { CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_PARTICIPANT_COUNT: "1.5" },
+        ],
+        [
+            "non-dedicated database name",
+            {
+                CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_EXPECTED_DB_NAME:
+                    "exercise",
+            },
         ],
     ])("rejects %s", (_label, override) => {
         expect(() =>

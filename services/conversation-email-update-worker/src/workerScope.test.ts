@@ -2,26 +2,53 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConversationEmailWorkerConfig } from "./config.js";
+import { structuredEventSchema } from "./observability.js";
+import type { ProviderResult } from "./provider.js";
+import type {
+    AuthorizedRecipient,
+    ClaimedRecipient,
+    ClaimedTestWork,
+    MaterializationResult,
+} from "./store.js";
+import type { ClaimedSnsInboxItem, SnsInboxItemOutcome } from "./sns.js";
 
 const storeMocks = vi.hoisted(() => ({
-    aggregateDeliveryStates: vi.fn(async () => undefined),
-    authorizeRecipientSend: vi.fn(async () => undefined),
-    authorizeTestAttempt: vi.fn(async () => false),
-    claimRecipients: vi.fn(async () => []),
-    claimTestAttempts: vi.fn(async () => []),
-    finalizeRecipientSend: vi.fn(async () => undefined),
-    finalizeTestAttempt: vi.fn(async () => undefined),
-    getUpdateConversationLinks: vi.fn(async () => []),
-    markTestAttempting: vi.fn(async () => false),
-    materializeOneDeliveryPage: vi.fn(async () => undefined),
-    recoverExpiredRecipientLeases: vi.fn(async () => undefined),
-    recoverExpiredTestAttemptLeases: vi.fn(async () => undefined),
-    stopActiveDeliveriesForKillSwitch: vi.fn(async () => undefined),
+    aggregateDeliveryStates: vi.fn(() => Promise.resolve(undefined)),
+    authorizeRecipientSend: vi.fn<
+        () => Promise<AuthorizedRecipient | undefined>
+    >(() => Promise.resolve(undefined)),
+    authorizeTestAttempt: vi.fn(() => Promise.resolve(false)),
+    claimRecipients: vi.fn<() => Promise<ClaimedRecipient[]>>(() =>
+        Promise.resolve([]),
+    ),
+    claimTestAttempts: vi.fn<() => Promise<ClaimedTestWork[]>>(() =>
+        Promise.resolve([]),
+    ),
+    finalizeRecipientSend: vi.fn(() => Promise.resolve(undefined)),
+    finalizeTestAttempt: vi.fn(() => Promise.resolve(undefined)),
+    getUpdateConversationLinks: vi.fn(() => Promise.resolve([])),
+    markTestAttempting: vi.fn(() => Promise.resolve(false)),
+    materializeOneDeliveryPage: vi.fn<
+        () => Promise<MaterializationResult | undefined>
+    >(() => Promise.resolve(undefined)),
+    recoverExpiredRecipientLeases: vi.fn(() =>
+        Promise.resolve({ sendLeaseCount: 0, claimLeaseCount: 0 }),
+    ),
+    recoverExpiredTestAttemptLeases: vi.fn(() =>
+        Promise.resolve({ sendLeaseCount: 0, claimLeaseCount: 0 }),
+    ),
+    stopActiveDeliveriesForKillSwitch: vi.fn(() => Promise.resolve(0)),
 }));
 const snsMocks = vi.hoisted(() => ({
-    applySnsInboxItem: vi.fn(async () => undefined),
-    claimSnsInboxItems: vi.fn(async () => []),
-    rescheduleSnsInboxItem: vi.fn(async () => undefined),
+    applySnsInboxItem: vi.fn<() => Promise<SnsInboxItemOutcome>>(() =>
+        Promise.resolve("applied"),
+    ),
+    claimSnsInboxItems: vi.fn<() => Promise<ClaimedSnsInboxItem[]>>(() =>
+        Promise.resolve([]),
+    ),
+    rescheduleSnsInboxItem: vi.fn<
+        () => Promise<Exclude<SnsInboxItemOutcome, "applied">>
+    >(() => Promise.resolve("retry_wait")),
 }));
 
 vi.mock("./store.js", () => storeMocks);
@@ -43,6 +70,7 @@ function config(enabled: boolean): ConversationEmailWorkerConfig {
         simulatorRetryableFailures: 1,
         workerId: "scope-test",
         pollIntervalMs: 10_000,
+        heartbeatIntervalMs: 60_000,
         batchSize: 25,
         concurrency: 1,
         sendsPerSecond: 25,
@@ -65,6 +93,12 @@ const log = {
     warn: vi.fn(),
     error: vi.fn(),
 };
+
+function infoEvents() {
+    return log.info.mock.calls.map((call) =>
+        structuredEventSchema.parse(call.at(0)),
+    );
+}
 
 beforeEach(() => {
     vi.clearAllMocks();
@@ -108,6 +142,19 @@ describe("conversation-scoped worker", () => {
                 expect.objectContaining({ conversationId: 42 }),
             );
         }
+        expect(log.info).toHaveBeenCalledWith(
+            expect.objectContaining({
+                event: "worker_started",
+                outcome: "started",
+            }),
+        );
+        expect(log.info).toHaveBeenCalledWith({
+            event: "worker_stopped",
+            outcome: "stopped",
+        });
+        expect(log.info).not.toHaveBeenCalledWith(
+            expect.objectContaining({ event: "tick_summary" }),
+        );
     });
 
     it("keeps production SNS behavior when no scope is supplied", async () => {
@@ -153,5 +200,509 @@ describe("conversation-scoped worker", () => {
         );
         expect(storeMocks.materializeOneDeliveryPage).not.toHaveBeenCalled();
         expect(snsMocks.claimSnsInboxItems).not.toHaveBeenCalled();
+    });
+
+    it("emits materialization and tick summaries only when work occurs", async () => {
+        storeMocks.materializeOneDeliveryPage.mockResolvedValueOnce({
+            kind: "page",
+            deliveryId: 17,
+            pageCandidateCount: 8,
+            insertedCount: 5,
+            materializedParticipantCount: 5,
+            frequencyCappedCount: 2,
+            ineligibleCount: 1,
+            exhausted: true,
+        });
+        const worker = createConversationEmailUpdateWorker({
+            db: database(),
+            provider: { send: vi.fn() },
+            config: config(true),
+            environment: "development",
+            log,
+            conversationId: 42,
+        });
+
+        const running = worker.run();
+        await vi.waitFor(() => {
+            expect(log.info).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    event: "tick_summary",
+                    outcome: "success",
+                }),
+            );
+        });
+        await worker.shutdown();
+        await running;
+
+        expect(log.info).toHaveBeenCalledWith({
+            event: "materialization_page",
+            outcome: "success",
+            deliveryId: 17,
+            exhausted: true,
+            counts: {
+                pageCandidates: 8,
+                inserted: 5,
+                materializedParticipants: 5,
+                frequencyCapped: 2,
+                ineligible: 1,
+            },
+        });
+    });
+
+    it("reports legal or abuse materialization stops without a success event", async () => {
+        storeMocks.materializeOneDeliveryPage.mockResolvedValueOnce({
+            kind: "stopped",
+            deliveryId: 18,
+            reason: "legal_or_abuse_block",
+        });
+        const worker = createConversationEmailUpdateWorker({
+            db: database(),
+            provider: { send: vi.fn() },
+            config: config(true),
+            environment: "development",
+            log,
+            conversationId: 42,
+        });
+
+        const running = worker.run();
+        await vi.waitFor(() => {
+            expect(log.warn).toHaveBeenCalledWith({
+                event: "materialization_stopped",
+                outcome: "stopped",
+                deliveryId: 18,
+                materializationReason: "legal_or_abuse_block",
+            });
+        });
+        await worker.shutdown();
+        await running;
+
+        expect(log.info).not.toHaveBeenCalledWith(
+            expect.objectContaining({
+                event: "materialization_page",
+                deliveryId: 18,
+            }),
+        );
+    });
+
+    it("reports incomplete owner-copy materialization as a failure", async () => {
+        storeMocks.materializeOneDeliveryPage.mockResolvedValueOnce({
+            kind: "failed",
+            deliveryId: 19,
+            reason: "incomplete_owner_copy_scope",
+        });
+        const worker = createConversationEmailUpdateWorker({
+            db: database(),
+            provider: { send: vi.fn() },
+            config: config(true),
+            environment: "development",
+            log,
+            conversationId: 42,
+        });
+
+        const running = worker.run();
+        await vi.waitFor(() => {
+            expect(log.error).toHaveBeenCalledWith({
+                event: "materialization_failed",
+                outcome: "failure",
+                deliveryId: 19,
+                materializationReason: "incomplete_owner_copy_scope",
+            });
+        });
+        await worker.shutdown();
+        await running;
+
+        expect(log.warn).toHaveBeenCalledWith(
+            expect.objectContaining({
+                event: "tick_summary",
+                outcome: "failure",
+                counts: {
+                    snsClaimed: 0,
+                    snsApplied: 0,
+                    snsRetryWait: 0,
+                    snsDeadLetter: 0,
+                    snsLeaseLost: 0,
+                    snsProcessingErrors: 0,
+                    testSendLeasesRecovered: 0,
+                    testClaimLeasesRecovered: 0,
+                    recipientSendLeasesRecovered: 0,
+                    recipientClaimLeasesRecovered: 0,
+                    deliveriesStopped: 0,
+                    pageCandidates: 0,
+                    inserted: 0,
+                    materializationFailed: 1,
+                    materializationStopped: 0,
+                    materializedParticipants: 0,
+                    frequencyCapped: 0,
+                    ineligible: 0,
+                    testAttemptsClaimed: 0,
+                    testProviderAccepted: 0,
+                    recipientsClaimed: 0,
+                    recipientProviderAccepted: 0,
+                },
+            }),
+        );
+    });
+
+    it("reports exhausted materialization retries as a terminal failure", async () => {
+        storeMocks.materializeOneDeliveryPage.mockResolvedValueOnce({
+            kind: "failed",
+            deliveryId: 20,
+            reason: "materialization_retry_exhausted",
+        });
+        const worker = createConversationEmailUpdateWorker({
+            db: database(),
+            provider: { send: vi.fn() },
+            config: config(true),
+            environment: "development",
+            log,
+            conversationId: 42,
+        });
+
+        const running = worker.run();
+        await vi.waitFor(() => {
+            expect(log.error).toHaveBeenCalledWith({
+                event: "materialization_failed",
+                outcome: "failure",
+                deliveryId: 20,
+                materializationReason: "materialization_retry_exhausted",
+            });
+        });
+        await worker.shutdown();
+        await running;
+    });
+
+    it("reports an exhausted page with no eligible participants as failure", async () => {
+        storeMocks.materializeOneDeliveryPage.mockResolvedValueOnce({
+            kind: "failed",
+            deliveryId: 21,
+            reason: "no_eligible_participants",
+            pageCandidateCount: 6,
+            insertedCount: 0,
+            materializedParticipantCount: 0,
+            frequencyCappedCount: 4,
+            ineligibleCount: 2,
+        });
+        const worker = createConversationEmailUpdateWorker({
+            db: database(),
+            provider: { send: vi.fn() },
+            config: config(true),
+            environment: "development",
+            log,
+            conversationId: 42,
+        });
+
+        const running = worker.run();
+        await vi.waitFor(() => {
+            expect(log.error).toHaveBeenCalledWith({
+                event: "materialization_failed",
+                outcome: "failure",
+                deliveryId: 21,
+                materializationReason: "no_eligible_participants",
+                counts: {
+                    materializationFailed: 1,
+                    pageCandidates: 6,
+                    inserted: 0,
+                    materializedParticipants: 0,
+                    frequencyCapped: 4,
+                    ineligible: 2,
+                },
+            });
+        });
+        await worker.shutdown();
+        await running;
+
+        expect(log.info).not.toHaveBeenCalledWith(
+            expect.objectContaining({
+                event: "materialization_page",
+                deliveryId: 21,
+            }),
+        );
+    });
+
+    it("emits safe provider outcomes and finalization retry events", async () => {
+        storeMocks.authorizeTestAttempt.mockResolvedValueOnce(true);
+        storeMocks.markTestAttempting.mockResolvedValueOnce(true);
+        storeMocks.claimTestAttempts.mockResolvedValueOnce([
+            {
+                id: 1,
+                publicId: "d940a6f0-bf87-4f52-a22a-d07c3cb4a650",
+                updateId: 10,
+                destinationEmail: "test-private@example.com",
+                destinationEmailCredentialId: 2,
+                requestedByUserId: "private-user-id",
+                subject: "Private test subject",
+                bodyHtml: "<p>Private test body</p>",
+                bodyPlainText: "Private test body",
+                projectTitle: "Private project",
+                replyToName: "Private project contact",
+                replyToEmail: "reply-private@example.com",
+                language: "en",
+                leaseToken: "private-test-lease-token",
+            },
+        ]);
+        storeMocks.finalizeTestAttempt.mockRejectedValueOnce(
+            new Error("test-private@example.com finalization secret"),
+        );
+        storeMocks.claimRecipients.mockResolvedValueOnce([
+            { id: 3n, deliveryId: 20, leaseToken: "private-recipient-lease" },
+        ]);
+        storeMocks.authorizeRecipientSend.mockResolvedValueOnce({
+            recipientId: 3n,
+            deliveryId: 20,
+            updateId: 10,
+            attemptPublicId: "179a13b1-b369-49d1-881f-34d74d96f17f",
+            attemptNumber: 1,
+            emailCredentialId: 4,
+            to: "participant-private@example.com",
+            subject: "Private participant subject",
+            bodyHtml: "<p>Private participant body</p>",
+            bodyPlainText: "Private participant body",
+            projectTitle: "Private project",
+            replyToName: "Private project contact",
+            replyToEmail: "reply-private@example.com",
+            language: "en",
+            kind: "participant",
+            projectId: 5,
+            authorizingOrganizationId: 6,
+            scopeKind: "listed_project",
+            conversations: [],
+            actions: undefined,
+            unsubscribeUrl:
+                "https://example.com/unsubscribe?token=private-token",
+            actionTokens: undefined,
+        });
+        const send = vi
+            .fn()
+            .mockResolvedValueOnce({
+                kind: "provider_accepted",
+                messageId: "provider-private-message-id",
+            })
+            .mockResolvedValueOnce({
+                kind: "permanent_rejected",
+                code: "MessageRejected",
+                details: "participant-private@example.com was rejected",
+            });
+        const worker = createConversationEmailUpdateWorker({
+            db: database(),
+            provider: { send },
+            config: config(true),
+            environment: "development",
+            log,
+            conversationId: 42,
+        });
+
+        const running = worker.run();
+        await vi.waitFor(() => {
+            expect(log.warn).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    event: "recipient_provider_outcome",
+                    outcome: "permanent_rejected",
+                    attemptId: "179a13b1-b369-49d1-881f-34d74d96f17f",
+                    recipientKind: "participant",
+                    error: {
+                        name: "ProviderError",
+                        code: "MessageRejected",
+                        category: "permanent",
+                    },
+                }),
+            );
+            expect(log.error).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    event: "test_finalization_failed",
+                    outcome: "retry",
+                    finalizationAttempt: 1,
+                }),
+            );
+        });
+        await worker.shutdown();
+        await running;
+
+        expect(log.info).not.toHaveBeenCalledWith(
+            expect.objectContaining({
+                event: "test_provider_outcome",
+                outcome: "provider_accepted",
+            }),
+        );
+        expect(
+            infoEvents().find((event) => event.event === "tick_summary"),
+        ).toMatchObject({
+            event: "tick_summary",
+            counts: {
+                testProviderAccepted: 1,
+                recipientProviderAccepted: 0,
+            },
+        });
+
+        const serializedEvents = JSON.stringify({
+            info: log.info.mock.calls,
+            warn: log.warn.mock.calls,
+            error: log.error.mock.calls,
+        });
+        expect(serializedEvents).not.toContain("test-private@example.com");
+        expect(serializedEvents).not.toContain(
+            "participant-private@example.com",
+        );
+        expect(serializedEvents).not.toContain("provider-private-message-id");
+        expect(serializedEvents).not.toContain("private-token");
+    });
+
+    it("reports SNS durable outcomes separately from processing errors", async () => {
+        const inboxItems: ClaimedSnsInboxItem[] = [1n, 2n, 3n, 4n].map(
+            (id) => ({
+                id,
+                snsTopicArn: "private-topic",
+                snsMessageId: `private-message-${id.toString()}`,
+                rawPayload: { private: "payload" },
+                leaseToken: `private-lease-${id.toString()}`,
+                processingAttemptCount: 1,
+            }),
+        );
+        snsMocks.claimSnsInboxItems.mockResolvedValueOnce(inboxItems);
+        snsMocks.applySnsInboxItem
+            .mockResolvedValueOnce("applied")
+            .mockResolvedValueOnce("retry_wait")
+            .mockResolvedValueOnce("lease_lost")
+            .mockRejectedValueOnce(new Error("private SNS payload failed"));
+        snsMocks.rescheduleSnsInboxItem.mockResolvedValueOnce("dead_letter");
+        const worker = createConversationEmailUpdateWorker({
+            db: database(),
+            provider: undefined,
+            config: config(false),
+            environment: "development",
+            log,
+        });
+
+        const running = worker.run();
+        await vi.waitFor(() => {
+            expect(log.warn).toHaveBeenCalledWith({
+                event: "sns_batch",
+                outcome: "failure",
+                counts: {
+                    snsClaimed: 4,
+                    snsApplied: 1,
+                    snsRetryWait: 1,
+                    snsDeadLetter: 1,
+                    snsLeaseLost: 1,
+                    snsProcessingErrors: 1,
+                },
+            });
+        });
+        await worker.shutdown();
+        await running;
+
+        const serializedEvents = JSON.stringify({
+            info: log.info.mock.calls,
+            warn: log.warn.mock.calls,
+            error: log.error.mock.calls,
+        });
+        expect(serializedEvents).not.toContain("private SNS payload failed");
+        expect(serializedEvents).not.toContain("private-message");
+        expect(serializedEvents).not.toContain("private-topic");
+    });
+
+    it("reports lease loss without claiming another durable SNS outcome", async () => {
+        snsMocks.claimSnsInboxItems.mockResolvedValueOnce([
+            {
+                id: 5n,
+                snsTopicArn: "private-topic",
+                snsMessageId: "private-message",
+                rawPayload: { private: "payload" },
+                leaseToken: "private-lease",
+                processingAttemptCount: 1,
+            },
+        ]);
+        snsMocks.applySnsInboxItem.mockResolvedValueOnce("lease_lost");
+        const worker = createConversationEmailUpdateWorker({
+            db: database(),
+            provider: undefined,
+            config: config(false),
+            environment: "development",
+            log,
+        });
+
+        const running = worker.run();
+        await vi.waitFor(() => {
+            expect(log.warn).toHaveBeenCalledWith({
+                event: "sns_batch",
+                outcome: "lease_lost",
+                counts: {
+                    snsClaimed: 1,
+                    snsApplied: 0,
+                    snsRetryWait: 0,
+                    snsDeadLetter: 0,
+                    snsLeaseLost: 1,
+                    snsProcessingErrors: 0,
+                },
+            });
+        });
+        await worker.shutdown();
+        await running;
+
+        expect(snsMocks.rescheduleSnsInboxItem).not.toHaveBeenCalled();
+    });
+
+    it("aggregates accepted recipient sends without per-recipient success logs", async () => {
+        storeMocks.claimRecipients.mockResolvedValueOnce([
+            { id: 5n, deliveryId: 22, leaseToken: "private-recipient-lease" },
+        ]);
+        storeMocks.authorizeRecipientSend.mockResolvedValueOnce({
+            recipientId: 5n,
+            deliveryId: 22,
+            updateId: 11,
+            attemptPublicId: "f5a792d8-62ad-42c4-b5d3-e4a5cc9da718",
+            attemptNumber: 1,
+            emailCredentialId: 6,
+            to: "accepted-private@example.com",
+            subject: "Private subject",
+            bodyHtml: "<p>Private body</p>",
+            bodyPlainText: "Private body",
+            projectTitle: "Private project",
+            replyToName: "Private project contact",
+            replyToEmail: "reply-private@example.com",
+            language: "en",
+            kind: "participant",
+            projectId: 7,
+            authorizingOrganizationId: 8,
+            scopeKind: "listed_project",
+            conversations: [],
+            actions: undefined,
+            unsubscribeUrl: "https://example.com/unsubscribe?token=private",
+            actionTokens: undefined,
+        });
+        const acceptedResult = {
+            kind: "provider_accepted",
+            messageId: "private-provider-message",
+        } satisfies ProviderResult;
+        const send = vi.fn(() => Promise.resolve(acceptedResult));
+        const worker = createConversationEmailUpdateWorker({
+            db: database(),
+            provider: { send },
+            config: config(true),
+            environment: "development",
+            log,
+            conversationId: 42,
+        });
+
+        const running = worker.run();
+        await vi.waitFor(() => {
+            expect(
+                infoEvents().find((event) => event.event === "tick_summary"),
+            ).toMatchObject({
+                event: "tick_summary",
+                counts: {
+                    recipientsClaimed: 1,
+                    recipientProviderAccepted: 1,
+                },
+            });
+        });
+        await worker.shutdown();
+        await running;
+
+        expect(log.info).not.toHaveBeenCalledWith(
+            expect.objectContaining({ event: "recipient_provider_outcome" }),
+        );
+        expect(log.warn).not.toHaveBeenCalledWith(
+            expect.objectContaining({ event: "recipient_provider_outcome" }),
+        );
     });
 });

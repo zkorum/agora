@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-    observationsIdentifySameArtifacts,
+    resolveOwnedUpdateEvidence,
     verifyExerciseReport,
 } from "./fixtureStore.js";
 import { parseDevExerciseEnvironment } from "./guard.js";
@@ -15,13 +15,15 @@ function fixtureData() {
         parseDevExerciseEnvironment({
             NODE_ENV: "development",
             AGORA_DEV_MODE: "true",
-            CONNECTION_STRING: "postgresql://postgres@127.0.0.1/exercise",
+            CONNECTION_STRING:
+                "postgresql://postgres@127.0.0.1/agora_email_exercise_test",
             CONVERSATION_EMAIL_UPDATES_ENABLED: "true",
             CONVERSATION_EMAIL_UPDATES_KILL_SWITCH: "false",
             CONVERSATION_EMAIL_UPDATE_PROVIDER: "simulated",
             CONVERSATION_EMAIL_UPDATE_SIMULATOR_ENABLED: "true",
             CONVERSATION_EMAIL_UPDATE_SITE_BASE_URL: "http://127.0.0.1:8080",
-            CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_EXPECTED_DB_NAME: "exercise",
+            CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_EXPECTED_DB_NAME:
+                "agora_email_exercise_test",
             CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_DATABASE_MARKER: "m".repeat(
                 32,
             ),
@@ -167,6 +169,45 @@ function fixtureData() {
 }
 
 describe("existing-conversation fixture verification planning", () => {
+    it("preserves drafts when cleanup has no positive ownership evidence", () => {
+        expect(
+            resolveOwnedUpdateEvidence({
+                providerUpdateIds: [],
+                recipientUpdateIds: [],
+            }),
+        ).toBeUndefined();
+    });
+
+    it("accepts one consistent provider or fixture-recipient update", () => {
+        expect(
+            resolveOwnedUpdateEvidence({
+                providerUpdateIds: [42],
+                recipientUpdateIds: [],
+            }),
+        ).toBe(42);
+        expect(
+            resolveOwnedUpdateEvidence({
+                providerUpdateIds: [42],
+                recipientUpdateIds: [42],
+            }),
+        ).toBe(42);
+    });
+
+    it("rejects ambiguous or conflicting cleanup evidence", () => {
+        expect(() =>
+            resolveOwnedUpdateEvidence({
+                providerUpdateIds: [41, 42],
+                recipientUpdateIds: [],
+            }),
+        ).toThrow("identify multiple updates");
+        expect(() =>
+            resolveOwnedUpdateEvidence({
+                providerUpdateIds: [41],
+                recipientUpdateIds: [42],
+            }),
+        ).toThrow("evidence conflict");
+    });
+
     it("accepts exact participant, owner, attempt, and provider relationships", () => {
         const { manifest, report } = fixtureData();
         expect(verifyExerciseReport({ manifest, report })).toEqual([]);
@@ -188,29 +229,5 @@ describe("existing-conversation fixture verification planning", () => {
         ).toContain(
             "Delivery includes a recipient outside fixture participants and authorized owners",
         );
-    });
-
-    it("plans cleanup only for the exact re-observed artifact IDs", () => {
-        const { report } = fixtureData();
-        const observation = report.database;
-        if (observation === undefined) throw new Error("Missing observation");
-        expect(
-            observationsIdentifySameArtifacts({
-                expected: observation,
-                current: observation,
-            }),
-        ).toBe(true);
-        expect(
-            observationsIdentifySameArtifacts({
-                expected: observation,
-                current: {
-                    ...observation,
-                    deliveryAttemptIds: [
-                        ...observation.deliveryAttemptIds,
-                        "999",
-                    ],
-                },
-            }),
-        ).toBe(false);
     });
 });

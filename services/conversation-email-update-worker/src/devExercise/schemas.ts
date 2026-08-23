@@ -93,7 +93,7 @@ const fixtureParticipantReferenceSchema = z
     })
     .strict();
 
-const fixtureReferenceSchema = z
+export const exerciseFixtureSchema = z
     .object({
         projectId: z.number().int().positive(),
         projectSlug: z.string().min(1),
@@ -130,7 +130,7 @@ export const exerciseManifestSchema = z
         revision: z.number().int().nonnegative(),
         createdAt: z.iso.datetime(),
         updatedAt: z.iso.datetime(),
-        fixture: fixtureReferenceSchema.optional(),
+        fixture: exerciseFixtureSchema.optional(),
         lastError: z.string().min(1).optional(),
     })
     .strict();

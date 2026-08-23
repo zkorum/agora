@@ -28,7 +28,7 @@ const environmentSchema = z
         CONVERSATION_EMAIL_UPDATE_SITE_BASE_URL: z.url(),
         CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_EXPECTED_DB_NAME: z
             .string()
-            .min(1),
+            .regex(/^agora_email_exercise_[a-z0-9_]+$/),
         CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_DATABASE_MARKER: z
             .string()
             .min(32)
@@ -150,6 +150,7 @@ const forbiddenExactNames = new Set([
     "DB_HOST_READ",
     "DB_PORT_READ",
     "DB_NAME_READ",
+    "DATABASE_URL",
     "CONVERSATION_EMAIL_UPDATE_EMAIL_FROM_ADDRESS",
     "CONVERSATION_EMAIL_UPDATE_SES_REGION",
     "CONVERSATION_EMAIL_UPDATE_SES_CONFIGURATION_SET",
@@ -167,7 +168,10 @@ export function parseDevExerciseEnvironment(
     source: NodeJS.ProcessEnv,
 ): DevExerciseEnvironment {
     const forbiddenNames = Object.keys(source).filter(
-        (name) => forbiddenExactNames.has(name) || name.startsWith("AWS_"),
+        (name) =>
+            forbiddenExactNames.has(name) ||
+            name.startsWith("AWS_") ||
+            name.startsWith("PG"),
     );
     if (forbiddenNames.length > 0) {
         throw new Error(

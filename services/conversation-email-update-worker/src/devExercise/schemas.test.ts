@@ -6,13 +6,15 @@ function environment() {
     return parseDevExerciseEnvironment({
         NODE_ENV: "development",
         AGORA_DEV_MODE: "true",
-        CONNECTION_STRING: "postgresql://postgres@127.0.0.1/exercise",
+        CONNECTION_STRING:
+            "postgresql://postgres@127.0.0.1/agora_email_exercise_test",
         CONVERSATION_EMAIL_UPDATES_ENABLED: "true",
         CONVERSATION_EMAIL_UPDATES_KILL_SWITCH: "false",
         CONVERSATION_EMAIL_UPDATE_PROVIDER: "simulated",
         CONVERSATION_EMAIL_UPDATE_SIMULATOR_ENABLED: "true",
         CONVERSATION_EMAIL_UPDATE_SITE_BASE_URL: "http://127.0.0.1:8080",
-        CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_EXPECTED_DB_NAME: "exercise",
+        CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_EXPECTED_DB_NAME:
+            "agora_email_exercise_test",
         CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_DATABASE_MARKER: "m".repeat(32),
         CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_CONVERSATION_SLUG_ID: "Ab12Cd34",
         CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_PARTICIPANT_COUNT: "7",

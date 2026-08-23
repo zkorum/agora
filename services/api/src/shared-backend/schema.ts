@@ -5771,12 +5771,8 @@ export const conversationEmailUpdateUserGlobalSettingTable = pgTable(
 export const conversationEmailUpdateUserProjectPreferenceTable = pgTable(
     "conversation_email_update_user_project_preference",
     {
-        userId: uuid("user_id")
-            .notNull()
-            .references(() => userTable.id),
-        projectId: integer("project_id")
-            .notNull()
-            .references(() => projectTable.id),
+        userId: uuid("user_id").notNull(),
+        projectId: integer("project_id").notNull(),
         enabled: boolean("enabled").notNull(),
         choiceAt: timestamp("choice_at", {
             mode: "date",
@@ -5792,6 +5788,16 @@ export const conversationEmailUpdateUserProjectPreferenceTable = pgTable(
     },
     (table) => [
         primaryKey({ columns: [table.userId, table.projectId] }),
+        foreignKey({
+            columns: [table.userId],
+            foreignColumns: [userTable.id],
+            name: "email_update_project_preference_user_fk",
+        }),
+        foreignKey({
+            columns: [table.projectId],
+            foreignColumns: [projectTable.id],
+            name: "email_update_project_preference_project_fk",
+        }),
         index("conversation_email_update_project_preference_project_idx").on(
             table.projectId,
         ),
@@ -5802,12 +5808,8 @@ export const conversationEmailUpdateUserProjectPreferenceTable = pgTable(
 export const conversationEmailUpdateUserConversationPreferenceTable = pgTable(
     "conversation_email_update_user_conversation_preference",
     {
-        userId: uuid("user_id")
-            .notNull()
-            .references(() => userTable.id),
-        conversationId: integer("conversation_id")
-            .notNull()
-            .references(() => conversationTable.id),
+        userId: uuid("user_id").notNull(),
+        conversationId: integer("conversation_id").notNull(),
         enabled: boolean("enabled").notNull(),
         choiceAt: timestamp("choice_at", {
             mode: "date",
@@ -5823,6 +5825,16 @@ export const conversationEmailUpdateUserConversationPreferenceTable = pgTable(
     },
     (table) => [
         primaryKey({ columns: [table.userId, table.conversationId] }),
+        foreignKey({
+            columns: [table.userId],
+            foreignColumns: [userTable.id],
+            name: "email_update_conversation_preference_user_fk",
+        }),
+        foreignKey({
+            columns: [table.conversationId],
+            foreignColumns: [conversationTable.id],
+            name: "email_update_conversation_preference_conversation_fk",
+        }),
         index("conversation_email_update_conversation_preference_scope_idx").on(
             table.conversationId,
         ),
@@ -6053,11 +6065,11 @@ export const conversationEmailUpdateTable = pgTable(
         ),
         check(
             "conversation_email_update_body_html_check",
-            sql`octet_length(${table.bodyHtml}) > 0 AND octet_length(${table.bodyHtml}) <= ${MAX_BYTES_CONVERSATION_EMAIL_UPDATE_HTML}`,
+            sql`octet_length(${table.bodyHtml}) > 0 AND octet_length(${table.bodyHtml}) <= ${sql.raw(String(MAX_BYTES_CONVERSATION_EMAIL_UPDATE_HTML))}`,
         ),
         check(
             "conversation_email_update_body_plain_text_check",
-            sql`length(btrim(${table.bodyPlainText})) > 0 AND length(${table.bodyPlainText}) <= ${MAX_LENGTH_CONVERSATION_EMAIL_UPDATE_PLAIN_TEXT}`,
+            sql`length(btrim(${table.bodyPlainText})) > 0 AND length(${table.bodyPlainText}) <= ${sql.raw(String(MAX_LENGTH_CONVERSATION_EMAIL_UPDATE_PLAIN_TEXT))}`,
         ),
         check(
             "conversation_email_update_reply_to_email_canonical_check",

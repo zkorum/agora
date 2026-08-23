@@ -44,6 +44,7 @@ export async function runExerciseWorker({
         simulatorRetryableFailures: 1,
         workerId: `dev-exercise-${manifest.plan.fixtureId}`,
         pollIntervalMs: 250,
+        heartbeatIntervalMs: 60_000,
         batchSize: 500,
         concurrency: 1,
         sendsPerSecond: 500,

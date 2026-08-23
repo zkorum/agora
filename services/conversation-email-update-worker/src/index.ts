@@ -1,6 +1,7 @@
 import { createDb, getPrimaryDatabase } from "@/shared-backend/db.js";
 import { databaseConfig, runtimeConfig, workerConfig } from "./config.js";
 import { log } from "./logger.js";
+import { writeStructuredLog } from "./observability.js";
 import { createConversationEmailProvider } from "./provider.js";
 import { createSimulatedConversationEmailProvider } from "./simulatedProvider.js";
 import { createConversationEmailUpdateWorker } from "./worker.js";
@@ -9,9 +10,16 @@ const database = getPrimaryDatabase(await createDb(databaseConfig, log));
 const provider = (() => {
     if (!workerConfig.enabled) return undefined;
     if (workerConfig.provider === "simulated") {
-        log.warn(
-            `[Conversation Email Updates] SIMULATED SES provider enabled (${workerConfig.simulatorMode})`,
-        );
+        writeStructuredLog({
+            log,
+            level: "warn",
+            event: {
+                event: "simulator_started",
+                outcome: "started",
+                provider: "simulated",
+                mode: workerConfig.simulatorMode,
+            },
+        });
         log.info(
             `AGORA_LOAD_EVENT ${JSON.stringify({
                 service: "conversation-email-update-worker",
@@ -47,10 +55,14 @@ const worker = createConversationEmailUpdateWorker({
 });
 
 let shutdownStarted = false;
-const shutdown = async (signal: NodeJS.Signals): Promise<void> => {
+const shutdown = async (signal: "SIGINT" | "SIGTERM"): Promise<void> => {
     if (shutdownStarted) return;
     shutdownStarted = true;
-    log.info(`[Conversation Email Updates] Received ${signal}`);
+    writeStructuredLog({
+        log,
+        level: "info",
+        event: { event: "signal_received", outcome: "received", signal },
+    });
     await worker.shutdown();
 };
 

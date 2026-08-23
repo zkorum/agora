@@ -18,6 +18,7 @@ import {
     type SQLWrapper,
 } from "drizzle-orm";
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
+import { alias } from "drizzle-orm/pg-core";
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import {
     conversationEmailUpdateActionTokenTable,
@@ -63,6 +64,14 @@ import { decideTestProviderFinalization } from "./testAttemptTransition.js";
 const ENGLISH_DISPLAY_LANGUAGE: SupportedDisplayLanguageCodes = "en";
 const DAY_IN_MS = 24 * 60 * 60 * 1_000;
 const MATERIALIZATION_MAX_FAILURE_COUNT = 5;
+const scopedUpdateConversationTable = alias(
+    conversationEmailUpdateConversationTable,
+    "scoped_update_conversation",
+);
+const scopedDeliveryTable = alias(
+    conversationEmailUpdateDeliveryTable,
+    "scoped_delivery",
+);
 
 export interface ClaimedTestWork {
     id: number;
@@ -94,7 +103,7 @@ function currentTimestamp() {
     return sql<Date>`now()`;
 }
 
-function updateIncludesConversation({
+export function updateIsExclusiveToConversation({
     db,
     updateId,
     conversationId,
@@ -104,26 +113,30 @@ function updateIncludesConversation({
     conversationId: number | undefined;
 }) {
     if (conversationId === undefined) return undefined;
-    return exists(
+    const updateLink = (differentConversation: boolean) =>
         db
             .select({
-                conversationId:
-                    conversationEmailUpdateConversationTable.conversationId,
+                conversationId: scopedUpdateConversationTable.conversationId,
             })
-            .from(conversationEmailUpdateConversationTable)
+            .from(scopedUpdateConversationTable)
             .where(
                 and(
-                    sql`${conversationEmailUpdateConversationTable.updateId} = ${updateId}`,
-                    eq(
-                        conversationEmailUpdateConversationTable.conversationId,
-                        conversationId,
-                    ),
+                    sql`${scopedUpdateConversationTable.updateId} = ${updateId}`,
+                    differentConversation
+                        ? ne(
+                              scopedUpdateConversationTable.conversationId,
+                              conversationId,
+                          )
+                        : eq(
+                              scopedUpdateConversationTable.conversationId,
+                              conversationId,
+                          ),
                 ),
-            ),
-    );
+            );
+    return and(exists(updateLink(false)), notExists(updateLink(true)));
 }
 
-function deliveryIncludesConversation({
+export function deliveryUpdateIsExclusiveToConversation({
     db,
     deliveryId,
     conversationId,
@@ -133,26 +146,34 @@ function deliveryIncludesConversation({
     conversationId: number | undefined;
 }) {
     if (conversationId === undefined) return undefined;
-    return exists(
+    const deliveryUpdateLink = (differentConversation: boolean) =>
         db
-            .select({ id: conversationEmailUpdateDeliveryTable.id })
-            .from(conversationEmailUpdateDeliveryTable)
+            .select({ id: scopedDeliveryTable.id })
+            .from(scopedDeliveryTable)
             .innerJoin(
-                conversationEmailUpdateConversationTable,
+                scopedUpdateConversationTable,
                 eq(
-                    conversationEmailUpdateConversationTable.updateId,
-                    conversationEmailUpdateDeliveryTable.updateId,
+                    scopedUpdateConversationTable.updateId,
+                    scopedDeliveryTable.updateId,
                 ),
             )
             .where(
                 and(
-                    sql`${conversationEmailUpdateDeliveryTable.id} = ${deliveryId}`,
-                    eq(
-                        conversationEmailUpdateConversationTable.conversationId,
-                        conversationId,
-                    ),
+                    sql`${scopedDeliveryTable.id} = ${deliveryId}`,
+                    differentConversation
+                        ? ne(
+                              scopedUpdateConversationTable.conversationId,
+                              conversationId,
+                          )
+                        : eq(
+                              scopedUpdateConversationTable.conversationId,
+                              conversationId,
+                          ),
                 ),
-            ),
+            );
+    return and(
+        exists(deliveryUpdateLink(false)),
+        notExists(deliveryUpdateLink(true)),
     );
 }
 
@@ -191,7 +212,7 @@ export async function claimTestAttempts({
                             ),
                         ),
                     ),
-                    updateIncludesConversation({
+                    updateIsExclusiveToConversation({
                         db: tx,
                         updateId:
                             conversationEmailUpdateTestAttemptTable.updateId,
@@ -287,9 +308,9 @@ export async function recoverExpiredTestAttemptLeases({
 }: {
     db: PostgresDatabase;
     conversationId?: number;
-}): Promise<void> {
-    await db.transaction(async (tx) => {
-        await tx
+}): Promise<{ sendLeaseCount: number; claimLeaseCount: number }> {
+    return await db.transaction(async (tx) => {
+        const expiredSends = await tx
             .update(conversationEmailUpdateTestAttemptTable)
             .set({
                 status: "unknown",
@@ -311,7 +332,7 @@ export async function recoverExpiredTestAttemptLeases({
                         conversationEmailUpdateTestAttemptTable.leaseExpiresAt,
                         currentTimestamp(),
                     ),
-                    updateIncludesConversation({
+                    updateIsExclusiveToConversation({
                         db: tx,
                         updateId:
                             conversationEmailUpdateTestAttemptTable.updateId,
@@ -319,7 +340,7 @@ export async function recoverExpiredTestAttemptLeases({
                     }),
                 ),
             );
-        await tx
+        const expiredClaims = await tx
             .update(conversationEmailUpdateTestAttemptTable)
             .set({
                 status: "pending",
@@ -337,7 +358,7 @@ export async function recoverExpiredTestAttemptLeases({
                         conversationEmailUpdateTestAttemptTable.leaseExpiresAt,
                         currentTimestamp(),
                     ),
-                    updateIncludesConversation({
+                    updateIsExclusiveToConversation({
                         db: tx,
                         updateId:
                             conversationEmailUpdateTestAttemptTable.updateId,
@@ -345,6 +366,10 @@ export async function recoverExpiredTestAttemptLeases({
                     }),
                 ),
             );
+        return {
+            sendLeaseCount: expiredSends.count,
+            claimLeaseCount: expiredClaims.count,
+        };
     });
 }
 
@@ -746,15 +771,42 @@ export async function getUpdateConversationLinks({
     });
 }
 
-export interface MaterializationResult {
-    deliveryId: number;
-    pageCandidateCount: number;
-    insertedCount: number;
-    materializedParticipantCount: number;
-    frequencyCappedCount: number;
-    ineligibleCount: number;
-    exhausted: boolean;
-}
+export type MaterializationResult =
+    | {
+          kind: "page";
+          deliveryId: number;
+          pageCandidateCount: number;
+          insertedCount: number;
+          materializedParticipantCount: number;
+          frequencyCappedCount: number;
+          ineligibleCount: number;
+          exhausted: boolean;
+      }
+    | {
+          kind: "stopped";
+          deliveryId: number;
+          reason: "legal_or_abuse_block";
+      }
+    | {
+          kind: "failed";
+          deliveryId: number;
+          reason: "incomplete_owner_copy_scope";
+      }
+    | {
+          kind: "failed";
+          deliveryId: number;
+          reason: "materialization_retry_exhausted";
+      }
+    | {
+          kind: "failed";
+          deliveryId: number;
+          reason: "no_eligible_participants";
+          pageCandidateCount: number;
+          insertedCount: number;
+          materializedParticipantCount: number;
+          frequencyCappedCount: number;
+          ineligibleCount: number;
+      };
 
 async function isScopeBlocked({
     db,
@@ -946,12 +998,18 @@ async function recordMaterializationFailure({
     db: PostgresDatabase;
     deliveryId: number;
     error: unknown;
-}): Promise<void> {
+}): Promise<
+    | Extract<
+          MaterializationResult,
+          { kind: "failed"; reason: "materialization_retry_exhausted" }
+      >
+    | undefined
+> {
     const details =
         error instanceof Error
             ? error.message
             : "Unknown materialization error";
-    await db.transaction(async (tx) => {
+    return await db.transaction(async (tx) => {
         const delivery = (
             await tx
                 .select({
@@ -1002,6 +1060,13 @@ async function recordMaterializationFailure({
                     ),
                 ),
             );
+        return decision.kind === "failed"
+            ? {
+                  kind: "failed",
+                  deliveryId,
+                  reason: "materialization_retry_exhausted",
+              }
+            : undefined;
     });
 }
 
@@ -1061,7 +1126,7 @@ export async function materializeOneDeliveryPage({
                                     sql<Date>`now() - interval '30 seconds'`,
                                 ),
                             ),
-                            updateIncludesConversation({
+                            updateIsExclusiveToConversation({
                                 db: tx,
                                 updateId:
                                     conversationEmailUpdateDeliveryTable.updateId,
@@ -1090,13 +1155,9 @@ export async function materializeOneDeliveryPage({
                     reason: "legal_or_abuse_block",
                 });
                 return {
+                    kind: "stopped",
                     deliveryId: delivery.deliveryId,
-                    pageCandidateCount: 0,
-                    insertedCount: 0,
-                    materializedParticipantCount: 0,
-                    frequencyCappedCount: 0,
-                    ineligibleCount: 0,
-                    exhausted: true,
+                    reason: "legal_or_abuse_block",
                 };
             }
 
@@ -1128,13 +1189,9 @@ export async function materializeOneDeliveryPage({
                             ),
                         );
                     return {
+                        kind: "failed",
                         deliveryId: delivery.deliveryId,
-                        pageCandidateCount: 0,
-                        insertedCount: 0,
-                        materializedParticipantCount: 0,
-                        frequencyCappedCount: 0,
-                        ineligibleCount: 0,
-                        exhausted: true,
+                        reason: "incomplete_owner_copy_scope",
                     };
                 }
             }
@@ -1560,8 +1617,21 @@ export async function materializeOneDeliveryPage({
                             delivery.deliveryId,
                         ),
                     );
+                if (totalMaterialized === 0) {
+                    return {
+                        kind: "failed",
+                        deliveryId: delivery.deliveryId,
+                        reason: "no_eligible_participants",
+                        pageCandidateCount: candidateUserIds.length,
+                        insertedCount,
+                        materializedParticipantCount,
+                        frequencyCappedCount,
+                        ineligibleCount,
+                    };
+                }
             }
             return {
+                kind: "page",
                 deliveryId: delivery.deliveryId,
                 pageCandidateCount: candidateUserIds.length,
                 insertedCount,
@@ -1573,11 +1643,12 @@ export async function materializeOneDeliveryPage({
         });
     } catch (error: unknown) {
         if (selectedDeliveryId !== undefined) {
-            await recordMaterializationFailure({
+            const terminalFailure = await recordMaterializationFailure({
                 db,
                 deliveryId: selectedDeliveryId,
                 error,
             });
+            if (terminalFailure !== undefined) return terminalFailure;
         }
         throw error;
     }
@@ -1645,8 +1716,8 @@ export async function stopActiveDeliveriesForKillSwitch({
 }: {
     db: PostgresDatabase;
     conversationId?: number;
-}): Promise<void> {
-    await db.transaction(async (tx) => {
+}): Promise<number> {
+    return await db.transaction(async (tx) => {
         const deliveries = await tx
             .select({ id: conversationEmailUpdateDeliveryTable.id })
             .from(conversationEmailUpdateDeliveryTable)
@@ -1657,10 +1728,9 @@ export async function stopActiveDeliveriesForKillSwitch({
                         "queued",
                         "sending",
                     ]),
-                    updateIncludesConversation({
+                    updateIsExclusiveToConversation({
                         db: tx,
-                        updateId:
-                            conversationEmailUpdateDeliveryTable.updateId,
+                        updateId: conversationEmailUpdateDeliveryTable.updateId,
                         conversationId,
                     }),
                 ),
@@ -1673,6 +1743,7 @@ export async function stopActiveDeliveriesForKillSwitch({
                 reason: "global_kill_switch",
             });
         }
+        return deliveries.length;
     });
 }
 
@@ -1688,8 +1759,8 @@ export async function recoverExpiredRecipientLeases({
 }: {
     db: PostgresDatabase;
     conversationId?: number;
-}): Promise<void> {
-    await db.transaction(async (tx) => {
+}): Promise<{ sendLeaseCount: number; claimLeaseCount: number }> {
+    return await db.transaction(async (tx) => {
         const expiredAttemptingRecipients = tx
             .select({ id: conversationEmailUpdateRecipientTable.id })
             .from(conversationEmailUpdateRecipientTable)
@@ -1707,7 +1778,7 @@ export async function recoverExpiredRecipientLeases({
                         conversationEmailUpdateRecipientTable.id,
                         conversationEmailUpdateDeliveryAttemptTable.recipientId,
                     ),
-                    deliveryIncludesConversation({
+                    deliveryUpdateIsExclusiveToConversation({
                         db: tx,
                         deliveryId:
                             conversationEmailUpdateRecipientTable.deliveryId,
@@ -1733,7 +1804,7 @@ export async function recoverExpiredRecipientLeases({
                     exists(expiredAttemptingRecipients),
                 ),
             );
-        await tx
+        const expiredSends = await tx
             .update(conversationEmailUpdateRecipientTable)
             .set({
                 status: "unknown",
@@ -1755,7 +1826,7 @@ export async function recoverExpiredRecipientLeases({
                         conversationEmailUpdateRecipientTable.leaseExpiresAt,
                         currentTimestamp(),
                     ),
-                    deliveryIncludesConversation({
+                    deliveryUpdateIsExclusiveToConversation({
                         db: tx,
                         deliveryId:
                             conversationEmailUpdateRecipientTable.deliveryId,
@@ -1777,7 +1848,7 @@ export async function recoverExpiredRecipientLeases({
                         conversationEmailUpdateRecipientTable.leaseExpiresAt,
                         currentTimestamp(),
                     ),
-                    deliveryIncludesConversation({
+                    deliveryUpdateIsExclusiveToConversation({
                         db: tx,
                         deliveryId:
                             conversationEmailUpdateRecipientTable.deliveryId,
@@ -1813,6 +1884,10 @@ export async function recoverExpiredRecipientLeases({
                     eq(conversationEmailUpdateRecipientTable.id, recipient.id),
                 );
         }
+        return {
+            sendLeaseCount: expiredSends.count,
+            claimLeaseCount: expiredClaimed.length,
+        };
     });
 }
 
@@ -1883,7 +1958,7 @@ async function claimRecipientKind({
                 kind === "participant"
                     ? notExists(outstandingOwnerCopy)
                     : undefined,
-                updateIncludesConversation({
+                updateIsExclusiveToConversation({
                     db: tx,
                     updateId: conversationEmailUpdateDeliveryTable.updateId,
                     conversationId,
@@ -2832,7 +2907,7 @@ export async function aggregateDeliveryStates({
                     "sending",
                     "stopping",
                 ]),
-                updateIncludesConversation({
+                updateIsExclusiveToConversation({
                     db,
                     updateId: conversationEmailUpdateDeliveryTable.updateId,
                     conversationId,

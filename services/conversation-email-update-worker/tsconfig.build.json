@@ -1,6 +1,12 @@
 {
     "extends": "./tsconfig.json",
-    "exclude": ["**/*.test.ts", "**/*.spec.ts", "node_modules", "dist"],
+    "exclude": [
+        "**/*.test.ts",
+        "**/*.spec.ts",
+        "src/devExercise/**",
+        "node_modules",
+        "dist"
+    ],
     "compilerOptions": {
         "noEmit": false
     }

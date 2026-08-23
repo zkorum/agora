@@ -60,12 +60,19 @@ const environmentSchema = z
             .string()
             .min(1)
             .max(100)
+            .regex(/^[A-Za-z0-9][A-Za-z0-9._:-]*$/)
             .default(`${hostname()}-${process.pid.toString()}`),
         CONVERSATION_EMAIL_UPDATE_WORKER_POLL_INTERVAL_MS: z.coerce
             .number()
             .int()
             .min(100)
             .default(1_000),
+        CONVERSATION_EMAIL_UPDATE_WORKER_HEARTBEAT_INTERVAL_MS: z.coerce
+            .number()
+            .int()
+            .min(60_000)
+            .max(3_600_000)
+            .default(60_000),
         CONVERSATION_EMAIL_UPDATE_WORKER_BATCH_SIZE: z.coerce
             .number()
             .int()
@@ -232,6 +239,7 @@ export interface ConversationEmailWorkerConfig {
     simulatorRetryableFailures: number;
     workerId: string;
     pollIntervalMs: number;
+    heartbeatIntervalMs: number;
     batchSize: number;
     concurrency: number;
     sendsPerSecond: number;
@@ -254,6 +262,8 @@ export const workerConfig: ConversationEmailWorkerConfig = {
     workerId: environment.CONVERSATION_EMAIL_UPDATE_WORKER_ID,
     pollIntervalMs:
         environment.CONVERSATION_EMAIL_UPDATE_WORKER_POLL_INTERVAL_MS,
+    heartbeatIntervalMs:
+        environment.CONVERSATION_EMAIL_UPDATE_WORKER_HEARTBEAT_INTERVAL_MS,
     batchSize: environment.CONVERSATION_EMAIL_UPDATE_WORKER_BATCH_SIZE,
     concurrency: environment.CONVERSATION_EMAIL_UPDATE_WORKER_CONCURRENCY,
     sendsPerSecond:
@@ -265,6 +275,7 @@ export const workerConfig: ConversationEmailWorkerConfig = {
 
 export const runtimeConfig = {
     environment: environment.NODE_ENV,
+    workerId: environment.CONVERSATION_EMAIL_UPDATE_WORKER_ID,
     logLevel:
         environment.CONVERSATION_EMAIL_UPDATE_WORKER_LOG_LEVEL ??
         (environment.NODE_ENV === "development" ? "debug" : "info"),

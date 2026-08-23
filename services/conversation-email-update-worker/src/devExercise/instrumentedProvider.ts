@@ -57,13 +57,6 @@ function decideResult({
     if (recipientKind === "test") {
         return acceptedResult({ plan, recipient, messageKey, attemptNumber });
     }
-    if (recipientKind === "participant" && cohort === undefined) {
-        return {
-            kind: "permanent_rejected",
-            code: "ExerciseRecipientNotNamespaced",
-            details: "Recipient is not part of the namespaced exercise plan",
-        };
-    }
     if (
         plan.scenario === "owner_permanent_rejection" &&
         recipientKind === "owner_copy"

@@ -1,6 +1,5 @@
-import { and, count, eq, gte, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, count, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { z } from "zod";
 import {
     conversationContentTable,
     conversationEmailUpdateActionTokenTable,
@@ -27,6 +26,15 @@ import {
     voteContentTable,
     voteTable,
 } from "@/shared-backend/schema.js";
+import {
+    acquireExerciseTargetReservation,
+    assertDatabaseName,
+    assertExerciseTargetReservation,
+    finalizeExerciseTargetReservation,
+    markExerciseTargetReservationCleaned,
+    markExerciseTargetReservationPrepared,
+    readOwnedExerciseTargetReservation,
+} from "./databaseGuard.js";
 import type {
     DatabaseObservation,
     ExerciseManifest,
@@ -60,6 +68,7 @@ export interface FixtureStore {
         manifest: ExerciseManifest;
         report: ExerciseReport | undefined;
     }) => Promise<void>;
+    finalizeCleanup: (manifest: ExerciseManifest) => Promise<void>;
 }
 
 function chunks<T>(values: readonly T[]): T[][] {
@@ -68,28 +77,6 @@ function chunks<T>(values: readonly T[]): T[][] {
         result.push(values.slice(offset, offset + INSERT_CHUNK_SIZE));
     }
     return result;
-}
-
-async function assertDatabaseName({
-    db,
-    expectedDatabaseName,
-}: {
-    db: PostgresJsDatabase;
-    expectedDatabaseName: string;
-}): Promise<void> {
-    const rows = await db.execute(
-        sql<{
-            databaseName: string;
-        }>`select current_database() as "databaseName"`,
-    );
-    const { databaseName: actualDatabaseName } = z
-        .object({ databaseName: z.string() })
-        .parse(rows.at(0));
-    if (actualDatabaseName !== expectedDatabaseName) {
-        throw new Error(
-            `Connected database ${actualDatabaseName} does not match guarded database ${expectedDatabaseName}`,
-        );
-    }
 }
 
 async function loadTarget({
@@ -194,7 +181,9 @@ async function assertTargetIsolation({
             .innerJoin(opinionTable, eq(opinionTable.id, voteTable.opinionId))
             .where(eq(opinionTable.conversationId, conversationId)),
         db
-            .select({ updateId: conversationEmailUpdateConversationTable.updateId })
+            .select({
+                updateId: conversationEmailUpdateConversationTable.updateId,
+            })
             .from(conversationEmailUpdateConversationTable)
             .where(
                 eq(
@@ -495,89 +484,94 @@ async function validateFixtureRelationships({
             }
             return reference;
         });
-        const [users, emails, languages, projectPreferences, conversationPreferences, votes, voteContents] =
-            await Promise.all([
-                db
-                    .select({
-                        userId: userTable.id,
-                        username: userTable.username,
-                        isDeleted: userTable.isDeleted,
-                    })
-                    .from(userTable)
-                    .where(inArray(userTable.id, userIds)),
-                db
-                    .select({
-                        id: emailTable.id,
-                        userId: emailTable.userId,
-                        email: emailTable.email,
-                        type: emailTable.type,
-                        isDeleted: emailTable.isDeleted,
-                    })
-                    .from(emailTable)
-                    .where(inArray(emailTable.userId, userIds)),
-                db
-                    .select({
-                        userId: userDisplayLanguageTable.userId,
-                        language: userDisplayLanguageTable.languageCode,
-                    })
-                    .from(userDisplayLanguageTable)
-                    .where(inArray(userDisplayLanguageTable.userId, userIds)),
-                db
-                    .select({
-                        userId: conversationEmailUpdateUserProjectPreferenceTable.userId,
-                        projectId:
-                            conversationEmailUpdateUserProjectPreferenceTable.projectId,
-                        enabled:
-                            conversationEmailUpdateUserProjectPreferenceTable.enabled,
-                    })
-                    .from(conversationEmailUpdateUserProjectPreferenceTable)
-                    .where(
-                        inArray(
-                            conversationEmailUpdateUserProjectPreferenceTable.userId,
-                            userIds,
-                        ),
+        const [
+            users,
+            emails,
+            languages,
+            projectPreferences,
+            conversationPreferences,
+            votes,
+            voteContents,
+        ] = await Promise.all([
+            db
+                .select({
+                    userId: userTable.id,
+                    username: userTable.username,
+                    isDeleted: userTable.isDeleted,
+                })
+                .from(userTable)
+                .where(inArray(userTable.id, userIds)),
+            db
+                .select({
+                    id: emailTable.id,
+                    userId: emailTable.userId,
+                    email: emailTable.email,
+                    type: emailTable.type,
+                    isDeleted: emailTable.isDeleted,
+                })
+                .from(emailTable)
+                .where(inArray(emailTable.userId, userIds)),
+            db
+                .select({
+                    userId: userDisplayLanguageTable.userId,
+                    language: userDisplayLanguageTable.languageCode,
+                })
+                .from(userDisplayLanguageTable)
+                .where(inArray(userDisplayLanguageTable.userId, userIds)),
+            db
+                .select({
+                    userId: conversationEmailUpdateUserProjectPreferenceTable.userId,
+                    projectId:
+                        conversationEmailUpdateUserProjectPreferenceTable.projectId,
+                    enabled:
+                        conversationEmailUpdateUserProjectPreferenceTable.enabled,
+                })
+                .from(conversationEmailUpdateUserProjectPreferenceTable)
+                .where(
+                    inArray(
+                        conversationEmailUpdateUserProjectPreferenceTable.userId,
+                        userIds,
                     ),
-                db
-                    .select({
-                        userId: conversationEmailUpdateUserConversationPreferenceTable.userId,
-                        conversationId:
-                            conversationEmailUpdateUserConversationPreferenceTable.conversationId,
-                        enabled:
-                            conversationEmailUpdateUserConversationPreferenceTable.enabled,
-                    })
-                    .from(
-                        conversationEmailUpdateUserConversationPreferenceTable,
-                    )
-                    .where(
-                        inArray(
-                            conversationEmailUpdateUserConversationPreferenceTable.userId,
-                            userIds,
-                        ),
+                ),
+            db
+                .select({
+                    userId: conversationEmailUpdateUserConversationPreferenceTable.userId,
+                    conversationId:
+                        conversationEmailUpdateUserConversationPreferenceTable.conversationId,
+                    enabled:
+                        conversationEmailUpdateUserConversationPreferenceTable.enabled,
+                })
+                .from(conversationEmailUpdateUserConversationPreferenceTable)
+                .where(
+                    inArray(
+                        conversationEmailUpdateUserConversationPreferenceTable.userId,
+                        userIds,
                     ),
-                db
-                    .select({
-                        id: voteTable.id,
-                        userId: voteTable.authorId,
-                        opinionId: voteTable.opinionId,
-                        currentContentId: voteTable.currentContentId,
-                    })
-                    .from(voteTable)
-                    .where(inArray(voteTable.authorId, userIds)),
-                db
-                    .select({
-                        id: voteContentTable.id,
-                        voteId: voteContentTable.voteId,
-                        opinionContentId: voteContentTable.opinionContentId,
-                        vote: voteContentTable.vote,
-                    })
-                    .from(voteContentTable)
-                    .where(
-                        inArray(
-                            voteContentTable.voteId,
-                            references.map((reference) => reference.voteId),
-                        ),
+                ),
+            db
+                .select({
+                    id: voteTable.id,
+                    userId: voteTable.authorId,
+                    opinionId: voteTable.opinionId,
+                    currentContentId: voteTable.currentContentId,
+                })
+                .from(voteTable)
+                .where(inArray(voteTable.authorId, userIds)),
+            db
+                .select({
+                    id: voteContentTable.id,
+                    voteId: voteContentTable.voteId,
+                    opinionContentId: voteContentTable.opinionContentId,
+                    vote: voteContentTable.vote,
+                })
+                .from(voteContentTable)
+                .where(
+                    inArray(
+                        voteContentTable.voteId,
+                        references.map((reference) => reference.voteId),
                     ),
-            ]);
+                ),
+        ]);
         if (
             [
                 users,
@@ -604,9 +598,7 @@ async function validateFixtureRelationships({
         const conversationsByUserId = new Map(
             conversationPreferences.map((row) => [row.userId, row]),
         );
-        const votesByUserId = new Map(
-            votes.map((row) => [row.userId, row]),
-        );
+        const votesByUserId = new Map(votes.map((row) => [row.userId, row]));
         const contentsByVoteId = new Map(
             voteContents.map((row) => [row.voteId, row]),
         );
@@ -621,9 +613,7 @@ async function validateFixtureRelationships({
             );
             const vote = votesByUserId.get(identity.userId);
             const content =
-                vote === undefined
-                    ? undefined
-                    : contentsByVoteId.get(vote.id);
+                vote === undefined ? undefined : contentsByVoteId.get(vote.id);
             if (
                 reference === undefined ||
                 user?.username !== identity.username ||
@@ -1238,90 +1228,235 @@ export function verifyExerciseReport({
     return failures;
 }
 
-function sameStringSet(
-    left: readonly string[],
-    right: readonly string[],
-): boolean {
-    const rightSet = new Set(right);
-    return (
-        left.length === right.length &&
-        rightSet.size === right.length &&
-        left.every((value) => rightSet.has(value))
-    );
-}
-
-export function observationsIdentifySameArtifacts({
-    expected,
-    current,
+export function resolveOwnedUpdateEvidence({
+    providerUpdateIds,
+    recipientUpdateIds,
 }: {
-    expected: DatabaseObservation;
-    current: DatabaseObservation;
-}): boolean {
-    return (
-        expected.updateId === current.updateId &&
-        expected.updatePublicId === current.updatePublicId &&
-        expected.deliveryId === current.deliveryId &&
-        sameStringSet(
-            expected.testAttemptIds.map(String),
-            current.testAttemptIds.map(String),
-        ) &&
-        sameStringSet(
-            expected.participantRecipientIds,
-            current.participantRecipientIds,
-        ) &&
-        sameStringSet(expected.ownerRecipientIds, current.ownerRecipientIds) &&
-        sameStringSet(
-            expected.deliveryAttemptIds,
-            current.deliveryAttemptIds,
-        ) &&
-        sameStringSet(expected.providerMessageIds, current.providerMessageIds)
-    );
+    providerUpdateIds: readonly number[];
+    recipientUpdateIds: readonly number[];
+}): number | undefined {
+    const uniqueProviderUpdateIds = [...new Set(providerUpdateIds)];
+    const uniqueRecipientUpdateIds = [...new Set(recipientUpdateIds)];
+    if (uniqueProviderUpdateIds.length > 1) {
+        throw new Error(
+            "Refusing cleanup because provider observations identify multiple updates",
+        );
+    }
+    if (uniqueRecipientUpdateIds.length > 1) {
+        throw new Error(
+            "Refusing cleanup because fixture recipients identify multiple updates",
+        );
+    }
+    const providerUpdateId = uniqueProviderUpdateIds.at(0);
+    const recipientUpdateId = uniqueRecipientUpdateIds.at(0);
+    if (
+        providerUpdateId !== undefined &&
+        recipientUpdateId !== undefined &&
+        providerUpdateId !== recipientUpdateId
+    ) {
+        throw new Error(
+            "Refusing cleanup because provider and fixture-recipient evidence conflict",
+        );
+    }
+    return providerUpdateId ?? recipientUpdateId;
 }
 
-async function discoverOwnedUpdateId({
+function secondPrecision(value: Date): Date {
+    return new Date(Math.floor(value.getTime() / 1_000) * 1_000);
+}
+
+function targetReservationParams({
+    db,
+    manifest,
+}: {
+    db: PostgresJsDatabase;
+    manifest: ExerciseManifest;
+}) {
+    const fixture = manifest.fixture;
+    if (fixture === undefined) {
+        throw new Error("Target reservation requires a prepared fixture");
+    }
+    return {
+        db,
+        conversationId: fixture.conversationId,
+        namespace: manifest.plan.namespace,
+        fixtureId: manifest.plan.fixtureId,
+        markerValue: manifest.plan.databaseMarker,
+    };
+}
+
+function targetReservationOwnerParams({
+    db,
+    plan,
+}: {
+    db: PostgresJsDatabase;
+    plan: ExercisePlan;
+}) {
+    return {
+        db,
+        namespace: plan.namespace,
+        fixtureId: plan.fixtureId,
+        markerValue: plan.databaseMarker,
+    };
+}
+
+function fixturesMatch({
+    left,
+    right,
+}: {
+    left: PreparedExerciseFixture;
+    right: PreparedExerciseFixture;
+}): boolean {
+    return JSON.stringify(left) === JSON.stringify(right);
+}
+
+async function validatePreparedFixture({
+    db,
+    plan,
+    fixture,
+}: {
+    db: PostgresJsDatabase;
+    plan: ExercisePlan;
+    fixture: PreparedExerciseFixture;
+}): Promise<void> {
+    const target = await loadTarget({
+        db,
+        plan,
+        expectedFixtureVoteIds: fixture.participantReferences.map(
+            (reference) => reference.voteId,
+        ),
+    });
+    if (
+        target.projectId !== fixture.projectId ||
+        target.projectSlug !== fixture.projectSlug ||
+        target.conversationId !== fixture.conversationId ||
+        target.conversationContentId !== fixture.conversationContentId ||
+        target.conversationSlugId !== fixture.conversationSlugId ||
+        target.opinionId !== fixture.opinionId ||
+        target.opinionContentId !== fixture.opinionContentId
+    ) {
+        throw new Error(
+            "Existing conversation target changed after fixture preparation",
+        );
+    }
+    await validateFixtureRelationships({ db, plan, fixture });
+}
+
+async function reconcileCleanupManifest({
     tx,
     manifest,
 }: {
     tx: PostgresJsDatabase;
     manifest: ExerciseManifest;
+}): Promise<
+    | { state: "unreserved" }
+    | {
+          state: "prepared" | "cleaned";
+          manifest: ExerciseManifest & { fixture: PreparedExerciseFixture };
+      }
+> {
+    const reservation = await readOwnedExerciseTargetReservation(
+        targetReservationOwnerParams({ db: tx, plan: manifest.plan }),
+    );
+    if (reservation === undefined) {
+        if (manifest.fixture !== undefined) {
+            throw new Error(
+                "Target conversation reservation does not match the guarded fixture",
+            );
+        }
+        return { state: "unreserved" };
+    }
+    if (reservation.state === "preparing") {
+        throw new Error("Target conversation reservation is incomplete");
+    }
+    if (
+        manifest.fixture !== undefined &&
+        !fixturesMatch({ left: manifest.fixture, right: reservation.fixture })
+    ) {
+        throw new Error(
+            "Persisted target reservation fixture does not match the manifest",
+        );
+    }
+    return {
+        state: reservation.state,
+        manifest: { ...manifest, fixture: reservation.fixture },
+    };
+}
+
+async function discoverOwnedUpdateId({
+    tx,
+    manifest,
+    report,
+}: {
+    tx: PostgresJsDatabase;
+    manifest: ExerciseManifest;
+    report: ExerciseReport | undefined;
 }): Promise<number | undefined> {
     const fixture = manifest.fixture;
     if (fixture === undefined) return undefined;
-    const candidates = await tx
-        .selectDistinct({
-            id: conversationEmailUpdateTable.id,
-            projectId: conversationEmailUpdateTable.projectId,
-        })
-        .from(conversationEmailUpdateTable)
-        .innerJoin(
-            conversationEmailUpdateConversationTable,
-            eq(
-                conversationEmailUpdateConversationTable.updateId,
-                conversationEmailUpdateTable.id,
-            ),
-        )
-        .where(
-            and(
-                eq(
-                    conversationEmailUpdateConversationTable.conversationId,
-                    fixture.conversationId,
-                ),
-                gte(
-                    conversationEmailUpdateTable.createdAt,
-                    new Date(fixture.preparedAt),
-                ),
-            ),
-        );
-    if (candidates.length === 0) return undefined;
-    if (candidates.length !== 1) {
+    if (
+        report !== undefined &&
+        (report.namespace !== manifest.plan.namespace ||
+            report.fixtureId !== manifest.plan.fixtureId)
+    ) {
         throw new Error(
-            "Refusing cleanup because target update ownership is ambiguous",
+            "Refusing cleanup because the provider report does not belong to this fixture",
         );
     }
-    const candidate = candidates[0];
-    if (candidate.projectId !== fixture.projectId) {
+    const recipientUpdateIds = new Set<number>();
+    for (const identityChunk of chunks(manifest.plan.identities)) {
+        const rows = await tx
+            .selectDistinct({
+                updateId: conversationEmailUpdateDeliveryTable.updateId,
+            })
+            .from(conversationEmailUpdateRecipientTable)
+            .innerJoin(
+                conversationEmailUpdateDeliveryTable,
+                eq(
+                    conversationEmailUpdateDeliveryTable.id,
+                    conversationEmailUpdateRecipientTable.deliveryId,
+                ),
+            )
+            .where(
+                inArray(
+                    conversationEmailUpdateRecipientTable.userId,
+                    identityChunk.map((identity) => identity.userId),
+                ),
+            );
+        for (const row of rows) recipientUpdateIds.add(row.updateId);
+    }
+    const updateId = resolveOwnedUpdateEvidence({
+        providerUpdateIds:
+            report?.provider.observations.map(
+                (observation) => observation.updateId,
+            ) ?? [],
+        recipientUpdateIds: [...recipientUpdateIds],
+    });
+    if (updateId === undefined) return undefined;
+
+    const update = (
+        await tx
+            .select({
+                id: conversationEmailUpdateTable.id,
+                projectId: conversationEmailUpdateTable.projectId,
+                createdAt: conversationEmailUpdateTable.createdAt,
+            })
+            .from(conversationEmailUpdateTable)
+            .where(eq(conversationEmailUpdateTable.id, updateId))
+            .limit(1)
+            .for("update")
+    ).at(0);
+    if (update === undefined) {
         throw new Error(
-            "Refusing cleanup because the candidate update project changed",
+            "Refusing cleanup because the evidenced update no longer exists",
+        );
+    }
+    if (
+        update.projectId !== fixture.projectId ||
+        update.createdAt < secondPrecision(new Date(fixture.preparedAt))
+    ) {
+        throw new Error(
+            "Refusing cleanup because the evidenced update is outside the frozen fixture boundary",
         );
     }
     const links = await tx
@@ -1331,10 +1466,7 @@ async function discoverOwnedUpdateId({
         })
         .from(conversationEmailUpdateConversationTable)
         .where(
-            eq(
-                conversationEmailUpdateConversationTable.updateId,
-                candidate.id,
-            ),
+            eq(conversationEmailUpdateConversationTable.updateId, update.id),
         );
     if (
         links.length !== 1 ||
@@ -1344,7 +1476,7 @@ async function discoverOwnedUpdateId({
             "Refusing cleanup because the candidate update is not exclusively linked to the target conversation",
         );
     }
-    return candidate.id;
+    return update.id;
 }
 
 async function deleteOwnedUpdateArtifacts({
@@ -1370,7 +1502,9 @@ async function deleteOwnedUpdateArtifacts({
                 ),
             );
         for (const recipientChunk of chunks(recipients)) {
-            const recipientIds = recipientChunk.map((recipient) => recipient.id);
+            const recipientIds = recipientChunk.map(
+                (recipient) => recipient.id,
+            );
             await tx
                 .delete(conversationEmailUpdateReportTable)
                 .where(
@@ -1415,10 +1549,7 @@ async function deleteOwnedUpdateArtifacts({
         await tx
             .delete(conversationEmailUpdateDeliveryTable)
             .where(
-                inArray(
-                    conversationEmailUpdateDeliveryTable.id,
-                    deliveryIds,
-                ),
+                inArray(conversationEmailUpdateDeliveryTable.id, deliveryIds),
             );
     }
     await tx
@@ -1503,52 +1634,82 @@ export function createExistingConversationFixtureStore({
                 db,
                 expectedDatabaseName: plan.expectedDatabaseName,
             });
-            const target = await loadTarget({
-                db,
-                plan,
-                expectedFixtureVoteIds: undefined,
+            return await db.transaction(async (tx) => {
+                const existingReservation =
+                    await readOwnedExerciseTargetReservation(
+                        targetReservationOwnerParams({ db: tx, plan }),
+                    );
+                if (existingReservation !== undefined) {
+                    if (existingReservation.state !== "prepared") {
+                        throw new Error(
+                            "Target conversation reservation is not available for prepare recovery",
+                        );
+                    }
+                    await validatePreparedFixture({
+                        db: tx,
+                        plan,
+                        fixture: existingReservation.fixture,
+                    });
+                    return existingReservation.fixture;
+                }
+                const target = await loadTarget({
+                    db: tx,
+                    plan,
+                    expectedFixtureVoteIds: undefined,
+                });
+                await assertNamespaceAvailable({ db: tx, plan });
+                await acquireExerciseTargetReservation({
+                    db: tx,
+                    conversationId: target.conversationId,
+                    namespace: plan.namespace,
+                    fixtureId: plan.fixtureId,
+                    markerValue: plan.databaseMarker,
+                });
+                const fixtureWithoutReferences: Omit<
+                    PreparedExerciseFixture,
+                    "participantReferences"
+                > = {
+                    ...target,
+                    preparedAt: secondPrecision(new Date()).toISOString(),
+                    participantCount: plan.participantCount,
+                };
+                const participantReferences = await seedParticipants({
+                    db: tx,
+                    plan,
+                    fixture: fixtureWithoutReferences,
+                });
+                const fixture = {
+                    ...fixtureWithoutReferences,
+                    participantReferences,
+                };
+                await markExerciseTargetReservationPrepared({
+                    db: tx,
+                    conversationId: target.conversationId,
+                    namespace: plan.namespace,
+                    fixtureId: plan.fixtureId,
+                    markerValue: plan.databaseMarker,
+                    fixture,
+                });
+                return fixture;
             });
-            await assertNamespaceAvailable({ db, plan });
-            const fixtureWithoutReferences: Omit<
-                PreparedExerciseFixture,
-                "participantReferences"
-            > = {
-                ...target,
-                preparedAt: new Date().toISOString(),
-                participantCount: plan.participantCount,
-            };
-            const participantReferences = await seedParticipants({
-                db,
-                plan,
-                fixture: fixtureWithoutReferences,
-            });
-            return { ...fixtureWithoutReferences, participantReferences };
         },
         attach: async ({ manifest, fixture }) => {
             await assertDatabaseName({
                 db,
                 expectedDatabaseName: manifest.plan.expectedDatabaseName,
             });
-            const target = await loadTarget({
-                db,
-                plan: manifest.plan,
-                expectedFixtureVoteIds: fixture.participantReferences.map(
-                    (reference) => reference.voteId,
-                ),
-            });
+            const reservation = await assertExerciseTargetReservation(
+                targetReservationParams({ db, manifest }),
+            );
             if (
-                target.projectId !== fixture.projectId ||
-                target.conversationId !== fixture.conversationId ||
-                target.conversationContentId !==
-                    fixture.conversationContentId ||
-                target.opinionId !== fixture.opinionId ||
-                target.opinionContentId !== fixture.opinionContentId
+                reservation.state !== "prepared" ||
+                !fixturesMatch({ left: fixture, right: reservation.fixture })
             ) {
                 throw new Error(
-                    "Existing conversation target changed after fixture preparation",
+                    "Persisted target reservation fixture does not match the manifest",
                 );
             }
-            await validateFixtureRelationships({
+            await validatePreparedFixture({
                 db,
                 plan: manifest.plan,
                 fixture,
@@ -1572,7 +1733,7 @@ export function createExistingConversationFixtureStore({
             });
             return verifyExerciseReport({ manifest, report });
         },
-        cleanup: async ({ manifest }) => {
+        cleanup: async ({ manifest, report }) => {
             await assertDatabaseName({
                 db,
                 expectedDatabaseName: manifest.plan.expectedDatabaseName,
@@ -1581,16 +1742,10 @@ export function createExistingConversationFixtureStore({
                 await tx.execute(
                     sql`select pg_advisory_xact_lock(hashtextextended(${manifest.plan.namespace}, 0))`,
                 );
-                const ownedUpdateId = await discoverOwnedUpdateId({
+                const reconciled = await reconcileCleanupManifest({
                     tx,
                     manifest,
                 });
-                if (ownedUpdateId !== undefined) {
-                    await deleteOwnedUpdateArtifacts({
-                        tx,
-                        updateId: ownedUpdateId,
-                    });
-                }
                 const existingRows = await tx
                     .select({ id: userTable.id })
                     .from(userTable)
@@ -1602,22 +1757,81 @@ export function createExistingConversationFixtureStore({
                             ),
                         ),
                     );
-                if (existingRows.length === 0) return;
-                if (
-                    existingRows.length !== manifest.plan.participantCount ||
-                    manifest.fixture === undefined
-                ) {
+                if (reconciled.state === "unreserved") {
+                    if (existingRows.length === 0) return;
                     throw new Error(
                         "Refusing cleanup because fixture namespace ownership is incomplete",
                     );
                 }
-                await validateFixtureRelationships({
+                if (reconciled.state === "cleaned") {
+                    if (existingRows.length !== 0) {
+                        throw new Error(
+                            "Refusing cleanup because a cleaned reservation still has fixture participants",
+                        );
+                    }
+                    return;
+                }
+                const cleanupManifest = reconciled.manifest;
+                const reservationParams = targetReservationParams({
                     db: tx,
-                    plan: manifest.plan,
-                    fixture: manifest.fixture,
+                    manifest: cleanupManifest,
                 });
-                await deleteFixtureParticipants({ tx, manifest });
+                const reservation =
+                    await assertExerciseTargetReservation(reservationParams);
+                if (
+                    reservation.state !== "prepared" ||
+                    !fixturesMatch({
+                        left: cleanupManifest.fixture,
+                        right: reservation.fixture,
+                    })
+                ) {
+                    throw new Error(
+                        "Persisted target reservation fixture does not match the manifest",
+                    );
+                }
+                if (existingRows.length > 0) {
+                    if (
+                        existingRows.length !==
+                        cleanupManifest.plan.participantCount
+                    ) {
+                        throw new Error(
+                            "Refusing cleanup because fixture namespace ownership is incomplete",
+                        );
+                    }
+                    await validateFixtureRelationships({
+                        db: tx,
+                        plan: cleanupManifest.plan,
+                        fixture: cleanupManifest.fixture,
+                    });
+                }
+                const ownedUpdateId = await discoverOwnedUpdateId({
+                    tx,
+                    manifest: cleanupManifest,
+                    report,
+                });
+                if (ownedUpdateId !== undefined) {
+                    await deleteOwnedUpdateArtifacts({
+                        tx,
+                        updateId: ownedUpdateId,
+                    });
+                }
+                if (existingRows.length > 0) {
+                    await deleteFixtureParticipants({
+                        tx,
+                        manifest: cleanupManifest,
+                    });
+                }
+                await markExerciseTargetReservationCleaned(reservationParams);
             });
+        },
+        finalizeCleanup: async (manifest) => {
+            await assertDatabaseName({
+                db,
+                expectedDatabaseName: manifest.plan.expectedDatabaseName,
+            });
+            await finalizeExerciseTargetReservation(
+                targetReservationOwnerParams({ db, plan: manifest.plan }),
+            );
         },
     };
 }
