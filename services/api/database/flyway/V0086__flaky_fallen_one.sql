@@ -306,24 +306,23 @@ CREATE TABLE "conversation_email_update_user_project_preference" (
 	CONSTRAINT "conversation_email_update_user_project_preference_user_id_project_id_pk" PRIMARY KEY("user_id","project_id")
 );
 --> statement-breakpoint
-ALTER TYPE "public"."organization_membership_all_project_capability_enum" RENAME VALUE 'conversation_update' TO 'conversation_edit';--> statement-breakpoint
-ALTER TYPE "public"."organization_membership_all_project_capability_enum" ADD VALUE 'conversation_email_update';--> statement-breakpoint
+ALTER TABLE "organization_membership_all_project_capability" DROP CONSTRAINT "organization_membership_all_project_capability_unique";--> statement-breakpoint
+ALTER TABLE "organization_membership_all_project_capability" ALTER COLUMN "capability" SET DATA TYPE text;--> statement-breakpoint
+UPDATE "organization_membership_all_project_capability" SET "capability" = 'conversation_edit' WHERE "capability" = 'conversation_update';--> statement-breakpoint
+DROP TYPE "public"."organization_membership_all_project_capability_enum";--> statement-breakpoint
+CREATE TYPE "public"."organization_membership_all_project_capability_enum" AS ENUM('project_update', 'project_delete', 'project_manage_owner_organizations', 'conversation_create', 'conversation_edit', 'conversation_delete', 'conversation_view_private_results', 'conversation_export_owner_data', 'conversation_moderate', 'conversation_manage_integrations', 'conversation_email_update');--> statement-breakpoint
+ALTER TABLE "organization_membership_all_project_capability" ALTER COLUMN "capability" SET DATA TYPE "public"."organization_membership_all_project_capability_enum" USING "capability"::"public"."organization_membership_all_project_capability_enum";--> statement-breakpoint
 ALTER TABLE "conversation" ADD COLUMN "conversation_email_update_enabled_override" boolean;--> statement-breakpoint
 ALTER TABLE "conversation" ADD COLUMN "conversation_email_update_override_updated_at" timestamp (0);--> statement-breakpoint
 ALTER TABLE "conversation" ADD COLUMN "conversation_email_update_override_updated_by_user_id" uuid;--> statement-breakpoint
-ALTER TABLE "maxdiff_comparison" ADD COLUMN "created_at" timestamp (0);--> statement-breakpoint
-UPDATE "maxdiff_comparison" AS "comparison"
-SET "created_at" = "result"."created_at"
-FROM "maxdiff_result" AS "result"
-WHERE "comparison"."maxdiff_result_id" = "result"."id";--> statement-breakpoint
-ALTER TABLE "maxdiff_comparison" ALTER COLUMN "created_at" SET DEFAULT now();--> statement-breakpoint
-ALTER TABLE "maxdiff_comparison" ALTER COLUMN "created_at" SET NOT NULL;--> statement-breakpoint
+ALTER TABLE "maxdiff_comparison" ADD COLUMN "created_at" timestamp (0) DEFAULT now() NOT NULL;--> statement-breakpoint
+ALTER TABLE "organization_membership_all_project_capability" ADD COLUMN "granted_by_user_id" uuid;--> statement-breakpoint
+ALTER TABLE "organization_membership_all_project_capability" ADD COLUMN "revoked_by_user_id" uuid;--> statement-breakpoint
+ALTER TABLE "organization_membership_all_project_capability" ADD COLUMN "updated_at" timestamp (0) DEFAULT now() NOT NULL;--> statement-breakpoint
+ALTER TABLE "organization_membership_all_project_capability" ADD COLUMN "deleted_at" timestamp (0);--> statement-breakpoint
 ALTER TABLE "project" ADD COLUMN "conversation_email_update_default_enabled" boolean DEFAULT false NOT NULL;--> statement-breakpoint
 ALTER TABLE "project" ADD COLUMN "conversation_email_update_default_updated_at" timestamp (0);--> statement-breakpoint
 ALTER TABLE "project" ADD COLUMN "conversation_email_update_default_updated_by_user_id" uuid;--> statement-breakpoint
-ALTER TABLE "conversation" ADD CONSTRAINT "conversation_project_id_id_unique" UNIQUE("project_id","id");--> statement-breakpoint
-ALTER TABLE "email" ADD CONSTRAINT "email_user_id_id_unique" UNIQUE("user_id","id");--> statement-breakpoint
-ALTER TABLE "premium_feature_entitlement" ADD CONSTRAINT "premium_feature_entitlement_organization_id_id_unique" UNIQUE("organization_id","id");--> statement-breakpoint
 ALTER TABLE "conversation_email_update_action_token" ADD CONSTRAINT "conversation_email_update_action_token_recipient_id_conversation_email_update_recipient_id_fk" FOREIGN KEY ("recipient_id") REFERENCES "public"."conversation_email_update_recipient"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "conversation_email_update_conversation" ADD CONSTRAINT "email_update_scope_update_project_fk" FOREIGN KEY ("project_id","update_id") REFERENCES "public"."conversation_email_update"("project_id","id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "conversation_email_update_conversation" ADD CONSTRAINT "email_update_scope_conversation_project_fk" FOREIGN KEY ("project_id","conversation_id") REFERENCES "public"."conversation"("project_id","id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -387,21 +386,14 @@ CREATE UNIQUE INDEX "conversation_email_update_user_complaint_active_unique" ON 
 CREATE INDEX "conversation_email_update_conversation_preference_scope_idx" ON "conversation_email_update_user_conversation_preference" USING btree ("conversation_id");--> statement-breakpoint
 CREATE INDEX "conversation_email_update_project_preference_project_idx" ON "conversation_email_update_user_project_preference" USING btree ("project_id");--> statement-breakpoint
 ALTER TABLE "conversation" ADD CONSTRAINT "conversation_conversation_email_update_override_updated_by_user_id_user_id_fk" FOREIGN KEY ("conversation_email_update_override_updated_by_user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "organization_membership_all_project_capability" ADD CONSTRAINT "organization_membership_all_project_capability_granted_by_user_id_user_id_fk" FOREIGN KEY ("granted_by_user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "organization_membership_all_project_capability" ADD CONSTRAINT "organization_membership_all_project_capability_revoked_by_user_id_user_id_fk" FOREIGN KEY ("revoked_by_user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "project" ADD CONSTRAINT "project_conversation_email_update_default_updated_by_user_id_user_id_fk" FOREIGN KEY ("conversation_email_update_default_updated_by_user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-DO $$
-BEGIN
-	IF EXISTS (
-		SELECT 1
-		FROM "email"
-		WHERE "type" = 'primary' AND "is_deleted" = false
-		GROUP BY "user_id"
-		HAVING count(*) > 1
-	) THEN
-		RAISE EXCEPTION USING
-			MESSAGE = 'Cannot enforce one active primary email per user while duplicate primary rows exist',
-			HINT = 'Resolve duplicate active primary email rows manually, then re-run migrations.';
-	END IF;
-END $$;--> statement-breakpoint
 CREATE UNIQUE INDEX "email_active_primary_user_unique" ON "email" USING btree ("user_id") WHERE "email"."type" = 'primary' AND "email"."is_deleted" = false;--> statement-breakpoint
+CREATE UNIQUE INDEX "organization_membership_all_project_capability_active_unique" ON "organization_membership_all_project_capability" USING btree ("organization_membership_id","capability") WHERE "organization_membership_all_project_capability"."deleted_at" is null;--> statement-breakpoint
+ALTER TABLE "conversation" ADD CONSTRAINT "conversation_project_id_id_unique" UNIQUE("project_id","id");--> statement-breakpoint
+ALTER TABLE "email" ADD CONSTRAINT "email_user_id_id_unique" UNIQUE("user_id","id");--> statement-breakpoint
+ALTER TABLE "premium_feature_entitlement" ADD CONSTRAINT "premium_feature_entitlement_organization_id_id_unique" UNIQUE("organization_id","id");--> statement-breakpoint
 ALTER TABLE "conversation" ADD CONSTRAINT "conversation_email_update_override_audit_check" CHECK (("conversation"."conversation_email_update_override_updated_at" IS NULL) = ("conversation"."conversation_email_update_override_updated_by_user_id" IS NULL));--> statement-breakpoint
+ALTER TABLE "organization_membership_all_project_capability" ADD CONSTRAINT "organization_membership_all_project_capability_revocation_check" CHECK ((("organization_membership_all_project_capability"."deleted_at" IS NULL AND "organization_membership_all_project_capability"."revoked_by_user_id" IS NULL) OR ("organization_membership_all_project_capability"."deleted_at" IS NOT NULL AND "organization_membership_all_project_capability"."revoked_by_user_id" IS NOT NULL)));--> statement-breakpoint
 ALTER TABLE "project" ADD CONSTRAINT "project_email_update_default_audit_check" CHECK (("project"."conversation_email_update_default_updated_at" IS NULL) = ("project"."conversation_email_update_default_updated_by_user_id" IS NULL));

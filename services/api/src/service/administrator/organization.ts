@@ -1,11 +1,13 @@
 import {
     organizationLocalizationTable,
+    organizationMembershipAllProjectCapabilityTable,
     organizationMembershipTable,
     organizationTable,
     userTable,
 } from "@/shared-backend/schema.js";
+import { getPrimaryDatabase } from "@/shared-backend/db.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import { useCommonUser } from "../common.js";
 import { httpErrors } from "@fastify/sensible";
 import { log } from "@/app.js";
@@ -17,6 +19,7 @@ import type {
     GetOrganizationOptionsResponse,
     GetOrganizationMembersResponse,
     GetOrganizationsByUsernameResponse,
+    UpdateOrganizationMemberConversationEmailUpdateCapabilityRequest,
     UpdateOrganizationSlugResponse,
     UpdateOrganizationLocalizationRequest,
     UpdateOrganizationLocalizationResponse,
@@ -269,8 +272,12 @@ export async function getOrganizationMembers({
     db: PostgresJsDatabase;
     organizationName: string;
 }): Promise<GetOrganizationMembersResponse> {
-    const memberRows = await db
-        .select({ username: userTable.username })
+    const memberRows = await getPrimaryDatabase(db)
+        .select({
+            username: userTable.username,
+            conversationEmailUpdateCapability:
+                organizationMembershipAllProjectCapabilityTable.capability,
+        })
         .from(organizationMembershipTable)
         .innerJoin(
             organizationTable,
@@ -283,6 +290,22 @@ export async function getOrganizationMembers({
             userTable,
             eq(userTable.id, organizationMembershipTable.userId),
         )
+        .leftJoin(
+            organizationMembershipAllProjectCapabilityTable,
+            and(
+                eq(
+                    organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
+                    organizationMembershipTable.id,
+                ),
+                eq(
+                    organizationMembershipAllProjectCapabilityTable.capability,
+                    "conversation_email_update",
+                ),
+                isNull(
+                    organizationMembershipAllProjectCapabilityTable.deletedAt,
+                ),
+            ),
+        )
         .where(
             and(
                 eq(organizationTable.slug, organizationName),
@@ -291,11 +314,98 @@ export async function getOrganizationMembers({
                 isNull(organizationTable.deletedAt),
                 eq(userTable.isDeleted, false),
             ),
-        );
+        )
+        .orderBy(asc(userTable.username));
 
     return {
-        memberList: memberRows,
+        memberList: memberRows.map((member) => ({
+            username: member.username,
+            conversationEmailUpdateCapabilityEnabled:
+                member.conversationEmailUpdateCapability ===
+                "conversation_email_update",
+        })),
     };
+}
+
+export async function updateOrganizationMemberConversationEmailUpdateCapability({
+    db,
+    adminUserId,
+    request,
+}: {
+    db: PostgresJsDatabase;
+    adminUserId: string;
+    request: UpdateOrganizationMemberConversationEmailUpdateCapabilityRequest;
+}): Promise<void> {
+    const primaryDb = getPrimaryDatabase(db);
+    await primaryDb.transaction(async (transaction) => {
+        const membership = (
+            await transaction
+                .select({ id: organizationMembershipTable.id })
+                .from(organizationMembershipTable)
+                .innerJoin(
+                    organizationTable,
+                    eq(
+                        organizationTable.id,
+                        organizationMembershipTable.organizationId,
+                    ),
+                )
+                .innerJoin(
+                    userTable,
+                    eq(userTable.id, organizationMembershipTable.userId),
+                )
+                .where(
+                    and(
+                        eq(userTable.username, request.username),
+                        eq(userTable.isDeleted, false),
+                        eq(organizationTable.slug, request.organizationSlug),
+                        eq(organizationTable.directoryVisibility, "listed"),
+                        isNull(organizationMembershipTable.deletedAt),
+                        isNull(organizationTable.deletedAt),
+                    ),
+                )
+                .limit(1)
+                .for("update")
+        ).at(0);
+        if (membership === undefined) {
+            throw httpErrors.notFound("Organization membership not found");
+        }
+
+        if (request.enabled) {
+            await transaction
+                .insert(organizationMembershipAllProjectCapabilityTable)
+                .values({
+                    organizationMembershipId: membership.id,
+                    capability: "conversation_email_update",
+                    grantedByUserId: adminUserId,
+                })
+                .onConflictDoNothing();
+            return;
+        }
+
+        const now = new Date();
+        await transaction
+            .update(organizationMembershipAllProjectCapabilityTable)
+            .set({
+                revokedByUserId: adminUserId,
+                updatedAt: now,
+                deletedAt: now,
+            })
+            .where(
+                and(
+                    eq(
+                        organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
+                        membership.id,
+                    ),
+                    eq(
+                        organizationMembershipAllProjectCapabilityTable.capability,
+                        "conversation_email_update",
+                    ),
+                    isNull(
+                        organizationMembershipAllProjectCapabilityTable.deletedAt,
+                    ),
+                ),
+            );
+    });
 }
 
 export async function updateOrganizationSlug({
@@ -476,43 +586,78 @@ export async function getOrganizationMembershipsByUserId({
 
 interface RemoveUserOrganizationMappingProps {
     db: PostgresJsDatabase;
+    adminUserId: string;
     username: string;
     organizationName: string;
 }
 
 export async function removeUserOrganizationMapping({
     db,
+    adminUserId,
     username,
     organizationName,
 }: RemoveUserOrganizationMappingProps) {
+    const primaryDb = getPrimaryDatabase(db);
     const { getUserIdFromUsername } = useCommonUser();
     const targetUserId = await getUserIdFromUsername({
-        db: db,
-        username: username,
+        db: primaryDb,
+        username,
     });
 
     const organizationId = await getListedOrganizationIdFromOrganizationSlug({
-        db,
+        db: primaryDb,
         organizationSlug: organizationName,
     });
     if (organizationId === undefined) {
         throw httpErrors.notFound("Organization not found");
     }
 
-    const deletedMapping = await db
-        .update(organizationMembershipTable)
-        .set({ deletedAt: new Date(), updatedAt: new Date() })
-        .where(
-            and(
-                eq(organizationMembershipTable.userId, targetUserId),
-                eq(organizationMembershipTable.organizationId, organizationId),
-                isNull(organizationMembershipTable.deletedAt),
-            ),
-        )
-        .returning();
-    if (deletedMapping.length === 0) {
-        throw httpErrors.notFound("Organization mapping does not exist");
-    }
+    await primaryDb.transaction(async (transaction) => {
+        const membership = (
+            await transaction
+                .select({ id: organizationMembershipTable.id })
+                .from(organizationMembershipTable)
+                .where(
+                    and(
+                        eq(organizationMembershipTable.userId, targetUserId),
+                        eq(
+                            organizationMembershipTable.organizationId,
+                            organizationId,
+                        ),
+                        isNull(organizationMembershipTable.deletedAt),
+                    ),
+                )
+                .limit(1)
+                .for("update")
+        ).at(0);
+        if (membership === undefined) {
+            throw httpErrors.notFound("Organization mapping does not exist");
+        }
+
+        const now = new Date();
+        await transaction
+            .update(organizationMembershipTable)
+            .set({ deletedAt: now, updatedAt: now })
+            .where(eq(organizationMembershipTable.id, membership.id));
+        await transaction
+            .update(organizationMembershipAllProjectCapabilityTable)
+            .set({
+                revokedByUserId: adminUserId,
+                updatedAt: now,
+                deletedAt: now,
+            })
+            .where(
+                and(
+                    eq(
+                        organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
+                        membership.id,
+                    ),
+                    isNull(
+                        organizationMembershipAllProjectCapabilityTable.deletedAt,
+                    ),
+                ),
+            );
+    });
 }
 
 interface AddUserOrganizationMappingProps {

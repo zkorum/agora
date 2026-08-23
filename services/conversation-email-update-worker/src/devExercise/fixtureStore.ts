@@ -674,6 +674,9 @@ async function allowedOwnerUserIds({
                     organizationMembershipAllProjectCapabilityTable.capability,
                     "conversation_email_update",
                 ),
+                isNull(
+                    organizationMembershipAllProjectCapabilityTable.deletedAt,
+                ),
             ),
         )
         .where(

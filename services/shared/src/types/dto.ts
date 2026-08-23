@@ -2111,6 +2111,7 @@ export class Dto {
     static organizationMember = z
         .object({
             username: zodUsername,
+            conversationEmailUpdateCapabilityEnabled: z.boolean(),
         })
         .strict();
     static getOrganizationMembersResponse = z
@@ -2128,6 +2129,13 @@ export class Dto {
         .object({
             username: zodUsername,
             organizationName: zodOrganizationSlug,
+        })
+        .strict();
+    static updateOrganizationMemberConversationEmailUpdateCapabilityRequest = z
+        .object({
+            username: zodUsername,
+            organizationSlug: zodOrganizationSlug,
+            enabled: z.boolean(),
         })
         .strict();
     static createProjectAttributionRequest = z.discriminatedUnion("source", [
@@ -2448,21 +2456,10 @@ export class Dto {
             languageOptions: z.array(zodProjectPageLanguageOption),
         })
         .strict();
-    static premiumFeatureEntitlementSubjectRequest = z
-        .object({
-            username: zodUsername.optional(),
-            organizationName: zodOrganizationSlug.optional(),
-        })
-        .strict()
-        .refine(
-            ({ username, organizationName }) =>
-                (username !== undefined && organizationName === undefined) ||
-                (username === undefined && organizationName !== undefined),
-            {
-                message:
-                    "Exactly one of username or organizationName is required",
-            },
-        );
+    static premiumFeatureEntitlementSubjectRequest = z.union([
+        z.object({ username: zodUsername }).strict(),
+        z.object({ organizationName: zodOrganizationSlug }).strict(),
+    ]);
     static premiumFeatureEntitlementItem = z
         .object({
             id: z.number().int().positive(),
@@ -2494,6 +2491,19 @@ export class Dto {
             adminNote: z.string().max(1000).optional(),
         })
         .strict()
+        .superRefine(({ subject, features }, context) => {
+            if (
+                "username" in subject &&
+                features.includes("conversation_email_update")
+            ) {
+                context.addIssue({
+                    code: "custom",
+                    path: ["features"],
+                    message:
+                        "Conversation Email Updates can only be granted to organizations",
+                });
+            }
+        })
         .refine(
             ({ startsAt, expiresAt }) =>
                 expiresAt === undefined ||
@@ -3737,6 +3747,10 @@ export type OrganizationMember = z.infer<typeof Dto.organizationMember>;
 export type GetOrganizationMembersResponse = z.infer<
     typeof Dto.getOrganizationMembersResponse
 >;
+export type UpdateOrganizationMemberConversationEmailUpdateCapabilityRequest =
+    z.infer<
+        typeof Dto.updateOrganizationMemberConversationEmailUpdateCapabilityRequest
+    >;
 export type AdminOrganizationProperties = z.infer<typeof zodAdminOrganization>;
 export type CreateOrganizationRequest = z.infer<
     typeof Dto.createOrganizationRequest

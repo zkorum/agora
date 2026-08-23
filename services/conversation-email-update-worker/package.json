@@ -8,7 +8,7 @@
         "build": "rm -rf dist && tsc --sourceMap -p tsconfig.build.json && node assertProductionBuild.mjs",
         "start": "node --loader esm-module-alias/loader --no-warnings dist/index.js",
         "start:dev": "tsx watch --trace-uncaught src/index.ts",
-        "dev:exercise": "tsx src/devExercise/index.ts",
+        "dev:exercise": "./run-dev-exercise.sh",
         "typecheck": "tsc -p tsconfig.json",
         "lint": "eslint .",
         "test": "vitest run",

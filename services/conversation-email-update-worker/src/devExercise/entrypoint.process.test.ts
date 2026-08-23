@@ -1,12 +1,15 @@
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const serviceDirectory = fileURLToPath(new URL("../../", import.meta.url));
 const sourceEntrypoint = fileURLToPath(new URL("./index.ts", import.meta.url));
+const launcher = fileURLToPath(
+    new URL("../../run-dev-exercise.sh", import.meta.url),
+);
 
 function validEnvironment(): NodeJS.ProcessEnv {
     return {
@@ -146,6 +149,42 @@ const unsafeCases: readonly {
 ];
 
 describe("development exercise process guard", () => {
+    it("loads the minimal exercise file into a sanitized environment", async () => {
+        const directory = await mkdtemp(
+            `${tmpdir()}/agora-email-exercise-launcher-`,
+        );
+        const environmentFile = `${directory}/exercise.env`;
+        await writeFile(
+            environmentFile,
+            [
+                "CONNECTION_STRING=postgresql://postgres:postgres@127.0.0.1:5432/agora_email_exercise_local",
+                `CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_DATABASE_MARKER=${"m".repeat(32)}`,
+                "CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_CONVERSATION_SLUG_ID=Ab12Cd34",
+            ].join("\n"),
+            { mode: 0o600 },
+        );
+
+        const result = spawnSync(launcher, [], {
+            cwd: serviceDirectory,
+            encoding: "utf8",
+            env: {
+                PATH: process.env.PATH,
+                HOME: process.env.HOME,
+                TMPDIR: process.env.TMPDIR,
+                AWS_PROFILE: "must-not-reach-the-exercise",
+                PGHOST: "must-not-reach-the-exercise",
+                CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_ENV_FILE:
+                    environmentFile,
+            },
+            timeout: 10_000,
+        });
+
+        expect(result.status).not.toBe(0);
+        expect(result.stderr).toContain("Usage: dev:exercise");
+        expect(result.stderr).not.toContain("Forbidden");
+        await rm(directory, { recursive: true, force: true });
+    });
+
     it.each(unsafeCases)(
         "rejects $name before importing runtime modules",
         async ({ environment }) => {

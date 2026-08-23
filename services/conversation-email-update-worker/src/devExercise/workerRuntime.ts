@@ -1,13 +1,127 @@
 import pino from "pino";
+import { setTimeout as sleep } from "node:timers/promises";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import type { ConversationEmailWorkerConfig } from "../config.js";
+import {
+    conversationEmailUpdateConversationTable,
+    conversationEmailUpdateDeliveryTable,
+    conversationEmailUpdateDeliveryStatusEnum,
+} from "../shared-backend/schema.js";
 import { createConversationEmailUpdateWorker } from "../worker.js";
 import type { DevExerciseEnvironment } from "./guard.js";
 import { createInstrumentedSimulatedProvider } from "./instrumentedProvider.js";
 import type { ExerciseArtifactStore } from "./manifestStore.js";
 import { exerciseReportSchema, type ExerciseManifest } from "./schemas.js";
+
+export type ConversationEmailUpdateDeliveryStatus =
+    (typeof conversationEmailUpdateDeliveryStatusEnum.enumValues)[number];
+
+const terminalDeliveryStatuses = [
+    "stopped",
+    "completed",
+    "completed_with_failures",
+    "failed",
+] satisfies readonly ConversationEmailUpdateDeliveryStatus[];
+
+export type TerminalExerciseDeliveryStatus =
+    (typeof terminalDeliveryStatuses)[number];
+
+const terminalDeliveryStatusSet: ReadonlySet<ConversationEmailUpdateDeliveryStatus> =
+    new Set(terminalDeliveryStatuses);
+
+export interface ExerciseDelivery {
+    id: number;
+    status: ConversationEmailUpdateDeliveryStatus;
+}
+
+interface TerminalExerciseDelivery {
+    id: number;
+    status: TerminalExerciseDeliveryStatus;
+}
+
+interface MonitorExerciseDeliveryParams {
+    signal: AbortSignal;
+    readDelivery: () => Promise<ExerciseDelivery | undefined>;
+    onStatusChange: (delivery: ExerciseDelivery) => void;
+    waitForNextPoll: () => Promise<void>;
+}
+
+export function isTerminalExerciseDeliveryStatus(
+    status: ConversationEmailUpdateDeliveryStatus,
+): status is TerminalExerciseDeliveryStatus {
+    return terminalDeliveryStatusSet.has(status);
+}
+
+export async function monitorExerciseDelivery({
+    signal,
+    readDelivery,
+    onStatusChange,
+    waitForNextPoll,
+}: MonitorExerciseDeliveryParams): Promise<
+    TerminalExerciseDelivery | undefined
+> {
+    let previousStatus: ConversationEmailUpdateDeliveryStatus | undefined;
+    while (!signal.aborted) {
+        const delivery = await readDelivery();
+        if (delivery !== undefined && delivery.status !== previousStatus) {
+            previousStatus = delivery.status;
+            onStatusChange(delivery);
+        }
+        if (
+            delivery !== undefined &&
+            isTerminalExerciseDeliveryStatus(delivery.status)
+        ) {
+            return { id: delivery.id, status: delivery.status };
+        }
+        await waitForNextPoll();
+    }
+    return undefined;
+}
+
+async function getExerciseDelivery({
+    db,
+    conversationId,
+}: {
+    db: PostgresJsDatabase;
+    conversationId: number;
+}): Promise<ExerciseDelivery | undefined> {
+    const deliveries = await db
+        .select({
+            id: conversationEmailUpdateDeliveryTable.id,
+            status: conversationEmailUpdateDeliveryTable.status,
+        })
+        .from(conversationEmailUpdateDeliveryTable)
+        .innerJoin(
+            conversationEmailUpdateConversationTable,
+            eq(
+                conversationEmailUpdateConversationTable.updateId,
+                conversationEmailUpdateDeliveryTable.updateId,
+            ),
+        )
+        .where(
+            eq(
+                conversationEmailUpdateConversationTable.conversationId,
+                conversationId,
+            ),
+        )
+        .limit(2);
+    if (deliveries.length > 1) {
+        throw new Error(
+            "Exercise conversation has multiple Email Update deliveries",
+        );
+    }
+    return deliveries.at(0);
+}
+
+export type ExerciseWorkerResult =
+    | {
+          outcome: "terminal";
+          deliveryStatus: TerminalExerciseDeliveryStatus;
+      }
+    | { outcome: "incomplete" };
 
 export async function runExerciseWorker({
     environment,
@@ -19,7 +133,7 @@ export async function runExerciseWorker({
     manifest: ExerciseManifest;
     artifacts: ExerciseArtifactStore;
     db: PostgresJsDatabase;
-}): Promise<void> {
+}): Promise<ExerciseWorkerResult> {
     const fixture = manifest.fixture;
     if (fixture === undefined) {
         throw new Error("Exercise worker requires a prepared fixture");
@@ -73,11 +187,15 @@ export async function runExerciseWorker({
         conversationId: fixture.conversationId,
     });
 
-    let shutdownStarted = false;
+    const monitorAbortController = new AbortController();
+    let shutdownPromise: Promise<void> | undefined;
+    let terminalDeliveryStatus: TerminalExerciseDeliveryStatus | undefined;
     const shutdown = async (): Promise<void> => {
-        if (shutdownStarted) return;
-        shutdownStarted = true;
-        await worker.shutdown();
+        if (shutdownPromise === undefined) {
+            monitorAbortController.abort();
+            shutdownPromise = worker.shutdown();
+        }
+        await shutdownPromise;
     };
     const handleSignal = (): void => {
         void shutdown();
@@ -93,10 +211,49 @@ export async function runExerciseWorker({
             },
             "Development exercise worker awaiting normal UI test/final-send actions",
         );
-        await worker.run();
+        const monitorPromise = (async (): Promise<void> => {
+            const terminalDelivery = await monitorExerciseDelivery({
+                signal: monitorAbortController.signal,
+                readDelivery: async () =>
+                    await getExerciseDelivery({
+                        db,
+                        conversationId: fixture.conversationId,
+                    }),
+                onStatusChange: (delivery) => {
+                    log.info(
+                        {
+                            event: "exercise_delivery_status",
+                            namespace: manifest.plan.namespace,
+                            deliveryId: delivery.id,
+                            deliveryStatus: delivery.status,
+                        },
+                        `Development exercise delivery is ${delivery.status}`,
+                    );
+                },
+                waitForNextPoll: async () => {
+                    await sleep(250);
+                },
+            });
+            if (terminalDelivery === undefined) {
+                return;
+            }
+            terminalDeliveryStatus = terminalDelivery.status;
+            log.info(
+                {
+                    event: "exercise_delivery_terminal",
+                    namespace: manifest.plan.namespace,
+                    deliveryId: terminalDelivery.id,
+                    deliveryStatus: terminalDelivery.status,
+                },
+                "Development exercise reached a terminal delivery state; stopping the worker",
+            );
+            await shutdown();
+        })();
+        await Promise.all([worker.run(), monitorPromise]);
     } finally {
         process.removeListener("SIGINT", handleSignal);
         process.removeListener("SIGTERM", handleSignal);
+        await shutdown();
         const provider = instrumentedProvider.snapshot();
         await artifacts.writeReport(
             exerciseReportSchema.parse({
@@ -114,6 +271,9 @@ export async function runExerciseWorker({
             "Development exercise provider report written",
         );
     }
+    return terminalDeliveryStatus === undefined
+        ? { outcome: "incomplete" }
+        : { outcome: "terminal", deliveryStatus: terminalDeliveryStatus };
 }
 
 export async function createExerciseDatabase({

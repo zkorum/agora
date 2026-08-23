@@ -268,7 +268,10 @@ async function getCandidateEntitlements({
             and(
                 eq(organizationMembershipTable.userId, subject.userId),
                 isNull(organizationMembershipTable.deletedAt),
-                eq(projectOrganizationOwnershipTable.projectId, subject.projectId),
+                eq(
+                    projectOrganizationOwnershipTable.projectId,
+                    subject.projectId,
+                ),
                 inArray(premiumFeatureEntitlementTable.feature, features),
                 lte(premiumFeatureEntitlementTable.startsAt, now),
                 isNull(premiumFeatureEntitlementTable.revokedAt),
@@ -336,7 +339,10 @@ export async function getOrganizationIdsWithActiveDynamicTranslationEntitlement(
         .from(premiumFeatureEntitlementTable)
         .where(
             and(
-                inArray(premiumFeatureEntitlementTable.organizationId, organizationIds),
+                inArray(
+                    premiumFeatureEntitlementTable.organizationId,
+                    organizationIds,
+                ),
                 eq(
                     premiumFeatureEntitlementTable.feature,
                     PREMIUM_DYNAMIC_TRANSLATION_FEATURE,
@@ -422,7 +428,10 @@ async function refreshPremiumAnalysisForSubject({
                   )
                   .where(
                       and(
-                          eq(organizationMembershipTable.userId, subject.userId),
+                          eq(
+                              organizationMembershipTable.userId,
+                              subject.userId,
+                          ),
                           eq(
                               projectOrganizationOwnershipTable.projectId,
                               subject.projectId,
@@ -630,15 +639,18 @@ export async function getPremiumFeaturesInConversation({
                       effectiveMultilingualSettings: {
                           dynamicTranslationEnabled:
                               translationContext.dynamicTranslationEnabled,
-                          additionalLanguageCodes: translationRows.flatMap((row) =>
-                              row.targetLanguageCode === null
-                                  ? []
-                                  : [row.targetLanguageCode],
+                          additionalLanguageCodes: translationRows.flatMap(
+                              (row) =>
+                                  row.targetLanguageCode === null
+                                      ? []
+                                      : [row.targetLanguageCode],
                           ),
                       },
-                      detectedTargetLanguageCode: sourceLanguageToDisplayLanguage({
-                          sourceLanguageCode: translationContext.sourceLanguageCode,
-                      }),
+                      detectedTargetLanguageCode:
+                          sourceLanguageToDisplayLanguage({
+                              sourceLanguageCode:
+                                  translationContext.sourceLanguageCode,
+                          }),
                   });
 
         if (
@@ -840,7 +852,7 @@ async function resolveEntitlementSubject({
     db: PostgresJsDatabase;
     subject: CreatePremiumFeatureEntitlementRequest["subject"];
 }): Promise<{ organizationId: number }> {
-    if (subject.username !== undefined) {
+    if ("username" in subject) {
         const users = await db
             .select({ userId: userTable.id })
             .from(userTable)
@@ -863,27 +875,24 @@ async function resolveEntitlementSubject({
         return { organizationId: organization.organizationId };
     }
 
-    if (subject.organizationName !== undefined) {
-        const organizations = await db
-            .select({ organizationId: organizationTable.id })
-            .from(organizationTable)
-            .where(
-                and(
-                    eq(organizationTable.slug, subject.organizationName),
-                    isNull(organizationTable.deletedAt),
-                ),
-            )
-            .limit(1);
+    const organizations = await db
+        .select({ organizationId: organizationTable.id })
+        .from(organizationTable)
+        .where(
+            and(
+                eq(organizationTable.slug, subject.organizationName),
+                eq(organizationTable.directoryVisibility, "listed"),
+                isNull(organizationTable.deletedAt),
+            ),
+        )
+        .limit(1);
 
-        const organization = organizations.at(0);
-        if (organization === undefined) {
-            throw httpErrors.notFound("Organization not found");
-        }
-
-        return { organizationId: organization.organizationId };
+    const organization = organizations.at(0);
+    if (organization === undefined) {
+        throw httpErrors.notFound("Organization not found");
     }
 
-    throw httpErrors.badRequest("Invalid entitlement subject");
+    return { organizationId: organization.organizationId };
 }
 
 async function assertNoOverlappingPremiumFeatureEntitlements({

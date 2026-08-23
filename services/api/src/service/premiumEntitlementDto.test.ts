@@ -26,6 +26,22 @@ describe("premium feature entitlement DTOs", () => {
         ).toBe(false);
     });
 
+    it("restricts Conversation Email Updates entitlements to organizations", () => {
+        expect(
+            Dto.createPremiumFeatureEntitlementRequest.safeParse({
+                ...validCreateEntitlementRequest,
+                features: ["conversation_email_update"],
+            }).success,
+        ).toBe(false);
+        expect(
+            Dto.createPremiumFeatureEntitlementRequest.safeParse({
+                ...validCreateEntitlementRequest,
+                subject: { organizationName: "example-org" },
+                features: ["conversation_email_update"],
+            }).success,
+        ).toBe(true);
+    });
+
     it("rejects an update entitlement request with an expiry equal to the start", () => {
         expect(
             Dto.updatePremiumFeatureEntitlementRequest.safeParse({

@@ -1,11 +1,15 @@
 IMAGE ?= quay.io/zkorum/agora-conversation-email-update-worker
 TAG ?= latest
 TAG_ARG := $(or $(word 2,$(MAKECMDGOALS)),$(TAG))
+DEV_SCENARIO ?= simulated-success
 
 all: dev
 
 dev:
-	pnpm start:dev
+	../../scripts/run-worker-scenario.sh conversation-email-update-worker "$(DEV_SCENARIO)"
+
+exercise:
+	pnpm dev:exercise $(COMMAND)
 
 build:
 	pnpm build

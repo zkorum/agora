@@ -1,0 +1,74 @@
+#!/bin/sh
+
+set -eu
+
+service_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+env_file=${CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_ENV_FILE:-"$service_dir/.env.dev-exercise"}
+
+if [ ! -f "$env_file" ]; then
+  echo "Missing Conversation Email Updates exercise environment: $env_file" >&2
+  echo "Create it from $service_dir/env.dev-exercise.example and replace the marker and conversation slug." >&2
+  exit 2
+fi
+
+# Do not let inherited database or cloud configuration leak into the exercise.
+unset CONNECTION_STRING
+unset CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_DATABASE_MARKER
+unset CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_CONVERSATION_SLUG_ID
+unset CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_EXPECTED_DB_NAME
+unset CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_PARTICIPANT_COUNT
+unset CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_NAMESPACE
+unset CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_SCENARIO
+unset CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_CAPTURE_BODIES
+unset CONVERSATION_EMAIL_UPDATE_SITE_BASE_URL
+
+set -a
+. "$env_file"
+set +a
+
+if [ -z "${CONNECTION_STRING:-}" ]; then
+  echo "CONNECTION_STRING is required in $env_file" >&2
+  exit 2
+fi
+if [ -z "${CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_DATABASE_MARKER:-}" ]; then
+  echo "CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_DATABASE_MARKER is required in $env_file" >&2
+  exit 2
+fi
+if [ -z "${CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_CONVERSATION_SLUG_ID:-}" ]; then
+  echo "CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_CONVERSATION_SLUG_ID is required in $env_file" >&2
+  exit 2
+fi
+
+expected_db_name=${CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_EXPECTED_DB_NAME:-agora_email_exercise_local}
+participant_count=${CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_PARTICIPANT_COUNT:-30}
+namespace=${CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_NAMESPACE:-my-local-exercise}
+scenario=${CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_SCENARIO:-success}
+capture_bodies=${CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_CAPTURE_BODIES:-false}
+site_base_url=${CONVERSATION_EMAIL_UPDATE_SITE_BASE_URL:-http://127.0.0.1:3200}
+
+if [ "$scenario" = "kill_switch" ]; then
+  kill_switch=true
+else
+  kill_switch=false
+fi
+
+exec env -i \
+  HOME="${HOME:-}" \
+  PATH="$PATH" \
+  TMPDIR="${TMPDIR:-/tmp}" \
+  NODE_ENV=development \
+  AGORA_DEV_MODE=true \
+  CONNECTION_STRING="$CONNECTION_STRING" \
+  CONVERSATION_EMAIL_UPDATES_ENABLED=true \
+  CONVERSATION_EMAIL_UPDATES_KILL_SWITCH="$kill_switch" \
+  CONVERSATION_EMAIL_UPDATE_PROVIDER=simulated \
+  CONVERSATION_EMAIL_UPDATE_SIMULATOR_ENABLED=true \
+  CONVERSATION_EMAIL_UPDATE_SITE_BASE_URL="$site_base_url" \
+  CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_EXPECTED_DB_NAME="$expected_db_name" \
+  CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_DATABASE_MARKER="$CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_DATABASE_MARKER" \
+  CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_CONVERSATION_SLUG_ID="$CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_CONVERSATION_SLUG_ID" \
+  CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_PARTICIPANT_COUNT="$participant_count" \
+  CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_NAMESPACE="$namespace" \
+  CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_SCENARIO="$scenario" \
+  CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_CAPTURE_BODIES="$capture_bodies" \
+  "$service_dir/node_modules/.bin/tsx" "$service_dir/src/devExercise/index.ts" "$@"

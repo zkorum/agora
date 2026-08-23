@@ -109,10 +109,11 @@ export const ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrg
 export type ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInnerLocalizationsInnerLanguageCodeEnum = typeof ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInnerLocalizationsInnerLanguageCodeEnum[keyof typeof ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInnerLocalizationsInnerLanguageCodeEnum];
 
 export interface ApiV1AdministratorOrganizationGetMembersPost200Response {
-    'memberList': Array<ApiV1UserUsernameUpdatePostRequest>;
+    'memberList': Array<ApiV1AdministratorOrganizationGetMembersPost200ResponseMemberListInner>;
 }
-export interface ApiV1AdministratorOrganizationGetMembersPostRequest {
-    'organizationName': string;
+export interface ApiV1AdministratorOrganizationGetMembersPost200ResponseMemberListInner {
+    'username': string;
+    'conversationEmailUpdateCapabilityEnabled': boolean;
 }
 export interface ApiV1AdministratorOrganizationGetOrganizationDetailsPost200Response {
     'organization'?: ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInner;
@@ -158,6 +159,11 @@ export const ApiV1AdministratorOrganizationLocalizationUpdatePostRequestLanguage
 
 export type ApiV1AdministratorOrganizationLocalizationUpdatePostRequestLanguageCodeEnum = typeof ApiV1AdministratorOrganizationLocalizationUpdatePostRequestLanguageCodeEnum[keyof typeof ApiV1AdministratorOrganizationLocalizationUpdatePostRequestLanguageCodeEnum];
 
+export interface ApiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest {
+    'username': string;
+    'organizationSlug': string;
+    'enabled': boolean;
+}
 /**
  * @type ApiV1AdministratorOrganizationSlugUpdatePost200Response
  */
@@ -198,8 +204,11 @@ export const ApiV1AdministratorPremiumEntitlementCreatePostRequestFeaturesEnum =
 export type ApiV1AdministratorPremiumEntitlementCreatePostRequestFeaturesEnum = typeof ApiV1AdministratorPremiumEntitlementCreatePostRequestFeaturesEnum[keyof typeof ApiV1AdministratorPremiumEntitlementCreatePostRequestFeaturesEnum];
 
 export interface ApiV1AdministratorPremiumEntitlementCreatePostRequestSubject {
-    'username'?: string;
-    'organizationName'?: string;
+    'username': string;
+    'organizationName': string;
+}
+export interface ApiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf {
+    'organizationName': string;
 }
 export interface ApiV1AdministratorPremiumEntitlementListPost200Response {
     'entitlements': Array<ApiV1AdministratorPremiumEntitlementListPost200ResponseEntitlementsInner>;
@@ -8394,13 +8403,13 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1AdministratorOrganizationGetMembersPostRequest} apiV1AdministratorOrganizationGetMembersPostRequest 
+         * @param {ApiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf} apiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1AdministratorOrganizationDeleteOrganizationPost: async (apiV1AdministratorOrganizationGetMembersPostRequest: ApiV1AdministratorOrganizationGetMembersPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1AdministratorOrganizationGetMembersPostRequest' is not null or undefined
-            assertParamExists('apiV1AdministratorOrganizationDeleteOrganizationPost', 'apiV1AdministratorOrganizationGetMembersPostRequest', apiV1AdministratorOrganizationGetMembersPostRequest)
+        apiV1AdministratorOrganizationDeleteOrganizationPost: async (apiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf: ApiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf' is not null or undefined
+            assertParamExists('apiV1AdministratorOrganizationDeleteOrganizationPost', 'apiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf', apiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf)
             const localVarPath = `/api/v1/administrator/organization/delete-organization`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -8422,7 +8431,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorOrganizationGetMembersPostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -8464,13 +8473,13 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1AdministratorOrganizationGetMembersPostRequest} apiV1AdministratorOrganizationGetMembersPostRequest 
+         * @param {ApiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf} apiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1AdministratorOrganizationGetMembersPost: async (apiV1AdministratorOrganizationGetMembersPostRequest: ApiV1AdministratorOrganizationGetMembersPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1AdministratorOrganizationGetMembersPostRequest' is not null or undefined
-            assertParamExists('apiV1AdministratorOrganizationGetMembersPost', 'apiV1AdministratorOrganizationGetMembersPostRequest', apiV1AdministratorOrganizationGetMembersPostRequest)
+        apiV1AdministratorOrganizationGetMembersPost: async (apiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf: ApiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf' is not null or undefined
+            assertParamExists('apiV1AdministratorOrganizationGetMembersPost', 'apiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf', apiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf)
             const localVarPath = `/api/v1/administrator/organization/get-members`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -8493,7 +8502,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorOrganizationGetMembersPostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -8641,6 +8650,43 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorOrganizationLocalizationUpdatePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest} apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePost: async (apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest: ApiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest' is not null or undefined
+            assertParamExists('apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePost', 'apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest', apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest)
+            const localVarPath = `/api/v1/administrator/organization/member/email-update-capability/update`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -13537,12 +13583,12 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {ApiV1AdministratorOrganizationGetMembersPostRequest} apiV1AdministratorOrganizationGetMembersPostRequest 
+         * @param {ApiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf} apiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1AdministratorOrganizationDeleteOrganizationPost(apiV1AdministratorOrganizationGetMembersPostRequest: ApiV1AdministratorOrganizationGetMembersPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorOrganizationDeleteOrganizationPost(apiV1AdministratorOrganizationGetMembersPostRequest, options);
+        async apiV1AdministratorOrganizationDeleteOrganizationPost(apiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf: ApiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorOrganizationDeleteOrganizationPost(apiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorOrganizationDeleteOrganizationPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -13560,12 +13606,12 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {ApiV1AdministratorOrganizationGetMembersPostRequest} apiV1AdministratorOrganizationGetMembersPostRequest 
+         * @param {ApiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf} apiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1AdministratorOrganizationGetMembersPost(apiV1AdministratorOrganizationGetMembersPostRequest: ApiV1AdministratorOrganizationGetMembersPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AdministratorOrganizationGetMembersPost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorOrganizationGetMembersPost(apiV1AdministratorOrganizationGetMembersPostRequest, options);
+        async apiV1AdministratorOrganizationGetMembersPost(apiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf: ApiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AdministratorOrganizationGetMembersPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorOrganizationGetMembersPost(apiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorOrganizationGetMembersPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -13615,6 +13661,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorOrganizationLocalizationUpdatePost(apiV1AdministratorOrganizationLocalizationUpdatePostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorOrganizationLocalizationUpdatePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest} apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePost(apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest: ApiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePost(apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -15216,12 +15274,12 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
-         * @param {ApiV1AdministratorOrganizationGetMembersPostRequest} apiV1AdministratorOrganizationGetMembersPostRequest 
+         * @param {ApiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf} apiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1AdministratorOrganizationDeleteOrganizationPost(apiV1AdministratorOrganizationGetMembersPostRequest: ApiV1AdministratorOrganizationGetMembersPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
-            return localVarFp.apiV1AdministratorOrganizationDeleteOrganizationPost(apiV1AdministratorOrganizationGetMembersPostRequest, options).then((request) => request(axios, basePath));
+        apiV1AdministratorOrganizationDeleteOrganizationPost(apiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf: ApiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.apiV1AdministratorOrganizationDeleteOrganizationPost(apiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -15233,12 +15291,12 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
-         * @param {ApiV1AdministratorOrganizationGetMembersPostRequest} apiV1AdministratorOrganizationGetMembersPostRequest 
+         * @param {ApiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf} apiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1AdministratorOrganizationGetMembersPost(apiV1AdministratorOrganizationGetMembersPostRequest: ApiV1AdministratorOrganizationGetMembersPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AdministratorOrganizationGetMembersPost200Response> {
-            return localVarFp.apiV1AdministratorOrganizationGetMembersPost(apiV1AdministratorOrganizationGetMembersPostRequest, options).then((request) => request(axios, basePath));
+        apiV1AdministratorOrganizationGetMembersPost(apiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf: ApiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AdministratorOrganizationGetMembersPost200Response> {
+            return localVarFp.apiV1AdministratorOrganizationGetMembersPost(apiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -15274,6 +15332,15 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         apiV1AdministratorOrganizationLocalizationUpdatePost(apiV1AdministratorOrganizationLocalizationUpdatePostRequest: ApiV1AdministratorOrganizationLocalizationUpdatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationEmailUpdateActionUnsubscribePost200ResponseOneOf> {
             return localVarFp.apiV1AdministratorOrganizationLocalizationUpdatePost(apiV1AdministratorOrganizationLocalizationUpdatePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest} apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePost(apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest: ApiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePost(apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -16483,12 +16550,12 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
-     * @param {ApiV1AdministratorOrganizationGetMembersPostRequest} apiV1AdministratorOrganizationGetMembersPostRequest 
+     * @param {ApiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf} apiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public apiV1AdministratorOrganizationDeleteOrganizationPost(apiV1AdministratorOrganizationGetMembersPostRequest: ApiV1AdministratorOrganizationGetMembersPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1AdministratorOrganizationDeleteOrganizationPost(apiV1AdministratorOrganizationGetMembersPostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1AdministratorOrganizationDeleteOrganizationPost(apiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf: ApiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AdministratorOrganizationDeleteOrganizationPost(apiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -16502,12 +16569,12 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
-     * @param {ApiV1AdministratorOrganizationGetMembersPostRequest} apiV1AdministratorOrganizationGetMembersPostRequest 
+     * @param {ApiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf} apiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public apiV1AdministratorOrganizationGetMembersPost(apiV1AdministratorOrganizationGetMembersPostRequest: ApiV1AdministratorOrganizationGetMembersPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1AdministratorOrganizationGetMembersPost(apiV1AdministratorOrganizationGetMembersPostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1AdministratorOrganizationGetMembersPost(apiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf: ApiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AdministratorOrganizationGetMembersPost(apiV1AdministratorPremiumEntitlementCreatePostRequestSubjectAnyOf, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -16547,6 +16614,16 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1AdministratorOrganizationLocalizationUpdatePost(apiV1AdministratorOrganizationLocalizationUpdatePostRequest: ApiV1AdministratorOrganizationLocalizationUpdatePostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1AdministratorOrganizationLocalizationUpdatePost(apiV1AdministratorOrganizationLocalizationUpdatePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest} apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePost(apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest: ApiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePost(apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

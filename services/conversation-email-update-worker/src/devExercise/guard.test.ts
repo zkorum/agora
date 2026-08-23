@@ -49,6 +49,17 @@ describe("development exercise environment guard", () => {
         ).toBe(true);
     });
 
+    it("requires every mixed-outcome cohort to be represented", () => {
+        expect(() =>
+            parseDevExerciseEnvironment({
+                ...validEnvironment(),
+                CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_SCENARIO:
+                    "mixed_participant_outcomes",
+                CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_PARTICIPANT_COUNT: "2",
+            }),
+        ).toThrow("requires at least three participants");
+    });
+
     it.each([
         [
             "postgres alias",

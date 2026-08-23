@@ -775,6 +775,9 @@ export async function hasProjectCapability({
                     organizationMembershipAllProjectCapabilityTable.capability,
                     capability,
                 ),
+                isNull(
+                    organizationMembershipAllProjectCapabilityTable.deletedAt,
+                ),
             ),
         )
         .limit(1);
@@ -861,6 +864,9 @@ export async function getProjectIdsWithCapability({
                 eq(
                     organizationMembershipAllProjectCapabilityTable.capability,
                     capability,
+                ),
+                isNull(
+                    organizationMembershipAllProjectCapabilityTable.deletedAt,
                 ),
             ),
         );

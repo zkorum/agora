@@ -67,6 +67,20 @@ const environmentSchema = z
                     : "The kill switch must be off outside the kill-switch exercise",
             });
         }
+        if (
+            value.CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_SCENARIO ===
+                "mixed_participant_outcomes" &&
+            value.CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_PARTICIPANT_COUNT < 3
+        ) {
+            context.addIssue({
+                code: "custom",
+                path: [
+                    "CONVERSATION_EMAIL_UPDATE_DEV_EXERCISE_PARTICIPANT_COUNT",
+                ],
+                message:
+                    "The mixed-outcomes exercise requires at least three participants",
+            });
+        }
 
         let databaseUrl: URL;
         try {

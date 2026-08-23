@@ -121,7 +121,11 @@ export async function runDevExercise({
     if (command === "plan") {
         const manifest = await artifacts.createManifest(plan);
         console.info(
-            `Created ${manifest.state} exercise ${manifest.plan.namespace} in ${getExerciseArtifactDirectory()}`,
+            [
+                `Planned exercise "${manifest.plan.namespace}" (${manifest.plan.scenario}) with ${manifest.plan.participantCount.toString()} deterministic participants.`,
+                `Manifest: ${getExerciseArtifactDirectory()}/${manifest.plan.namespace}.manifest.json`,
+                "No database data was changed. Next: pnpm dev:exercise initialize-database",
+            ].join("\n"),
         );
         return;
     }
@@ -145,6 +149,13 @@ export async function runDevExercise({
                         expectedDatabaseName: plan.expectedDatabaseName,
                         markerValue: plan.databaseMarker,
                     });
+                    console.info(
+                        [
+                            `Initialized safety markers in ${plan.expectedDatabaseName}.`,
+                            "This only marks the dedicated exercise database; it does not apply application migrations.",
+                            "Next: pnpm dev:exercise prepare",
+                        ].join("\n"),
+                    );
                     return;
                 }
                 await assertExerciseDatabaseMarker({
@@ -162,6 +173,13 @@ export async function runDevExercise({
                         fixtureStore,
                         artifacts,
                     });
+                    console.info(
+                        [
+                            `Prepared ${plan.participantCount.toString()} deterministic participants for conversation ${plan.conversationSlugId}.`,
+                            "The fixture added participant emails, preferences, and votes. Do not modify participation for this conversation.",
+                            "Next: pnpm dev:exercise attach",
+                        ].join("\n"),
+                    );
                     return;
                 }
                 if (command === "attach") {
@@ -181,6 +199,12 @@ export async function runDevExercise({
                         namespace: plan.namespace,
                         to: "fixture_attached",
                     });
+                    console.info(
+                        [
+                            "Attached and verified the frozen fixture. The target and seeded relationships still match the plan.",
+                            "Next: pnpm dev:exercise run, then send the test and final update from the normal UI.",
+                        ].join("\n"),
+                    );
                     return;
                 }
                 if (command === "run") {
@@ -206,12 +230,44 @@ export async function runDevExercise({
                     });
                     const { runExerciseWorker } =
                         await import("./workerRuntime.js");
-                    await runExerciseWorker({
-                        environment,
-                        manifest: runningManifest,
-                        artifacts,
-                        db: database.db,
-                    });
+                    let workerResult: Awaited<
+                        ReturnType<typeof runExerciseWorker>
+                    >;
+                    try {
+                        workerResult = await runExerciseWorker({
+                            environment,
+                            manifest: runningManifest,
+                            artifacts,
+                            db: database.db,
+                        });
+                    } catch (error: unknown) {
+                        await artifacts.transitionManifest({
+                            namespace: plan.namespace,
+                            to: "failed",
+                            lastError:
+                                error instanceof Error
+                                    ? error.message
+                                    : "Unknown exercise worker failure",
+                        });
+                        throw error;
+                    }
+                    if (workerResult.outcome === "incomplete") {
+                        const message =
+                            "Exercise worker stopped before a terminal delivery was observed";
+                        await artifacts.transitionManifest({
+                            namespace: plan.namespace,
+                            to: "failed",
+                            lastError: message,
+                        });
+                        throw new Error(message);
+                    }
+                    console.info(
+                        [
+                            `Exercise delivery reached terminal status: ${workerResult.deliveryStatus}.`,
+                            `Provider report: ${getExerciseArtifactDirectory()}/${plan.namespace}.report.json`,
+                            "Next: pnpm dev:exercise observe",
+                        ].join("\n"),
+                    );
                     return;
                 }
                 if (command === "observe") {
@@ -238,6 +294,13 @@ export async function runDevExercise({
                         namespace: plan.namespace,
                         to: "observing",
                     });
+                    console.info(
+                        [
+                            `Observed delivery ${databaseObservation.deliveryId.toString()} with status ${databaseObservation.deliveryStatus}.`,
+                            `Materialized participants: ${databaseObservation.materializedParticipantCount.toString()}; required owner copies: ${databaseObservation.requiredOwnerCopyCount.toString()}.`,
+                            "Next: pnpm dev:exercise verify",
+                        ].join("\n"),
+                    );
                     return;
                 }
                 if (command === "verify") {
@@ -270,6 +333,14 @@ export async function runDevExercise({
                             `Exercise verification failed: ${failures.join("; ")}`,
                         );
                     }
+                    console.info(
+                        [
+                            `Verification passed for exercise "${plan.namespace}".`,
+                            `Delivery status: ${report.database?.deliveryStatus ?? "unavailable"}; provider calls: ${report.provider.aggregate.sendCalls.toString()}.`,
+                            `Report: ${getExerciseArtifactDirectory()}/${plan.namespace}.report.json`,
+                            "Next: pnpm dev:exercise cleanup",
+                        ].join("\n"),
+                    );
                     return;
                 }
 
@@ -278,6 +349,12 @@ export async function runDevExercise({
                     fixtureStore,
                     artifacts,
                 });
+                console.info(
+                    [
+                        `Cleaned exercise-owned database rows for "${plan.namespace}".`,
+                        "The project, conversation, facilitator, entitlement, capability, database marker, and local report artifacts were preserved.",
+                    ].join("\n"),
+                );
             } finally {
                 await database.close();
             }

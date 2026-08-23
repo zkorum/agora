@@ -24,7 +24,7 @@ const provider = (() => {
             `AGORA_LOAD_EVENT ${JSON.stringify({
                 service: "conversation-email-update-worker",
                 event: "simulator_started",
-                provider: "ses",
+                provider: "simulated",
                 mode: workerConfig.simulatorMode,
             })}`,
         );

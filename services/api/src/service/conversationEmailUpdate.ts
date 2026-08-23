@@ -413,6 +413,9 @@ async function listAuthorizedConversations({
                     organizationMembershipAllProjectCapabilityTable.capability,
                     "conversation_email_update",
                 ),
+                isNull(
+                    organizationMembershipAllProjectCapabilityTable.deletedAt,
+                ),
             ),
         )
         .innerJoin(
@@ -630,6 +633,9 @@ function historyProjectVisibilityPredicate({
                         eq(
                             organizationMembershipAllProjectCapabilityTable.capability,
                             "conversation_email_update",
+                        ),
+                        isNull(
+                            organizationMembershipAllProjectCapabilityTable.deletedAt,
                         ),
                     ),
                 )
@@ -972,6 +978,9 @@ async function countOwnerCopies({
                     organizationMembershipAllProjectCapabilityTable.capability,
                     "conversation_email_update",
                 ),
+                isNull(
+                    organizationMembershipAllProjectCapabilityTable.deletedAt,
+                ),
             ),
         )
         .innerJoin(
@@ -1140,6 +1149,9 @@ async function resolveRequiredOwnerCopies({
                 eq(
                     organizationMembershipAllProjectCapabilityTable.capability,
                     "conversation_email_update",
+                ),
+                isNull(
+                    organizationMembershipAllProjectCapabilityTable.deletedAt,
                 ),
             ),
         )
@@ -2383,6 +2395,9 @@ async function hasConversationEditCapability({
                 eq(
                     organizationMembershipAllProjectCapabilityTable.capability,
                     "conversation_edit",
+                ),
+                isNull(
+                    organizationMembershipAllProjectCapabilityTable.deletedAt,
                 ),
             ),
         )

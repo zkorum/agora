@@ -1841,17 +1841,35 @@ export const organizationMembershipAllProjectCapabilityTable = pgTable(
             organizationMembershipAllProjectCapabilityEnum(
                 "capability",
             ).notNull(),
+        grantedByUserId: uuid("granted_by_user_id").references(
+            () => userTable.id,
+        ),
+        revokedByUserId: uuid("revoked_by_user_id").references(
+            () => userTable.id,
+        ),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
         })
             .defaultNow()
             .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
     },
     (table) => [
-        unique("organization_membership_all_project_capability_unique").on(
-            table.organizationMembershipId,
-            table.capability,
+        uniqueIndex(
+            "organization_membership_all_project_capability_active_unique",
+        )
+            .on(table.organizationMembershipId, table.capability)
+            .where(isNull(table.deletedAt)),
+        check(
+            "organization_membership_all_project_capability_revocation_check",
+            sql`((${table.deletedAt} IS NULL AND ${table.revokedByUserId} IS NULL) OR (${table.deletedAt} IS NOT NULL AND ${table.revokedByUserId} IS NOT NULL))`,
         ),
     ],
 );

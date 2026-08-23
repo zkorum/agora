@@ -24130,19 +24130,35 @@
                                 "type": "object",
                                 "properties": {
                                     "subject": {
-                                        "type": "object",
-                                        "properties": {
-                                            "username": {
-                                                "type": "string",
-                                                "pattern": "^[a-z0-9_]*$"
+                                        "anyOf": [
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "username": {
+                                                        "type": "string",
+                                                        "pattern": "^[a-z0-9_]*$"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "username"
+                                                ],
+                                                "additionalProperties": false
                                             },
-                                            "organizationName": {
-                                                "type": "string",
-                                                "maxLength": 65,
-                                                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "organizationName": {
+                                                        "type": "string",
+                                                        "maxLength": 65,
+                                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "organizationName"
+                                                ],
+                                                "additionalProperties": false
                                             }
-                                        },
-                                        "additionalProperties": false
+                                        ]
                                     },
                                     "features": {
                                         "minItems": 1,
@@ -26929,10 +26945,14 @@
                                                     "username": {
                                                         "type": "string",
                                                         "pattern": "^[a-z0-9_]*$"
+                                                    },
+                                                    "conversationEmailUpdateCapabilityEnabled": {
+                                                        "type": "boolean"
                                                     }
                                                 },
                                                 "required": [
-                                                    "username"
+                                                    "username",
+                                                    "conversationEmailUpdateCapabilityEnabled"
                                                 ],
                                                 "additionalProperties": false
                                             }
@@ -26945,6 +26965,45 @@
                                 }
                             }
                         }
+                    }
+                }
+            }
+        },
+        "/api/v1/administrator/organization/member/email-update-capability/update": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "username": {
+                                        "type": "string",
+                                        "pattern": "^[a-z0-9_]*$"
+                                    },
+                                    "organizationSlug": {
+                                        "type": "string",
+                                        "maxLength": 65,
+                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                    },
+                                    "enabled": {
+                                        "type": "boolean"
+                                    }
+                                },
+                                "required": [
+                                    "username",
+                                    "organizationSlug",
+                                    "enabled"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
                     }
                 }
             }

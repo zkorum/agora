@@ -227,6 +227,7 @@ import {
     getOrganizationMembers,
     getOrganizationsByUsername,
     removeUserOrganizationMapping,
+    updateOrganizationMemberConversationEmailUpdateCapability,
     updateOrganizationLocalization,
     updateOrganizationSlug,
 } from "./service/administrator/organization.js";
@@ -1860,14 +1861,19 @@ server.addHook("preParsing", (request, _reply, payload, done) => {
 });
 
 async function requireSiteOrgAdmin(request: FastifyRequest): Promise<string> {
-    const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(db, request, {
-        expectedKnownDeviceStatus: {
-            isRegistered: true,
-            isLoggedIn: true,
+    const primaryDb = getPrimaryDatabase(db);
+    const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+        primaryDb,
+        request,
+        {
+            expectedKnownDeviceStatus: {
+                isRegistered: true,
+                isLoggedIn: true,
+            },
         },
-    });
+    );
     const isOrgAdmin = await isSiteOrgAdminAccount({
-        db,
+        db: primaryDb,
         userId: deviceStatus.userId,
     });
 
@@ -5605,29 +5611,11 @@ server.after(() => {
             body: Dto.removeUserOrganizationMappingRequest,
         },
         handler: async (request) => {
-            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
-                db,
-                request,
-                {
-                    expectedKnownDeviceStatus: {
-                        isRegistered: true,
-                        isLoggedIn: true,
-                    },
-                },
-            );
-            const isOrgAdmin = await isSiteOrgAdminAccount({
-                db: db,
-                userId: deviceStatus.userId,
-            });
-
-            if (!isOrgAdmin) {
-                throw server.httpErrors.unauthorized(
-                    "User is not a site org admin",
-                );
-            }
+            const adminUserId = await requireSiteOrgAdmin(request);
 
             await removeUserOrganizationMapping({
-                db: db,
+                db,
+                adminUserId,
                 username: request.body.username,
                 organizationName: request.body.organizationName,
             });
@@ -5684,30 +5672,27 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
-                db,
-                request,
-                {
-                    expectedKnownDeviceStatus: {
-                        isRegistered: true,
-                        isLoggedIn: true,
-                    },
-                },
-            );
-            const isOrgAdmin = await isSiteOrgAdminAccount({
-                db: db,
-                userId: deviceStatus.userId,
-            });
-
-            if (!isOrgAdmin) {
-                throw server.httpErrors.unauthorized(
-                    "User is not a site org admin",
-                );
-            }
+            await requireSiteOrgAdmin(request);
 
             return await getOrganizationMembers({
                 db,
                 organizationName: request.body.organizationName,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/administrator/organization/member/email-update-capability/update`,
+        schema: {
+            body: Dto.updateOrganizationMemberConversationEmailUpdateCapabilityRequest,
+        },
+        handler: async (request) => {
+            const adminUserId = await requireSiteOrgAdmin(request);
+            await updateOrganizationMemberConversationEmailUpdateCapability({
+                db,
+                adminUserId,
+                request: request.body,
             });
         },
     });

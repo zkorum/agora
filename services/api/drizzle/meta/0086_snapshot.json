@@ -1,5 +1,5 @@
 {
-  "id": "43107a90-60f3-4473-b938-219592127367",
+  "id": "9e6173da-e182-47af-a20f-11a8041b4c0c",
   "prevId": "0e4c0620-5a60-47b8-96a4-745494444687",
   "version": "7",
   "dialect": "postgresql",
@@ -11324,15 +11324,63 @@
           "primaryKey": false,
           "notNull": true
         },
+        "granted_by_user_id": {
+          "name": "granted_by_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "revoked_by_user_id": {
+          "name": "revoked_by_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp (0)",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "organization_membership_all_project_capability_active_unique": {
+          "name": "organization_membership_all_project_capability_active_unique",
+          "columns": [
+            {
+              "expression": "organization_membership_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "capability",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"organization_membership_all_project_capability\".\"deleted_at\" is null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "organization_membership_all_project_capability_organization_membership_id_organization_membership_id_fk": {
           "name": "organization_membership_all_project_capability_organization_membership_id_organization_membership_id_fk",
@@ -11346,21 +11394,43 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+        },
+        "organization_membership_all_project_capability_granted_by_user_id_user_id_fk": {
+          "name": "organization_membership_all_project_capability_granted_by_user_id_user_id_fk",
+          "tableFrom": "organization_membership_all_project_capability",
+          "tableTo": "user",
+          "columnsFrom": [
+            "granted_by_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "organization_membership_all_project_capability_revoked_by_user_id_user_id_fk": {
+          "name": "organization_membership_all_project_capability_revoked_by_user_id_user_id_fk",
+          "tableFrom": "organization_membership_all_project_capability",
+          "tableTo": "user",
+          "columnsFrom": [
+            "revoked_by_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "organization_membership_all_project_capability_unique": {
-          "name": "organization_membership_all_project_capability_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "organization_membership_id",
-            "capability"
-          ]
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "organization_membership_all_project_capability_revocation_check": {
+          "name": "organization_membership_all_project_capability_revocation_check",
+          "value": "((\"organization_membership_all_project_capability\".\"deleted_at\" IS NULL AND \"organization_membership_all_project_capability\".\"revoked_by_user_id\" IS NULL) OR (\"organization_membership_all_project_capability\".\"deleted_at\" IS NOT NULL AND \"organization_membership_all_project_capability\".\"revoked_by_user_id\" IS NOT NULL))"
         }
       },
-      "policies": {},
-      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.organization_membership_capability": {

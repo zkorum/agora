@@ -187,12 +187,13 @@ const subjectTypeOptions = computed<Array<SelectOption<SubjectType>>>(() => [
 ]);
 
 const featureOptions = computed<Array<SelectOption<GrantablePremiumFeature>>>(
-  () => [
-    { label: t("surveyFeature"), value: "survey" },
-    { label: t("eventTicketFeature"), value: "event_ticket" },
-    { label: t("analysisVariantsFeature"), value: "analysis_variants" },
-    { label: t("dynamicTranslationFeature"), value: "dynamic_translation" },
-  ]
+  () =>
+    zodGrantablePremiumFeature.options
+      .filter(isFeatureAvailableForSubject)
+      .map((value) => ({
+        label: getFeatureLabel(value),
+        value,
+      }))
 );
 
 const organizationOptions = computed<Array<SelectOption<string>>>(() =>
@@ -254,9 +255,11 @@ const canCreateEntitlement = computed(() => {
 });
 
 watch(subjectType, async (nextSubjectType) => {
-  if (nextSubjectType === "organization") {
-    await ensureOrganizationOptions();
+  features.value = features.value.filter(isFeatureAvailableForSubject);
+  if (nextSubjectType !== "organization") {
+    return;
   }
+  await ensureOrganizationOptions();
 });
 
 onMounted(async () => {
@@ -312,6 +315,15 @@ function handleFeatureUpdate(value: string | string[] | null): void {
     const parsedFeature = zodGrantablePremiumFeature.safeParse(feature);
     return parsedFeature.success ? [parsedFeature.data] : [];
   });
+}
+
+function isFeatureAvailableForSubject(
+  feature: GrantablePremiumFeature
+): boolean {
+  return (
+    subjectType.value === "organization" ||
+    feature !== "conversation_email_update"
+  );
 }
 
 function isOverlappingSelectedEntitlement({

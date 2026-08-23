@@ -394,6 +394,9 @@ export async function authorizeTestAttempt({
                     organizationMembershipAllProjectCapabilityTable.capability,
                     "conversation_email_update",
                 ),
+                isNull(
+                    organizationMembershipAllProjectCapabilityTable.deletedAt,
+                ),
             ),
         )
         .where(

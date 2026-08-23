@@ -170,12 +170,30 @@
               :key="member.username"
               class="summary-row"
             >
-              <div class="summary-title">{{ member.username }}</div>
+              <div class="member-summary">
+                <div class="summary-title">{{ member.username }}</div>
+                <q-checkbox
+                  :model-value="member.conversationEmailUpdateCapabilityEnabled"
+                  :label="t('emailUpdatesCapabilityLabel')"
+                  :disable="
+                    updatingCapabilityUsername !== undefined ||
+                    removingMemberUsername === member.username
+                  "
+                  @update:model-value="
+                    (enabled) =>
+                      updateMemberEmailUpdatesCapability({
+                        username: member.username,
+                        enabled: enabled === true,
+                      })
+                  "
+                />
+              </div>
               <q-btn
                 flat
                 color="negative"
                 no-caps
                 :loading="removingMemberUsername === member.username"
+                :disable="updatingCapabilityUsername === member.username"
                 :label="t('removeUserButton')"
                 @click="removeFetchedMember(member.username)"
               />
@@ -319,6 +337,7 @@ const {
   deleteOrganization,
   getOrganizationMembers,
   removeUserOrganizationMapping,
+  updateMemberConversationEmailUpdateCapability,
   updateOrganizationLocalization,
   updateOrganizationSlug,
 } = useBackendAdministratorOrganizationApi();
@@ -331,6 +350,7 @@ const memberUsername = ref("");
 const organizationMembers = ref<OrganizationMember[]>([]);
 const hasLoadedMembers = ref(false);
 const removingMemberUsername = ref<string | undefined>(undefined);
+const updatingCapabilityUsername = ref<string | undefined>(undefined);
 const showDeleteConfirmDialog = ref(false);
 const showSlugConfirmDialog = ref(false);
 const isSaving = ref(false);
@@ -664,6 +684,41 @@ async function removeFetchedMember(username: string): Promise<void> {
   }
 }
 
+async function updateMemberEmailUpdatesCapability({
+  username,
+  enabled,
+}: {
+  username: string;
+  enabled: boolean;
+}): Promise<void> {
+  const organization = selectedOrganization.value;
+  if (
+    organization === undefined ||
+    updatingCapabilityUsername.value !== undefined
+  ) {
+    return;
+  }
+
+  updatingCapabilityUsername.value = username;
+  const success = await updateMemberConversationEmailUpdateCapability({
+    username,
+    organizationSlug: organization.slug,
+    enabled,
+  });
+  updatingCapabilityUsername.value = undefined;
+
+  if (success && selectedOrganization.value?.slug === organization.slug) {
+    organizationMembers.value = organizationMembers.value.map((member) =>
+      member.username === username
+        ? {
+            ...member,
+            conversationEmailUpdateCapabilityEnabled: enabled,
+          }
+        : member
+    );
+  }
+}
+
 function deleteButtonClicked(): void {
   const organization = selectedOrganization.value;
   if (organization === undefined || isDeleting.value) {
@@ -752,6 +807,15 @@ async function confirmDeleteOrganization(): Promise<void> {
   font-weight: 700;
 }
 
+.member-summary {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
 .summary-meta {
   color: #6d6a74;
   font-size: 0.9rem;
@@ -817,6 +881,11 @@ async function confirmDeleteOrganization(): Promise<void> {
 }
 
 @media (max-width: 600px) {
+  .summary-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
   .dangerZoneRow {
     align-items: stretch;
     flex-direction: column;

@@ -4,6 +4,7 @@ LOG_RUNNER := node scripts/dev-log-runner.mjs
 OPENAPI_GENERATOR_IMAGE := openapitools/openapi-generator-cli:v7.24.0
 LOAD_TEST_CONVERSATIONS := $(or $(CONVERSATION_SLUG_IDS),$(conversations))
 CONTENT_TRANSLATION_WORKER_DEV_SCENARIO ?= simulated-success
+CONVERSATION_EMAIL_UPDATE_WORKER_DEV_SCENARIO ?= simulated-success
 
 PYTHON_TYPECHECK_PATTERNS := \
 	services/shared-analysis-worker/src/**/*.py \
@@ -182,16 +183,19 @@ dev-api-raw:
 	cd services/api && pnpm start:dev
 
 dev-conversation-email-update-worker:
-	$(LOG_RUNNER) --service conversation-email-update-worker -- $(MAKE) dev-conversation-email-update-worker-raw
+	$(LOG_RUNNER) --service conversation-email-update-worker -- $(MAKE) dev-conversation-email-update-worker-scenario-raw SCENARIO="$(CONVERSATION_EMAIL_UPDATE_WORKER_DEV_SCENARIO)"
 
 dev-conversation-email-update-worker-raw:
-	cd services/conversation-email-update-worker && $(MAKE) dev
+	scripts/run-worker-scenario.sh conversation-email-update-worker "$(CONVERSATION_EMAIL_UPDATE_WORKER_DEV_SCENARIO)"
 
 dev-conversation-email-update-worker-scenario:
 	$(LOG_RUNNER) --service conversation-email-update-worker -- $(MAKE) dev-conversation-email-update-worker-scenario-raw
 
 dev-conversation-email-update-worker-scenario-raw:
-	scripts/run-worker-scenario.sh conversation-email-update-worker "$(SCENARIO)"
+	scripts/run-worker-scenario.sh conversation-email-update-worker "$(or $(SCENARIO),$(CONVERSATION_EMAIL_UPDATE_WORKER_DEV_SCENARIO))"
+
+dev-conversation-email-update-worker-exercise:
+	cd services/conversation-email-update-worker && pnpm dev:exercise $(COMMAND)
 
 dev-math-updater:
 	$(LOG_RUNNER) --service math-updater -- $(MAKE) dev-math-updater-raw
