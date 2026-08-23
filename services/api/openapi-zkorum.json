@@ -26945,14 +26945,10 @@
                                                     "username": {
                                                         "type": "string",
                                                         "pattern": "^[a-z0-9_]*$"
-                                                    },
-                                                    "conversationEmailUpdateCapabilityEnabled": {
-                                                        "type": "boolean"
                                                     }
                                                 },
                                                 "required": [
-                                                    "username",
-                                                    "conversationEmailUpdateCapabilityEnabled"
+                                                    "username"
                                                 ],
                                                 "additionalProperties": false
                                             }
@@ -26965,45 +26961,6 @@
                                 }
                             }
                         }
-                    }
-                }
-            }
-        },
-        "/api/v1/administrator/organization/member/email-update-capability/update": {
-            "post": {
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "username": {
-                                        "type": "string",
-                                        "pattern": "^[a-z0-9_]*$"
-                                    },
-                                    "organizationSlug": {
-                                        "type": "string",
-                                        "maxLength": 65,
-                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
-                                    },
-                                    "enabled": {
-                                        "type": "boolean"
-                                    }
-                                },
-                                "required": [
-                                    "username",
-                                    "organizationSlug",
-                                    "enabled"
-                                ],
-                                "additionalProperties": false
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Default Response"
                     }
                 }
             }

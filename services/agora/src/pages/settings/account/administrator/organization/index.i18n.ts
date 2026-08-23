@@ -41,7 +41,6 @@ export interface AdministratorOrganizationTranslations {
   memberListDescription: string;
   fetchMembersButton: string;
   noMembersMessage: string;
-  emailUpdatesCapabilityLabel: string;
   localizationMissingHint: string;
   defaultLanguageBadge: string;
   localizationReadyBadge: string;
@@ -100,7 +99,6 @@ const en: AdministratorOrganizationTranslations = {
     "Fetch the current member list, then remove users directly from the list.",
   fetchMembersButton: "Fetch members",
   noMembersMessage: "No members found for this organization.",
-  emailUpdatesCapabilityLabel: "Can send Email Updates",
   localizationMissingHint:
     "This language has no saved localization yet. The form is prefilled from the default profile so you can translate it quickly.",
   defaultLanguageBadge: "Default",
@@ -162,7 +160,6 @@ const ar: AdministratorOrganizationTranslations = {
     "استرد قائمة الأعضاء الحالية، ثم أزل المستخدمين مباشرةً من القائمة.",
   fetchMembersButton: "استرداد الأعضاء",
   noMembersMessage: "لم يتم العثور على أعضاء لهذه المنظمة.",
-  emailUpdatesCapabilityLabel: "يمكنه إرسال تحديثات البريد الإلكتروني",
   localizationMissingHint:
     "لا توجد ترجمة محفوظة لهذه اللغة حتى الآن. تمت تعبئة النموذج مسبقًا من الملف التعريفي الافتراضي حتى تتمكن من ترجمته بسرعة.",
   defaultLanguageBadge: "افتراضي",
@@ -226,7 +223,6 @@ const es: AdministratorOrganizationTranslations = {
     "Obtén la lista actual de miembros y después quita usuarios directamente de ella.",
   fetchMembersButton: "Obtener miembros",
   noMembersMessage: "No se encontraron miembros en esta organización.",
-  emailUpdatesCapabilityLabel: "Puede enviar actualizaciones por correo",
   localizationMissingHint:
     "Todavía no hay ninguna localización guardada para este idioma. El formulario se ha rellenado previamente con el perfil predeterminado para que puedas traducirlo rápidamente.",
   defaultLanguageBadge: "Predeterminado",
@@ -288,7 +284,6 @@ const fa: AdministratorOrganizationTranslations = {
     "فهرست اعضای فعلی را دریافت کنید، سپس کاربران را مستقیماً از فهرست حذف کنید.",
   fetchMembersButton: "دریافت اعضا",
   noMembersMessage: "هیچ عضوی برای این سازمان یافت نشد.",
-  emailUpdatesCapabilityLabel: "می‌تواند به‌روزرسانی ایمیلی ارسال کند",
   localizationMissingHint:
     "هنوز بومی‌سازی ذخیره‌شده‌ای برای این زبان وجود ندارد. فرم از نمایه پیش‌فرض از پیش پر شده است تا بتوانید آن را سریع ترجمه کنید.",
   defaultLanguageBadge: "پیش‌فرض",
@@ -352,7 +347,6 @@ const fr: AdministratorOrganizationTranslations = {
     "Récupérez la liste actuelle des membres, puis retirez des utilisateurs directement depuis cette liste.",
   fetchMembersButton: "Récupérer les membres",
   noMembersMessage: "Aucun membre trouvé pour cette organisation.",
-  emailUpdatesCapabilityLabel: "Peut envoyer des suivis par e-mail",
   localizationMissingHint:
     "Aucune localisation n’est encore enregistrée pour cette langue. Le formulaire est prérempli à partir du profil par défaut afin que vous puissiez le traduire rapidement.",
   defaultLanguageBadge: "Par défaut",
@@ -413,7 +407,6 @@ const he: AdministratorOrganizationTranslations = {
     "יש לאחזר את רשימת החברים הנוכחית ולאחר מכן להסיר משתמשים ישירות מהרשימה.",
   fetchMembersButton: "אחזור חברים",
   noMembersMessage: "לא נמצאו חברים בארגון זה.",
-  emailUpdatesCapabilityLabel: "יכול לשלוח עדכונים בדוא״ל",
   localizationMissingHint:
     "עדיין לא נשמרה התאמה לשפה זו. הטופס מולא מראש מנתוני פרופיל ברירת המחדל כדי לאפשר תרגום מהיר.",
   defaultLanguageBadge: "ברירת מחדל",
@@ -475,7 +468,6 @@ const ja: AdministratorOrganizationTranslations = {
     "現在のメンバー一覧を取得し、その一覧からユーザーを直接削除します。",
   fetchMembersButton: "メンバーを取得",
   noMembersMessage: "この組織のメンバーは見つかりませんでした。",
-  emailUpdatesCapabilityLabel: "メール更新を送信可能",
   localizationMissingHint:
     "この言語のローカライズはまだ保存されていません。すぐに翻訳できるよう、フォームにはデフォルトプロフィールの内容があらかじめ入力されています。",
   defaultLanguageBadge: "デフォルト",
@@ -538,7 +530,6 @@ const ky: AdministratorOrganizationTranslations = {
     "Учурдагы мүчөлөрдүн тизмесин алып, андан соң колдонуучуларды тизмеден түз алып салыңыз.",
   fetchMembersButton: "Мүчөлөрдү алуу",
   noMembersMessage: "Бул уюмда мүчөлөр табылган жок.",
-  emailUpdatesCapabilityLabel: "Электрондук жаңыртууларды жөнөтө алат",
   localizationMissingHint:
     "Бул тил үчүн сакталган локалдаштыруу азырынча жок. Тез которушуңуз үчүн форма демейки профилдеги маалыматтар менен алдын ала толтурулду.",
   defaultLanguageBadge: "Демейки",
@@ -602,8 +593,6 @@ const ru: AdministratorOrganizationTranslations = {
     "Получите текущий список участников, а затем удаляйте пользователей непосредственно из списка.",
   fetchMembersButton: "Получить список участников",
   noMembersMessage: "В этой организации нет участников.",
-  emailUpdatesCapabilityLabel:
-    "Может отправлять обновления по электронной почте",
   localizationMissingHint:
     "Для этого языка еще не сохранена локализация. Форма предварительно заполнена данными профиля по умолчанию, чтобы вы могли быстро их перевести.",
   defaultLanguageBadge: "По умолчанию",
@@ -662,7 +651,6 @@ const zhHans: AdministratorOrganizationTranslations = {
   memberListDescription: "获取当前成员列表，然后直接从列表中移除用户。",
   fetchMembersButton: "获取成员",
   noMembersMessage: "未找到该组织的成员。",
-  emailUpdatesCapabilityLabel: "可以发送电子邮件更新",
   localizationMissingHint:
     "此语言尚无已保存的本地化内容。表单已根据默认资料预先填充，方便你快速翻译。",
   defaultLanguageBadge: "默认",
@@ -721,7 +709,6 @@ const zhHant: AdministratorOrganizationTranslations = {
   memberListDescription: "擷取目前的成員清單，然後直接從清單中移除使用者。",
   fetchMembersButton: "擷取成員",
   noMembersMessage: "找不到這個組織的成員。",
-  emailUpdatesCapabilityLabel: "可以傳送電子郵件更新",
   localizationMissingHint:
     "此語言尚無已儲存的本地化內容。表單已根據預設資料預先填入，方便你快速翻譯。",
   defaultLanguageBadge: "預設",

@@ -2440,6 +2440,112 @@ async function lockProject({
     return rows.length === 1;
 }
 
+async function lockActiveEmailUpdateAuthorization({
+    db,
+    projectId,
+    organizationId,
+    entitlementId,
+    userId,
+    now,
+}: {
+    db: PostgresJsDatabase;
+    projectId: number;
+    organizationId: number;
+    entitlementId: number;
+    userId: string;
+    now: Date;
+}): Promise<boolean> {
+    const rows = await db
+        .select({ membershipId: organizationMembershipTable.id })
+        .from(projectOrganizationOwnershipTable)
+        .innerJoin(
+            organizationTable,
+            and(
+                eq(
+                    organizationTable.id,
+                    projectOrganizationOwnershipTable.organizationId,
+                ),
+                isNull(organizationTable.deletedAt),
+            ),
+        )
+        .innerJoin(
+            organizationMembershipTable,
+            and(
+                eq(
+                    organizationMembershipTable.organizationId,
+                    projectOrganizationOwnershipTable.organizationId,
+                ),
+                eq(organizationMembershipTable.userId, userId),
+                isNull(organizationMembershipTable.deletedAt),
+            ),
+        )
+        .innerJoin(
+            userTable,
+            and(
+                eq(userTable.id, organizationMembershipTable.userId),
+                eq(userTable.isDeleted, false),
+            ),
+        )
+        .innerJoin(
+            organizationMembershipAllProjectCapabilityTable,
+            and(
+                eq(
+                    organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
+                    organizationMembershipTable.id,
+                ),
+                eq(
+                    organizationMembershipAllProjectCapabilityTable.capability,
+                    "conversation_email_update",
+                ),
+                isNull(
+                    organizationMembershipAllProjectCapabilityTable.deletedAt,
+                ),
+            ),
+        )
+        .innerJoin(
+            premiumFeatureEntitlementTable,
+            and(
+                eq(premiumFeatureEntitlementTable.id, entitlementId),
+                eq(
+                    premiumFeatureEntitlementTable.organizationId,
+                    projectOrganizationOwnershipTable.organizationId,
+                ),
+                eq(
+                    premiumFeatureEntitlementTable.feature,
+                    "conversation_email_update",
+                ),
+                lte(premiumFeatureEntitlementTable.startsAt, now),
+                isNull(premiumFeatureEntitlementTable.revokedAt),
+                or(
+                    isNull(premiumFeatureEntitlementTable.expiresAt),
+                    gt(premiumFeatureEntitlementTable.expiresAt, now),
+                ),
+            ),
+        )
+        .where(
+            and(
+                eq(projectOrganizationOwnershipTable.projectId, projectId),
+                eq(
+                    projectOrganizationOwnershipTable.organizationId,
+                    organizationId,
+                ),
+                isNull(projectOrganizationOwnershipTable.deletedAt),
+            ),
+        )
+        .limit(1)
+        .for("update", {
+            of: [
+                projectOrganizationOwnershipTable,
+                organizationTable,
+                organizationMembershipTable,
+                userTable,
+                organizationMembershipAllProjectCapabilityTable,
+                premiumFeatureEntitlementTable,
+            ],
+        });
+    return rows.length === 1;
+}
+
 async function hasActiveDelivery({
     db,
     projectId,
@@ -3311,6 +3417,23 @@ export function createConversationEmailUpdateService({
                             } as const;
                         }
                         if (project === undefined) {
+                            return {
+                                success: false,
+                                reason: "sending_disabled",
+                            } as const;
+                        }
+                        if (
+                            !(await lockActiveEmailUpdateAuthorization({
+                                db: tx,
+                                projectId: attempt.project_id,
+                                organizationId:
+                                    attempt.authorizing_organization_id,
+                                entitlementId:
+                                    attempt.authorizing_entitlement_id,
+                                userId,
+                                now,
+                            }))
+                        ) {
                             return {
                                 success: false,
                                 reason: "sending_disabled",

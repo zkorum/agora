@@ -13,7 +13,7 @@ const DRIZZLE_QUERY_FORMAT = "%s --";
 const loadEventSchema = z.object({
     service: z.literal(OBSERVABILITY_SERVICE),
     event: z.literal("simulator_started"),
-    provider: z.literal("ses"),
+    provider: z.literal("simulated"),
     mode: z.enum([
         "success",
         "retryable_rejected",

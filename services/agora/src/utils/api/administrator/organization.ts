@@ -7,7 +7,6 @@ import {
   type GetOrganizationDetailsRequest,
   type OrganizationMember,
   type UpdateOrganizationLocalizationRequest,
-  type UpdateOrganizationMemberConversationEmailUpdateCapabilityRequest,
   type UpdateOrganizationSlugRequest,
 } from "src/shared/types/dto";
 import type { OrganizationProperties } from "src/shared/types/zod";
@@ -169,27 +168,6 @@ export function useBackendAdministratorOrganizationApi() {
     }
   }
 
-  async function updateMemberConversationEmailUpdateCapability(
-    request: UpdateOrganizationMemberConversationEmailUpdateCapabilityRequest
-  ): Promise<boolean> {
-    try {
-      const params =
-        Dto.updateOrganizationMemberConversationEmailUpdateCapabilityRequest.parse(
-          request
-        );
-      await postWithUcan({
-        url: "/api/v1/administrator/organization/member/email-update-capability/update",
-        data: params,
-      });
-      showNotifyMessage(t("updatedOrganization"));
-      return true;
-    } catch (e) {
-      console.error(e);
-      showNotifyMessage(t("failedToUpdateOrganization"));
-      return false;
-    }
-  }
-
   async function deleteOrganization({
     organizationName,
   }: {
@@ -304,7 +282,6 @@ export function useBackendAdministratorOrganizationApi() {
     updateOrganizationSlug,
     addUserOrganizationMapping,
     removeUserOrganizationMapping,
-    updateMemberConversationEmailUpdateCapability,
     getOrganizationDetails,
     getOrganizationOptions,
     getOrganizationMembers,

@@ -3,11 +3,11 @@ import postgres from "postgres";
 import { GenericContainer, type StartedTestContainer } from "testcontainers";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
+    addUserOrganizationMapping,
     getOrganizationMembers,
-    updateOrganizationMemberConversationEmailUpdateCapability,
 } from "./organization.js";
 
-describe("organization Email Updates capability administration", () => {
+describe("organization membership baseline capabilities", () => {
     let container: StartedTestContainer | undefined;
     let sqlClient: postgres.Sql | undefined;
     let db: PostgresJsDatabase;
@@ -42,11 +42,27 @@ describe("organization Email Updates capability administration", () => {
                 "deleted_at" timestamp
             );
             CREATE TABLE "organization_membership" (
-                "id" integer PRIMARY KEY,
+                "id" integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                 "user_id" uuid NOT NULL,
                 "organization_id" integer NOT NULL,
+                "created_at" timestamp NOT NULL DEFAULT now(),
+                "updated_at" timestamp NOT NULL DEFAULT now(),
                 "deleted_at" timestamp
             );
+            CREATE UNIQUE INDEX "organization_membership_active_unique"
+                ON "organization_membership" ("user_id", "organization_id")
+                WHERE "deleted_at" IS NULL;
+            CREATE TABLE "organization_membership_capability" (
+                "id" integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                "organization_membership_id" integer NOT NULL,
+                "capability" text NOT NULL,
+                "created_at" timestamp NOT NULL DEFAULT now()
+            );
+            CREATE UNIQUE INDEX "organization_membership_capability_unique"
+                ON "organization_membership_capability" (
+                    "organization_membership_id",
+                    "capability"
+                );
             CREATE TABLE "organization_membership_all_project_capability" (
                 "id" integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                 "organization_membership_id" integer NOT NULL,
@@ -66,11 +82,6 @@ describe("organization Email Updates capability administration", () => {
             VALUES ('00000000-0000-4000-8000-000000000001', 'author');
             INSERT INTO "organization" ("id", "slug", "directory_visibility")
             VALUES (1, 'test-org', 'listed');
-            INSERT INTO "organization_membership" (
-                "id",
-                "user_id",
-                "organization_id"
-            ) VALUES (1, '00000000-0000-4000-8000-000000000001', 1);
         `);
     }, 60_000);
 
@@ -83,115 +94,37 @@ describe("organization Email Updates capability administration", () => {
         }
     });
 
-    it("records capability grant and revocation history", async () => {
+    it("grants Email Updates when adding an organization member", async () => {
         const client = sqlClient;
         if (client === undefined) {
             throw new Error("Test database client was not initialized");
         }
-        await expect(
-            getOrganizationMembers({
-                db,
-                organizationName: "test-org",
-            }),
-        ).resolves.toEqual({
-            memberList: [
-                {
-                    username: "author",
-                    conversationEmailUpdateCapabilityEnabled: false,
-                },
-            ],
-        });
 
-        await updateOrganizationMemberConversationEmailUpdateCapability({
-            db,
-            adminUserId: "00000000-0000-4000-8000-000000000001",
-            request: {
+        await Promise.all([
+            addUserOrganizationMapping({
+                db,
                 username: "author",
-                organizationSlug: "test-org",
-                enabled: true,
-            },
-        });
-        await expect(
-            getOrganizationMembers({
-                db,
                 organizationName: "test-org",
             }),
-        ).resolves.toEqual({
-            memberList: [
-                {
-                    username: "author",
-                    conversationEmailUpdateCapabilityEnabled: true,
-                },
-            ],
-        });
-
-        await updateOrganizationMemberConversationEmailUpdateCapability({
-            db,
-            adminUserId: "00000000-0000-4000-8000-000000000001",
-            request: {
+            addUserOrganizationMapping({
+                db,
                 username: "author",
-                organizationSlug: "test-org",
-                enabled: false,
-            },
-        });
-        await expect(
-            getOrganizationMembers({
-                db,
                 organizationName: "test-org",
             }),
-        ).resolves.toEqual({
-            memberList: [
-                {
-                    username: "author",
-                    conversationEmailUpdateCapabilityEnabled: false,
-                },
-            ],
-        });
+        ]);
 
-        const revokedGrants = await client`
-            SELECT
-                granted_by_user_id,
-                revoked_by_user_id,
-                deleted_at
-            FROM organization_membership_all_project_capability
+        const emailUpdateCapabilities = await client`
+            SELECT "capability"
+            FROM "organization_membership_all_project_capability"
+            WHERE "capability" = 'conversation_email_update'
+                AND "deleted_at" IS NULL
         `;
-        expect(revokedGrants).toHaveLength(1);
-        expect(revokedGrants[0]).toMatchObject({
-            granted_by_user_id: "00000000-0000-4000-8000-000000000001",
-            revoked_by_user_id: "00000000-0000-4000-8000-000000000001",
-        });
-        expect(revokedGrants[0].deleted_at).not.toBeNull();
-
-        await updateOrganizationMemberConversationEmailUpdateCapability({
-            db,
-            adminUserId: "00000000-0000-4000-8000-000000000001",
-            request: {
-                username: "author",
-                organizationSlug: "test-org",
-                enabled: true,
-            },
-        });
-        const grantHistory = await client`
-            SELECT deleted_at
-            FROM organization_membership_all_project_capability
-            ORDER BY id
-        `;
-        expect(grantHistory).toHaveLength(2);
-        expect(grantHistory[0].deleted_at).not.toBeNull();
-        expect(grantHistory[1].deleted_at).toBeNull();
-    });
-
-    it("rejects users who are not active organization members", async () => {
+        expect(emailUpdateCapabilities).toHaveLength(1);
         await expect(
-            updateOrganizationMemberConversationEmailUpdateCapability({
+            getOrganizationMembers({
                 db,
-                adminUserId: "00000000-0000-4000-8000-000000000001",
-                request: {
-                    username: "missing",
-                    organizationSlug: "test-org",
-                    enabled: true,
-                },
+                organizationName: "test-org",
             }),
-        ).rejects.toMatchObject({ statusCode: 404 });
+        ).resolves.toEqual({ memberList: [{ username: "author" }] });
     });
 });

@@ -42,6 +42,7 @@ import {
     opinionTable,
     organizationMembershipAllProjectCapabilityTable,
     organizationMembershipTable,
+    organizationTable,
     premiumFeatureEntitlementTable,
     projectOrganizationOwnershipTable,
     projectTable,
@@ -480,6 +481,37 @@ export async function authorizeTestAttempt({
     const authorization = db
         .select({ id: conversationEmailUpdateTable.id })
         .from(conversationEmailUpdateTable)
+        .innerJoin(
+            projectTable,
+            and(
+                eq(projectTable.id, conversationEmailUpdateTable.projectId),
+                isNull(projectTable.deletedAt),
+            ),
+        )
+        .innerJoin(
+            projectOrganizationOwnershipTable,
+            and(
+                eq(
+                    projectOrganizationOwnershipTable.projectId,
+                    conversationEmailUpdateTable.projectId,
+                ),
+                eq(
+                    projectOrganizationOwnershipTable.organizationId,
+                    conversationEmailUpdateTable.authorizingOrganizationId,
+                ),
+                isNull(projectOrganizationOwnershipTable.deletedAt),
+            ),
+        )
+        .innerJoin(
+            organizationTable,
+            and(
+                eq(
+                    organizationTable.id,
+                    conversationEmailUpdateTable.authorizingOrganizationId,
+                ),
+                isNull(organizationTable.deletedAt),
+            ),
+        )
         .innerJoin(
             emailTable,
             and(

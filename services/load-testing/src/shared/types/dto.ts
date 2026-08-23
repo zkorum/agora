@@ -2112,7 +2112,6 @@ export class Dto {
     static organizationMember = z
         .object({
             username: zodUsername,
-            conversationEmailUpdateCapabilityEnabled: z.boolean(),
         })
         .strict();
     static getOrganizationMembersResponse = z
@@ -2130,13 +2129,6 @@ export class Dto {
         .object({
             username: zodUsername,
             organizationName: zodOrganizationSlug,
-        })
-        .strict();
-    static updateOrganizationMemberConversationEmailUpdateCapabilityRequest = z
-        .object({
-            username: zodUsername,
-            organizationSlug: zodOrganizationSlug,
-            enabled: z.boolean(),
         })
         .strict();
     static createProjectAttributionRequest = z.discriminatedUnion("source", [
@@ -3748,10 +3740,6 @@ export type OrganizationMember = z.infer<typeof Dto.organizationMember>;
 export type GetOrganizationMembersResponse = z.infer<
     typeof Dto.getOrganizationMembersResponse
 >;
-export type UpdateOrganizationMemberConversationEmailUpdateCapabilityRequest =
-    z.infer<
-        typeof Dto.updateOrganizationMemberConversationEmailUpdateCapabilityRequest
-    >;
 export type AdminOrganizationProperties = z.infer<typeof zodAdminOrganization>;
 export type CreateOrganizationRequest = z.infer<
     typeof Dto.createOrganizationRequest

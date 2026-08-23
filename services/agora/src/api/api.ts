@@ -109,11 +109,7 @@ export const ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrg
 export type ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInnerLocalizationsInnerLanguageCodeEnum = typeof ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInnerLocalizationsInnerLanguageCodeEnum[keyof typeof ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInnerLocalizationsInnerLanguageCodeEnum];
 
 export interface ApiV1AdministratorOrganizationGetMembersPost200Response {
-    'memberList': Array<ApiV1AdministratorOrganizationGetMembersPost200ResponseMemberListInner>;
-}
-export interface ApiV1AdministratorOrganizationGetMembersPost200ResponseMemberListInner {
-    'username': string;
-    'conversationEmailUpdateCapabilityEnabled': boolean;
+    'memberList': Array<ApiV1UserUsernameUpdatePostRequest>;
 }
 export interface ApiV1AdministratorOrganizationGetOrganizationDetailsPost200Response {
     'organization'?: ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInner;
@@ -159,11 +155,6 @@ export const ApiV1AdministratorOrganizationLocalizationUpdatePostRequestLanguage
 
 export type ApiV1AdministratorOrganizationLocalizationUpdatePostRequestLanguageCodeEnum = typeof ApiV1AdministratorOrganizationLocalizationUpdatePostRequestLanguageCodeEnum[keyof typeof ApiV1AdministratorOrganizationLocalizationUpdatePostRequestLanguageCodeEnum];
 
-export interface ApiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest {
-    'username': string;
-    'organizationSlug': string;
-    'enabled': boolean;
-}
 /**
  * @type ApiV1AdministratorOrganizationSlugUpdatePost200Response
  */
@@ -8658,43 +8649,6 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest} apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePost: async (apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest: ApiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest' is not null or undefined
-            assertParamExists('apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePost', 'apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest', apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest)
-            const localVarPath = `/api/v1/administrator/organization/member/email-update-capability/update`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
          * @param {ApiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest} apiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -13665,18 +13619,6 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {ApiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest} apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePost(apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest: ApiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePost(apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
          * @param {ApiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest} apiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -15335,15 +15277,6 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
-         * @param {ApiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest} apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePost(apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest: ApiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
-            return localVarFp.apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePost(apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
          * @param {ApiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest} apiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -16614,16 +16547,6 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1AdministratorOrganizationLocalizationUpdatePost(apiV1AdministratorOrganizationLocalizationUpdatePostRequest: ApiV1AdministratorOrganizationLocalizationUpdatePostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1AdministratorOrganizationLocalizationUpdatePost(apiV1AdministratorOrganizationLocalizationUpdatePostRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @param {ApiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest} apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePost(apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest: ApiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePost(apiV1AdministratorOrganizationMemberEmailUpdateCapabilityUpdatePostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

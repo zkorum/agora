@@ -63,6 +63,7 @@ const baselineAllProjectCapabilities = [
     "conversation_export_owner_data",
     "conversation_moderate",
     "conversation_manage_integrations",
+    "conversation_email_update",
 ] satisfies readonly AllProjectCapability[];
 
 function personalOrganizationSlug(userId: string): string {
@@ -110,6 +111,16 @@ async function getOrCreateMembership({
     userId: string;
     organizationId: number;
 }): Promise<number> {
+    const insertedRows = await db
+        .insert(organizationMembershipTable)
+        .values({ userId, organizationId })
+        .onConflictDoNothing()
+        .returning({ id: organizationMembershipTable.id });
+    const inserted = insertedRows.at(0);
+    if (inserted !== undefined) {
+        return inserted.id;
+    }
+
     const existingRows = await db
         .select({ id: organizationMembershipTable.id })
         .from(organizationMembershipTable)
@@ -126,17 +137,9 @@ async function getOrCreateMembership({
         return existing.id;
     }
 
-    const insertedRows = await db
-        .insert(organizationMembershipTable)
-        .values({ userId, organizationId })
-        .returning({ id: organizationMembershipTable.id });
-    const inserted = insertedRows.at(0);
-    if (inserted === undefined) {
-        throw httpErrors.internalServerError(
-            "Failed to create organization membership",
-        );
-    }
-    return inserted.id;
+    throw httpErrors.internalServerError(
+        "Failed to create organization membership",
+    );
 }
 
 export async function ensureOrganizationMembershipBaselineCapabilities({

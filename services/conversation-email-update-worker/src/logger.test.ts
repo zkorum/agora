@@ -97,7 +97,7 @@ describe("privacy-safe structured logging", () => {
         });
 
         log.info(
-            'AGORA_LOAD_EVENT {"service":"conversation-email-update-worker","event":"simulator_started","provider":"ses","mode":"success"}',
+            'AGORA_LOAD_EVENT {"service":"conversation-email-update-worker","event":"simulator_started","provider":"simulated","mode":"success"}',
         );
 
         expect(lines.join("")).toContain("AGORA_LOAD_EVENT");

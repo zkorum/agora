@@ -172,28 +172,12 @@
             >
               <div class="member-summary">
                 <div class="summary-title">{{ member.username }}</div>
-                <q-checkbox
-                  :model-value="member.conversationEmailUpdateCapabilityEnabled"
-                  :label="t('emailUpdatesCapabilityLabel')"
-                  :disable="
-                    updatingCapabilityUsername !== undefined ||
-                    removingMemberUsername === member.username
-                  "
-                  @update:model-value="
-                    (enabled) =>
-                      updateMemberEmailUpdatesCapability({
-                        username: member.username,
-                        enabled: enabled === true,
-                      })
-                  "
-                />
               </div>
               <q-btn
                 flat
                 color="negative"
                 no-caps
                 :loading="removingMemberUsername === member.username"
-                :disable="updatingCapabilityUsername === member.username"
                 :label="t('removeUserButton')"
                 @click="removeFetchedMember(member.username)"
               />
@@ -337,7 +321,6 @@ const {
   deleteOrganization,
   getOrganizationMembers,
   removeUserOrganizationMapping,
-  updateMemberConversationEmailUpdateCapability,
   updateOrganizationLocalization,
   updateOrganizationSlug,
 } = useBackendAdministratorOrganizationApi();
@@ -350,7 +333,6 @@ const memberUsername = ref("");
 const organizationMembers = ref<OrganizationMember[]>([]);
 const hasLoadedMembers = ref(false);
 const removingMemberUsername = ref<string | undefined>(undefined);
-const updatingCapabilityUsername = ref<string | undefined>(undefined);
 const showDeleteConfirmDialog = ref(false);
 const showSlugConfirmDialog = ref(false);
 const isSaving = ref(false);
@@ -681,41 +663,6 @@ async function removeFetchedMember(username: string): Promise<void> {
 
   if (success) {
     await fetchMembers();
-  }
-}
-
-async function updateMemberEmailUpdatesCapability({
-  username,
-  enabled,
-}: {
-  username: string;
-  enabled: boolean;
-}): Promise<void> {
-  const organization = selectedOrganization.value;
-  if (
-    organization === undefined ||
-    updatingCapabilityUsername.value !== undefined
-  ) {
-    return;
-  }
-
-  updatingCapabilityUsername.value = username;
-  const success = await updateMemberConversationEmailUpdateCapability({
-    username,
-    organizationSlug: organization.slug,
-    enabled,
-  });
-  updatingCapabilityUsername.value = undefined;
-
-  if (success && selectedOrganization.value?.slug === organization.slug) {
-    organizationMembers.value = organizationMembers.value.map((member) =>
-      member.username === username
-        ? {
-            ...member,
-            conversationEmailUpdateCapabilityEnabled: enabled,
-          }
-        : member
-    );
   }
 }
 

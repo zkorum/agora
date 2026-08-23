@@ -20,6 +20,7 @@ import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgre
 import { log } from "@/app.js";
 import { scheduleConversationAnalysisRefresh } from "@/shared-backend/conversationCounters.js";
 import { recordIdentityChangedUsers } from "./authSession.js";
+import { ensureOrganizationMembershipBaselineCapabilities } from "./projectAccess.js";
 
 interface MergeGuestIntoVerifiedUserProps {
     db: PostgresDatabase;
@@ -214,13 +215,11 @@ export async function mergeGuestIntoVerifiedUser({
         );
 
     for (const mapping of guestOrgMappings) {
-        await db
-            .insert(organizationMembershipTable)
-            .values({
-                userId: verifiedUserId,
-                organizationId: mapping.organizationId,
-            })
-            .onConflictDoNothing();
+        await ensureOrganizationMembershipBaselineCapabilities({
+            db,
+            userId: verifiedUserId,
+            organizationId: mapping.organizationId,
+        });
     }
 
     // 11. Transfer votes (uses authorId, unique constraint: authorId + opinionId)

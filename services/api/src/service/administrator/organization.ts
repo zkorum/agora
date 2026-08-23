@@ -19,7 +19,6 @@ import type {
     GetOrganizationOptionsResponse,
     GetOrganizationMembersResponse,
     GetOrganizationsByUsernameResponse,
-    UpdateOrganizationMemberConversationEmailUpdateCapabilityRequest,
     UpdateOrganizationSlugResponse,
     UpdateOrganizationLocalizationRequest,
     UpdateOrganizationLocalizationResponse,
@@ -275,8 +274,6 @@ export async function getOrganizationMembers({
     const memberRows = await getPrimaryDatabase(db)
         .select({
             username: userTable.username,
-            conversationEmailUpdateCapability:
-                organizationMembershipAllProjectCapabilityTable.capability,
         })
         .from(organizationMembershipTable)
         .innerJoin(
@@ -289,22 +286,6 @@ export async function getOrganizationMembers({
         .innerJoin(
             userTable,
             eq(userTable.id, organizationMembershipTable.userId),
-        )
-        .leftJoin(
-            organizationMembershipAllProjectCapabilityTable,
-            and(
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
-                    organizationMembershipTable.id,
-                ),
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.capability,
-                    "conversation_email_update",
-                ),
-                isNull(
-                    organizationMembershipAllProjectCapabilityTable.deletedAt,
-                ),
-            ),
         )
         .where(
             and(
@@ -320,92 +301,8 @@ export async function getOrganizationMembers({
     return {
         memberList: memberRows.map((member) => ({
             username: member.username,
-            conversationEmailUpdateCapabilityEnabled:
-                member.conversationEmailUpdateCapability ===
-                "conversation_email_update",
         })),
     };
-}
-
-export async function updateOrganizationMemberConversationEmailUpdateCapability({
-    db,
-    adminUserId,
-    request,
-}: {
-    db: PostgresJsDatabase;
-    adminUserId: string;
-    request: UpdateOrganizationMemberConversationEmailUpdateCapabilityRequest;
-}): Promise<void> {
-    const primaryDb = getPrimaryDatabase(db);
-    await primaryDb.transaction(async (transaction) => {
-        const membership = (
-            await transaction
-                .select({ id: organizationMembershipTable.id })
-                .from(organizationMembershipTable)
-                .innerJoin(
-                    organizationTable,
-                    eq(
-                        organizationTable.id,
-                        organizationMembershipTable.organizationId,
-                    ),
-                )
-                .innerJoin(
-                    userTable,
-                    eq(userTable.id, organizationMembershipTable.userId),
-                )
-                .where(
-                    and(
-                        eq(userTable.username, request.username),
-                        eq(userTable.isDeleted, false),
-                        eq(organizationTable.slug, request.organizationSlug),
-                        eq(organizationTable.directoryVisibility, "listed"),
-                        isNull(organizationMembershipTable.deletedAt),
-                        isNull(organizationTable.deletedAt),
-                    ),
-                )
-                .limit(1)
-                .for("update")
-        ).at(0);
-        if (membership === undefined) {
-            throw httpErrors.notFound("Organization membership not found");
-        }
-
-        if (request.enabled) {
-            await transaction
-                .insert(organizationMembershipAllProjectCapabilityTable)
-                .values({
-                    organizationMembershipId: membership.id,
-                    capability: "conversation_email_update",
-                    grantedByUserId: adminUserId,
-                })
-                .onConflictDoNothing();
-            return;
-        }
-
-        const now = new Date();
-        await transaction
-            .update(organizationMembershipAllProjectCapabilityTable)
-            .set({
-                revokedByUserId: adminUserId,
-                updatedAt: now,
-                deletedAt: now,
-            })
-            .where(
-                and(
-                    eq(
-                        organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
-                        membership.id,
-                    ),
-                    eq(
-                        organizationMembershipAllProjectCapabilityTable.capability,
-                        "conversation_email_update",
-                    ),
-                    isNull(
-                        organizationMembershipAllProjectCapabilityTable.deletedAt,
-                    ),
-                ),
-            );
-    });
 }
 
 export async function updateOrganizationSlug({
@@ -671,14 +568,15 @@ export async function addUserOrganizationMapping({
     username,
     organizationName,
 }: AddUserOrganizationMappingProps) {
+    const primaryDb = getPrimaryDatabase(db);
     const { getUserIdFromUsername } = useCommonUser();
     const targetUserId = await getUserIdFromUsername({
-        db: db,
-        username: username,
+        db: primaryDb,
+        username,
     });
 
     const organizationId = await getListedOrganizationIdFromOrganizationSlug({
-        db,
+        db: primaryDb,
         organizationSlug: organizationName,
     });
 
@@ -686,10 +584,12 @@ export async function addUserOrganizationMapping({
         throw httpErrors.notFound("Organization not found");
     }
 
-    await ensureOrganizationMembershipBaselineCapabilities({
-        db,
-        userId: targetUserId,
-        organizationId,
+    await primaryDb.transaction(async (transaction) => {
+        await ensureOrganizationMembershipBaselineCapabilities({
+            db: transaction,
+            userId: targetUserId,
+            organizationId,
+        });
     });
 }
 

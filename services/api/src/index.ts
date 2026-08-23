@@ -227,7 +227,6 @@ import {
     getOrganizationMembers,
     getOrganizationsByUsername,
     removeUserOrganizationMapping,
-    updateOrganizationMemberConversationEmailUpdateCapability,
     updateOrganizationLocalization,
     updateOrganizationSlug,
 } from "./service/administrator/organization.js";
@@ -5677,22 +5676,6 @@ server.after(() => {
             return await getOrganizationMembers({
                 db,
                 organizationName: request.body.organizationName,
-            });
-        },
-    });
-
-    server.withTypeProvider<ZodTypeProvider>().route({
-        method: "POST",
-        url: `/api/${apiVersion}/administrator/organization/member/email-update-capability/update`,
-        schema: {
-            body: Dto.updateOrganizationMemberConversationEmailUpdateCapabilityRequest,
-        },
-        handler: async (request) => {
-            const adminUserId = await requireSiteOrgAdmin(request);
-            await updateOrganizationMemberConversationEmailUpdateCapability({
-                db,
-                adminUserId,
-                request: request.body,
             });
         },
     });

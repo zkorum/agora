@@ -55,7 +55,7 @@ Before creating a plan:
 1. Create a dedicated local database named `agora_email_exercise_*` and apply all normal application migrations.
 2. Run the API against that same database with `CONVERSATION_EMAIL_UPDATES_ENABLED=true`, `CONVERSATION_EMAIL_UPDATES_KILL_SWITCH=false`, and no read-replica connection.
 3. Run Agora at `http://127.0.0.1:3200`.
-4. Bootstrap a site administrator, then use the administrator UI to grant the facilitator the Email Updates entitlement and organization-member capability.
+4. Bootstrap a site administrator, grant the organization the Email Updates entitlement, and add the facilitator as an organization member. Membership automatically grants the capability.
 5. Create the target through the normal UI. It must be an active, open Polis conversation in an active listed project, have current conversation content and at least one active opinion with current content, and have no votes, participants, or previous Email Update.
 6. Record the generated eight-character conversation slug for the environment below.
 
