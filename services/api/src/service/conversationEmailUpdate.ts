@@ -17,8 +17,8 @@ import {
     or,
     sql,
 } from "drizzle-orm";
-import { union } from "drizzle-orm/pg-core";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { buildConversationEmailParticipationQuery } from "@/shared-backend/conversationEmailUpdateParticipation.js";
 import { getPrimaryDatabase } from "@/shared-backend/db.js";
 import {
     conversationEmailUpdateConversationTable,
@@ -36,10 +36,6 @@ import {
     conversationContentTable,
     conversationTable,
     emailTable,
-    maxdiffComparisonTable,
-    maxdiffResultTable,
-    opinionModerationTable,
-    opinionTable,
     organizationMembershipAllProjectCapabilityTable,
     organizationMembershipTable,
     organizationTable,
@@ -49,7 +45,6 @@ import {
     projectTable,
     userDisplayLanguageTable,
     userTable,
-    voteTable,
 } from "@/shared-backend/schema.js";
 import type {
     ConversationEmailUpdateAudienceEstimateRequest,
@@ -890,87 +885,6 @@ function resolveSelection({
           };
 }
 
-export function buildConversationEmailParticipationQuery({
-    db,
-    conversationIds,
-    cutoffAt,
-}: {
-    db: PostgresJsDatabase;
-    conversationIds: readonly number[];
-    cutoffAt: Date;
-}) {
-    const visibleOpinionModeration = or(
-        isNull(opinionModerationTable.id),
-        ne(opinionModerationTable.moderationAction, "hide"),
-    );
-    const voteParticipation = db
-        .select({
-            userId: voteTable.authorId,
-            conversationId: opinionTable.conversationId,
-        })
-        .from(voteTable)
-        .innerJoin(opinionTable, eq(opinionTable.id, voteTable.opinionId))
-        .leftJoin(
-            opinionModerationTable,
-            and(
-                eq(opinionModerationTable.opinionId, opinionTable.id),
-                isNull(opinionModerationTable.deletedAt),
-            ),
-        )
-        .where(
-            and(
-                inArray(opinionTable.conversationId, conversationIds),
-                isNotNull(opinionTable.currentContentId),
-                isNotNull(voteTable.currentContentId),
-                lte(voteTable.createdAt, cutoffAt),
-                visibleOpinionModeration,
-            ),
-        );
-    const opinionParticipation = db
-        .select({
-            userId: opinionTable.authorId,
-            conversationId: opinionTable.conversationId,
-        })
-        .from(opinionTable)
-        .leftJoin(
-            opinionModerationTable,
-            and(
-                eq(opinionModerationTable.opinionId, opinionTable.id),
-                isNull(opinionModerationTable.deletedAt),
-            ),
-        )
-        .where(
-            and(
-                inArray(opinionTable.conversationId, conversationIds),
-                isNotNull(opinionTable.currentContentId),
-                lte(opinionTable.createdAt, cutoffAt),
-                visibleOpinionModeration,
-            ),
-        );
-    const maxdiffParticipation = db
-        .select({
-            userId: maxdiffResultTable.participantId,
-            conversationId: maxdiffResultTable.conversationId,
-        })
-        .from(maxdiffComparisonTable)
-        .innerJoin(
-            maxdiffResultTable,
-            eq(maxdiffResultTable.id, maxdiffComparisonTable.maxdiffResultId),
-        )
-        .where(
-            and(
-                inArray(maxdiffResultTable.conversationId, conversationIds),
-                isNull(maxdiffComparisonTable.deletedAt),
-                lte(maxdiffComparisonTable.createdAt, cutoffAt),
-            ),
-        );
-    return union(
-        voteParticipation,
-        opinionParticipation,
-        maxdiffParticipation,
-    );
-}
-
 async function countEligibleAudience({
     db,
     selection,
@@ -987,8 +901,8 @@ async function countEligibleAudience({
     );
     const participation = buildConversationEmailParticipationQuery({
         db,
-        conversationIds,
         cutoffAt,
+        scope: { kind: "conversation_ids", conversationIds },
     }).as("participation");
     const preferenceCondition =
         selection.project.scope_kind === "project"

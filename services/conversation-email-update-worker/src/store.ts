@@ -19,6 +19,7 @@ import {
 } from "drizzle-orm";
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { alias } from "drizzle-orm/pg-core";
+import { buildConversationEmailParticipationQuery } from "@/shared-backend/conversationEmailUpdateParticipation.js";
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import {
     conversationEmailUpdateActionTokenTable,
@@ -37,10 +38,6 @@ import {
     conversationEmailUpdateUserProjectPreferenceTable,
     conversationTable,
     emailTable,
-    maxdiffComparisonTable,
-    maxdiffResultTable,
-    opinionModerationTable,
-    opinionTable,
     organizationMembershipAllProjectCapabilityTable,
     organizationMembershipTable,
     organizationTable,
@@ -49,7 +46,6 @@ import {
     projectTable,
     userDisplayLanguageTable,
     userTable,
-    voteTable,
 } from "@/shared-backend/schema.js";
 import type { ConversationEmailActionLinks } from "./renderer.js";
 import type { ProviderResult } from "./provider.js";
@@ -94,81 +90,6 @@ export interface ClaimedTestWork {
 export interface ConversationLink {
     title: string;
     url: string;
-}
-
-export function buildConversationEmailParticipationQuery({
-    db,
-}: {
-    db: PostgresDatabase;
-}) {
-    const visibleOpinionModeration = or(
-        isNull(opinionModerationTable.id),
-        ne(opinionModerationTable.moderationAction, "hide"),
-    );
-    return db
-        .select({
-            userId: voteTable.authorId,
-            conversationId: opinionTable.conversationId,
-            createdAt: voteTable.createdAt,
-        })
-        .from(voteTable)
-        .innerJoin(opinionTable, eq(opinionTable.id, voteTable.opinionId))
-        .leftJoin(
-            opinionModerationTable,
-            and(
-                eq(opinionModerationTable.opinionId, opinionTable.id),
-                isNull(opinionModerationTable.deletedAt),
-            ),
-        )
-        .where(
-            and(
-                isNotNull(opinionTable.currentContentId),
-                isNotNull(voteTable.currentContentId),
-                visibleOpinionModeration,
-            ),
-        )
-        .unionAll(
-            db
-                .select({
-                    userId: opinionTable.authorId,
-                    conversationId: opinionTable.conversationId,
-                    createdAt: opinionTable.createdAt,
-                })
-                .from(opinionTable)
-                .leftJoin(
-                    opinionModerationTable,
-                    and(
-                        eq(
-                            opinionModerationTable.opinionId,
-                            opinionTable.id,
-                        ),
-                        isNull(opinionModerationTable.deletedAt),
-                    ),
-                )
-                .where(
-                    and(
-                        isNotNull(opinionTable.currentContentId),
-                        visibleOpinionModeration,
-                    ),
-                ),
-        )
-        .unionAll(
-            db
-                .select({
-                    userId: maxdiffResultTable.participantId,
-                    conversationId: maxdiffResultTable.conversationId,
-                    createdAt: maxdiffComparisonTable.createdAt,
-                })
-                .from(maxdiffComparisonTable)
-                .innerJoin(
-                    maxdiffResultTable,
-                    eq(
-                        maxdiffResultTable.id,
-                        maxdiffComparisonTable.maxdiffResultId,
-                    ),
-                )
-                .where(isNull(maxdiffComparisonTable.deletedAt)),
-        );
 }
 
 function leaseExpiryExpression(seconds: number) {
@@ -1306,6 +1227,9 @@ export async function materializeOneDeliveryPage({
     let selectedDeliveryId: number | undefined;
     try {
         return await db.transaction(async (tx) => {
+            await tx.execute(
+                sql`set transaction isolation level repeatable read`,
+            );
             const delivery = (
                 await tx
                     .select({
@@ -1422,6 +1346,8 @@ export async function materializeOneDeliveryPage({
 
             const participation = buildConversationEmailParticipationQuery({
                 db: tx,
+                cutoffAt: delivery.audienceCutoffAt,
+                scope: { kind: "update", updateId: delivery.updateId },
             }).as("participation");
             const qualified = tx
                 .selectDistinct({
@@ -1429,19 +1355,6 @@ export async function materializeOneDeliveryPage({
                     conversationId: participation.conversationId,
                 })
                 .from(participation)
-                .innerJoin(
-                    conversationEmailUpdateConversationTable,
-                    and(
-                        eq(
-                            conversationEmailUpdateConversationTable.updateId,
-                            delivery.updateId,
-                        ),
-                        eq(
-                            conversationEmailUpdateConversationTable.conversationId,
-                            participation.conversationId,
-                        ),
-                    ),
-                )
                 .leftJoin(
                     conversationEmailUpdateUserProjectPreferenceTable,
                     and(
@@ -1470,7 +1383,6 @@ export async function materializeOneDeliveryPage({
                 )
                 .where(
                     and(
-                        lte(participation.createdAt, delivery.audienceCutoffAt),
                         delivery.scopeKind === "listed_project"
                             ? and(
                                   eq(

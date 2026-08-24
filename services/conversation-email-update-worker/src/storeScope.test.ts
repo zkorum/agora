@@ -7,7 +7,6 @@ import {
 } from "@/shared-backend/schema.js";
 import {
     activeOwnerAuthorizationQuery,
-    buildConversationEmailParticipationQuery,
     buildConversationLinkUrl,
     createRecipientActions,
     deliveryUpdateIsExclusiveToConversation,
@@ -16,27 +15,6 @@ import {
 } from "./store.js";
 
 describe("scoped store predicates", () => {
-    it("materializes active visible statement authors as participants", () => {
-        const query = buildConversationEmailParticipationQuery({
-            db: drizzle.mock(),
-        }).toSQL();
-
-        expect(query.sql).toContain('from "vote"');
-        expect(query.sql).toContain('"vote"."current_content_id" is not null');
-        expect(query.sql).toContain('from "opinion"');
-        expect(query.sql).toContain(
-            '"opinion"."current_content_id" is not null',
-        );
-        expect(query.sql).toContain(
-            '"opinion_moderation"."moderation_action" <>',
-        );
-        expect(query.sql).toContain('from "maxdiff_comparison"');
-        expect(query.sql).toContain(
-            '"maxdiff_comparison"."deleted_at" is null',
-        );
-        expect(query.sql.match(/ union all /g)).toHaveLength(2);
-    });
-
     it("links real project conversations through their project page", () => {
         const url = buildConversationLinkUrl({
             baseUrl: new URL("https://www.agoracitizen.app"),
