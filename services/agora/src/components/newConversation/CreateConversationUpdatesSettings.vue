@@ -11,10 +11,7 @@
         :title="t('emailUpdates')"
         :subtitle="dialogSubtitle"
       >
-        <q-list
-          separator
-          class="conversation-updates-settings__list"
-        >
+        <q-list separator class="conversation-updates-settings__list">
           <q-item
             v-for="option in settingOptions"
             :key="option.id"
@@ -54,7 +51,7 @@ const props = defineProps<{
   scopeKind: "project" | "no-project";
   projectTitle: string | undefined;
   scopeDefaultEnabled: boolean;
-  hasEntitlement: boolean;
+  canConfigure: boolean;
 }>();
 
 type SettingMode = "inherit" | "off" | "on";
@@ -71,7 +68,7 @@ const { t } = useComponentI18n<CreateConversationUpdatesSettingsTranslations>(
   createConversationUpdatesSettingsTranslations
 );
 
-const shouldShow = computed(() => props.hasEntitlement);
+const shouldShow = computed(() => props.canConfigure);
 const displayEnabled = computed(
   () => override.value ?? props.scopeDefaultEnabled
 );
@@ -85,9 +82,7 @@ const dialogSubtitle = computed(() => t("manualUpdatesSubtitle"));
 const controlLabel = computed(() => {
   const value = displayEnabled.value ? t("on") : t("off");
   const inheritedSource =
-    props.scopeKind === "project"
-      ? t("projectDefault")
-      : t("noProjectDefault");
+    props.scopeKind === "project" ? t("projectDefault") : t("noProjectDefault");
   const source = override.value === undefined ? inheritedSource : t("override");
   return t("controlLabel", { value, source });
 });
@@ -98,9 +93,7 @@ const settingOptions = computed<readonly SettingOption[]>(() => {
       ? (props.projectTitle ?? t("projectFallback"))
       : t("noProjectGroup");
   const defaultSource =
-    props.scopeKind === "project"
-      ? t("projectDefault")
-      : t("noProjectDefault");
+    props.scopeKind === "project" ? t("projectDefault") : t("noProjectDefault");
   const overrideDescription = t("overridesDescription", {
     defaultValue,
     scopeLabel,

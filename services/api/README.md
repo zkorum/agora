@@ -46,12 +46,22 @@ At this stage, you should have a docker container running, have access to the th
 ## Running the api
 
 ```bash
-# development
+# Development with fail-closed Email Updates defaults
 pnpm start:dev
+
+# Normal repository development with Email Updates and its SNS simulator enabled
+make dev-api
 
 # production mode
 pnpm build && pnpm start
 ```
+
+`make dev-api` explicitly sets `NODE_ENV=development`, enables Conversation
+Email Updates, disables its kill switch, and enables the development-only SNS
+simulator. Direct API startup keeps the application defaults: Email Updates
+disabled, kill switch active, and simulator disabled. The API rejects simulator
+startup outside development, so production and staging must configure their
+delivery gates explicitly and cannot inherit the local simulator behavior.
 
 ## Moderation
 

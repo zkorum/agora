@@ -52,6 +52,21 @@
             v-model:override-multilingual-setting="multilingualSetting"
             :project-list="projectLanguageProjects"
           />
+          <CreateConversationUpdatesSettings
+            v-if="
+              conversationDraft.importSettings.importType === null &&
+              selectedEmailUpdatesConfiguration !== undefined
+            "
+            v-model="conversationEmailUpdateEnabledOverride"
+            :scope-kind="
+              selectedProjectSlug === undefined ? 'no-project' : 'project'
+            "
+            :project-title="selectedProjectOption?.projectTitle"
+            :scope-default-enabled="
+              selectedEmailUpdatesConfiguration.scopeDefaultEnabled
+            "
+            :can-configure="selectedEmailUpdatesConfiguration.canConfigure"
+          />
         </template>
       </NewConversationControlBar>
 
@@ -179,6 +194,7 @@ import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import type { CreateConversationProjectLanguageProject } from "src/components/newConversation/CreateConversationProjectLanguageSettings.vue";
 import CreateConversationProjectLanguageSettings from "src/components/newConversation/CreateConversationProjectLanguageSettings.vue";
+import CreateConversationUpdatesSettings from "src/components/newConversation/CreateConversationUpdatesSettings.vue";
 import PolisCsvUpload from "src/components/newConversation/import/csv/PolisCsvUpload.vue";
 import PolisUrlInput from "src/components/newConversation/import/url/PolisUrlInput.vue";
 import NewConversationControlBar from "src/components/newConversation/NewConversationControlBar.vue";
@@ -247,6 +263,7 @@ const {
   multilingualSetting,
   selectedProjectSlug,
   inheritProjectLanguages,
+  conversationEmailUpdateEnabledOverride,
   conversationType,
   rankingMode,
   isPrivate,
@@ -316,8 +333,38 @@ const {
   importConversation,
   importConversationFromCsv,
 } = useBackendPostApi();
-const projectLanguageProjects = ref<CreateConversationProjectLanguageProject[]>(
+type ConversationCreateProjectOptionsSuccess = Extract<
+  GetConversationCreateProjectOptionsResponse,
+  { success: true }
+>;
+type ConversationCreateProjectOption =
+  ConversationCreateProjectOptionsSuccess["projectList"][number];
+type ConversationCreateEmailUpdates =
+  ConversationCreateProjectOptionsSuccess["noProjectEmailUpdates"];
+
+const conversationCreateProjectOptions = ref<ConversationCreateProjectOption[]>(
   []
+);
+const noProjectEmailUpdates = ref<ConversationCreateEmailUpdates>();
+const projectLanguageProjects = computed<
+  CreateConversationProjectLanguageProject[]
+>(() =>
+  conversationCreateProjectOptions.value.map((project) => ({
+    slug: project.projectSlug,
+    title: project.projectTitle,
+    defaultLanguageCode: project.defaultLanguageCode,
+    languageSettings: project.languageSettings,
+  }))
+);
+const selectedProjectOption = computed(() =>
+  conversationCreateProjectOptions.value.find(
+    (project) => project.projectSlug === selectedProjectSlug.value
+  )
+);
+const selectedEmailUpdatesConfiguration = computed(() =>
+  selectedProjectSlug.value === undefined
+    ? noProjectEmailUpdates.value
+    : selectedProjectOption.value?.emailUpdates
 );
 let projectOptionsRequestId = 0;
 
@@ -368,8 +415,10 @@ watch(
     organizationList,
   }) => {
     const requestId = ++projectOptionsRequestId;
-    projectLanguageProjects.value = [];
+    conversationCreateProjectOptions.value = [];
+    noProjectEmailUpdates.value = undefined;
     selectedProjectSlug.value = undefined;
+    conversationEmailUpdateEnabledOverride.value = undefined;
     inheritProjectLanguages.value = false;
 
     if (
@@ -409,14 +458,21 @@ watch(
       return;
     }
 
-    projectLanguageProjects.value = response.projectList.map((project) => ({
-      slug: project.projectSlug,
-      title: project.projectTitle,
-      defaultLanguageCode: project.defaultLanguageCode,
-      languageSettings: project.languageSettings,
-    }));
+    conversationCreateProjectOptions.value = response.projectList;
+    noProjectEmailUpdates.value = response.noProjectEmailUpdates;
   },
   { immediate: true }
+);
+
+watch(
+  [
+    () => postAs.value.postAsOrganization,
+    () => postAs.value.organizationName,
+    selectedProjectSlug,
+  ],
+  () => {
+    conversationEmailUpdateEnabledOverride.value = undefined;
+  }
 );
 
 const hasActiveImport = computed(() => {

@@ -1,5 +1,5 @@
+import type { ManageOptOutItem } from "src/components/conversationUpdates/authFreePreferenceManager";
 import type {
-  ConversationEmailUpdateActionManageOptOutRequest,
   ConversationEmailUpdateActionReportRequest,
   ConversationEmailUpdateActionResolveResponse,
 } from "src/shared/types/dto";
@@ -18,16 +18,7 @@ export type PreferencesResolution = Extract<
   { action: "manage_preferences" }
 >;
 export type ReportResolution = Extract<ResolveSuccess, { action: "report" }>;
-export type ManageOptOutTarget =
-  ConversationEmailUpdateActionManageOptOutRequest["target"];
 export type ReportReason = ConversationEmailUpdateActionReportRequest["reason"];
-
-export interface ManageOptOutItem {
-  key: string;
-  title: string;
-  target: ManageOptOutTarget;
-  type: "project" | "conversation";
-}
 
 export const reportReasons: readonly ReportReason[] = [
   "spam",
@@ -101,18 +92,6 @@ export function getManageOptOutItems(
 export function optionalReportDetails(details: string): string | undefined {
   const trimmedDetails = details.trim();
   return trimmedDetails.length > 0 ? trimmedDetails : undefined;
-}
-
-export function isManageOptOutDisabled({
-  itemKey,
-  pendingKey,
-  successfulKeys,
-}: {
-  itemKey: string;
-  pendingKey: string | undefined;
-  successfulKeys: ReadonlySet<string>;
-}): boolean {
-  return pendingKey !== undefined || successfulKeys.has(itemKey);
 }
 
 function getOrCreateMeta(name: string): HTMLMetaElement {

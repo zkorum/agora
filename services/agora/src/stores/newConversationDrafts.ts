@@ -111,6 +111,9 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     const hasProjectSelectionChanges =
       current.selectedProjectSlug !== emptyDraft.selectedProjectSlug ||
       current.inheritProjectLanguages !== emptyDraft.inheritProjectLanguages;
+    const hasConversationEmailUpdateChanges =
+      current.conversationEmailUpdateEnabledOverride !==
+      emptyDraft.conversationEmailUpdateEnabledOverride;
 
     // Check seed opinions changes
     const hasSeedOpinionsChanges =
@@ -147,16 +150,16 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       JSON.stringify(current.importSettings.csvFileMetadata) !==
         JSON.stringify(emptyDraft.importSettings.csvFileMetadata);
 
-    const hasSurveyConfigChanges =
-      !areSurveyConfigsEqual({
-        left: current.surveyConfig,
-        right: emptyDraft.surveyConfig,
-      });
+    const hasSurveyConfigChanges = !areSurveyConfigsEqual({
+      left: current.surveyConfig,
+      right: emptyDraft.surveyConfig,
+    });
 
     return (
       hasContentChanges ||
       hasMultilingualSettingChanges ||
       hasProjectSelectionChanges ||
+      hasConversationEmailUpdateChanges ||
       hasSeedOpinionsChanges ||
       hasConversationTypeChanges ||
       hasPostAsChanges ||
@@ -203,10 +206,7 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
    */
   function hasContentThatWouldBeCleared(): boolean {
     const draft = conversationDraft.value;
-    return (
-      draft.title.trim() !== "" ||
-      draft.content.trim() !== ""
-    );
+    return draft.title.trim() !== "" || draft.content.trim() !== "";
   }
 
   /**
@@ -281,7 +281,8 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
 
   function canEvaluateCurrentActorRestrictions(): boolean {
     return (
-      conversationDraft.value.postAs.postAsOrganization || authStore.userId !== undefined
+      conversationDraft.value.postAs.postAsOrganization ||
+      authStore.userId !== undefined
     );
   }
 
@@ -312,7 +313,6 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     ) {
       clearImportDraft();
     }
-
   }
 
   // ============================================================================

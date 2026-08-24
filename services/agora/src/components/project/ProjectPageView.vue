@@ -35,17 +35,20 @@
             :text-direction="projectTextDirection"
           />
 
-          <div
-            v-if="consultationStatus !== 'none'"
-            class="project-page-view__consultation-pill"
-            :class="consultationStatusClass"
-          >
-            <ZKLiveStatusDot
-              class="project-page-view__consultation-dot"
-              :active="consultationStatus === 'live'"
-              tone="positive"
-            />
-            {{ consultationStatusLabel }}
+          <div class="project-page-view__banner-actions">
+            <div
+              v-if="consultationStatus !== 'none'"
+              class="project-page-view__consultation-pill"
+              :class="consultationStatusClass"
+            >
+              <ZKLiveStatusDot
+                class="project-page-view__consultation-dot"
+                :active="consultationStatus === 'live'"
+                tone="positive"
+              />
+              {{ consultationStatusLabel }}
+            </div>
+            <ProjectEmailUpdatesMenu :project-slug="project.slug" />
           </div>
         </div>
       </section>
@@ -226,6 +229,7 @@ import { computed } from "vue";
 import ProjectActivityCard from "./ProjectActivityCard.vue";
 import ProjectDetailsAside from "./ProjectDetailsAside.vue";
 import ProjectDocuments from "./ProjectDocuments.vue";
+import ProjectEmailUpdatesMenu from "./ProjectEmailUpdatesMenu.vue";
 import ProjectLanguageSelect from "./ProjectLanguageSelect.vue";
 import ProjectMobileDetails from "./ProjectMobileDetails.vue";
 import ProjectPageFooter from "./ProjectPageFooter.vue";
@@ -415,6 +419,12 @@ main {
   line-height: 1;
   box-shadow: 0 0.25rem 1rem rgba(10, 7, 20, 0.14);
   white-space: nowrap;
+}
+
+.project-page-view__banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
 }
 
 .project-page-view__consultation-dot {

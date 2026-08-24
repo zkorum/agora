@@ -107,6 +107,7 @@ export function createEmptyDraft(): ConversationDraft {
     },
     selectedProjectSlug: undefined,
     inheritProjectLanguages: false,
+    conversationEmailUpdateEnabledOverride: undefined,
     seedOpinions: [],
 
     // Conversation Type

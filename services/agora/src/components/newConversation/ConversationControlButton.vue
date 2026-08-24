@@ -6,6 +6,7 @@
       { 'show-border': showBorder },
     ]"
     type="button"
+    :disabled="disabled"
     @click="$emit('click')"
   >
     <i v-if="icon && iconPosition === 'left'" :class="icon" class="icon" />
@@ -22,12 +23,14 @@ withDefaults(
     showBorder?: boolean;
     iconPosition?: "left" | "right";
     variant?: "light" | "filled";
+    disabled?: boolean;
   }>(),
   {
     showBorder: true,
     icon: undefined,
     iconPosition: "right",
     variant: "light",
+    disabled: false,
   }
 );
 
@@ -51,6 +54,11 @@ defineEmits<{
   outline: none;
   transition: all 0.2s ease-in-out;
   min-height: 48px; // WCAG 2.2 AA minimum touch target
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.75;
+  }
 
   // Light variant (default - original style)
   &.variant-light {

@@ -401,6 +401,12 @@ const zodConversationLanguageSettingsSource = z.enum([
     "conversation_override",
     "project_inherited",
 ]);
+const zodConversationCreateEmailUpdateConfiguration = z
+    .object({
+        canConfigure: z.boolean(),
+        scopeDefaultEnabled: z.boolean(),
+    })
+    .strict();
 const zodConversationCreateProjectOption = z
     .object({
         projectSlug: zodProjectSlug,
@@ -409,6 +415,12 @@ const zodConversationCreateProjectOption = z
         languageSettings: zodProjectLanguageSettings,
     })
     .strict();
+const zodConversationCreateProjectOptionWithEmailUpdates =
+    zodConversationCreateProjectOption
+        .extend({
+            emailUpdates: zodConversationCreateEmailUpdateConfiguration,
+        })
+        .strict();
 const zodProjectContentLocalizationInput = z
     .object({
         languageCode: ZodSupportedDisplayLanguageCodes,
@@ -1236,6 +1248,7 @@ export class Dto {
             multilingualSetting: zodConversationMultilingualSetting,
             seedOpinionList: z.array(zodOpinionContentInput).max(50),
             requiresEventTicket: zodEventSlug.optional(),
+            conversationEmailUpdateEnabledOverride: z.boolean().optional(),
         })
         .strict();
     static createNewConversationRequest = z.discriminatedUnion(
@@ -1553,6 +1566,7 @@ export class Dto {
                 aiLabelingEnabled: z.boolean(),
                 preferredOpinionGroupCount: zodPreferredOpinionGroupCount,
                 postAsOrganizationName: z.string().optional(),
+                postAsOrganizationSlug: zodOrganizationSlug.optional(),
                 surveyConfig: zodSurveyConfig.nullable().optional(),
                 createdAt: zodDateTimeFlexible,
                 updatedAt: zodDateTimeFlexible,
@@ -2336,14 +2350,19 @@ export class Dto {
             ),
         })
         .strict();
-    static conversationCreateProjectOption = zodConversationCreateProjectOption;
+    static conversationCreateProjectOption =
+        zodConversationCreateProjectOptionWithEmailUpdates;
     static getConversationCreateProjectOptionsResponse = z.discriminatedUnion(
         "success",
         [
             z
                 .object({
                     success: z.literal(true),
-                    projectList: z.array(Dto.conversationCreateProjectOption),
+                    projectList: z.array(
+                        zodConversationCreateProjectOptionWithEmailUpdates,
+                    ),
+                    noProjectEmailUpdates:
+                        zodConversationCreateEmailUpdateConfiguration,
                 })
                 .strict(),
             z
@@ -3475,6 +3494,39 @@ export class Dto {
                 })
                 .strict(),
         ]);
+    static conversationEmailUpdateProjectSummaryRequest = z
+        .object({
+            projectSlug: zodProjectSlug,
+        })
+        .strict();
+    static conversationEmailUpdateProjectSummaryResponse = z.discriminatedUnion(
+        "success",
+        [
+            z
+                .object({
+                    success: z.literal(true),
+                    authoringAction: z.enum(["none", "compose", "history"]),
+                    participantPreference: z
+                        .object({
+                            state: zodConversationEmailUpdatePreferenceState,
+                            resolvedEnabled: z.boolean(),
+                        })
+                        .strict()
+                        .optional(),
+                })
+                .strict(),
+            z
+                .object({
+                    success: z.literal(false),
+                    reason: z.enum([
+                        "project_not_found",
+                        "feature_not_available",
+                        "summary_unavailable",
+                    ]),
+                })
+                .strict(),
+        ],
+    );
     static conversationEmailUpdateActionResolveRequest = z
         .object({ token: zodConversationEmailUpdateActionToken })
         .strict();
@@ -4123,6 +4175,12 @@ export type ConversationEmailUpdateConversationSummaryRequest = z.infer<
 >;
 export type ConversationEmailUpdateConversationSummaryResponse = z.infer<
     typeof Dto.conversationEmailUpdateConversationSummaryResponse
+>;
+export type ConversationEmailUpdateProjectSummaryRequest = z.infer<
+    typeof Dto.conversationEmailUpdateProjectSummaryRequest
+>;
+export type ConversationEmailUpdateProjectSummaryResponse = z.infer<
+    typeof Dto.conversationEmailUpdateProjectSummaryResponse
 >;
 export type ConversationEmailUpdateSnsSimulatorRequest = z.infer<
     typeof Dto.conversationEmailUpdateSnsSimulatorRequest

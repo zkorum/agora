@@ -19,60 +19,27 @@
       </section>
     </div>
 
-    <section v-else class="action-card">
-      <h1>{{ t("title") }}</h1>
-      <p class="action-description">{{ t("description") }}</p>
-
-      <ul class="preference-list">
-        <li v-for="item in state.items" :key="item.key" class="preference-item">
-          <div class="preference-copy">
-            <span class="preference-type">{{ t(item.type) }}</span>
-            <h2>{{ item.title }}</h2>
-            <span
-              v-if="successfulKeys.has(item.key)"
-              class="preference-success"
-              role="status"
-            >
-              {{ t("optedOut") }}
-            </span>
-            <span
-              v-else-if="errorKey === item.key"
-              class="action-error"
-              role="alert"
-            >
-              {{ t("submitFailed") }}
-            </span>
-          </div>
-          <div class="preference-action">
-            <ZKButton
-              button-type="standardButton"
-              outline
-              color="primary"
-              :disable="
-                isManageOptOutDisabled({
-                  itemKey: item.key,
-                  pendingKey,
-                  successfulKeys,
-                })
-              "
-              :loading="pendingKey === item.key"
-              :aria-label="t('optOutTarget', { title: item.title })"
-              @click="submitOptOut(item)"
-            >
-              {{ pendingKey === item.key ? t("optingOut") : t("optOut") }}
-            </ZKButton>
-          </div>
-        </li>
-      </ul>
-    </section>
+    <ConversationUpdateAuthFreePreferenceManager
+      v-else
+      :items="state.items"
+      :pending-key="pendingKey"
+      :error-key="errorKey"
+      :successful-keys="successfulKeys"
+      :translate="t"
+      @opt-out="submitOptOut"
+    />
   </main>
 </template>
 
 <script setup lang="ts">
+import {
+  isManageOptOutDisabled,
+  type ManageOptOutItem,
+} from "src/components/conversationUpdates/authFreePreferenceManager";
+import ConversationUpdateAuthFreePreferenceManager from "src/components/conversationUpdates/ConversationUpdateAuthFreePreferenceManager.vue";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import SpaLink from "src/components/ui-library/SpaLink.vue";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { usePublicConversationEmailUpdateActionsApi } from "src/utils/api/conversationUpdates/publicConversationEmailUpdateActions";
@@ -83,8 +50,6 @@ import { useRoute } from "vue-router";
 import {
   getManageOptOutItems,
   getPreferencesResolution,
-  isManageOptOutDisabled,
-  type ManageOptOutItem,
   useEmailUpdateActionPageMetadata,
 } from "../actionPage";
 import {
@@ -182,44 +147,6 @@ async function submitOptOut(item: ManageOptOutItem): Promise<void> {
 <style scoped lang="scss">
 @use "../actionPageStyles";
 
-.preference-list {
-  display: grid;
-  gap: 0.8rem;
-  padding: 0;
-  margin: 0;
-  list-style: none;
-}
-
-.preference-item {
-  display: grid;
-  gap: 1rem;
-  padding: 1rem;
-  border: 1px solid $grey-4;
-  border-radius: 14px;
-}
-
-.preference-copy {
-  display: grid;
-  gap: 0.3rem;
-}
-
-.preference-type {
-  color: $grey-7;
-  font-size: 0.8rem;
-  font-weight: var(--font-weight-semibold);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.preference-success {
-  color: $positive;
-  font-weight: var(--font-weight-semibold);
-}
-
-.preference-action {
-  width: 8rem;
-}
-
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -230,12 +157,5 @@ async function submitOptOut(item: ManageOptOutItem): Promise<void> {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
-}
-
-@media (min-width: $breakpoint-sm-min) {
-  .preference-item {
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-  }
 }
 </style>

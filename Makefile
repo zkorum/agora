@@ -180,7 +180,12 @@ dev-api:
 	$(LOG_RUNNER) --service api -- $(MAKE) dev-api-raw
 
 dev-api-raw:
-	cd services/api && pnpm start:dev
+	cd services/api && \
+		NODE_ENV=development \
+		CONVERSATION_EMAIL_UPDATES_ENABLED=true \
+		CONVERSATION_EMAIL_UPDATES_KILL_SWITCH=false \
+		CONVERSATION_EMAIL_UPDATE_SNS_SIMULATOR_ENABLED=true \
+		pnpm start:dev
 
 dev-conversation-email-update-worker:
 	$(LOG_RUNNER) --service conversation-email-update-worker -- $(MAKE) dev-conversation-email-update-worker-scenario-raw SCENARIO="$(CONVERSATION_EMAIL_UPDATE_WORKER_DEV_SCENARIO)"

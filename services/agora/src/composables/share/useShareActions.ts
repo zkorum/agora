@@ -121,7 +121,9 @@ export function useShareActions(): ShareActionsComposable {
     }
 
     try {
-      await action.handler(dialogStateRef.value.context);
+      if (action.handler !== undefined) {
+        await action.handler(dialogStateRef.value.context);
+      }
       // Close dialog after successful execution
       closeDialog();
     } catch (error) {

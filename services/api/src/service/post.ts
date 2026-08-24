@@ -331,6 +331,8 @@ export async function createNewPost({
                 isImporting: isImporting,
                 languageSettingsSource,
                 requiresEventTicket: requiresEventTicket,
+                conversationEmailUpdateEnabledOverride:
+                    request.conversationEmailUpdateEnabledOverride,
                 currentContentId: null,
                 createdAt: now,
                 updatedAt: now,

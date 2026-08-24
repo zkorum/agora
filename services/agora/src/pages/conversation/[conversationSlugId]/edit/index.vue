@@ -73,7 +73,7 @@
             "
             :project-title="currentProjectLanguageProject?.title"
             :scope-default-enabled="conversationUpdatesScopeDefault"
-            :has-entitlement="
+            :can-configure="
               conversationUpdatesConfiguration?.canConfigure === true
             "
             @update:model-value="updateConversationUpdatesConfiguration"
@@ -725,6 +725,12 @@ onMounted(async () => {
       response.contentLanguageMetadata.detectedRawLanguageCode;
     autoDetectionStatus.value =
       response.contentLanguageMetadata.autoDetectionStatus;
+    if (response.postAsOrganizationSlug !== undefined) {
+      postAs.value = {
+        postAsOrganization: true,
+        organizationName: response.postAsOrganizationSlug,
+      };
+    }
 
     initializeFromData({
       title: response.conversationTitle,

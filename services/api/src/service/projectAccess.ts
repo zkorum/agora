@@ -10,6 +10,7 @@ import {
     organizationMembershipTable,
     organizationTable,
     premiumFeatureEntitlementTable,
+    projectContactTable,
     projectContentTable,
     projectOrganizationOwnershipTable,
     projectTable,
@@ -539,7 +540,14 @@ export async function getConversationCreateProjectOptions({
     postAsOrganizationSlug: string | undefined;
 }): Promise<GetConversationCreateProjectOptionsResponse> {
     if (postAsOrganizationSlug === undefined || postAsOrganizationSlug === "") {
-        return { success: true, projectList: [] };
+        return {
+            success: true,
+            projectList: [],
+            noProjectEmailUpdates: {
+                canConfigure: false,
+                scopeDefaultEnabled: false,
+            },
+        };
     }
 
     const organizationRows = await db
@@ -566,52 +574,98 @@ export async function getConversationCreateProjectOptions({
         return { success: false, reason: "organization_not_available" };
     }
 
-    const projectIdsWithCreate = new Set(
-        await getProjectIdsWithCapability({
+    const [
+        projectIdsWithCreateRows,
+        canConfigureEmailUpdates,
+        projectRows,
+        noProjectRows,
+    ] = await Promise.all([
+        getProjectIdsWithCapability({
             db,
             userId,
             capability: "conversation_create",
         }),
-    );
-
-    const projectRows = await db
-        .select({
-            projectId: projectTable.id,
-            projectSlug: projectTable.slug,
-            projectTitle: projectTable.title,
-            sourceLanguageCode: projectContentTable.sourceLanguageCode,
-            dynamicTranslationEnabled: projectTable.dynamicTranslationEnabled,
-        })
-        .from(projectTable)
-        .innerJoin(
-            projectOrganizationOwnershipTable,
-            and(
-                eq(
-                    projectOrganizationOwnershipTable.projectId,
-                    projectTable.id,
+        canConfigureConversationEmailUpdatesForOrganization({
+            db,
+            userId,
+            organizationId: organization.organizationId,
+            now: new Date(),
+        }),
+        db
+            .select({
+                projectId: projectTable.id,
+                projectSlug: projectTable.slug,
+                projectTitle: projectTable.title,
+                sourceLanguageCode: projectContentTable.sourceLanguageCode,
+                dynamicTranslationEnabled:
+                    projectTable.dynamicTranslationEnabled,
+                conversationEmailUpdateDefaultEnabled:
+                    projectTable.conversationEmailUpdateDefaultEnabled,
+                participantContactEmail: projectContactTable.email,
+            })
+            .from(projectTable)
+            .innerJoin(
+                projectOrganizationOwnershipTable,
+                and(
+                    eq(
+                        projectOrganizationOwnershipTable.projectId,
+                        projectTable.id,
+                    ),
+                    isNull(projectOrganizationOwnershipTable.deletedAt),
                 ),
-                isNull(projectOrganizationOwnershipTable.deletedAt),
+            )
+            .innerJoin(
+                organizationTable,
+                eq(
+                    organizationTable.id,
+                    projectOrganizationOwnershipTable.organizationId,
+                ),
+            )
+            .leftJoin(
+                projectContentTable,
+                eq(projectContentTable.id, projectTable.currentContentId),
+            )
+            .leftJoin(
+                projectContactTable,
+                and(
+                    eq(projectContactTable.projectId, projectTable.id),
+                    isNull(projectContactTable.deletedAt),
+                ),
+            )
+            .where(
+                and(
+                    eq(organizationTable.id, organization.organizationId),
+                    isNull(organizationTable.deletedAt),
+                    eq(projectTable.directoryVisibility, "listed"),
+                    isNull(projectTable.deletedAt),
+                ),
             ),
-        )
-        .innerJoin(
-            organizationTable,
-            eq(
-                organizationTable.id,
-                projectOrganizationOwnershipTable.organizationId,
-            ),
-        )
-        .leftJoin(
-            projectContentTable,
-            eq(projectContentTable.id, projectTable.currentContentId),
-        )
-        .where(
-            and(
-                eq(organizationTable.id, organization.organizationId),
-                isNull(organizationTable.deletedAt),
-                eq(projectTable.directoryVisibility, "listed"),
-                isNull(projectTable.deletedAt),
-            ),
-        );
+        db
+            .select({
+                conversationEmailUpdateDefaultEnabled:
+                    projectTable.conversationEmailUpdateDefaultEnabled,
+                participantContactEmail: projectContactTable.email,
+            })
+            .from(projectTable)
+            .leftJoin(
+                projectContactTable,
+                and(
+                    eq(projectContactTable.projectId, projectTable.id),
+                    isNull(projectContactTable.deletedAt),
+                ),
+            )
+            .where(
+                and(
+                    eq(
+                        projectTable.autoProvisionedForOrganizationId,
+                        organization.organizationId,
+                    ),
+                    isNull(projectTable.deletedAt),
+                ),
+            )
+            .limit(1),
+    ]);
+    const projectIdsWithCreate = new Set(projectIdsWithCreateRows);
 
     const availableProjectRows = projectRows.filter((project) =>
         projectIdsWithCreate.has(project.projectId),
@@ -661,6 +715,15 @@ export async function getConversationCreateProjectOptions({
 
     return {
         success: true,
+        noProjectEmailUpdates: {
+            canConfigure:
+                canConfigureEmailUpdates &&
+                noProjectRows.at(0)?.participantContactEmail !== undefined &&
+                noProjectRows.at(0)?.participantContactEmail !== null,
+            scopeDefaultEnabled:
+                noProjectRows.at(0)?.conversationEmailUpdateDefaultEnabled ??
+                false,
+        },
         projectList: availableProjectRows.map((project) => ({
             projectSlug: project.projectSlug,
             projectTitle: project.projectTitle,
@@ -673,8 +736,113 @@ export async function getConversationCreateProjectOptions({
                 targetLanguageCodes:
                     targetLanguageCodesByProjectId.get(project.projectId) ?? [],
             },
+            emailUpdates: {
+                canConfigure:
+                    canConfigureEmailUpdates &&
+                    project.participantContactEmail !== null,
+                scopeDefaultEnabled:
+                    project.conversationEmailUpdateDefaultEnabled,
+            },
         })),
     };
+}
+
+export async function canConfigureConversationEmailUpdatesForOrganization({
+    db,
+    userId,
+    organizationId,
+    now,
+}: {
+    db: PostgresDatabase;
+    userId: string;
+    organizationId: number;
+    now: Date;
+}): Promise<boolean> {
+    const rows = await db
+        .select({ entitlementId: premiumFeatureEntitlementTable.id })
+        .from(organizationMembershipTable)
+        .innerJoin(
+            organizationTable,
+            and(
+                eq(
+                    organizationTable.id,
+                    organizationMembershipTable.organizationId,
+                ),
+                isNull(organizationTable.deletedAt),
+            ),
+        )
+        .innerJoin(
+            userTable,
+            and(
+                eq(userTable.id, organizationMembershipTable.userId),
+                eq(userTable.isDeleted, false),
+            ),
+        )
+        .innerJoin(
+            organizationMembershipAllProjectCapabilityTable,
+            and(
+                eq(
+                    organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
+                    organizationMembershipTable.id,
+                ),
+                eq(
+                    organizationMembershipAllProjectCapabilityTable.capability,
+                    "conversation_email_update",
+                ),
+                isNull(
+                    organizationMembershipAllProjectCapabilityTable.deletedAt,
+                ),
+            ),
+        )
+        .innerJoin(
+            premiumFeatureEntitlementTable,
+            and(
+                eq(
+                    premiumFeatureEntitlementTable.organizationId,
+                    organizationMembershipTable.organizationId,
+                ),
+                eq(
+                    premiumFeatureEntitlementTable.feature,
+                    "conversation_email_update",
+                ),
+                lte(premiumFeatureEntitlementTable.startsAt, now),
+                isNull(premiumFeatureEntitlementTable.revokedAt),
+                or(
+                    isNull(premiumFeatureEntitlementTable.expiresAt),
+                    gt(premiumFeatureEntitlementTable.expiresAt, now),
+                ),
+            ),
+        )
+        .where(
+            and(
+                eq(organizationMembershipTable.userId, userId),
+                eq(organizationMembershipTable.organizationId, organizationId),
+                isNull(organizationMembershipTable.deletedAt),
+            ),
+        )
+        .limit(1);
+
+    return rows.length === 1;
+}
+
+export async function hasProjectParticipantContactEmail({
+    db,
+    projectId,
+}: {
+    db: PostgresDatabase;
+    projectId: number;
+}): Promise<boolean> {
+    const rows = await db
+        .select({ id: projectContactTable.id })
+        .from(projectContactTable)
+        .where(
+            and(
+                eq(projectContactTable.projectId, projectId),
+                isNull(projectContactTable.deletedAt),
+            ),
+        )
+        .limit(1);
+    return rows.length === 1;
 }
 
 export async function getProjectLanguageSettings({

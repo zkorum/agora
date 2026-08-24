@@ -39,6 +39,27 @@
                 @update:model-value="handleActionClick(action)"
               />
             </div>
+            <SpaLink
+              v-else-if="action.to !== undefined"
+              :to="action.to"
+              class="action-item"
+              :class="getActionVariantClass(action)"
+              @click="handleNavigationClick(action)"
+            >
+              <q-icon :name="action.icon" size="20px" class="action-icon" />
+              <div class="action-content">
+                <div class="action-label">{{ action.label }}</div>
+                <div v-if="action.description" class="action-description">
+                  {{ action.description }}
+                </div>
+              </div>
+              <q-icon
+                v-if="action.trailingIcon !== undefined"
+                :name="action.trailingIcon"
+                size="20px"
+                class="action-trailing-icon"
+              />
+            </SpaLink>
             <button
               v-else
               type="button"
@@ -72,6 +93,7 @@
 import type { ContentAction } from "src/utils/actions/core/types";
 import { watch } from "vue";
 
+import SpaLink from "./SpaLink.vue";
 import ZKBottomDialogContainer from "./ZKBottomDialogContainer.vue";
 import ZKSwitch from "./ZKSwitch.vue";
 
@@ -115,6 +137,12 @@ const handleActionClick = (action: ContentAction): void => {
     return;
   }
   emit("actionSelected", action);
+  if (action.closeOnSelect !== false) {
+    showDialog.value = false;
+  }
+};
+
+const handleNavigationClick = (action: ContentAction): void => {
   if (action.closeOnSelect !== false) {
     showDialog.value = false;
   }
@@ -178,6 +206,7 @@ watch(showDialog, (newValue) => {
   padding: 0.75rem;
   border-radius: 8px;
   cursor: pointer;
+  text-decoration: none;
   border: 1px solid transparent;
   background: transparent;
   text-align: start;

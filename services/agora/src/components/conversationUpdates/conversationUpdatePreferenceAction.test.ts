@@ -36,12 +36,14 @@ describe("createConversationUpdatePreferenceAction", () => {
 
   it("uses a switch for the saved preference", () => {
     const enabledAction = createConversationUpdatePreferenceAction({
+      id: "conversationEmailUpdates",
       label: "Receive email updates for this conversation",
       enabled: true,
       description: undefined,
       onToggle: vi.fn(),
     });
     const disabledAction = createConversationUpdatePreferenceAction({
+      id: "conversationEmailUpdates",
       label: "Receive email updates for this conversation",
       enabled: false,
       description: undefined,
@@ -61,6 +63,7 @@ describe("createConversationUpdatePreferenceAction", () => {
 
   it("describes a conversation-only opt-in", () => {
     const action = createConversationUpdatePreferenceAction({
+      id: "conversationEmailUpdates",
       label: "Receive email updates for this conversation",
       enabled: false,
       description: "Turn on updates for this conversation only",
@@ -76,6 +79,7 @@ describe("createConversationUpdatePreferenceAction", () => {
   it("runs the supplied toggle handler", async () => {
     const onToggle = vi.fn();
     const action = createConversationUpdatePreferenceAction({
+      id: "conversationEmailUpdates",
       label: "Receive email updates for this conversation",
       enabled: false,
       description: undefined,

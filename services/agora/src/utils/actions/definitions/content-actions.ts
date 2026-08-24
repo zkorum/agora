@@ -166,7 +166,7 @@ export function useContentActions() {
     const isOrgMember =
       conversationOrganizationName !== "" &&
       profileData.value.organizationList.some(
-        (org) => org.name === conversationOrganizationName,
+        (org) => org.name === conversationOrganizationName
       );
 
     const context = createActionContext({
@@ -296,7 +296,9 @@ export function useContentActions() {
     if (!actionContext) return;
 
     try {
-      await action.handler(actionContext);
+      if (action.handler !== undefined) {
+        await action.handler(actionContext);
+      }
 
       // Close dialog after successful action (except for certain actions that should keep it open)
       const keepOpenActions = ["moderationHistory", "embedLink"];

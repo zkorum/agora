@@ -1,3 +1,4 @@
+import { isManageOptOutDisabled } from "src/components/conversationUpdates/authFreePreferenceManager";
 import type { ConversationEmailUpdateActionResolveResponse } from "src/shared/types/dto";
 import { describe, expect, it } from "vitest";
 
@@ -6,7 +7,6 @@ import {
   getPreferencesResolution,
   getReportResolution,
   getUnsubscribeResolution,
-  isManageOptOutDisabled,
   optionalReportDetails,
   reportReasons,
 } from "./actionPage";

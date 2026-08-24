@@ -62,6 +62,8 @@ export interface ConversationDraftBase {
   selectedProjectSlug?: string;
   /** Whether the conversation should use the selected project's language settings. */
   inheritProjectLanguages: boolean;
+  /** Per-conversation Email Updates setting; undefined inherits the scope default. */
+  conversationEmailUpdateEnabledOverride?: boolean;
   /** Initial opinion responses to seed the conversation */
   seedOpinions: string[];
 
@@ -69,7 +71,10 @@ export interface ConversationDraftBase {
   /** The broad conversation family. Ranking subtypes are represented by rankingMode. */
   conversationType: ConversationTypeConfig["conversationType"];
   /** Ranking subtype; currently only "bws" is supported. */
-  rankingMode?: Extract<ConversationTypeConfig, { conversationType: "ranking" }>["rankingMode"];
+  rankingMode?: Extract<
+    ConversationTypeConfig,
+    { conversationType: "ranking" }
+  >["rankingMode"];
 
   // Publishing Options
   postAs: PostAsSettings;

@@ -508,6 +508,7 @@ function addConversationUpdateActions(): void {
           : t("emailUpdatesPreferenceUndisclosed");
     additions.push(
       createConversationUpdatePreferenceAction({
+        id: "conversationEmailUpdates",
         label: t("receiveEmailUpdatesLabel"),
         enabled,
         description,

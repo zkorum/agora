@@ -2,6 +2,7 @@ import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { GenericContainer, type StartedTestContainer } from "testcontainers";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { canConfigureConversationEmailUpdatesForOrganization } from "../projectAccess.js";
 import {
     addUserOrganizationMapping,
     getOrganizationMembers,
@@ -78,6 +79,14 @@ describe("organization membership baseline capabilities", () => {
                     "organization_membership_id",
                     "capability"
                 ) WHERE "deleted_at" IS NULL;
+            CREATE TABLE "premium_feature_entitlement" (
+                "id" integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                "organization_id" integer NOT NULL,
+                "feature" text NOT NULL,
+                "starts_at" timestamp NOT NULL,
+                "expires_at" timestamp,
+                "revoked_at" timestamp
+            );
             INSERT INTO "user" ("id", "username")
             VALUES ('00000000-0000-4000-8000-000000000001', 'author');
             INSERT INTO "organization" ("id", "slug", "directory_visibility")
@@ -120,6 +129,31 @@ describe("organization membership baseline capabilities", () => {
                 AND "deleted_at" IS NULL
         `;
         expect(emailUpdateCapabilities).toHaveLength(1);
+        const now = new Date("2026-08-24T12:00:00.000Z");
+        await expect(
+            canConfigureConversationEmailUpdatesForOrganization({
+                db,
+                userId: "00000000-0000-4000-8000-000000000001",
+                organizationId: 1,
+                now,
+            }),
+        ).resolves.toBe(false);
+
+        await client`
+            INSERT INTO "premium_feature_entitlement" (
+                "organization_id",
+                "feature",
+                "starts_at"
+            ) VALUES (1, 'conversation_email_update', '2026-08-01T00:00:00.000Z')
+        `;
+        await expect(
+            canConfigureConversationEmailUpdatesForOrganization({
+                db,
+                userId: "00000000-0000-4000-8000-000000000001",
+                organizationId: 1,
+                now,
+            }),
+        ).resolves.toBe(true);
         await expect(
             getOrganizationMembers({
                 db,

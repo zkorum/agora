@@ -57,6 +57,7 @@ export interface UseConversationDraftReturn {
   multilingualSetting: Ref<ConversationMultilingualSetting>;
   selectedProjectSlug: Ref<string | undefined>;
   inheritProjectLanguages: Ref<boolean>;
+  conversationEmailUpdateEnabledOverride: Ref<boolean | undefined>;
   seedOpinions: Ref<string[]>;
   conversationType: Ref<ConversationType>;
   rankingMode: Ref<RankingMode | undefined>;
@@ -134,6 +135,9 @@ export function useConversationDraft(
     initialDraft.selectedProjectSlug
   );
   const inheritProjectLanguages = ref(initialDraft.inheritProjectLanguages);
+  const conversationEmailUpdateEnabledOverride = ref<boolean | undefined>(
+    initialDraft.conversationEmailUpdateEnabledOverride
+  );
   const seedOpinions = ref<string[]>([...initialDraft.seedOpinions]);
   const conversationType = ref<ConversationType>(initialDraft.conversationType);
   const rankingMode = ref<RankingMode | undefined>(
@@ -179,6 +183,8 @@ export function useConversationDraft(
       multilingualSetting: multilingualSetting.value,
       selectedProjectSlug: selectedProjectSlug.value,
       inheritProjectLanguages: inheritProjectLanguages.value,
+      conversationEmailUpdateEnabledOverride:
+        conversationEmailUpdateEnabledOverride.value,
       seedOpinions: [...seedOpinions.value],
       conversationType: conversationType.value,
       rankingMode: rankingMode.value,
@@ -205,6 +211,8 @@ export function useConversationDraft(
           newSnapshot.selectedProjectSlug;
         store.conversationDraft.inheritProjectLanguages =
           newSnapshot.inheritProjectLanguages;
+        store.conversationDraft.conversationEmailUpdateEnabledOverride =
+          newSnapshot.conversationEmailUpdateEnabledOverride;
         store.conversationDraft.seedOpinions = newSnapshot.seedOpinions;
         if (newSnapshot.conversationType === "ranking") {
           store.conversationDraft = {
@@ -439,6 +447,9 @@ export function useConversationDraft(
     const hasProjectSelectionChanges =
       selectedProjectSlug.value !== emptyDraft.selectedProjectSlug ||
       inheritProjectLanguages.value !== emptyDraft.inheritProjectLanguages;
+    const hasConversationEmailUpdateChanges =
+      conversationEmailUpdateEnabledOverride.value !==
+      emptyDraft.conversationEmailUpdateEnabledOverride;
 
     // Check seed opinions changes
     const hasSeedOpinionsChanges =
@@ -484,6 +495,7 @@ export function useConversationDraft(
       hasContentChanges ||
       hasMultilingualSettingChanges ||
       hasProjectSelectionChanges ||
+      hasConversationEmailUpdateChanges ||
       hasSeedOpinionsChanges ||
       hasConversationTypeChanges ||
       hasPostAsChanges ||
@@ -514,6 +526,8 @@ export function useConversationDraft(
     multilingualSetting.value = emptyDraft.multilingualSetting;
     selectedProjectSlug.value = emptyDraft.selectedProjectSlug;
     inheritProjectLanguages.value = emptyDraft.inheritProjectLanguages;
+    conversationEmailUpdateEnabledOverride.value =
+      emptyDraft.conversationEmailUpdateEnabledOverride;
     seedOpinions.value = [];
     conversationType.value = emptyDraft.conversationType;
     rankingMode.value = undefined;
@@ -598,6 +612,7 @@ export function useConversationDraft(
     multilingualSetting,
     selectedProjectSlug,
     inheritProjectLanguages,
+    conversationEmailUpdateEnabledOverride,
     seedOpinions,
     conversationType,
     rankingMode,

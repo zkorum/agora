@@ -1,3 +1,5 @@
+import type { RouteLocationRaw } from "vue-router";
+
 /**
  * Core TypeScript interfaces for the content action dialog system
  * This file defines all types used throughout the content action management system
@@ -38,10 +40,24 @@ export type ContentActionHandler = (
 ) => Promise<void> | void;
 
 // Complete content action with handler
-export interface ContentAction extends BaseContentAction {
-  handler: ContentActionHandler;
+interface ContentActionVisibility {
   isVisible: (context: ContentActionContext) => boolean;
 }
+
+interface CommonContentAction
+  extends BaseContentAction, ContentActionVisibility {}
+
+export interface HandlerContentAction extends CommonContentAction {
+  handler: ContentActionHandler;
+  to?: never;
+}
+
+export interface NavigationContentAction extends CommonContentAction {
+  handler?: never;
+  to: RouteLocationRaw;
+}
+
+export type ContentAction = HandlerContentAction | NavigationContentAction;
 
 // Content action categories for organization
 export type ContentActionCategory =
@@ -50,9 +66,9 @@ export type ContentActionCategory =
   | "social"
   | "sharing";
 
-export interface CategorizedContentAction extends ContentAction {
+export type CategorizedContentAction = ContentAction & {
   category: ContentActionCategory;
-}
+};
 
 // Content action dialog state management
 export interface ContentActionDialogState {

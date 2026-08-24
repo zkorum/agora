@@ -15,6 +15,8 @@ import {
   type ConversationEmailUpdatePreferencesResponse,
   type ConversationEmailUpdatePreferenceUpdateRequest,
   type ConversationEmailUpdatePreferenceUpdateResponse,
+  type ConversationEmailUpdateProjectSummaryRequest,
+  type ConversationEmailUpdateProjectSummaryResponse,
   type ConversationEmailUpdateSendRequest,
   type ConversationEmailUpdateSendResponse,
   type ConversationEmailUpdateSendTestRequest,
@@ -179,6 +181,16 @@ export function useBackendConversationEmailUpdatesApi() {
     });
   }
 
+  function getProjectSummary(
+    request: ConversationEmailUpdateProjectSummaryRequest
+  ): Promise<ConversationEmailUpdateProjectSummaryResponse> {
+    return post({
+      url: "/api/v1/project/email-update/summary/get",
+      body: Dto.conversationEmailUpdateProjectSummaryRequest.parse(request),
+      responseSchema: Dto.conversationEmailUpdateProjectSummaryResponse,
+    });
+  }
+
   return {
     getWorkspace,
     listHistory,
@@ -192,5 +204,6 @@ export function useBackendConversationEmailUpdatesApi() {
     getConfiguration,
     updateConfiguration,
     getConversationSummary,
+    getProjectSummary,
   };
 }

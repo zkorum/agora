@@ -2,9 +2,36 @@ import { describe, expect, it } from "vitest";
 import {
     buildConversationEmailPreferenceGroups,
     resolveCompleteOwnerSnapshots,
+    resolveConversationEmailUpdateAuthoringAction,
     type RequiredOwnerSnapshot,
 } from "./conversationEmailUpdate.js";
 import { resolveConversationEmailPreference } from "./conversationEmailUpdatePolicy.js";
+
+describe("resolveConversationEmailUpdateAuthoringAction", () => {
+    it("keeps the workspace visible when sending is currently blocked", () => {
+        expect(
+            resolveConversationEmailUpdateAuthoringAction({
+                canAccessWorkspace: true,
+                hasHistory: false,
+            }),
+        ).toBe("compose");
+    });
+
+    it("falls back to history without current authoring access", () => {
+        expect(
+            resolveConversationEmailUpdateAuthoringAction({
+                canAccessWorkspace: false,
+                hasHistory: true,
+            }),
+        ).toBe("history");
+        expect(
+            resolveConversationEmailUpdateAuthoringAction({
+                canAccessWorkspace: false,
+                hasHistory: false,
+            }),
+        ).toBe("none");
+    });
+});
 
 describe("resolveConversationEmailPreference", () => {
     it("keeps lower-level choices intact while globally paused", () => {

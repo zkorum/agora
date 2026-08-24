@@ -12,6 +12,7 @@
       :key="button.id"
       :label="button.label"
       :icon="button.icon"
+      :disabled="!button.clickable"
       :class="{ 'cursor-pointer': button.clickable }"
       :aria-label="button.label"
       @click="button.clickHandler"
@@ -22,6 +23,7 @@
       :key="button.id"
       :label="button.label"
       :icon="button.icon"
+      :disabled="!button.clickable"
       :class="{ 'cursor-pointer': button.clickable }"
       :aria-label="button.label"
       @click="button.clickHandler"
@@ -268,7 +270,7 @@ const selectedOrganizationImageUrl = computed(() => {
 });
 
 const showPostAsImage = computed(() => {
-  return !postAs.value.postAsOrganization || selectedOrganizationImageUrl.value !== "";
+  return true;
 });
 
 const showPostAsDialogVisible = ref(false);
@@ -573,20 +575,28 @@ watch(
   }
 );
 
-watch(isAnalysisVariantsPreferenceDenied, (isDenied) => {
-  if (isDenied) {
-    preferredOpinionGroupCount.value = null;
-  }
-}, { immediate: true });
+watch(
+  isAnalysisVariantsPreferenceDenied,
+  (isDenied) => {
+    if (isDenied) {
+      preferredOpinionGroupCount.value = null;
+    }
+  },
+  { immediate: true }
+);
 
-watch(isDynamicTranslationDenied, (isDenied) => {
-  if (isDenied) {
-    multilingualSetting.value = {
-      dynamicTranslationEnabled: false,
-      additionalLanguageCodes: [],
-    };
-  }
-}, { immediate: true });
+watch(
+  isDynamicTranslationDenied,
+  (isDenied) => {
+    if (isDenied) {
+      multilingualSetting.value = {
+        dynamicTranslationEnabled: false,
+        additionalLanguageCodes: [],
+      };
+    }
+  },
+  { immediate: true }
+);
 
 const canOpenEventTicketRequirementDialog = computed(() => {
   if (requiresEventTicket.value === undefined) {
@@ -623,7 +633,8 @@ const analysisPreferenceLabel = computed(() => {
 
 const languageSettingLabel = computed(() => {
   const detectedLanguage =
-    props.detectedLanguageCode === null || props.detectedLanguageCode === undefined
+    props.detectedLanguageCode === null ||
+    props.detectedLanguageCode === undefined
       ? t("languagePrimaryAuto")
       : getLanguageLabel({
           languageCode: props.detectedLanguageCode,
@@ -645,10 +656,12 @@ const controlButtons = computed((): ControlButton[] => [
     label: t("asLabel").replace("{name}", postAsDisplayName.value),
     icon: showPostAsDialogVisible.value
       ? "pi pi-chevron-up"
-      : "pi pi-chevron-down",
-    isVisible: isLoggedIn.value && !props.isEditMode,
+      : props.isEditMode
+        ? ""
+        : "pi pi-chevron-down",
+    isVisible: isLoggedIn.value,
     clickHandler: showAsDialog,
-    clickable: true,
+    clickable: !props.isEditMode,
   },
   {
     id: "post-type",

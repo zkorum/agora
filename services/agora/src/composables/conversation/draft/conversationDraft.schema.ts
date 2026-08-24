@@ -97,6 +97,7 @@ const zodConversationDraftBase = z.object({
   }),
   selectedProjectSlug: zodProjectSlug.optional(),
   inheritProjectLanguages: z.boolean().default(false),
+  conversationEmailUpdateEnabledOverride: z.boolean().optional(),
   seedOpinions: z.array(z.string()),
 
   // Publishing options

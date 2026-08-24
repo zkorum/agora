@@ -120,6 +120,7 @@ export async function getConversationForEdit({
             preferredOpinionGroupCount:
                 polisConversationConfigTable.preferredOpinionGroupCount,
             postAsOrganizationName: organizationTable.displayName,
+            postAsOrganizationSlug: organizationTable.slug,
             autoProvisionedForUserId:
                 organizationTable.autoProvisionedForUserId,
             createdAt: conversationTable.createdAt,
@@ -308,6 +309,11 @@ export async function getConversationForEdit({
         postAsOrganizationName: toUnionUndefined(
             conversation.autoProvisionedForUserId === null
                 ? conversation.postAsOrganizationName
+                : null,
+        ),
+        postAsOrganizationSlug: toUnionUndefined(
+            conversation.autoProvisionedForUserId === null
+                ? conversation.postAsOrganizationSlug
                 : null,
         ),
         surveyConfig,

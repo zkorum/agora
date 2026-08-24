@@ -1,4 +1,4 @@
-import type { ContentAction } from "src/utils/actions/core/types";
+import type { HandlerContentAction } from "src/utils/actions/core/types";
 
 export type ConversationUpdatePreferenceState =
   | "disabled"
@@ -18,20 +18,22 @@ export function getConversationUpdatePreferenceDisplay(
 }
 
 export function createConversationUpdatePreferenceAction({
+  id,
   label,
   enabled,
   description,
   disabled = false,
   onToggle,
 }: {
+  id: string;
   label: string;
   enabled: boolean;
   description: string | undefined;
   disabled?: boolean;
   onToggle: () => void;
-}): ContentAction {
+}): HandlerContentAction {
   return {
-    id: "conversationEmailUpdates",
+    id,
     label,
     description,
     ...(disabled ? { disabled: true } : {}),

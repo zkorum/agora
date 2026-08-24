@@ -69,6 +69,8 @@ import type {
     ConversationEmailUpdatePreferenceUpdateResponse,
     ConversationEmailUpdatePreferencesRequest,
     ConversationEmailUpdatePreferencesResponse,
+    ConversationEmailUpdateProjectSummaryRequest,
+    ConversationEmailUpdateProjectSummaryResponse,
     ConversationEmailUpdateScope,
     ConversationEmailUpdateSelection,
     ConversationEmailUpdateSendRequest,
@@ -90,6 +92,19 @@ import {
 import { normalizeUserRichTextInput } from "./richText.js";
 
 const NO_PROJECT_TITLE = "No Project";
+
+export function resolveConversationEmailUpdateAuthoringAction({
+    canAccessWorkspace,
+    hasHistory,
+}: {
+    canAccessWorkspace: boolean;
+    hasHistory: boolean;
+}): "none" | "compose" | "history" {
+    if (canAccessWorkspace) {
+        return "compose";
+    }
+    return hasHistory ? "history" : "none";
+}
 
 interface AuthenticatedRequest<Request> {
     userId: string;
@@ -133,6 +148,9 @@ export interface ConversationEmailUpdateService {
     getConversationSummary: (
         params: AuthenticatedRequest<ConversationEmailUpdateConversationSummaryRequest>,
     ) => Promise<ConversationEmailUpdateConversationSummaryResponse>;
+    getProjectSummary: (
+        params: AuthenticatedRequest<ConversationEmailUpdateProjectSummaryRequest>,
+    ) => Promise<ConversationEmailUpdateProjectSummaryResponse>;
 }
 
 type AuthorizedConversationDao = Awaited<
@@ -352,10 +370,12 @@ async function listAuthorizedConversations({
     db,
     userId,
     now,
+    projectId,
 }: {
     db: PostgresJsDatabase;
     userId: string;
     now: Date;
+    projectId?: number;
 }) {
     const authorizedProject = db
         .selectDistinctOn([projectTable.id], {
@@ -437,7 +457,14 @@ async function listAuthorizedConversations({
                 ),
             ),
         )
-        .where(isNull(projectTable.deletedAt))
+        .where(
+            and(
+                isNull(projectTable.deletedAt),
+                projectId === undefined
+                    ? undefined
+                    : eq(projectTable.id, projectId),
+            ),
+        )
         .orderBy(
             projectTable.id,
             projectOrganizationOwnershipTable.organizationId,
@@ -1645,6 +1672,34 @@ async function queryVisibleHistoryRows({
         .limit(limit);
 }
 
+async function hasVisibleHistory({
+    db,
+    userId,
+    context,
+}: {
+    db: PostgresJsDatabase;
+    userId: string;
+    context: HistoryContext;
+}): Promise<boolean> {
+    const rows = await db
+        .select({ id: conversationEmailUpdateDeliveryTable.id })
+        .from(conversationEmailUpdateDeliveryTable)
+        .innerJoin(
+            conversationEmailUpdateTable,
+            eq(
+                conversationEmailUpdateTable.id,
+                conversationEmailUpdateDeliveryTable.updateId,
+            ),
+        )
+        .innerJoin(
+            projectTable,
+            eq(projectTable.id, conversationEmailUpdateDeliveryTable.projectId),
+        )
+        .where(historyAccessPredicate({ db, userId, context }))
+        .limit(1);
+    return rows.length > 0;
+}
+
 function getPreferenceScopeKind({
     autoProvisionedForOrganizationId,
     directoryVisibility,
@@ -2027,6 +2082,9 @@ async function queryProjectConfigurationRows({
         .select({
             project_id: projectTable.id,
             project_slug: projectTable.slug,
+            directory_visibility: projectTable.directoryVisibility,
+            auto_provisioned_for_organization_id:
+                projectTable.autoProvisionedForOrganizationId,
             default_enabled: projectTable.conversationEmailUpdateDefaultEnabled,
             contact_email: projectContactTable.email,
             safety_blocked: exists(
@@ -2347,33 +2405,30 @@ async function getConversationConfigurationRow({
     return rows.at(0);
 }
 
-async function isSiteOrgAdmin({
-    db,
-    userId,
-}: {
-    db: PostgresJsDatabase;
-    userId: string;
-}): Promise<boolean> {
-    const rows = await db
-        .select({ allowed: userTable.isSiteOrgAdmin })
-        .from(userTable)
-        .where(and(eq(userTable.id, userId), eq(userTable.isDeleted, false)))
-        .limit(1);
-    return rows.at(0)?.allowed ?? false;
-}
-
-async function hasConversationEditCapability({
+async function hasConversationEmailUpdateCapability({
     db,
     userId,
     projectId,
+    now,
 }: {
     db: PostgresJsDatabase;
     userId: string;
     projectId: number;
+    now: Date;
 }): Promise<boolean> {
     const rows = await db
         .select({ id: projectOrganizationOwnershipTable.id })
         .from(projectOrganizationOwnershipTable)
+        .innerJoin(
+            organizationTable,
+            and(
+                eq(
+                    organizationTable.id,
+                    projectOrganizationOwnershipTable.organizationId,
+                ),
+                isNull(organizationTable.deletedAt),
+            ),
+        )
         .innerJoin(
             organizationMembershipTable,
             and(
@@ -2386,6 +2441,13 @@ async function hasConversationEditCapability({
             ),
         )
         .innerJoin(
+            userTable,
+            and(
+                eq(userTable.id, organizationMembershipTable.userId),
+                eq(userTable.isDeleted, false),
+            ),
+        )
+        .innerJoin(
             organizationMembershipAllProjectCapabilityTable,
             and(
                 eq(
@@ -2394,10 +2456,29 @@ async function hasConversationEditCapability({
                 ),
                 eq(
                     organizationMembershipAllProjectCapabilityTable.capability,
-                    "conversation_edit",
+                    "conversation_email_update",
                 ),
                 isNull(
                     organizationMembershipAllProjectCapabilityTable.deletedAt,
+                ),
+            ),
+        )
+        .innerJoin(
+            premiumFeatureEntitlementTable,
+            and(
+                eq(
+                    premiumFeatureEntitlementTable.organizationId,
+                    projectOrganizationOwnershipTable.organizationId,
+                ),
+                eq(
+                    premiumFeatureEntitlementTable.feature,
+                    "conversation_email_update",
+                ),
+                lte(premiumFeatureEntitlementTable.startsAt, now),
+                isNull(premiumFeatureEntitlementTable.revokedAt),
+                or(
+                    isNull(premiumFeatureEntitlementTable.expiresAt),
+                    gt(premiumFeatureEntitlementTable.expiresAt, now),
                 ),
             ),
         )
@@ -2666,20 +2747,25 @@ export function createConversationEmailUpdateService({
         try {
             const now = new Date();
             if (request.target === "project") {
-                const [row, canConfigure] = await Promise.all([
-                    getProjectConfigurationRow({
-                        db: database,
-                        projectSlug: request.projectSlug,
-                        now,
-                    }),
-                    isSiteOrgAdmin({ db: database, userId }),
-                ]);
+                const row = await getProjectConfigurationRow({
+                    db: database,
+                    projectSlug: request.projectSlug,
+                    now,
+                });
                 if (row === undefined) {
                     return { success: false, reason: "target_not_found" };
                 }
                 if (!row.feature_available) {
                     return { success: false, reason: "feature_not_available" };
                 }
+                const canConfigure = await hasConversationEmailUpdateCapability(
+                    {
+                        db: database,
+                        userId,
+                        projectId: row.project_id,
+                        now,
+                    },
+                );
                 return {
                     success: true,
                     configuration: {
@@ -2704,10 +2790,11 @@ export function createConversationEmailUpdateService({
             if (!row.feature_available) {
                 return { success: false, reason: "feature_not_available" };
             }
-            const canConfigure = await hasConversationEditCapability({
+            const canConfigure = await hasConversationEmailUpdateCapability({
                 db: database,
                 userId,
                 projectId: row.project_id,
+                now,
             });
             return mapConfiguration({
                 row,
@@ -3939,10 +4026,13 @@ export function createConversationEmailUpdateService({
                                 reason: "target_not_found",
                             };
                         }
-                        const allowed = await isSiteOrgAdmin({
-                            db: tx,
-                            userId,
-                        });
+                        const allowed =
+                            await hasConversationEmailUpdateCapability({
+                                db: tx,
+                                userId,
+                                projectId: row.project_id,
+                                now,
+                            });
                         if (!row.feature_available || !allowed) {
                             return {
                                 success: false,
@@ -4010,11 +4100,13 @@ export function createConversationEmailUpdateService({
                                 reason: "target_not_found",
                             };
                         }
-                        const allowed = await hasConversationEditCapability({
-                            db: tx,
-                            userId,
-                            projectId: row.project_id,
-                        });
+                        const allowed =
+                            await hasConversationEmailUpdateCapability({
+                                db: tx,
+                                userId,
+                                projectId: row.project_id,
+                                now,
+                            });
                         if (!row.feature_available || !allowed) {
                             return {
                                 success: false,
@@ -4109,13 +4201,8 @@ export function createConversationEmailUpdateService({
                             now,
                         }),
                     ]);
-                const canCompose = accessRows.some(
-                    (access) =>
-                        access.conversation_id === row.conversation_id &&
-                        isSendingEnabled({
-                            row: access,
-                            operationallyEnabled: sendingEnabled,
-                        }),
+                const canAccessWorkspace = accessRows.some(
+                    (access) => access.conversation_id === row.conversation_id,
                 );
                 const conversationPreference =
                     preferenceRows.conversationRows.find(
@@ -4144,11 +4231,11 @@ export function createConversationEmailUpdateService({
                     });
                 return {
                     success: true,
-                    authoringAction: canCompose
-                        ? "compose"
-                        : row.has_history
-                          ? "history"
-                          : "none",
+                    authoringAction:
+                        resolveConversationEmailUpdateAuthoringAction({
+                            canAccessWorkspace,
+                            hasHistory: row.has_history,
+                        }),
                     participantPreference:
                         primaryEmail === undefined
                             ? undefined
@@ -4180,6 +4267,122 @@ export function createConversationEmailUpdateService({
                                                         conversationSlugId:
                                                             row.conversation_slug_id,
                                                     },
+                                      }),
+                              },
+                };
+            } catch {
+                return { success: false, reason: "summary_unavailable" };
+            }
+        },
+
+        getProjectSummary: async ({ userId, request }) => {
+            try {
+                const now = new Date();
+                const configuration = await getProjectConfigurationRow({
+                    db,
+                    projectSlug: request.projectSlug,
+                    now,
+                });
+                if (
+                    configuration?.directory_visibility !== "listed" ||
+                    configuration.auto_provisioned_for_organization_id !== null
+                ) {
+                    return { success: false, reason: "project_not_found" };
+                }
+
+                const [
+                    accessRows,
+                    hasHistory,
+                    primaryEmail,
+                    globalPreferenceRows,
+                    projectPreferenceRows,
+                ] = await Promise.all([
+                    listAuthorizedConversations({
+                        db,
+                        userId,
+                        now,
+                        projectId: configuration.project_id,
+                    }),
+                    hasVisibleHistory({
+                        db,
+                        userId,
+                        context: {
+                            kind: "project",
+                            projectSlug: request.projectSlug,
+                        },
+                    }),
+                    getPrimaryEmail({ db, userId }),
+                    db
+                        .select({
+                            pausedAt:
+                                conversationEmailUpdateUserGlobalSettingTable.pausedAt,
+                        })
+                        .from(conversationEmailUpdateUserGlobalSettingTable)
+                        .where(
+                            eq(
+                                conversationEmailUpdateUserGlobalSettingTable.userId,
+                                userId,
+                            ),
+                        )
+                        .limit(1),
+                    db
+                        .select({
+                            enabled:
+                                conversationEmailUpdateUserProjectPreferenceTable.enabled,
+                        })
+                        .from(conversationEmailUpdateUserProjectPreferenceTable)
+                        .where(
+                            and(
+                                eq(
+                                    conversationEmailUpdateUserProjectPreferenceTable.userId,
+                                    userId,
+                                ),
+                                eq(
+                                    conversationEmailUpdateUserProjectPreferenceTable.projectId,
+                                    configuration.project_id,
+                                ),
+                            ),
+                        )
+                        .limit(1),
+                ]);
+                const canAccessWorkspace = accessRows.length > 0;
+                if (!configuration.feature_available && !hasHistory) {
+                    return {
+                        success: false,
+                        reason: "feature_not_available",
+                    };
+                }
+
+                const projectPreference = projectPreferenceRows.at(0)?.enabled;
+                const globalPaused =
+                    globalPreferenceRows.length > 0 &&
+                    globalPreferenceRows.at(0)?.pausedAt !== null;
+                const state =
+                    projectPreference === undefined
+                        ? "undisclosed"
+                        : projectPreference
+                          ? "enabled"
+                          : "disabled";
+                return {
+                    success: true,
+                    authoringAction:
+                        resolveConversationEmailUpdateAuthoringAction({
+                            canAccessWorkspace,
+                            hasHistory,
+                        }),
+                    participantPreference:
+                        primaryEmail === undefined ||
+                        !configuration.feature_available ||
+                        configuration.safety_blocked
+                            ? undefined
+                            : {
+                                  state,
+                                  resolvedEnabled:
+                                      resolveConversationEmailPreference({
+                                          globalPaused,
+                                          projectEnabled: projectPreference,
+                                          conversationEnabled: undefined,
+                                          scopeKind: "project",
                                       }),
                               },
                 };

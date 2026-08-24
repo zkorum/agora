@@ -77,6 +77,8 @@ function buildBaseCreateConversationRequest({
     participationMode: conversationDraft.participationMode,
     seedOpinionList: conversationDraft.seedOpinions,
     requiresEventTicket: conversationDraft.requiresEventTicket,
+    conversationEmailUpdateEnabledOverride:
+      conversationDraft.conversationEmailUpdateEnabledOverride,
   };
 }
 
@@ -235,9 +237,7 @@ export function usePublishConversationDraft() {
     }
   }
 
-  function showProjectTargetFailure(
-    reason: ProjectCreateFailureReason
-  ): void {
+  function showProjectTargetFailure(reason: ProjectCreateFailureReason): void {
     if (reason === "organization_not_available") {
       showNotifyMessage(t("organizationUnavailable"));
       return;

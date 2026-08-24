@@ -3944,21 +3944,55 @@
                                                                     "targetLanguageCodes"
                                                                 ],
                                                                 "additionalProperties": false
+                                                            },
+                                                            "emailUpdates": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "canConfigure": {
+                                                                        "type": "boolean"
+                                                                    },
+                                                                    "scopeDefaultEnabled": {
+                                                                        "type": "boolean"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "canConfigure",
+                                                                    "scopeDefaultEnabled"
+                                                                ],
+                                                                "additionalProperties": false
                                                             }
                                                         },
                                                         "required": [
                                                             "projectSlug",
                                                             "projectTitle",
                                                             "defaultLanguageCode",
-                                                            "languageSettings"
+                                                            "languageSettings",
+                                                            "emailUpdates"
                                                         ],
                                                         "additionalProperties": false
                                                     }
+                                                },
+                                                "noProjectEmailUpdates": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "canConfigure": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "scopeDefaultEnabled": {
+                                                            "type": "boolean"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "canConfigure",
+                                                        "scopeDefaultEnabled"
+                                                    ],
+                                                    "additionalProperties": false
                                                 }
                                             },
                                             "required": [
                                                 "success",
-                                                "projectList"
+                                                "projectList",
+                                                "noProjectEmailUpdates"
                                             ],
                                             "additionalProperties": false
                                         },
@@ -17030,6 +17064,9 @@
                                                     "devconnect-2025"
                                                 ]
                                             },
+                                            "conversationEmailUpdateEnabledOverride": {
+                                                "type": "boolean"
+                                            },
                                             "conversationType": {
                                                 "type": "string",
                                                 "enum": [
@@ -17391,6 +17428,9 @@
                                                 "enum": [
                                                     "devconnect-2025"
                                                 ]
+                                            },
+                                            "conversationEmailUpdateEnabledOverride": {
+                                                "type": "boolean"
                                             },
                                             "conversationType": {
                                                 "type": "string",
@@ -20626,6 +20666,11 @@
                                                 },
                                                 "postAsOrganizationName": {
                                                     "type": "string"
+                                                },
+                                                "postAsOrganizationSlug": {
+                                                    "type": "string",
+                                                    "maxLength": 65,
+                                                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
                                                 },
                                                 "surveyConfig": {
                                                     "nullable": true,
@@ -38883,6 +38928,113 @@
                                                     "type": "string",
                                                     "enum": [
                                                         "conversation_not_found",
+                                                        "feature_not_available",
+                                                        "summary_unavailable"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/project/email-update/summary/get": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "projectSlug": {
+                                        "type": "string",
+                                        "maxLength": 65,
+                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                    }
+                                },
+                                "required": [
+                                    "projectSlug"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
+                                                "authoringAction": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "none",
+                                                        "compose",
+                                                        "history"
+                                                    ]
+                                                },
+                                                "participantPreference": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "state": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "disabled",
+                                                                "enabled",
+                                                                "undisclosed"
+                                                            ]
+                                                        },
+                                                        "resolvedEnabled": {
+                                                            "type": "boolean"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "state",
+                                                        "resolvedEnabled"
+                                                    ],
+                                                    "additionalProperties": false
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "authoringAction"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "project_not_found",
                                                         "feature_not_available",
                                                         "summary_unavailable"
                                                     ]
