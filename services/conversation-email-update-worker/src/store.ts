@@ -39,6 +39,7 @@ import {
     emailTable,
     maxdiffComparisonTable,
     maxdiffResultTable,
+    opinionModerationTable,
     opinionTable,
     organizationMembershipAllProjectCapabilityTable,
     organizationMembershipTable,
@@ -48,7 +49,6 @@ import {
     projectTable,
     userDisplayLanguageTable,
     userTable,
-    voteContentTable,
     voteTable,
 } from "@/shared-backend/schema.js";
 import type { ConversationEmailActionLinks } from "./renderer.js";
@@ -94,6 +94,81 @@ export interface ClaimedTestWork {
 export interface ConversationLink {
     title: string;
     url: string;
+}
+
+export function buildConversationEmailParticipationQuery({
+    db,
+}: {
+    db: PostgresDatabase;
+}) {
+    const visibleOpinionModeration = or(
+        isNull(opinionModerationTable.id),
+        ne(opinionModerationTable.moderationAction, "hide"),
+    );
+    return db
+        .select({
+            userId: voteTable.authorId,
+            conversationId: opinionTable.conversationId,
+            createdAt: voteTable.createdAt,
+        })
+        .from(voteTable)
+        .innerJoin(opinionTable, eq(opinionTable.id, voteTable.opinionId))
+        .leftJoin(
+            opinionModerationTable,
+            and(
+                eq(opinionModerationTable.opinionId, opinionTable.id),
+                isNull(opinionModerationTable.deletedAt),
+            ),
+        )
+        .where(
+            and(
+                isNotNull(opinionTable.currentContentId),
+                isNotNull(voteTable.currentContentId),
+                visibleOpinionModeration,
+            ),
+        )
+        .unionAll(
+            db
+                .select({
+                    userId: opinionTable.authorId,
+                    conversationId: opinionTable.conversationId,
+                    createdAt: opinionTable.createdAt,
+                })
+                .from(opinionTable)
+                .leftJoin(
+                    opinionModerationTable,
+                    and(
+                        eq(
+                            opinionModerationTable.opinionId,
+                            opinionTable.id,
+                        ),
+                        isNull(opinionModerationTable.deletedAt),
+                    ),
+                )
+                .where(
+                    and(
+                        isNotNull(opinionTable.currentContentId),
+                        visibleOpinionModeration,
+                    ),
+                ),
+        )
+        .unionAll(
+            db
+                .select({
+                    userId: maxdiffResultTable.participantId,
+                    conversationId: maxdiffResultTable.conversationId,
+                    createdAt: maxdiffComparisonTable.createdAt,
+                })
+                .from(maxdiffComparisonTable)
+                .innerJoin(
+                    maxdiffResultTable,
+                    eq(
+                        maxdiffResultTable.id,
+                        maxdiffComparisonTable.maxdiffResultId,
+                    ),
+                )
+                .where(isNull(maxdiffComparisonTable.deletedAt)),
+        );
 }
 
 function leaseExpiryExpression(seconds: number) {
@@ -859,16 +934,10 @@ export async function getUpdateConversationLinks({
             title: conversationEmailUpdateConversationTable.conversationTitleSnapshot,
             slugId: conversationTable.slugId,
             projectSlug: projectTable.slug,
-            scopeKind: conversationEmailUpdateTable.scopeKind,
+            autoProvisionedForOrganizationId:
+                projectTable.autoProvisionedForOrganizationId,
         })
         .from(conversationEmailUpdateConversationTable)
-        .innerJoin(
-            conversationEmailUpdateTable,
-            eq(
-                conversationEmailUpdateTable.id,
-                conversationEmailUpdateConversationTable.updateId,
-            ),
-        )
         .innerJoin(
             conversationTable,
             eq(
@@ -878,7 +947,10 @@ export async function getUpdateConversationLinks({
         )
         .innerJoin(
             projectTable,
-            eq(projectTable.id, conversationEmailUpdateTable.projectId),
+            eq(
+                projectTable.id,
+                conversationEmailUpdateConversationTable.projectId,
+            ),
         )
         .where(
             and(
@@ -893,13 +965,34 @@ export async function getUpdateConversationLinks({
             asc(conversationEmailUpdateConversationTable.conversationId),
         );
     const baseUrl = new URL(siteBaseUrl);
-    return rows.map((row) => {
-        const path =
-            row.scopeKind === "listed_project"
-                ? `/project/${encodeURIComponent(row.projectSlug)}/conversation/${encodeURIComponent(row.slugId)}/`
-                : `/conversation/${encodeURIComponent(row.slugId)}/`;
-        return { title: row.title, url: new URL(path, baseUrl).toString() };
-    });
+    return rows.map((row) => ({
+        title: row.title,
+        url: buildConversationLinkUrl({
+            baseUrl,
+            conversationSlugId: row.slugId,
+            route:
+                row.autoProvisionedForOrganizationId === null
+                    ? { kind: "project", projectSlug: row.projectSlug }
+                    : { kind: "conversation" },
+        }),
+    }));
+}
+
+export function buildConversationLinkUrl({
+    baseUrl,
+    conversationSlugId,
+    route,
+}: {
+    baseUrl: URL;
+    conversationSlugId: string;
+    route: { kind: "project"; projectSlug: string } | { kind: "conversation" };
+}): string {
+    const encodedConversationSlugId = encodeURIComponent(conversationSlugId);
+    const path =
+        route.kind === "project"
+            ? `/project/${encodeURIComponent(route.projectSlug)}/conversation/${encodedConversationSlugId}/`
+            : `/conversation/${encodedConversationSlugId}/`;
+    return new URL(path, baseUrl).toString();
 }
 
 export type MaterializationResult =
@@ -1327,35 +1420,9 @@ export async function materializeOneDeliveryPage({
                 }
             }
 
-            const participation = tx
-                .select({
-                    userId: voteTable.authorId,
-                    conversationId: opinionTable.conversationId,
-                    createdAt: voteContentTable.createdAt,
-                })
-                .from(voteContentTable)
-                .innerJoin(voteTable, eq(voteTable.id, voteContentTable.voteId))
-                .innerJoin(
-                    opinionTable,
-                    eq(opinionTable.id, voteTable.opinionId),
-                )
-                .unionAll(
-                    tx
-                        .select({
-                            userId: maxdiffResultTable.participantId,
-                            conversationId: maxdiffResultTable.conversationId,
-                            createdAt: maxdiffComparisonTable.createdAt,
-                        })
-                        .from(maxdiffComparisonTable)
-                        .innerJoin(
-                            maxdiffResultTable,
-                            eq(
-                                maxdiffResultTable.id,
-                                maxdiffComparisonTable.maxdiffResultId,
-                            ),
-                        ),
-                )
-                .as("participation");
+            const participation = buildConversationEmailParticipationQuery({
+                db: tx,
+            }).as("participation");
             const qualified = tx
                 .selectDistinct({
                     userId: participation.userId,

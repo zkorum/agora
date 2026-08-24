@@ -1,6 +1,6 @@
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { type App, createApp, defineComponent, h } from "vue";
+import { type App, createApp, defineComponent, h, nextTick } from "vue";
 import { createI18n } from "vue-i18n";
 
 vi.mock(
@@ -63,6 +63,39 @@ vi.mock("src/components/ui-library/ZKInfoBanner.vue", () => ({
     },
   }),
 }));
+vi.mock("src/components/ui-library/ZKConfirmDialog.vue", () => ({
+  default: defineComponent({
+    name: "ZKConfirmDialog",
+    props: {
+      modelValue: { type: Boolean, required: true },
+      title: { type: String, required: true },
+      confirmText: { type: String, required: true },
+      cancelText: { type: String, required: true },
+    },
+    emits: ["confirm", "update:modelValue"],
+    setup(props, { emit, slots }) {
+      return () => {
+        if (!props.modelValue) return null;
+        return h("div", { class: "confirm-dialog-stub" }, [
+          h("h3", props.title),
+          slots.default?.(),
+          h(
+            "button",
+            {
+              class: "confirm-button-stub",
+              onClick: () => {
+                emit("confirm");
+                emit("update:modelValue", false);
+              },
+            },
+            props.confirmText
+          ),
+          h("span", props.cancelText),
+        ]);
+      };
+    },
+  }),
+}));
 
 import ConversationUpdateComposerForm from "./ConversationUpdateComposerForm.vue";
 
@@ -95,6 +128,9 @@ describe("ConversationUpdateComposerForm", () => {
     expect(zeroRecipientBanner?.textContent).toContain(
       "No participants are currently eligible"
     );
+    expect(container.querySelector(".input-stub")?.nextElementSibling).toBe(
+      zeroRecipientBanner
+    );
     expect(banners.indexOf(zeroRecipientBanner ?? document.body)).toBeLessThan(
       banners.indexOf(policyBanner ?? document.body)
     );
@@ -103,7 +139,7 @@ describe("ConversationUpdateComposerForm", () => {
     );
   });
 
-  it("explains test and real recipients and provides structured group guidance", () => {
+  it("explains real recipients and provides optional writing suggestions", () => {
     const container = mountComposer({
       locale: "en",
       audienceEstimate: 12,
@@ -112,9 +148,7 @@ describe("ConversationUpdateComposerForm", () => {
     const text = container.textContent ?? "";
     const editor = container.querySelector(".editor-stub");
 
-    expect(text).toContain(
-      "This test goes only to the facilitator at facilitator@example.com. Nobody else receives anything until you send the real update."
-    );
+    expect(text).not.toContain("This test goes only to the facilitator");
     expect(text).toContain(
       "The real update will reach eligible participants plus 2 authorized project managers."
     );
@@ -122,8 +156,37 @@ describe("ConversationUpdateComposerForm", () => {
       "Anyone who is both an eligible participant and an authorized project manager receives one owner copy."
     );
     expect(editor?.getAttribute("data-placeholder")).toBe(
-      "Share a concise group update:\n• Share results\n• Explain what changed\n• Highlight new statements\n• Invite participants to return\n\nRemember: some participants may have responded to everything; others may not have."
+      "Possible updates:\n• Share results\n• Share recent changes\n• Highlight new statements\n• Invite participants to return and vote on newly added statements, improving the analysis as participation grows\n\nRemember: this email will be sent to all eligible participants, whether they responded to some statements or none at all.\n\nLinks to the selected conversations are added automatically at the end of the email, using their project pages when applicable. You do not need to include them here, but you may."
     );
+  });
+
+  it("confirms that a test goes only to the facilitator before requesting it", async () => {
+    const testHandler = vi.fn();
+    const container = mountComposer({
+      locale: "en",
+      audienceEstimate: 12,
+      relatedConversationOwnerCount: 2,
+      testHandler,
+    });
+
+    expect(container.textContent).not.toContain(
+      "This test goes only to the facilitator"
+    );
+    getButton(container, "Send test email").click();
+    await nextTick();
+
+    expect(container.textContent).toContain("Send this test email?");
+    expect(container.textContent).toContain(
+      "This test goes only to the facilitator at facilitator@example.com."
+    );
+    expect(testHandler).not.toHaveBeenCalled();
+
+    const confirmButton = container.querySelector<HTMLButtonElement>(
+      ".confirm-button-stub"
+    );
+    expect(confirmButton).not.toBeNull();
+    confirmButton?.click();
+    expect(testHandler).toHaveBeenCalledOnce();
   });
 
   it("uses localized singular owner-copy wording", () => {
@@ -141,7 +204,7 @@ describe("ConversationUpdateComposerForm", () => {
     );
   });
 
-  it("renders dynamic notices and multiline guidance in an RTL language", () => {
+  it("renders recipient details and multiline guidance in an RTL language", () => {
     const container = mountComposer({
       locale: "ar",
       audienceEstimate: 12,
@@ -150,12 +213,13 @@ describe("ConversationUpdateComposerForm", () => {
     const text = container.textContent ?? "";
     const editor = container.querySelector(".editor-stub");
 
-    expect(text).toContain("يُرسل هذا الاختبار إلى المُيسّر فقط");
-    expect(text).toContain("facilitator@example.com");
     expect(text).toContain("مديري المشروع المخوّلين");
     expect(text).not.toContain("Compose update");
     expect(editor?.getAttribute("data-placeholder")).toContain(
-      "• شارك النتائج\n• اشرح ما تغيّر"
+      "• شارك النتائج\n• شارك التغييرات الأخيرة"
+    );
+    expect(editor?.getAttribute("data-placeholder")).toContain(
+      "تُضاف روابط المحادثات المحددة تلقائيًا"
     );
   });
 });
@@ -164,10 +228,12 @@ function mountComposer({
   locale,
   audienceEstimate,
   relatedConversationOwnerCount,
+  testHandler = undefined,
 }: {
   locale: SupportedDisplayLanguageCodes;
   audienceEstimate: number;
   relatedConversationOwnerCount: number;
+  testHandler?: () => void;
 }): HTMLElement {
   const container = document.createElement("div");
   container.dir = locale === "ar" ? "rtl" : "ltr";
@@ -208,6 +274,7 @@ function mountComposer({
     bodyHtml: "<p>Update body</p>",
     bodyPlainText: "Update body",
     contentConfirmed: false,
+    onTest: testHandler,
   });
   const i18n = createI18n({
     legacy: false,
@@ -234,13 +301,24 @@ function mountComposer({
         hint: { type: String, default: "" },
       },
       setup(props) {
-        return () => h("label", [props.label, props.hint]);
+        return () =>
+          h("label", { class: "input-stub" }, [props.label, props.hint]);
       },
     })
   );
   mountedApps.push(app);
   app.mount(container);
   return container;
+}
+
+function getButton(container: HTMLElement, label: string): HTMLButtonElement {
+  const button = [...container.querySelectorAll("button")].find(
+    (candidate) => candidate.textContent === label
+  );
+  if (button === undefined) {
+    throw new Error(`Button not found: ${label}`);
+  }
+  return button;
 }
 
 function slotComponent(tag: string) {

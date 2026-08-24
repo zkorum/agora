@@ -12,8 +12,8 @@
 
   <ZKActionDialog
     v-model="showDialog"
-    :title="t('projectActions')"
     :actions="actions"
+    :dialog-label="t('projectActions')"
     @action-selected="handleActionSelected"
   />
 </template>

@@ -780,6 +780,255 @@
                 }
             }
         },
+        "/api/v1/dev/conversation/email-update/sns/simulate": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "target": {
+                                        "oneOf": [
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "kind": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "test"
+                                                        ]
+                                                    },
+                                                    "testAttemptId": {
+                                                        "type": "string",
+                                                        "format": "uuid",
+                                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "kind",
+                                                    "testAttemptId"
+                                                ],
+                                                "additionalProperties": false
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "kind": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "delivery"
+                                                        ]
+                                                    },
+                                                    "deliveryAttemptId": {
+                                                        "type": "string",
+                                                        "format": "uuid",
+                                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "kind",
+                                                    "deliveryAttemptId"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        ]
+                                    },
+                                    "event": {
+                                        "oneOf": [
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "type": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "send"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "type"
+                                                ],
+                                                "additionalProperties": false
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "type": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "delivery"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "type"
+                                                ],
+                                                "additionalProperties": false
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "type": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "bounce"
+                                                        ]
+                                                    },
+                                                    "bounceType": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "Permanent",
+                                                            "Transient"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "type",
+                                                    "bounceType"
+                                                ],
+                                                "additionalProperties": false
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "type": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "complaint"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "type"
+                                                ],
+                                                "additionalProperties": false
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "type": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "delivery_delay"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "type"
+                                                ],
+                                                "additionalProperties": false
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "type": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "reject"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "type"
+                                                ],
+                                                "additionalProperties": false
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "type": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "rendering_failure"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "type"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        ]
+                                    },
+                                    "idempotencyKey": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 100,
+                                        "pattern": "^[A-Za-z0-9_-]+$"
+                                    }
+                                },
+                                "required": [
+                                    "target",
+                                    "event"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
+                                                "result": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "stored",
+                                                        "duplicate"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "result"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "attempt_not_found",
+                                                        "provider_message_not_available"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/webhook/conversation-email-update/sns": {
             "post": {
                 "requestBody": {

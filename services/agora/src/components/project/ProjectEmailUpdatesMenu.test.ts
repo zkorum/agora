@@ -64,6 +64,7 @@ vi.mock("src/components/ui-library/ZKActionDialog.vue", () => ({
     props: {
       modelValue: { type: Boolean, required: true },
       actions: { type: Array, required: true },
+      dialogLabel: { type: String, required: true },
     },
     emits: ["update:modelValue", "actionSelected"],
     setup(props, { emit }) {
@@ -74,7 +75,10 @@ vi.mock("src/components/ui-library/ZKActionDialog.vue", () => ({
         const actions = z.array(testActionSchema).parse(props.actions);
         return h(
           "div",
-          { "data-testid": "action-drawer" },
+          {
+            "data-testid": "action-drawer",
+            "aria-label": props.dialogLabel,
+          },
           actions.map((action) =>
             h(
               "button",
@@ -147,6 +151,11 @@ describe("ProjectEmailUpdatesMenu", () => {
       await nextTick();
 
       expect(getButton(container, label).textContent).toBe(label);
+      expect(
+        container
+          .querySelector('[data-testid="action-drawer"]')
+          ?.getAttribute("aria-label")
+      ).toBe("projectActions");
       expect(container.querySelectorAll("button")).toHaveLength(2);
     }
   );

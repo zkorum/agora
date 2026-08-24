@@ -22,23 +22,14 @@
       <q-input :model-value="replyTo" outlined readonly :label="replyToLabel" />
 
       <ZKInfoBanner
-        v-if="emailReachWarning !== undefined"
-        :message="emailReachWarning"
-      />
-
-      <ZKInfoBanner
-        v-if="testDestinationEmail !== undefined"
-        :message="
-          t('testEmailNotice', {
-            email: testDestinationEmail,
-          })
-        "
-      />
-
-      <ZKInfoBanner
         v-if="audienceEstimateAvailable && audienceEstimate === 0"
         :message="t('zeroAudienceWarning')"
         variant="error"
+      />
+
+      <ZKInfoBanner
+        v-if="emailReachWarning !== undefined"
+        :message="emailReachWarning"
       />
 
       <q-input
@@ -57,7 +48,7 @@
           v-model:plain-text="bodyPlainText"
           :show-toolbar="true"
           :placeholder="t('editorPlaceholder')"
-          min-height="12rem"
+          min-height="var(--conversation-update-editor-min-height, 12rem)"
           :disabled="!authoringEnabled"
           :single-line="false"
           :max-length="CONVERSATION_EMAIL_UPDATE_PLAIN_TEXT_MAX_LENGTH"
@@ -88,6 +79,8 @@
       <ZKInfoBanner v-if="notice !== undefined" :message="notice" />
     </q-card-section>
 
+    <slot name="preview" />
+
     <q-separator />
 
     <q-card-actions align="right" class="composer-form__actions">
@@ -99,7 +92,7 @@
         :label="testButtonLabel"
         :loading="testPending"
         :disable="!canTest"
-        @click="emit('test')"
+        @click="showTestSendDialog = true"
       />
       <ZKButton
         button-type="standardButton"
@@ -112,6 +105,19 @@
       />
     </q-card-actions>
   </q-card>
+
+  <ZKConfirmDialog
+    v-if="testDestinationEmail !== undefined"
+    v-model="showTestSendDialog"
+    :title="t('testDialogTitle')"
+    :confirm-text="t('sendTest')"
+    :cancel-text="t('cancel')"
+    @confirm="emit('test')"
+  >
+    <p>
+      {{ t("testEmailNotice", { email: testDestinationEmail }) }}
+    </p>
+  </ZKConfirmDialog>
 </template>
 
 <script setup lang="ts">
@@ -121,6 +127,7 @@ import Editor from "src/components/editor/Editor.vue";
 import { hasConversationUpdatesPartialEmailReach } from "src/components/newConversation/conversationUpdatesParticipation";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKCheckbox from "src/components/ui-library/ZKCheckbox.vue";
+import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
 import ZKInfoBanner from "src/components/ui-library/ZKInfoBanner.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { validateRichTextInput } from "src/shared/richText";
@@ -129,7 +136,7 @@ import {
   CONVERSATION_EMAIL_UPDATE_SUBJECT_MAX_LENGTH,
   zodConversationEmailUpdateSubject,
 } from "src/shared/types/dto";
-import { computed, watch } from "vue";
+import { computed, ref, watch } from "vue";
 
 import {
   type ConversationUpdateComposerFormTranslations,
@@ -171,6 +178,7 @@ const { locale, t } =
   useComponentI18n<ConversationUpdateComposerFormTranslations>(
     conversationUpdateComposerFormTranslations
   );
+const showTestSendDialog = ref(false);
 const authoringEnabled = computed(
   () => props.testDestinationEmail !== undefined
 );
@@ -253,7 +261,15 @@ const testButtonLabel = computed(() =>
 
 watch([selectedScopeId, selectedConversationIds, subject, bodyHtml], () => {
   contentConfirmed.value = false;
+  showTestSendDialog.value = false;
 });
+
+watch(
+  () => props.testDestinationEmail,
+  () => {
+    showTestSendDialog.value = false;
+  }
+);
 
 function updateSubject(value: string | number | null): void {
   subject.value = value === null ? "" : String(value);
@@ -318,10 +334,23 @@ function formatNumber(value: number): string {
 
 @media (max-width: $breakpoint-xs-max) {
   .composer-form__actions {
-    display: grid;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.75rem;
 
     :deep(.quasarBtn) {
-      width: 100%;
+      flex: 1 1 9rem;
+      min-width: 0;
+    }
+  }
+}
+
+@media (min-width: $breakpoint-md-min) {
+  .composer-form__editor {
+    --conversation-update-editor-min-height: 26rem;
+
+    :deep(.ProseMirror) {
+      max-height: 65vh;
     }
   }
 }

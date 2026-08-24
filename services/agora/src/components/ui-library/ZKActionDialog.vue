@@ -2,7 +2,7 @@
   <q-dialog
     v-model="showDialog"
     position="bottom"
-    :aria-label="title ?? 'Actions'"
+    :aria-label="dialogLabel ?? title ?? 'Actions'"
   >
     <ZKBottomDialogContainer>
       <div class="action-dialog">
@@ -17,10 +17,15 @@
               v-if="action.variant === 'destructive' && index > 0"
               class="action-separator"
             />
-            <div
+            <button
               v-if="action.trailingControl?.type === 'switch'"
+              type="button"
               class="action-item"
               :class="getActionVariantClass(action)"
+              role="switch"
+              :aria-checked="action.trailingControl.checked"
+              :disabled="action.disabled === true"
+              @click="handleActionClick(action)"
             >
               <q-icon :name="action.icon" size="20px" class="action-icon" />
               <div class="action-content">
@@ -32,13 +37,13 @@
               <ZKSwitch
                 :model-value="action.trailingControl.checked"
                 :disable="action.disabled === true"
-                :aria-label="action.label"
+                :interactive="false"
                 :track-width="48"
                 :track-height="28"
                 :thumb-size="24"
-                @update:model-value="handleActionClick(action)"
+                class="action-switch"
               />
-            </div>
+            </button>
             <SpaLink
               v-else-if="action.to !== undefined"
               :to="action.to"
@@ -101,6 +106,7 @@ interface Props {
   actions: ContentAction[];
   title?: string;
   message?: string;
+  dialogLabel?: string;
 }
 
 interface Emits {
@@ -212,7 +218,8 @@ watch(showDialog, (newValue) => {
   text-align: start;
   @include hover-effects($hover-background-color);
 
-  &:disabled {
+  &:disabled,
+  &[aria-disabled="true"] {
     cursor: not-allowed;
     opacity: 0.55;
   }
@@ -226,6 +233,10 @@ watch(showDialog, (newValue) => {
 .action-trailing-icon {
   flex-shrink: 0;
   color: $color-text-weak;
+}
+
+.action-switch {
+  pointer-events: none;
 }
 
 .action-content {

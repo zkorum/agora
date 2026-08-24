@@ -243,6 +243,15 @@ const unsubscribeScopeName = computed(() =>
   }
 }
 
+@media (max-width: $breakpoint-sm-max) {
+  .email-preview__body {
+    min-height: 0;
+    max-height: 18rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
 @media (max-width: $breakpoint-xs-max) {
   .email-preview__heading {
     flex-direction: column;

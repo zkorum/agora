@@ -1,5 +1,6 @@
 <template>
   <button
+    v-if="interactive"
     type="button"
     class="zk-switch"
     :class="{
@@ -15,6 +16,18 @@
   >
     <span class="zk-switch__thumb" />
   </button>
+  <span
+    v-else
+    class="zk-switch"
+    :class="{
+      'zk-switch--checked': modelValue,
+      'zk-switch--disabled': disable,
+    }"
+    :style="switchStyleVars"
+    aria-hidden="true"
+  >
+    <span class="zk-switch__thumb" />
+  </span>
 </template>
 
 <script setup lang="ts">
@@ -23,12 +36,14 @@ import { computed } from "vue";
 const props = withDefaults(
   defineProps<{
     disable?: boolean;
+    interactive?: boolean;
     trackWidth?: number;
     trackHeight?: number;
     thumbSize?: number;
   }>(),
   {
     disable: false,
+    interactive: true,
     trackWidth: 56,
     trackHeight: 32,
     thumbSize: 28,

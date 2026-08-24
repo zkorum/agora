@@ -1,5 +1,10 @@
 <template>
-  <q-dialog v-model="showDialog" position="bottom" :persistent="persistent">
+  <q-dialog
+    v-model="showDialog"
+    position="bottom"
+    :persistent="persistent"
+    :aria-label="title ?? message ?? confirmText"
+  >
     <ZKBottomDialogContainer>
       <div class="confirm-dialog">
         <div class="dialog-header">

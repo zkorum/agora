@@ -3,7 +3,9 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 export interface ConversationUpdateComposerFormTranslations {
   composeUpdate: string;
   heading: string;
+  testDialogTitle: string;
   testEmailNotice: string;
+  cancel: string;
   zeroAudienceWarning: string;
   subjectLabel: string;
   subjectHint: string;
@@ -31,15 +33,17 @@ export const conversationUpdateComposerFormTranslations: Record<
   en: {
     composeUpdate: "Compose update",
     heading: "Write once, deliver with each participant's context",
+    testDialogTitle: "Send this test email?",
     testEmailNotice:
       "This test goes only to the facilitator at {email}. Nobody else receives anything until you send the real update.",
+    cancel: "Cancel",
     zeroAudienceWarning:
       "No participants are currently eligible to receive this email. Testing and sending will become available when at least one participant is eligible.",
     subjectLabel: "Subject",
     subjectHint: "Maximum {max} Unicode characters",
     messageLabel: "Message",
     editorPlaceholder:
-      "Share a concise group update:\n• Share results\n• Explain what changed\n• Highlight new statements\n• Invite participants to return\n\nRemember: some participants may have responded to everything; others may not have.",
+      "Possible updates:\n• Share results\n• Share recent changes\n• Highlight new statements\n• Invite participants to return and vote on newly added statements, improving the analysis as participation grows\n\nRemember: this email will be sent to all eligible participants, whether they responded to some statements or none at all.\n\nLinks to the selected conversations are added automatically at the end of the email, using their project pages when applicable. You do not need to include them here, but you may.",
     policyWarning:
       "Keep this update strictly about the selected conversations. Advertising, fundraising, political campaigning, and unrelated promotion are not allowed.",
     contentConfirmation:
@@ -65,15 +69,17 @@ export const conversationUpdateComposerFormTranslations: Record<
   ar: {
     composeUpdate: "إنشاء تحديث",
     heading: "اكتب مرة واحدة، وأرسل وفق سياق كل مشارك",
+    testDialogTitle: "هل تريد إرسال هذا البريد التجريبي؟",
     testEmailNotice:
       "يُرسل هذا الاختبار إلى المُيسّر فقط على {email}. لن يتلقى أي شخص آخر شيئًا حتى ترسل التحديث الفعلي.",
+    cancel: "إلغاء",
     zeroAudienceWarning:
       "لا يوجد حاليًا مشاركون مؤهلون لتلقي هذا البريد الإلكتروني. سيصبح الاختبار والإرسال متاحين عندما يكون هناك مشارك مؤهل واحد على الأقل.",
     subjectLabel: "الموضوع",
     subjectHint: "الحد الأقصى {max} من محارف Unicode",
     messageLabel: "الرسالة",
     editorPlaceholder:
-      "شارك تحديثًا موجزًا للمجموعة:\n• شارك النتائج\n• اشرح ما تغيّر\n• سلّط الضوء على المقترحات الجديدة\n• ادعُ المشاركين إلى العودة\n\nتذكّر: قد يكون بعض المشاركين قد أجابوا عن كل شيء، بينما لم يفعل آخرون ذلك.",
+      "تحديثات محتملة:\n• شارك النتائج\n• شارك التغييرات الأخيرة\n• سلّط الضوء على المقترحات الجديدة\n• ادعُ المشاركين إلى العودة والتصويت على المقترحات المضافة حديثًا لتحسين التحليل مع زيادة المشاركة\n\nتذكّر: سيُرسل هذا البريد الإلكتروني إلى جميع المشاركين المؤهلين، سواء أجابوا عن بعض المقترحات أم لم يجيبوا عن أي منها.\n\nتُضاف روابط المحادثات المحددة تلقائيًا في نهاية البريد الإلكتروني، مع استخدام صفحات مشاريعها عند الاقتضاء. لا حاجة إلى إدراجها هنا، ولكن يمكنك ذلك.",
     policyWarning:
       "اجعل هذا التحديث متعلقًا فقط بالمحادثات المحددة. لا يُسمح بالإعلانات أو جمع التبرعات أو الحملات السياسية أو الترويج غير ذي الصلة.",
     contentConfirmation:
@@ -99,15 +105,17 @@ export const conversationUpdateComposerFormTranslations: Record<
   es: {
     composeUpdate: "Redactar actualización",
     heading: "Escriba una vez y envíe con el contexto de cada participante",
+    testDialogTitle: "¿Enviar este correo de prueba?",
     testEmailNotice:
       "Esta prueba se envía únicamente a la persona facilitadora en {email}. Nadie más recibirá nada hasta que envíe la actualización real.",
+    cancel: "Cancelar",
     zeroAudienceWarning:
       "Actualmente no hay participantes que puedan recibir este correo. Las opciones de prueba y envío estarán disponibles cuando haya al menos una persona participante elegible.",
     subjectLabel: "Asunto",
     subjectHint: "Máximo de {max} caracteres Unicode",
     messageLabel: "Mensaje",
     editorPlaceholder:
-      "Comparta una actualización breve con el grupo:\n• Comparta resultados\n• Explique qué cambió\n• Destaque nuevas propuestas\n• Invite a volver a participar\n\nRecuerde: algunas personas pueden haber respondido a todo y otras no.",
+      "Posibles actualizaciones:\n• Comparta resultados\n• Comparta cambios recientes\n• Destaque nuevas propuestas\n• Invite a volver y votar las propuestas añadidas recientemente para mejorar el análisis a medida que aumenta la participación\n\nRecuerde: este correo se enviará a todas las personas participantes elegibles, tanto si respondieron a algunas propuestas como si no respondieron a ninguna.\n\nLos enlaces a las conversaciones seleccionadas se añaden automáticamente al final del correo, usando sus páginas de proyecto cuando corresponda. No necesita incluirlos aquí, aunque puede hacerlo.",
     policyWarning:
       "Limite esta actualización estrictamente a las conversaciones seleccionadas. No se permiten la publicidad, la recaudación de fondos, las campañas políticas ni la promoción no relacionada.",
     contentConfirmation:
@@ -133,15 +141,17 @@ export const conversationUpdateComposerFormTranslations: Record<
   fa: {
     composeUpdate: "نوشتن به‌روزرسانی",
     heading: "یک‌بار بنویسید و متناسب با زمینه هر شرکت‌کننده ارسال کنید",
+    testDialogTitle: "این ایمیل آزمایشی ارسال شود؟",
     testEmailNotice:
       "این آزمایش فقط برای تسهیل‌گر به نشانی {email} فرستاده می‌شود. تا زمانی که به‌روزرسانی واقعی را ارسال نکنید، هیچ‌کس دیگری چیزی دریافت نمی‌کند.",
+    cancel: "لغو",
     zeroAudienceWarning:
       "در حال حاضر هیچ شرکت‌کننده‌ای واجد شرایط دریافت این ایمیل نیست. آزمایش و ارسال زمانی فعال می‌شود که دست‌کم یک شرکت‌کننده واجد شرایط باشد.",
     subjectLabel: "موضوع",
     subjectHint: "حداکثر {max} نویسه یونیکد",
     messageLabel: "پیام",
     editorPlaceholder:
-      "یک به‌روزرسانی کوتاه برای گروه بنویسید:\n• نتایج را به اشتراک بگذارید\n• توضیح دهید چه چیزی تغییر کرده است\n• گزاره‌های جدید را برجسته کنید\n• از شرکت‌کنندگان دعوت کنید بازگردند\n\nبه یاد داشته باشید: ممکن است برخی به همه موارد پاسخ داده باشند و برخی دیگر نه.",
+      "به‌روزرسانی‌های احتمالی:\n• نتایج را به اشتراک بگذارید\n• تغییرات اخیر را به اشتراک بگذارید\n• گزاره‌های جدید را برجسته کنید\n• از شرکت‌کنندگان دعوت کنید بازگردند و به گزاره‌های تازه‌افزوده رأی دهند تا با افزایش مشارکت، تحلیل بهتر شود\n\nبه یاد داشته باشید: این ایمیل برای همه شرکت‌کنندگان واجد شرایط ارسال می‌شود، چه به برخی گزاره‌ها پاسخ داده باشند و چه به هیچ‌کدام.\n\nپیوند گفت‌وگوهای انتخاب‌شده به‌طور خودکار در پایان ایمیل افزوده می‌شود و در صورت وجود، از صفحه پروژه آن‌ها استفاده می‌کند. لازم نیست آن‌ها را اینجا وارد کنید، اما می‌توانید.",
     policyWarning:
       "این به‌روزرسانی را فقط به گفت‌وگوهای انتخاب‌شده محدود کنید. تبلیغات، جمع‌آوری کمک مالی، کارزار سیاسی و ترویج نامرتبط مجاز نیست.",
     contentConfirmation:
@@ -167,15 +177,17 @@ export const conversationUpdateComposerFormTranslations: Record<
   fr: {
     composeUpdate: "Rédiger une actualité",
     heading: "Écrivez une fois, envoyez avec le contexte de chaque participant",
+    testDialogTitle: "Envoyer cet e-mail de test ?",
     testEmailNotice:
       "Ce test est envoyé uniquement à la personne facilitatrice à l'adresse {email}. Personne d'autre ne recevra quoi que ce soit avant l'envoi de l'actualité réelle.",
+    cancel: "Annuler",
     zeroAudienceWarning:
       "Aucun participant ne peut actuellement recevoir cet e-mail. Le test et l'envoi seront disponibles dès qu'au moins un participant sera éligible.",
     subjectLabel: "Objet",
     subjectHint: "{max} caractères Unicode au maximum",
     messageLabel: "Message",
     editorPlaceholder:
-      "Partagez une actualité concise avec le groupe :\n• Partagez les résultats\n• Expliquez ce qui a changé\n• Mettez en avant les nouvelles propositions\n• Invitez les participants à revenir\n\nRappel : certains participants ont peut-être répondu à tout, d'autres non.",
+      "Actualités possibles :\n• Partagez les résultats\n• Partagez les changements récents\n• Mettez en avant les nouvelles propositions\n• Invitez les participants à revenir voter sur les propositions récemment ajoutées afin d'améliorer l'analyse à mesure que la participation augmente\n\nRappel : cet e-mail sera envoyé à tous les participants éligibles, qu'ils aient répondu à certaines propositions ou à aucune.\n\nLes liens vers les conversations sélectionnées sont ajoutés automatiquement à la fin de l'e-mail, via leur page de projet le cas échéant. Vous n'avez pas besoin de les inclure ici, mais vous pouvez le faire.",
     policyWarning:
       "Limitez strictement cette actualité aux conversations sélectionnées. La publicité, la collecte de fonds, les campagnes politiques et les promotions sans rapport sont interdites.",
     contentConfirmation:
@@ -201,15 +213,17 @@ export const conversationUpdateComposerFormTranslations: Record<
   "zh-Hans": {
     composeUpdate: "撰写动态",
     heading: "一次撰写，结合每位参与者的情况发送",
+    testDialogTitle: "发送这封测试邮件？",
     testEmailNotice:
       "此测试仅发送给 {email} 的协调员。在您发送正式动态之前，其他任何人都不会收到任何内容。",
+    cancel: "取消",
     zeroAudienceWarning:
       "目前没有符合条件的参与者可以接收此邮件。至少有一名参与者符合条件后，测试和发送功能才会可用。",
     subjectLabel: "主题",
     subjectHint: "最多 {max} 个 Unicode 字符",
     messageLabel: "消息",
     editorPlaceholder:
-      "向群组分享简短动态：\n• 分享结果\n• 说明发生了哪些变化\n• 强调新观点\n• 邀请参与者回来\n\n请注意：有些参与者可能已回应全部内容，另一些则尚未回应。",
+      "可分享的动态：\n• 分享结果\n• 分享近期变化\n• 强调新观点\n• 邀请参与者回来为新增观点投票；参与度越高，分析就越完善\n\n请注意：此邮件会发送给所有符合条件的参与者，无论他们回答了部分观点还是完全没有回答。\n\n所选对话的链接会自动添加在邮件末尾；适用时将使用其项目页面。您无需在此添加，但仍可自行添加。",
     policyWarning:
       "此动态必须严格围绕所选对话。不得包含广告、募款、政治竞选或无关推广。",
     contentConfirmation: "我确认此动态符合邮件动态内容规则",
@@ -233,15 +247,17 @@ export const conversationUpdateComposerFormTranslations: Record<
   "zh-Hant": {
     composeUpdate: "撰寫動態",
     heading: "一次撰寫，結合每位參與者的情況傳送",
+    testDialogTitle: "傳送這封測試郵件？",
     testEmailNotice:
       "此測試僅傳送給 {email} 的協調員。在您傳送正式動態之前，其他任何人都不會收到任何內容。",
+    cancel: "取消",
     zeroAudienceWarning:
       "目前沒有符合資格的參與者可以接收此郵件。至少有一名參與者符合資格後，測試和傳送功能才會開放。",
     subjectLabel: "主旨",
     subjectHint: "最多 {max} 個 Unicode 字元",
     messageLabel: "訊息",
     editorPlaceholder:
-      "向群組分享簡短動態：\n• 分享結果\n• 說明發生了哪些變化\n• 強調新提議\n• 邀請參與者回來\n\n請注意：有些參與者可能已回應全部內容，另一些則尚未回應。",
+      "可分享的動態：\n• 分享結果\n• 分享近期變化\n• 強調新提議\n• 邀請參與者回來為新增提議投票；參與度越高，分析就越完善\n\n請注意：此郵件會傳送給所有符合資格的參與者，無論他們回應了部分提議還是完全沒有回應。\n\n所選對話的連結會自動新增在郵件末尾；適用時將使用其專案頁面。您無需在此新增，但仍可自行新增。",
     policyWarning:
       "此動態必須嚴格圍繞所選對話。不得包含廣告、募款、政治競選或無關推廣。",
     contentConfirmation: "我確認此動態符合郵件動態內容規則",
@@ -265,15 +281,17 @@ export const conversationUpdateComposerFormTranslations: Record<
   he: {
     composeUpdate: "כתיבת עדכון",
     heading: "כותבים פעם אחת ושולחים בהקשר של כל משתתף",
+    testDialogTitle: "לשלוח את הודעת הבדיקה הזו?",
     testEmailNotice:
       "בדיקה זו נשלחת רק למנחה בכתובת {email}. אף אדם אחר לא יקבל דבר עד לשליחת העדכון האמיתי.",
+    cancel: "ביטול",
     zeroAudienceWarning:
       "אין כרגע משתתפים שזכאים לקבל את הודעת הדוא״ל הזו. הבדיקה והשליחה יהיו זמינות כשיהיה לפחות משתתף זכאי אחד.",
     subjectLabel: "נושא",
     subjectHint: "עד {max} תווי Unicode",
     messageLabel: "הודעה",
     editorPlaceholder:
-      "שתפו עדכון קצר עם הקבוצה:\n• שתפו תוצאות\n• הסבירו מה השתנה\n• הדגישו הצהרות חדשות\n• הזמינו את המשתתפים לחזור\n\nחשוב לזכור: ייתכן שחלק מהמשתתפים הגיבו לכל דבר ואחרים עדיין לא.",
+      "עדכונים אפשריים:\n• שתפו תוצאות\n• שתפו שינויים אחרונים\n• הדגישו הצהרות חדשות\n• הזמינו את המשתתפים לחזור ולהצביע על הצהרות שנוספו לאחרונה, כדי לשפר את הניתוח ככל שההשתתפות גדלה\n\nחשוב לזכור: הודעת דוא״ל זו תישלח לכל המשתתפים הזכאים, בין שהגיבו לחלק מההצהרות ובין שלא הגיבו לאף אחת.\n\nקישורים לשיחות שנבחרו יתווספו אוטומטית בסוף הודעת הדוא״ל, דרך דפי הפרויקט שלהן כאשר רלוונטי. אין צורך לכלול אותם כאן, אך אפשר לעשות זאת.",
     policyWarning:
       "יש להגביל את העדכון אך ורק לשיחות שנבחרו. פרסום, גיוס כספים, תעמולה פוליטית וקידום שאינו קשור אסורים.",
     contentConfirmation: "אני מאשר/ת שהעדכון עומד בכללי התוכן של עדכוני הדוא״ל",
@@ -298,15 +316,17 @@ export const conversationUpdateComposerFormTranslations: Record<
   ja: {
     composeUpdate: "更新を作成",
     heading: "一度の作成で、各参加者の状況に合わせて配信",
+    testDialogTitle: "このテストメールを送信しますか？",
     testEmailNotice:
       "このテストはファシリテーターの {email} にのみ送信されます。実際の更新を送信するまで、ほかの誰にも何も届きません。",
+    cancel: "キャンセル",
     zeroAudienceWarning:
       "現在、このメールを受け取れる参加者はいません。対象となる参加者が1人以上になると、テストと送信が可能になります。",
     subjectLabel: "件名",
     subjectHint: "Unicode文字は最大{max}文字",
     messageLabel: "メッセージ",
     editorPlaceholder:
-      "グループに簡潔な更新を共有：\n• 結果を共有する\n• 変更点を説明する\n• 新しい提案を紹介する\n• 参加者に再訪を促す\n\n注意：すべてに回答済みの参加者も、まだ回答していない参加者もいます。",
+      "更新内容の例：\n• 結果を共有する\n• 最近の変更を共有する\n• 新しい提案を紹介する\n• 参加者に再訪して新しく追加された提案へ投票するよう促し、参加の拡大とともに分析を改善する\n\n注意：このメールは、一部の提案に回答したか、まったく回答していないかにかかわらず、対象となるすべての参加者に送信されます。\n\n選択した会話へのリンクはメール末尾に自動追加され、該当する場合はプロジェクト内のページが使用されます。ここに含める必要はありませんが、追加しても構いません。",
     policyWarning:
       "この更新は選択した会話の内容に厳密に限定してください。広告、資金調達、政治運動、無関係な宣伝は禁止されています。",
     contentConfirmation:
@@ -332,15 +352,17 @@ export const conversationUpdateComposerFormTranslations: Record<
   ky: {
     composeUpdate: "Жаңыртуу жазуу",
     heading: "Бир жолу жазып, ар бир катышуучунун контекстине жараша жөнөтүңүз",
+    testDialogTitle: "Бул сыноо каты жөнөтүлсүнбү?",
     testEmailNotice:
       "Бул сыноо {email} дарегиндеги фасилитаторго гана жөнөтүлөт. Чыныгы жаңыртууну жөнөткөнгө чейин башка эч ким эч нерсе албайт.",
+    cancel: "Жокко чыгаруу",
     zeroAudienceWarning:
       "Учурда бул катты алууга жарамдуу катышуучулар жок. Кеминде бир жарамдуу катышуучу болгондо сыноо жана жөнөтүү жеткиликтүү болот.",
     subjectLabel: "Тема",
     subjectHint: "Эң көбү {max} Unicode белгиси",
     messageLabel: "Билдирүү",
     editorPlaceholder:
-      "Топко кыска жаңыртуу бөлүшүңүз:\n• Жыйынтыктарды бөлүшүңүз\n• Эмне өзгөргөнүн түшүндүрүңүз\n• Жаңы сунуштарды белгилеңиз\n• Катышуучуларды кайтып келүүгө чакырыңыз\n\nЭске алыңыз: айрым катышуучулар баарына жооп берген болушу мүмкүн, башкалары жооп бере элек болушу мүмкүн.",
+      "Мүмкүн болгон жаңыртуулар:\n• Жыйынтыктарды бөлүшүңүз\n• Акыркы өзгөрүүлөрдү бөлүшүңүз\n• Жаңы сунуштарды белгилеңиз\n• Катышуучуларды кайтып келип, жаңы кошулган сунуштарга добуш берүүгө чакырыңыз; катышуу өскөн сайын талдоо жакшырат\n\nЭске алыңыз: бул кат айрым сунуштарга жооп бергенине же эч бирине жооп бербегенине карабастан, бардык жарамдуу катышуучуларга жөнөтүлөт.\n\nТандалган талкууларга шилтемелер каттын аягына автоматтык түрдө кошулуп, тиешелүү учурда алардын долбоордогу барактары колдонулат. Аларды бул жерге кошуунун кереги жок, бирок кошсоңуз болот.",
     policyWarning:
       "Бул жаңыртууну тандалган талкууларга гана тиешелүү кылыңыз. Жарнамага, каражат чогултууга, саясий үгүткө жана тиешеси жок илгерилетүүгө жол берилбейт.",
     contentConfirmation:
@@ -366,15 +388,17 @@ export const conversationUpdateComposerFormTranslations: Record<
   ru: {
     composeUpdate: "Создать обновление",
     heading: "Напишите один раз с учётом контекста каждого участника",
+    testDialogTitle: "Отправить это тестовое письмо?",
     testEmailNotice:
       "Это тестовое письмо отправляется только фасилитатору на адрес {email}. До отправки настоящего обновления больше никто ничего не получит.",
+    cancel: "Отмена",
     zeroAudienceWarning:
       "Сейчас нет участников, которым можно отправить это письмо. Тестирование и отправка станут доступны, когда появится хотя бы один подходящий участник.",
     subjectLabel: "Тема",
     subjectHint: "Не более {max} символов Unicode",
     messageLabel: "Сообщение",
     editorPlaceholder:
-      "Поделитесь кратким обновлением с группой:\n• Расскажите о результатах\n• Объясните, что изменилось\n• Выделите новые предложения\n• Пригласите участников вернуться\n\nПомните: некоторые участники могли ответить на всё, а другие — ещё нет.",
+      "Возможные обновления:\n• Расскажите о результатах\n• Расскажите о недавних изменениях\n• Выделите новые предложения\n• Пригласите участников вернуться и проголосовать по недавно добавленным предложениям: по мере роста участия анализ становится точнее\n\nПомните: это письмо будет отправлено всем подходящим участникам независимо от того, ответили они на некоторые предложения или не ответили ни на одно.\n\nСсылки на выбранные обсуждения автоматически добавляются в конце письма; при необходимости используются их страницы в проектах. Добавлять их здесь не нужно, но можно.",
     policyWarning:
       "Обновление должно касаться только выбранных обсуждений. Реклама, сбор средств, политическая агитация и продвижение посторонних материалов запрещены.",
     contentConfirmation:

@@ -38,6 +38,7 @@ import {
     emailTable,
     maxdiffComparisonTable,
     maxdiffResultTable,
+    opinionModerationTable,
     opinionTable,
     organizationMembershipAllProjectCapabilityTable,
     organizationMembershipTable,
@@ -48,7 +49,6 @@ import {
     projectTable,
     userDisplayLanguageTable,
     userTable,
-    voteContentTable,
     voteTable,
 } from "@/shared-backend/schema.js";
 import type {
@@ -890,32 +890,61 @@ function resolveSelection({
           };
 }
 
-async function countEligibleAudience({
+export function buildConversationEmailParticipationQuery({
     db,
-    selection,
+    conversationIds,
     cutoffAt,
-    excludedUserIds,
 }: {
     db: PostgresJsDatabase;
-    selection: ResolvedSelection;
+    conversationIds: readonly number[];
     cutoffAt: Date;
-    excludedUserIds: readonly string[];
-}): Promise<number> {
-    const conversationIds = selection.conversations.map(
-        (row) => row.conversation_id,
+}) {
+    const visibleOpinionModeration = or(
+        isNull(opinionModerationTable.id),
+        ne(opinionModerationTable.moderationAction, "hide"),
     );
     const voteParticipation = db
         .select({
             userId: voteTable.authorId,
             conversationId: opinionTable.conversationId,
         })
-        .from(voteContentTable)
-        .innerJoin(voteTable, eq(voteTable.id, voteContentTable.voteId))
+        .from(voteTable)
         .innerJoin(opinionTable, eq(opinionTable.id, voteTable.opinionId))
+        .leftJoin(
+            opinionModerationTable,
+            and(
+                eq(opinionModerationTable.opinionId, opinionTable.id),
+                isNull(opinionModerationTable.deletedAt),
+            ),
+        )
         .where(
             and(
                 inArray(opinionTable.conversationId, conversationIds),
-                lte(voteContentTable.createdAt, cutoffAt),
+                isNotNull(opinionTable.currentContentId),
+                isNotNull(voteTable.currentContentId),
+                lte(voteTable.createdAt, cutoffAt),
+                visibleOpinionModeration,
+            ),
+        );
+    const opinionParticipation = db
+        .select({
+            userId: opinionTable.authorId,
+            conversationId: opinionTable.conversationId,
+        })
+        .from(opinionTable)
+        .leftJoin(
+            opinionModerationTable,
+            and(
+                eq(opinionModerationTable.opinionId, opinionTable.id),
+                isNull(opinionModerationTable.deletedAt),
+            ),
+        )
+        .where(
+            and(
+                inArray(opinionTable.conversationId, conversationIds),
+                isNotNull(opinionTable.currentContentId),
+                lte(opinionTable.createdAt, cutoffAt),
+                visibleOpinionModeration,
             ),
         );
     const maxdiffParticipation = db
@@ -931,12 +960,36 @@ async function countEligibleAudience({
         .where(
             and(
                 inArray(maxdiffResultTable.conversationId, conversationIds),
+                isNull(maxdiffComparisonTable.deletedAt),
                 lte(maxdiffComparisonTable.createdAt, cutoffAt),
             ),
         );
-    const participation = union(voteParticipation, maxdiffParticipation).as(
-        "participation",
+    return union(
+        voteParticipation,
+        opinionParticipation,
+        maxdiffParticipation,
     );
+}
+
+async function countEligibleAudience({
+    db,
+    selection,
+    cutoffAt,
+    excludedUserIds,
+}: {
+    db: PostgresJsDatabase;
+    selection: ResolvedSelection;
+    cutoffAt: Date;
+    excludedUserIds: readonly string[];
+}): Promise<number> {
+    const conversationIds = selection.conversations.map(
+        (row) => row.conversation_id,
+    );
+    const participation = buildConversationEmailParticipationQuery({
+        db,
+        conversationIds,
+        cutoffAt,
+    }).as("participation");
     const preferenceCondition =
         selection.project.scope_kind === "project"
             ? and(

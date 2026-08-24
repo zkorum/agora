@@ -80,19 +80,41 @@
               :related-conversation-owner-count="relatedConversationOwnerCount"
               @test="sendTest"
               @send="showSendDialog = true"
-            />
+            >
+              <template #preview>
+                <div
+                  v-if="$q.screen.lt.md"
+                  class="updates-workspace__preview updates-workspace__preview--mobile"
+                >
+                  <ConversationUpdateEmailPreview
+                    :subject="subject"
+                    :body-html="bodyHtml"
+                    :reply-to="currentContactEmail"
+                    :scope-kind="currentScope?.kind ?? 'project'"
+                    :scope-href="currentScope?.href"
+                    :scope-label="currentScope?.label ?? ''"
+                    :conversations="selectedConversations"
+                    :audience-estimate="audienceEstimate"
+                  />
+                </div>
+              </template>
+            </ConversationUpdateComposerForm>
 
-            <ConversationUpdateEmailPreview
+            <div
+              v-if="!$q.screen.lt.md"
               class="updates-workspace__preview"
-              :subject="subject"
-              :body-html="bodyHtml"
-              :reply-to="currentContactEmail"
-              :scope-kind="currentScope?.kind ?? 'project'"
-              :scope-href="currentScope?.href"
-              :scope-label="currentScope?.label ?? ''"
-              :conversations="selectedConversations"
-              :audience-estimate="audienceEstimate"
-            />
+            >
+              <ConversationUpdateEmailPreview
+                :subject="subject"
+                :body-html="bodyHtml"
+                :reply-to="currentContactEmail"
+                :scope-kind="currentScope?.kind ?? 'project'"
+                :scope-href="currentScope?.href"
+                :scope-label="currentScope?.label ?? ''"
+                :conversations="selectedConversations"
+                :audience-estimate="audienceEstimate"
+              />
+            </div>
           </div>
         </q-tab-panel>
 
@@ -158,6 +180,7 @@
 </template>
 
 <script setup lang="ts">
+import { useQuasar } from "quasar";
 import ConversationUpdateComposerForm from "src/components/conversationUpdates/ConversationUpdateComposerForm.vue";
 import ConversationUpdateEmailPreview from "src/components/conversationUpdates/ConversationUpdateEmailPreview.vue";
 import ConversationUpdateHistoryList from "src/components/conversationUpdates/ConversationUpdateHistoryList.vue";
@@ -214,6 +237,7 @@ const props = defineProps<{
 }>();
 
 const AUDIENCE_ESTIMATE_DEBOUNCE_MS = 250;
+const $q = useQuasar();
 const { t, locale } =
   useComponentI18n<ConversationUpdatesWorkspaceTranslations>(
     conversationUpdatesWorkspaceTranslations
@@ -1126,6 +1150,10 @@ onBeforeUnmount(() => {
 
     &__preview {
       position: static;
+
+      &--mobile {
+        margin: 0 1rem 1rem;
+      }
     }
   }
 }

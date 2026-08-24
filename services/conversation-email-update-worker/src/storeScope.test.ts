@@ -7,6 +7,8 @@ import {
 } from "@/shared-backend/schema.js";
 import {
     activeOwnerAuthorizationQuery,
+    buildConversationEmailParticipationQuery,
+    buildConversationLinkUrl,
     createRecipientActions,
     deliveryUpdateIsExclusiveToConversation,
     testAttemptHasNoActiveSuppressions,
@@ -14,6 +16,51 @@ import {
 } from "./store.js";
 
 describe("scoped store predicates", () => {
+    it("materializes active visible statement authors as participants", () => {
+        const query = buildConversationEmailParticipationQuery({
+            db: drizzle.mock(),
+        }).toSQL();
+
+        expect(query.sql).toContain('from "vote"');
+        expect(query.sql).toContain('"vote"."current_content_id" is not null');
+        expect(query.sql).toContain('from "opinion"');
+        expect(query.sql).toContain(
+            '"opinion"."current_content_id" is not null',
+        );
+        expect(query.sql).toContain(
+            '"opinion_moderation"."moderation_action" <>',
+        );
+        expect(query.sql).toContain('from "maxdiff_comparison"');
+        expect(query.sql).toContain(
+            '"maxdiff_comparison"."deleted_at" is null',
+        );
+        expect(query.sql.match(/ union all /g)).toHaveLength(2);
+    });
+
+    it("links real project conversations through their project page", () => {
+        const url = buildConversationLinkUrl({
+            baseUrl: new URL("https://www.agoracitizen.app"),
+            conversationSlugId: "trees & parks",
+            route: { kind: "project", projectSlug: "green city" },
+        });
+
+        expect(url).toBe(
+            "https://www.agoracitizen.app/project/green%20city/conversation/trees%20%26%20parks/",
+        );
+    });
+
+    it("links conversations without a real project through their normal page", () => {
+        const url = buildConversationLinkUrl({
+            baseUrl: new URL("https://www.agoracitizen.app"),
+            conversationSlugId: "trees & parks",
+            route: { kind: "conversation" },
+        });
+
+        expect(url).toBe(
+            "https://www.agoracitizen.app/conversation/trees%20%26%20parks/",
+        );
+    });
+
     it("requires an update link to the target and forbids every other conversation link", () => {
         const db = drizzle.mock();
         const query = db

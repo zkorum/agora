@@ -7,7 +7,15 @@ import type {
   ConversationEmailUpdateWorkspaceRequest,
 } from "src/shared/types/dto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { type App, createApp, defineComponent, h, type Ref, ref } from "vue";
+import {
+  type App,
+  createApp,
+  defineComponent,
+  h,
+  nextTick,
+  type Ref,
+  ref,
+} from "vue";
 import { createI18n } from "vue-i18n";
 
 import { conversationUpdatesWorkspaceTranslations } from "./ConversationUpdatesWorkspace.i18n";
@@ -22,6 +30,11 @@ const api = vi.hoisted(() => ({
   sendTest: vi.fn(),
 }));
 const showNotifyMessage = vi.hoisted(() => vi.fn());
+const quasarScreen = vi.hoisted(() => ({ lt: { md: false } }));
+
+vi.mock("quasar", () => ({
+  useQuasar: () => ({ screen: quasarScreen }),
+}));
 
 vi.mock("src/utils/api/conversationUpdates/conversationEmailUpdates", () => ({
   useBackendConversationEmailUpdatesApi: () => api,
@@ -43,22 +56,28 @@ vi.mock("./ConversationUpdateComposerForm.vue", () => ({
   default: defineComponent({
     name: "ConversationUpdateComposerForm",
     emits: ["test", "send", "update:contentConfirmed"],
-    setup(_props, { emit }) {
+    setup(_props, { emit, slots }) {
       return () =>
         h("div", [
-          h("button", { onClick: () => emit("test") }, "Send test"),
-          h("button", { onClick: () => emit("send") }, "Open send"),
-          h(
-            "button",
-            { onClick: () => emit("update:contentConfirmed", true) },
-            "Confirm content"
-          ),
+          h("div", "Composer fields"),
+          slots.preview?.(),
+          h("div", { class: "composer-actions-stub" }, [
+            h("button", { onClick: () => emit("test") }, "Send test"),
+            h("button", { onClick: () => emit("send") }, "Open send"),
+            h(
+              "button",
+              { onClick: () => emit("update:contentConfirmed", true) },
+              "Confirm content"
+            ),
+          ]),
         ]);
     },
   }),
 }));
 vi.mock("./ConversationUpdateEmailPreview.vue", () => ({
-  default: defineComponent(() => () => null),
+  default: defineComponent(
+    () => () => h("div", { class: "preview-stub" }, "Preview")
+  ),
 }));
 vi.mock("./ConversationUpdateHistoryList.vue", () => ({
   default: defineComponent({
@@ -102,20 +121,32 @@ vi.mock("src/components/ui-library/ZKConfirmDialog.vue", () => ({
   default: defineComponent({
     name: "ZKConfirmDialog",
     props: {
+      modelValue: { type: Boolean, required: true },
       title: { type: String, required: true },
       confirmText: { type: String, required: true },
       cancelText: { type: String, required: true },
     },
-    emits: ["confirm"],
+    emits: ["confirm", "update:modelValue"],
     setup(props, { emit, slots }) {
-      return () =>
-        h("div", [
+      return () => {
+        if (!props.modelValue) return null;
+        return h("div", { "data-confirm-dialog": "" }, [
           h("span", props.title),
           h("span", props.confirmText),
           h("span", props.cancelText),
           slots.default?.(),
-          h("button", { onClick: () => emit("confirm") }, "Confirm send"),
+          h(
+            "button",
+            {
+              onClick: () => {
+                emit("update:modelValue", false);
+                emit("confirm");
+              },
+            },
+            "Confirm send"
+          ),
         ]);
+      };
     },
   }),
 }));
@@ -138,6 +169,7 @@ function isHistoryRecord(
 }
 
 beforeEach(() => {
+  quasarScreen.lt.md = false;
   for (const mock of Object.values(api)) {
     mock.mockReset();
   }
@@ -162,6 +194,26 @@ afterEach(() => {
 });
 
 describe("ConversationUpdatesWorkspace", () => {
+  it("mounts one preview before the actions in the mobile layout", async () => {
+    quasarScreen.lt.md = true;
+    api.getWorkspace.mockResolvedValue(workspaceResponse({ kind: "global" }));
+
+    const { container } = mountComponent({
+      context: ref({ kind: "global" }),
+      initialTab: "compose",
+    });
+    await flushAudienceEstimate();
+
+    const previews = container.querySelectorAll(".preview-stub");
+    const preview = previews.item(0);
+    const actions = container.querySelector(".composer-actions-stub");
+    expect(previews).toHaveLength(1);
+    expect(
+      preview.compareDocumentPosition(actions ?? document.body) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).not.toBe(0);
+  });
+
   it("renders workspace copy in the active display language", async () => {
     api.getWorkspace.mockResolvedValue(workspaceResponse({ kind: "global" }));
     api.listHistory.mockResolvedValue({
@@ -187,9 +239,6 @@ describe("ConversationUpdatesWorkspace", () => {
     );
     expect(container.textContent).toContain("Redactar");
     expect(container.textContent).toContain("Historial");
-    expect(container.textContent).toContain(
-      "Actualmente hay 12.345 destinatarios aptos"
-    );
     expect(container.textContent).not.toContain(
       "Keep participants connected to the work they joined"
     );
@@ -362,9 +411,6 @@ describe("ConversationUpdatesWorkspace", () => {
       status: "pending",
     });
     await flushPromises();
-    getButton(container, "Confirm send").click();
-    await flushPromises();
-
     expect(api.getTestStatus).not.toHaveBeenCalled();
     expect(api.send).not.toHaveBeenCalled();
   });
@@ -418,6 +464,7 @@ describe("ConversationUpdatesWorkspace", () => {
     await flushPromises();
     getButton(container, "Confirm content").click();
     getButton(container, "Open send").click();
+    await nextTick();
     const confirmButton = getButton(container, "Confirm send");
     confirmButton.click();
     confirmButton.click();
@@ -576,15 +623,15 @@ describe("ConversationUpdatesWorkspace", () => {
     await flushPromises();
     getButton(container, "Confirm content").click();
     getButton(container, "Open send").click();
-    getButton(container, "Confirm send").click();
+    await nextTick();
+    const confirmButton = getButton(container, "Confirm send");
+    confirmButton.click();
+    confirmButton.click();
     await flushPromises();
 
     expect(showNotifyMessage).toHaveBeenCalledWith(
       "No participants are currently eligible to receive this email."
     );
-    getButton(container, "Confirm send").click();
-    await flushPromises();
-
     expect(api.send).toHaveBeenCalledOnce();
   });
 

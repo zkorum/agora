@@ -1,7 +1,9 @@
+import { drizzle } from "drizzle-orm/postgres-js";
 import { describe, expect, it } from "vitest";
 import { Dto } from "@/shared/types/dto.js";
 import {
     buildConversationEmailPreferenceGroups,
+    buildConversationEmailParticipationQuery,
     mapConversationEmailUpdateTestStatus,
     mapInBatches,
     resolveCompleteOwnerSnapshots,
@@ -10,6 +12,31 @@ import {
     type RequiredOwnerSnapshot,
 } from "./conversationEmailUpdate.js";
 import { resolveConversationEmailPreference } from "./conversationEmailUpdatePolicy.js";
+
+describe("buildConversationEmailParticipationQuery", () => {
+    it("includes active visible statements and excludes deleted activity", () => {
+        const query = buildConversationEmailParticipationQuery({
+            db: drizzle.mock(),
+            conversationIds: [42],
+            cutoffAt: new Date("2026-08-25T12:00:00.000Z"),
+        }).toSQL();
+
+        expect(query.sql).toContain('from "vote"');
+        expect(query.sql).toContain('"vote"."current_content_id" is not null');
+        expect(query.sql).toContain('from "opinion"');
+        expect(query.sql).toContain(
+            '"opinion"."current_content_id" is not null',
+        );
+        expect(query.sql).toContain(
+            '"opinion_moderation"."moderation_action" <>',
+        );
+        expect(query.sql).toContain('from "maxdiff_comparison"');
+        expect(query.sql).toContain(
+            '"maxdiff_comparison"."deleted_at" is null',
+        );
+        expect(query.sql.match(/ union /g)).toHaveLength(2);
+    });
+});
 
 describe("resolveConversationEmailUpdateAuthoringAction", () => {
     it("keeps the workspace visible when sending is currently blocked", () => {
