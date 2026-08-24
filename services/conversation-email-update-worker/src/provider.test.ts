@@ -104,6 +104,42 @@ describe("conversation email SES provider", () => {
         ]);
     });
 
+    it("omits unsubscribe headers for operational owner copies", async () => {
+        let headers: { Name?: string; Value?: string }[] | undefined;
+        const sendCommand = vi.fn(
+            (params: {
+                command: SendEmailCommand;
+                abortSignal: AbortSignal;
+            }) => {
+                headers = params.command.input.Content?.Simple?.Headers;
+                return Promise.resolve({
+                    MessageId: "owner-message-id",
+                    $metadata: {},
+                });
+            },
+        );
+        const provider = createConversationEmailProvider({
+            region: "eu-west-1",
+            fromAddress: "conversation@updates.agoracitizen.network",
+            configurationSetName: "conversation-updates",
+            requestTimeoutMs: 1_000,
+            sendCommand,
+        });
+
+        await provider.send({
+            to: "owner@example.com",
+            subject: "Operational owner update",
+            html: '<a href="https://www.agoracitizen.app/email-updates/unsubscribe/token">Unsubscribe participant preferences</a>',
+            text: "Unsubscribe participant preferences",
+            replyToName: "Project contact",
+            replyToEmail: "contact@example.com",
+            tags: { message_type: "conversation_update" },
+            unsubscribeUrl: undefined,
+        });
+
+        expect(headers).toEqual([]);
+    });
+
     it.each([
         {
             name: 'Project \\ "contact"',

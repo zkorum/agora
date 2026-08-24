@@ -14,11 +14,11 @@ export interface PostMetadataTranslations {
   alreadyOpen: string;
   syncSuccess: string;
   syncError: string;
-  emailUpdatesLabel: string;
+  manageEmailUpdatesLabel: string;
+  viewEmailUpdateHistoryLabel: string;
   receiveEmailUpdatesLabel: string;
-  emailUpdatesPreferenceOn: string;
-  emailUpdatesPreferenceOff: string;
-  emailUpdatesPreferenceUndisclosed: string;
+  emailUpdatesPreferenceSaveEnabled: string;
+  emailUpdatesPreferenceSaveDisabled: string;
   emailUpdatesPreferenceSaveError: string;
 }
 
@@ -42,13 +42,16 @@ export const postMetadataTranslations: Record<
     alreadyOpen: "This conversation is already open",
     syncSuccess: "Synced from GitHub successfully",
     syncError: "Failed to sync from GitHub",
-    emailUpdatesLabel: "Email Updates",
+    manageEmailUpdatesLabel: "Manage email updates for this conversation",
+    viewEmailUpdateHistoryLabel:
+      "View email update history for this conversation",
     receiveEmailUpdatesLabel: "Receive email updates for this conversation",
-    emailUpdatesPreferenceOn: "On for this conversation",
-    emailUpdatesPreferenceOff: "Off for this conversation",
-    emailUpdatesPreferenceUndisclosed: "No conversation preference saved",
+    emailUpdatesPreferenceSaveEnabled:
+      "Email updates are on for this conversation.",
+    emailUpdatesPreferenceSaveDisabled:
+      "Email updates are off for this conversation.",
     emailUpdatesPreferenceSaveError:
-      "The Email Update preference could not be saved.",
+      "Couldn’t save your email update preference.",
   },
   ar: {
     closeConfirmMessage:
@@ -66,11 +69,14 @@ export const postMetadataTranslations: Record<
     alreadyOpen: "هذه المحادثة مفتوحة بالفعل",
     syncSuccess: "تمت المزامنة من GitHub بنجاح",
     syncError: "فشلت المزامنة من GitHub",
-    emailUpdatesLabel: "تحديثات البريد الإلكتروني",
+    manageEmailUpdatesLabel: "إدارة تحديثات البريد الإلكتروني لهذه المحادثة",
+    viewEmailUpdateHistoryLabel:
+      "عرض سجل تحديثات البريد الإلكتروني لهذه المحادثة",
     receiveEmailUpdatesLabel: "تلقي تحديثات البريد الإلكتروني لهذه المحادثة",
-    emailUpdatesPreferenceOn: "مفعّلة لهذه المحادثة",
-    emailUpdatesPreferenceOff: "متوقفة لهذه المحادثة",
-    emailUpdatesPreferenceUndisclosed: "لم يتم حفظ تفضيل لهذه المحادثة",
+    emailUpdatesPreferenceSaveEnabled:
+      "تم تفعيل تحديثات البريد الإلكتروني لهذه المحادثة.",
+    emailUpdatesPreferenceSaveDisabled:
+      "تم إيقاف تحديثات البريد الإلكتروني لهذه المحادثة.",
     emailUpdatesPreferenceSaveError:
       "تعذر حفظ تفضيل تحديثات البريد الإلكتروني.",
   },
@@ -90,13 +96,18 @@ export const postMetadataTranslations: Record<
     alreadyOpen: "Esta conversación ya está abierta",
     syncSuccess: "Sincronización desde GitHub exitosa",
     syncError: "Error al sincronizar desde GitHub",
-    emailUpdatesLabel: "Actualizaciones por correo",
-    receiveEmailUpdatesLabel: "Recibir actualizaciones de esta conversación",
-    emailUpdatesPreferenceOn: "Activadas para esta conversación",
-    emailUpdatesPreferenceOff: "Desactivadas para esta conversación",
-    emailUpdatesPreferenceUndisclosed: "No se guardó ninguna preferencia",
+    manageEmailUpdatesLabel:
+      "Gestionar las actualizaciones por correo de esta conversación",
+    viewEmailUpdateHistoryLabel:
+      "Ver el historial de actualizaciones por correo de esta conversación",
+    receiveEmailUpdatesLabel:
+      "Recibir actualizaciones por correo de esta conversación",
+    emailUpdatesPreferenceSaveEnabled:
+      "Las actualizaciones por correo están activadas para esta conversación.",
+    emailUpdatesPreferenceSaveDisabled:
+      "Las actualizaciones por correo están desactivadas para esta conversación.",
     emailUpdatesPreferenceSaveError:
-      "No se pudo guardar la preferencia de actualizaciones.",
+      "No se pudo guardar tu preferencia de actualizaciones por correo.",
   },
   fa: {
     closeConfirmMessage:
@@ -114,12 +125,15 @@ export const postMetadataTranslations: Record<
     alreadyOpen: "این گفتگو قبلاً باز است",
     syncSuccess: "همگام‌سازی از GitHub با موفقیت انجام شد",
     syncError: "همگام‌سازی از GitHub ناموفق بود",
-    emailUpdatesLabel: "به‌روزرسانی‌های ایمیلی",
+    manageEmailUpdatesLabel: "مدیریت به‌روزرسانی‌های ایمیلی این گفتگو",
+    viewEmailUpdateHistoryLabel:
+      "مشاهده تاریخچه به‌روزرسانی‌های ایمیلی این گفتگو",
     receiveEmailUpdatesLabel: "دریافت به‌روزرسانی ایمیلی برای این گفتگو",
-    emailUpdatesPreferenceOn: "برای این گفتگو روشن است",
-    emailUpdatesPreferenceOff: "برای این گفتگو خاموش است",
-    emailUpdatesPreferenceUndisclosed: "ترجیحی برای گفتگو ذخیره نشده است",
-    emailUpdatesPreferenceSaveError: "ترجیح به‌روزرسانی ایمیلی ذخیره نشد.",
+    emailUpdatesPreferenceSaveEnabled:
+      "به‌روزرسانی‌های ایمیلی برای این گفتگو روشن شد.",
+    emailUpdatesPreferenceSaveDisabled:
+      "به‌روزرسانی‌های ایمیلی برای این گفتگو خاموش شد.",
+    emailUpdatesPreferenceSaveError: "ذخیره ترجیح به‌روزرسانی ایمیلی ممکن نشد.",
   },
   fr: {
     closeConfirmMessage:
@@ -137,13 +151,18 @@ export const postMetadataTranslations: Record<
     alreadyOpen: "Cette conversation est déjà ouverte",
     syncSuccess: "Synchronisation depuis GitHub réussie",
     syncError: "Échec de la synchronisation depuis GitHub",
-    emailUpdatesLabel: "Actualités par e-mail",
-    receiveEmailUpdatesLabel: "Recevoir les actualités de cette conversation",
-    emailUpdatesPreferenceOn: "Activées pour cette conversation",
-    emailUpdatesPreferenceOff: "Désactivées pour cette conversation",
-    emailUpdatesPreferenceUndisclosed: "Aucune préférence enregistrée",
+    manageEmailUpdatesLabel:
+      "Gérer les actualités par e-mail de cette conversation",
+    viewEmailUpdateHistoryLabel:
+      "Voir l’historique des actualités par e-mail de cette conversation",
+    receiveEmailUpdatesLabel:
+      "Recevoir les actualités par e-mail de cette conversation",
+    emailUpdatesPreferenceSaveEnabled:
+      "Les actualités par e-mail sont activées pour cette conversation.",
+    emailUpdatesPreferenceSaveDisabled:
+      "Les actualités par e-mail sont désactivées pour cette conversation.",
     emailUpdatesPreferenceSaveError:
-      "La préférence d’actualités par e-mail n’a pas pu être enregistrée.",
+      "Impossible d’enregistrer votre préférence d’actualités par e-mail.",
   },
   "zh-Hans": {
     closeConfirmMessage: "您确定要关闭此对话吗？用户将无法发布新意见或投票。",
@@ -159,12 +178,12 @@ export const postMetadataTranslations: Record<
     alreadyOpen: "此对话已打开",
     syncSuccess: "从 GitHub 同步成功",
     syncError: "从 GitHub 同步失败",
-    emailUpdatesLabel: "邮件更新",
+    manageEmailUpdatesLabel: "管理此对话的电子邮件更新",
+    viewEmailUpdateHistoryLabel: "查看此对话的电子邮件更新历史",
     receiveEmailUpdatesLabel: "接收此对话的邮件更新",
-    emailUpdatesPreferenceOn: "已为此对话开启",
-    emailUpdatesPreferenceOff: "已为此对话关闭",
-    emailUpdatesPreferenceUndisclosed: "未保存对话偏好",
-    emailUpdatesPreferenceSaveError: "无法保存邮件更新偏好。",
+    emailUpdatesPreferenceSaveEnabled: "已开启此对话的电子邮件更新。",
+    emailUpdatesPreferenceSaveDisabled: "已关闭此对话的电子邮件更新。",
+    emailUpdatesPreferenceSaveError: "无法保存您的电子邮件更新偏好。",
   },
   "zh-Hant": {
     closeConfirmMessage: "您確定要關閉此對話嗎？用戶將無法發布新意見或投票。",
@@ -180,12 +199,12 @@ export const postMetadataTranslations: Record<
     alreadyOpen: "此對話已打開",
     syncSuccess: "從 GitHub 同步成功",
     syncError: "從 GitHub 同步失敗",
-    emailUpdatesLabel: "電子郵件更新",
+    manageEmailUpdatesLabel: "管理此對話的電子郵件更新",
+    viewEmailUpdateHistoryLabel: "查看此對話的電子郵件更新歷史",
     receiveEmailUpdatesLabel: "接收此對話的電子郵件更新",
-    emailUpdatesPreferenceOn: "已為此對話開啟",
-    emailUpdatesPreferenceOff: "已為此對話關閉",
-    emailUpdatesPreferenceUndisclosed: "未儲存對話偏好",
-    emailUpdatesPreferenceSaveError: "無法儲存電子郵件更新偏好。",
+    emailUpdatesPreferenceSaveEnabled: "已開啟此對話的電子郵件更新。",
+    emailUpdatesPreferenceSaveDisabled: "已關閉此對話的電子郵件更新。",
+    emailUpdatesPreferenceSaveError: "無法儲存您的電子郵件更新偏好。",
   },
   he: {
     closeConfirmMessage:
@@ -203,12 +222,12 @@ export const postMetadataTranslations: Record<
     alreadyOpen: "שיחה זו כבר פתוחה",
     syncSuccess: "סנכרון מ-GitHub הצליח",
     syncError: "סנכרון מ-GitHub נכשל",
-    emailUpdatesLabel: "עדכונים בדוא״ל",
+    manageEmailUpdatesLabel: "ניהול עדכונים בדוא״ל לשיחה הזו",
+    viewEmailUpdateHistoryLabel: "הצגת היסטוריית העדכונים בדוא״ל של השיחה הזו",
     receiveEmailUpdatesLabel: "קבלת עדכונים בדוא״ל לשיחה הזו",
-    emailUpdatesPreferenceOn: "מופעל לשיחה הזו",
-    emailUpdatesPreferenceOff: "כבוי לשיחה הזו",
-    emailUpdatesPreferenceUndisclosed: "לא נשמרה העדפה לשיחה",
-    emailUpdatesPreferenceSaveError: "לא ניתן היה לשמור את העדפת העדכונים.",
+    emailUpdatesPreferenceSaveEnabled: "עדכונים בדוא״ל הופעלו לשיחה הזו.",
+    emailUpdatesPreferenceSaveDisabled: "עדכונים בדוא״ל כובו לשיחה הזו.",
+    emailUpdatesPreferenceSaveError: "לא ניתן לשמור את העדפת העדכונים בדוא״ל.",
   },
   ja: {
     closeConfirmMessage:
@@ -226,11 +245,12 @@ export const postMetadataTranslations: Record<
     alreadyOpen: "この会話はすでに開いています",
     syncSuccess: "GitHub からの同期に成功しました",
     syncError: "GitHub からの同期に失敗しました",
-    emailUpdatesLabel: "メール更新",
+    manageEmailUpdatesLabel: "この会話のメール更新を管理する",
+    viewEmailUpdateHistoryLabel: "この会話のメール更新履歴を表示する",
     receiveEmailUpdatesLabel: "この会話のメール更新を受け取る",
-    emailUpdatesPreferenceOn: "この会話ではオン",
-    emailUpdatesPreferenceOff: "この会話ではオフ",
-    emailUpdatesPreferenceUndisclosed: "会話の設定は保存されていません",
+    emailUpdatesPreferenceSaveEnabled: "この会話のメール更新をオンにしました。",
+    emailUpdatesPreferenceSaveDisabled:
+      "この会話のメール更新をオフにしました。",
     emailUpdatesPreferenceSaveError: "メール更新の設定を保存できませんでした。",
   },
   ky: {
@@ -249,12 +269,14 @@ export const postMetadataTranslations: Record<
     alreadyOpen: "Бул талкуу мурунтан эле ачык",
     syncSuccess: "GitHub'тен синхрондоо ийгиликтүү болду",
     syncError: "GitHub'тен синхрондоо ишке ашпай калды",
-    emailUpdatesLabel: "Электрондук кат жаңыртуулары",
+    manageEmailUpdatesLabel: "Бул талкуунун электрондук каттарын башкаруу",
+    viewEmailUpdateHistoryLabel: "Бул талкуунун электрондук кат тарыхын көрүү",
     receiveEmailUpdatesLabel: "Бул талкуу боюнча каттарды алуу",
-    emailUpdatesPreferenceOn: "Бул талкуу үчүн күйгүзүлгөн",
-    emailUpdatesPreferenceOff: "Бул талкуу үчүн өчүрүлгөн",
-    emailUpdatesPreferenceUndisclosed: "Талкуу тандоосу сакталган эмес",
-    emailUpdatesPreferenceSaveError: "Электрондук кат тандоосу сакталган жок.",
+    emailUpdatesPreferenceSaveEnabled:
+      "Бул талкуу үчүн электрондук каттар күйгүзүлдү.",
+    emailUpdatesPreferenceSaveDisabled:
+      "Бул талкуу үчүн электрондук каттар өчүрүлдү.",
+    emailUpdatesPreferenceSaveError: "Электрондук кат тандооңуз сакталган жок.",
   },
   ru: {
     closeConfirmMessage:
@@ -272,11 +294,15 @@ export const postMetadataTranslations: Record<
     alreadyOpen: "Это обсуждение уже открыто",
     syncSuccess: "Синхронизация с GitHub выполнена успешно",
     syncError: "Не удалось синхронизировать с GitHub",
-    emailUpdatesLabel: "Обновления по почте",
-    receiveEmailUpdatesLabel: "Получать обновления этого обсуждения",
-    emailUpdatesPreferenceOn: "Включены для этого обсуждения",
-    emailUpdatesPreferenceOff: "Выключены для этого обсуждения",
-    emailUpdatesPreferenceUndisclosed: "Настройка обсуждения не сохранена",
+    manageEmailUpdatesLabel:
+      "Управлять почтовыми обновлениями этого обсуждения",
+    viewEmailUpdateHistoryLabel:
+      "Посмотреть историю почтовых обновлений этого обсуждения",
+    receiveEmailUpdatesLabel: "Получать обновления этого обсуждения по почте",
+    emailUpdatesPreferenceSaveEnabled:
+      "Почтовые обновления этого обсуждения включены.",
+    emailUpdatesPreferenceSaveDisabled:
+      "Почтовые обновления этого обсуждения выключены.",
     emailUpdatesPreferenceSaveError:
       "Не удалось сохранить настройку почтовых обновлений.",
   },

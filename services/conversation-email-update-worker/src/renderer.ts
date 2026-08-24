@@ -9,7 +9,8 @@ interface FixedCopy {
     owner: string;
     why: string;
     conversations: string;
-    unsubscribe: string;
+    unsubscribeProject: string;
+    unsubscribeConversation: string;
     manage: string;
     report: string;
     reply: string;
@@ -17,10 +18,11 @@ interface FixedCopy {
 
 const englishCopy: FixedCopy = {
     test: "TEST EMAIL - no participant actions are active",
-    owner: "You received this mandatory copy because you own a selected conversation.",
+    owner: "You received this operational owner copy because you are authorized to manage Email Updates for an organization that owns this project. Participant email preferences do not disable operational owner copies.",
     why: "You received this update because you chose email updates for a conversation in which you participated.",
     conversations: "Included conversations",
-    unsubscribe: "Unsubscribe from these updates",
+    unsubscribeProject: "Unsubscribe from updates for this project",
+    unsubscribeConversation: "Unsubscribe from updates for this conversation",
     manage: "Manage preferences or unsubscribe from specific conversations",
     report: "Report this update",
     reply: "Reply to this email to contact the project team.",
@@ -30,100 +32,110 @@ const fixedCopy: Record<SupportedDisplayLanguageCodes, FixedCopy> = {
     en: englishCopy,
     es: {
         test: "CORREO DE PRUEBA - las acciones para participantes no están activas",
-        owner: "Recibió esta copia obligatoria porque gestiona una conversación seleccionada.",
+        owner: "Recibió esta copia operativa para propietarios porque tiene autorización para gestionar las Actualizaciones por correo electrónico de una organización propietaria de este proyecto. Las preferencias de correo electrónico de los participantes no desactivan las copias operativas para propietarios.",
         why: "Recibió esta actualización porque eligió recibir correos sobre una conversación en la que participó.",
         conversations: "Conversaciones incluidas",
-        unsubscribe: "Cancelar la suscripción a estas actualizaciones",
+        unsubscribeProject: "Cancelar las actualizaciones de este proyecto",
+        unsubscribeConversation: "Cancelar las actualizaciones de esta conversación",
         manage: "Gestionar preferencias o cancelar la suscripción a conversaciones específicas",
         report: "Denunciar esta actualización",
         reply: "Responda a este correo para contactar al equipo del proyecto.",
     },
     fr: {
         test: "E-MAIL DE TEST - aucune action destinée aux participants n'est active",
-        owner: "Vous recevez cette copie obligatoire car vous gérez une conversation sélectionnée.",
+        owner: "Vous recevez cette copie opérationnelle destinée aux propriétaires car vous êtes autorisé à gérer les Mises à jour par e-mail pour une organisation propriétaire de ce projet. Les préférences e-mail des participants ne désactivent pas les copies opérationnelles destinées aux propriétaires.",
         why: "Vous recevez cette mise à jour car vous avez choisi les e-mails pour une conversation à laquelle vous avez participé.",
         conversations: "Conversations incluses",
-        unsubscribe: "Se désabonner de ces mises à jour",
+        unsubscribeProject: "Se désabonner des mises à jour de ce projet",
+        unsubscribeConversation: "Se désabonner des mises à jour de cette conversation",
         manage: "Gérer les préférences ou se désabonner de conversations précises",
         report: "Signaler cette mise à jour",
         reply: "Répondez à cet e-mail pour contacter l'équipe du projet.",
     },
     "zh-Hans": {
         test: "测试邮件 - 参与者操作未启用",
-        owner: "您收到此必要副本，是因为您负责所选对话。",
+        owner: "您收到这封项目所有者运营副本，是因为您有权为拥有此项目的组织管理电子邮件更新。参与者的电子邮件偏好不会停用项目所有者运营副本。",
         why: "您收到此更新，是因为您选择接收您参与过的对话的电子邮件更新。",
         conversations: "包含的对话",
-        unsubscribe: "退订这些更新",
+        unsubscribeProject: "退订此项目的更新",
+        unsubscribeConversation: "退订此对话的更新",
         manage: "管理偏好或退订特定对话",
         report: "举报此更新",
         reply: "回复此邮件即可联系项目团队。",
     },
     "zh-Hant": {
         test: "測試郵件 - 參與者操作未啟用",
-        owner: "您收到此必要副本，是因為您負責所選對話。",
+        owner: "您收到這封專案擁有者營運副本，是因為您有權為擁有此專案的組織管理電子郵件更新。參與者的電子郵件偏好不會停用專案擁有者營運副本。",
         why: "您收到此更新，是因為您選擇接收您參與過的對話的電子郵件更新。",
         conversations: "包含的對話",
-        unsubscribe: "取消訂閱這些更新",
+        unsubscribeProject: "取消訂閱此專案的更新",
+        unsubscribeConversation: "取消訂閱此對話的更新",
         manage: "管理偏好或取消訂閱特定對話",
         report: "檢舉此更新",
         reply: "回覆此郵件即可聯絡專案團隊。",
     },
     ja: {
         test: "テストメール - 参加者向け操作は無効です",
-        owner: "選択された会話の管理者であるため、この必須コピーを受信しています。",
+        owner: "このプロジェクトを所有する組織のメール更新を管理する権限があるため、この運用上の所有者向けコピーを受信しています。参加者のメール設定で運用上の所有者向けコピーが無効になることはありません。",
         why: "参加した会話のメール更新を希望したため、この更新を受信しています。",
         conversations: "対象の会話",
-        unsubscribe: "この更新の配信を停止",
+        unsubscribeProject: "このプロジェクトの更新配信を停止",
+        unsubscribeConversation: "この会話の更新配信を停止",
         manage: "設定の管理または会話ごとの配信停止",
         report: "この更新を報告",
         reply: "プロジェクトチームへの連絡は、このメールに返信してください。",
     },
     ar: {
         test: "رسالة اختبار - إجراءات المشاركين غير مفعلة",
-        owner: "تلقيت هذه النسخة الإلزامية لأنك تدير محادثة محددة.",
+        owner: "تلقيت نسخة المالك التشغيلية هذه لأنك مخوّل بإدارة تحديثات البريد الإلكتروني لمؤسسة تملك هذا المشروع. لا تؤدي تفضيلات البريد الإلكتروني للمشاركين إلى تعطيل نسخ المالك التشغيلية.",
         why: "تلقيت هذا التحديث لأنك اخترت تحديثات البريد لمحادثة شاركت فيها.",
         conversations: "المحادثات المشمولة",
-        unsubscribe: "إلغاء الاشتراك في هذه التحديثات",
+        unsubscribeProject: "إلغاء الاشتراك في تحديثات هذا المشروع",
+        unsubscribeConversation: "إلغاء الاشتراك في تحديثات هذه المحادثة",
         manage: "إدارة التفضيلات أو إلغاء محادثات محددة",
         report: "الإبلاغ عن هذا التحديث",
         reply: "رد على هذه الرسالة للتواصل مع فريق المشروع.",
     },
     he: {
         test: "הודעת בדיקה - פעולות משתתפים אינן פעילות",
-        owner: "קיבלת עותק חובה זה כי באחריותך שיחה שנבחרה.",
+        owner: "קיבלת עותק תפעולי זה לבעלים כי יש לך הרשאה לנהל עדכוני דוא״ל עבור ארגון שבבעלותו הפרויקט הזה. העדפות הדוא״ל של המשתתפים אינן משביתות עותקים תפעוליים לבעלים.",
         why: "קיבלת עדכון זה כי בחרת לקבל עדכונים לשיחה שבה השתתפת.",
         conversations: "שיחות כלולות",
-        unsubscribe: "ביטול הרשמה לעדכונים אלה",
+        unsubscribeProject: "ביטול הרשמה לעדכונים מהפרויקט הזה",
+        unsubscribeConversation: "ביטול הרשמה לעדכונים מהשיחה הזאת",
         manage: "ניהול העדפות או ביטול הרשמה לשיחות מסוימות",
         report: "דיווח על עדכון זה",
         reply: "אפשר להשיב להודעה זו כדי ליצור קשר עם צוות הפרויקט.",
     },
     fa: {
         test: "ایمیل آزمایشی - اقدام‌های شرکت‌کننده فعال نیست",
-        owner: "این نسخه الزامی را چون مسئول یک گفت‌وگوی انتخاب‌شده هستید دریافت کردید.",
+        owner: "این نسخه عملیاتی مالک را دریافت کرده‌اید زیرا مجاز به مدیریت به‌روزرسانی‌های ایمیلی برای سازمانی هستید که مالک این پروژه است. ترجیحات ایمیلی شرکت‌کنندگان نسخه‌های عملیاتی مالک را غیرفعال نمی‌کند.",
         why: "این به‌روزرسانی را چون ایمیل‌های گفت‌وگویی را که در آن شرکت کردید انتخاب کرده‌اید دریافت کردید.",
         conversations: "گفت‌وگوهای موجود",
-        unsubscribe: "لغو اشتراک این به‌روزرسانی‌ها",
+        unsubscribeProject: "لغو اشتراک به‌روزرسانی‌های این پروژه",
+        unsubscribeConversation: "لغو اشتراک به‌روزرسانی‌های این گفت‌وگو",
         manage: "مدیریت ترجیحات یا لغو گفت‌وگوهای مشخص",
         report: "گزارش این به‌روزرسانی",
         reply: "برای تماس با تیم پروژه به این ایمیل پاسخ دهید.",
     },
     ky: {
         test: "СЫНОО КАТЫ - катышуучунун аракеттери иштебейт",
-        owner: "Тандалган талкууну башкарганыңыз үчүн бул милдеттүү көчүрмөнү алдыңыз.",
+        owner: "Бул долбоорго ээлик кылган уюм үчүн электрондук почта жаңыртууларын башкарууга укуктуу болгонуңуз үчүн ээсине арналган бул операциялык көчүрмөнү алдыңыз. Катышуучулардын электрондук почта жөндөөлөрү ээсине арналган операциялык көчүрмөлөрдү өчүрбөйт.",
         why: "Катышкан талкууңуз боюнча каттарды тандаганыңыз үчүн бул жаңыртууну алдыңыз.",
         conversations: "Камтылган талкуулар",
-        unsubscribe: "Бул жаңыртуулардан чыгуу",
+        unsubscribeProject: "Бул долбоордун жаңыртууларынан чыгуу",
+        unsubscribeConversation: "Бул талкуунун жаңыртууларынан чыгуу",
         manage: "Жөндөөлөрдү башкаруу же айрым талкуулардан чыгуу",
         report: "Бул жаңыртууну билдирүү",
         reply: "Долбоор тобуна байланышуу үчүн бул катка жооп бериңиз.",
     },
     ru: {
         test: "ТЕСТОВОЕ ПИСЬМО - действия участников неактивны",
-        owner: "Вы получили обязательную копию, так как управляете выбранным обсуждением.",
+        owner: "Вы получили эту служебную копию для владельца, поскольку уполномочены управлять почтовыми обновлениями от имени организации, владеющей этим проектом. Настройки электронной почты участников не отключают служебные копии для владельцев.",
         why: "Вы получили обновление, так как выбрали письма об обсуждении, в котором участвовали.",
         conversations: "Включенные обсуждения",
-        unsubscribe: "Отписаться от этих обновлений",
+        unsubscribeProject: "Отписаться от обновлений этого проекта",
+        unsubscribeConversation: "Отписаться от обновлений этого обсуждения",
         manage: "Управлять настройками или отписаться от отдельных обсуждений",
         report: "Пожаловаться на это обновление",
         reply: "Ответьте на это письмо, чтобы связаться с командой проекта.",
@@ -137,21 +149,34 @@ export interface RenderedConversationEmail {
 }
 
 export interface ConversationEmailActionLinks {
+    unsubscribeScope: "project" | "conversation";
     unsubscribeUrl: string;
     manageUrl: string;
     reportUrl: string;
 }
 
-export interface RenderConversationEmailParams {
+interface RenderConversationEmailParamsCommon {
     subject: string;
     bodyHtml: string;
     bodyPlainText: string;
     projectTitle: string;
     conversations: readonly { title: string; url: string }[];
     language: SupportedDisplayLanguageCodes;
-    variant: "test" | "owner_copy" | "participant";
-    actions: ConversationEmailActionLinks | undefined;
 }
+
+export type RenderConversationEmailParams =
+    RenderConversationEmailParamsCommon &
+        (
+            | { variant: "test"; actions?: never }
+            | {
+                  variant: "owner_copy";
+                  actions: ConversationEmailActionLinks;
+              }
+            | {
+                  variant: "participant";
+                  actions: ConversationEmailActionLinks;
+              }
+        );
 
 function escapeHtml(value: string): string {
     return value
@@ -201,16 +226,18 @@ function textUrl(value: string): string {
     return safeUrl(value) ?? "#";
 }
 
-export function renderConversationEmail({
-    subject,
-    bodyHtml,
-    bodyPlainText,
-    projectTitle,
-    conversations,
-    language,
-    variant,
-    actions,
-}: RenderConversationEmailParams): RenderedConversationEmail {
+export function renderConversationEmail(
+    params: RenderConversationEmailParams,
+): RenderedConversationEmail {
+    const {
+        subject,
+        bodyHtml,
+        bodyPlainText,
+        projectTitle,
+        conversations,
+        language,
+        variant,
+    } = params;
     const copy = fixedCopy[language];
     const direction = getLanguageTextDirection(language);
     const marker = variant === "test" ? copy.test : undefined;
@@ -230,10 +257,16 @@ export function renderConversationEmail({
                 `<li style="margin:0 0 8px"><a href="${htmlUrl(conversation.url)}" style="color:#4f46e5">${escapeHtml(conversation.title)}</a></li>`,
         )
         .join("");
-    const actionHtml =
-        variant === "participant" && actions !== undefined
-            ? `<p style="margin:20px 0 8px"><a href="${htmlUrl(actions.unsubscribeUrl)}">${escapeHtml(copy.unsubscribe)}</a></p><p style="margin:8px 0"><a href="${htmlUrl(actions.manageUrl)}">${escapeHtml(copy.manage)}</a></p><p style="margin:8px 0"><a href="${htmlUrl(actions.reportUrl)}">${escapeHtml(copy.report)}</a></p>`
-            : "";
+    let actionHtml = "";
+    let actionText = "";
+    if (params.variant !== "test") {
+        const unsubscribeCopy =
+            params.actions.unsubscribeScope === "project"
+                ? copy.unsubscribeProject
+                : copy.unsubscribeConversation;
+        actionHtml = `<p style="margin:20px 0 8px"><a href="${htmlUrl(params.actions.unsubscribeUrl)}">${escapeHtml(unsubscribeCopy)}</a></p><p style="margin:8px 0"><a href="${htmlUrl(params.actions.manageUrl)}">${escapeHtml(copy.manage)}</a></p><p style="margin:8px 0"><a href="${htmlUrl(params.actions.reportUrl)}">${escapeHtml(copy.report)}</a></p>`;
+        actionText = `\n\n${unsubscribeCopy}: ${textUrl(params.actions.unsubscribeUrl)}\n${copy.manage}: ${textUrl(params.actions.manageUrl)}\n${copy.report}: ${textUrl(params.actions.reportUrl)}`;
+    }
     const markerHtml =
         marker === undefined
             ? ""
@@ -246,10 +279,6 @@ export function renderConversationEmail({
                 `- ${conversation.title}: ${textUrl(conversation.url)}`,
         )
         .join("\n");
-    const actionText =
-        variant === "participant" && actions !== undefined
-            ? `\n\n${copy.unsubscribe}: ${textUrl(actions.unsubscribeUrl)}\n${copy.manage}: ${textUrl(actions.manageUrl)}\n${copy.report}: ${textUrl(actions.reportUrl)}`
-            : "";
     const text = `${marker === undefined ? "" : `${marker}\n\n`}${projectTitle}\n${subject}\n\n${bodyPlainText.trim()}\n\n${copy.conversations}\n${conversationText}\n\n${explanation}\n${copy.reply}${actionText}\n\n${BRAND}`;
     return {
         subject: marker === undefined ? subject : `[TEST] ${subject}`,

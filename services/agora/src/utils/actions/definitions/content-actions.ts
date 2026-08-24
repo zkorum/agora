@@ -300,9 +300,12 @@ export function useContentActions() {
         await action.handler(actionContext);
       }
 
-      // Close dialog after successful action (except for certain actions that should keep it open)
+      // Close dialog after successful action unless the action keeps it open.
       const keepOpenActions = ["moderationHistory", "embedLink"];
-      if (!keepOpenActions.includes(action.id)) {
+      if (
+        action.closeOnSelect !== false &&
+        !keepOpenActions.includes(action.id)
+      ) {
         closeDialog();
       }
     } catch (error) {

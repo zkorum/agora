@@ -2,12 +2,8 @@
   <section class="updates-workspace">
     <div class="updates-workspace__intro">
       <div>
-        <span>Email Updates</span>
-        <h1>Keep participants connected to the work they joined</h1>
-        <p>
-          Share a focused update about selected conversations, test the exact
-          email, and review accepted sends in one place.
-        </p>
+        <h1>{{ t("introTitle") }}</h1>
+        <p>{{ t("introDescription") }}</p>
       </div>
       <q-icon name="mdi-email-fast-outline" size="2.25rem" />
     </div>
@@ -17,11 +13,26 @@
     <ErrorRetryBlock
       v-else-if="workspaceError !== undefined"
       :title="workspaceError"
-      retry-label="Try again"
+      :retry-label="t('tryAgain')"
       @retry="loadWorkspace"
     />
 
     <template v-else>
+      <ZKInfoBanner
+        v-if="testDestinationEmail === undefined"
+        :message="t('verifyEmailBanner')"
+        :action-label="t('verifyEmail')"
+        variant="warning"
+        @action="showEmailVerificationDialog = true"
+      />
+      <ZKInfoBanner
+        v-if="activeTab === 'compose' && audienceEstimateError !== undefined"
+        :message="audienceEstimateError"
+        :action-label="t('retry')"
+        variant="warning"
+        @action="loadAudienceEstimate"
+      />
+
       <q-tabs
         :model-value="activeTab"
         dense
@@ -32,8 +43,12 @@
         class="updates-workspace__tabs"
         @update:model-value="updateActiveTab"
       >
-        <q-tab name="compose" icon="mdi-email-edit-outline" label="Compose" />
-        <q-tab name="history" icon="mdi-history" label="History" />
+        <q-tab
+          name="compose"
+          icon="mdi-email-edit-outline"
+          :label="t('compose')"
+        />
+        <q-tab name="history" icon="mdi-history" :label="t('history')" />
       </q-tabs>
 
       <q-tab-panels
@@ -56,9 +71,12 @@
                 updatesDisabledConversationIds
               "
               :test-pending="activeTestOperationId !== undefined"
+              :send-pending="isSendingUpdate"
               :notice="notice"
               :has-successful-test="hasSuccessfulTest"
+              :audience-estimate="audienceEstimate"
               :audience-estimate-available="audienceEstimateAvailable"
+              :test-destination-email="testDestinationEmail"
               :related-conversation-owner-count="relatedConversationOwnerCount"
               @test="sendTest"
               @send="showSendDialog = true"
@@ -83,7 +101,7 @@
           <ErrorRetryBlock
             v-else-if="historyError !== undefined && history.length === 0"
             :title="historyError"
-            retry-label="Try again"
+            :retry-label="t('tryAgain')"
             @retry="loadHistory"
           />
           <template v-else>
@@ -101,7 +119,7 @@
                 button-type="standardButton"
                 outline
                 color="primary"
-                label="Load more"
+                :label="t('loadMore')"
                 :loading="isLoadingMoreHistory"
                 :disable="isLoadingMoreHistory"
                 @click="loadMoreHistory"
@@ -115,20 +133,27 @@
 
   <ZKConfirmDialog
     v-model="showSendDialog"
-    title="Send this update?"
-    confirm-text="Send update"
-    cancel-text="Cancel"
+    :title="t('sendDialogTitle')"
+    :confirm-text="t('sendUpdate')"
+    :cancel-text="t('cancel')"
     @confirm="sendUpdate"
   >
     <div class="updates-workspace__send-summary">
-      <strong
-        >About {{ formattedAudienceEstimate }} eligible participants</strong
-      >
-      <p>
-        Required owner copies are sent first. Participant delivery cannot be
-        canceled after the update is accepted.
-      </p>
+      <strong>{{
+        t("audienceSummary", { count: formattedAudienceEstimate })
+      }}</strong>
+      <p>{{ t("sendWarning") }}</p>
     </div>
+  </ZKConfirmDialog>
+
+  <ZKConfirmDialog
+    v-model="showEmailVerificationDialog"
+    :title="t('verifyDialogTitle')"
+    :confirm-text="t('continueVerification')"
+    :cancel-text="t('notNow')"
+    @confirm="startEmailVerification"
+  >
+    <p>{{ t("verifyDialogDescription") }}</p>
   </ZKConfirmDialog>
 </template>
 
@@ -153,22 +178,52 @@ import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
 import ZKInfoBanner from "src/components/ui-library/ZKInfoBanner.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
   ConversationEmailUpdateHistoryRecord,
   ConversationEmailUpdateScope,
+  ConversationEmailUpdateSendResponse,
+  ConversationEmailUpdateSendTestResponse,
   ConversationEmailUpdateWorkspaceRequest,
 } from "src/shared/types/dto";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
+import { onboardingFlowStore } from "src/stores/onboarding/flow";
 import { useBackendConversationEmailUpdatesApi } from "src/utils/api/conversationUpdates/conversationEmailUpdates";
+import { useNotify } from "src/utils/ui/notify";
 import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+
+import {
+  type ConversationUpdatesWorkspaceTranslations,
+  conversationUpdatesWorkspaceTranslations,
+} from "./ConversationUpdatesWorkspace.i18n";
 
 type WorkspaceTab = "compose" | "history";
+type TestSendFailure = Extract<
+  ConversationEmailUpdateSendTestResponse,
+  { success: false }
+>["error"];
+type SendFailure = Extract<
+  ConversationEmailUpdateSendResponse,
+  { success: false }
+>;
 
 const props = defineProps<{
   initialTab: WorkspaceTab;
   context: ConversationEmailUpdateWorkspaceRequest["context"];
 }>();
 
+const AUDIENCE_ESTIMATE_DEBOUNCE_MS = 250;
+const { t, locale } =
+  useComponentI18n<ConversationUpdatesWorkspaceTranslations>(
+    conversationUpdatesWorkspaceTranslations
+  );
 const emailUpdatesApi = useBackendConversationEmailUpdatesApi();
+const notify = useNotify();
+const route = useRoute();
+const router = useRouter();
+const loginIntentionStore = useLoginIntentionStore();
+const flowStore = onboardingFlowStore();
 const apiScopes = ref<readonly ConversationEmailUpdateScope[]>([]);
 const displayScopes = computed(() =>
   mapConversationEmailUpdateScopes(apiScopes.value)
@@ -185,6 +240,7 @@ const testedDraftKey = ref<string | undefined>(undefined);
 const successfulUpdateId = ref<string | undefined>(undefined);
 const successfulTestAttemptId = ref<string | undefined>(undefined);
 const showSendDialog = ref(false);
+const showEmailVerificationDialog = ref(false);
 const isLoadingWorkspace = ref(true);
 const workspaceError = ref<string | undefined>(undefined);
 const isLoadingHistory = ref(false);
@@ -198,12 +254,17 @@ const resolvedContext = ref<
 >(undefined);
 const audienceEstimate = ref(0);
 const audienceEstimateAvailable = ref(false);
+const audienceEstimateError = ref<string | undefined>(undefined);
+const testDestinationEmail = ref<string | undefined>(undefined);
 const relatedConversationOwnerCount = ref(0);
 let audienceRequestId = 0;
+let audienceEstimateTimer: number | undefined;
+let audienceAbortController: AbortController | undefined;
 let historyRequestId = 0;
 let workspaceGeneration = 0;
 let activeTestAttemptId: string | undefined;
 const activeTestOperationId = ref<number | undefined>(undefined);
+const isSendingUpdate = ref(false);
 let nextTestOperationId = 0;
 let isUnmounted = false;
 
@@ -261,7 +322,7 @@ const hasSuccessfulTest = computed(
   () => testedDraftKey.value === currentDraftKey.value
 );
 const formattedAudienceEstimate = computed(() =>
-  new Intl.NumberFormat().format(audienceEstimate.value)
+  new Intl.NumberFormat(locale.value).format(audienceEstimate.value)
 );
 const contextKey = computed(() => JSON.stringify(props.context));
 
@@ -282,9 +343,7 @@ watch(selectedScopeId, () => {
 watch(
   currentDraftKey,
   () => {
-    testedDraftKey.value = undefined;
-    successfulUpdateId.value = undefined;
-    successfulTestAttemptId.value = undefined;
+    clearSuccessfulTestAuthorization();
     activeTestAttemptId = undefined;
     activeTestOperationId.value = undefined;
   },
@@ -293,9 +352,7 @@ watch(
 
 watch(
   () => JSON.stringify([selectedScopeId.value, selectedConversationIds.value]),
-  async () => {
-    await loadAudienceEstimate();
-  }
+  scheduleAudienceEstimate
 );
 
 watch(
@@ -326,9 +383,11 @@ watch(
 function resetScopeState(): void {
   workspaceGeneration += 1;
   audienceRequestId += 1;
+  cancelAudienceEstimate();
   historyRequestId += 1;
   activeTestAttemptId = undefined;
   activeTestOperationId.value = undefined;
+  isSendingUpdate.value = false;
   apiScopes.value = [];
   selectedScopeId.value = "";
   selectedConversationIds.value = [];
@@ -338,10 +397,9 @@ function resetScopeState(): void {
   bodyPlainText.value = "";
   contentConfirmed.value = false;
   notice.value = undefined;
-  testedDraftKey.value = undefined;
-  successfulUpdateId.value = undefined;
-  successfulTestAttemptId.value = undefined;
+  clearSuccessfulTestAuthorization();
   showSendDialog.value = false;
+  showEmailVerificationDialog.value = false;
   isLoadingWorkspace.value = true;
   workspaceError.value = undefined;
   isLoadingHistory.value = false;
@@ -353,6 +411,8 @@ function resetScopeState(): void {
   resolvedContext.value = undefined;
   audienceEstimate.value = 0;
   audienceEstimateAvailable.value = false;
+  audienceEstimateError.value = undefined;
+  testDestinationEmail.value = undefined;
   relatedConversationOwnerCount.value = 0;
 }
 
@@ -372,6 +432,7 @@ async function loadWorkspace(): Promise<void> {
     }
     apiScopes.value = response.scopes;
     resolvedContext.value = response.resolvedContext;
+    testDestinationEmail.value = response.testDestinationEmail;
     const initialSelection = response.initialSelection;
     if (initialSelection?.kind === "project") {
       selectedScopeId.value = initialSelection.projectSlug;
@@ -392,7 +453,7 @@ async function loadWorkspace(): Promise<void> {
       return;
     }
     console.error("Failed to load Email Updates workspace", error);
-    workspaceError.value = "Email Updates are unavailable right now.";
+    workspaceError.value = t("workspaceUnavailable");
   } finally {
     if (generation === workspaceGeneration) {
       isLoadingWorkspace.value = false;
@@ -401,7 +462,14 @@ async function loadWorkspace(): Promise<void> {
 }
 
 async function loadAudienceEstimate(): Promise<void> {
+  cancelAudienceEstimate();
   audienceEstimateAvailable.value = false;
+  audienceEstimateError.value = undefined;
+  if (testDestinationEmail.value === undefined) {
+    audienceEstimate.value = 0;
+    relatedConversationOwnerCount.value = 0;
+    return;
+  }
   const scope = currentScope.value;
   if (scope === undefined) {
     audienceEstimate.value = 0;
@@ -420,26 +488,60 @@ async function loadAudienceEstimate(): Promise<void> {
 
   const requestId = ++audienceRequestId;
   const generation = workspaceGeneration;
+  const abortController = new AbortController();
+  audienceAbortController = abortController;
   try {
-    const response = await emailUpdatesApi.estimateAudience({ selection });
+    const response = await emailUpdatesApi.estimateAudience({
+      request: { selection },
+      signal: abortController.signal,
+    });
     if (requestId !== audienceRequestId || generation !== workspaceGeneration) {
       return;
     }
     if (!response.success) {
       audienceEstimate.value = 0;
       relatedConversationOwnerCount.value = 0;
-      notice.value = `Audience estimate unavailable: ${response.reason.replaceAll("_", " ")}.`;
+      audienceEstimateError.value = getAudienceEstimateError(response.reason);
       return;
     }
     audienceEstimate.value = response.estimatedEligibleRecipientCount;
     relatedConversationOwnerCount.value = response.requiredOwnerCopyCount;
     audienceEstimateAvailable.value = true;
   } catch (error) {
+    if (abortController.signal.aborted) {
+      return;
+    }
     console.error("Failed to estimate Email Update audience", error);
     if (requestId === audienceRequestId && generation === workspaceGeneration) {
-      notice.value = "The audience estimate could not be loaded.";
+      audienceEstimate.value = 0;
+      relatedConversationOwnerCount.value = 0;
+      audienceEstimateError.value = t("audienceEstimateUnavailable");
+    }
+  } finally {
+    if (audienceAbortController === abortController) {
+      audienceAbortController = undefined;
     }
   }
+}
+
+function scheduleAudienceEstimate(): void {
+  cancelAudienceEstimate();
+  audienceRequestId += 1;
+  audienceEstimateAvailable.value = false;
+  audienceEstimateError.value = undefined;
+  audienceEstimateTimer = window.setTimeout(() => {
+    audienceEstimateTimer = undefined;
+    void loadAudienceEstimate();
+  }, AUDIENCE_ESTIMATE_DEBOUNCE_MS);
+}
+
+function cancelAudienceEstimate(): void {
+  if (audienceEstimateTimer !== undefined) {
+    window.clearTimeout(audienceEstimateTimer);
+    audienceEstimateTimer = undefined;
+  }
+  audienceAbortController?.abort();
+  audienceAbortController = undefined;
 }
 
 async function loadHistory(): Promise<void> {
@@ -458,7 +560,7 @@ async function loadHistory(): Promise<void> {
       return;
     }
     if (!response.success) {
-      historyError.value = "Email Update history is unavailable right now.";
+      historyError.value = t("historyUnavailable");
       return;
     }
     const records = loadHistoryRecords(response.items);
@@ -473,7 +575,7 @@ async function loadHistory(): Promise<void> {
       return;
     }
     console.error("Failed to load Email Update history", error);
-    historyError.value = "Email Update history is unavailable right now.";
+    historyError.value = t("historyUnavailable");
   } finally {
     if (isCurrentHistoryRequest({ requestId, generation })) {
       isLoadingHistory.value = false;
@@ -506,7 +608,7 @@ async function loadMoreHistory(): Promise<void> {
       return;
     }
     if (!response.success) {
-      historyError.value = "More Email Update history could not be loaded.";
+      historyError.value = t("moreHistoryUnavailable");
       return;
     }
     const records = loadHistoryRecords(response.items);
@@ -524,7 +626,7 @@ async function loadMoreHistory(): Promise<void> {
       return;
     }
     console.error("Failed to load more Email Update history", error);
-    historyError.value = "More Email Update history could not be loaded.";
+    historyError.value = t("moreHistoryUnavailable");
   } finally {
     if (isCurrentHistoryRequest({ requestId, generation })) {
       isLoadingMoreHistory.value = false;
@@ -553,6 +655,9 @@ async function sendTest(): Promise<void> {
   const scope = currentScope.value;
   if (
     scope === undefined ||
+    testDestinationEmail.value === undefined ||
+    !audienceEstimateAvailable.value ||
+    audienceEstimate.value === 0 ||
     activeTestAttemptId !== undefined ||
     activeTestOperationId.value !== undefined
   ) {
@@ -568,7 +673,7 @@ async function sendTest(): Promise<void> {
   const draftKey = currentDraftKey.value;
   const operationId = ++nextTestOperationId;
   activeTestOperationId.value = operationId;
-  notice.value = "Queueing your test email...";
+  notice.value = t("queueingTest");
   try {
     const response = await emailUpdatesApi.sendTest({
       selection,
@@ -583,12 +688,13 @@ async function sendTest(): Promise<void> {
       return;
     }
     if (!response.success) {
-      notice.value = `Test email failed: ${response.reason.replaceAll("_", " ")}.`;
+      notice.value = undefined;
+      reconcileTestSendFailure(response.error);
+      notify.showNotifyMessage(getTestSendFailureMessage(response.error));
       return;
     }
     activeTestAttemptId = response.testAttemptId;
-    notice.value =
-      "Test queued. Waiting for the email provider to accept it...";
+    notice.value = t("testQueued");
     await pollTestStatus({
       updateId: response.updateId,
       testAttemptId: response.testAttemptId,
@@ -596,11 +702,16 @@ async function sendTest(): Promise<void> {
       generation,
     });
   } catch (error) {
-    if (generation !== workspaceGeneration) {
+    if (
+      generation !== workspaceGeneration ||
+      currentDraftKey.value !== draftKey ||
+      activeTestOperationId.value !== operationId
+    ) {
       return;
     }
     console.error("Failed to send Email Update test", error);
-    notice.value = "The test email could not be queued.";
+    notice.value = undefined;
+    notify.showNotifyMessage(t("testQueueUnavailable"));
     activeTestAttemptId = undefined;
   } finally {
     if (activeTestOperationId.value === operationId) {
@@ -644,12 +755,12 @@ async function pollTestStatus({
       }
       if (!response.success) {
         if (response.reason === "test_not_found") {
-          notice.value = "The queued test email could not be found.";
+          notice.value = undefined;
+          notify.showNotifyMessage(t("queuedTestNotFound"));
           activeTestAttemptId = undefined;
           return;
         }
-        notice.value =
-          "Waiting for the email provider. Test status is temporarily unavailable...";
+        notice.value = t("testStatusUnavailable");
         continue;
       }
       if (response.status.state === "provider_accepted") {
@@ -657,21 +768,27 @@ async function pollTestStatus({
         successfulUpdateId.value = updateId;
         successfulTestAttemptId.value = testAttemptId;
         activeTestAttemptId = undefined;
-        notice.value = "Test accepted for this exact email version.";
+        notice.value = t("testAccepted");
         return;
       }
       if (response.status.state === "failed") {
-        notice.value = `Test delivery failed: ${response.status.reason.replaceAll("_", " ")}.`;
+        notice.value = undefined;
+        notify.showNotifyMessage(
+          getTestDeliveryFailureMessage(response.status.reason)
+        );
         activeTestAttemptId = undefined;
         return;
       }
     } catch (error) {
-      if (generation !== workspaceGeneration) {
+      if (
+        generation !== workspaceGeneration ||
+        currentDraftKey.value !== draftKey ||
+        activeTestAttemptId !== testAttemptId
+      ) {
         return;
       }
       console.error("Failed to poll Email Update test status", error);
-      notice.value =
-        "Waiting for the email provider. Test status is temporarily unavailable...";
+      notice.value = t("testStatusUnavailable");
     }
   }
 }
@@ -705,10 +822,13 @@ async function sendUpdate(): Promise<void> {
     testAttemptId === undefined ||
     !hasSuccessfulTest.value ||
     !audienceEstimateAvailable.value ||
-    !contentConfirmed.value
+    audienceEstimate.value === 0 ||
+    !contentConfirmed.value ||
+    isSendingUpdate.value
   ) {
     return;
   }
+  isSendingUpdate.value = true;
   try {
     const response = await emailUpdatesApi.send({
       updateId,
@@ -720,7 +840,8 @@ async function sendUpdate(): Promise<void> {
       return;
     }
     if (!response.success) {
-      notice.value = `Update not sent: ${response.reason.replaceAll("_", " ")}.`;
+      reconcileSendFailure(response);
+      notify.showNotifyMessage(getSendFailureMessage(response));
       return;
     }
     history.value = [
@@ -732,17 +853,25 @@ async function sendUpdate(): Promise<void> {
     hasLoadedHistory.value = true;
     notice.value = undefined;
     contentConfirmed.value = false;
-    testedDraftKey.value = undefined;
-    successfulUpdateId.value = undefined;
-    successfulTestAttemptId.value = undefined;
+    clearSuccessfulTestAuthorization();
     activeTab.value = "history";
   } catch (error) {
     if (generation !== workspaceGeneration) {
       return;
     }
     console.error("Failed to send Email Update", error);
-    notice.value = "The update could not be sent.";
+    notify.showNotifyMessage(t("updateSendUnavailable"));
+  } finally {
+    if (generation === workspaceGeneration) {
+      isSendingUpdate.value = false;
+    }
   }
+}
+
+async function startEmailVerification(): Promise<void> {
+  loginIntentionStore.createEmailUpdatesIntention(route.fullPath);
+  flowStore.onboardingMode = "LOGIN";
+  await router.push({ name: "/verify/email/" });
 }
 
 function copyContext(
@@ -761,14 +890,132 @@ function copyContext(
 }
 
 function getWorkspaceError(
-  reason:
-    | "context_not_found"
-    | "feature_not_available"
-    | "workspace_unavailable"
+  reason: "context_not_found" | "feature_not_available"
 ): string {
   return reason === "context_not_found"
-    ? "This Email Updates context could not be found."
-    : "Email Updates are unavailable right now.";
+    ? t("contextNotFound")
+    : t("workspaceUnavailable");
+}
+
+function getAudienceEstimateError(
+  reason: "scope_not_found" | "conversation_not_in_scope" | "sending_disabled"
+): string {
+  switch (reason) {
+    case "scope_not_found":
+      return t("scopeUnavailable");
+    case "conversation_not_in_scope":
+      return t("conversationsUnavailable");
+    case "sending_disabled":
+      return t("sendingDisabled");
+  }
+}
+
+function clearSuccessfulTestAuthorization(): void {
+  testedDraftKey.value = undefined;
+  successfulUpdateId.value = undefined;
+  successfulTestAttemptId.value = undefined;
+}
+
+function reconcileTestSendFailure(error: TestSendFailure): void {
+  switch (error.reason) {
+    case "no_verified_test_email":
+      testDestinationEmail.value = undefined;
+      return;
+    case "no_eligible_participants":
+      audienceEstimate.value = 0;
+      audienceEstimateAvailable.value = true;
+      return;
+    case "scope_not_found":
+    case "conversation_not_in_scope":
+    case "missing_participant_contact_email":
+    case "sending_disabled":
+      void loadWorkspace();
+      return;
+    case "content_invalid":
+    case "test_rate_limited":
+      return;
+  }
+}
+
+function reconcileSendFailure(response: SendFailure): void {
+  switch (response.reason) {
+    case "test_not_found":
+    case "test_not_accepted":
+    case "test_used":
+      clearSuccessfulTestAuthorization();
+      return;
+    case "sending_disabled":
+      void loadWorkspace();
+      return;
+    case "no_eligible_participants":
+      audienceEstimate.value = 0;
+      audienceEstimateAvailable.value = true;
+      return;
+    case "delivery_already_active":
+    case "required_owner_copy_unavailable":
+      return;
+  }
+}
+
+function getTestSendFailureMessage(error: TestSendFailure): string {
+  switch (error.reason) {
+    case "scope_not_found":
+      return t("scopeUnavailable");
+    case "conversation_not_in_scope":
+      return t("conversationsUnavailable");
+    case "content_invalid":
+      return t("contentInvalid");
+    case "missing_participant_contact_email":
+      return t("missingContactEmail");
+    case "no_verified_test_email":
+      return t("verifyBeforeTest");
+    case "no_eligible_participants":
+      return t("noEligibleParticipants");
+    case "sending_disabled":
+      return t("sendingDisabled");
+    case "test_rate_limited":
+      return t("testRateLimited", {
+        retryAt: error.retryAt.toLocaleString(locale.value),
+      });
+  }
+}
+
+function getSendFailureMessage(response: SendFailure): string {
+  switch (response.reason) {
+    case "test_not_found":
+      return t("successfulTestNotFound");
+    case "test_not_accepted":
+      return t("testNotAccepted");
+    case "test_used":
+      return t("testUsed");
+    case "sending_disabled":
+      return t("sendingDisabled");
+    case "no_eligible_participants":
+      return t("noEligibleParticipants");
+    case "delivery_already_active":
+      return t("deliveryAlreadyActive");
+    case "required_owner_copy_unavailable":
+      return t("ownerCopyUnavailable");
+  }
+}
+
+function getTestDeliveryFailureMessage(
+  reason:
+    | "retryable_rejected"
+    | "permanent_rejected"
+    | "authorization_rejected"
+    | "unknown"
+): string {
+  switch (reason) {
+    case "retryable_rejected":
+      return t("testDeliveryRetryable");
+    case "authorization_rejected":
+      return t("testDeliveryAuthorization");
+    case "permanent_rejected":
+      return t("testDeliveryPermanent");
+    case "unknown":
+      return t("testDeliveryUnknown");
+  }
 }
 
 onBeforeUnmount(() => {
@@ -776,6 +1023,7 @@ onBeforeUnmount(() => {
   workspaceGeneration += 1;
   historyRequestId += 1;
   audienceRequestId += 1;
+  cancelAudienceEstimate();
   activeTestAttemptId = undefined;
   activeTestOperationId.value = undefined;
 });
@@ -804,14 +1052,6 @@ onBeforeUnmount(() => {
         transparent 45%
       ),
       $color-background-default;
-
-    span {
-      color: $primary;
-      font-size: 0.78rem;
-      font-weight: var(--font-weight-semibold);
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
 
     h1 {
       max-width: 38rem;

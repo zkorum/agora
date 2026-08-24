@@ -149,10 +149,7 @@ async function loadConversationUpdateSummary(): Promise<void> {
       conversationUpdatesChecked.value = action?.initialEnabled ?? true;
       summaryLoadState.value = "ready";
     } else {
-      summaryLoadState.value =
-        response.reason === "summary_unavailable"
-          ? "transient_error"
-          : "unavailable";
+      summaryLoadState.value = "unavailable";
     }
   } catch (error) {
     console.error("Failed to load Email Update onboarding summary", error);

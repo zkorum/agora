@@ -65,7 +65,7 @@ export function useComponentI18n<T extends { [K in keyof T]: string }>(
       Object.entries(params).forEach(([paramKey, paramValue]) => {
         translation = translation.replace(
           new RegExp(`\\{${paramKey}\\}`, "g"),
-          String(paramValue)
+          () => String(paramValue)
         );
       });
     }

@@ -1,16 +1,24 @@
 <template>
   <q-card flat bordered class="history-card">
-    <q-card-section class="history-card__heading">
+    <q-card-section v-if="records.length > 0" class="history-card__heading">
       <div>
-        <p>Immutable history</p>
-        <h2>Email Updates</h2>
+        <p>{{ t("deliveryHistory") }}</p>
+        <h2>{{ t("sentUpdates") }}</h2>
       </div>
       <q-icon name="mdi-history" size="1.65rem" />
     </q-card-section>
 
-    <q-separator />
+    <q-separator v-if="records.length > 0" />
 
-    <q-list separator>
+    <q-card-section v-if="records.length === 0" class="history-card__empty">
+      <q-icon name="mdi-email-outline" size="2rem" />
+      <div>
+        <h2>{{ t("emptyHeading") }}</h2>
+        <p>{{ t("emptyDescription") }}</p>
+      </div>
+    </q-card-section>
+
+    <q-list v-else separator>
       <q-item
         v-for="record in records"
         :key="record.id"
@@ -24,7 +32,7 @@
               }}</q-item-label>
               <q-item-label caption
                 >{{ record.scopeLabel }} ·
-                {{ record.createdAtLabel }}</q-item-label
+                {{ formatDate(record.acceptedAt) }}</q-item-label
               >
             </div>
             <ZKChip :color="getStatusColor(record.status)">
@@ -35,8 +43,7 @@
           <div class="history-card__facts">
             <span>
               <q-icon name="mdi-account-multiple-outline" />
-              About {{ formatNumber(record.audienceEstimate) }} eligible
-              participants
+              {{ getAudienceLabel(record.audienceEstimate) }}
             </span>
             <span>
               <q-icon name="mdi-forum-outline" />
@@ -59,12 +66,12 @@
             dense
             switch-toggle-side
             icon="mdi-email-open-outline"
-            label="View email content"
+            :label="t('viewEmailContent')"
             class="history-card__content-disclosure"
           >
             <div class="history-card__content-snapshot">
               <div>
-                <span>Subject</span>
+                <span>{{ t("subjectLabel") }}</span>
                 <strong>{{ record.subject }}</strong>
               </div>
               <ZKHtmlContent
@@ -115,29 +122,40 @@ import type {
 import SpaLink from "src/components/ui-library/SpaLink.vue";
 import ZKChip from "src/components/ui-library/ZKChip.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+
+import {
+  type ConversationUpdateHistoryListTranslations,
+  conversationUpdateHistoryListTranslations,
+} from "./ConversationUpdateHistoryList.i18n";
 
 defineProps<{
   records: readonly ConversationUpdateHistoryRecord[];
 }>();
 
+const { t, locale } =
+  useComponentI18n<ConversationUpdateHistoryListTranslations>(
+    conversationUpdateHistoryListTranslations
+  );
+
 function getStatusLabel(status: ConversationUpdateStatus): string {
   switch (status) {
     case "preparing":
-      return "Preparing";
+      return t("statusPreparing");
     case "sending":
-      return "Sending";
+      return t("statusSending");
     case "queued":
-      return "Queued";
+      return t("statusQueued");
     case "stopping":
-      return "Stopping";
+      return t("statusStopping");
     case "completed":
-      return "Completed";
+      return t("statusCompleted");
     case "completed_with_failures":
-      return "Completed with failures";
+      return t("statusCompletedWithFailures");
     case "failed":
-      return "Failed";
+      return t("statusFailed");
     case "stopped":
-      return "Stopped";
+      return t("statusStopped");
   }
 }
 
@@ -160,15 +178,32 @@ function getStatusColor(
 }
 
 function formatNumber(value: number): string {
-  return new Intl.NumberFormat().format(value);
+  return new Intl.NumberFormat(locale.value).format(value);
+}
+
+function formatDate(value: Date): string {
+  return new Intl.DateTimeFormat(locale.value, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(value);
 }
 
 function getConversationCountLabel(count: number): string {
-  return count === 1 ? "1 conversation" : `${String(count)} conversations`;
+  return t(count === 1 ? "conversationSingular" : "conversationPlural", {
+    count: formatNumber(count),
+  });
 }
 
 function getOwnerCopyCountLabel(count: number): string {
-  return count === 1 ? "1 owner copy" : `${String(count)} owner copies`;
+  return t(count === 1 ? "ownerCopySingular" : "ownerCopyPlural", {
+    count: formatNumber(count),
+  });
+}
+
+function getAudienceLabel(count: number): string {
+  return t(count === 1 ? "audienceSingular" : "audiencePlural", {
+    count: formatNumber(count),
+  });
 }
 
 function getOutcomeDetail(
@@ -176,7 +211,7 @@ function getOutcomeDetail(
 ): string | undefined {
   switch (record.status) {
     case "completed_with_failures":
-      return "Participant delivery finished, but one or more recipient attempts failed or had an unknown provider outcome.";
+      return t("outcomeCompletedWithFailures");
     case "failed":
       return getFailureDetail(record.reason);
     case "stopping":
@@ -195,24 +230,24 @@ function getAutomaticStopDetail(
 ): string {
   switch (reason) {
     case "emergency_global_kill_switch":
-      return "Automatically stopped before remaining delivery because Agora activated the emergency global sending stop.";
+      return t("stopGlobalKillSwitch");
     case "emergency_legal_or_abuse_block":
-      return "Automatically stopped before remaining delivery because Agora applied an emergency legal or abuse-safety block.";
+      return t("stopLegalOrAbuseBlock");
   }
 }
 
 function getFailureDetail(reason: ConversationUpdateFailureReason): string {
   switch (reason) {
     case "required_owner_copy_not_accepted":
-      return "Participant delivery did not begin because at least one required conversation owner copy was not accepted by the email provider.";
+      return t("failureOwnerCopyNotAccepted");
     case "audience_materialization_failed":
-      return "The eligible participant audience could not be prepared safely, so no participant delivery began.";
+      return t("failureAudienceMaterialization");
     case "no_eligible_participants":
-      return "No participants remained eligible at the accepted audience cutoff, so no participant delivery began.";
+      return t("failureNoEligibleParticipants");
     case "provider_configuration_error":
-      return "Participant delivery could not begin because the email provider configuration was invalid.";
+      return t("failureProviderConfiguration");
     case "all_participant_attempts_failed":
-      return "No participant attempt was provider-accepted; every participant attempt failed or ended with an unknown outcome.";
+      return t("failureAllParticipantAttempts");
   }
 }
 </script>
@@ -248,6 +283,34 @@ function getFailureDetail(reason: ConversationUpdateFailureReason): string {
 
   &__item {
     padding-block: 1.25rem;
+  }
+
+  &__empty {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+
+    .q-icon {
+      flex: 0 0 auto;
+      color: $primary;
+    }
+
+    h2,
+    p {
+      margin: 0;
+    }
+
+    h2 {
+      color: $color-text-strong;
+      font-size: 1.1rem;
+    }
+
+    p {
+      margin-block-start: 0.25rem;
+      color: $grey-7;
+      line-height: 1.4;
+    }
   }
 
   &__item-heading {

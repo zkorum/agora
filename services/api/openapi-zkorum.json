@@ -35608,6 +35608,12 @@
                                                         }
                                                     ]
                                                 },
+                                                "testDestinationEmail": {
+                                                    "type": "string",
+                                                    "maxLength": 254,
+                                                    "format": "email",
+                                                    "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                                },
                                                 "scopes": {
                                                     "type": "array",
                                                     "items": {
@@ -35786,8 +35792,7 @@
                                                     "type": "string",
                                                     "enum": [
                                                         "context_not_found",
-                                                        "feature_not_available",
-                                                        "workspace_unavailable"
+                                                        "feature_not_available"
                                                     ]
                                                 }
                                             },
@@ -36346,8 +36351,7 @@
                                                     "type": "string",
                                                     "enum": [
                                                         "context_not_found",
-                                                        "invalid_cursor",
-                                                        "history_unavailable"
+                                                        "invalid_cursor"
                                                     ]
                                                 }
                                             },
@@ -36831,8 +36835,7 @@
                                                 "reason": {
                                                     "type": "string",
                                                     "enum": [
-                                                        "update_not_found",
-                                                        "history_unavailable"
+                                                        "update_not_found"
                                                     ]
                                                 }
                                             },
@@ -36971,8 +36974,7 @@
                                                     "enum": [
                                                         "scope_not_found",
                                                         "conversation_not_in_scope",
-                                                        "sending_disabled",
-                                                        "audience_unavailable"
+                                                        "sending_disabled"
                                                     ]
                                                 }
                                             },
@@ -37125,50 +37127,55 @@
                                                         false
                                                     ]
                                                 },
-                                                "reason": {
-                                                    "type": "string",
-                                                    "enum": [
-                                                        "scope_not_found",
-                                                        "conversation_not_in_scope",
-                                                        "content_invalid",
-                                                        "missing_participant_contact_email",
-                                                        "no_verified_test_email",
-                                                        "sending_disabled",
-                                                        "audience_unavailable",
-                                                        "test_delivery_failed"
+                                                "error": {
+                                                    "oneOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "reason": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "scope_not_found",
+                                                                        "conversation_not_in_scope",
+                                                                        "content_invalid",
+                                                                        "missing_participant_contact_email",
+                                                                        "no_verified_test_email",
+                                                                        "no_eligible_participants",
+                                                                        "sending_disabled"
+                                                                    ]
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "reason"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "reason": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "test_rate_limited"
+                                                                    ]
+                                                                },
+                                                                "retryAt": {
+                                                                    "type": "string",
+                                                                    "format": "date-time"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "reason",
+                                                                "retryAt"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        }
                                                     ]
                                                 }
                                             },
                                             "required": [
                                                 "success",
-                                                "reason"
-                                            ],
-                                            "additionalProperties": false
-                                        },
-                                        {
-                                            "type": "object",
-                                            "properties": {
-                                                "success": {
-                                                    "type": "boolean",
-                                                    "enum": [
-                                                        false
-                                                    ]
-                                                },
-                                                "reason": {
-                                                    "type": "string",
-                                                    "enum": [
-                                                        "test_rate_limited"
-                                                    ]
-                                                },
-                                                "retryAt": {
-                                                    "type": "string",
-                                                    "format": "date-time"
-                                                }
-                                            },
-                                            "required": [
-                                                "success",
-                                                "reason",
-                                                "retryAt"
+                                                "error"
                                             ],
                                             "additionalProperties": false
                                         }
@@ -37272,6 +37279,7 @@
                                                                     "enum": [
                                                                         "retryable_rejected",
                                                                         "permanent_rejected",
+                                                                        "authorization_rejected",
                                                                         "unknown"
                                                                     ]
                                                                 }
@@ -37811,7 +37819,7 @@
                                                         "test_not_accepted",
                                                         "test_used",
                                                         "sending_disabled",
-                                                        "audience_unavailable",
+                                                        "no_eligible_participants",
                                                         "delivery_already_active",
                                                         "required_owner_copy_unavailable"
                                                     ]
@@ -38340,8 +38348,7 @@
                                                         "project_not_found",
                                                         "conversation_not_found",
                                                         "feature_not_available",
-                                                        "verified_email_required",
-                                                        "preference_conflict"
+                                                        "verified_email_required"
                                                     ]
                                                 }
                                             },
@@ -38547,8 +38554,7 @@
                                                     "type": "string",
                                                     "enum": [
                                                         "target_not_found",
-                                                        "feature_not_available",
-                                                        "configuration_unavailable"
+                                                        "feature_not_available"
                                                     ]
                                                 }
                                             },
@@ -38928,8 +38934,7 @@
                                                     "type": "string",
                                                     "enum": [
                                                         "conversation_not_found",
-                                                        "feature_not_available",
-                                                        "summary_unavailable"
+                                                        "feature_not_available"
                                                     ]
                                                 }
                                             },
@@ -39035,8 +39040,7 @@
                                                     "type": "string",
                                                     "enum": [
                                                         "project_not_found",
-                                                        "feature_not_available",
-                                                        "summary_unavailable"
+                                                        "feature_not_available"
                                                     ]
                                                 }
                                             },

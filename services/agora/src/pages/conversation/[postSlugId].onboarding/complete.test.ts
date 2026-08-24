@@ -218,7 +218,7 @@ describe("conversation onboarding completion", () => {
     });
     emailUpdatesApi.updatePreference.mockResolvedValue({
       success: false,
-      reason: "preference_conflict",
+      reason: "feature_not_available",
     });
     const container = mountComponent();
     await flushPromises();
@@ -282,10 +282,7 @@ describe("conversation onboarding completion", () => {
 
   it("offers retry or an explicit exit after a transient summary failure", async () => {
     emailUpdatesApi.getConversationSummary
-      .mockResolvedValueOnce({
-        success: false,
-        reason: "summary_unavailable",
-      })
+      .mockRejectedValueOnce(new Error("Summary request failed"))
       .mockResolvedValueOnce({
         success: true,
         authoringAction: "none",

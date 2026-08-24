@@ -446,9 +446,11 @@ watch(
 .editor :deep(.tiptap p.is-editor-empty:first-child::before) {
   color: $color-text-weak;
   content: attr(data-placeholder);
-  float: left;
+  display: block;
   height: 0;
   pointer-events: none;
+  text-align: start;
+  white-space: pre-wrap;
 }
 
 .editor :deep(.ProseMirror) {

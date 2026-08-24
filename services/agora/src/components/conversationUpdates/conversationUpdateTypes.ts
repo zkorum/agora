@@ -55,7 +55,7 @@ interface ConversationUpdateHistoryRecordBase {
   readonly conversations: readonly ConversationUpdateHistoryConversation[];
   readonly audienceEstimate: number;
   readonly ownerCopyCount: number;
-  readonly createdAtLabel: string;
+  readonly acceptedAt: Date;
 }
 
 export type ConversationUpdateHistoryRecord =

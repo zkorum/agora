@@ -3,40 +3,40 @@
     <ZKSearchableBottomSheetSelect
       :model-value="selectedScopeId"
       :options="scopeOptions"
-      label="Project"
-      dialog-title="Choose a project"
-      dialog-subtitle="Authorization is inferred from your eligible project memberships."
+      :label="t('projectLabel')"
+      :dialog-title="t('chooseProject')"
+      :dialog-subtitle="t('projectAuthorizationDescription')"
       search-mode="always"
+      :disable="disabled"
       @update:model-value="updateSelectedScope"
     />
 
     <div class="scope-fields__conversation-heading">
       <div>
-        <strong>Conversations</strong>
-        <p>
-          The email will add the recipient-specific intersection automatically.
-        </p>
+        <strong>{{ t("conversationsHeading") }}</strong>
+        <p>{{ t("recipientIntersectionDescription") }}</p>
       </div>
     </div>
 
     <ZKSearchableBottomSheetSelect
       :model-value="conversationSelectionModel"
       :options="conversationOptions"
-      label="Included conversations"
-      placeholder="Select at least one conversation (required)"
-      dialog-title="Choose conversations"
+      :label="t('includedConversationsLabel')"
+      :placeholder="t('conversationPlaceholder')"
+      :dialog-title="t('chooseConversations')"
       :dialog-subtitle="conversationDialogSubtitle"
       search-mode="always"
       :multiple="currentScope?.kind === 'project'"
       :show-bulk-actions="currentScope?.kind === 'project'"
       :select-all-label="selectAllLabel"
-      clear-all-label="Clear all"
+      :clear-all-label="t('clearAll')"
       :selected-count-label="getSelectedCountLabel"
+      :disable="disabled"
       @update:model-value="updateSelectedConversations"
     />
 
     <p v-if="currentScope?.kind === 'no-project'" class="scope-fields__hint">
-      Choose one eligible conversation created without a project.
+      {{ t("noProjectHint") }}
     </p>
   </div>
 </template>
@@ -47,12 +47,24 @@ import type {
   ConversationUpdateScopeSummary,
 } from "src/components/conversationUpdates/conversationUpdateTypes";
 import ZKSearchableBottomSheetSelect from "src/components/ui-library/ZKSearchableBottomSheetSelect.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { computed } from "vue";
+
+import {
+  type ConversationUpdateScopeFieldsTranslations,
+  conversationUpdateScopeFieldsTranslations,
+} from "./ConversationUpdateScopeFields.i18n";
 
 const props = defineProps<{
   scopes: readonly ConversationUpdateScopeSummary[];
   updatesDisabledConversationIds: readonly string[];
+  disabled: boolean;
 }>();
+
+const { t, locale } =
+  useComponentI18n<ConversationUpdateScopeFieldsTranslations>(
+    conversationUpdateScopeFieldsTranslations
+  );
 
 const selectedScopeId = defineModel<string>("selectedScopeId", {
   required: true,
@@ -80,10 +92,10 @@ const scopeOptions = computed(() =>
       {
         label: scope.label,
         value: scope.id,
-        caption:
-          scope.kind === "no-project"
-            ? `${String(selectableConversations.length)} eligible conversations without a project`
-            : `${String(selectableConversations.length)} eligible conversations`,
+        caption: getEligibleConversationCountLabel({
+          count: selectableConversations.length,
+          withoutProject: scope.kind === "no-project",
+        }),
         searchText: `${scope.label} ${selectableConversations
           .map((conversation) => conversation.title)
           .join(" ")}`,
@@ -97,25 +109,54 @@ const conversationOptions = computed(
       label: conversation.title,
       value: conversation.id,
       caption: props.updatesDisabledConversationIds.includes(conversation.id)
-        ? "Email Updates disabled for this conversation"
-        : `About ${new Intl.NumberFormat().format(
-            conversation.eligibleParticipantCount
-          )} participants before email consent filters`,
+        ? t("updatesDisabled")
+        : t(
+            conversation.eligibleParticipantCount === 1
+              ? "participantEstimateSingular"
+              : "participantEstimatePlural",
+            { count: formatNumber(conversation.eligibleParticipantCount) }
+          ),
       disabled: props.updatesDisabledConversationIds.includes(conversation.id),
     })) ?? []
 );
 const conversationDialogSubtitle = computed(() =>
   currentScope.value?.kind === "no-project"
-    ? "Choose exactly one conversation created without a project."
-    : "Choose one or more conversations from this project."
+    ? t("noProjectDialogSubtitle")
+    : t("projectDialogSubtitle")
 );
 const selectAllLabel = computed(() => {
   const count = getSelectableConversations(currentScope.value).length;
-  return `Select all ${String(count)} eligible conversations`;
+  return t(
+    count === 1 ? "selectAllEligibleSingular" : "selectAllEligiblePlural",
+    { count: formatNumber(count) }
+  );
 });
 
 function getSelectedCountLabel({ count }: { count: number }): string {
-  return count === 1 ? "1 conversation" : `${String(count)} conversations`;
+  return t(count === 1 ? "conversationSingular" : "conversationPlural", {
+    count: formatNumber(count),
+  });
+}
+
+function getEligibleConversationCountLabel({
+  count,
+  withoutProject,
+}: {
+  count: number;
+  withoutProject: boolean;
+}): string {
+  const key = withoutProject
+    ? count === 1
+      ? "eligibleWithoutProjectSingular"
+      : "eligibleWithoutProjectPlural"
+    : count === 1
+      ? "eligibleConversationSingular"
+      : "eligibleConversationPlural";
+  return t(key, { count: formatNumber(count) });
+}
+
+function formatNumber(value: number): string {
+  return new Intl.NumberFormat(locale.value).format(value);
 }
 
 function getSelectableConversations(
@@ -130,14 +171,16 @@ function getSelectableConversations(
 }
 
 function updateSelectedScope(value: string | readonly string[]): void {
-  if (typeof value === "string") {
+  if (!props.disabled && typeof value === "string") {
     selectedScopeId.value = value;
     selectedConversationIds.value = [];
   }
 }
 
 function updateSelectedConversations(value: string | readonly string[]): void {
-  selectedConversationIds.value = typeof value === "string" ? [value] : value;
+  if (!props.disabled) {
+    selectedConversationIds.value = typeof value === "string" ? [value] : value;
+  }
 }
 </script>
 

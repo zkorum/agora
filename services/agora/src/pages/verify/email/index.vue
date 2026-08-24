@@ -69,6 +69,7 @@ const router = useRouter();
 
 const loginIntentionStore = useLoginIntentionStore();
 const { activeUserIntention } = storeToRefs(loginIntentionStore);
+const { setActiveUserIntention } = loginIntentionStore;
 
 const { isLoading, submitEmail, nextCodeWaitSeconds } = useEmailSubmit({
   onNavigateToOtp: () => router.replace({ name: "/verify/email-code/" }),
@@ -88,6 +89,9 @@ const { isLoading, submitEmail, nextCodeWaitSeconds } = useEmailSubmit({
 function backCallback() {
   if (activeUserIntention.value === "settings") {
     void router.replace({ name: "/settings/" });
+  } else if (activeUserIntention.value === "emailUpdates") {
+    setActiveUserIntention("none");
+    router.back();
   } else {
     router.back();
   }

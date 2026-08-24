@@ -1091,10 +1091,10 @@ export function verifyExerciseReport({
     }
     const expectedActionTokenCount =
         report.provider.observations.filter(
-            (observation) => observation.recipientKind === "participant",
+            (observation) => observation.messageType === "conversation_update",
         ).length * 3;
     if (database.actionTokenCount !== expectedActionTokenCount) {
-        failures.push("Participant action-token count is incorrect");
+        failures.push("Recipient action-token count is incorrect");
     }
     const aggregateFromObservations = {
         sendCalls: report.provider.observations.length,

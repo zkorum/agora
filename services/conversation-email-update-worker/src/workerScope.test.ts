@@ -3,7 +3,10 @@ import postgres from "postgres";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConversationEmailWorkerConfig } from "./config.js";
 import { structuredEventSchema } from "./observability.js";
-import type { ProviderResult } from "./provider.js";
+import type {
+    ConversationEmailProviderMessage,
+    ProviderResult,
+} from "./provider.js";
 import type {
     AuthorizedRecipient,
     ClaimedRecipient,
@@ -371,6 +374,77 @@ describe("conversation-scoped worker", () => {
         await running;
     });
 
+    it("does not call the provider when test-send suppression authorization fails", async () => {
+        storeMocks.claimTestAttempts.mockResolvedValueOnce([
+            {
+                id: 1,
+                publicId: "d940a6f0-bf87-4f52-a22a-d07c3cb4a650",
+                updateId: 10,
+                destinationEmail: "suppressed@example.com",
+                destinationEmailCredentialId: 2,
+                requestedByUserId: "suppressed-user-id",
+                subject: "Suppressed test",
+                bodyHtml: "<p>Suppressed test</p>",
+                bodyPlainText: "Suppressed test",
+                projectTitle: "Private project",
+                replyToName: "Private project contact",
+                replyToEmail: "reply-private@example.com",
+                language: "en",
+                leaseToken: "suppressed-test-lease-token",
+            },
+        ]);
+        const send = vi.fn();
+        const worker = createConversationEmailUpdateWorker({
+            db: database(),
+            provider: { send },
+            config: config(true),
+            environment: "development",
+            log,
+            conversationId: 42,
+        });
+
+        const running = worker.run();
+        await vi.waitFor(() => {
+            expect(storeMocks.authorizeTestAttempt).toHaveBeenCalledOnce();
+        });
+        await worker.shutdown();
+        await running;
+
+        expect(send).not.toHaveBeenCalled();
+        expect(storeMocks.markTestAttempting).not.toHaveBeenCalled();
+    });
+
+    it("does not call the provider when an owner-copy authorization is revoked", async () => {
+        const claimedOwner = {
+            id: 2n,
+            deliveryId: 12,
+            leaseToken: "revoked-owner-lease-token",
+        } satisfies ClaimedRecipient;
+        storeMocks.claimRecipients.mockResolvedValueOnce([claimedOwner]);
+        const send = vi.fn();
+        const worker = createConversationEmailUpdateWorker({
+            db: database(),
+            provider: { send },
+            config: config(true),
+            environment: "development",
+            log,
+            conversationId: 42,
+        });
+
+        const running = worker.run();
+        await vi.waitFor(() => {
+            expect(storeMocks.authorizeRecipientSend).toHaveBeenCalledWith(
+                expect.objectContaining({ claimed: claimedOwner }),
+            );
+        });
+        await worker.shutdown();
+        await running;
+
+        expect(send).not.toHaveBeenCalled();
+        expect(storeMocks.finalizeRecipientSend).not.toHaveBeenCalled();
+        expect(storeMocks.aggregateDeliveryStates).toHaveBeenCalled();
+    });
+
     it("reports an exhausted page with no eligible participants as failure", async () => {
         storeMocks.materializeOneDeliveryPage.mockResolvedValueOnce({
             kind: "failed",
@@ -466,10 +540,22 @@ describe("conversation-scoped worker", () => {
             authorizingOrganizationId: 6,
             scopeKind: "listed_project",
             conversations: [],
-            actions: undefined,
+            actions: {
+                unsubscribeScope: "project",
+                unsubscribeUrl:
+                    "https://example.com/email-updates/unsubscribe/private-token",
+                manageUrl:
+                    "https://example.com/email-updates/preferences/private-token",
+                reportUrl:
+                    "https://example.com/email-updates/report/private-token",
+            },
             unsubscribeUrl:
                 "https://example.com/unsubscribe?token=private-token",
-            actionTokens: undefined,
+            actionTokens: {
+                unsubscribeHash: "a".repeat(64),
+                manageHash: "b".repeat(64),
+                reportHash: "c".repeat(64),
+            },
         });
         const send = vi
             .fn()
@@ -665,15 +751,30 @@ describe("conversation-scoped worker", () => {
             authorizingOrganizationId: 8,
             scopeKind: "listed_project",
             conversations: [],
-            actions: undefined,
+            actions: {
+                unsubscribeScope: "project",
+                unsubscribeUrl:
+                    "https://example.com/email-updates/unsubscribe/private",
+                manageUrl:
+                    "https://example.com/email-updates/preferences/private",
+                reportUrl: "https://example.com/email-updates/report/private",
+            },
             unsubscribeUrl: "https://example.com/unsubscribe?token=private",
-            actionTokens: undefined,
+            actionTokens: {
+                unsubscribeHash: "d".repeat(64),
+                manageHash: "e".repeat(64),
+                reportHash: "f".repeat(64),
+            },
         });
         const acceptedResult = {
             kind: "provider_accepted",
             messageId: "private-provider-message",
         } satisfies ProviderResult;
-        const send = vi.fn(() => Promise.resolve(acceptedResult));
+        const sentMessages: ConversationEmailProviderMessage[] = [];
+        const send = vi.fn((message: ConversationEmailProviderMessage) => {
+            sentMessages.push(message);
+            return Promise.resolve(acceptedResult);
+        });
         const worker = createConversationEmailUpdateWorker({
             db: database(),
             provider: { send },
@@ -704,5 +805,81 @@ describe("conversation-scoped worker", () => {
         expect(log.warn).not.toHaveBeenCalledWith(
             expect.objectContaining({ event: "recipient_provider_outcome" }),
         );
+        expect(sentMessages.at(0)?.unsubscribeUrl).toBe(
+            "https://example.com/unsubscribe?token=private",
+        );
+        expect(sentMessages.at(0)?.html).toContain(
+            "/email-updates/unsubscribe/private",
+        );
+    });
+
+    it("renders owner actions without exposing a provider unsubscribe header", async () => {
+        storeMocks.claimRecipients.mockResolvedValueOnce([
+            { id: 8n, deliveryId: 23, leaseToken: "owner-recipient-lease" },
+        ]);
+        storeMocks.authorizeRecipientSend.mockResolvedValueOnce({
+            recipientId: 8n,
+            deliveryId: 23,
+            updateId: 12,
+            attemptPublicId: "dcf82ba9-34dc-4a9f-850c-3b09f559ebcf",
+            attemptNumber: 1,
+            emailCredentialId: 9,
+            to: "owner-private@example.com",
+            subject: "Private owner subject",
+            bodyHtml: "<p>Private owner body</p>",
+            bodyPlainText: "Private owner body",
+            projectTitle: "Private project",
+            replyToName: "Private project contact",
+            replyToEmail: "reply-private@example.com",
+            language: "en",
+            kind: "conversation_owner_copy",
+            projectId: 10,
+            authorizingOrganizationId: 11,
+            scopeKind: "listed_project",
+            conversations: [],
+            actions: {
+                unsubscribeScope: "project",
+                unsubscribeUrl:
+                    "https://example.com/email-updates/unsubscribe/private-owner-token",
+                manageUrl:
+                    "https://example.com/email-updates/preferences/private-owner-token",
+                reportUrl:
+                    "https://example.com/email-updates/report/private-owner-token",
+            },
+            unsubscribeUrl: undefined,
+            actionTokens: {
+                unsubscribeHash: "a".repeat(64),
+                manageHash: "b".repeat(64),
+                reportHash: "c".repeat(64),
+            },
+        });
+        const acceptedResult = {
+            kind: "provider_accepted",
+            messageId: "private-owner-provider-message",
+        } satisfies ProviderResult;
+        const sentMessages: ConversationEmailProviderMessage[] = [];
+        const send = vi.fn((message: ConversationEmailProviderMessage) => {
+            sentMessages.push(message);
+            return Promise.resolve(acceptedResult);
+        });
+        const worker = createConversationEmailUpdateWorker({
+            db: database(),
+            provider: { send },
+            config: config(true),
+            environment: "development",
+            log,
+            conversationId: 42,
+        });
+
+        const running = worker.run();
+        await vi.waitFor(() => {
+            expect(send).toHaveBeenCalledOnce();
+        });
+        await worker.shutdown();
+        await running;
+
+        expect(sentMessages.at(0)?.unsubscribeUrl).toBeUndefined();
+        expect(sentMessages.at(0)?.html).toContain("private-owner-token");
+        expect(sentMessages.at(0)?.text).toContain("operational owner copy");
     });
 });

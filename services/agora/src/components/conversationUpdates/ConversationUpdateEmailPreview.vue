@@ -2,20 +2,22 @@
   <q-card flat bordered class="email-preview">
     <q-card-section class="email-preview__heading">
       <div>
-        <p class="email-preview__eyebrow">Email preview</p>
-        <h2>{{ subject || "Your update subject" }}</h2>
+        <p class="email-preview__eyebrow">{{ t("emailPreview") }}</p>
+        <h2>{{ subject || t("defaultSubject") }}</h2>
       </div>
-      <ZKChip color="muted">About {{ formattedAudience }} recipients</ZKChip>
+      <ZKChip color="muted">{{ audienceLabel }}</ZKChip>
     </q-card-section>
 
     <q-separator />
 
     <q-card-section class="email-preview__metadata">
       <div>
-        <strong>From</strong> Agora
+        <strong>{{ t("fromLabel") }}</strong> Agora
         &lt;conversation@updates.agoracitizen.network&gt;
       </div>
-      <div><strong>Reply to</strong> {{ replyTo }}</div>
+      <div>
+        <strong>{{ t("replyToLabel") }}</strong> {{ replyTo }}
+      </div>
     </q-card-section>
 
     <q-card-section class="email-preview__body">
@@ -27,7 +29,7 @@
         :collapsible="false"
       />
       <p v-else class="email-preview__placeholder">
-        Your message will appear here as you write.
+        {{ t("messagePlaceholder") }}
       </p>
 
       <div class="email-preview__conversations">
@@ -60,7 +62,7 @@
           </ul>
         </div>
         <p v-else class="email-preview__placeholder">
-          Select a conversation to continue.
+          {{ t("conversationPlaceholder") }}
         </p>
       </div>
     </q-card-section>
@@ -103,12 +105,21 @@ const props = defineProps<{
   audienceEstimate: number;
 }>();
 
-const { t } = useComponentI18n<ConversationUpdateEmailPreviewTranslations>(
-  conversationUpdateEmailPreviewTranslations
-);
+const { t, locale } =
+  useComponentI18n<ConversationUpdateEmailPreviewTranslations>(
+    conversationUpdateEmailPreviewTranslations
+  );
 
 const formattedAudience = computed(() =>
-  new Intl.NumberFormat().format(props.audienceEstimate)
+  new Intl.NumberFormat(locale.value).format(props.audienceEstimate)
+);
+const audienceLabel = computed(() =>
+  t(
+    props.audienceEstimate === 1
+      ? "eligibleRecipientSingular"
+      : "eligibleRecipientPlural",
+    { count: formattedAudience.value }
+  )
 );
 const unsubscribeScopeName = computed(() =>
   getConversationUpdateUnsubscribeScopeName({

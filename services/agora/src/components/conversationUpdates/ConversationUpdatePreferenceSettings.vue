@@ -1,12 +1,9 @@
 <template>
   <section class="preference-settings">
     <div class="preference-settings__intro">
-      <span>Email Updates</span>
-      <h1>Choose what brings you back</h1>
-      <p>
-        Keep your choices specific. Project preferences apply by default, while
-        a conversation choice can make an exception.
-      </p>
+      <span>{{ t("emailUpdates") }}</span>
+      <h1>{{ t("heading") }}</h1>
+      <p>{{ t("description") }}</p>
     </div>
 
     <q-input
@@ -14,7 +11,7 @@
       outlined
       clearable
       debounce="350"
-      label="Search projects and conversations"
+      :label="t('searchLabel')"
       @update:model-value="updateSearch"
     >
       <template #prepend><q-icon name="mdi-magnify" /></template>
@@ -25,16 +22,11 @@
     <ErrorRetryBlock
       v-else-if="loadError !== undefined"
       :title="loadError"
-      retry-label="Try again"
+      :retry-label="t('tryAgain')"
       @retry="loadFirstPage"
     />
 
     <template v-else>
-      <ZKInfoBanner
-        v-if="saveError !== undefined"
-        :message="saveError"
-        variant="warning"
-      />
       <ZKInfoBanner
         v-if="paginationError !== undefined"
         :message="paginationError"
@@ -44,26 +36,23 @@
       <q-card flat bordered class="preference-settings__pause-card">
         <q-card-section class="preference-settings__switch-row">
           <div>
-            <strong>Pause all Email Updates</strong>
-            <span>Your project and conversation choices stay saved.</span>
-            <span v-if="isSaving('global')">Saving...</span>
+            <strong>{{ t("pauseAll") }}</strong>
+            <span>{{ t("pauseDescription") }}</span>
+            <span v-if="isSaving('global')">{{ t("saving") }}</span>
           </div>
           <ZKSwitch
             :model-value="globalPaused"
             :disable="isSaving('global')"
-            aria-label="Pause all Email Updates"
+            :aria-label="t('pauseAll')"
             @update:model-value="setGlobalPaused"
           />
         </q-card-section>
       </q-card>
 
-      <ZKInfoBanner
-        v-if="globalPaused"
-        message="All Email Updates are paused. Your choices below remain saved and can still be changed."
-      />
+      <ZKInfoBanner v-if="globalPaused" :message="t('pausedDescription')" />
 
       <p v-if="groups.length === 0" class="preference-settings__empty">
-        No Email Update preferences match this search.
+        {{ t("empty") }}
       </p>
 
       <section
@@ -73,14 +62,12 @@
       >
         <div class="preference-settings__group-heading">
           <template v-if="group.kind === 'project'">
-            <h2>Projects</h2>
-            <span>Set a default, then adjust individual conversations.</span>
+            <h2>{{ t("projects") }}</h2>
+            <span>{{ t("projectsDescription") }}</span>
           </template>
           <template v-else>
-            <h2>No Project</h2>
-            <span
-              >These conversations each have their own explicit choice.</span
-            >
+            <h2>{{ t("noProject") }}</h2>
+            <span>{{ t("noProjectDescription") }}</span>
           </template>
         </div>
 
@@ -96,10 +83,10 @@
               </SpaLink>
               <span>{{ getProjectChoiceLabel(group) }}</span>
               <span v-if="group.availability === 'temporarily_unavailable'">
-                This project preference is temporarily unavailable.
+                {{ t("projectUnavailable") }}
               </span>
               <span v-if="isSaving(`project:${group.projectSlug}`)">
-                Saving...
+                {{ t("saving") }}
               </span>
             </div>
             <ZKSwitch
@@ -108,7 +95,9 @@
                 group.availability === 'temporarily_unavailable' ||
                 isSaving(`project:${group.projectSlug}`)
               "
-              :aria-label="`Receive Email Updates for ${group.projectTitle}`"
+              :aria-label="
+                t('receiveEmailUpdatesFor', { name: group.projectTitle })
+              "
               @update:model-value="
                 setProjectPreference({ group, enabled: $event })
               "
@@ -136,7 +125,7 @@
                   v-if="conversation.availability === 'temporarily_unavailable'"
                   caption
                 >
-                  This conversation preference is temporarily unavailable.
+                  {{ t("conversationUnavailable") }}
                 </q-item-label>
                 <q-item-label
                   v-if="
@@ -144,7 +133,7 @@
                   "
                   caption
                 >
-                  Saving...
+                  {{ t("saving") }}
                 </q-item-label>
               </q-item-section>
               <q-item-section side>
@@ -154,7 +143,11 @@
                     conversation.availability === 'temporarily_unavailable' ||
                     isSaving(`conversation:${conversation.conversationSlugId}`)
                   "
-                  :aria-label="`Receive Email Updates for ${conversation.conversationTitle}`"
+                  :aria-label="
+                    t('receiveEmailUpdatesFor', {
+                      name: conversation.conversationTitle,
+                    })
+                  "
                   @update:model-value="
                     setConversationPreference({
                       conversationSlugId: conversation.conversationSlugId,
@@ -173,7 +166,7 @@
           button-type="standardButton"
           outline
           color="primary"
-          label="Load more"
+          :label="t('loadMore')"
           :loading="isLoadingMore"
           :disable="isLoadingMore"
           @click="loadMore"
@@ -190,9 +183,16 @@ import SpaLink from "src/components/ui-library/SpaLink.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKInfoBanner from "src/components/ui-library/ZKInfoBanner.vue";
 import ZKSwitch from "src/components/ui-library/ZKSwitch.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ConversationEmailUpdatePreferenceGroup } from "src/shared/types/dto";
 import { useBackendConversationEmailUpdatesApi } from "src/utils/api/conversationUpdates/conversationEmailUpdates";
+import { useNotify } from "src/utils/ui/notify";
 import { onMounted, ref, watch } from "vue";
+
+import {
+  type ConversationUpdatePreferenceSettingsTranslations,
+  conversationUpdatePreferenceSettingsTranslations,
+} from "./ConversationUpdatePreferenceSettings.i18n";
 
 type ProjectPreferenceGroup = Extract<
   ConversationEmailUpdatePreferenceGroup,
@@ -200,6 +200,11 @@ type ProjectPreferenceGroup = Extract<
 >;
 
 const emailUpdatesApi = useBackendConversationEmailUpdatesApi();
+const { t } =
+  useComponentI18n<ConversationUpdatePreferenceSettingsTranslations>(
+    conversationUpdatePreferenceSettingsTranslations
+  );
+const { showNotifyMessage } = useNotify();
 const search = ref("");
 const groups = ref<readonly ConversationEmailUpdatePreferenceGroup[]>([]);
 const globalPaused = ref(false);
@@ -207,7 +212,6 @@ const nextCursor = ref<string | undefined>(undefined);
 const isInitialLoading = ref(true);
 const isLoadingMore = ref(false);
 const loadError = ref<string | undefined>(undefined);
-const saveError = ref<string | undefined>(undefined);
 const paginationError = ref<string | undefined>(undefined);
 const savingKeys = ref<ReadonlySet<string>>(new Set());
 const optimisticValues = ref<ReadonlyMap<string, boolean>>(new Map());
@@ -218,20 +222,10 @@ const mutationGenerations = new Map<string, number>();
 watch(search, loadFirstPage);
 
 async function loadFirstPage(): Promise<void> {
-  await fetchFirstPage({ showLoading: true });
-}
-
-async function fetchFirstPage({
-  showLoading,
-}: {
-  showLoading: boolean;
-}): Promise<void> {
   const requestId = ++loadRequestId;
   isLoadingMore.value = false;
   paginationError.value = undefined;
-  if (showLoading) {
-    isInitialLoading.value = true;
-  }
+  isInitialLoading.value = true;
   loadError.value = undefined;
   try {
     const trimmedSearch = search.value.trim();
@@ -243,12 +237,7 @@ async function fetchFirstPage({
       return;
     }
     if (!response.success) {
-      const message = getPreferencesError(response.reason);
-      if (showLoading) {
-        loadError.value = message;
-      } else {
-        saveError.value = message;
-      }
+      loadError.value = getPreferencesError(response.reason);
       return;
     }
     applyPreferenceState({
@@ -259,18 +248,11 @@ async function fetchFirstPage({
   } catch (error) {
     console.error("Failed to load Email Update preferences", error);
     if (requestId === loadRequestId) {
-      const message = "Email Update preferences are unavailable right now.";
-      if (showLoading) {
-        loadError.value = message;
-      } else {
-        saveError.value = message;
-      }
+      loadError.value = t("preferencesUnavailable");
     }
   } finally {
     if (requestId === loadRequestId) {
-      if (showLoading) {
-        isInitialLoading.value = false;
-      }
+      isInitialLoading.value = false;
     }
   }
 }
@@ -307,8 +289,7 @@ async function loadMore(): Promise<void> {
       return;
     }
     console.error("Failed to load more Email Update preferences", error);
-    paginationError.value =
-      "More Email Update preferences could not be loaded.";
+    paginationError.value = t("morePreferencesUnavailable");
   } finally {
     if (requestId === loadRequestId) {
       isLoadingMore.value = false;
@@ -318,32 +299,44 @@ async function loadMore(): Promise<void> {
 
 async function setGlobalPaused(paused: boolean): Promise<void> {
   const key = "global";
+  if (isSaving(key)) {
+    return;
+  }
   const generation = beginMutation({ key, value: paused });
   const previousValue = globalPaused.value;
   globalPaused.value = paused;
-  saveError.value = undefined;
+  let shouldReconcile = false;
   try {
     const response = await emailUpdatesApi.updatePreference({
       operation: "set_global_pause",
       paused,
     });
-    if (!response.success) {
+    if (!isCurrentMutation({ key, generation })) {
+      return;
+    }
+    shouldReconcile = true;
+    if (!response.success || response.result.operation !== "set_global_pause") {
       rollbackGlobalPreference({ key, generation, previousValue });
-      saveError.value = "The global pause setting could not be saved.";
-    } else if (response.result.operation !== "set_global_pause") {
-      rollbackGlobalPreference({ key, generation, previousValue });
-      saveError.value = "The global pause setting could not be saved.";
-    } else if (isCurrentMutation({ key, generation })) {
+      showNotifyMessage(t("savePreferenceError"));
+    } else {
       globalPaused.value = response.result.globalPaused;
+      showNotifyMessage(
+        t(response.result.globalPaused ? "pauseSaved" : "resumeSaved")
+      );
     }
   } catch (error) {
     console.error("Failed to update the Email Updates global pause", error);
-    rollbackGlobalPreference({ key, generation, previousValue });
-    saveError.value = "The global pause setting could not be saved.";
+    if (isCurrentMutation({ key, generation })) {
+      shouldReconcile = true;
+      rollbackGlobalPreference({ key, generation, previousValue });
+      showNotifyMessage(t("savePreferenceError"));
+    }
   } finally {
     finishMutation({ key, generation });
   }
-  await refreshLoadedGroups();
+  if (shouldReconcile) {
+    await refreshLoadedGroups();
+  }
 }
 
 async function setProjectPreference({
@@ -354,9 +347,12 @@ async function setProjectPreference({
   enabled: boolean;
 }): Promise<void> {
   const key = `project:${group.projectSlug}`;
+  if (isSaving(key)) {
+    return;
+  }
   const generation = beginMutation({ key, value: enabled });
   const previousState = group.state;
-  saveError.value = undefined;
+  let shouldReconcile = false;
   groups.value = groups.value.map((item) =>
     item.kind === "project" && item.projectSlug === group.projectSlug
       ? {
@@ -372,31 +368,56 @@ async function setProjectPreference({
       enabled,
       source: "settings",
     });
-    if (!response.success) {
+    if (!isCurrentMutation({ key, generation })) {
+      return;
+    }
+    shouldReconcile = true;
+    if (
+      !response.success ||
+      response.result.operation !== "set_project_preference" ||
+      response.result.projectSlug !== group.projectSlug
+    ) {
       rollbackProjectPreference({
         key,
         generation,
         projectSlug: group.projectSlug,
         previousState,
       });
-      saveError.value = "The project preference could not be saved.";
+      showNotifyMessage(t("savePreferenceError"));
+    } else {
+      setProjectState({
+        projectSlug: group.projectSlug,
+        state: response.result.state,
+      });
+      showNotifyMessage(
+        t(
+          response.result.state === "enabled"
+            ? "preferenceOnSaved"
+            : "preferenceOffSaved"
+        )
+      );
     }
   } catch (error) {
     console.error(
       "Failed to update an Email Updates project preference",
       error
     );
-    rollbackProjectPreference({
-      key,
-      generation,
-      projectSlug: group.projectSlug,
-      previousState,
-    });
-    saveError.value = "The project preference could not be saved.";
+    if (isCurrentMutation({ key, generation })) {
+      shouldReconcile = true;
+      rollbackProjectPreference({
+        key,
+        generation,
+        projectSlug: group.projectSlug,
+        previousState,
+      });
+      showNotifyMessage(t("savePreferenceError"));
+    }
   } finally {
     finishMutation({ key, generation });
   }
-  await refreshLoadedGroups();
+  if (shouldReconcile) {
+    await refreshLoadedGroups();
+  }
 }
 
 async function setConversationPreference({
@@ -407,9 +428,12 @@ async function setConversationPreference({
   enabled: boolean;
 }): Promise<void> {
   const key = `conversation:${conversationSlugId}`;
+  if (isSaving(key)) {
+    return;
+  }
   const generation = beginMutation({ key, value: enabled });
   const previousState = getConversationPreferenceState(conversationSlugId);
-  saveError.value = undefined;
+  let shouldReconcile = false;
   groups.value = groups.value.map((group) => ({
     ...group,
     conversations: group.conversations.map((conversation) =>
@@ -428,31 +452,59 @@ async function setConversationPreference({
       enabled,
       source: "settings",
     });
-    if (!response.success) {
+    if (!isCurrentMutation({ key, generation })) {
+      return;
+    }
+    shouldReconcile = true;
+    const savedPreference =
+      response.success &&
+      response.result.operation === "set_conversation_preference"
+        ? response.result.conversationPreferences.find(
+            (preference) => preference.conversationSlugId === conversationSlugId
+          )
+        : undefined;
+    if (savedPreference === undefined) {
       rollbackConversationPreference({
         key,
         generation,
         conversationSlugId,
         previousState,
       });
-      saveError.value = "The conversation preference could not be saved.";
+      showNotifyMessage(t("savePreferenceError"));
+    } else {
+      setConversationState({
+        conversationSlugId,
+        state: savedPreference.state,
+      });
+      showNotifyMessage(
+        t(
+          savedPreference.state === "enabled"
+            ? "preferenceOnSaved"
+            : "preferenceOffSaved"
+        )
+      );
     }
   } catch (error) {
     console.error(
       "Failed to update an Email Updates conversation preference",
       error
     );
-    rollbackConversationPreference({
-      key,
-      generation,
-      conversationSlugId,
-      previousState,
-    });
-    saveError.value = "The conversation preference could not be saved.";
+    if (isCurrentMutation({ key, generation })) {
+      shouldReconcile = true;
+      rollbackConversationPreference({
+        key,
+        generation,
+        conversationSlugId,
+        previousState,
+      });
+      showNotifyMessage(t("savePreferenceError"));
+    }
   } finally {
     finishMutation({ key, generation });
   }
-  await refreshLoadedGroups();
+  if (shouldReconcile) {
+    await refreshLoadedGroups();
+  }
 }
 
 async function refreshLoadedGroups(): Promise<void> {
@@ -475,7 +527,6 @@ async function refreshLoadedGroups(): Promise<void> {
         return;
       }
       if (!response.success) {
-        saveError.value = getPreferencesError(response.reason);
         return;
       }
 
@@ -495,9 +546,6 @@ async function refreshLoadedGroups(): Promise<void> {
     paginationError.value = undefined;
   } catch (error) {
     console.error("Failed to refresh Email Update preferences", error);
-    if (requestId === loadRequestId) {
-      saveError.value = "Email Update preferences are unavailable right now.";
-    }
   }
 }
 
@@ -572,9 +620,19 @@ function rollbackProjectPreference({
   if (!isCurrentMutation({ key, generation })) {
     return;
   }
+  setProjectState({ projectSlug, state: previousState });
+}
+
+function setProjectState({
+  projectSlug,
+  state,
+}: {
+  projectSlug: string;
+  state: ProjectPreferenceGroup["state"];
+}): void {
   groups.value = groups.value.map((group) =>
     group.kind === "project" && group.projectSlug === projectSlug
-      ? { ...group, state: previousState }
+      ? { ...group, state }
       : group
   );
 }
@@ -593,11 +651,21 @@ function rollbackConversationPreference({
   if (previousState === undefined || !isCurrentMutation({ key, generation })) {
     return;
   }
+  setConversationState({ conversationSlugId, state: previousState });
+}
+
+function setConversationState({
+  conversationSlugId,
+  state,
+}: {
+  conversationSlugId: string;
+  state: "disabled" | "enabled";
+}): void {
   groups.value = groups.value.map((group) => ({
     ...group,
     conversations: group.conversations.map((conversation) =>
       conversation.conversationSlugId === conversationSlugId
-        ? { ...conversation, state: previousState }
+        ? { ...conversation, state }
         : conversation
     ),
   }));
@@ -673,26 +741,24 @@ function getGroupKey(group: ConversationEmailUpdatePreferenceGroup): string {
 
 function getProjectChoiceLabel(group: ProjectPreferenceGroup): string {
   if (group.state === "enabled") {
-    return "On for this project";
+    return t("projectOn");
   }
   if (group.state === "disabled") {
-    return "Off for this project";
+    return t("projectOff");
   }
-  return "No project choice saved";
+  return t("projectUnset");
 }
 
 function getConversationChoiceLabel(state: "disabled" | "enabled"): string {
-  return state === "enabled"
-    ? "On for this conversation"
-    : "Off for this conversation";
+  return state === "enabled" ? t("conversationOn") : t("conversationOff");
 }
 
 function getPreferencesError(
   reason: "preferences_unavailable" | "verified_email_required"
 ): string {
   return reason === "verified_email_required"
-    ? "Verify an email address before changing Email Update preferences."
-    : "Email Update preferences are unavailable right now.";
+    ? t("verifiedEmailRequired")
+    : t("preferencesUnavailable");
 }
 
 onMounted(loadFirstPage);

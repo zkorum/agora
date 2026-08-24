@@ -52,9 +52,12 @@
         :scopes="scopes"
         :updates-disabled-conversation-ids="[]"
         :test-pending="false"
+        :send-pending="false"
         :notice="notice"
         :has-successful-test="hasSuccessfulTest"
+        :audience-estimate="1842"
         :audience-estimate-available="true"
+        test-destination-email="facilitator@example.org"
         :related-conversation-owner-count="1"
         @test="simulateTest"
         @send="simulateSend"
@@ -243,7 +246,7 @@ const historyRecords = [
     conversations,
     audienceEstimate: 1842,
     ownerCopyCount: 1,
-    createdAtLabel: "July 18, 2026",
+    acceptedAt: new Date("2026-07-18T12:00:00.000Z"),
     status: "completed",
     reason: undefined,
   },
@@ -278,9 +281,6 @@ const preferenceActions = computed(() => [
     id: "conversationEmailUpdates",
     label: "Receive Email Updates",
     enabled: preferenceEnabled.value,
-    description: preferenceEnabled.value
-      ? "On for this conversation"
-      : "Off for this conversation",
     onToggle: () => {
       preferenceEnabled.value = !preferenceEnabled.value;
     },

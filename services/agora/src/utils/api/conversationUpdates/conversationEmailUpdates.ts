@@ -42,18 +42,23 @@ export function useBackendConversationEmailUpdatesApi() {
     url,
     body,
     responseSchema,
+    signal = undefined,
+    timeoutMs = undefined,
   }: {
     url: string;
     body: object;
     responseSchema: ResponseSchema<Response>;
+    signal?: AbortSignal;
+    timeoutMs?: number;
   }): Promise<Response> {
     const options = { method: "POST" };
     const encodedUcan = await buildEncodedUcan(url, options);
-    const response = await api.post<unknown>(
-      url,
-      body,
-      createRawAxiosRequestConfig({ encodedUcan })
-    );
+    const requestConfig = createRawAxiosRequestConfig({ encodedUcan });
+    const response = await api.post<unknown>(url, body, {
+      ...requestConfig,
+      signal,
+      timeout: timeoutMs ?? requestConfig.timeout,
+    });
     return responseSchema.parse(response.data);
   }
 
@@ -87,13 +92,18 @@ export function useBackendConversationEmailUpdatesApi() {
     });
   }
 
-  function estimateAudience(
-    request: ConversationEmailUpdateAudienceEstimateRequest
-  ): Promise<ConversationEmailUpdateAudienceEstimateResponse> {
+  function estimateAudience({
+    request,
+    signal,
+  }: {
+    request: ConversationEmailUpdateAudienceEstimateRequest;
+    signal: AbortSignal;
+  }): Promise<ConversationEmailUpdateAudienceEstimateResponse> {
     return post({
       url: "/api/v1/conversation/email-update/audience/estimate",
       body: Dto.conversationEmailUpdateAudienceEstimateRequest.parse(request),
       responseSchema: Dto.conversationEmailUpdateAudienceEstimateResponse,
+      signal,
     });
   }
 
@@ -144,6 +154,7 @@ export function useBackendConversationEmailUpdatesApi() {
       url: "/api/v1/conversation/email-update/preferences/update",
       body: Dto.conversationEmailUpdatePreferenceUpdateRequest.parse(request),
       responseSchema: Dto.conversationEmailUpdatePreferenceUpdateResponse,
+      timeoutMs: 15_000,
     });
   }
 

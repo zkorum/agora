@@ -1,7 +1,7 @@
 <template>
   <Teleport v-if="isActive" to="#page-header">
     <StandardMenuBar
-      title="Email Updates"
+      :title="t('pageTitle')"
       :center-content="true"
       fallback-route="/"
     />
@@ -14,11 +14,20 @@
 import ConversationUpdatesWorkspace from "src/components/conversationUpdates/ConversationUpdatesWorkspace.vue";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ConversationEmailUpdateWorkspaceRequest } from "src/shared/types/dto";
 import { computed } from "vue";
 import { useRoute } from "vue-router";
 
+import {
+  type EmailUpdatesPageTranslations,
+  emailUpdatesPageTranslations,
+} from "./emailUpdatesPage.i18n";
+
 const route = useRoute();
+const { t } = useComponentI18n<EmailUpdatesPageTranslations>(
+  emailUpdatesPageTranslations
+);
 const { isActive } = usePageLayout({
   enableDrawer: false,
   enableFooter: false,

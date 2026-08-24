@@ -450,6 +450,7 @@ describe("conversation email update action service", () => {
         action,
         scopeKind,
         representedConversationIds,
+        recipientKind = "participant",
     }: {
         token: string;
         action:
@@ -459,6 +460,7 @@ describe("conversation email update action service", () => {
             | "report";
         scopeKind: "listed_project" | "no_project";
         representedConversationIds: number[];
+        recipientKind?: "participant" | "conversation_owner_copy";
     }): Promise<void> {
         await sqlClient`
             INSERT INTO "project" ("id", "slug")
@@ -480,7 +482,7 @@ describe("conversation email update action service", () => {
         await sqlClient`
             INSERT INTO "conversation_email_update_recipient"
                 ("id", "delivery_id", "user_id", "kind")
-            VALUES (40, 30, ${USER_ID}, 'participant')
+            VALUES (40, 30, ${USER_ID}, ${recipientKind})
         `;
         const selectedConversationIds =
             scopeKind === "no_project" ? representedConversationIds : [10, 11];
@@ -733,6 +735,120 @@ describe("conversation email update action service", () => {
                 recipientId: 40n,
                 reason: "spam",
                 details: "First report",
+            },
+        ]);
+    });
+
+    it("accepts a scope-bound owner manage token", async () => {
+        await seedAction({
+            token: TOKEN,
+            action: "manage_preferences",
+            scopeKind: "listed_project",
+            representedConversationIds: [10],
+            recipientKind: "conversation_owner_copy",
+        });
+
+        expect(await service.resolve({ token: TOKEN })).toMatchObject({
+            success: true,
+            action: "manage_preferences",
+            scope: {
+                kind: "project",
+                conversations: [{ conversationSlugId: "conv0001" }],
+            },
+        });
+        expect(
+            await service.manageOptOut({
+                token: TOKEN,
+                target: {
+                    kind: "conversation",
+                    conversationSlugId: "conv0002",
+                },
+            }),
+        ).toEqual({ success: false, reason: "unavailable" });
+        expect(
+            await service.manageOptOut({
+                token: TOKEN,
+                target: {
+                    kind: "conversation",
+                    conversationSlugId: "conv0001",
+                },
+            }),
+        ).toEqual({ success: true });
+    });
+
+    it("accepts an owner project-unsubscribe token", async () => {
+        await seedAction({
+            token: TOKEN,
+            action: "unsubscribe_project",
+            scopeKind: "listed_project",
+            representedConversationIds: [10],
+            recipientKind: "conversation_owner_copy",
+        });
+
+        expect(await service.unsubscribe({ token: TOKEN })).toEqual({
+            success: true,
+        });
+        await expect(
+            db.select().from(conversationEmailUpdateUserProjectPreferenceTable),
+        ).resolves.toMatchObject([
+            {
+                userId: USER_ID,
+                projectId: 1,
+                enabled: false,
+                choiceSource: "unsubscribe",
+            },
+        ]);
+    });
+
+    it("accepts an owner No Project conversation-unsubscribe token", async () => {
+        await seedAction({
+            token: TOKEN,
+            action: "unsubscribe_conversation",
+            scopeKind: "no_project",
+            representedConversationIds: [10],
+            recipientKind: "conversation_owner_copy",
+        });
+
+        expect(await service.unsubscribe({ token: TOKEN })).toEqual({
+            success: true,
+        });
+        await expect(
+            db
+                .select()
+                .from(conversationEmailUpdateUserConversationPreferenceTable),
+        ).resolves.toMatchObject([
+            {
+                userId: USER_ID,
+                conversationId: 10,
+                enabled: false,
+                choiceSource: "unsubscribe",
+            },
+        ]);
+    });
+
+    it("accepts a scope-bound owner report token", async () => {
+        await seedAction({
+            token: TOKEN,
+            action: "report",
+            scopeKind: "no_project",
+            representedConversationIds: [10],
+            recipientKind: "conversation_owner_copy",
+        });
+
+        expect(
+            await service.submitReport({
+                token: TOKEN,
+                reason: "spam",
+                details: "Owner report",
+            }),
+        ).toEqual({ success: true });
+        await expect(
+            db.select().from(conversationEmailUpdateReportTable),
+        ).resolves.toMatchObject([
+            {
+                recipientId: 40n,
+                reason: "spam",
+                details: "Owner report",
             },
         ]);
     });

@@ -155,7 +155,7 @@ function fixtureData() {
             deliveryAttemptIds: ["200", "201"],
             deliveryAttemptCount: 2,
             deliveryAttemptOutcomeCounts: { provider_accepted: 2 },
-            actionTokenCount: 3,
+            actionTokenCount: 6,
             providerMessageIds: [
                 "exercise-test-message",
                 "exercise-owner-message",

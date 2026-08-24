@@ -82,6 +82,7 @@ function getSubMessage(): string {
       return t("subMessageReportRequired");
     case "voting":
       return t("subMessageReturnToConversation");
+    case "emailUpdates":
     case "settings":
       return "";
     default:

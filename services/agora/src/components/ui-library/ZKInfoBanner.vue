@@ -1,18 +1,16 @@
 <template>
   <div class="zk-info-banner" :class="`zk-info-banner--${variant}`">
     <ZKIcon
-      :name="
-        variant === 'warning' ? 'mdi:alert-outline' : 'mdi:information-outline'
-      "
+      :name="presentation.iconName"
       size="1.25rem"
-      :color="variant === 'warning' ? '#8a5a00' : 'var(--p-blue-600)'"
+      :color="presentation.iconColor"
     />
     <div class="banner-content">
       <span class="banner-text">{{ message }}</span>
       <PrimeButton
         v-if="actionLabel"
         :label="actionLabel"
-        :severity="variant === 'warning' ? 'warn' : 'info'"
+        :severity="presentation.buttonSeverity"
         size="small"
         @click="emit('action')"
       />
@@ -22,6 +20,7 @@
 
 <script setup lang="ts">
 import Button from "primevue/button";
+import { computed } from "vue";
 
 import ZKIcon from "./ZKIcon.vue";
 
@@ -31,7 +30,7 @@ defineOptions({
   },
 });
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   actionLabel: undefined,
   variant: "info",
 });
@@ -43,8 +42,31 @@ const emit = defineEmits<{
 export interface Props {
   message: string;
   actionLabel?: string;
-  variant?: "info" | "warning";
+  variant?: "error" | "info" | "warning";
 }
+
+type BannerVariant = NonNullable<Props["variant"]>;
+const presentations = {
+  error: {
+    iconName: "mdi:alert-circle-outline",
+    iconColor: "#d3180c",
+    buttonSeverity: "danger",
+  },
+  info: {
+    iconName: "mdi:information-outline",
+    iconColor: "var(--p-blue-600)",
+    buttonSeverity: "info",
+  },
+  warning: {
+    iconName: "mdi:alert-outline",
+    iconColor: "#8a5a00",
+    buttonSeverity: "warn",
+  },
+} satisfies Record<
+  BannerVariant,
+  { iconName: string; iconColor: string; buttonSeverity: string }
+>;
+const presentation = computed(() => presentations[props.variant]);
 </script>
 
 <style scoped lang="scss">
@@ -67,9 +89,20 @@ export interface Props {
   }
 }
 
+.zk-info-banner--error {
+  background-color: rgba($negative, 0.08);
+  border-color: rgba($negative, 0.35);
+
+  .banner-text {
+    color: $negative;
+    font-weight: 600;
+  }
+}
+
 .banner-content {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 1rem;
   flex: 1;
 }

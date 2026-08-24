@@ -13,7 +13,9 @@ import {
     lte,
     ne,
     notExists,
+    notInArray,
     or,
+    sql,
 } from "drizzle-orm";
 import { union } from "drizzle-orm/pg-core";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
@@ -175,12 +177,79 @@ type ConfigurationConversationDao = Awaited<
 >[number];
 type DisplayLanguage =
     (typeof userDisplayLanguageTable.$inferSelect)["languageCode"];
+type TestAttemptStatus =
+    (typeof conversationEmailUpdateTestAttemptTable.$inferSelect)["status"];
+type TestStatus = Extract<
+    ConversationEmailUpdateTestStatusResponse,
+    { success: true }
+>["status"];
+
+const WORKSPACE_QUERY_BATCH_SIZE = 8;
+
+export async function mapInBatches<Input, Output>({
+    items,
+    batchSize,
+    map,
+}: {
+    items: readonly Input[];
+    batchSize: number;
+    map: (item: Input) => Promise<Output>;
+}): Promise<Output[]> {
+    if (!Number.isInteger(batchSize) || batchSize < 1) {
+        throw new RangeError("batchSize must be a positive integer");
+    }
+    const outputs: Output[] = [];
+    for (let offset = 0; offset < items.length; offset += batchSize) {
+        outputs.push(
+            ...(await Promise.all(
+                items.slice(offset, offset + batchSize).map(map),
+            )),
+        );
+    }
+    return outputs;
+}
+
+export function mapConversationEmailUpdateTestStatus({
+    status,
+    finishedAt,
+    errorCode,
+}: {
+    status: TestAttemptStatus;
+    finishedAt: Date | null;
+    errorCode: string | null;
+}): TestStatus | undefined {
+    if (status === "provider_accepted") {
+        return finishedAt === null
+            ? undefined
+            : { state: "provider_accepted", providerAcceptedAt: finishedAt };
+    }
+    if (
+        status === "retryable_rejected" ||
+        status === "permanent_rejected" ||
+        status === "unknown"
+    ) {
+        return {
+            state: "failed",
+            reason:
+                status === "permanent_rejected" &&
+                errorCode === "authorization_failed"
+                    ? "authorization_rejected"
+                    : status,
+        };
+    }
+    return { state: status };
+}
 
 export interface RequiredOwnerSnapshot {
     userId: string;
     emailCredentialId: number;
     email: string;
     displayLanguage: DisplayLanguage;
+}
+
+export interface RequiredOwnerCopySet {
+    requiredOwnerUserIds: string[];
+    ownerSnapshots: RequiredOwnerSnapshot[] | undefined;
 }
 
 export function resolveCompleteOwnerSnapshots({
@@ -201,6 +270,23 @@ export function resolveCompleteOwnerSnapshots({
         return candidate === undefined ? [] : [candidate];
     });
     return snapshots.length === requiredIds.length ? snapshots : undefined;
+}
+
+export function resolveRequiredOwnerCopySet({
+    requiredOwnerUserIds,
+    candidates,
+}: {
+    requiredOwnerUserIds: readonly string[];
+    candidates: readonly RequiredOwnerSnapshot[];
+}): RequiredOwnerCopySet {
+    const uniqueRequiredOwnerUserIds = [...new Set(requiredOwnerUserIds)];
+    return {
+        requiredOwnerUserIds: uniqueRequiredOwnerUserIds,
+        ownerSnapshots: resolveCompleteOwnerSnapshots({
+            requiredOwnerUserIds: uniqueRequiredOwnerUserIds,
+            candidates,
+        }),
+    };
 }
 
 interface BuildPreferenceGroupsParams {
@@ -379,9 +465,16 @@ async function listAuthorizedConversations({
 }) {
     const authorizedProject = db
         .selectDistinctOn([projectTable.id], {
-            projectId: projectTable.id,
-            organizationId: projectOrganizationOwnershipTable.organizationId,
-            entitlementId: premiumFeatureEntitlementTable.id,
+            projectId: sql<number>`${projectTable.id}`.as(
+                "authorized_project_id",
+            ),
+            organizationId:
+                sql<number>`${projectOrganizationOwnershipTable.organizationId}`.as(
+                    "authorized_organization_id",
+                ),
+            entitlementId: sql<number>`${premiumFeatureEntitlementTable.id}`.as(
+                "authorized_entitlement_id",
+            ),
         })
         .from(projectTable)
         .innerJoin(
@@ -801,10 +894,12 @@ async function countEligibleAudience({
     db,
     selection,
     cutoffAt,
+    excludedUserIds,
 }: {
     db: PostgresJsDatabase;
     selection: ResolvedSelection;
     cutoffAt: Date;
+    excludedUserIds: readonly string[];
 }): Promise<number> {
     const conversationIds = selection.conversations.map(
         (row) => row.conversation_id,
@@ -956,22 +1051,23 @@ async function countEligibleAudience({
                         ),
                 ),
                 preferenceCondition,
+                excludedUserIds.length === 0
+                    ? undefined
+                    : notInArray(participation.userId, [...excludedUserIds]),
             ),
         );
     return rows.at(0)?.eligible_count ?? 0;
 }
 
-async function countOwnerCopies({
+async function listRequiredOwnerUserIds({
     db,
     projectId,
 }: {
     db: PostgresJsDatabase;
     projectId: number;
-}): Promise<number> {
+}): Promise<string[]> {
     const rows = await db
-        .select({
-            owner_count: countDistinct(organizationMembershipTable.userId),
-        })
+        .select({ userId: organizationMembershipTable.userId })
         .from(organizationMembershipTable)
         .innerJoin(
             projectOrganizationOwnershipTable,
@@ -1010,65 +1106,92 @@ async function countOwnerCopies({
                 ),
             ),
         )
-        .innerJoin(
-            userTable,
-            and(
-                eq(userTable.id, organizationMembershipTable.userId),
-                eq(userTable.isDeleted, false),
-            ),
-        )
-        .innerJoin(
-            emailTable,
-            and(
-                eq(emailTable.userId, organizationMembershipTable.userId),
-                eq(emailTable.type, "primary"),
-                eq(emailTable.isDeleted, false),
-            ),
-        )
+        .where(isNull(organizationMembershipTable.deletedAt));
+    return [...new Set(rows.map((row) => row.userId))];
+}
+
+export async function lockRequiredOwnerUserIds({
+    db,
+    organizationIds,
+}: {
+    db: PostgresJsDatabase;
+    organizationIds: readonly number[];
+}): Promise<string[]> {
+    const orderedOrganizationIds = [...new Set(organizationIds)].sort(
+        (left, right) => left - right,
+    );
+    if (orderedOrganizationIds.length === 0) return [];
+
+    // Parent UPDATE locks make concurrent FK inserts wait. Keep this global
+    // organization -> membership -> capability order across projects.
+    const organizations = await db
+        .select({ id: organizationTable.id })
+        .from(organizationTable)
         .where(
             and(
-                isNull(organizationMembershipTable.deletedAt),
-                notExists(
-                    db
-                        .select({
-                            id: conversationEmailUpdateUserComplaintSuppressionTable.id,
-                        })
-                        .from(
-                            conversationEmailUpdateUserComplaintSuppressionTable,
-                        )
-                        .where(
-                            and(
-                                eq(
-                                    conversationEmailUpdateUserComplaintSuppressionTable.userId,
-                                    organizationMembershipTable.userId,
-                                ),
-                                isNull(
-                                    conversationEmailUpdateUserComplaintSuppressionTable.liftedAt,
-                                ),
-                            ),
-                        ),
+                inArray(organizationTable.id, orderedOrganizationIds),
+                isNull(organizationTable.deletedAt),
+            ),
+        )
+        .orderBy(organizationTable.id)
+        .for("update");
+    if (organizations.length === 0) return [];
+
+    const memberships = await db
+        .select({
+            id: organizationMembershipTable.id,
+            userId: organizationMembershipTable.userId,
+        })
+        .from(organizationMembershipTable)
+        .where(
+            and(
+                inArray(
+                    organizationMembershipTable.organizationId,
+                    organizations.map((organization) => organization.id),
                 ),
-                notExists(
-                    db
-                        .select({
-                            id: conversationEmailUpdateEmailSuppressionTable.id,
-                        })
-                        .from(conversationEmailUpdateEmailSuppressionTable)
-                        .where(
-                            and(
-                                eq(
-                                    conversationEmailUpdateEmailSuppressionTable.canonicalEmail,
-                                    emailTable.email,
-                                ),
-                                isNull(
-                                    conversationEmailUpdateEmailSuppressionTable.liftedAt,
-                                ),
-                            ),
-                        ),
+                isNull(organizationMembershipTable.deletedAt),
+            ),
+        )
+        .orderBy(organizationMembershipTable.id)
+        .for("update");
+    if (memberships.length === 0) return [];
+
+    const capabilities = await db
+        .select({
+            id: organizationMembershipAllProjectCapabilityTable.id,
+            membershipId:
+                organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
+        })
+        .from(organizationMembershipAllProjectCapabilityTable)
+        .where(
+            and(
+                inArray(
+                    organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
+                    memberships.map((membership) => membership.id),
+                ),
+                eq(
+                    organizationMembershipAllProjectCapabilityTable.capability,
+                    "conversation_email_update",
+                ),
+                isNull(
+                    organizationMembershipAllProjectCapabilityTable.deletedAt,
                 ),
             ),
-        );
-    return rows.at(0)?.owner_count ?? 0;
+        )
+        .orderBy(organizationMembershipAllProjectCapabilityTable.id)
+        .for("update");
+    const capableMembershipIds = new Set(
+        capabilities.map((capability) => capability.membershipId),
+    );
+    return [
+        ...new Set(
+            memberships.flatMap((membership) =>
+                capableMembershipIds.has(membership.id)
+                    ? [membership.userId]
+                    : [],
+            ),
+        ),
+    ];
 }
 
 async function resolveRequiredOwnerCopies({
@@ -1081,7 +1204,7 @@ async function resolveRequiredOwnerCopies({
     projectId: number;
     conversationIds: readonly number[];
     facilitatorUserId: string;
-}): Promise<RequiredOwnerSnapshot[] | undefined> {
+}): Promise<RequiredOwnerCopySet> {
     const ownerships = await db
         .select({
             organizationId: projectOrganizationOwnershipTable.organizationId,
@@ -1106,7 +1229,9 @@ async function resolveRequiredOwnerCopies({
         .orderBy(projectOrganizationOwnershipTable.organizationId)
         .for("update", { of: projectOrganizationOwnershipTable });
     const organizationIds = ownerships.map((row) => row.organizationId);
-    if (organizationIds.length === 0) return undefined;
+    if (organizationIds.length === 0) {
+        return { requiredOwnerUserIds: [], ownerSnapshots: undefined };
+    }
 
     const activeSafetyBlocks = await db
         .select({ id: conversationEmailUpdateScopeSafetyBlockTable.id })
@@ -1159,44 +1284,16 @@ async function resolveRequiredOwnerCopies({
             ),
         )
         .limit(1);
-    if (activeSafetyBlocks.length > 0) return undefined;
-
-    const memberships = await db
-        .select({
-            userId: organizationMembershipTable.userId,
-        })
-        .from(organizationMembershipTable)
-        .innerJoin(
-            organizationMembershipAllProjectCapabilityTable,
-            and(
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
-                    organizationMembershipTable.id,
-                ),
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.capability,
-                    "conversation_email_update",
-                ),
-                isNull(
-                    organizationMembershipAllProjectCapabilityTable.deletedAt,
-                ),
-            ),
-        )
-        .where(
-            and(
-                inArray(
-                    organizationMembershipTable.organizationId,
-                    organizationIds,
-                ),
-                isNull(organizationMembershipTable.deletedAt),
-            ),
-        )
-        .orderBy(organizationMembershipTable.id)
-        .for("update", { of: organizationMembershipTable });
-    const requiredOwnerUserIds = [
-        ...new Set(memberships.map((row) => row.userId)),
-    ];
-    if (requiredOwnerUserIds.length === 0) return undefined;
+    const requiredOwnerUserIds = await lockRequiredOwnerUserIds({
+        db,
+        organizationIds,
+    });
+    if (requiredOwnerUserIds.length === 0) {
+        return { requiredOwnerUserIds, ownerSnapshots: undefined };
+    }
+    if (activeSafetyBlocks.length > 0) {
+        return { requiredOwnerUserIds, ownerSnapshots: undefined };
+    }
 
     const accounts = await db
         .select({
@@ -1224,8 +1321,7 @@ async function resolveRequiredOwnerCopies({
                 eq(userTable.isDeleted, false),
             ),
         )
-        .orderBy(userTable.id)
-        .for("update", { of: [userTable, emailTable] });
+        .orderBy(userTable.id);
     const complaintRows = await db
         .select({
             userId: conversationEmailUpdateUserComplaintSuppressionTable.userId,
@@ -1266,7 +1362,7 @@ async function resolveRequiredOwnerCopies({
     const suppressedEmails = new Set(
         suppressedEmailRows.map((row) => row.email),
     );
-    return resolveCompleteOwnerSnapshots({
+    return resolveRequiredOwnerCopySet({
         requiredOwnerUserIds,
         candidates: accounts.flatMap((account) =>
             complainedUserIds.has(account.userId) ||
@@ -1296,15 +1392,20 @@ async function estimateResolvedSelection({
     estimatedEligibleRecipientCount: number;
     requiredOwnerCopyCount: number;
 }> {
-    const [estimatedEligibleRecipientCount, requiredOwnerCopyCount] =
-        await Promise.all([
-            countEligibleAudience({ db, selection, cutoffAt }),
-            countOwnerCopies({
-                db,
-                projectId: selection.project.project_id,
-            }),
-        ]);
-    return { estimatedEligibleRecipientCount, requiredOwnerCopyCount };
+    const requiredOwnerUserIds = await listRequiredOwnerUserIds({
+        db,
+        projectId: selection.project.project_id,
+    });
+    const estimatedEligibleRecipientCount = await countEligibleAudience({
+        db,
+        selection,
+        cutoffAt,
+        excludedUserIds: requiredOwnerUserIds,
+    });
+    return {
+        estimatedEligibleRecipientCount,
+        requiredOwnerCopyCount: requiredOwnerUserIds.length,
+    };
 }
 
 function groupScopes({
@@ -2700,41 +2801,33 @@ export function createConversationEmailUpdateService({
         userId,
         request,
     }: AuthenticatedRequest<ConversationEmailUpdateAudienceEstimateRequest>): Promise<ConversationEmailUpdateAudienceEstimateResponse> => {
-        try {
-            if (!sendingEnabled) {
-                return { success: false, reason: "sending_disabled" };
-            }
-            const now = new Date();
-            const rows = await listAuthorizedConversations({
-                db,
-                userId,
-                now,
-            });
-            const resolved = resolveSelection({
-                rows,
-                selection: request.selection,
-            });
-            if (!resolved.success) return resolved;
-            if (
-                resolved.value.conversations.some(
-                    (row) =>
-                        !isSendingEnabled({
-                            row,
-                            operationallyEnabled: sendingEnabled,
-                        }),
-                )
-            ) {
-                return { success: false, reason: "sending_disabled" };
-            }
-            const estimate = await estimateResolvedSelection({
-                db,
-                selection: resolved.value,
-                cutoffAt: now,
-            });
-            return { success: true, ...estimate };
-        } catch {
-            return { success: false, reason: "audience_unavailable" };
+        if (!sendingEnabled) {
+            return { success: false, reason: "sending_disabled" };
         }
+        const now = new Date();
+        const rows = await listAuthorizedConversations({ db, userId, now });
+        const resolved = resolveSelection({
+            rows,
+            selection: request.selection,
+        });
+        if (!resolved.success) return resolved;
+        if (
+            resolved.value.conversations.some(
+                (row) =>
+                    !isSendingEnabled({
+                        row,
+                        operationallyEnabled: sendingEnabled,
+                    }),
+            )
+        ) {
+            return { success: false, reason: "sending_disabled" };
+        }
+        const estimate = await estimateResolvedSelection({
+            db,
+            selection: resolved.value,
+            cutoffAt: now,
+        });
+        return { success: true, ...estimate };
     };
 
     const getConfigurationWithDatabase = async ({
@@ -2744,44 +2837,11 @@ export function createConversationEmailUpdateService({
     }: AuthenticatedRequest<ConversationEmailUpdateConfigurationRequest> & {
         database: PostgresJsDatabase;
     }): Promise<ConversationEmailUpdateConfigurationResponse> => {
-        try {
-            const now = new Date();
-            if (request.target === "project") {
-                const row = await getProjectConfigurationRow({
-                    db: database,
-                    projectSlug: request.projectSlug,
-                    now,
-                });
-                if (row === undefined) {
-                    return { success: false, reason: "target_not_found" };
-                }
-                if (!row.feature_available) {
-                    return { success: false, reason: "feature_not_available" };
-                }
-                const canConfigure = await hasConversationEmailUpdateCapability(
-                    {
-                        db: database,
-                        userId,
-                        projectId: row.project_id,
-                        now,
-                    },
-                );
-                return {
-                    success: true,
-                    configuration: {
-                        target: "project",
-                        projectSlug: row.project_slug,
-                        canConfigure,
-                        defaultEnabled: row.default_enabled,
-                        participantContactEmail: normalizeContactEmail(
-                            row.contact_email,
-                        ),
-                    },
-                };
-            }
-            const row = await getConversationConfigurationRow({
+        const now = new Date();
+        if (request.target === "project") {
+            const row = await getProjectConfigurationRow({
                 db: database,
-                conversationSlugId: request.conversationSlugId,
+                projectSlug: request.projectSlug,
                 now,
             });
             if (row === undefined) {
@@ -2796,14 +2856,41 @@ export function createConversationEmailUpdateService({
                 projectId: row.project_id,
                 now,
             });
-            return mapConfiguration({
-                row,
-                canConfigure,
-                operationalSendingEnabled: sendingEnabled,
-            });
-        } catch {
-            return { success: false, reason: "configuration_unavailable" };
+            return {
+                success: true,
+                configuration: {
+                    target: "project",
+                    projectSlug: row.project_slug,
+                    canConfigure,
+                    defaultEnabled: row.default_enabled,
+                    participantContactEmail: normalizeContactEmail(
+                        row.contact_email,
+                    ),
+                },
+            };
         }
+        const row = await getConversationConfigurationRow({
+            db: database,
+            conversationSlugId: request.conversationSlugId,
+            now,
+        });
+        if (row === undefined) {
+            return { success: false, reason: "target_not_found" };
+        }
+        if (!row.feature_available) {
+            return { success: false, reason: "feature_not_available" };
+        }
+        const canConfigure = await hasConversationEmailUpdateCapability({
+            db: database,
+            userId,
+            projectId: row.project_id,
+            now,
+        });
+        return mapConfiguration({
+            row,
+            canConfigure,
+            operationalSendingEnabled: sendingEnabled,
+        });
     };
     const getConfiguration = async ({
         userId,
@@ -2813,491 +2900,479 @@ export function createConversationEmailUpdateService({
 
     return {
         getWorkspace: async ({ userId, request }) => {
-            try {
-                const now = new Date();
-                const allRows = await listAuthorizedConversations({
-                    db,
-                    userId,
-                    now,
-                });
-                let rows = allRows;
-                let initialSelection:
-                    | ConversationEmailUpdateSelection
-                    | undefined;
-                if (request.context.kind === "project") {
-                    const projectSlug = request.context.projectSlug;
-                    rows = allRows.filter(
-                        (row) =>
-                            row.scope_kind === "project" &&
-                            row.project_slug === projectSlug,
-                    );
-                } else if (request.context.kind === "conversation") {
-                    const conversationSlugId =
-                        request.context.conversationSlugId;
-                    const selected = allRows.find(
-                        (row) =>
-                            row.conversation_slug_id === conversationSlugId,
-                    );
-                    rows =
-                        selected === undefined
-                            ? []
-                            : allRows.filter((row) =>
-                                  selected.scope_kind === "project"
-                                      ? row.project_id === selected.project_id
-                                      : row.scope_kind === "no_project",
-                              );
-                    initialSelection =
-                        selected?.scope_kind === "project"
-                            ? {
-                                  kind: "project",
-                                  projectSlug: selected.project_slug,
-                                  conversationSlugIds: [
-                                      selected.conversation_slug_id,
-                                  ],
-                              }
-                            : selected?.scope_kind === "no_project"
-                              ? {
-                                    kind: "no_project",
-                                    conversationSlugId:
-                                        selected.conversation_slug_id,
-                                }
-                              : undefined;
+            const now = new Date();
+            const [allRows, testDestination] = await Promise.all([
+                listAuthorizedConversations({ db, userId, now }),
+                getPrimaryEmail({ db: getPrimaryDatabase(db), userId }),
+            ]);
+            let rows = allRows;
+            let initialSelection: ConversationEmailUpdateSelection | undefined;
+            if (request.context.kind === "project") {
+                const projectSlug = request.context.projectSlug;
+                rows = allRows.filter(
+                    (row) =>
+                        row.scope_kind === "project" &&
+                        row.project_slug === projectSlug,
+                );
+            } else if (request.context.kind === "conversation") {
+                const conversationSlugId = request.context.conversationSlugId;
+                const selected = allRows.find(
+                    (row) => row.conversation_slug_id === conversationSlugId,
+                );
+                rows =
+                    selected === undefined
+                        ? []
+                        : allRows.filter((row) =>
+                              selected.scope_kind === "project"
+                                  ? row.project_id === selected.project_id
+                                  : row.scope_kind === "no_project",
+                          );
+                initialSelection =
+                    selected?.scope_kind === "project"
+                        ? {
+                              kind: "project",
+                              projectSlug: selected.project_slug,
+                              conversationSlugIds: [
+                                  selected.conversation_slug_id,
+                              ],
+                          }
+                        : selected?.scope_kind === "no_project"
+                          ? {
+                                kind: "no_project",
+                                conversationSlugId:
+                                    selected.conversation_slug_id,
+                            }
+                          : undefined;
+            }
+            if (rows.length === 0) {
+                if (request.context.kind === "global") {
+                    return {
+                        success: false,
+                        reason: "feature_not_available",
+                    };
                 }
-                if (rows.length === 0) {
-                    if (request.context.kind === "global") {
-                        return {
-                            success: false,
-                            reason: "feature_not_available",
-                        };
-                    }
-                    if (request.context.kind === "conversation") {
-                        const context = await getConversationConfigurationRow({
-                            db,
-                            conversationSlugId:
-                                request.context.conversationSlugId,
-                            now,
-                        });
-                        return context === undefined
-                            ? { success: false, reason: "context_not_found" }
-                            : {
-                                  success: false,
-                                  reason: "feature_not_available",
-                              };
-                    }
-                    const contextRows = await db
-                        .select({ id: projectTable.id })
-                        .from(projectTable)
-                        .where(
-                            and(
-                                eq(
-                                    projectTable.slug,
-                                    request.context.projectSlug,
-                                ),
-                                isNull(projectTable.deletedAt),
-                                eq(projectTable.directoryVisibility, "listed"),
-                                isNull(
-                                    projectTable.autoProvisionedForOrganizationId,
-                                ),
-                            ),
-                        )
-                        .limit(1);
-                    return contextRows.length === 0
+                if (request.context.kind === "conversation") {
+                    const context = await getConversationConfigurationRow({
+                        db,
+                        conversationSlugId: request.context.conversationSlugId,
+                        now,
+                    });
+                    return context === undefined
                         ? { success: false, reason: "context_not_found" }
                         : {
                               success: false,
                               reason: "feature_not_available",
                           };
                 }
-                const estimateEntries = await Promise.all(
-                    rows.map(async (row) => {
-                        const count = await countEligibleAudience({
-                            db,
-                            selection: {
-                                project: row,
-                                conversations: [row],
-                            },
-                            cutoffAt: now,
-                        });
-                        return [row.conversation_id, count] as const;
-                    }),
-                );
-                const scopes = groupScopes({
-                    rows,
-                    estimates: new Map(estimateEntries),
-                    operationalSendingEnabled: sendingEnabled,
-                });
-                if (scopes.length === 0) {
-                    return { success: false, reason: "feature_not_available" };
-                }
-                return {
-                    success: true,
-                    resolvedContext: request.context,
-                    initialSelection,
-                    scopes,
-                };
-            } catch {
-                return { success: false, reason: "workspace_unavailable" };
+                const contextRows = await db
+                    .select({ id: projectTable.id })
+                    .from(projectTable)
+                    .where(
+                        and(
+                            eq(projectTable.slug, request.context.projectSlug),
+                            isNull(projectTable.deletedAt),
+                            eq(projectTable.directoryVisibility, "listed"),
+                            isNull(
+                                projectTable.autoProvisionedForOrganizationId,
+                            ),
+                        ),
+                    )
+                    .limit(1);
+                return contextRows.length === 0
+                    ? { success: false, reason: "context_not_found" }
+                    : {
+                          success: false,
+                          reason: "feature_not_available",
+                      };
             }
+            const requiredOwnerUserIdsByProjectId = new Map(
+                await mapInBatches({
+                    items: [...new Set(rows.map((row) => row.project_id))],
+                    batchSize: WORKSPACE_QUERY_BATCH_SIZE,
+                    map: async (projectId): Promise<[number, string[]]> => [
+                        projectId,
+                        await listRequiredOwnerUserIds({
+                            db,
+                            projectId,
+                        }),
+                    ],
+                }),
+            );
+            const estimateEntries = await mapInBatches({
+                items: rows,
+                batchSize: WORKSPACE_QUERY_BATCH_SIZE,
+                map: async (row): Promise<readonly [number, number]> => {
+                    const count = await countEligibleAudience({
+                        db,
+                        selection: {
+                            project: row,
+                            conversations: [row],
+                        },
+                        cutoffAt: now,
+                        excludedUserIds:
+                            requiredOwnerUserIdsByProjectId.get(
+                                row.project_id,
+                            ) ?? [],
+                    });
+                    return [row.conversation_id, count];
+                },
+            });
+            const scopes = groupScopes({
+                rows,
+                estimates: new Map(estimateEntries),
+                operationalSendingEnabled: sendingEnabled,
+            });
+            if (scopes.length === 0) {
+                return { success: false, reason: "feature_not_available" };
+            }
+            return {
+                success: true,
+                resolvedContext: request.context,
+                initialSelection,
+                testDestinationEmail: testDestination?.email,
+                scopes,
+            };
         },
 
         listHistory: async ({ userId, request }) => {
-            try {
-                const contextVisible = await isHistoryContextVisible({
-                    db,
-                    userId,
-                    context: request.context,
-                });
-                if (!contextVisible) {
-                    return { success: false, reason: "context_not_found" };
-                }
-
-                const cursorPosition =
-                    request.cursor === undefined
-                        ? undefined
-                        : await resolveHistoryCursorPosition({
-                              db,
-                              userId,
-                              context: request.context,
-                              cursor: request.cursor,
-                          });
-                if (
-                    request.cursor !== undefined &&
-                    cursorPosition === undefined
-                ) {
-                    return { success: false, reason: "invalid_cursor" };
-                }
-
-                const rows = await queryVisibleHistoryRows({
-                    db,
-                    userId,
-                    context: request.context,
-                    cursorPosition,
-                    publicUpdateId: undefined,
-                    limit: request.limit + 1,
-                });
-                const hasNextPage = rows.length > request.limit;
-                const page = rows.slice(0, request.limit);
-                const conversations = await loadHistoryConversations({
-                    db,
-                    updateIds: page.map((row) => row.internal_update_id),
-                });
-                return {
-                    success: true,
-                    items: page.map((row) =>
-                        mapHistoryRecord({
-                            row,
-                            conversations: conversations.filter(
-                                (conversation) =>
-                                    conversation.update_id ===
-                                    row.internal_update_id,
-                            ),
-                        }),
-                    ),
-                    nextCursor: hasNextPage
-                        ? page.at(-1)?.update_id
-                        : undefined,
-                };
-            } catch {
-                return { success: false, reason: "history_unavailable" };
+            const contextVisible = await isHistoryContextVisible({
+                db,
+                userId,
+                context: request.context,
+            });
+            if (!contextVisible) {
+                return { success: false, reason: "context_not_found" };
             }
+
+            const cursorPosition =
+                request.cursor === undefined
+                    ? undefined
+                    : await resolveHistoryCursorPosition({
+                          db,
+                          userId,
+                          context: request.context,
+                          cursor: request.cursor,
+                      });
+            if (request.cursor !== undefined && cursorPosition === undefined) {
+                return { success: false, reason: "invalid_cursor" };
+            }
+
+            const rows = await queryVisibleHistoryRows({
+                db,
+                userId,
+                context: request.context,
+                cursorPosition,
+                publicUpdateId: undefined,
+                limit: request.limit + 1,
+            });
+            const hasNextPage = rows.length > request.limit;
+            const page = rows.slice(0, request.limit);
+            const conversations = await loadHistoryConversations({
+                db,
+                updateIds: page.map((row) => row.internal_update_id),
+            });
+            return {
+                success: true,
+                items: page.map((row) =>
+                    mapHistoryRecord({
+                        row,
+                        conversations: conversations.filter(
+                            (conversation) =>
+                                conversation.update_id ===
+                                row.internal_update_id,
+                        ),
+                    }),
+                ),
+                nextCursor: hasNextPage ? page.at(-1)?.update_id : undefined,
+            };
         },
 
         getHistoryDetail: async ({ userId, request }) => {
-            try {
-                const rows = await queryVisibleHistoryRows({
-                    db,
-                    userId,
-                    context: { kind: "global" },
-                    cursorPosition: undefined,
-                    publicUpdateId: request.updateId,
-                    limit: 1,
-                });
-                const row = rows.at(0);
-                if (row === undefined) {
-                    return { success: false, reason: "update_not_found" };
-                }
-                const conversations = await loadHistoryConversations({
-                    db,
-                    updateIds: [row.internal_update_id],
-                });
-                return {
-                    success: true,
-                    record: mapHistoryRecord({ row, conversations }),
-                };
-            } catch {
-                return { success: false, reason: "history_unavailable" };
+            const rows = await queryVisibleHistoryRows({
+                db,
+                userId,
+                context: { kind: "global" },
+                cursorPosition: undefined,
+                publicUpdateId: request.updateId,
+                limit: 1,
+            });
+            const row = rows.at(0);
+            if (row === undefined) {
+                return { success: false, reason: "update_not_found" };
             }
+            const conversations = await loadHistoryConversations({
+                db,
+                updateIds: [row.internal_update_id],
+            });
+            return {
+                success: true,
+                record: mapHistoryRecord({ row, conversations }),
+            };
         },
 
         estimateAudience,
 
         sendTest: async ({ userId, request }) => {
             if (!sendingEnabled) {
-                return { success: false, reason: "sending_disabled" };
+                return {
+                    success: false,
+                    error: { reason: "sending_disabled" },
+                };
             }
             const normalized = normalizeUserRichTextInput({
                 html: request.bodyHtml,
                 validationMode: "conversation_email_update",
             });
             if (!normalized.success) {
-                return { success: false, reason: "content_invalid" };
-            }
-            try {
-                const now = new Date();
-                const result = await getPrimaryDatabase(db).transaction(
-                    async (tx) => {
-                        await lockUser({ db: tx, userId });
-                        const [accessRows, requesterEmail] = await Promise.all([
-                            listAuthorizedConversations({
-                                db: tx,
-                                userId,
-                                now,
-                            }),
-                            getPrimaryEmail({ db: tx, userId }),
-                        ]);
-                        if (requesterEmail === undefined) {
-                            return {
-                                success: false,
-                                reason: "no_verified_test_email",
-                            } as const;
-                        }
-                        const resolved = resolveSelection({
-                            rows: accessRows,
-                            selection: request.selection,
-                        });
-                        if (!resolved.success) return resolved;
-                        if (
-                            resolved.value.conversations.some(
-                                (row) =>
-                                    !isSendingEnabled({
-                                        row,
-                                        operationallyEnabled: sendingEnabled,
-                                    }),
-                            )
-                        ) {
-                            return {
-                                success: false,
-                                reason: "sending_disabled",
-                            } as const;
-                        }
-                        const contactEmail = normalizeContactEmail(
-                            resolved.value.project.contact_email,
-                        );
-                        if (contactEmail === undefined) {
-                            return {
-                                success: false,
-                                reason: "missing_participant_contact_email",
-                            } as const;
-                        }
-                        try {
-                            await estimateResolvedSelection({
-                                db: tx,
-                                selection: resolved.value,
-                                cutoffAt: now,
-                            });
-                        } catch {
-                            return {
-                                success: false,
-                                reason: "audience_unavailable",
-                            } as const;
-                        }
-                        const recentAttempts = await tx
-                            .select({
-                                createdAt:
-                                    conversationEmailUpdateTestAttemptTable.createdAt,
-                            })
-                            .from(conversationEmailUpdateTestAttemptTable)
-                            .where(
-                                and(
-                                    eq(
-                                        conversationEmailUpdateTestAttemptTable.requestedByUserId,
-                                        userId,
-                                    ),
-                                    gte(
-                                        conversationEmailUpdateTestAttemptTable.createdAt,
-                                        new Date(
-                                            now.getTime() -
-                                                24 * 60 * 60 * 1_000,
-                                        ),
-                                    ),
-                                ),
-                            );
-                        const rateLimit = decideConversationEmailTestRateLimit({
-                            now,
-                            attemptCreatedAt: recentAttempts.map(
-                                (attempt) => attempt.createdAt,
-                            ),
-                        });
-                        if (!rateLimit.allowed) {
-                            return {
-                                success: false,
-                                reason: "test_rate_limited",
-                                retryAt: rateLimit.retryAt,
-                            } as const;
-                        }
-                        const updateRows = await tx
-                            .insert(conversationEmailUpdateTable)
-                            .values({
-                                projectId: resolved.value.project.project_id,
-                                scopeKind:
-                                    resolved.value.project.scope_kind ===
-                                    "project"
-                                        ? "listed_project"
-                                        : "no_project",
-                                createdByUserId: userId,
-                                authorizingOrganizationId:
-                                    resolved.value.project
-                                        .authorizing_organization_id,
-                                authorizingPremiumFeatureId:
-                                    resolved.value.project
-                                        .authorizing_entitlement_id,
-                                projectTitleSnapshot:
-                                    resolved.value.project.project_title,
-                                replyToNameSnapshot:
-                                    resolved.value.project.contact_name ??
-                                    resolved.value.project.project_title,
-                                replyToEmailSnapshot: contactEmail,
-                                subject: request.subject.trim(),
-                                bodyHtml: normalized.content.html,
-                                bodyPlainText: normalized.content.plainText,
-                            })
-                            .returning({
-                                id: conversationEmailUpdateTable.id,
-                                publicId: conversationEmailUpdateTable.publicId,
-                            });
-                        const update = updateRows.at(0);
-                        if (update === undefined) {
-                            return {
-                                success: false,
-                                reason: "test_delivery_failed",
-                            } as const;
-                        }
-                        await tx
-                            .insert(conversationEmailUpdateConversationTable)
-                            .values(
-                                resolved.value.conversations.map((row) => ({
-                                    updateId: update.id,
-                                    projectId: row.project_id,
-                                    conversationId: row.conversation_id,
-                                    conversationTitleSnapshot:
-                                        row.conversation_title,
-                                })),
-                            );
-                        const attemptRows = await tx
-                            .insert(conversationEmailUpdateTestAttemptTable)
-                            .values({
-                                updateId: update.id,
-                                requestedByUserId: userId,
-                                destinationEmailCredentialId:
-                                    requesterEmail.credential_id,
-                                destinationEmailSnapshot: requesterEmail.email,
-                                status: "pending",
-                            })
-                            .returning({
-                                publicId:
-                                    conversationEmailUpdateTestAttemptTable.publicId,
-                            });
-                        const attempt = attemptRows.at(0);
-                        return attempt === undefined
-                            ? ({
-                                  success: false,
-                                  reason: "test_delivery_failed",
-                              } as const)
-                            : ({
-                                  success: true,
-                                  updateId: update.publicId,
-                                  testAttemptId: attempt.publicId,
-                              } as const);
-                    },
-                );
-                if (!result.success) return result;
                 return {
-                    success: true,
-                    updateId: result.updateId,
-                    testAttemptId: result.testAttemptId,
-                    status: "pending",
+                    success: false,
+                    error: { reason: "content_invalid" },
                 };
-            } catch {
-                return { success: false, reason: "test_delivery_failed" };
             }
-        },
-
-        getTestStatus: async ({ userId, request }) => {
-            try {
-                const rows = await getPrimaryDatabase(db)
-                    .select({
-                        attempt_id: conversationEmailUpdateTestAttemptTable.id,
-                        attempt_public_id:
-                            conversationEmailUpdateTestAttemptTable.publicId,
-                        update_id:
-                            conversationEmailUpdateTestAttemptTable.updateId,
-                        update_public_id: conversationEmailUpdateTable.publicId,
-                        project_id: conversationEmailUpdateTable.projectId,
-                        authorizing_organization_id:
-                            conversationEmailUpdateTable.authorizingOrganizationId,
-                        requested_by_user_id:
-                            conversationEmailUpdateTestAttemptTable.requestedByUserId,
-                        status: conversationEmailUpdateTestAttemptTable.status,
-                        finished_at:
-                            conversationEmailUpdateTestAttemptTable.finishedAt,
-                    })
-                    .from(conversationEmailUpdateTestAttemptTable)
-                    .innerJoin(
-                        conversationEmailUpdateTable,
-                        eq(
-                            conversationEmailUpdateTable.id,
-                            conversationEmailUpdateTestAttemptTable.updateId,
-                        ),
-                    )
-                    .where(
-                        and(
-                            eq(
-                                conversationEmailUpdateTestAttemptTable.publicId,
-                                request.testAttemptId,
-                            ),
-                            eq(
-                                conversationEmailUpdateTestAttemptTable.requestedByUserId,
-                                userId,
-                            ),
-                        ),
-                    )
-                    .limit(1);
-                const attempt = rows.at(0);
-                if (attempt === undefined) {
-                    return { success: false, reason: "test_not_found" };
-                }
-                if (attempt.status === "provider_accepted") {
-                    if (attempt.finished_at === null) {
+            const now = new Date();
+            const result = await getPrimaryDatabase(db).transaction(
+                async (tx) => {
+                    await lockUser({ db: tx, userId });
+                    const [accessRows, requesterEmail] = await Promise.all([
+                        listAuthorizedConversations({
+                            db: tx,
+                            userId,
+                            now,
+                        }),
+                        getPrimaryEmail({ db: tx, userId }),
+                    ]);
+                    if (requesterEmail === undefined) {
                         return {
                             success: false,
-                            reason: "test_status_unavailable",
-                        };
+                            reason: "no_verified_test_email",
+                        } as const;
+                    }
+                    const resolved = resolveSelection({
+                        rows: accessRows,
+                        selection: request.selection,
+                    });
+                    if (!resolved.success) return resolved;
+                    if (
+                        resolved.value.conversations.some(
+                            (row) =>
+                                !isSendingEnabled({
+                                    row,
+                                    operationallyEnabled: sendingEnabled,
+                                }),
+                        )
+                    ) {
+                        return {
+                            success: false,
+                            reason: "sending_disabled",
+                        } as const;
+                    }
+                    const contactEmail = normalizeContactEmail(
+                        resolved.value.project.contact_email,
+                    );
+                    if (contactEmail === undefined) {
+                        return {
+                            success: false,
+                            reason: "missing_participant_contact_email",
+                        } as const;
+                    }
+                    const requiredOwnerUserIds = await listRequiredOwnerUserIds(
+                        {
+                            db: tx,
+                            projectId: resolved.value.project.project_id,
+                        },
+                    );
+                    const participantEstimate = await countEligibleAudience({
+                        db: tx,
+                        selection: resolved.value,
+                        cutoffAt: now,
+                        excludedUserIds: requiredOwnerUserIds,
+                    });
+                    if (participantEstimate === 0) {
+                        return {
+                            success: false,
+                            reason: "no_eligible_participants",
+                        } as const;
+                    }
+                    const recentAttempts = await tx
+                        .select({
+                            createdAt:
+                                conversationEmailUpdateTestAttemptTable.createdAt,
+                        })
+                        .from(conversationEmailUpdateTestAttemptTable)
+                        .where(
+                            and(
+                                eq(
+                                    conversationEmailUpdateTestAttemptTable.requestedByUserId,
+                                    userId,
+                                ),
+                                gte(
+                                    conversationEmailUpdateTestAttemptTable.createdAt,
+                                    new Date(
+                                        now.getTime() - 24 * 60 * 60 * 1_000,
+                                    ),
+                                ),
+                            ),
+                        );
+                    const rateLimit = decideConversationEmailTestRateLimit({
+                        now,
+                        attemptCreatedAt: recentAttempts.map(
+                            (attempt) => attempt.createdAt,
+                        ),
+                    });
+                    if (!rateLimit.allowed) {
+                        return {
+                            success: false,
+                            reason: "test_rate_limited",
+                            retryAt: rateLimit.retryAt,
+                        } as const;
+                    }
+                    const updateRows = await tx
+                        .insert(conversationEmailUpdateTable)
+                        .values({
+                            projectId: resolved.value.project.project_id,
+                            scopeKind:
+                                resolved.value.project.scope_kind === "project"
+                                    ? "listed_project"
+                                    : "no_project",
+                            createdByUserId: userId,
+                            authorizingOrganizationId:
+                                resolved.value.project
+                                    .authorizing_organization_id,
+                            authorizingPremiumFeatureId:
+                                resolved.value.project
+                                    .authorizing_entitlement_id,
+                            projectTitleSnapshot:
+                                resolved.value.project.project_title,
+                            replyToNameSnapshot:
+                                resolved.value.project.contact_name ??
+                                resolved.value.project.project_title,
+                            replyToEmailSnapshot: contactEmail,
+                            subject: request.subject.trim(),
+                            bodyHtml: normalized.content.html,
+                            bodyPlainText: normalized.content.plainText,
+                        })
+                        .returning({
+                            id: conversationEmailUpdateTable.id,
+                            publicId: conversationEmailUpdateTable.publicId,
+                        });
+                    const update = updateRows.at(0);
+                    if (update === undefined) {
+                        throw new Error("Test update insert returned no row");
+                    }
+                    await tx
+                        .insert(conversationEmailUpdateConversationTable)
+                        .values(
+                            resolved.value.conversations.map((row) => ({
+                                updateId: update.id,
+                                projectId: row.project_id,
+                                conversationId: row.conversation_id,
+                                conversationTitleSnapshot:
+                                    row.conversation_title,
+                            })),
+                        );
+                    const attemptRows = await tx
+                        .insert(conversationEmailUpdateTestAttemptTable)
+                        .values({
+                            updateId: update.id,
+                            requestedByUserId: userId,
+                            destinationEmailCredentialId:
+                                requesterEmail.credential_id,
+                            destinationEmailSnapshot: requesterEmail.email,
+                            status: "pending",
+                        })
+                        .returning({
+                            publicId:
+                                conversationEmailUpdateTestAttemptTable.publicId,
+                        });
+                    const attempt = attemptRows.at(0);
+                    if (attempt === undefined) {
+                        throw new Error("Test attempt insert returned no row");
                     }
                     return {
                         success: true,
-                        status: {
-                            state: "provider_accepted",
-                            providerAcceptedAt: attempt.finished_at,
-                        },
-                    };
-                }
-                if (
-                    attempt.status === "retryable_rejected" ||
-                    attempt.status === "permanent_rejected" ||
-                    attempt.status === "unknown"
-                ) {
-                    return {
-                        success: true,
-                        status: {
-                            state: "failed",
-                            reason: attempt.status,
-                        },
-                    };
-                }
-                return { success: true, status: { state: attempt.status } };
-            } catch {
-                return { success: false, reason: "test_status_unavailable" };
+                        updateId: update.publicId,
+                        testAttemptId: attempt.publicId,
+                    } as const;
+                },
+            );
+            if (!result.success) {
+                return result.reason === "test_rate_limited"
+                    ? {
+                          success: false,
+                          error: {
+                              reason: result.reason,
+                              retryAt: result.retryAt,
+                          },
+                      }
+                    : {
+                          success: false,
+                          error: { reason: result.reason },
+                      };
             }
+            return {
+                success: true,
+                updateId: result.updateId,
+                testAttemptId: result.testAttemptId,
+                status: "pending",
+            };
+        },
+
+        getTestStatus: async ({ userId, request }) => {
+            const rows = await getPrimaryDatabase(db)
+                .select({
+                    attempt_id: conversationEmailUpdateTestAttemptTable.id,
+                    attempt_public_id:
+                        conversationEmailUpdateTestAttemptTable.publicId,
+                    update_id: conversationEmailUpdateTestAttemptTable.updateId,
+                    update_public_id: conversationEmailUpdateTable.publicId,
+                    project_id: conversationEmailUpdateTable.projectId,
+                    authorizing_organization_id:
+                        conversationEmailUpdateTable.authorizingOrganizationId,
+                    requested_by_user_id:
+                        conversationEmailUpdateTestAttemptTable.requestedByUserId,
+                    status: conversationEmailUpdateTestAttemptTable.status,
+                    finished_at:
+                        conversationEmailUpdateTestAttemptTable.finishedAt,
+                    error_code:
+                        conversationEmailUpdateTestAttemptTable.errorCode,
+                })
+                .from(conversationEmailUpdateTestAttemptTable)
+                .innerJoin(
+                    conversationEmailUpdateTable,
+                    eq(
+                        conversationEmailUpdateTable.id,
+                        conversationEmailUpdateTestAttemptTable.updateId,
+                    ),
+                )
+                .where(
+                    and(
+                        eq(
+                            conversationEmailUpdateTestAttemptTable.publicId,
+                            request.testAttemptId,
+                        ),
+                        eq(
+                            conversationEmailUpdateTestAttemptTable.requestedByUserId,
+                            userId,
+                        ),
+                    ),
+                )
+                .limit(1);
+            const attempt = rows.at(0);
+            if (attempt === undefined) {
+                return { success: false, reason: "test_not_found" };
+            }
+            const status = mapConversationEmailUpdateTestStatus({
+                status: attempt.status,
+                finishedAt: attempt.finished_at,
+                errorCode: attempt.error_code,
+            });
+            if (status === undefined) {
+                return {
+                    success: false,
+                    reason: "test_status_unavailable",
+                };
+            }
+            return { success: true, status };
         },
 
         send: async ({ userId, request }) => {
@@ -3509,6 +3584,14 @@ export function createConversationEmailUpdateService({
                                 reason: "sending_disabled",
                             } as const;
                         }
+                        const ownerCopySet = await resolveRequiredOwnerCopies({
+                            db: tx,
+                            projectId: attempt.project_id,
+                            conversationIds: conversations.map(
+                                (row) => row.conversation_id,
+                            ),
+                            facilitatorUserId: userId,
+                        });
                         if (
                             !(await lockActiveEmailUpdateAuthorization({
                                 db: tx,
@@ -3527,16 +3610,21 @@ export function createConversationEmailUpdateService({
                             } as const;
                         }
                         const selection = { project, conversations };
-                        const ownerSnapshots = await resolveRequiredOwnerCopies(
-                            {
+                        const acceptanceParticipantEstimate =
+                            await countEligibleAudience({
                                 db: tx,
-                                projectId: attempt.project_id,
-                                conversationIds: conversations.map(
-                                    (row) => row.conversation_id,
-                                ),
-                                facilitatorUserId: userId,
-                            },
-                        );
+                                selection,
+                                cutoffAt: now,
+                                excludedUserIds:
+                                    ownerCopySet.requiredOwnerUserIds,
+                            });
+                        if (acceptanceParticipantEstimate === 0) {
+                            return {
+                                success: false,
+                                reason: "no_eligible_participants",
+                            } as const;
+                        }
+                        const ownerSnapshots = ownerCopySet.ownerSnapshots;
                         if (
                             ownerSnapshots === undefined ||
                             ownerSnapshots.length === 0
@@ -3546,12 +3634,6 @@ export function createConversationEmailUpdateService({
                                 reason: "required_owner_copy_unavailable",
                             } as const;
                         }
-                        const acceptanceParticipantEstimate =
-                            await countEligibleAudience({
-                                db: tx,
-                                selection,
-                                cutoffAt: now,
-                            });
                         const deliveryRows = await tx
                             .insert(conversationEmailUpdateDeliveryTable)
                             .values({
@@ -3573,12 +3655,6 @@ export function createConversationEmailUpdateService({
                                 acceptedAt:
                                     conversationEmailUpdateDeliveryTable.acceptedAt,
                             });
-                        if (deliveryRows.length === 0) {
-                            return {
-                                success: false,
-                                reason: "audience_unavailable",
-                            } as const;
-                        }
                         const delivery = deliveryRows.at(0);
                         if (delivery === undefined) {
                             throw new Error(
@@ -3656,676 +3732,203 @@ export function createConversationEmailUpdateService({
                 );
                 return result;
             } catch (error: unknown) {
-                return {
-                    success: false,
-                    reason: isUniqueViolation(error)
-                        ? "delivery_already_active"
-                        : "audience_unavailable",
-                };
+                if (isUniqueViolation(error)) {
+                    return {
+                        success: false,
+                        reason: "delivery_already_active",
+                    };
+                }
+                throw error;
             }
         },
 
         getPreferences: async ({ userId, request }) => {
-            try {
-                if ((await getPrimaryEmail({ db, userId })) === undefined) {
+            if ((await getPrimaryEmail({ db, userId })) === undefined) {
+                return {
+                    success: false,
+                    reason: "verified_email_required",
+                };
+            }
+            const rows = await loadPreferenceRows({
+                db,
+                userId,
+                now: new Date(),
+            });
+            let groups = buildConversationEmailPreferenceGroups(rows);
+            if (request.search !== undefined) {
+                const search = request.search.toLocaleLowerCase();
+                groups = groups.filter((group) =>
+                    group.kind === "project"
+                        ? group.projectTitle
+                              .toLocaleLowerCase()
+                              .includes(search) ||
+                          group.conversations.some((conversation) =>
+                              conversation.conversationTitle
+                                  .toLocaleLowerCase()
+                                  .includes(search),
+                          )
+                        : group.conversations.some((conversation) =>
+                              conversation.conversationTitle
+                                  .toLocaleLowerCase()
+                                  .includes(search),
+                          ),
+                );
+            }
+            const cursorFor = (
+                group: ConversationEmailUpdatePreferenceGroup,
+            ): string =>
+                group.kind === "project"
+                    ? `project:${group.projectSlug}`
+                    : "no-project";
+            const startIndex =
+                request.cursor === undefined
+                    ? 0
+                    : groups.findIndex(
+                          (group) => cursorFor(group) === request.cursor,
+                      ) + 1;
+            if (request.cursor !== undefined && startIndex === 0) {
+                return {
+                    success: false,
+                    reason: "preferences_unavailable",
+                };
+            }
+            const page = groups.slice(startIndex, startIndex + request.limit);
+            const lastGroup = page.at(-1);
+            return {
+                success: true,
+                globalPaused: rows.globalPaused,
+                groups: page,
+                nextCursor:
+                    startIndex + page.length < groups.length &&
+                    lastGroup !== undefined
+                        ? cursorFor(lastGroup)
+                        : undefined,
+            };
+        },
+
+        updatePreference: async ({ userId, request }) => {
+            return await getPrimaryDatabase(db).transaction(async (tx) => {
+                await lockUser({ db: tx, userId });
+                if ((await getPrimaryEmail({ db: tx, userId })) === undefined) {
                     return {
                         success: false,
                         reason: "verified_email_required",
                     };
                 }
-                const rows = await loadPreferenceRows({
-                    db,
-                    userId,
-                    now: new Date(),
-                });
-                let groups = buildConversationEmailPreferenceGroups(rows);
-                if (request.search !== undefined) {
-                    const search = request.search.toLocaleLowerCase();
-                    groups = groups.filter((group) =>
-                        group.kind === "project"
-                            ? group.projectTitle
-                                  .toLocaleLowerCase()
-                                  .includes(search) ||
-                              group.conversations.some((conversation) =>
-                                  conversation.conversationTitle
-                                      .toLocaleLowerCase()
-                                      .includes(search),
-                              )
-                            : group.conversations.some((conversation) =>
-                                  conversation.conversationTitle
-                                      .toLocaleLowerCase()
-                                      .includes(search),
-                              ),
-                    );
-                }
-                const cursorFor = (
-                    group: ConversationEmailUpdatePreferenceGroup,
-                ): string =>
-                    group.kind === "project"
-                        ? `project:${group.projectSlug}`
-                        : "no-project";
-                const startIndex =
-                    request.cursor === undefined
-                        ? 0
-                        : groups.findIndex(
-                              (group) => cursorFor(group) === request.cursor,
-                          ) + 1;
-                if (request.cursor !== undefined && startIndex === 0) {
-                    return {
-                        success: false,
-                        reason: "preferences_unavailable",
-                    };
-                }
-                const page = groups.slice(
-                    startIndex,
-                    startIndex + request.limit,
-                );
-                const lastGroup = page.at(-1);
-                return {
-                    success: true,
-                    globalPaused: rows.globalPaused,
-                    groups: page,
-                    nextCursor:
-                        startIndex + page.length < groups.length &&
-                        lastGroup !== undefined
-                            ? cursorFor(lastGroup)
-                            : undefined,
-                };
-            } catch {
-                return { success: false, reason: "preferences_unavailable" };
-            }
-        },
-
-        updatePreference: async ({ userId, request }) => {
-            try {
-                return await getPrimaryDatabase(db).transaction(async (tx) => {
-                    await lockUser({ db: tx, userId });
-                    if (
-                        (await getPrimaryEmail({ db: tx, userId })) ===
-                        undefined
-                    ) {
-                        return {
-                            success: false,
-                            reason: "verified_email_required",
-                        };
-                    }
-                    const now = new Date();
-                    if (request.operation === "set_global_pause") {
-                        await tx
-                            .insert(
-                                conversationEmailUpdateUserGlobalSettingTable,
-                            )
-                            .values({
-                                userId,
+                const now = new Date();
+                if (request.operation === "set_global_pause") {
+                    await tx
+                        .insert(conversationEmailUpdateUserGlobalSettingTable)
+                        .values({
+                            userId,
+                            pausedAt: request.paused ? now : null,
+                            updatedAt: now,
+                        })
+                        .onConflictDoUpdate({
+                            target: conversationEmailUpdateUserGlobalSettingTable.userId,
+                            set: {
                                 pausedAt: request.paused ? now : null,
                                 updatedAt: now,
-                            })
-                            .onConflictDoUpdate({
-                                target: conversationEmailUpdateUserGlobalSettingTable.userId,
-                                set: {
-                                    pausedAt: request.paused ? now : null,
-                                    updatedAt: now,
-                                },
-                            });
-                        return {
-                            success: true,
-                            result: {
-                                operation: request.operation,
-                                globalPaused: request.paused,
                             },
-                        };
-                    }
-                    if (request.operation === "set_project_preference") {
-                        const projectRows = await tx
-                            .select({ id: projectTable.id })
-                            .from(projectTable)
-                            .where(
-                                and(
-                                    eq(projectTable.slug, request.projectSlug),
-                                    isNull(projectTable.deletedAt),
-                                    eq(
-                                        projectTable.directoryVisibility,
-                                        "listed",
-                                    ),
-                                    isNull(
-                                        projectTable.autoProvisionedForOrganizationId,
-                                    ),
-                                ),
-                            )
-                            .limit(1);
-                        const project = projectRows.at(0);
-                        if (project === undefined) {
-                            return {
-                                success: false,
-                                reason: "project_not_found",
-                            };
-                        }
-                        const config = await getProjectConfigurationRow({
-                            db: tx,
-                            projectSlug: request.projectSlug,
-                            now,
                         });
-                        if (
-                            config?.feature_available !== true ||
-                            config.safety_blocked
-                        ) {
-                            return {
-                                success: false,
-                                reason: "feature_not_available",
-                            };
-                        }
-                        await tx
-                            .insert(
-                                conversationEmailUpdateUserProjectPreferenceTable,
-                            )
-                            .values({
-                                userId,
-                                projectId: project.id,
-                                enabled: request.enabled,
-                                choiceAt: now,
-                                choiceSource: request.source,
-                            })
-                            .onConflictDoUpdate({
-                                target: [
-                                    conversationEmailUpdateUserProjectPreferenceTable.userId,
-                                    conversationEmailUpdateUserProjectPreferenceTable.projectId,
-                                ],
-                                set: {
-                                    enabled: request.enabled,
-                                    choiceAt: now,
-                                    choiceSource: request.source,
-                                },
-                            });
-                        return {
-                            success: true,
-                            result: {
-                                operation: request.operation,
-                                projectSlug: request.projectSlug,
-                                state: request.enabled ? "enabled" : "disabled",
-                            },
-                        };
-                    }
-                    const config = await getConversationConfigurationRow({
-                        db: tx,
-                        conversationSlugId: request.conversationSlugId,
-                        now,
-                    });
-                    if (config === undefined) {
+                    return {
+                        success: true,
+                        result: {
+                            operation: request.operation,
+                            globalPaused: request.paused,
+                        },
+                    };
+                }
+                if (request.operation === "set_project_preference") {
+                    const projectRows = await tx
+                        .select({ id: projectTable.id })
+                        .from(projectTable)
+                        .where(
+                            and(
+                                eq(projectTable.slug, request.projectSlug),
+                                isNull(projectTable.deletedAt),
+                                eq(projectTable.directoryVisibility, "listed"),
+                                isNull(
+                                    projectTable.autoProvisionedForOrganizationId,
+                                ),
+                            ),
+                        )
+                        .limit(1);
+                    const project = projectRows.at(0);
+                    if (project === undefined) {
                         return {
                             success: false,
-                            reason: "conversation_not_found",
+                            reason: "project_not_found",
                         };
                     }
-                    if (!config.feature_available || config.safety_blocked) {
+                    const config = await getProjectConfigurationRow({
+                        db: tx,
+                        projectSlug: request.projectSlug,
+                        now,
+                    });
+                    if (
+                        config?.feature_available !== true ||
+                        config.safety_blocked
+                    ) {
                         return {
                             success: false,
                             reason: "feature_not_available",
                         };
                     }
-                    let projectPreference:
-                        | { projectSlug: string; state: "enabled" }
-                        | undefined;
-                    let conversationIds = [config.conversation_id];
-                    if (request.enabled && config.scope_kind === "project") {
-                        const preferences = await tx
-                            .select({
-                                enabled:
-                                    conversationEmailUpdateUserProjectPreferenceTable.enabled,
-                            })
-                            .from(
-                                conversationEmailUpdateUserProjectPreferenceTable,
-                            )
-                            .where(
-                                and(
-                                    eq(
-                                        conversationEmailUpdateUserProjectPreferenceTable.userId,
-                                        userId,
-                                    ),
-                                    eq(
-                                        conversationEmailUpdateUserProjectPreferenceTable.projectId,
-                                        config.project_id,
-                                    ),
-                                ),
-                            )
-                            .limit(1);
-                        if (preferences.at(0)?.enabled !== true) {
-                            await tx
-                                .insert(
-                                    conversationEmailUpdateUserProjectPreferenceTable,
-                                )
-                                .values({
-                                    userId,
-                                    projectId: config.project_id,
-                                    enabled: true,
-                                    choiceAt: now,
-                                    choiceSource: request.source,
-                                })
-                                .onConflictDoUpdate({
-                                    target: [
-                                        conversationEmailUpdateUserProjectPreferenceTable.userId,
-                                        conversationEmailUpdateUserProjectPreferenceTable.projectId,
-                                    ],
-                                    set: {
-                                        enabled: true,
-                                        choiceAt: now,
-                                        choiceSource: request.source,
-                                    },
-                                });
-                            projectPreference = {
-                                projectSlug: config.project_slug,
-                                state: "enabled",
-                            };
-                            const siblings = await tx
-                                .select({ id: conversationTable.id })
-                                .from(conversationTable)
-                                .where(
-                                    and(
-                                        eq(
-                                            conversationTable.projectId,
-                                            config.project_id,
-                                        ),
-                                        isNotNull(
-                                            conversationTable.currentContentId,
-                                        ),
-                                    ),
-                                );
-                            conversationIds = siblings.map((row) => row.id);
-                        }
-                    }
-                    for (const conversationId of conversationIds) {
-                        const enabled =
-                            conversationId === config.conversation_id
-                                ? request.enabled
-                                : false;
-                        await tx
-                            .insert(
-                                conversationEmailUpdateUserConversationPreferenceTable,
-                            )
-                            .values({
-                                userId,
-                                conversationId,
-                                enabled,
+                    await tx
+                        .insert(
+                            conversationEmailUpdateUserProjectPreferenceTable,
+                        )
+                        .values({
+                            userId,
+                            projectId: project.id,
+                            enabled: request.enabled,
+                            choiceAt: now,
+                            choiceSource: request.source,
+                        })
+                        .onConflictDoUpdate({
+                            target: [
+                                conversationEmailUpdateUserProjectPreferenceTable.userId,
+                                conversationEmailUpdateUserProjectPreferenceTable.projectId,
+                            ],
+                            set: {
+                                enabled: request.enabled,
                                 choiceAt: now,
                                 choiceSource: request.source,
-                            })
-                            .onConflictDoUpdate({
-                                target: [
-                                    conversationEmailUpdateUserConversationPreferenceTable.userId,
-                                    conversationEmailUpdateUserConversationPreferenceTable.conversationId,
-                                ],
-                                set: {
-                                    enabled,
-                                    choiceAt: now,
-                                    choiceSource: request.source,
-                                },
-                            });
-                    }
-                    const changedRows = await tx
-                        .select({
-                            id: conversationTable.id,
-                            slugId: conversationTable.slugId,
-                        })
-                        .from(conversationTable)
-                        .where(inArray(conversationTable.id, conversationIds));
+                            },
+                        });
                     return {
                         success: true,
                         result: {
                             operation: request.operation,
-                            projectPreference,
-                            conversationPreferences: changedRows.map((row) => ({
-                                conversationSlugId: row.slugId,
-                                state:
-                                    row.id === config.conversation_id &&
-                                    request.enabled
-                                        ? ("enabled" as const)
-                                        : ("disabled" as const),
-                            })),
+                            projectSlug: request.projectSlug,
+                            state: request.enabled ? "enabled" : "disabled",
                         },
                     };
-                });
-            } catch {
-                return {
-                    success: false,
-                    reason: "preference_conflict",
-                };
-            }
-        },
-
-        getConfiguration,
-
-        updateConfiguration: async ({ userId, request }) => {
-            try {
-                return await getPrimaryDatabase(db).transaction(async (tx) => {
-                    const now = new Date();
-                    if (request.target === "project") {
-                        const initialRow = await getProjectConfigurationRow({
-                            db: tx,
-                            projectSlug: request.projectSlug,
-                            now,
-                        });
-                        if (
-                            initialRow === undefined ||
-                            !(await lockProject({
-                                db: tx,
-                                projectId: initialRow.project_id,
-                            }))
-                        ) {
-                            return {
-                                success: false,
-                                reason: "target_not_found",
-                            };
-                        }
-                        const row = await getProjectConfigurationRow({
-                            db: tx,
-                            projectSlug: request.projectSlug,
-                            now,
-                        });
-                        if (row?.project_id !== initialRow.project_id) {
-                            return {
-                                success: false,
-                                reason: "target_not_found",
-                            };
-                        }
-                        const allowed =
-                            await hasConversationEmailUpdateCapability({
-                                db: tx,
-                                userId,
-                                projectId: row.project_id,
-                                now,
-                            });
-                        if (!row.feature_available || !allowed) {
-                            return {
-                                success: false,
-                                reason: "feature_not_available",
-                            };
-                        }
-                        if (
-                            request.defaultEnabled &&
-                            normalizeContactEmail(row.contact_email) ===
-                                undefined
-                        ) {
-                            return {
-                                success: false,
-                                reason: "missing_participant_contact_email",
-                            };
-                        }
-                        if (
-                            await hasActiveDelivery({
-                                db: tx,
-                                projectId: row.project_id,
-                            })
-                        ) {
-                            return {
-                                success: false,
-                                reason: "active_delivery_conflict",
-                            };
-                        }
-                        await tx
-                            .update(projectTable)
-                            .set({
-                                conversationEmailUpdateDefaultEnabled:
-                                    request.defaultEnabled,
-                                conversationEmailUpdateDefaultUpdatedAt: now,
-                                conversationEmailUpdateDefaultUpdatedByUserId:
-                                    userId,
-                            })
-                            .where(eq(projectTable.id, row.project_id));
-                    } else {
-                        const initialRow =
-                            await getConversationConfigurationRow({
-                                db: tx,
-                                conversationSlugId: request.conversationSlugId,
-                                now,
-                            });
-                        if (
-                            initialRow === undefined ||
-                            !(await lockProject({
-                                db: tx,
-                                projectId: initialRow.project_id,
-                            }))
-                        ) {
-                            return {
-                                success: false,
-                                reason: "target_not_found",
-                            };
-                        }
-                        const row = await getConversationConfigurationRow({
-                            db: tx,
-                            conversationSlugId: request.conversationSlugId,
-                            now,
-                        });
-                        if (row?.project_id !== initialRow.project_id) {
-                            return {
-                                success: false,
-                                reason: "target_not_found",
-                            };
-                        }
-                        const allowed =
-                            await hasConversationEmailUpdateCapability({
-                                db: tx,
-                                userId,
-                                projectId: row.project_id,
-                                now,
-                            });
-                        if (!row.feature_available || !allowed) {
-                            return {
-                                success: false,
-                                reason: "feature_not_available",
-                            };
-                        }
-                        const effectiveEnabled =
-                            request.setting === "enabled" ||
-                            (request.setting === "inherit" &&
-                                row.default_enabled);
-                        if (
-                            effectiveEnabled &&
-                            normalizeContactEmail(row.contact_email) ===
-                                undefined
-                        ) {
-                            return {
-                                success: false,
-                                reason: "missing_participant_contact_email",
-                            };
-                        }
-                        if (
-                            await hasActiveDelivery({
-                                db: tx,
-                                projectId: row.project_id,
-                            })
-                        ) {
-                            return {
-                                success: false,
-                                reason: "active_delivery_conflict",
-                            };
-                        }
-                        await tx
-                            .update(conversationTable)
-                            .set({
-                                conversationEmailUpdateEnabledOverride:
-                                    request.setting === "inherit"
-                                        ? null
-                                        : request.setting === "enabled",
-                                conversationEmailUpdateOverrideUpdatedAt: now,
-                                conversationEmailUpdateOverrideUpdatedByUserId:
-                                    userId,
-                            })
-                            .where(
-                                eq(conversationTable.id, row.conversation_id),
-                            );
-                    }
-                    const configuration = await getConfigurationWithDatabase({
-                        database: tx,
-                        userId,
-                        request,
-                    });
-                    return configuration.success
-                        ? configuration
-                        : { success: false, reason: "configuration_conflict" };
-                });
-            } catch {
-                return { success: false, reason: "configuration_conflict" };
-            }
-        },
-
-        getConversationSummary: async ({ userId, request }) => {
-            try {
-                const now = new Date();
-                const row = await getConversationConfigurationRow({
-                    db,
+                }
+                const config = await getConversationConfigurationRow({
+                    db: tx,
                     conversationSlugId: request.conversationSlugId,
                     now,
                 });
-                if (row === undefined) {
+                if (config === undefined) {
                     return {
                         success: false,
                         reason: "conversation_not_found",
                     };
                 }
-                if (!row.feature_available) {
+                if (!config.feature_available || config.safety_blocked) {
                     return {
                         success: false,
                         reason: "feature_not_available",
                     };
                 }
-                const [accessRows, primaryEmail, preferenceRows] =
-                    await Promise.all([
-                        listAuthorizedConversations({
-                            db,
-                            userId,
-                            now,
-                        }),
-                        getPrimaryEmail({ db, userId }),
-                        loadPreferenceRows({
-                            db,
-                            userId,
-                            now,
-                        }),
-                    ]);
-                const canAccessWorkspace = accessRows.some(
-                    (access) => access.conversation_id === row.conversation_id,
-                );
-                const conversationPreference =
-                    preferenceRows.conversationRows.find(
-                        (preference) =>
-                            preference.conversation_id === row.conversation_id,
-                    )?.enabled;
-                const projectPreference = preferenceRows.projectRows.find(
-                    (preference) => preference.project_id === row.project_id,
-                )?.enabled;
-                const state =
-                    conversationPreference === undefined
-                        ? "undisclosed"
-                        : conversationPreference
-                          ? "enabled"
-                          : "disabled";
-                const availability =
-                    resolveConversationEmailSendingAvailability({
-                        operationallyEnabled: sendingEnabled,
-                        featureAvailable: row.feature_available,
-                        safetyBlocked: row.safety_blocked,
-                        configuredEnabled:
-                            row.override_enabled ?? row.default_enabled,
-                        hasParticipantContactEmail:
-                            normalizeContactEmail(row.contact_email) !==
-                            undefined,
-                    });
-                return {
-                    success: true,
-                    authoringAction:
-                        resolveConversationEmailUpdateAuthoringAction({
-                            canAccessWorkspace,
-                            hasHistory: row.has_history,
-                        }),
-                    participantPreference:
-                        primaryEmail === undefined
-                            ? undefined
-                            : {
-                                  state,
-                                  resolvedEnabled:
-                                      resolveConversationEmailPreference({
-                                          globalPaused:
-                                              preferenceRows.globalPaused,
-                                          projectEnabled: projectPreference,
-                                          conversationEnabled:
-                                              conversationPreference,
-                                          scopeKind: row.scope_kind,
-                                      }),
-                                  onboardingAction:
-                                      resolveConversationEmailOnboardingAction({
-                                          hasVerifiedEmail: true,
-                                          preferenceState: state,
-                                          availability,
-                                          scope:
-                                              row.scope_kind === "project"
-                                                  ? {
-                                                        kind: "project",
-                                                        projectSlug:
-                                                            row.project_slug,
-                                                    }
-                                                  : {
-                                                        kind: "no_project",
-                                                        conversationSlugId:
-                                                            row.conversation_slug_id,
-                                                    },
-                                      }),
-                              },
-                };
-            } catch {
-                return { success: false, reason: "summary_unavailable" };
-            }
-        },
-
-        getProjectSummary: async ({ userId, request }) => {
-            try {
-                const now = new Date();
-                const configuration = await getProjectConfigurationRow({
-                    db,
-                    projectSlug: request.projectSlug,
-                    now,
-                });
-                if (
-                    configuration?.directory_visibility !== "listed" ||
-                    configuration.auto_provisioned_for_organization_id !== null
-                ) {
-                    return { success: false, reason: "project_not_found" };
-                }
-
-                const [
-                    accessRows,
-                    hasHistory,
-                    primaryEmail,
-                    globalPreferenceRows,
-                    projectPreferenceRows,
-                ] = await Promise.all([
-                    listAuthorizedConversations({
-                        db,
-                        userId,
-                        now,
-                        projectId: configuration.project_id,
-                    }),
-                    hasVisibleHistory({
-                        db,
-                        userId,
-                        context: {
-                            kind: "project",
-                            projectSlug: request.projectSlug,
-                        },
-                    }),
-                    getPrimaryEmail({ db, userId }),
-                    db
-                        .select({
-                            pausedAt:
-                                conversationEmailUpdateUserGlobalSettingTable.pausedAt,
-                        })
-                        .from(conversationEmailUpdateUserGlobalSettingTable)
-                        .where(
-                            eq(
-                                conversationEmailUpdateUserGlobalSettingTable.userId,
-                                userId,
-                            ),
-                        )
-                        .limit(1),
-                    db
+                let projectPreference:
+                    | { projectSlug: string; state: "enabled" }
+                    | undefined;
+                let conversationIds = [config.conversation_id];
+                if (request.enabled && config.scope_kind === "project") {
+                    const preferences = await tx
                         .select({
                             enabled:
                                 conversationEmailUpdateUserProjectPreferenceTable.enabled,
@@ -4339,56 +3942,479 @@ export function createConversationEmailUpdateService({
                                 ),
                                 eq(
                                     conversationEmailUpdateUserProjectPreferenceTable.projectId,
-                                    configuration.project_id,
+                                    config.project_id,
                                 ),
                             ),
                         )
-                        .limit(1),
-                ]);
-                const canAccessWorkspace = accessRows.length > 0;
-                if (!configuration.feature_available && !hasHistory) {
-                    return {
-                        success: false,
-                        reason: "feature_not_available",
-                    };
+                        .limit(1);
+                    if (preferences.at(0)?.enabled !== true) {
+                        await tx
+                            .insert(
+                                conversationEmailUpdateUserProjectPreferenceTable,
+                            )
+                            .values({
+                                userId,
+                                projectId: config.project_id,
+                                enabled: true,
+                                choiceAt: now,
+                                choiceSource: request.source,
+                            })
+                            .onConflictDoUpdate({
+                                target: [
+                                    conversationEmailUpdateUserProjectPreferenceTable.userId,
+                                    conversationEmailUpdateUserProjectPreferenceTable.projectId,
+                                ],
+                                set: {
+                                    enabled: true,
+                                    choiceAt: now,
+                                    choiceSource: request.source,
+                                },
+                            });
+                        projectPreference = {
+                            projectSlug: config.project_slug,
+                            state: "enabled",
+                        };
+                        const siblings = await tx
+                            .select({ id: conversationTable.id })
+                            .from(conversationTable)
+                            .where(
+                                and(
+                                    eq(
+                                        conversationTable.projectId,
+                                        config.project_id,
+                                    ),
+                                    isNotNull(
+                                        conversationTable.currentContentId,
+                                    ),
+                                ),
+                            );
+                        conversationIds = siblings.map((row) => row.id);
+                    }
                 }
-
-                const projectPreference = projectPreferenceRows.at(0)?.enabled;
-                const globalPaused =
-                    globalPreferenceRows.length > 0 &&
-                    globalPreferenceRows.at(0)?.pausedAt !== null;
-                const state =
-                    projectPreference === undefined
-                        ? "undisclosed"
-                        : projectPreference
-                          ? "enabled"
-                          : "disabled";
+                for (const conversationId of conversationIds) {
+                    const enabled =
+                        conversationId === config.conversation_id
+                            ? request.enabled
+                            : false;
+                    await tx
+                        .insert(
+                            conversationEmailUpdateUserConversationPreferenceTable,
+                        )
+                        .values({
+                            userId,
+                            conversationId,
+                            enabled,
+                            choiceAt: now,
+                            choiceSource: request.source,
+                        })
+                        .onConflictDoUpdate({
+                            target: [
+                                conversationEmailUpdateUserConversationPreferenceTable.userId,
+                                conversationEmailUpdateUserConversationPreferenceTable.conversationId,
+                            ],
+                            set: {
+                                enabled,
+                                choiceAt: now,
+                                choiceSource: request.source,
+                            },
+                        });
+                }
+                const changedRows = await tx
+                    .select({
+                        id: conversationTable.id,
+                        slugId: conversationTable.slugId,
+                    })
+                    .from(conversationTable)
+                    .where(inArray(conversationTable.id, conversationIds));
                 return {
                     success: true,
-                    authoringAction:
-                        resolveConversationEmailUpdateAuthoringAction({
-                            canAccessWorkspace,
-                            hasHistory,
-                        }),
-                    participantPreference:
-                        primaryEmail === undefined ||
-                        !configuration.feature_available ||
-                        configuration.safety_blocked
-                            ? undefined
-                            : {
-                                  state,
-                                  resolvedEnabled:
-                                      resolveConversationEmailPreference({
-                                          globalPaused,
-                                          projectEnabled: projectPreference,
-                                          conversationEnabled: undefined,
-                                          scopeKind: "project",
-                                      }),
-                              },
+                    result: {
+                        operation: request.operation,
+                        projectPreference,
+                        conversationPreferences: changedRows.map((row) => ({
+                            conversationSlugId: row.slugId,
+                            state:
+                                row.id === config.conversation_id &&
+                                request.enabled
+                                    ? ("enabled" as const)
+                                    : ("disabled" as const),
+                        })),
+                    },
                 };
-            } catch {
-                return { success: false, reason: "summary_unavailable" };
+            });
+        },
+
+        getConfiguration,
+
+        updateConfiguration: async ({ userId, request }) => {
+            return await getPrimaryDatabase(db).transaction(async (tx) => {
+                const now = new Date();
+                if (request.target === "project") {
+                    const initialRow = await getProjectConfigurationRow({
+                        db: tx,
+                        projectSlug: request.projectSlug,
+                        now,
+                    });
+                    if (
+                        initialRow === undefined ||
+                        !(await lockProject({
+                            db: tx,
+                            projectId: initialRow.project_id,
+                        }))
+                    ) {
+                        return {
+                            success: false,
+                            reason: "target_not_found",
+                        };
+                    }
+                    const row = await getProjectConfigurationRow({
+                        db: tx,
+                        projectSlug: request.projectSlug,
+                        now,
+                    });
+                    if (row?.project_id !== initialRow.project_id) {
+                        return {
+                            success: false,
+                            reason: "target_not_found",
+                        };
+                    }
+                    const allowed = await hasConversationEmailUpdateCapability({
+                        db: tx,
+                        userId,
+                        projectId: row.project_id,
+                        now,
+                    });
+                    if (!row.feature_available || !allowed) {
+                        return {
+                            success: false,
+                            reason: "feature_not_available",
+                        };
+                    }
+                    if (
+                        request.defaultEnabled &&
+                        normalizeContactEmail(row.contact_email) === undefined
+                    ) {
+                        return {
+                            success: false,
+                            reason: "missing_participant_contact_email",
+                        };
+                    }
+                    if (
+                        await hasActiveDelivery({
+                            db: tx,
+                            projectId: row.project_id,
+                        })
+                    ) {
+                        return {
+                            success: false,
+                            reason: "active_delivery_conflict",
+                        };
+                    }
+                    await tx
+                        .update(projectTable)
+                        .set({
+                            conversationEmailUpdateDefaultEnabled:
+                                request.defaultEnabled,
+                            conversationEmailUpdateDefaultUpdatedAt: now,
+                            conversationEmailUpdateDefaultUpdatedByUserId:
+                                userId,
+                        })
+                        .where(eq(projectTable.id, row.project_id));
+                } else {
+                    const initialRow = await getConversationConfigurationRow({
+                        db: tx,
+                        conversationSlugId: request.conversationSlugId,
+                        now,
+                    });
+                    if (
+                        initialRow === undefined ||
+                        !(await lockProject({
+                            db: tx,
+                            projectId: initialRow.project_id,
+                        }))
+                    ) {
+                        return {
+                            success: false,
+                            reason: "target_not_found",
+                        };
+                    }
+                    const row = await getConversationConfigurationRow({
+                        db: tx,
+                        conversationSlugId: request.conversationSlugId,
+                        now,
+                    });
+                    if (row?.project_id !== initialRow.project_id) {
+                        return {
+                            success: false,
+                            reason: "target_not_found",
+                        };
+                    }
+                    const allowed = await hasConversationEmailUpdateCapability({
+                        db: tx,
+                        userId,
+                        projectId: row.project_id,
+                        now,
+                    });
+                    if (!row.feature_available || !allowed) {
+                        return {
+                            success: false,
+                            reason: "feature_not_available",
+                        };
+                    }
+                    const effectiveEnabled =
+                        request.setting === "enabled" ||
+                        (request.setting === "inherit" && row.default_enabled);
+                    if (
+                        effectiveEnabled &&
+                        normalizeContactEmail(row.contact_email) === undefined
+                    ) {
+                        return {
+                            success: false,
+                            reason: "missing_participant_contact_email",
+                        };
+                    }
+                    if (
+                        await hasActiveDelivery({
+                            db: tx,
+                            projectId: row.project_id,
+                        })
+                    ) {
+                        return {
+                            success: false,
+                            reason: "active_delivery_conflict",
+                        };
+                    }
+                    await tx
+                        .update(conversationTable)
+                        .set({
+                            conversationEmailUpdateEnabledOverride:
+                                request.setting === "inherit"
+                                    ? null
+                                    : request.setting === "enabled",
+                            conversationEmailUpdateOverrideUpdatedAt: now,
+                            conversationEmailUpdateOverrideUpdatedByUserId:
+                                userId,
+                        })
+                        .where(eq(conversationTable.id, row.conversation_id));
+                }
+                const configuration = await getConfigurationWithDatabase({
+                    database: tx,
+                    userId,
+                    request,
+                });
+                return configuration.success
+                    ? configuration
+                    : { success: false, reason: "configuration_conflict" };
+            });
+        },
+
+        getConversationSummary: async ({ userId, request }) => {
+            const now = new Date();
+            const row = await getConversationConfigurationRow({
+                db,
+                conversationSlugId: request.conversationSlugId,
+                now,
+            });
+            if (row === undefined) {
+                return {
+                    success: false,
+                    reason: "conversation_not_found",
+                };
             }
+            if (!row.feature_available) {
+                return {
+                    success: false,
+                    reason: "feature_not_available",
+                };
+            }
+            const [accessRows, primaryEmail, preferenceRows] =
+                await Promise.all([
+                    listAuthorizedConversations({
+                        db,
+                        userId,
+                        now,
+                    }),
+                    getPrimaryEmail({ db, userId }),
+                    loadPreferenceRows({
+                        db,
+                        userId,
+                        now,
+                    }),
+                ]);
+            const canAccessWorkspace = accessRows.some(
+                (access) => access.conversation_id === row.conversation_id,
+            );
+            const conversationPreference = preferenceRows.conversationRows.find(
+                (preference) =>
+                    preference.conversation_id === row.conversation_id,
+            )?.enabled;
+            const projectPreference = preferenceRows.projectRows.find(
+                (preference) => preference.project_id === row.project_id,
+            )?.enabled;
+            const state =
+                conversationPreference === undefined
+                    ? "undisclosed"
+                    : conversationPreference
+                      ? "enabled"
+                      : "disabled";
+            const availability = resolveConversationEmailSendingAvailability({
+                operationallyEnabled: sendingEnabled,
+                featureAvailable: row.feature_available,
+                safetyBlocked: row.safety_blocked,
+                configuredEnabled: row.override_enabled ?? row.default_enabled,
+                hasParticipantContactEmail:
+                    normalizeContactEmail(row.contact_email) !== undefined,
+            });
+            return {
+                success: true,
+                authoringAction: resolveConversationEmailUpdateAuthoringAction({
+                    canAccessWorkspace,
+                    hasHistory: row.has_history,
+                }),
+                participantPreference:
+                    primaryEmail === undefined
+                        ? undefined
+                        : {
+                              state,
+                              resolvedEnabled:
+                                  resolveConversationEmailPreference({
+                                      globalPaused: preferenceRows.globalPaused,
+                                      projectEnabled: projectPreference,
+                                      conversationEnabled:
+                                          conversationPreference,
+                                      scopeKind: row.scope_kind,
+                                  }),
+                              onboardingAction:
+                                  resolveConversationEmailOnboardingAction({
+                                      hasVerifiedEmail: true,
+                                      preferenceState: state,
+                                      availability,
+                                      scope:
+                                          row.scope_kind === "project"
+                                              ? {
+                                                    kind: "project",
+                                                    projectSlug:
+                                                        row.project_slug,
+                                                }
+                                              : {
+                                                    kind: "no_project",
+                                                    conversationSlugId:
+                                                        row.conversation_slug_id,
+                                                },
+                                  }),
+                          },
+            };
+        },
+
+        getProjectSummary: async ({ userId, request }) => {
+            const now = new Date();
+            const configuration = await getProjectConfigurationRow({
+                db,
+                projectSlug: request.projectSlug,
+                now,
+            });
+            if (
+                configuration?.directory_visibility !== "listed" ||
+                configuration.auto_provisioned_for_organization_id !== null
+            ) {
+                return { success: false, reason: "project_not_found" };
+            }
+
+            const [
+                accessRows,
+                hasHistory,
+                primaryEmail,
+                globalPreferenceRows,
+                projectPreferenceRows,
+            ] = await Promise.all([
+                listAuthorizedConversations({
+                    db,
+                    userId,
+                    now,
+                    projectId: configuration.project_id,
+                }),
+                hasVisibleHistory({
+                    db,
+                    userId,
+                    context: {
+                        kind: "project",
+                        projectSlug: request.projectSlug,
+                    },
+                }),
+                getPrimaryEmail({ db, userId }),
+                db
+                    .select({
+                        pausedAt:
+                            conversationEmailUpdateUserGlobalSettingTable.pausedAt,
+                    })
+                    .from(conversationEmailUpdateUserGlobalSettingTable)
+                    .where(
+                        eq(
+                            conversationEmailUpdateUserGlobalSettingTable.userId,
+                            userId,
+                        ),
+                    )
+                    .limit(1),
+                db
+                    .select({
+                        enabled:
+                            conversationEmailUpdateUserProjectPreferenceTable.enabled,
+                    })
+                    .from(conversationEmailUpdateUserProjectPreferenceTable)
+                    .where(
+                        and(
+                            eq(
+                                conversationEmailUpdateUserProjectPreferenceTable.userId,
+                                userId,
+                            ),
+                            eq(
+                                conversationEmailUpdateUserProjectPreferenceTable.projectId,
+                                configuration.project_id,
+                            ),
+                        ),
+                    )
+                    .limit(1),
+            ]);
+            const canAccessWorkspace = accessRows.length > 0;
+            if (!configuration.feature_available && !hasHistory) {
+                return {
+                    success: false,
+                    reason: "feature_not_available",
+                };
+            }
+
+            const projectPreference = projectPreferenceRows.at(0)?.enabled;
+            const globalPaused =
+                globalPreferenceRows.length > 0 &&
+                globalPreferenceRows.at(0)?.pausedAt !== null;
+            const state =
+                projectPreference === undefined
+                    ? "undisclosed"
+                    : projectPreference
+                      ? "enabled"
+                      : "disabled";
+            return {
+                success: true,
+                authoringAction: resolveConversationEmailUpdateAuthoringAction({
+                    canAccessWorkspace,
+                    hasHistory,
+                }),
+                participantPreference:
+                    primaryEmail === undefined ||
+                    !configuration.feature_available ||
+                    configuration.safety_blocked
+                        ? undefined
+                        : {
+                              state,
+                              resolvedEnabled:
+                                  resolveConversationEmailPreference({
+                                      globalPaused,
+                                      projectEnabled: projectPreference,
+                                      conversationEnabled: undefined,
+                                      scopeKind: "project",
+                                  }),
+                          },
+            };
         },
     };
 }

@@ -216,7 +216,6 @@ async function loadAction({
 type ActionRow = NonNullable<Awaited<ReturnType<typeof loadAction>>>;
 
 function hasValidActionBinding(action: ActionRow): boolean {
-    if (action.recipient_kind !== "participant") return false;
     if (action.action === "unsubscribe_project") {
         return action.update_scope_kind === "listed_project";
     }

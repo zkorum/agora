@@ -3117,7 +3117,6 @@ export const ApiV1ConversationEmailUpdateAudienceEstimatePost200ResponseOneOf1Re
     ScopeNotFound: 'scope_not_found',
     ConversationNotInScope: 'conversation_not_in_scope',
     SendingDisabled: 'sending_disabled',
-    AudienceUnavailable: 'audience_unavailable',
 } as const;
 
 export type ApiV1ConversationEmailUpdateAudienceEstimatePost200ResponseOneOf1ReasonEnum = typeof ApiV1ConversationEmailUpdateAudienceEstimatePost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1ConversationEmailUpdateAudienceEstimatePost200ResponseOneOf1ReasonEnum];
@@ -3142,7 +3141,6 @@ export interface ApiV1ConversationEmailUpdateConfigurationGetPost200ResponseOneO
 export const ApiV1ConversationEmailUpdateConfigurationGetPost200ResponseOneOf1ReasonEnum = {
     TargetNotFound: 'target_not_found',
     FeatureNotAvailable: 'feature_not_available',
-    ConfigurationUnavailable: 'configuration_unavailable',
 } as const;
 
 export type ApiV1ConversationEmailUpdateConfigurationGetPost200ResponseOneOf1ReasonEnum = typeof ApiV1ConversationEmailUpdateConfigurationGetPost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1ConversationEmailUpdateConfigurationGetPost200ResponseOneOf1ReasonEnum];
@@ -3296,7 +3294,6 @@ export interface ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOf1 
 
 export const ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOf1ReasonEnum = {
     UpdateNotFound: 'update_not_found',
-    HistoryUnavailable: 'history_unavailable',
 } as const;
 
 export type ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOf1ReasonEnum = typeof ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1ConversationEmailUpdateHistoryDetailPost200ResponseOneOf1ReasonEnum];
@@ -3322,7 +3319,6 @@ export interface ApiV1ConversationEmailUpdateHistoryListPost200ResponseOneOf1 {
 export const ApiV1ConversationEmailUpdateHistoryListPost200ResponseOneOf1ReasonEnum = {
     ContextNotFound: 'context_not_found',
     InvalidCursor: 'invalid_cursor',
-    HistoryUnavailable: 'history_unavailable',
 } as const;
 
 export type ApiV1ConversationEmailUpdateHistoryListPost200ResponseOneOf1ReasonEnum = typeof ApiV1ConversationEmailUpdateHistoryListPost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1ConversationEmailUpdateHistoryListPost200ResponseOneOf1ReasonEnum];
@@ -3560,7 +3556,6 @@ export const ApiV1ConversationEmailUpdatePreferencesUpdatePost200ResponseOneOf1R
     ConversationNotFound: 'conversation_not_found',
     FeatureNotAvailable: 'feature_not_available',
     VerifiedEmailRequired: 'verified_email_required',
-    PreferenceConflict: 'preference_conflict',
 } as const;
 
 export type ApiV1ConversationEmailUpdatePreferencesUpdatePost200ResponseOneOf1ReasonEnum = typeof ApiV1ConversationEmailUpdatePreferencesUpdatePost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1ConversationEmailUpdatePreferencesUpdatePost200ResponseOneOf1ReasonEnum];
@@ -3706,7 +3701,7 @@ export const ApiV1ConversationEmailUpdateSendPost200ResponseOneOfReasonEnum = {
     TestNotAccepted: 'test_not_accepted',
     TestUsed: 'test_used',
     SendingDisabled: 'sending_disabled',
-    AudienceUnavailable: 'audience_unavailable',
+    NoEligibleParticipants: 'no_eligible_participants',
     DeliveryAlreadyActive: 'delivery_already_active',
     RequiredOwnerCopyUnavailable: 'required_owner_copy_unavailable',
 } as const;
@@ -3746,7 +3741,6 @@ export interface ApiV1ConversationEmailUpdateSummaryGetPost200ResponseOneOf1 {
 export const ApiV1ConversationEmailUpdateSummaryGetPost200ResponseOneOf1ReasonEnum = {
     ConversationNotFound: 'conversation_not_found',
     FeatureNotAvailable: 'feature_not_available',
-    SummaryUnavailable: 'summary_unavailable',
 } as const;
 
 export type ApiV1ConversationEmailUpdateSummaryGetPost200ResponseOneOf1ReasonEnum = typeof ApiV1ConversationEmailUpdateSummaryGetPost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1ConversationEmailUpdateSummaryGetPost200ResponseOneOf1ReasonEnum];
@@ -3797,7 +3791,7 @@ export type ApiV1ConversationEmailUpdateSummaryGetPost200ResponseOneOfParticipan
 /**
  * @type ApiV1ConversationEmailUpdateTestSendPost200Response
  */
-export type ApiV1ConversationEmailUpdateTestSendPost200Response = ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf | ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf1 | ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf2;
+export type ApiV1ConversationEmailUpdateTestSendPost200Response = ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf | ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf1;
 
 export interface ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf {
     'success': boolean;
@@ -3814,33 +3808,39 @@ export type ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOfStatusEnum =
 
 export interface ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf1 {
     'success': boolean;
-    'reason': ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf1ReasonEnum;
+    'error': ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf1Error;
+}
+/**
+ * @type ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf1Error
+ */
+export type ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf1Error = ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf1ErrorOneOf | ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf1ErrorOneOf1;
+
+export interface ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf1ErrorOneOf {
+    'reason': ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf1ErrorOneOfReasonEnum;
 }
 
-export const ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf1ReasonEnum = {
+export const ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf1ErrorOneOfReasonEnum = {
     ScopeNotFound: 'scope_not_found',
     ConversationNotInScope: 'conversation_not_in_scope',
     ContentInvalid: 'content_invalid',
     MissingParticipantContactEmail: 'missing_participant_contact_email',
     NoVerifiedTestEmail: 'no_verified_test_email',
+    NoEligibleParticipants: 'no_eligible_participants',
     SendingDisabled: 'sending_disabled',
-    AudienceUnavailable: 'audience_unavailable',
-    TestDeliveryFailed: 'test_delivery_failed',
 } as const;
 
-export type ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf1ReasonEnum = typeof ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf1ReasonEnum];
+export type ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf1ErrorOneOfReasonEnum = typeof ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf1ErrorOneOfReasonEnum[keyof typeof ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf1ErrorOneOfReasonEnum];
 
-export interface ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf2 {
-    'success': boolean;
-    'reason': ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf2ReasonEnum;
+export interface ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf1ErrorOneOf1 {
+    'reason': ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf1ErrorOneOf1ReasonEnum;
     'retryAt': string;
 }
 
-export const ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf2ReasonEnum = {
+export const ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf1ErrorOneOf1ReasonEnum = {
     TestRateLimited: 'test_rate_limited',
 } as const;
 
-export type ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf2ReasonEnum = typeof ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf2ReasonEnum[keyof typeof ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf2ReasonEnum];
+export type ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf1ErrorOneOf1ReasonEnum = typeof ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf1ErrorOneOf1ReasonEnum[keyof typeof ApiV1ConversationEmailUpdateTestSendPost200ResponseOneOf1ErrorOneOf1ReasonEnum];
 
 export interface ApiV1ConversationEmailUpdateTestSendPostRequest {
     'selection': ApiV1ConversationEmailUpdateWorkspaceGetPost200ResponseOneOfInitialSelection;
@@ -3909,6 +3909,7 @@ export type ApiV1ConversationEmailUpdateTestStatusPost200ResponseOneOfStatusOneO
 export const ApiV1ConversationEmailUpdateTestStatusPost200ResponseOneOfStatusOneOf2ReasonEnum = {
     RetryableRejected: 'retryable_rejected',
     PermanentRejected: 'permanent_rejected',
+    AuthorizationRejected: 'authorization_rejected',
     Unknown: 'unknown',
 } as const;
 
@@ -3926,6 +3927,7 @@ export interface ApiV1ConversationEmailUpdateWorkspaceGetPost200ResponseOneOf {
     'success': boolean;
     'resolvedContext': ApiV1ConversationEmailUpdateWorkspaceGetPostRequestContext;
     'initialSelection'?: ApiV1ConversationEmailUpdateWorkspaceGetPost200ResponseOneOfInitialSelection;
+    'testDestinationEmail'?: string;
     'scopes': Array<ApiV1ConversationEmailUpdateWorkspaceGetPost200ResponseOneOfScopesInner>;
 }
 export interface ApiV1ConversationEmailUpdateWorkspaceGetPost200ResponseOneOf1 {
@@ -3936,7 +3938,6 @@ export interface ApiV1ConversationEmailUpdateWorkspaceGetPost200ResponseOneOf1 {
 export const ApiV1ConversationEmailUpdateWorkspaceGetPost200ResponseOneOf1ReasonEnum = {
     ContextNotFound: 'context_not_found',
     FeatureNotAvailable: 'feature_not_available',
-    WorkspaceUnavailable: 'workspace_unavailable',
 } as const;
 
 export type ApiV1ConversationEmailUpdateWorkspaceGetPost200ResponseOneOf1ReasonEnum = typeof ApiV1ConversationEmailUpdateWorkspaceGetPost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1ConversationEmailUpdateWorkspaceGetPost200ResponseOneOf1ReasonEnum];
@@ -6807,7 +6808,6 @@ export interface ApiV1ProjectEmailUpdateSummaryGetPost200ResponseOneOf1 {
 export const ApiV1ProjectEmailUpdateSummaryGetPost200ResponseOneOf1ReasonEnum = {
     ProjectNotFound: 'project_not_found',
     FeatureNotAvailable: 'feature_not_available',
-    SummaryUnavailable: 'summary_unavailable',
 } as const;
 
 export type ApiV1ProjectEmailUpdateSummaryGetPost200ResponseOneOf1ReasonEnum = typeof ApiV1ProjectEmailUpdateSummaryGetPost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1ProjectEmailUpdateSummaryGetPost200ResponseOneOf1ReasonEnum];

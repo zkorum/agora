@@ -86,10 +86,7 @@ export function mapConversationEmailUpdateHistoryRecord(
     })),
     audienceEstimate: record.audienceEstimate,
     ownerCopyCount: record.ownerCopyCount,
-    createdAtLabel: new Intl.DateTimeFormat(undefined, {
-      dateStyle: "medium",
-      timeStyle: "short",
-    }).format(new Date(record.acceptedAt)),
+    acceptedAt: new Date(record.acceptedAt),
   };
 
   if (record.status === "failed") {

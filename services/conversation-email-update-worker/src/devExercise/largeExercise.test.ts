@@ -154,7 +154,7 @@ describe("large development exercise", () => {
                 deliveryAttemptOutcomeCounts: {
                     provider_accepted: finalObservations.length,
                 },
-                actionTokenCount: plan.participantCount * 3,
+                actionTokenCount: (plan.participantCount + 1) * 3,
                 providerMessageIds: snapshot.observations.flatMap(
                     (observation) =>
                         observation.providerMessageId === undefined

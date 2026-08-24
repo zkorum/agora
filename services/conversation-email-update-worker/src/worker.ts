@@ -306,7 +306,6 @@ export function createConversationEmailUpdateWorker({
             conversations,
             language: work.language,
             variant: "test",
-            actions: undefined,
         });
         if (
             !(await markTestAttempting({

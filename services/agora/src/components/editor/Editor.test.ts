@@ -18,11 +18,13 @@ const mountedApps: App[] = [];
 async function mountEditor({
   modelValue,
   singleLine,
+  placeholder = "Write here",
   submitOnShiftEnter = false,
   onSubmit = undefined,
 }: {
   modelValue: string;
   singleLine: boolean;
+  placeholder?: string;
   submitOnShiftEnter?: boolean;
   onSubmit?: () => void;
 }): Promise<HTMLElement> {
@@ -33,7 +35,7 @@ async function mountEditor({
     modelValue,
     plainText: "",
     showToolbar: false,
-    placeholder: "Write here",
+    placeholder,
     minHeight: "auto",
     disabled: false,
     singleLine,
@@ -135,6 +137,20 @@ afterEach(() => {
 });
 
 describe("Editor", () => {
+  it("preserves line breaks in a multiline placeholder", async () => {
+    const placeholder =
+      "Share an update:\n• Share results\n• Explain changes\n\nRemember the whole group.";
+    const editorElement = await mountEditor({
+      modelValue: "",
+      singleLine: false,
+      placeholder,
+    });
+
+    expect(editorElement.querySelector("p")?.dataset.placeholder).toBe(
+      placeholder
+    );
+  });
+
   it.each([
     { shortcut: "Tab", shiftKey: false },
     { shortcut: "Shift-Tab", shiftKey: true },

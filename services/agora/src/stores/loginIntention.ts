@@ -53,6 +53,7 @@ export type PossibleIntentions =
   | "newConversation"
   | "newOpinion"
   | "reportUserContent"
+  | "emailUpdates"
   | "settings";
 
 export const useLoginIntentionStore = defineStore("loginIntention", () => {
@@ -97,6 +98,8 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     routeContext: normalConversationRouteContext,
     eventSlug: undefined,
   };
+
+  let emailUpdatesReturnPath = "/email-updates/";
 
   function createVotingIntention(
     conversationSlugId: string,
@@ -162,6 +165,11 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     };
   }
 
+  function createEmailUpdatesIntention(returnPath: string): void {
+    emailUpdatesReturnPath = returnPath;
+    setActiveUserIntention("emailUpdates");
+  }
+
   function setActiveUserIntention(intention: PossibleIntentions) {
     activeUserIntention.value = intention;
   }
@@ -220,6 +228,9 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
           })
         );
         break;
+      case "emailUpdates":
+        await router.replace(emailUpdatesReturnPath);
+        break;
       case "settings":
         await router.replace({ name: "/settings/" });
         break;
@@ -263,7 +274,10 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
   function clearNewConversationIntention(): NewConversationIntention {
     if (completedUserLogin) {
       const savedIntention = newConversationIntention;
-      newConversationIntention = { ...newConversationIntention, enabled: false };
+      newConversationIntention = {
+        ...newConversationIntention,
+        enabled: false,
+      };
       showIntentionDialog(savedIntention.enabled, "newConversation");
       return savedIntention;
     } else {
@@ -349,6 +363,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     createNewConversationIntention,
     createNewOpinionIntention,
     createReportUserContentIntention,
+    createEmailUpdatesIntention,
     routeUserAfterLogin,
     clearNewOpinionIntention,
     clearNewConversationIntention,

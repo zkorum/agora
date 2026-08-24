@@ -2,8 +2,8 @@
   <q-card flat bordered class="composer-form">
     <q-card-section class="composer-form__heading">
       <div>
-        <p>Compose update</p>
-        <h2>Write once, deliver with each participant's context</h2>
+        <p>{{ t("composeUpdate") }}</p>
+        <h2>{{ t("heading") }}</h2>
       </div>
       <q-icon name="mdi-email-edit-outline" size="1.75rem" />
     </q-card-section>
@@ -16,9 +16,10 @@
         v-model:selected-conversation-ids="selectedConversationIds"
         :scopes="scopes"
         :updates-disabled-conversation-ids="updatesDisabledConversationIds"
+        :disabled="!authoringEnabled"
       />
 
-      <q-input :model-value="replyTo" outlined readonly label="Reply to" />
+      <q-input :model-value="replyTo" outlined readonly :label="replyToLabel" />
 
       <ZKInfoBanner
         v-if="emailReachWarning !== undefined"
@@ -26,37 +27,51 @@
       />
 
       <ZKInfoBanner
-        message="Keep this update strictly about the selected conversations. Advertising, fundraising, political campaigning, and unrelated promotion are not allowed."
-        variant="warning"
+        v-if="testDestinationEmail !== undefined"
+        :message="
+          t('testEmailNotice', {
+            email: testDestinationEmail,
+          })
+        "
+      />
+
+      <ZKInfoBanner
+        v-if="audienceEstimateAvailable && audienceEstimate === 0"
+        :message="t('zeroAudienceWarning')"
+        variant="error"
       />
 
       <q-input
         :model-value="subject"
         outlined
-        label="Subject"
-        :hint="`Maximum ${String(CONVERSATION_EMAIL_UPDATE_SUBJECT_MAX_LENGTH)} Unicode characters`"
+        :label="t('subjectLabel')"
+        :disable="!authoringEnabled"
+        :hint="subjectHint"
         @update:model-value="updateSubject"
       />
 
       <div class="composer-form__editor">
-        <label>Message</label>
+        <label>{{ t("messageLabel") }}</label>
         <Editor
           v-model="bodyHtml"
           v-model:plain-text="bodyPlainText"
           :show-toolbar="true"
-          placeholder="Share what happened, what was learned, and what comes next..."
+          :placeholder="t('editorPlaceholder')"
           min-height="12rem"
-          :disabled="false"
+          :disabled="!authoringEnabled"
           :single-line="false"
           :max-length="CONVERSATION_EMAIL_UPDATE_PLAIN_TEXT_MAX_LENGTH"
         />
       </div>
 
+      <ZKInfoBanner :message="t('policyWarning')" variant="warning" />
+
       <ZKCheckbox
         v-model="contentConfirmed"
-        label="I confirm this update follows the Email Update content rules"
+        :label="t('contentConfirmation')"
         :description="undefined"
         :required="true"
+        :disabled="!authoringEnabled"
       />
 
       <ZKInfoBanner
@@ -90,7 +105,8 @@
         button-type="standardButton"
         color="primary"
         icon-right="mdi-arrow-right"
-        label="Review and send"
+        :label="t('reviewAndSend')"
+        :loading="sendPending"
         :disable="!canSend"
         @click="emit('send')"
       />
@@ -106,6 +122,7 @@ import { hasConversationUpdatesPartialEmailReach } from "src/components/newConve
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKCheckbox from "src/components/ui-library/ZKCheckbox.vue";
 import ZKInfoBanner from "src/components/ui-library/ZKInfoBanner.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { validateRichTextInput } from "src/shared/richText";
 import {
   CONVERSATION_EMAIL_UPDATE_PLAIN_TEXT_MAX_LENGTH,
@@ -114,13 +131,21 @@ import {
 } from "src/shared/types/dto";
 import { computed, watch } from "vue";
 
+import {
+  type ConversationUpdateComposerFormTranslations,
+  conversationUpdateComposerFormTranslations,
+} from "./ConversationUpdateComposerForm.i18n";
+
 const props = defineProps<{
   scopes: readonly ConversationUpdateScopeSummary[];
   updatesDisabledConversationIds: readonly string[];
   testPending: boolean;
+  sendPending: boolean;
   notice: string | undefined;
   hasSuccessfulTest: boolean;
+  audienceEstimate: number;
   audienceEstimateAvailable: boolean;
+  testDestinationEmail: string | undefined;
   relatedConversationOwnerCount: number;
 }>();
 
@@ -142,9 +167,19 @@ const bodyPlainText = defineModel<string>("bodyPlainText", { required: true });
 const contentConfirmed = defineModel<boolean>("contentConfirmed", {
   required: true,
 });
+const { locale, t } =
+  useComponentI18n<ConversationUpdateComposerFormTranslations>(
+    conversationUpdateComposerFormTranslations
+  );
+const authoringEnabled = computed(
+  () => props.testDestinationEmail !== undefined
+);
 const canTest = computed(
   () =>
     !props.testPending &&
+    authoringEnabled.value &&
+    props.audienceEstimateAvailable &&
+    props.audienceEstimate > 0 &&
     selectedConversationIds.value.length > 0 &&
     selectedConversationIds.value.every(
       (conversationId) =>
@@ -159,8 +194,8 @@ const canTest = computed(
 const canSend = computed(
   () =>
     canTest.value &&
+    !props.sendPending &&
     props.hasSuccessfulTest &&
-    props.audienceEstimateAvailable &&
     contentConfirmed.value
 );
 const selectedConversations = computed(() => {
@@ -178,27 +213,42 @@ const replyTo = computed(
     props.scopes.find((scope) => scope.id === selectedScopeId.value)
       ?.contactEmail ?? ""
 );
+const replyToLabel = computed(() => {
+  const scope = props.scopes.find(
+    (candidate) => candidate.id === selectedScopeId.value
+  );
+  return scope?.kind === "no-project"
+    ? t("replyToConversation")
+    : t("replyToProject");
+});
+const subjectHint = computed(() =>
+  t("subjectHint", {
+    max: formatNumber(CONVERSATION_EMAIL_UPDATE_SUBJECT_MAX_LENGTH),
+  })
+);
 const emailReachWarning = computed<string | undefined>(() => {
-  const hasNonEmailRequirement = selectedConversations.value.some(
+  const optionalEmailConversationCount = selectedConversations.value.filter(
     (conversation) =>
       hasConversationUpdatesPartialEmailReach(conversation.participationMode)
-  );
-  return hasNonEmailRequirement
-    ? "These conversations do not require email. The estimate only includes participants who voluntarily verified an email in Settings and opted in."
-    : undefined;
+  ).length;
+  if (optionalEmailConversationCount === 0) {
+    return undefined;
+  }
+  return optionalEmailConversationCount === selectedConversations.value.length
+    ? t("optionalEmailAllWarning")
+    : t("optionalEmailSomeWarning");
 });
 const ownerCopyMessage = computed(() => {
   const count = props.relatedConversationOwnerCount;
-  const ownerLabel = count === 1 ? "owner" : "owners";
-  return `The real update will also be sent to ${String(count)} related conversation ${ownerLabel}. These required copies are sent before participant delivery.`;
+  return t(count === 1 ? "ownerCopySingular" : "ownerCopyPlural", {
+    count: formatNumber(count),
+  });
 });
 const testRequirementMessage = computed(() =>
-  props.hasSuccessfulTest
-    ? "This exact email version passed its test. Changing the scope, Reply-To, subject, or message requires another successful test."
-    : "Send a successful test email for this exact version before reviewing the real send."
+  props.hasSuccessfulTest ? t("testPassed") : t("testRequired")
 );
 const testButtonLabel = computed(() =>
-  props.hasSuccessfulTest ? "Send another test email" : "Send test email"
+  props.hasSuccessfulTest ? t("sendAnotherTest") : t("sendTest")
 );
 
 watch([selectedScopeId, selectedConversationIds, subject, bodyHtml], () => {
@@ -207,6 +257,10 @@ watch([selectedScopeId, selectedConversationIds, subject, bodyHtml], () => {
 
 function updateSubject(value: string | number | null): void {
   subject.value = value === null ? "" : String(value);
+}
+
+function formatNumber(value: number): string {
+  return new Intl.NumberFormat(locale.value).format(value);
 }
 </script>
 

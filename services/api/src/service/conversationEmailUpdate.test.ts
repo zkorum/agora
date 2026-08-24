@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { Dto } from "@/shared/types/dto.js";
 import {
     buildConversationEmailPreferenceGroups,
+    mapConversationEmailUpdateTestStatus,
+    mapInBatches,
     resolveCompleteOwnerSnapshots,
     resolveConversationEmailUpdateAuthoringAction,
+    resolveRequiredOwnerCopySet,
     type RequiredOwnerSnapshot,
 } from "./conversationEmailUpdate.js";
 import { resolveConversationEmailPreference } from "./conversationEmailUpdatePolicy.js";
@@ -30,6 +34,132 @@ describe("resolveConversationEmailUpdateAuthoringAction", () => {
                 hasHistory: false,
             }),
         ).toBe("none");
+    });
+});
+
+describe("conversationEmailUpdateSendTestResponse", () => {
+    it("parses expected test-send failures with a shared false discriminator", () => {
+        expect(
+            Dto.conversationEmailUpdateSendTestResponse.parse({
+                success: false,
+                error: { reason: "no_verified_test_email" },
+            }),
+        ).toEqual({
+            success: false,
+            error: { reason: "no_verified_test_email" },
+        });
+        expect(
+            Dto.conversationEmailUpdateSendTestResponse.parse({
+                success: false,
+                error: {
+                    reason: "test_rate_limited",
+                    retryAt: new Date("2026-08-24T12:00:00.000Z"),
+                },
+            }),
+        ).toEqual({
+            success: false,
+            error: {
+                reason: "test_rate_limited",
+                retryAt: new Date("2026-08-24T12:00:00.000Z"),
+            },
+        });
+        expect(
+            Dto.conversationEmailUpdateSendTestResponse.safeParse({
+                success: false,
+                error: { reason: "test_rate_limited" },
+            }).success,
+        ).toBe(false);
+    });
+});
+
+describe("conversationEmailUpdateTestStatusResponse", () => {
+    it("distinguishes local authorization failure from provider rejection", () => {
+        expect(
+            mapConversationEmailUpdateTestStatus({
+                status: "permanent_rejected",
+                finishedAt: new Date("2026-08-24T12:00:00.000Z"),
+                errorCode: "authorization_failed",
+            }),
+        ).toEqual({
+            state: "failed",
+            reason: "authorization_rejected",
+        });
+        expect(
+            mapConversationEmailUpdateTestStatus({
+                status: "permanent_rejected",
+                finishedAt: new Date("2026-08-24T12:00:00.000Z"),
+                errorCode: "provider_message_rejected",
+            }),
+        ).toEqual({ state: "failed", reason: "permanent_rejected" });
+    });
+
+    it("parses the typed authorization rejection response", () => {
+        expect(
+            Dto.conversationEmailUpdateTestStatusResponse.parse({
+                success: true,
+                status: {
+                    state: "failed",
+                    reason: "authorization_rejected",
+                },
+            }),
+        ).toEqual({
+            success: true,
+            status: {
+                state: "failed",
+                reason: "authorization_rejected",
+            },
+        });
+    });
+
+    it("requires a completion timestamp for provider acceptance", () => {
+        expect(
+            mapConversationEmailUpdateTestStatus({
+                status: "provider_accepted",
+                finishedAt: null,
+                errorCode: null,
+            }),
+        ).toBeUndefined();
+    });
+});
+
+describe("mapInBatches", () => {
+    it("bounds concurrency and preserves input order", async () => {
+        let active = 0;
+        let maximumActive = 0;
+        const outputs = await mapInBatches({
+            items: [1, 2, 3, 4, 5, 6, 7],
+            batchSize: 3,
+            map: async (item) => {
+                active += 1;
+                maximumActive = Math.max(maximumActive, active);
+                await new Promise((resolve) => {
+                    setTimeout(resolve, (4 - (item % 4)) * 2);
+                });
+                active -= 1;
+                return `item-${String(item)}`;
+            },
+        });
+
+        expect(maximumActive).toBe(3);
+        expect(outputs).toEqual([
+            "item-1",
+            "item-2",
+            "item-3",
+            "item-4",
+            "item-5",
+            "item-6",
+            "item-7",
+        ]);
+    });
+
+    it("rejects invalid batch sizes", async () => {
+        await expect(
+            mapInBatches({
+                items: [1],
+                batchSize: 0,
+                map: (item) => Promise.resolve(item),
+            }),
+        ).rejects.toThrow("batchSize must be a positive integer");
     });
 });
 
@@ -139,6 +269,39 @@ describe("resolveCompleteOwnerSnapshots", () => {
                 candidates: [ownerA, { ...ownerA, emailCredentialId: 3 }],
             }),
         ).toBeUndefined();
+    });
+});
+
+describe("resolveRequiredOwnerCopySet", () => {
+    const owner: RequiredOwnerSnapshot = {
+        userId: "owner-a",
+        emailCredentialId: 1,
+        email: "owner-a@example.com",
+        displayLanguage: "en",
+    };
+
+    it("retains each required owner ID once for participant exclusion", () => {
+        expect(
+            resolveRequiredOwnerCopySet({
+                requiredOwnerUserIds: ["owner-a", "owner-a"],
+                candidates: [owner],
+            }),
+        ).toEqual({
+            requiredOwnerUserIds: ["owner-a"],
+            ownerSnapshots: [owner],
+        });
+    });
+
+    it("retains required owner IDs when the strict copy gate fails", () => {
+        expect(
+            resolveRequiredOwnerCopySet({
+                requiredOwnerUserIds: ["owner-a", "owner-b"],
+                candidates: [owner],
+            }),
+        ).toEqual({
+            requiredOwnerUserIds: ["owner-a", "owner-b"],
+            ownerSnapshots: undefined,
+        });
     });
 });
 

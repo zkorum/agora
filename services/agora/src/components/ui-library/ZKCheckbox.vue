@@ -3,6 +3,7 @@
     <q-checkbox
       v-model="checked"
       color="primary"
+      :disable="disabled"
       :aria-describedby="description === undefined ? undefined : descriptionId"
     >
       <span>
@@ -26,6 +27,7 @@ defineProps<{
   label: string;
   description: string | undefined;
   required: boolean;
+  disabled: boolean;
 }>();
 
 const checked = defineModel<boolean>({ required: true });

@@ -35,27 +35,27 @@
             :text-direction="projectTextDirection"
           />
 
-          <div class="project-page-view__banner-actions">
-            <div
-              v-if="consultationStatus !== 'none'"
-              class="project-page-view__consultation-pill"
-              :class="consultationStatusClass"
-            >
-              <ZKLiveStatusDot
-                class="project-page-view__consultation-dot"
-                :active="consultationStatus === 'live'"
-                tone="positive"
-              />
-              {{ consultationStatusLabel }}
-            </div>
-            <ProjectEmailUpdatesMenu :project-slug="project.slug" />
+          <div
+            v-if="consultationStatus !== 'none'"
+            class="project-page-view__consultation-pill"
+            :class="consultationStatusClass"
+          >
+            <ZKLiveStatusDot
+              class="project-page-view__consultation-dot"
+              :active="consultationStatus === 'live'"
+              tone="positive"
+            />
+            {{ consultationStatusLabel }}
           </div>
         </div>
       </section>
 
       <div class="project-page-view__shell">
         <section class="project-page-view__intro">
-          <h1>{{ displayedProjectContent.title }}</h1>
+          <div class="project-page-view__title-row">
+            <h1>{{ displayedProjectContent.title }}</h1>
+            <ProjectEmailUpdatesMenu :project-slug="project.slug" />
+          </div>
           <p
             v-if="displayedProjectContent.subtitle !== undefined"
             class="project-page-view__subtitle"
@@ -421,12 +421,6 @@ main {
   white-space: nowrap;
 }
 
-.project-page-view__banner-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-}
-
 .project-page-view__consultation-dot {
   flex: none;
   width: 0.6rem;
@@ -448,6 +442,18 @@ main {
 .project-page-view__intro {
   max-width: 64rem;
   padding: clamp(1rem, 2.4vw, 1.6rem) 0 0;
+}
+
+.project-page-view__title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+
+  h1 {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
 }
 
 .project-page-view__section-heading p {

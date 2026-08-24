@@ -98,7 +98,10 @@
 import { storeToRefs } from "pinia";
 import { copyToClipboard, useQuasar } from "quasar";
 import PreParticipationIntentionDialog from "src/components/authentication/intention/PreParticipationIntentionDialog.vue";
-import { createConversationUpdatePreferenceAction } from "src/components/conversationUpdates/conversationUpdatePreferenceAction";
+import {
+  createConversationUpdatePreferenceAction,
+  resolveConversationUpdatePreferenceEnabled,
+} from "src/components/conversationUpdates/conversationUpdatePreferenceAction";
 import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue";
 import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
 import ZKActionDialog from "src/components/ui-library/ZKActionDialog.vue";
@@ -131,7 +134,7 @@ import {
 import { useEmbedMode } from "src/utils/ui/embedMode";
 import { useNotify } from "src/utils/ui/notify";
 import { useConversationUrl } from "src/utils/url/conversationUrl";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import {
@@ -403,6 +406,7 @@ const conversationEmailUpdateSummary = ref<
 >(undefined);
 const isSavingConversationEmailUpdatePreference = ref(false);
 let conversationEmailUpdateSummaryRequestId = 0;
+let conversationEmailUpdateMutationGeneration = 0;
 
 async function clickedMoreIcon(): Promise<void> {
   const showSyncGitHub =
@@ -452,18 +456,25 @@ async function clickedMoreIcon(): Promise<void> {
 
 async function loadConversationUpdateActions(): Promise<void> {
   const requestId = ++conversationEmailUpdateSummaryRequestId;
+  const conversationSlugId = props.postSlugId;
   try {
     const response = await conversationEmailUpdatesApi.getConversationSummary({
-      conversationSlugId: props.postSlugId,
+      conversationSlugId,
     });
-    if (requestId !== conversationEmailUpdateSummaryRequestId) {
+    if (
+      requestId !== conversationEmailUpdateSummaryRequestId ||
+      conversationSlugId !== props.postSlugId
+    ) {
       return;
     }
     conversationEmailUpdateSummary.value = response.success
       ? response
       : undefined;
   } catch (error) {
-    if (requestId !== conversationEmailUpdateSummaryRequestId) {
+    if (
+      requestId !== conversationEmailUpdateSummaryRequestId ||
+      conversationSlugId !== props.postSlugId
+    ) {
       return;
     }
     console.error("Failed to load Email Update conversation summary", error);
@@ -488,7 +499,10 @@ function addConversationUpdateActions(): void {
     const destinationTab = summary.authoringAction;
     additions.push({
       id: "manageConversationEmailUpdates",
-      label: t("emailUpdatesLabel"),
+      label:
+        destinationTab === "compose"
+          ? t("manageEmailUpdatesLabel")
+          : t("viewEmailUpdateHistoryLabel"),
       icon: "mdi-email-edit-outline",
       handler: () => {
         openConversationEmailUpdates(destinationTab);
@@ -499,19 +513,14 @@ function addConversationUpdateActions(): void {
 
   const participantPreference = summary?.participantPreference;
   if (participantPreference !== undefined) {
-    const enabled = participantPreference.resolvedEnabled;
-    const description =
-      participantPreference.state === "enabled"
-        ? t("emailUpdatesPreferenceOn")
-        : participantPreference.state === "disabled"
-          ? t("emailUpdatesPreferenceOff")
-          : t("emailUpdatesPreferenceUndisclosed");
+    const enabled = resolveConversationUpdatePreferenceEnabled(
+      participantPreference
+    );
     additions.push(
       createConversationUpdatePreferenceAction({
         id: "conversationEmailUpdates",
         label: t("receiveEmailUpdatesLabel"),
         enabled,
-        description,
         disabled: isSavingConversationEmailUpdatePreference.value,
         onToggle: () => {
           void updateConversationUpdatePreference(!enabled);
@@ -520,17 +529,17 @@ function addConversationUpdateActions(): void {
     );
   }
 
-  const destructiveIndex = existingActions.findIndex(
-    (action) => action.variant === "destructive"
+  const warningOrDestructiveIndex = existingActions.findIndex(
+    (action) => action.variant === "warning" || action.variant === "destructive"
   );
-  if (destructiveIndex === -1) {
+  if (warningOrDestructiveIndex === -1) {
     postActions.dialogState.value.actions = [...existingActions, ...additions];
     return;
   }
   postActions.dialogState.value.actions = [
-    ...existingActions.slice(0, destructiveIndex),
+    ...existingActions.slice(0, warningOrDestructiveIndex),
     ...additions,
-    ...existingActions.slice(destructiveIndex),
+    ...existingActions.slice(warningOrDestructiveIndex),
   ];
 }
 
@@ -545,6 +554,8 @@ async function updateConversationUpdatePreference(
   if (previousSummary === undefined || previousPreference === undefined) {
     return;
   }
+  const conversationSlugId = props.postSlugId;
+  const generation = ++conversationEmailUpdateMutationGeneration;
   conversationEmailUpdateSummaryRequestId += 1;
   isSavingConversationEmailUpdatePreference.value = true;
   conversationEmailUpdateSummary.value = {
@@ -559,25 +570,102 @@ async function updateConversationUpdatePreference(
   try {
     const response = await conversationEmailUpdatesApi.updatePreference({
       operation: "set_conversation_preference",
-      conversationSlugId: props.postSlugId,
+      conversationSlugId,
       enabled,
       source: "menu",
     });
-    if (!response.success) {
-      await loadConversationUpdateActions();
-      notify.showNotifyMessage(t("emailUpdatesPreferenceSaveError"));
+    if (
+      !isCurrentConversationEmailUpdateMutation({
+        generation,
+        conversationSlugId,
+      })
+    ) {
       return;
     }
-    await loadConversationUpdateActions();
+    if (
+      !response.success ||
+      response.result.operation !== "set_conversation_preference"
+    ) {
+      conversationEmailUpdateSummary.value = previousSummary;
+      notify.showNotifyMessage(t("emailUpdatesPreferenceSaveError"));
+      await loadConversationUpdateActions();
+      return;
+    }
+    const savedPreference = response.result.conversationPreferences.find(
+      (preference) => preference.conversationSlugId === conversationSlugId
+    );
+    if (savedPreference === undefined) {
+      conversationEmailUpdateSummary.value = previousSummary;
+      notify.showNotifyMessage(t("emailUpdatesPreferenceSaveError"));
+      await loadConversationUpdateActions();
+      return;
+    }
+    const currentSummary = conversationEmailUpdateSummary.value;
+    if (currentSummary?.participantPreference !== undefined) {
+      conversationEmailUpdateSummary.value = {
+        ...currentSummary,
+        participantPreference: {
+          ...currentSummary.participantPreference,
+          state: savedPreference.state,
+        },
+      };
+    }
+    notify.showNotifyMessage(
+      t(
+        savedPreference.state === "enabled"
+          ? "emailUpdatesPreferenceSaveEnabled"
+          : "emailUpdatesPreferenceSaveDisabled"
+      )
+    );
   } catch (error) {
+    if (
+      !isCurrentConversationEmailUpdateMutation({
+        generation,
+        conversationSlugId,
+      })
+    ) {
+      return;
+    }
     console.error("Failed to update Email Update preference", error);
-    await loadConversationUpdateActions();
+    conversationEmailUpdateSummary.value = previousSummary;
     notify.showNotifyMessage(t("emailUpdatesPreferenceSaveError"));
+    await loadConversationUpdateActions();
   } finally {
-    isSavingConversationEmailUpdatePreference.value = false;
-    addConversationUpdateActions();
+    if (
+      isCurrentConversationEmailUpdateMutation({
+        generation,
+        conversationSlugId,
+      })
+    ) {
+      isSavingConversationEmailUpdatePreference.value = false;
+      addConversationUpdateActions();
+    }
   }
 }
+
+function isCurrentConversationEmailUpdateMutation({
+  generation,
+  conversationSlugId,
+}: {
+  generation: number;
+  conversationSlugId: string;
+}): boolean {
+  return (
+    generation === conversationEmailUpdateMutationGeneration &&
+    conversationSlugId === props.postSlugId
+  );
+}
+
+watch(
+  () => props.postSlugId,
+  () => {
+    conversationEmailUpdateSummaryRequestId += 1;
+    conversationEmailUpdateMutationGeneration += 1;
+    conversationEmailUpdateSummary.value = undefined;
+    isSavingConversationEmailUpdatePreference.value = false;
+    postActions.closeDialog();
+  }
+);
 
 function openConversationEmailUpdates(tab: "compose" | "history"): void {
   void router.push({

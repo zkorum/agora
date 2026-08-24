@@ -1,10 +1,16 @@
+import {
+  type SupportedDisplayLanguageCodes,
+  ZodSupportedDisplayLanguageCodes,
+} from "src/shared/languages";
 import type {
   ConversationEmailUpdateHistoryRecord,
   ConversationEmailUpdateWorkspaceRequest,
 } from "src/shared/types/dto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { type App, createApp, defineComponent, h, type Ref, ref } from "vue";
+import { createI18n } from "vue-i18n";
 
+import { conversationUpdatesWorkspaceTranslations } from "./ConversationUpdatesWorkspace.i18n";
 import type { ConversationUpdateHistoryRecord } from "./conversationUpdateTypes";
 
 const api = vi.hoisted(() => ({
@@ -15,19 +21,38 @@ const api = vi.hoisted(() => ({
   send: vi.fn(),
   sendTest: vi.fn(),
 }));
+const showNotifyMessage = vi.hoisted(() => vi.fn());
 
 vi.mock("src/utils/api/conversationUpdates/conversationEmailUpdates", () => ({
   useBackendConversationEmailUpdatesApi: () => api,
 }));
+vi.mock("src/utils/ui/notify", () => ({
+  useNotify: () => ({ showNotifyMessage }),
+}));
+vi.mock("src/stores/loginIntention", () => ({
+  useLoginIntentionStore: () => ({ createEmailUpdatesIntention: vi.fn() }),
+}));
+vi.mock("src/stores/onboarding/flow", () => ({
+  onboardingFlowStore: () => ({ onboardingMode: "LOGIN" }),
+}));
+vi.mock("vue-router", () => ({
+  useRoute: () => ({ fullPath: "/email-updates/?tab=compose" }),
+  useRouter: () => ({ push: vi.fn() }),
+}));
 vi.mock("./ConversationUpdateComposerForm.vue", () => ({
   default: defineComponent({
     name: "ConversationUpdateComposerForm",
-    emits: ["test", "send"],
+    emits: ["test", "send", "update:contentConfirmed"],
     setup(_props, { emit }) {
       return () =>
         h("div", [
           h("button", { onClick: () => emit("test") }, "Send test"),
           h("button", { onClick: () => emit("send") }, "Open send"),
+          h(
+            "button",
+            { onClick: () => emit("update:contentConfirmed", true) },
+            "Confirm content"
+          ),
         ]);
     },
   }),
@@ -76,10 +101,21 @@ vi.mock("src/components/ui-library/ZKInfoBanner.vue", () => ({
 vi.mock("src/components/ui-library/ZKConfirmDialog.vue", () => ({
   default: defineComponent({
     name: "ZKConfirmDialog",
+    props: {
+      title: { type: String, required: true },
+      confirmText: { type: String, required: true },
+      cancelText: { type: String, required: true },
+    },
     emits: ["confirm"],
-    setup(_props, { emit }) {
+    setup(props, { emit, slots }) {
       return () =>
-        h("button", { onClick: () => emit("confirm") }, "Confirm send");
+        h("div", [
+          h("span", props.title),
+          h("span", props.confirmText),
+          h("span", props.cancelText),
+          slots.default?.(),
+          h("button", { onClick: () => emit("confirm") }, "Confirm send"),
+        ]);
     },
   }),
 }));
@@ -105,6 +141,7 @@ beforeEach(() => {
   for (const mock of Object.values(api)) {
     mock.mockReset();
   }
+  showNotifyMessage.mockReset();
   api.estimateAudience.mockResolvedValue({
     success: true,
     estimatedEligibleRecipientCount: 10,
@@ -125,6 +162,61 @@ afterEach(() => {
 });
 
 describe("ConversationUpdatesWorkspace", () => {
+  it("renders workspace copy in the active display language", async () => {
+    api.getWorkspace.mockResolvedValue(workspaceResponse({ kind: "global" }));
+    api.listHistory.mockResolvedValue({
+      success: true,
+      items: [],
+      nextCursor: "next-page",
+    });
+    api.estimateAudience.mockResolvedValue({
+      success: true,
+      estimatedEligibleRecipientCount: 12_345,
+      requiredOwnerCopyCount: 1,
+    });
+
+    const { container } = mountComponent({
+      context: ref({ kind: "global" }),
+      initialTab: "compose",
+      locale: "es",
+    });
+    await flushAudienceEstimate();
+
+    expect(container.textContent).toContain(
+      "Mantén conectados a los participantes con el trabajo al que se unieron"
+    );
+    expect(container.textContent).toContain("Redactar");
+    expect(container.textContent).toContain("Historial");
+    expect(container.textContent).toContain(
+      "Actualmente hay 12.345 destinatarios aptos"
+    );
+    expect(container.textContent).not.toContain(
+      "Keep participants connected to the work they joined"
+    );
+  });
+
+  it("formats a test retry date using the active display locale", async () => {
+    const retryAt = new Date("2026-08-24T12:34:00.000Z");
+    api.getWorkspace.mockResolvedValue(workspaceResponse({ kind: "global" }));
+    api.sendTest.mockResolvedValue({
+      success: false,
+      error: { reason: "test_rate_limited", retryAt },
+    });
+
+    const { container } = mountComponent({
+      context: ref({ kind: "global" }),
+      initialTab: "compose",
+      locale: "es",
+    });
+    await flushAudienceEstimate();
+    getButton(container, "Send test").click();
+    await flushPromises();
+
+    expect(showNotifyMessage).toHaveBeenCalledWith(
+      `Se solicitaron demasiados correos de prueba. Inténtalo de nuevo después de ${retryAt.toLocaleString("es")}.`
+    );
+  });
+
   it("loads subsequent history pages with the returned cursor", async () => {
     api.getWorkspace.mockResolvedValue(workspaceResponse({ kind: "global" }));
     api.listHistory
@@ -254,7 +346,7 @@ describe("ConversationUpdatesWorkspace", () => {
     api.sendTest.mockReturnValue(testResponse.promise);
 
     const { container } = mountComponent({ context });
-    await flushPromises();
+    await flushAudienceEstimate();
     getButton(container, "Send test").click();
     await flushPromises();
 
@@ -290,13 +382,210 @@ describe("ConversationUpdatesWorkspace", () => {
     const { container } = mountComponent({
       context: ref({ kind: "global" }),
     });
-    await flushPromises();
+    await flushAudienceEstimate();
     const sendTestButton = getButton(container, "Send test");
     sendTestButton.click();
     sendTestButton.click();
     await flushPromises();
 
     expect(api.sendTest).toHaveBeenCalledOnce();
+  });
+
+  it("submits only one final send while the request is pending", async () => {
+    api.getWorkspace.mockResolvedValue(workspaceResponse({ kind: "global" }));
+    api.sendTest.mockResolvedValue({
+      success: true,
+      updateId: "00000000-0000-4000-8000-000000000010",
+      testAttemptId: "00000000-0000-4000-8000-000000000011",
+      status: "pending",
+    });
+    api.getTestStatus.mockResolvedValue({
+      success: true,
+      status: {
+        state: "provider_accepted",
+        providerAcceptedAt: new Date("2026-08-24T12:00:00.000Z"),
+      },
+    });
+    api.send.mockReturnValue(new Promise(() => undefined));
+
+    const { container } = mountComponent({
+      context: ref({ kind: "global" }),
+      initialTab: "compose",
+    });
+    await flushAudienceEstimate();
+    getButton(container, "Send test").click();
+    await new Promise((resolve) => window.setTimeout(resolve, 1_600));
+    await flushPromises();
+    getButton(container, "Confirm content").click();
+    getButton(container, "Open send").click();
+    const confirmButton = getButton(container, "Confirm send");
+    confirmButton.click();
+    confirmButton.click();
+    await flushPromises();
+
+    expect(api.send).toHaveBeenCalledOnce();
+  });
+
+  it("does not queue a test without a verified facilitator email", async () => {
+    api.getWorkspace.mockResolvedValue({
+      ...workspaceResponse({ kind: "global" }),
+      testDestinationEmail: undefined,
+    });
+
+    const { container } = mountComponent({
+      context: ref({ kind: "global" }),
+      initialTab: "compose",
+    });
+    await flushAudienceEstimate();
+    getButton(container, "Send test").click();
+    await flushPromises();
+
+    expect(api.sendTest).not.toHaveBeenCalled();
+    expect(api.estimateAudience).not.toHaveBeenCalled();
+  });
+
+  it("debounces audience estimates when the workspace context changes", async () => {
+    const context = ref<ConversationEmailUpdateWorkspaceRequest["context"]>({
+      kind: "global",
+    });
+    api.getWorkspace.mockImplementation(({ context: requestContext }) =>
+      Promise.resolve(workspaceResponse(requestContext))
+    );
+
+    mountComponent({ context, initialTab: "compose" });
+    await flushPromises();
+    context.value = {
+      kind: "conversation",
+      conversationSlugId: "new-conversation",
+    };
+    await flushAudienceEstimate();
+
+    expect(api.estimateAudience).toHaveBeenCalledOnce();
+    expect(api.estimateAudience).toHaveBeenCalledWith({
+      request: {
+        selection: {
+          kind: "project",
+          projectSlug: "workspace-project",
+          conversationSlugIds: ["new-conversation"],
+        },
+      },
+      signal: expect.any(AbortSignal),
+    });
+  });
+
+  it("does not queue a test for an empty eligible audience", async () => {
+    api.getWorkspace.mockResolvedValue(workspaceResponse({ kind: "global" }));
+    api.estimateAudience.mockResolvedValue({
+      success: true,
+      estimatedEligibleRecipientCount: 0,
+      requiredOwnerCopyCount: 1,
+    });
+
+    const { container } = mountComponent({
+      context: ref({ kind: "global" }),
+      initialTab: "compose",
+    });
+    await flushAudienceEstimate();
+    getButton(container, "Send test").click();
+    await flushPromises();
+
+    expect(api.sendTest).not.toHaveBeenCalled();
+  });
+
+  it("shows test failures as temporary notifications", async () => {
+    api.getWorkspace.mockResolvedValue(workspaceResponse({ kind: "global" }));
+    api.sendTest.mockResolvedValue({
+      success: false,
+      error: { reason: "no_verified_test_email" },
+    });
+
+    const { container } = mountComponent({
+      context: ref({ kind: "global" }),
+      initialTab: "compose",
+    });
+    await flushAudienceEstimate();
+    getButton(container, "Send test").click();
+    await flushPromises();
+
+    expect(showNotifyMessage).toHaveBeenCalledWith(
+      "Verify an email address before sending a test email."
+    );
+    getButton(container, "Send test").click();
+    await flushPromises();
+
+    expect(api.sendTest).toHaveBeenCalledOnce();
+  });
+
+  it("explains when a test was not sent after authorization became unavailable", async () => {
+    api.getWorkspace.mockResolvedValue(workspaceResponse({ kind: "global" }));
+    api.sendTest.mockResolvedValue({
+      success: true,
+      updateId: "00000000-0000-4000-8000-000000000010",
+      testAttemptId: "00000000-0000-4000-8000-000000000011",
+      status: "pending",
+    });
+    api.getTestStatus.mockResolvedValue({
+      success: true,
+      status: {
+        state: "failed",
+        reason: "authorization_rejected",
+      },
+    });
+
+    const { container } = mountComponent({
+      context: ref({ kind: "global" }),
+      initialTab: "compose",
+    });
+    await flushAudienceEstimate();
+    getButton(container, "Send test").click();
+    await new Promise((resolve) => window.setTimeout(resolve, 1_600));
+    await flushPromises();
+
+    expect(showNotifyMessage).toHaveBeenCalledWith(
+      "The test email was not sent because its destination or sending authorization was no longer available."
+    );
+  });
+
+  it("blocks another final send when the eligible audience becomes empty", async () => {
+    api.getWorkspace.mockResolvedValue(workspaceResponse({ kind: "global" }));
+    api.sendTest.mockResolvedValue({
+      success: true,
+      updateId: "00000000-0000-4000-8000-000000000010",
+      testAttemptId: "00000000-0000-4000-8000-000000000011",
+      status: "pending",
+    });
+    api.getTestStatus.mockResolvedValue({
+      success: true,
+      status: {
+        state: "provider_accepted",
+        providerAcceptedAt: new Date("2026-08-24T12:00:00.000Z"),
+      },
+    });
+    api.send.mockResolvedValue({
+      success: false,
+      reason: "no_eligible_participants",
+    });
+
+    const { container } = mountComponent({
+      context: ref({ kind: "global" }),
+      initialTab: "compose",
+    });
+    await flushAudienceEstimate();
+    getButton(container, "Send test").click();
+    await new Promise((resolve) => window.setTimeout(resolve, 1_600));
+    await flushPromises();
+    getButton(container, "Confirm content").click();
+    getButton(container, "Open send").click();
+    getButton(container, "Confirm send").click();
+    await flushPromises();
+
+    expect(showNotifyMessage).toHaveBeenCalledWith(
+      "No participants are currently eligible to receive this email."
+    );
+    getButton(container, "Confirm send").click();
+    await flushPromises();
+
+    expect(api.send).toHaveBeenCalledOnce();
   });
 
   it("does not load history while opening the composer", async () => {
@@ -312,12 +601,31 @@ describe("ConversationUpdatesWorkspace", () => {
   });
 });
 
+describe("conversationUpdatesWorkspaceTranslations", () => {
+  it("provides the authorization failure message in every display language", () => {
+    expect(
+      Object.keys(conversationUpdatesWorkspaceTranslations).sort()
+    ).toEqual([...ZodSupportedDisplayLanguageCodes.options].sort());
+
+    for (const translations of Object.values(
+      conversationUpdatesWorkspaceTranslations
+    )) {
+      expect(translations.testDeliveryAuthorization.trim()).not.toBe("");
+      expect(translations.testDeliveryAuthorization).not.toBe(
+        translations.testDeliveryPermanent
+      );
+    }
+  });
+});
+
 function mountComponent({
   context,
   initialTab = "history",
+  locale = "en",
 }: {
   context: Ref<ConversationEmailUpdateWorkspaceRequest["context"]>;
   initialTab?: "compose" | "history";
+  locale?: SupportedDisplayLanguageCodes;
 }): { container: HTMLElement } {
   const container = document.createElement("div");
   document.body.append(container);
@@ -329,6 +637,13 @@ function mountComponent({
       })
   );
   const app = createApp(root);
+  app.use(
+    createI18n({
+      legacy: false,
+      locale,
+      messages: {},
+    })
+  );
   const slotStub = defineComponent(
     (_props, { slots }) =>
       () =>
@@ -339,7 +654,12 @@ function mountComponent({
   app.component("QTabPanel", slotStub);
   app.component(
     "QTab",
-    defineComponent(() => () => null)
+    defineComponent({
+      props: { label: { type: String, required: true } },
+      setup(props) {
+        return () => h("span", props.label);
+      },
+    })
   );
   app.component(
     "QIcon",
@@ -362,6 +682,7 @@ function workspaceResponse(
   return {
     success: true as const,
     resolvedContext: context,
+    testDestinationEmail: "facilitator@example.com",
     initialSelection: {
       kind: "project" as const,
       projectSlug,
@@ -420,6 +741,12 @@ function getButton(container: HTMLElement, label: string): HTMLButtonElement {
 
 async function flushPromises(): Promise<void> {
   await new Promise((resolve) => window.setTimeout(resolve, 0));
+}
+
+async function flushAudienceEstimate(): Promise<void> {
+  await flushPromises();
+  await new Promise((resolve) => window.setTimeout(resolve, 300));
+  await flushPromises();
 }
 
 function deferred<T>(): {

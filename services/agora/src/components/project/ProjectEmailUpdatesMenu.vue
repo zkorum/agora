@@ -3,10 +3,11 @@
     v-if="actions.length > 0"
     button-type="icon"
     flat
-    color="white"
-    icon="mdi-dots-horizontal"
+    text-color="color-text-weak"
+    icon="mdi-dots-vertical"
+    size="0.656rem"
     :aria-label="t('projectActions')"
-    @click="showDialog = true"
+    @click.stop.prevent="showDialog = true"
   />
 
   <ZKActionDialog
@@ -20,7 +21,10 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
-import { createConversationUpdatePreferenceAction } from "src/components/conversationUpdates/conversationUpdatePreferenceAction";
+import {
+  createConversationUpdatePreferenceAction,
+  resolveConversationUpdatePreferenceEnabled,
+} from "src/components/conversationUpdates/conversationUpdatePreferenceAction";
 import ZKActionDialog from "src/components/ui-library/ZKActionDialog.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
@@ -58,6 +62,7 @@ const summary =
     Extract<ConversationEmailUpdateProjectSummaryResponse, { success: true }>
   >();
 let summaryRequestId = 0;
+let preferenceMutationGeneration = 0;
 
 const actionContext: ContentActionContext = {
   isOwner: false,
@@ -80,20 +85,13 @@ const actions = computed<ContentAction[]>(() => {
   const projectActions: ContentAction[] = [];
   const participantPreference = currentSummary.participantPreference;
   if (participantPreference !== undefined) {
-    const preferenceEnabled = participantPreference.state === "enabled";
-    const description =
-      participantPreference.state === "enabled"
-        ? participantPreference.resolvedEnabled
-          ? t("preferenceOn")
-          : t("preferenceOnPaused")
-        : participantPreference.state === "disabled"
-          ? t("preferenceOff")
-          : t("preferenceDefault");
+    const preferenceEnabled = resolveConversationUpdatePreferenceEnabled(
+      participantPreference
+    );
     projectActions.push(
       createConversationUpdatePreferenceAction({
         id: "projectEmailUpdatePreference",
         label: t("receiveUpdates"),
-        description,
         disabled: isSavingPreference.value,
         enabled: preferenceEnabled,
         onToggle: () => {
@@ -107,11 +105,7 @@ const actions = computed<ContentAction[]>(() => {
     const tab = currentSummary.authoringAction;
     projectActions.push({
       id: "projectEmailUpdateWorkspace",
-      label: tab === "compose" ? t("sendUpdate") : t("updateHistory"),
-      description:
-        tab === "compose"
-          ? t("sendUpdateDescription")
-          : t("updateHistoryDescription"),
+      label: tab === "compose" ? t("manageUpdates") : t("viewHistory"),
       icon: tab === "compose" ? "mdi-email-edit-outline" : "mdi-history",
       trailingIcon: $q.lang.rtl ? "mdi-chevron-left" : "mdi-chevron-right",
       to: {
@@ -127,6 +121,7 @@ const actions = computed<ContentAction[]>(() => {
 
 async function loadSummary(): Promise<void> {
   const requestId = ++summaryRequestId;
+  const projectSlug = props.projectSlug;
   if (!isLoggedIn.value) {
     summary.value = undefined;
     return;
@@ -134,15 +129,15 @@ async function loadSummary(): Promise<void> {
 
   try {
     const response = await emailUpdatesApi.getProjectSummary({
-      projectSlug: props.projectSlug,
+      projectSlug,
     });
-    if (requestId !== summaryRequestId) {
+    if (requestId !== summaryRequestId || projectSlug !== props.projectSlug) {
       return;
     }
     summary.value = response.success ? response : undefined;
   } catch (error) {
     console.error("Failed to load project Email Update actions", error);
-    if (requestId === summaryRequestId) {
+    if (requestId === summaryRequestId && projectSlug === props.projectSlug) {
       summary.value = undefined;
     }
   }
@@ -153,36 +148,82 @@ async function updatePreference(enabled: boolean): Promise<void> {
     return;
   }
 
+  const previousSummary = summary.value;
+  const previousPreference = previousSummary?.participantPreference;
+  if (previousSummary === undefined || previousPreference === undefined) {
+    return;
+  }
+
+  const projectSlug = props.projectSlug;
+  const generation = ++preferenceMutationGeneration;
+  summaryRequestId += 1;
   isSavingPreference.value = true;
+  summary.value = {
+    ...previousSummary,
+    participantPreference: {
+      ...previousPreference,
+      state: enabled ? "enabled" : "disabled",
+    },
+  };
   try {
     const response = await emailUpdatesApi.updatePreference({
       operation: "set_project_preference",
-      projectSlug: props.projectSlug,
+      projectSlug,
       enabled,
       source: "menu",
     });
-    if (!response.success) {
-      notify.showNotifyMessage(t("saveError"));
+    if (!isCurrentPreferenceMutation({ generation, projectSlug })) {
       return;
     }
-    if (response.result.operation === "set_project_preference") {
-      const currentSummary = summary.value;
-      if (currentSummary?.participantPreference !== undefined) {
-        summary.value = {
-          ...currentSummary,
-          participantPreference: {
-            ...currentSummary.participantPreference,
-            state: response.result.state,
-          },
-        };
-      }
+    if (
+      !response.success ||
+      response.result.operation !== "set_project_preference" ||
+      response.result.projectSlug !== projectSlug
+    ) {
+      summary.value = previousSummary;
+      notify.showNotifyMessage(t("saveError"));
+      await loadSummary();
+      return;
     }
+    const currentSummary = summary.value;
+    if (currentSummary?.participantPreference !== undefined) {
+      summary.value = {
+        ...currentSummary,
+        participantPreference: {
+          ...currentSummary.participantPreference,
+          state: response.result.state,
+        },
+      };
+    }
+    notify.showNotifyMessage(
+      t(response.result.state === "enabled" ? "saveEnabled" : "saveDisabled")
+    );
   } catch (error) {
+    if (!isCurrentPreferenceMutation({ generation, projectSlug })) {
+      return;
+    }
     console.error("Failed to update project Email Update preference", error);
+    summary.value = previousSummary;
     notify.showNotifyMessage(t("saveError"));
+    await loadSummary();
   } finally {
-    isSavingPreference.value = false;
+    if (isCurrentPreferenceMutation({ generation, projectSlug })) {
+      isSavingPreference.value = false;
+    }
   }
+}
+
+function isCurrentPreferenceMutation({
+  generation,
+  projectSlug,
+}: {
+  generation: number;
+  projectSlug: string;
+}): boolean {
+  return (
+    generation === preferenceMutationGeneration &&
+    projectSlug === props.projectSlug
+  );
 }
 
 async function handleActionSelected(action: ContentAction): Promise<void> {
@@ -194,18 +235,12 @@ async function handleActionSelected(action: ContentAction): Promise<void> {
 watch(
   [() => props.projectSlug, isLoggedIn],
   () => {
+    preferenceMutationGeneration += 1;
+    isSavingPreference.value = false;
+    summary.value = undefined;
+    showDialog.value = false;
     void loadSummary();
   },
   { immediate: true }
 );
 </script>
-
-<style scoped lang="scss">
-:deep(.quasarBtn) {
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 999px;
-  background: rgba($ink-base, 0.78);
-  box-shadow: 0 0.25rem 1rem rgba(10, 7, 20, 0.14);
-}
-</style>

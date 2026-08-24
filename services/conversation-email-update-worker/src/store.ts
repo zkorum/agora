@@ -178,6 +178,101 @@ export function deliveryUpdateIsExclusiveToConversation({
     );
 }
 
+export function testAttemptHasNoActiveSuppressions({
+    db,
+}: {
+    db: PostgresDatabase;
+}) {
+    const activeUserComplaint = db
+        .select({ id: conversationEmailUpdateUserComplaintSuppressionTable.id })
+        .from(conversationEmailUpdateUserComplaintSuppressionTable)
+        .where(
+            and(
+                eq(
+                    conversationEmailUpdateUserComplaintSuppressionTable.userId,
+                    conversationEmailUpdateTestAttemptTable.requestedByUserId,
+                ),
+                isNull(
+                    conversationEmailUpdateUserComplaintSuppressionTable.liftedAt,
+                ),
+            ),
+        );
+    const activeEmailSuppression = db
+        .select({ id: conversationEmailUpdateEmailSuppressionTable.id })
+        .from(conversationEmailUpdateEmailSuppressionTable)
+        .where(
+            and(
+                eq(
+                    conversationEmailUpdateEmailSuppressionTable.canonicalEmail,
+                    conversationEmailUpdateTestAttemptTable.destinationEmailSnapshot,
+                ),
+                isNull(conversationEmailUpdateEmailSuppressionTable.liftedAt),
+            ),
+        );
+    return and(
+        notExists(activeUserComplaint),
+        notExists(activeEmailSuppression),
+    );
+}
+
+export function activeOwnerAuthorizationQuery({
+    db,
+    userId,
+    projectId,
+}: {
+    db: PostgresDatabase;
+    userId: string;
+    projectId: number;
+}) {
+    return db
+        .select({ id: organizationMembershipTable.id })
+        .from(organizationMembershipTable)
+        .innerJoin(
+            organizationTable,
+            and(
+                eq(
+                    organizationTable.id,
+                    organizationMembershipTable.organizationId,
+                ),
+                isNull(organizationTable.deletedAt),
+            ),
+        )
+        .innerJoin(
+            projectOrganizationOwnershipTable,
+            and(
+                eq(
+                    projectOrganizationOwnershipTable.organizationId,
+                    organizationTable.id,
+                ),
+                eq(projectOrganizationOwnershipTable.projectId, projectId),
+                isNull(projectOrganizationOwnershipTable.deletedAt),
+            ),
+        )
+        .innerJoin(
+            organizationMembershipAllProjectCapabilityTable,
+            and(
+                eq(
+                    organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
+                    organizationMembershipTable.id,
+                ),
+                eq(
+                    organizationMembershipAllProjectCapabilityTable.capability,
+                    "conversation_email_update",
+                ),
+                isNull(
+                    organizationMembershipAllProjectCapabilityTable.deletedAt,
+                ),
+            ),
+        )
+        .where(
+            and(
+                eq(organizationMembershipTable.userId, userId),
+                isNull(organizationMembershipTable.deletedAt),
+            ),
+        )
+        .limit(1);
+}
+
 export async function claimTestAttempts({
     db,
     workerId,
@@ -582,6 +677,7 @@ export async function authorizeTestAttempt({
                 ),
                 exists(membershipCapability),
                 notExists(activeSafetyBlock),
+                testAttemptHasNoActiveSuppressions({ db }),
             ),
         );
     const authorized = await db
@@ -2102,7 +2198,7 @@ export async function claimRecipients({
     });
 }
 
-export interface AuthorizedRecipient {
+interface AuthorizedRecipientCommon {
     recipientId: bigint;
     deliveryId: number;
     updateId: number;
@@ -2117,21 +2213,35 @@ export interface AuthorizedRecipient {
     replyToName: string;
     replyToEmail: string;
     language: SupportedDisplayLanguageCodes;
-    kind: "participant" | "conversation_owner_copy";
     projectId: number;
     authorizingOrganizationId: number;
     scopeKind: "listed_project" | "no_project";
     conversations: ConversationLink[];
-    actions: ConversationEmailActionLinks | undefined;
-    unsubscribeUrl: string | undefined;
-    actionTokens:
-        | {
-              unsubscribeHash: string;
-              manageHash: string;
-              reportHash: string;
-          }
-        | undefined;
 }
+
+interface RecipientActionDetailsCommon {
+    actions: ConversationEmailActionLinks;
+    actionTokens: {
+        unsubscribeHash: string;
+        manageHash: string;
+        reportHash: string;
+    };
+}
+
+type RecipientActionDetails = RecipientActionDetailsCommon &
+    (
+        | {
+              kind: "participant";
+              unsubscribeUrl: string;
+          }
+        | {
+              kind: "conversation_owner_copy";
+              unsubscribeUrl: undefined;
+          }
+    );
+
+export type AuthorizedRecipient = AuthorizedRecipientCommon &
+    RecipientActionDetails;
 
 function createActionToken(): { raw: string; hash: string } {
     const raw = randomBytes(32).toString("base64url");
@@ -2139,6 +2249,47 @@ function createActionToken(): { raw: string; hash: string } {
         raw,
         hash: createHash("sha256").update(raw).digest("hex"),
     };
+}
+
+export function createRecipientActions({
+    siteBaseUrl,
+    kind,
+    scopeKind,
+}: {
+    siteBaseUrl: string;
+    kind: AuthorizedRecipient["kind"];
+    scopeKind: AuthorizedRecipient["scopeKind"];
+}): RecipientActionDetails {
+    const unsubscribe = createActionToken();
+    const manage = createActionToken();
+    const report = createActionToken();
+    const actionUrls = buildConversationEmailActionUrls({
+        siteBaseUrl,
+        unsubscribeToken: unsubscribe.raw,
+        manageToken: manage.raw,
+        reportToken: report.raw,
+    });
+    const actionDetails: RecipientActionDetailsCommon = {
+        actions: {
+            unsubscribeScope:
+                scopeKind === "listed_project" ? "project" : "conversation",
+            unsubscribeUrl: actionUrls.visibleUnsubscribeUrl,
+            manageUrl: actionUrls.manageUrl,
+            reportUrl: actionUrls.reportUrl,
+        },
+        actionTokens: {
+            unsubscribeHash: unsubscribe.hash,
+            manageHash: manage.hash,
+            reportHash: report.hash,
+        },
+    };
+    return kind === "participant"
+        ? {
+              ...actionDetails,
+              kind,
+              unsubscribeUrl: actionUrls.oneClickUnsubscribeUrl,
+          }
+        : { ...actionDetails, kind, unsubscribeUrl: undefined };
 }
 
 export async function authorizeRecipientSend({
@@ -2275,6 +2426,22 @@ export async function authorizeRecipientSend({
                 reason: "account_ineligible",
             });
             return undefined;
+        }
+        if (recipient.kind === "conversation_owner_copy") {
+            const activeOwnerAuthorization =
+                await activeOwnerAuthorizationQuery({
+                    db: tx,
+                    userId: recipient.userId,
+                    projectId: recipient.projectId,
+                });
+            if (activeOwnerAuthorization.length === 0) {
+                await skipClaimedRecipient({
+                    tx,
+                    claimed,
+                    reason: "account_ineligible",
+                });
+                return undefined;
+            }
         }
         const validCredential = await tx
             .select({ id: emailTable.id })
@@ -2502,31 +2669,11 @@ export async function authorizeRecipientSend({
 
         const attemptNumber = recipient.attemptCount + 1;
         const attemptPublicId = randomUUID();
-        let actions: ConversationEmailActionLinks | undefined;
-        let unsubscribeUrl: string | undefined;
-        let actionTokens: AuthorizedRecipient["actionTokens"];
-        if (recipient.kind === "participant") {
-            const unsubscribe = createActionToken();
-            const manage = createActionToken();
-            const report = createActionToken();
-            actionTokens = {
-                unsubscribeHash: unsubscribe.hash,
-                manageHash: manage.hash,
-                reportHash: report.hash,
-            };
-            const actionUrls = buildConversationEmailActionUrls({
-                siteBaseUrl,
-                unsubscribeToken: unsubscribe.raw,
-                manageToken: manage.raw,
-                reportToken: report.raw,
-            });
-            unsubscribeUrl = actionUrls.oneClickUnsubscribeUrl;
-            actions = {
-                unsubscribeUrl: actionUrls.visibleUnsubscribeUrl,
-                manageUrl: actionUrls.manageUrl,
-                reportUrl: actionUrls.reportUrl,
-            };
-        }
+        const actionDetails = createRecipientActions({
+            siteBaseUrl,
+            kind: recipient.kind,
+            scopeKind: recipient.scopeKind,
+        });
         const authorized: AuthorizedRecipient = {
             recipientId: recipient.recipientId,
             deliveryId: recipient.deliveryId,
@@ -2542,7 +2689,6 @@ export async function authorizeRecipientSend({
             replyToName: recipient.replyToName,
             replyToEmail: recipient.replyToEmail,
             language: recipient.language,
-            kind: recipient.kind,
             projectId: recipient.projectId,
             authorizingOrganizationId: recipient.authorizingOrganizationId,
             scopeKind: recipient.scopeKind,
@@ -2552,9 +2698,7 @@ export async function authorizeRecipientSend({
                 recipientId: recipient.recipientId,
                 siteBaseUrl,
             }),
-            actions,
-            unsubscribeUrl,
-            actionTokens,
+            ...actionDetails,
         };
         if (
             !(await markRecipientAttempting({
@@ -2622,31 +2766,29 @@ async function markRecipientAttempting({
         outcome: "send_authorized",
         authorizedAt: currentTimestamp(),
     });
-    if (authorized.actionTokens !== undefined) {
-        await tx.insert(conversationEmailUpdateActionTokenTable).values([
-            {
-                tokenHash: authorized.actionTokens.unsubscribeHash,
-                recipientId: authorized.recipientId,
-                action:
-                    authorized.scopeKind === "listed_project"
-                        ? "unsubscribe_project"
-                        : "unsubscribe_conversation",
-                expiresAt: sql<Date>`now() + interval '365 days'`,
-            },
-            {
-                tokenHash: authorized.actionTokens.manageHash,
-                recipientId: authorized.recipientId,
-                action: "manage_preferences",
-                expiresAt: sql<Date>`now() + interval '90 days'`,
-            },
-            {
-                tokenHash: authorized.actionTokens.reportHash,
-                recipientId: authorized.recipientId,
-                action: "report",
-                expiresAt: sql<Date>`now() + interval '90 days'`,
-            },
-        ]);
-    }
+    await tx.insert(conversationEmailUpdateActionTokenTable).values([
+        {
+            tokenHash: authorized.actionTokens.unsubscribeHash,
+            recipientId: authorized.recipientId,
+            action:
+                authorized.scopeKind === "listed_project"
+                    ? "unsubscribe_project"
+                    : "unsubscribe_conversation",
+            expiresAt: sql<Date>`now() + interval '365 days'`,
+        },
+        {
+            tokenHash: authorized.actionTokens.manageHash,
+            recipientId: authorized.recipientId,
+            action: "manage_preferences",
+            expiresAt: sql<Date>`now() + interval '90 days'`,
+        },
+        {
+            tokenHash: authorized.actionTokens.reportHash,
+            recipientId: authorized.recipientId,
+            action: "report",
+            expiresAt: sql<Date>`now() + interval '90 days'`,
+        },
+    ]);
     return true;
 }
 

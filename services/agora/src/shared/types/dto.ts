@@ -3025,6 +3025,7 @@ export class Dto {
                     resolvedContext: zodConversationEmailUpdateContext,
                     initialSelection:
                         zodConversationEmailUpdateSelection.optional(),
+                    testDestinationEmail: zodEmail.optional(),
                     scopes: z.array(zodConversationEmailUpdateScope),
                 })
                 .strict(),
@@ -3034,7 +3035,6 @@ export class Dto {
                     reason: z.enum([
                         "context_not_found",
                         "feature_not_available",
-                        "workspace_unavailable",
                     ]),
                 })
                 .strict(),
@@ -3063,7 +3063,6 @@ export class Dto {
                     reason: z.enum([
                         "context_not_found",
                         "invalid_cursor",
-                        "history_unavailable",
                     ]),
                 })
                 .strict(),
@@ -3084,7 +3083,7 @@ export class Dto {
             z
                 .object({
                     success: z.literal(false),
-                    reason: z.enum(["update_not_found", "history_unavailable"]),
+                    reason: z.literal("update_not_found"),
                 })
                 .strict(),
         ],
@@ -3113,7 +3112,6 @@ export class Dto {
                         "scope_not_found",
                         "conversation_not_in_scope",
                         "sending_disabled",
-                        "audience_unavailable",
                     ]),
                 })
                 .strict(),
@@ -3148,23 +3146,27 @@ export class Dto {
             z
                 .object({
                     success: z.literal(false),
-                    reason: z.enum([
-                        "scope_not_found",
-                        "conversation_not_in_scope",
-                        "content_invalid",
-                        "missing_participant_contact_email",
-                        "no_verified_test_email",
-                        "sending_disabled",
-                        "audience_unavailable",
-                        "test_delivery_failed",
+                    error: z.discriminatedUnion("reason", [
+                        z
+                            .object({
+                                reason: z.enum([
+                                    "scope_not_found",
+                                    "conversation_not_in_scope",
+                                    "content_invalid",
+                                    "missing_participant_contact_email",
+                                    "no_verified_test_email",
+                                    "no_eligible_participants",
+                                    "sending_disabled",
+                                ]),
+                            })
+                            .strict(),
+                        z
+                            .object({
+                                reason: z.literal("test_rate_limited"),
+                                retryAt: zodDateTimeFlexible,
+                            })
+                            .strict(),
                     ]),
-                })
-                .strict(),
-            z
-                .object({
-                    success: z.literal(false),
-                    reason: z.literal("test_rate_limited"),
-                    retryAt: zodDateTimeFlexible,
                 })
                 .strict(),
         ],
@@ -3200,6 +3202,7 @@ export class Dto {
                                 reason: z.enum([
                                     "retryable_rejected",
                                     "permanent_rejected",
+                                    "authorization_rejected",
                                     "unknown",
                                 ]),
                             })
@@ -3247,7 +3250,7 @@ export class Dto {
                         "test_not_accepted",
                         "test_used",
                         "sending_disabled",
-                        "audience_unavailable",
+                        "no_eligible_participants",
                         "delivery_already_active",
                         "required_owner_copy_unavailable",
                     ]),
@@ -3361,7 +3364,6 @@ export class Dto {
                         "conversation_not_found",
                         "feature_not_available",
                         "verified_email_required",
-                        "preference_conflict",
                     ]),
                 })
                 .strict(),
@@ -3398,7 +3400,6 @@ export class Dto {
                     reason: z.enum([
                         "target_not_found",
                         "feature_not_available",
-                        "configuration_unavailable",
                     ]),
                 })
                 .strict(),
@@ -3490,7 +3491,6 @@ export class Dto {
                     reason: z.enum([
                         "conversation_not_found",
                         "feature_not_available",
-                        "summary_unavailable",
                     ]),
                 })
                 .strict(),
@@ -3522,7 +3522,6 @@ export class Dto {
                     reason: z.enum([
                         "project_not_found",
                         "feature_not_available",
-                        "summary_unavailable",
                     ]),
                 })
                 .strict(),
