@@ -72,11 +72,11 @@ import type {
   ConversationEmailUpdatePreferenceGroup,
 } from "src/shared/types/dto";
 
+import ConversationUpdatePreferenceAvatar from "./ConversationUpdatePreferenceAvatar.vue";
 import {
   type ConversationUpdatePreferenceControlsTranslations,
   conversationUpdatePreferenceControlsTranslations,
 } from "./conversationUpdatePreferenceControls.i18n";
-import ConversationUpdatePreferenceAvatar from "./ConversationUpdatePreferenceAvatar.vue";
 import ConversationUpdatePreferenceRow from "./ConversationUpdatePreferenceRow.vue";
 import type {
   ConversationEmailUpdatePreference,

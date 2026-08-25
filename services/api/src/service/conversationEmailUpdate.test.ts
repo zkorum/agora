@@ -8,6 +8,7 @@ import {
     resolveCompleteOwnerSnapshots,
     resolveConversationEmailUpdateAuthoringAction,
     resolveConversationEmailUpdateWorkspaceContext,
+    resolvePreferenceAvatar,
     resolveRequiredOwnerCopySet,
     type RequiredOwnerSnapshot,
 } from "./conversationEmailUpdate.js";
@@ -414,6 +415,58 @@ describe("resolveRequiredOwnerCopySet", () => {
     });
 });
 
+describe("resolvePreferenceAvatar", () => {
+    it("uses the personal username and resolves its relative image path", () => {
+        expect(
+            resolvePreferenceAvatar({
+                source: {
+                    organizationId: 3,
+                    organizationDisplayName: "Personal Workspace",
+                    organizationImagePath: "/owners/alex.png",
+                    organizationIsFullImagePath: false,
+                    organizationDeletedAt: null,
+                    username: "alex",
+                    externalOrganizationId: null,
+                    externalDisplayName: null,
+                    externalImagePath: null,
+                    externalIsFullImagePath: null,
+                    externalDeletedAt: null,
+                },
+                baseImageServiceUrl: "https://images.example",
+            }),
+        ).toEqual({
+            kind: "user",
+            displayName: "alex",
+            imageUrl: "https://images.example/owners/alex.png",
+        });
+    });
+
+    it("uses an external project-owner organization", () => {
+        expect(
+            resolvePreferenceAvatar({
+                source: {
+                    organizationId: null,
+                    organizationDisplayName: null,
+                    organizationImagePath: null,
+                    organizationIsFullImagePath: null,
+                    organizationDeletedAt: null,
+                    username: null,
+                    externalOrganizationId: 4,
+                    externalDisplayName: "External Owner",
+                    externalImagePath: "https://cdn.example/owner.png",
+                    externalIsFullImagePath: true,
+                    externalDeletedAt: null,
+                },
+                baseImageServiceUrl: "https://images.example",
+            }),
+        ).toEqual({
+            kind: "organization",
+            displayName: "External Owner",
+            imageUrl: "https://cdn.example/owner.png",
+        });
+    });
+});
+
 describe("buildConversationEmailPreferenceGroups", () => {
     it("includes conversations inheriting a project preference", () => {
         const groups = buildConversationEmailPreferenceGroups({
@@ -442,7 +495,6 @@ describe("buildConversationEmailPreferenceGroups", () => {
                     project_id: 7,
                     project_slug: "public-plan",
                     project_title: "Public Plan",
-                    auto_provisioned_for_organization_id: null,
                     scope_kind: "project",
                     conversation_id: 11,
                     conversation_slug_id: "child001",
@@ -489,7 +541,6 @@ describe("buildConversationEmailPreferenceGroups", () => {
                     project_id: 7,
                     project_slug: "public-plan",
                     project_title: "Public Plan",
-                    auto_provisioned_for_organization_id: null,
                     scope_kind: "project",
                     conversation_id: 11,
                     conversation_slug_id: "child001",
@@ -524,7 +575,6 @@ describe("buildConversationEmailPreferenceGroups", () => {
                     project_id: 7,
                     project_slug: "public-plan",
                     project_title: "Public Plan",
-                    auto_provisioned_for_organization_id: null,
                     scope_kind: "project",
                     conversation_id: 11,
                     conversation_slug_id: "child001",
@@ -574,7 +624,6 @@ describe("buildConversationEmailPreferenceGroups", () => {
                     project_id: 9,
                     project_slug: "personal",
                     project_title: "Personal",
-                    auto_provisioned_for_organization_id: 5,
                     scope_kind: "no_project",
                     conversation_id: 12,
                     conversation_slug_id: "direct01",

@@ -2489,8 +2489,6 @@ async function queryPreferenceConversations({
             project_id: row.project_id,
             project_slug: row.project_slug,
             project_title: row.project_title,
-            auto_provisioned_for_organization_id:
-                row.auto_provisioned_for_organization_id,
             scope_kind: scopeKind,
             conversation_id: row.conversation_id,
             conversation_slug_id: row.conversation_slug_id,
@@ -2528,7 +2526,7 @@ interface PreferenceAvatarSource {
     externalDeletedAt: Date | null;
 }
 
-function resolvePreferenceAvatar({
+export function resolvePreferenceAvatar({
     source,
     baseImageServiceUrl,
 }: {
@@ -2574,10 +2572,12 @@ function resolvePreferenceAvatar({
 async function loadPreferenceOwnerByProjectId({
     db,
     projectIds,
+    noProjectProjectIds,
     baseImageServiceUrl,
 }: {
     db: PostgresJsDatabase;
     projectIds: readonly number[];
+    noProjectProjectIds: ReadonlySet<number>;
     baseImageServiceUrl: string;
 }): Promise<
     ReadonlyMap<number, ConversationEmailUpdatePreferenceAvatar>
@@ -2689,7 +2689,12 @@ async function loadPreferenceOwnerByProjectId({
         ConversationEmailUpdatePreferenceAvatar
     >();
     for (const row of attributionRows) {
-        if (ownerByProjectId.has(row.projectId)) continue;
+        if (
+            noProjectProjectIds.has(row.projectId) ||
+            ownerByProjectId.has(row.projectId)
+        ) {
+            continue;
+        }
         const owner = resolvePreferenceAvatar({
             source: row,
             baseImageServiceUrl,
@@ -2753,6 +2758,11 @@ async function loadPreferenceRows({
             ...projectRows.map((row) => row.project_id),
             ...conversationRows.map((row) => row.project_id),
         ],
+        noProjectProjectIds: new Set(
+            conversationRows.flatMap((row) =>
+                row.scope_kind === "no_project" ? [row.project_id] : [],
+            ),
+        ),
         baseImageServiceUrl,
     });
     return {

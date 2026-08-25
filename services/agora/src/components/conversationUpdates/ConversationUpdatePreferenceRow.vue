@@ -38,14 +38,14 @@
 import SpaLink from "src/components/ui-library/SpaLink.vue";
 import ZKSwitch from "src/components/ui-library/ZKSwitch.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { ConversationEmailUpdatePreferenceAvatar } from "src/shared/types/dto";
 
+import ConversationUpdatePreferenceAvatar from "./ConversationUpdatePreferenceAvatar.vue";
 import {
   type ConversationUpdatePreferenceControlsTranslations,
   conversationUpdatePreferenceControlsTranslations,
 } from "./conversationUpdatePreferenceControls.i18n";
-import ConversationUpdatePreferenceAvatar from "./ConversationUpdatePreferenceAvatar.vue";
 import type { ConversationEmailUpdatePreference } from "./conversationUpdatePreferenceTypes";
-import type { ConversationEmailUpdatePreferenceAvatar } from "src/shared/types/dto";
 
 defineProps<{
   conversation: ConversationEmailUpdatePreference;

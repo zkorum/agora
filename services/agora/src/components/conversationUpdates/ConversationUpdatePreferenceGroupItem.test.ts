@@ -121,10 +121,6 @@ const projectGroup = {
       state: "enabled",
       resolvedEnabled: true,
       availability: "available",
-      owner: {
-        kind: "user",
-        displayName: "standalone-owner",
-      },
     },
   ],
 } satisfies ProjectEmailUpdatePreferenceGroup;
@@ -139,6 +135,10 @@ const noProjectGroup = {
       state: "enabled",
       resolvedEnabled: true,
       availability: "available",
+      owner: {
+        kind: "user",
+        displayName: "standalone-owner",
+      },
     },
   ],
 } satisfies ConversationEmailUpdatePreferenceGroup;
