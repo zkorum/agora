@@ -2,14 +2,156 @@ import { describe, expect, it } from "vitest";
 import { Dto } from "@/shared/types/dto.js";
 import {
     buildConversationEmailPreferenceGroups,
+    isConversationEmailUpdateWorkspaceContextRepresented,
     mapConversationEmailUpdateTestStatus,
-    mapInBatches,
     resolveCompleteOwnerSnapshots,
     resolveConversationEmailUpdateAuthoringAction,
+    resolveConversationEmailUpdateWorkspaceContext,
     resolveRequiredOwnerCopySet,
     type RequiredOwnerSnapshot,
 } from "./conversationEmailUpdate.js";
 import { resolveConversationEmailPreference } from "./conversationEmailUpdatePolicy.js";
+
+const workspaceRows = [
+    {
+        scope_kind: "project" as const,
+        project_slug: "listed-project",
+        conversation_slug_id: "listconv01",
+    },
+    {
+        scope_kind: "no_project" as const,
+        project_slug: "internal-container",
+        conversation_slug_id: "standconv1",
+    },
+];
+
+describe("resolveConversationEmailUpdateWorkspaceContext", () => {
+    it("keeps all authorized scopes available from a project composer", () => {
+        expect(
+            resolveConversationEmailUpdateWorkspaceContext({
+                rows: workspaceRows,
+                context: { kind: "project", projectSlug: "listed-project" },
+            }),
+        ).toEqual({ initialSelection: undefined });
+    });
+
+    it("keeps all authorized scopes while preselecting a conversation", () => {
+        expect(
+            resolveConversationEmailUpdateWorkspaceContext({
+                rows: workspaceRows,
+                context: {
+                    kind: "conversation",
+                    conversationSlugId: "standconv1",
+                },
+            }),
+        ).toEqual({
+            initialSelection: {
+                kind: "no_project",
+                conversationSlugId: "standconv1",
+            },
+        });
+    });
+
+    it("keeps No Project available from a listed-conversation composer", () => {
+        expect(
+            resolveConversationEmailUpdateWorkspaceContext({
+                rows: workspaceRows,
+                context: {
+                    kind: "conversation",
+                    conversationSlugId: "listconv01",
+                },
+            }),
+        ).toEqual({
+            initialSelection: {
+                kind: "project",
+                projectSlug: "listed-project",
+                conversationSlugIds: ["listconv01"],
+            },
+        });
+    });
+
+    it("rejects an unavailable route context", () => {
+        expect(
+            resolveConversationEmailUpdateWorkspaceContext({
+                rows: workspaceRows,
+                context: { kind: "project", projectSlug: "unavailable" },
+            }),
+        ).toBeUndefined();
+    });
+});
+
+describe("isConversationEmailUpdateWorkspaceContextRepresented", () => {
+    const workspace = Dto.conversationEmailUpdateWorkspaceResponse.parse({
+        success: true,
+        resolvedContext: { kind: "global" },
+        scopes: [
+            {
+                kind: "project",
+                projectSlug: "listed-project",
+                title: "Listed project",
+                participantContactEmail: "project@example.com",
+                conversations: [
+                    {
+                        conversationSlugId: "listconv01",
+                        title: "Listed conversation",
+                        participationMode: "account_required",
+                        estimatedEligibleRecipientCount: 1,
+                        sendingEnabled: true,
+                    },
+                ],
+            },
+        ],
+    });
+    if (!workspace.success) {
+        throw new Error("Expected a parsed workspace response");
+    }
+    const { scopes } = workspace;
+
+    it("requires the requested project in the final parsed scopes", () => {
+        expect(
+            isConversationEmailUpdateWorkspaceContextRepresented({
+                scopes,
+                context: { kind: "project", projectSlug: "listed-project" },
+            }),
+        ).toBe(true);
+        expect(
+            isConversationEmailUpdateWorkspaceContextRepresented({
+                scopes,
+                context: { kind: "project", projectSlug: "filtered-project" },
+            }),
+        ).toBe(false);
+    });
+
+    it("requires the requested conversation in the final parsed scopes", () => {
+        expect(
+            isConversationEmailUpdateWorkspaceContextRepresented({
+                scopes,
+                context: {
+                    kind: "conversation",
+                    conversationSlugId: "filtered-conversation",
+                },
+            }),
+        ).toBe(false);
+    });
+});
+
+describe("conversationEmailUpdateWorkspaceResponse", () => {
+    it("does not represent a scope without conversations", () => {
+        expect(
+            Dto.conversationEmailUpdateWorkspaceResponse.safeParse({
+                success: true,
+                resolvedContext: { kind: "global" },
+                scopes: [
+                    {
+                        kind: "no_project",
+                        title: "No Project",
+                        conversations: [],
+                    },
+                ],
+            }).success,
+        ).toBe(false);
+    });
+});
 
 describe("resolveConversationEmailUpdateAuthoringAction", () => {
     it("keeps the workspace visible when sending is currently blocked", () => {
@@ -119,47 +261,6 @@ describe("conversationEmailUpdateTestStatusResponse", () => {
                 errorCode: null,
             }),
         ).toBeUndefined();
-    });
-});
-
-describe("mapInBatches", () => {
-    it("bounds concurrency and preserves input order", async () => {
-        let active = 0;
-        let maximumActive = 0;
-        const outputs = await mapInBatches({
-            items: [1, 2, 3, 4, 5, 6, 7],
-            batchSize: 3,
-            map: async (item) => {
-                active += 1;
-                maximumActive = Math.max(maximumActive, active);
-                await new Promise((resolve) => {
-                    setTimeout(resolve, (4 - (item % 4)) * 2);
-                });
-                active -= 1;
-                return `item-${String(item)}`;
-            },
-        });
-
-        expect(maximumActive).toBe(3);
-        expect(outputs).toEqual([
-            "item-1",
-            "item-2",
-            "item-3",
-            "item-4",
-            "item-5",
-            "item-6",
-            "item-7",
-        ]);
-    });
-
-    it("rejects invalid batch sizes", async () => {
-        await expect(
-            mapInBatches({
-                items: [1],
-                batchSize: 0,
-                map: (item) => Promise.resolve(item),
-            }),
-        ).rejects.toThrow("batchSize must be a positive integer");
     });
 });
 

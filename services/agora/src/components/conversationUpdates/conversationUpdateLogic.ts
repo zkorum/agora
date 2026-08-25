@@ -1,19 +1,24 @@
-import type {
-  ConversationUpdateConversationSummary,
-  ConversationUpdateHistoryRecord,
-  ConversationUpdateScopeSummary,
+import {
+  CONVERSATION_UPDATE_NO_PROJECT_SCOPE_ID,
+  type ConversationUpdateConversationSummary,
+  type ConversationUpdateHistoryRecord,
+  type ConversationUpdateScopeSummary,
 } from "src/components/conversationUpdates/conversationUpdateTypes";
 import type {
   ConversationEmailUpdateHistoryRecord,
   ConversationEmailUpdateScope,
   ConversationEmailUpdateSelection,
 } from "src/shared/types/dto";
+import { Dto } from "src/shared/types/dto";
 
 export function mapConversationEmailUpdateScopes(
   scopes: readonly ConversationEmailUpdateScope[]
 ): readonly ConversationUpdateScopeSummary[] {
   return scopes.map((scope) => ({
-    id: scope.kind === "project" ? scope.projectSlug : "no-project",
+    id:
+      scope.kind === "project"
+        ? scope.projectSlug
+        : CONVERSATION_UPDATE_NO_PROJECT_SCOPE_ID,
     kind: scope.kind === "project" ? "project" : "no-project",
     label: scope.title,
     href:
@@ -46,20 +51,34 @@ export function createConversationEmailUpdateSelection({
   selectedConversationIds: readonly string[];
 }): ConversationEmailUpdateSelection | undefined {
   if (scope.kind === "project") {
-    if (selectedConversationIds.length === 0) {
+    const [firstConversationSlugId, ...remainingConversationSlugIds] =
+      selectedConversationIds;
+    if (firstConversationSlugId === undefined) {
       return undefined;
     }
-    return {
+    const parsedSelection = Dto.conversationEmailUpdateSelection.safeParse({
       kind: "project",
       projectSlug: scope.id,
-      conversationSlugIds: [...selectedConversationIds],
-    };
+      conversationSlugIds: [
+        firstConversationSlugId,
+        ...remainingConversationSlugIds,
+      ],
+    });
+    return parsedSelection.success ? parsedSelection.data : undefined;
   }
 
   const conversationSlugId = selectedConversationIds.at(0);
-  return conversationSlugId === undefined
-    ? undefined
-    : { kind: "no_project", conversationSlugId };
+  if (
+    selectedConversationIds.length !== 1 ||
+    conversationSlugId === undefined
+  ) {
+    return undefined;
+  }
+  const parsedSelection = Dto.conversationEmailUpdateSelection.safeParse({
+    kind: "no_project",
+    conversationSlugId,
+  });
+  return parsedSelection.success ? parsedSelection.data : undefined;
 }
 
 export function mapConversationEmailUpdateHistoryRecord(
@@ -72,7 +91,9 @@ export function mapConversationEmailUpdateHistoryRecord(
     subject: record.subject,
     bodyHtml: record.bodyHtml,
     scopeId:
-      record.scope.kind === "project" ? record.scope.projectSlug : "no-project",
+      record.scope.kind === "project"
+        ? record.scope.projectSlug
+        : CONVERSATION_UPDATE_NO_PROJECT_SCOPE_ID,
     scopeKind,
     scopeLabel: record.scope.title,
     scopeHref:

@@ -83,24 +83,20 @@ const conversationSelectionModel = computed<string | readonly string[]>(() =>
     : selectedConversationIds.value
 );
 const scopeOptions = computed(() =>
-  props.scopes.flatMap((scope) => {
+  props.scopes.map((scope) => {
     const selectableConversations = getSelectableConversations(scope);
-    if (selectableConversations.length === 0) {
-      return [];
-    }
-    return [
-      {
-        label: scope.label,
-        value: scope.id,
-        caption: getEligibleConversationCountLabel({
-          count: selectableConversations.length,
-          withoutProject: scope.kind === "no-project",
-        }),
-        searchText: `${scope.label} ${selectableConversations
-          .map((conversation) => conversation.title)
-          .join(" ")}`,
-      },
-    ];
+    return {
+      label: scope.label,
+      value: scope.id,
+      caption: getEligibleConversationCountLabel({
+        count: selectableConversations.length,
+        withoutProject: scope.kind === "no-project",
+      }),
+      searchText: `${scope.label} ${scope.conversations
+        .map((conversation) => conversation.title)
+        .join(" ")}`,
+      disabled: selectableConversations.length === 0,
+    };
   })
 );
 const conversationOptions = computed(

@@ -66,16 +66,14 @@
         :has-successful-test="hasSuccessfulTest"
         :audience-estimate="1842"
         :audience-estimate-available="true"
+        :selection-valid="selectedConversationIds.length > 0"
         test-destination-email="facilitator@example.org"
         :related-conversation-owner-count="1"
         @test="simulateTest"
         @send="simulateSend"
       >
         <template #preview>
-          <div
-            v-if="$q.screen.lt.md"
-            class="conversation-updates-dev__preview"
-          >
+          <div v-if="$q.screen.lt.md" class="conversation-updates-dev__preview">
             <ConversationUpdateEmailPreview
               :subject="subject"
               :body-html="bodyHtml"
@@ -90,10 +88,7 @@
         </template>
       </ConversationUpdateComposerForm>
 
-      <div
-        v-if="!$q.screen.lt.md"
-        class="conversation-updates-dev__preview"
-      >
+      <div v-if="!$q.screen.lt.md" class="conversation-updates-dev__preview">
         <ConversationUpdateEmailPreview
           :subject="subject"
           :body-html="bodyHtml"

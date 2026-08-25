@@ -687,6 +687,15 @@ export const zodConversationEmailUpdateSubject = z
         minLength: 1,
         maxLength: CONVERSATION_EMAIL_UPDATE_SUBJECT_MAX_LENGTH,
     });
+const zodConversationEmailUpdateBodyHtml = z
+    .string()
+    .min(1)
+    .max(CONVERSATION_EMAIL_UPDATE_HTML_MAX_BYTES)
+    .refine(
+        (html) =>
+            countUtf8Bytes(html) <= CONVERSATION_EMAIL_UPDATE_HTML_MAX_BYTES,
+        "Email body HTML exceeds the UTF-8 byte limit",
+    );
 
 const zodConversationEmailUpdatePreferenceState = z.enum([
     "disabled",
@@ -711,37 +720,83 @@ const zodConversationEmailUpdateConversationBase = z
         sendingEnabled: z.boolean(),
     })
     .strict();
+const zodConversationEmailUpdateProjectConversations = z.tuple(
+    [zodConversationEmailUpdateConversationBase],
+    zodConversationEmailUpdateConversationBase,
+);
+const zodConversationEmailUpdateNoProjectConversation =
+    zodConversationEmailUpdateConversationBase
+        .extend({ participantContactEmail: zodEmail })
+        .strict();
+const zodConversationEmailUpdateNoProjectConversations = z.tuple(
+    [zodConversationEmailUpdateNoProjectConversation],
+    zodConversationEmailUpdateNoProjectConversation,
+);
+const zodConversationEmailUpdateProjectScopeBase = z
+    .object({
+        kind: z.literal("project"),
+        projectSlug: zodProjectSlug,
+        title: z.string().trim().min(1).max(MAX_LENGTH_TITLE),
+        participantContactEmail: zodEmail,
+    })
+    .strict();
+const zodConversationEmailUpdateNoProjectScopeBase = z
+    .object({
+        kind: z.literal("no_project"),
+        title: z.string().trim().min(1).max(MAX_LENGTH_TITLE),
+    })
+    .strict();
 const zodConversationEmailUpdateScope = z.discriminatedUnion("kind", [
-    z
-        .object({
-            kind: z.literal("project"),
-            projectSlug: zodProjectSlug,
-            title: z.string().trim().min(1).max(MAX_LENGTH_TITLE),
-            participantContactEmail: zodEmail,
-            conversations: z
-                .array(zodConversationEmailUpdateConversationBase)
-                .min(1),
-        })
-        .strict(),
-    z
-        .object({
-            kind: z.literal("no_project"),
-            title: z.string().trim().min(1).max(MAX_LENGTH_TITLE),
-            conversations: z
-                .array(
-                    zodConversationEmailUpdateConversationBase
-                        .extend({ participantContactEmail: zodEmail })
-                        .strict(),
-                )
-                .min(1),
-        })
-        .strict(),
+    zodConversationEmailUpdateProjectScopeBase.extend({
+        conversations: zodConversationEmailUpdateProjectConversations,
+    }),
+    zodConversationEmailUpdateNoProjectScopeBase.extend({
+        conversations: zodConversationEmailUpdateNoProjectConversations,
+    }),
 ]);
+const zodConversationEmailUpdateTransportScope = z.discriminatedUnion("kind", [
+    zodConversationEmailUpdateProjectScopeBase.extend({
+        conversations: z
+            .array(zodConversationEmailUpdateConversationBase)
+            .min(1),
+    }),
+    zodConversationEmailUpdateNoProjectScopeBase.extend({
+        conversations: z
+            .array(zodConversationEmailUpdateNoProjectConversation)
+            .min(1),
+    }),
+]);
+const zodConversationEmailUpdateProjectSelectionBase = z
+    .object({
+        kind: z.literal("project"),
+        projectSlug: zodProjectSlug,
+    })
+    .strict();
+const zodConversationEmailUpdateNoProjectSelection = z
+    .object({
+        kind: z.literal("no_project"),
+        conversationSlugId: zodSlugId,
+    })
+    .strict();
 const zodConversationEmailUpdateSelection = z.discriminatedUnion("kind", [
-    z
-        .object({
-            kind: z.literal("project"),
-            projectSlug: zodProjectSlug,
+    zodConversationEmailUpdateProjectSelectionBase.extend({
+        conversationSlugIds: z
+            .tuple([zodSlugId], zodSlugId)
+            .refine(
+                (values) => values.length <= 1_000,
+                "Conversation selection exceeds 1,000 conversations",
+            )
+            .refine(
+                (values) => new Set(values).size === values.length,
+                "Conversation selection contains duplicates",
+            ),
+    }),
+    zodConversationEmailUpdateNoProjectSelection,
+]);
+const zodConversationEmailUpdateTransportSelection = z.discriminatedUnion(
+    "kind",
+    [
+        zodConversationEmailUpdateProjectSelectionBase.extend({
             conversationSlugIds: z
                 .array(zodSlugId)
                 .min(1)
@@ -750,15 +805,10 @@ const zodConversationEmailUpdateSelection = z.discriminatedUnion("kind", [
                     (values) => new Set(values).size === values.length,
                     "Conversation selection contains duplicates",
                 ),
-        })
-        .strict(),
-    z
-        .object({
-            kind: z.literal("no_project"),
-            conversationSlugId: zodSlugId,
-        })
-        .strict(),
-]);
+        }),
+        zodConversationEmailUpdateNoProjectSelection,
+    ],
+);
 const zodConversationEmailUpdateContext = z.discriminatedUnion("kind", [
     z.object({ kind: z.literal("global") }).strict(),
     z
@@ -3011,6 +3061,8 @@ export class Dto {
         issues: z.array(Dto.maxdiffGitHubPreviewItem),
     });
 
+    static conversationEmailUpdateSelection =
+        zodConversationEmailUpdateSelection;
     static conversationEmailUpdateWorkspaceRequest = z
         .object({
             context: zodConversationEmailUpdateContext,
@@ -3040,6 +3092,28 @@ export class Dto {
                 .strict(),
         ],
     );
+    static conversationEmailUpdateWorkspaceOpenApiResponse =
+        z.discriminatedUnion("success", [
+            z
+                .object({
+                    success: z.literal(true),
+                    resolvedContext: zodConversationEmailUpdateContext,
+                    initialSelection:
+                        zodConversationEmailUpdateTransportSelection.optional(),
+                    testDestinationEmail: zodEmail.optional(),
+                    scopes: z.array(zodConversationEmailUpdateTransportScope),
+                })
+                .strict(),
+            z
+                .object({
+                    success: z.literal(false),
+                    reason: z.enum([
+                        "context_not_found",
+                        "feature_not_available",
+                    ]),
+                })
+                .strict(),
+        ]);
     static conversationEmailUpdateHistoryListRequest = z
         .object({
             context: zodConversationEmailUpdateContext,
@@ -3093,6 +3167,11 @@ export class Dto {
             selection: zodConversationEmailUpdateSelection,
         })
         .strict();
+    static conversationEmailUpdateAudienceEstimateOpenApiRequest = z
+        .object({
+            selection: zodConversationEmailUpdateTransportSelection,
+        })
+        .strict();
     static conversationEmailUpdateAudienceEstimateResponse =
         z.discriminatedUnion("success", [
             z
@@ -3120,16 +3199,14 @@ export class Dto {
         .object({
             selection: zodConversationEmailUpdateSelection,
             subject: zodConversationEmailUpdateSubject,
-            bodyHtml: z
-                .string()
-                .min(1)
-                .max(CONVERSATION_EMAIL_UPDATE_HTML_MAX_BYTES)
-                .refine(
-                    (html) =>
-                        countUtf8Bytes(html) <=
-                        CONVERSATION_EMAIL_UPDATE_HTML_MAX_BYTES,
-                    "Email body HTML exceeds the UTF-8 byte limit",
-                ),
+            bodyHtml: zodConversationEmailUpdateBodyHtml,
+        })
+        .strict();
+    static conversationEmailUpdateSendTestOpenApiRequest = z
+        .object({
+            selection: zodConversationEmailUpdateTransportSelection,
+            subject: zodConversationEmailUpdateSubject,
+            bodyHtml: zodConversationEmailUpdateBodyHtml,
         })
         .strict();
     static conversationEmailUpdateSendTestResponse = z.discriminatedUnion(

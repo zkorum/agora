@@ -76,6 +76,7 @@
               :has-successful-test="hasSuccessfulTest"
               :audience-estimate="audienceEstimate"
               :audience-estimate-available="audienceEstimateAvailable"
+              :selection-valid="currentSelection !== undefined"
               :test-destination-email="testDestinationEmail"
               :related-conversation-owner-count="relatedConversationOwnerCount"
               @test="sendTest"
@@ -100,10 +101,7 @@
               </template>
             </ConversationUpdateComposerForm>
 
-            <div
-              v-if="!$q.screen.lt.md"
-              class="updates-workspace__preview"
-            >
+            <div v-if="!$q.screen.lt.md" class="updates-workspace__preview">
               <ConversationUpdateEmailPreview
                 :subject="subject"
                 :body-html="bodyHtml"
@@ -192,9 +190,10 @@ import {
   mapConversationEmailUpdateHistoryRecord,
   mapConversationEmailUpdateScopes,
 } from "src/components/conversationUpdates/conversationUpdateLogic";
-import type {
-  ConversationUpdateHistoryRecord,
-  ConversationUpdateScopeSummary,
+import {
+  CONVERSATION_UPDATE_NO_PROJECT_SCOPE_ID,
+  type ConversationUpdateHistoryRecord,
+  type ConversationUpdateScopeSummary,
 } from "src/components/conversationUpdates/conversationUpdateTypes";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
@@ -309,6 +308,15 @@ const selectedConversations = computed(() =>
     selectedConversationIds: selectedConversationIds.value,
   })
 );
+const currentSelection = computed(() => {
+  const scope = currentScope.value;
+  return scope === undefined
+    ? undefined
+    : createConversationEmailUpdateSelection({
+        scope,
+        selectedConversationIds: selectedConversationIds.value,
+      });
+});
 const currentNoProjectContactEmail = computed(() => {
   const selectedConversationId = selectedConversationIds.value.at(0);
   const noProjectScope = apiScopes.value.find(
@@ -355,13 +363,10 @@ watch(selectedScopeId, () => {
     currentScope.value?.conversations.map((conversation) => conversation.id) ??
       []
   );
-  if (
-    selectedConversationIds.value.length > 0 &&
-    selectedConversationIds.value.every((id) => conversationIds.has(id))
-  ) {
+  if (selectedConversationIds.value.every((id) => conversationIds.has(id))) {
     return;
   }
-  selectedConversationIds.value = getInitialConversationIds(currentScope.value);
+  selectedConversationIds.value = [];
 });
 
 watch(
@@ -462,8 +467,11 @@ async function loadWorkspace(): Promise<void> {
       selectedScopeId.value = initialSelection.projectSlug;
       selectedConversationIds.value = initialSelection.conversationSlugIds;
     } else if (initialSelection?.kind === "no_project") {
-      selectedScopeId.value = "no-project";
+      selectedScopeId.value = CONVERSATION_UPDATE_NO_PROJECT_SCOPE_ID;
       selectedConversationIds.value = [initialSelection.conversationSlugId];
+    } else if (response.resolvedContext.kind === "project") {
+      selectedScopeId.value = response.resolvedContext.projectSlug;
+      selectedConversationIds.value = [];
     } else {
       const firstScope = displayScopes.value.at(0);
       selectedScopeId.value = firstScope?.id ?? "";
@@ -494,16 +502,7 @@ async function loadAudienceEstimate(): Promise<void> {
     relatedConversationOwnerCount.value = 0;
     return;
   }
-  const scope = currentScope.value;
-  if (scope === undefined) {
-    audienceEstimate.value = 0;
-    relatedConversationOwnerCount.value = 0;
-    return;
-  }
-  const selection = createConversationEmailUpdateSelection({
-    scope,
-    selectedConversationIds: selectedConversationIds.value,
-  });
+  const selection = currentSelection.value;
   if (selection === undefined) {
     audienceEstimate.value = 0;
     relatedConversationOwnerCount.value = 0;
@@ -676,22 +675,15 @@ function isCurrentHistoryRequest({
 
 async function sendTest(): Promise<void> {
   const generation = workspaceGeneration;
-  const scope = currentScope.value;
+  const selection = currentSelection.value;
   if (
-    scope === undefined ||
+    selection === undefined ||
     testDestinationEmail.value === undefined ||
     !audienceEstimateAvailable.value ||
     audienceEstimate.value === 0 ||
     activeTestAttemptId !== undefined ||
     activeTestOperationId.value !== undefined
   ) {
-    return;
-  }
-  const selection = createConversationEmailUpdateSelection({
-    scope,
-    selectedConversationIds: selectedConversationIds.value,
-  });
-  if (selection === undefined) {
     return;
   }
   const draftKey = currentDraftKey.value;

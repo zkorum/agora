@@ -29,9 +29,10 @@ vi.mock("src/components/ui-library/ZKButton.vue", () => ({
     name: "ZKButton",
     props: {
       label: { type: String, required: true },
+      disable: { type: Boolean, default: false },
     },
     setup(props) {
-      return () => h("button", props.label);
+      return () => h("button", { disabled: props.disable }, props.label);
     },
   }),
 }));
@@ -189,6 +190,17 @@ describe("ConversationUpdateComposerForm", () => {
     expect(testHandler).toHaveBeenCalledOnce();
   });
 
+  it("does not enable testing for an invalid scope selection", () => {
+    const container = mountComposer({
+      locale: "en",
+      audienceEstimate: 12,
+      relatedConversationOwnerCount: 1,
+      selectionValid: false,
+    });
+
+    expect(getButton(container, "Send test email").disabled).toBe(true);
+  });
+
   it("uses localized singular owner-copy wording", () => {
     const container = mountComposer({
       locale: "en",
@@ -228,11 +240,13 @@ function mountComposer({
   locale,
   audienceEstimate,
   relatedConversationOwnerCount,
+  selectionValid = true,
   testHandler = undefined,
 }: {
   locale: SupportedDisplayLanguageCodes;
   audienceEstimate: number;
   relatedConversationOwnerCount: number;
+  selectionValid?: boolean;
   testHandler?: () => void;
 }): HTMLElement {
   const container = document.createElement("div");
@@ -266,6 +280,7 @@ function mountComposer({
     hasSuccessfulTest: false,
     audienceEstimate,
     audienceEstimateAvailable: true,
+    selectionValid,
     testDestinationEmail: "facilitator@example.com",
     relatedConversationOwnerCount,
     selectedScopeId: "project-one",

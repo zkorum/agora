@@ -19,6 +19,9 @@ export type ConversationUpdateFailureReason =
   | "provider_configuration_error"
   | "required_owner_copy_not_accepted";
 
+// Project slugs cannot contain underscores, so this synthetic ID cannot collide.
+export const CONVERSATION_UPDATE_NO_PROJECT_SCOPE_ID = "__no-project";
+
 export interface ConversationUpdateConversationSummary {
   readonly id: string;
   readonly title: string;

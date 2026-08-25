@@ -6778,7 +6778,7 @@ server.after(() => {
         schema: {
             body: Dto.conversationEmailUpdateWorkspaceRequest,
             response: {
-                200: Dto.conversationEmailUpdateWorkspaceResponse,
+                200: Dto.conversationEmailUpdateWorkspaceOpenApiResponse,
             },
         },
         handler: async (request) => {
@@ -6830,7 +6830,7 @@ server.after(() => {
         method: "POST",
         url: `/api/${apiVersion}/conversation/email-update/audience/estimate`,
         schema: {
-            body: Dto.conversationEmailUpdateAudienceEstimateRequest,
+            body: Dto.conversationEmailUpdateAudienceEstimateOpenApiRequest,
             response: {
                 200: Dto.conversationEmailUpdateAudienceEstimateResponse,
             },
@@ -6839,7 +6839,10 @@ server.after(() => {
             const userId = await requireAuthenticatedUserId(request);
             return conversationEmailUpdateService.estimateAudience({
                 userId,
-                request: request.body,
+                request:
+                    Dto.conversationEmailUpdateAudienceEstimateRequest.parse(
+                        request.body,
+                    ),
             });
         },
     });
@@ -6848,7 +6851,7 @@ server.after(() => {
         method: "POST",
         url: `/api/${apiVersion}/conversation/email-update/test/send`,
         schema: {
-            body: Dto.conversationEmailUpdateSendTestRequest,
+            body: Dto.conversationEmailUpdateSendTestOpenApiRequest,
             response: {
                 200: Dto.conversationEmailUpdateSendTestResponse,
             },
@@ -6857,7 +6860,9 @@ server.after(() => {
             const userId = await requireAuthenticatedUserId(request);
             return conversationEmailUpdateService.sendTest({
                 userId,
-                request: request.body,
+                request: Dto.conversationEmailUpdateSendTestRequest.parse(
+                    request.body,
+                ),
             });
         },
     });

@@ -5,13 +5,14 @@ import {
   getConversationUpdateUnsubscribeScopeName,
   mapConversationEmailUpdateScopes,
 } from "./conversationUpdateLogic";
-import type {
-  ConversationUpdateConversationSummary,
-  ConversationUpdateScopeSummary,
+import {
+  CONVERSATION_UPDATE_NO_PROJECT_SCOPE_ID,
+  type ConversationUpdateConversationSummary,
+  type ConversationUpdateScopeSummary,
 } from "./conversationUpdateTypes";
 
 const firstConversation: ConversationUpdateConversationSummary = {
-  id: "conversation-1",
+  id: "conv000001",
   title: "First conversation",
   href: "/conversation/first",
   eligibleParticipantCount: 10,
@@ -22,7 +23,7 @@ const firstConversation: ConversationUpdateConversationSummary = {
 const conversations: readonly ConversationUpdateConversationSummary[] = [
   firstConversation,
   {
-    id: "conversation-2",
+    id: "conv000002",
     title: "Second conversation",
     href: "/conversation/second",
     eligibleParticipantCount: 20,
@@ -78,12 +79,12 @@ describe("createConversationEmailUpdateSelection", () => {
     expect(
       createConversationEmailUpdateSelection({
         scope: projectScope,
-        selectedConversationIds: ["conversation-1", "conversation-2"],
+        selectedConversationIds: ["conv000001", "conv000002"],
       })
     ).toEqual({
       kind: "project",
       projectSlug: "public-consultation",
-      conversationSlugIds: ["conversation-1", "conversation-2"],
+      conversationSlugIds: ["conv000001", "conv000002"],
     });
   });
 
@@ -91,12 +92,46 @@ describe("createConversationEmailUpdateSelection", () => {
     expect(
       createConversationEmailUpdateSelection({
         scope: { ...projectScope, id: "no-project", kind: "no-project" },
-        selectedConversationIds: ["conversation-1"],
+        selectedConversationIds: ["conv000001"],
       })
     ).toEqual({
       kind: "no_project",
-      conversationSlugId: "conversation-1",
+      conversationSlugId: "conv000001",
     });
+  });
+
+  it("requires exactly one No Project conversation", () => {
+    const noProjectScope: ConversationUpdateScopeSummary = {
+      ...projectScope,
+      id: "no-project",
+      kind: "no-project",
+    };
+
+    expect(
+      createConversationEmailUpdateSelection({
+        scope: noProjectScope,
+        selectedConversationIds: [],
+      })
+    ).toBeUndefined();
+    expect(
+      createConversationEmailUpdateSelection({
+        scope: noProjectScope,
+        selectedConversationIds: ["conv000001", "conv000002"],
+      })
+    ).toBeUndefined();
+  });
+
+  it("rejects an oversized project selection without throwing", () => {
+    const conversationSlugIds = Array.from({ length: 1_001 }, (_, index) =>
+      String(index).padStart(10, "0")
+    );
+
+    expect(
+      createConversationEmailUpdateSelection({
+        scope: projectScope,
+        selectedConversationIds: conversationSlugIds,
+      })
+    ).toBeUndefined();
   });
 });
 
@@ -139,6 +174,45 @@ describe("mapConversationEmailUpdateScopes", () => {
           },
         ],
       },
+    ]);
+  });
+
+  it("keeps No Project distinct from a project with the no-project slug", () => {
+    const mappedScopes = mapConversationEmailUpdateScopes([
+      {
+        kind: "project",
+        projectSlug: "no-project",
+        title: "No Project initiative",
+        participantContactEmail: "project@example.com",
+        conversations: [
+          {
+            conversationSlugId: "project001",
+            title: "Project conversation",
+            participationMode: "account_required",
+            estimatedEligibleRecipientCount: 1,
+            sendingEnabled: true,
+          },
+        ],
+      },
+      {
+        kind: "no_project",
+        title: "No Project",
+        conversations: [
+          {
+            conversationSlugId: "stand001",
+            title: "Standalone conversation",
+            participationMode: "account_required",
+            estimatedEligibleRecipientCount: 1,
+            sendingEnabled: true,
+            participantContactEmail: "standalone@example.com",
+          },
+        ],
+      },
+    ]);
+
+    expect(mappedScopes.map((scope) => scope.id)).toEqual([
+      "no-project",
+      CONVERSATION_UPDATE_NO_PROJECT_SCOPE_ID,
     ]);
   });
 });

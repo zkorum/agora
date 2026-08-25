@@ -152,6 +152,7 @@ const props = defineProps<{
   hasSuccessfulTest: boolean;
   audienceEstimate: number;
   audienceEstimateAvailable: boolean;
+  selectionValid: boolean;
   testDestinationEmail: string | undefined;
   relatedConversationOwnerCount: number;
 }>();
@@ -188,7 +189,7 @@ const canTest = computed(
     authoringEnabled.value &&
     props.audienceEstimateAvailable &&
     props.audienceEstimate > 0 &&
-    selectedConversationIds.value.length > 0 &&
+    props.selectionValid &&
     selectedConversationIds.value.every(
       (conversationId) =>
         !props.updatesDisabledConversationIds.includes(conversationId)
