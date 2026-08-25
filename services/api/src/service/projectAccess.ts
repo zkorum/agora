@@ -644,16 +644,8 @@ export async function getConversationCreateProjectOptions({
             .select({
                 conversationEmailUpdateDefaultEnabled:
                     projectTable.conversationEmailUpdateDefaultEnabled,
-                participantContactEmail: projectContactTable.email,
             })
             .from(projectTable)
-            .leftJoin(
-                projectContactTable,
-                and(
-                    eq(projectContactTable.projectId, projectTable.id),
-                    isNull(projectContactTable.deletedAt),
-                ),
-            )
             .where(
                 and(
                     eq(
@@ -713,16 +705,13 @@ export async function getConversationCreateProjectOptions({
         );
     }
 
+    const noProject = noProjectRows.at(0);
     return {
         success: true,
         noProjectEmailUpdates: {
-            canConfigure:
-                canConfigureEmailUpdates &&
-                noProjectRows.at(0)?.participantContactEmail !== undefined &&
-                noProjectRows.at(0)?.participantContactEmail !== null,
+            canConfigure: canConfigureEmailUpdates,
             scopeDefaultEnabled:
-                noProjectRows.at(0)?.conversationEmailUpdateDefaultEnabled ??
-                false,
+                noProject?.conversationEmailUpdateDefaultEnabled ?? false,
         },
         projectList: availableProjectRows.map((project) => ({
             projectSlug: project.projectSlug,
