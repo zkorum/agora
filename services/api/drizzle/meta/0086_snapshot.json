@@ -1,5 +1,5 @@
 {
-  "id": "9e6173da-e182-47af-a20f-11a8041b4c0c",
+  "id": "f21bab43-aa29-4f68-8623-4a508a06ef46",
   "prevId": "0e4c0620-5a60-47b8-96a4-745494444687",
   "version": "7",
   "dialect": "postgresql",
@@ -1753,9 +1753,9 @@
           "primaryKey": false,
           "notNull": true
         },
-        "recipient_id": {
-          "name": "recipient_id",
-          "type": "bigint",
+        "attempt_public_id": {
+          "name": "attempt_public_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -1787,11 +1787,11 @@
         }
       },
       "indexes": {
-        "conversation_email_update_action_recipient_idx": {
-          "name": "conversation_email_update_action_recipient_idx",
+        "conversation_email_update_action_attempt_idx": {
+          "name": "conversation_email_update_action_attempt_idx",
           "columns": [
             {
-              "expression": "recipient_id",
+              "expression": "attempt_public_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1804,15 +1804,15 @@
         }
       },
       "foreignKeys": {
-        "conversation_email_update_action_token_recipient_id_conversation_email_update_recipient_id_fk": {
-          "name": "conversation_email_update_action_token_recipient_id_conversation_email_update_recipient_id_fk",
+        "conversation_email_update_action_token_attempt_public_id_conversation_email_update_delivery_attempt_public_id_fk": {
+          "name": "conversation_email_update_action_token_attempt_public_id_conversation_email_update_delivery_attempt_public_id_fk",
           "tableFrom": "conversation_email_update_action_token",
-          "tableTo": "conversation_email_update_recipient",
+          "tableTo": "conversation_email_update_delivery_attempt",
           "columnsFrom": [
-            "recipient_id"
+            "attempt_public_id"
           ],
           "columnsTo": [
-            "id"
+            "public_id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -1937,6 +1937,98 @@
           "name": "conversation_email_update_conversation_update_id_conversation_id_pk",
           "columns": [
             "update_id",
+            "conversation_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.conversation_email_update_delivery_attempt_conversation": {
+      "name": "conversation_email_update_delivery_attempt_conversation",
+      "schema": "",
+      "columns": {
+        "attempt_public_id": {
+          "name": "attempt_public_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recipient_id": {
+          "name": "recipient_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "conversation_id": {
+          "name": "conversation_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "conversation_email_update_attempt_scope_recipient_idx": {
+          "name": "conversation_email_update_attempt_scope_recipient_idx",
+          "columns": [
+            {
+              "expression": "recipient_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "conversation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "email_update_attempt_scope_attempt_fk": {
+          "name": "email_update_attempt_scope_attempt_fk",
+          "tableFrom": "conversation_email_update_delivery_attempt_conversation",
+          "tableTo": "conversation_email_update_delivery_attempt",
+          "columnsFrom": [
+            "attempt_public_id",
+            "recipient_id"
+          ],
+          "columnsTo": [
+            "public_id",
+            "recipient_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "email_update_attempt_scope_recipient_fk": {
+          "name": "email_update_attempt_scope_recipient_fk",
+          "tableFrom": "conversation_email_update_delivery_attempt_conversation",
+          "tableTo": "conversation_email_update_recipient_conversation",
+          "columnsFrom": [
+            "recipient_id",
+            "conversation_id"
+          ],
+          "columnsTo": [
+            "recipient_id",
+            "conversation_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "conversation_email_update_delivery_attempt_conversation_attempt_public_id_conversation_id_pk": {
+          "name": "conversation_email_update_delivery_attempt_conversation_attempt_public_id_conversation_id_pk",
+          "columns": [
+            "attempt_public_id",
             "conversation_id"
           ]
         }
@@ -2137,6 +2229,14 @@
             "recipient_id",
             "attempt_number"
           ]
+        },
+        "conversation_email_update_attempt_public_recipient_unique": {
+          "name": "conversation_email_update_attempt_public_recipient_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "public_id",
+            "recipient_id"
+          ]
         }
       },
       "policies": {},
@@ -2208,6 +2308,13 @@
         "status": {
           "name": "status",
           "type": "conversation_email_update_delivery_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "participant_preference_scope": {
+          "name": "participant_preference_scope",
+          "type": "conversation_email_update_participant_preference_scope",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
@@ -18715,6 +18822,14 @@
         "no_eligible_participants",
         "required_owner_copy_not_accepted",
         "no_participant_provider_accepted"
+      ]
+    },
+    "public.conversation_email_update_participant_preference_scope": {
+      "name": "conversation_email_update_participant_preference_scope",
+      "schema": "public",
+      "values": [
+        "project",
+        "conversation"
       ]
     },
     "public.conversation_email_update_preference_source": {

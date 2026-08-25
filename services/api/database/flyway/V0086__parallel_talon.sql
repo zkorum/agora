@@ -4,6 +4,7 @@ CREATE TYPE "public"."conversation_email_update_delivery_status" AS ENUM('prepar
 CREATE TYPE "public"."conversation_email_update_email_suppression_reason" AS ENUM('permanent_bounce', 'complaint');--> statement-breakpoint
 CREATE TYPE "public"."conversation_email_update_error_category" AS ENUM('retryable', 'permanent', 'ambiguous');--> statement-breakpoint
 CREATE TYPE "public"."conversation_email_update_failure_reason" AS ENUM('materialization_failed', 'no_eligible_participants', 'required_owner_copy_not_accepted', 'no_participant_provider_accepted');--> statement-breakpoint
+CREATE TYPE "public"."conversation_email_update_participant_preference_scope" AS ENUM('project', 'conversation');--> statement-breakpoint
 CREATE TYPE "public"."conversation_email_update_preference_source" AS ENUM('onboarding', 'menu', 'settings', 'unsubscribe', 'support');--> statement-breakpoint
 CREATE TYPE "public"."conversation_email_update_recipient_kind" AS ENUM('participant', 'conversation_owner_copy');--> statement-breakpoint
 CREATE TYPE "public"."conversation_email_update_recipient_status" AS ENUM('pending', 'claimed', 'attempting', 'retry_wait', 'provider_accepted', 'skipped', 'permanent_failed', 'unknown');--> statement-breakpoint
@@ -19,7 +20,7 @@ ALTER TYPE "public"."premium_feature" ADD VALUE 'conversation_email_update';--> 
 CREATE TABLE "conversation_email_update_action_token" (
 	"id" bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "conversation_email_update_action_token_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 9223372036854775807 START WITH 1 CACHE 1),
 	"token_hash" varchar(64) NOT NULL,
-	"recipient_id" bigint NOT NULL,
+	"attempt_public_id" uuid NOT NULL,
 	"action" "conversation_email_update_action" NOT NULL,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"expires_at" timestamp (0) NOT NULL,
@@ -36,6 +37,13 @@ CREATE TABLE "conversation_email_update_conversation" (
 	"conversation_title_snapshot" varchar(140) NOT NULL,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	CONSTRAINT "conversation_email_update_conversation_update_id_conversation_id_pk" PRIMARY KEY("update_id","conversation_id")
+);
+--> statement-breakpoint
+CREATE TABLE "conversation_email_update_delivery_attempt_conversation" (
+	"attempt_public_id" uuid NOT NULL,
+	"recipient_id" bigint NOT NULL,
+	"conversation_id" integer NOT NULL,
+	CONSTRAINT "conversation_email_update_delivery_attempt_conversation_attempt_public_id_conversation_id_pk" PRIMARY KEY("attempt_public_id","conversation_id")
 );
 --> statement-breakpoint
 CREATE TABLE "conversation_email_update_delivery_attempt" (
@@ -61,6 +69,7 @@ CREATE TABLE "conversation_email_update_delivery_attempt" (
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	CONSTRAINT "conversation_email_update_delivery_attempt_public_id_unique" UNIQUE("public_id"),
 	CONSTRAINT "conversation_email_update_attempt_recipient_number_unique" UNIQUE("recipient_id","attempt_number"),
+	CONSTRAINT "conversation_email_update_attempt_public_recipient_unique" UNIQUE("public_id","recipient_id"),
 	CONSTRAINT "conversation_email_update_attempt_number_check" CHECK ("conversation_email_update_delivery_attempt"."attempt_number" BETWEEN 1 AND 3),
 	CONSTRAINT "conversation_email_update_attempt_outcome_check" CHECK ((("conversation_email_update_delivery_attempt"."outcome" = 'send_authorized' AND "conversation_email_update_delivery_attempt"."finished_at" IS NULL AND "conversation_email_update_delivery_attempt"."provider_message_id" IS NULL) OR ("conversation_email_update_delivery_attempt"."outcome" = 'provider_accepted' AND "conversation_email_update_delivery_attempt"."finished_at" IS NOT NULL AND "conversation_email_update_delivery_attempt"."provider_message_id" IS NOT NULL) OR ("conversation_email_update_delivery_attempt"."outcome" IN ('retryable_rejected', 'permanent_rejected', 'unknown') AND "conversation_email_update_delivery_attempt"."finished_at" IS NOT NULL))),
 	CONSTRAINT "conversation_email_update_attempt_error_check" CHECK ((("conversation_email_update_delivery_attempt"."outcome" IN ('retryable_rejected', 'permanent_rejected', 'unknown') AND "conversation_email_update_delivery_attempt"."error_category" IS NOT NULL AND "conversation_email_update_delivery_attempt"."error_code" IS NOT NULL AND length(btrim("conversation_email_update_delivery_attempt"."error_code")) > 0 AND "conversation_email_update_delivery_attempt"."error_details" IS NOT NULL AND length(btrim("conversation_email_update_delivery_attempt"."error_details")) > 0) OR ("conversation_email_update_delivery_attempt"."outcome" NOT IN ('retryable_rejected', 'permanent_rejected', 'unknown') AND "conversation_email_update_delivery_attempt"."error_category" IS NULL AND "conversation_email_update_delivery_attempt"."error_code" IS NULL AND "conversation_email_update_delivery_attempt"."error_details" IS NULL))),
@@ -74,6 +83,7 @@ CREATE TABLE "conversation_email_update_delivery" (
 	"accepted_test_attempt_id" integer NOT NULL,
 	"accepted_by_user_id" uuid NOT NULL,
 	"status" "conversation_email_update_delivery_status" NOT NULL,
+	"participant_preference_scope" "conversation_email_update_participant_preference_scope" NOT NULL,
 	"failure_reason" "conversation_email_update_failure_reason",
 	"stop_reason" "conversation_email_update_stop_reason",
 	"audience_cutoff_at" timestamp (0) NOT NULL,
@@ -326,9 +336,11 @@ ALTER TABLE "project" ADD COLUMN "conversation_email_update_default_updated_by_u
 ALTER TABLE "conversation" ADD CONSTRAINT "conversation_project_id_id_unique" UNIQUE("project_id","id");--> statement-breakpoint
 ALTER TABLE "email" ADD CONSTRAINT "email_user_id_id_unique" UNIQUE("user_id","id");--> statement-breakpoint
 ALTER TABLE "premium_feature_entitlement" ADD CONSTRAINT "premium_feature_entitlement_organization_id_id_unique" UNIQUE("organization_id","id");--> statement-breakpoint
-ALTER TABLE "conversation_email_update_action_token" ADD CONSTRAINT "conversation_email_update_action_token_recipient_id_conversation_email_update_recipient_id_fk" FOREIGN KEY ("recipient_id") REFERENCES "public"."conversation_email_update_recipient"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "conversation_email_update_action_token" ADD CONSTRAINT "conversation_email_update_action_token_attempt_public_id_conversation_email_update_delivery_attempt_public_id_fk" FOREIGN KEY ("attempt_public_id") REFERENCES "public"."conversation_email_update_delivery_attempt"("public_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "conversation_email_update_conversation" ADD CONSTRAINT "email_update_scope_update_project_fk" FOREIGN KEY ("project_id","update_id") REFERENCES "public"."conversation_email_update"("project_id","id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "conversation_email_update_conversation" ADD CONSTRAINT "email_update_scope_conversation_project_fk" FOREIGN KEY ("project_id","conversation_id") REFERENCES "public"."conversation"("project_id","id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "conversation_email_update_delivery_attempt_conversation" ADD CONSTRAINT "email_update_attempt_scope_attempt_fk" FOREIGN KEY ("attempt_public_id","recipient_id") REFERENCES "public"."conversation_email_update_delivery_attempt"("public_id","recipient_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "conversation_email_update_delivery_attempt_conversation" ADD CONSTRAINT "email_update_attempt_scope_recipient_fk" FOREIGN KEY ("recipient_id","conversation_id") REFERENCES "public"."conversation_email_update_recipient_conversation"("recipient_id","conversation_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "conversation_email_update_delivery_attempt" ADD CONSTRAINT "email_update_attempt_recipient_credential_fk" FOREIGN KEY ("email_credential_id","recipient_id") REFERENCES "public"."conversation_email_update_recipient"("materialized_email_credential_id","id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "conversation_email_update_delivery" ADD CONSTRAINT "conversation_email_update_delivery_accepted_by_user_id_user_id_fk" FOREIGN KEY ("accepted_by_user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "conversation_email_update_delivery" ADD CONSTRAINT "email_update_delivery_update_project_fk" FOREIGN KEY ("project_id","update_id") REFERENCES "public"."conversation_email_update"("project_id","id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -361,8 +373,9 @@ ALTER TABLE "conversation_email_update_user_conversation_preference" ADD CONSTRA
 ALTER TABLE "conversation_email_update_user_global_setting" ADD CONSTRAINT "conversation_email_update_user_global_setting_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "conversation_email_update_user_project_preference" ADD CONSTRAINT "email_update_project_preference_user_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "conversation_email_update_user_project_preference" ADD CONSTRAINT "email_update_project_preference_project_fk" FOREIGN KEY ("project_id") REFERENCES "public"."project"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-CREATE INDEX "conversation_email_update_action_recipient_idx" ON "conversation_email_update_action_token" USING btree ("recipient_id");--> statement-breakpoint
+CREATE INDEX "conversation_email_update_action_attempt_idx" ON "conversation_email_update_action_token" USING btree ("attempt_public_id");--> statement-breakpoint
 CREATE INDEX "conversation_email_update_scope_conversation_idx" ON "conversation_email_update_conversation" USING btree ("conversation_id","update_id");--> statement-breakpoint
+CREATE INDEX "conversation_email_update_attempt_scope_recipient_idx" ON "conversation_email_update_delivery_attempt_conversation" USING btree ("recipient_id","conversation_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "conversation_email_update_attempt_provider_message_unique" ON "conversation_email_update_delivery_attempt" USING btree ("provider_message_id") WHERE "conversation_email_update_delivery_attempt"."provider_message_id" is not null;--> statement-breakpoint
 CREATE UNIQUE INDEX "conversation_email_update_delivery_project_active_unique" ON "conversation_email_update_delivery" USING btree ("project_id") WHERE "conversation_email_update_delivery"."status" IN ('preparing', 'queued', 'sending', 'stopping');--> statement-breakpoint
 CREATE INDEX "conversation_email_update_delivery_materialization_idx" ON "conversation_email_update_delivery" USING btree ("status","id");--> statement-breakpoint
