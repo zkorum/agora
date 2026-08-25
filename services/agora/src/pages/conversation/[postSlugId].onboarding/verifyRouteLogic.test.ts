@@ -49,6 +49,7 @@ describe("resolveVerifyRouteDecision", () => {
         needsAuth: false,
         needsTicket: true,
       },
+      emailUpdateResolution: { status: "not_required" },
     });
 
     expect(decision.navigation).toEqual({
@@ -73,6 +74,7 @@ describe("resolveVerifyRouteDecision", () => {
         needsAuth: false,
         needsTicket: false,
       },
+      emailUpdateResolution: { status: "not_required" },
     });
 
     expect(decision.navigation).toEqual({ kind: "none" });
@@ -94,6 +96,7 @@ describe("resolveVerifyRouteDecision", () => {
         needsAuth: false,
         needsTicket: false,
       },
+      emailUpdateResolution: { status: "not_required" },
     });
 
     expect(decision.navigation).toEqual({ kind: "exitToConversation" });
@@ -132,6 +135,7 @@ describe("resolveVerifyRouteDecision", () => {
         needsAuth: false,
         needsTicket: false,
       },
+      emailUpdateResolution: { status: "not_required" },
     });
 
     expect(decision.navigation).toEqual({ kind: "exitToConversation" });
@@ -165,6 +169,7 @@ describe("resolveVerifyRouteDecision", () => {
         needsAuth: true,
         needsTicket: true,
       },
+      emailUpdateResolution: { status: "not_required" },
     });
 
     expect(decision.navigation).toEqual({
@@ -173,5 +178,69 @@ describe("resolveVerifyRouteDecision", () => {
     });
     expect(decision.credentialUpgradeTarget).toBe("hard");
     expect(decision.onboardingMode).toBe("LOGIN");
+  });
+
+  it("routes backend-authored email consent before starting a required survey", () => {
+    const decision = resolveVerifyRouteDecision({
+      exactVerifyRoute: true,
+      isInitialLoading: false,
+      hasLoadError: false,
+      justCompletedSurvey: false,
+      conversationSlugId: "qlWQFzY",
+      conversation: { participationMode: "email_verification" },
+      surveyStatus: createSurveyStatus(),
+      surveyForm: {
+        success: true,
+        currentRevision: 1,
+        questions: [],
+        surveyGate: createSurveyStatus().surveyGate,
+      },
+      requirementState: { needsAuth: false, needsTicket: false },
+      emailUpdateResolution: {
+        status: "required",
+        action: {
+          operation: "set_project_preference",
+          projectSlug: "public-plan",
+          conversationSlugId: "qlWQFzY",
+          initialEnabled: true,
+        },
+      },
+      routeContext: {
+        kind: "project",
+        projectSlug: "public-plan",
+      },
+    });
+
+    expect(decision.navigation).toEqual({
+      kind: "redirect",
+      path: "/project/public-plan/conversation/qlWQFzY/onboarding/complete",
+    });
+  });
+
+  it("keeps authentication ahead of an already cached email consent action", () => {
+    const decision = resolveVerifyRouteDecision({
+      exactVerifyRoute: true,
+      isInitialLoading: false,
+      hasLoadError: false,
+      justCompletedSurvey: false,
+      conversationSlugId: "qlWQFzY",
+      conversation: { participationMode: "account_required" },
+      surveyStatus: createNoSurveyStatus(),
+      surveyForm: undefined,
+      requirementState: { needsAuth: true, needsTicket: false },
+      emailUpdateResolution: {
+        status: "required",
+        action: {
+          operation: "set_conversation_preference",
+          conversationSlugId: "qlWQFzY",
+          initialEnabled: true,
+        },
+      },
+    });
+
+    expect(decision.navigation).toEqual({
+      kind: "redirect",
+      path: "/conversation/qlWQFzY/onboarding/verify/hard",
+    });
   });
 });

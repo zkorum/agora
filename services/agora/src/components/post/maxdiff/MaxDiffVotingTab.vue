@@ -333,6 +333,13 @@ const { showNotifyMessage } = useNotify();
 const conversationSlugId = computed(
   () => props.conversationData.metadata.conversationSlugId
 );
+const isParticipationDisabled = computed(() => {
+  const moderation = props.conversationData.metadata.moderation;
+  return (
+    props.conversationData.metadata.isClosed ||
+    (moderation.status === "moderated" && moderation.action === "lock")
+  );
+});
 const { needsAuth: isAuthBlocked, shouldOpenParticipationModal } =
   useParticipationGate({
     conversationSlugId,
@@ -744,6 +751,7 @@ async function retryInitialize(): Promise<void> {
 }
 
 async function handleCandidateClick(slugId: string): Promise<void> {
+  if (isParticipationDisabled.value) return;
   if (await shouldOpenParticipationModal()) {
     showLoginDialog.value = true;
     return;
@@ -898,11 +906,29 @@ function undoLastVote(): void {
   });
 }
 
-function handleUndoClick(): void {
+async function handleUndoClick(): Promise<void> {
+  if (
+    isParticipationDisabled.value ||
+    (await shouldOpenParticipationModal())
+  ) {
+    if (!isParticipationDisabled.value) {
+      showLoginDialog.value = true;
+    }
+    return;
+  }
   undoLastVote();
 }
 
-function handleRedoRanking(): void {
+async function handleRedoRanking(): Promise<void> {
+  if (
+    isParticipationDisabled.value ||
+    (await shouldOpenParticipationModal())
+  ) {
+    if (!isParticipationDisabled.value) {
+      showLoginDialog.value = true;
+    }
+    return;
+  }
   $q.dialog({
     title: t("redoConfirmTitle"),
     message: t("redoConfirmMessage"),

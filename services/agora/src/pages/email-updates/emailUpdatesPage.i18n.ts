@@ -10,9 +10,9 @@ export const emailUpdatesPageTranslations: Record<
 > = {
   en: { pageTitle: "Email Updates" },
   ar: { pageTitle: "تحديثات البريد الإلكتروني" },
-  es: { pageTitle: "Actualizaciones por correo" },
+  es: { pageTitle: "Novedades por correo" },
   fa: { pageTitle: "به‌روزرسانی‌های ایمیلی" },
-  fr: { pageTitle: "Actualités par e-mail" },
+  fr: { pageTitle: "Nouvelles par e-mail" },
   "zh-Hans": { pageTitle: "电子邮件更新" },
   "zh-Hant": { pageTitle: "電子郵件更新" },
   he: { pageTitle: "עדכונים בדוא״ל" },

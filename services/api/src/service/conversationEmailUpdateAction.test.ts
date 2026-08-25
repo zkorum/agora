@@ -363,7 +363,8 @@ describe("conversation email update action service", () => {
             );
             CREATE TABLE "conversation_email_update_delivery" (
                 "id" integer PRIMARY KEY,
-                "update_id" integer NOT NULL
+                "update_id" integer NOT NULL,
+                "participant_preference_scope" text NOT NULL
             );
             CREATE TABLE "conversation_email_update_recipient" (
                 "id" bigint PRIMARY KEY,
@@ -383,10 +384,20 @@ describe("conversation email update action service", () => {
                 "conversation_id" integer NOT NULL,
                 PRIMARY KEY ("recipient_id", "conversation_id")
             );
+            CREATE TABLE "conversation_email_update_delivery_attempt" (
+                "public_id" uuid PRIMARY KEY,
+                "recipient_id" bigint NOT NULL
+            );
+            CREATE TABLE "conversation_email_update_delivery_attempt_conversation" (
+                "attempt_public_id" uuid NOT NULL,
+                "recipient_id" bigint NOT NULL,
+                "conversation_id" integer NOT NULL,
+                PRIMARY KEY ("attempt_public_id", "conversation_id")
+            );
             CREATE TABLE "conversation_email_update_action_token" (
                 "id" bigint PRIMARY KEY,
                 "token_hash" varchar(64) NOT NULL UNIQUE,
-                "recipient_id" bigint NOT NULL,
+                "attempt_public_id" uuid NOT NULL,
                 "action" text NOT NULL,
                 "expires_at" timestamp NOT NULL,
                 "last_used_at" timestamp
@@ -431,6 +442,8 @@ describe("conversation email update action service", () => {
                 "conversation_email_update_user_conversation_preference",
                 "conversation_email_update_user_project_preference",
                 "conversation_email_update_action_token",
+                "conversation_email_update_delivery_attempt_conversation",
+                "conversation_email_update_delivery_attempt",
                 "conversation_email_update_recipient_conversation",
                 "conversation_email_update_conversation",
                 "conversation_email_update_recipient",
@@ -450,6 +463,8 @@ describe("conversation email update action service", () => {
         action,
         scopeKind,
         representedConversationIds,
+        authorizedConversationIds = representedConversationIds,
+        participantPreferenceScope,
         recipientKind = "participant",
     }: {
         token: string;
@@ -460,6 +475,8 @@ describe("conversation email update action service", () => {
             | "report";
         scopeKind: "listed_project" | "no_project";
         representedConversationIds: number[];
+        authorizedConversationIds?: number[];
+        participantPreferenceScope?: "project" | "conversation";
         recipientKind?: "participant" | "conversation_owner_copy";
     }): Promise<void> {
         await sqlClient`
@@ -476,8 +493,13 @@ describe("conversation email update action service", () => {
             VALUES (20, 1, ${scopeKind}, 'Frozen Project', 'Frozen subject')
         `;
         await sqlClient`
-            INSERT INTO "conversation_email_update_delivery" ("id", "update_id")
-            VALUES (30, 20)
+            INSERT INTO "conversation_email_update_delivery"
+                ("id", "update_id", "participant_preference_scope")
+            VALUES (
+                30,
+                20,
+                ${participantPreferenceScope ?? (scopeKind === "listed_project" ? "project" : "conversation")}
+            )
         `;
         await sqlClient`
             INSERT INTO "conversation_email_update_recipient"
@@ -504,13 +526,26 @@ describe("conversation email update action service", () => {
                 VALUES (40, 20, ${conversationId})
             `;
         }
+        const attemptPublicId = "00000000-0000-4000-8000-000000000001";
+        await sqlClient`
+            INSERT INTO "conversation_email_update_delivery_attempt"
+                ("public_id", "recipient_id")
+            VALUES (${attemptPublicId}, 40)
+        `;
+        for (const conversationId of authorizedConversationIds) {
+            await sqlClient`
+                INSERT INTO "conversation_email_update_delivery_attempt_conversation"
+                    ("attempt_public_id", "recipient_id", "conversation_id")
+                VALUES (${attemptPublicId}, 40, ${conversationId})
+            `;
+        }
         await sqlClient`
             INSERT INTO "conversation_email_update_action_token"
-                ("id", "token_hash", "recipient_id", "action", "expires_at")
+                ("id", "token_hash", "attempt_public_id", "action", "expires_at")
             VALUES (
                 50,
                 ${hashConversationEmailUpdateActionToken(token)},
-                40,
+                ${attemptPublicId},
                 ${action},
                 '2100-01-01'
             )
@@ -572,6 +607,33 @@ describe("conversation email update action service", () => {
                 choiceSource: "unsubscribe",
             },
         ]);
+    });
+
+    it("binds action capabilities to conversations authorized for the send", async () => {
+        await seedAction({
+            token: TOKEN,
+            action: "manage_preferences",
+            scopeKind: "listed_project",
+            representedConversationIds: [10, 11],
+            authorizedConversationIds: [10],
+        });
+
+        expect(await service.resolve({ token: TOKEN })).toMatchObject({
+            success: true,
+            action: "manage_preferences",
+            scope: {
+                conversations: [{ conversationSlugId: "conv0001" }],
+            },
+        });
+        expect(
+            await service.manageOptOut({
+                token: TOKEN,
+                target: {
+                    kind: "conversation",
+                    conversationSlugId: "conv0002",
+                },
+            }),
+        ).toEqual({ success: false, reason: "unavailable" });
     });
 
     it("keeps repeated direct project unsubscribe disabled and records token use", async () => {
@@ -662,6 +724,53 @@ describe("conversation email update action service", () => {
         expect(preferences).toEqual([
             { conversationId: 10, enabled: false },
             { conversationId: 11, enabled: true },
+        ]);
+    });
+
+    it("unsubscribes every represented conversation for a listed conversation-scoped delivery", async () => {
+        await seedAction({
+            token: TOKEN,
+            action: "unsubscribe_conversation",
+            scopeKind: "listed_project",
+            participantPreferenceScope: "conversation",
+            representedConversationIds: [10, 11],
+        });
+
+        expect(await service.resolve({ token: TOKEN })).toEqual({
+            success: true,
+            action: "unsubscribe_conversation",
+            scope: {
+                kind: "no_project",
+                conversations: [
+                    {
+                        conversationSlugId: "conv0001",
+                        title: "Frozen first",
+                    },
+                    {
+                        conversationSlugId: "conv0002",
+                        title: "Frozen second",
+                    },
+                ],
+            },
+        });
+        expect(await service.unsubscribe({ token: TOKEN })).toEqual({
+            success: true,
+        });
+        const preferences = await db
+            .select({
+                conversationId:
+                    conversationEmailUpdateUserConversationPreferenceTable.conversationId,
+                enabled:
+                    conversationEmailUpdateUserConversationPreferenceTable.enabled,
+            })
+            .from(conversationEmailUpdateUserConversationPreferenceTable)
+            .orderBy(
+                conversationEmailUpdateUserConversationPreferenceTable.conversationId,
+            );
+
+        expect(preferences).toEqual([
+            { conversationId: 10, enabled: false },
+            { conversationId: 11, enabled: false },
         ]);
     });
 

@@ -44,8 +44,8 @@ const supportedLanguages = [
 const ownerExplanationSnippets: Record<SupportedDisplayLanguageCodes, string> =
     {
         en: "Participant email preferences do not disable operational owner copies",
-        es: "Las preferencias de correo electrónico de los participantes no desactivan",
-        fr: "Les préférences e-mail des participants ne désactivent pas",
+        es: "Las preferencias de seguimiento por correo de los participantes no desactivan",
+        fr: "Les préférences de suivi par e-mail des participants ne désactivent pas",
         "zh-Hant": "參與者的電子郵件偏好不會停用",
         "zh-Hans": "参与者的电子邮件偏好不会停用",
         ja: "参加者のメール設定で運用上の所有者向けコピーが無効になることはありません",
@@ -149,9 +149,7 @@ describe("conversation email renderer", () => {
             expect(rendered.html).toContain("/unsubscribe/one");
             expect(rendered.text).toContain("/preferences/two");
             expect(rendered.text).toContain("/report/three");
-            expect(rendered.text).toContain(
-                ownerExplanationSnippets[language],
-            );
+            expect(rendered.text).toContain(ownerExplanationSnippets[language]);
         },
     );
 

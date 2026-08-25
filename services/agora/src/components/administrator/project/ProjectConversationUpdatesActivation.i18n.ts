@@ -49,7 +49,7 @@ export const projectConversationUpdatesActivationTranslations: Record<
     title: "تحديثات البريد الإلكتروني",
   },
   es: {
-    defaultAriaLabel: "Actualizaciones por correo activadas por defecto",
+    defaultAriaLabel: "Novedades por correo activadas por defecto",
     defaultLabel: "Activadas por defecto",
     editParticipantContact: "Editar contacto de participantes",
     listedDefaultDescription:
@@ -57,12 +57,12 @@ export const projectConversationUpdatesActivationTranslations: Record<
     listedDescription:
       "Define el valor predeterminado de las conversaciones de {projectTitle}.",
     missingContact:
-      "Añade un correo de contacto de participantes supervisado antes de enviar actualizaciones.",
+      "Añade una dirección de correo electrónico de contacto supervisada antes de enviar novedades.",
     noProjectDefaultDescription:
       "Las conversaciones sin proyecto heredan esta opción salvo que un responsable la anule.",
     noProjectDescription:
       "Define el valor predeterminado de las conversaciones creadas sin un proyecto listado.",
-    title: "Actualizaciones por correo",
+    title: "Novedades por correo",
   },
   fa: {
     defaultAriaLabel: "روشن بودن پیش‌فرض به‌روزرسانی‌های ایمیلی",
@@ -80,7 +80,7 @@ export const projectConversationUpdatesActivationTranslations: Record<
     title: "به‌روزرسانی‌های ایمیلی",
   },
   fr: {
-    defaultAriaLabel: "Mises à jour par e-mail activées par défaut",
+    defaultAriaLabel: "Nouvelles par e-mail activées par défaut",
     defaultLabel: "Activées par défaut",
     editParticipantContact: "Modifier le contact des participants",
     listedDefaultDescription:
@@ -88,12 +88,12 @@ export const projectConversationUpdatesActivationTranslations: Record<
     listedDescription:
       "Définissez le réglage par défaut des conversations de {projectTitle}.",
     missingContact:
-      "Ajoutez une adresse de contact suivie pour les participants avant d'envoyer des mises à jour.",
+      "Ajoutez une adresse e-mail de contact suivie pour les participants avant d'envoyer des nouvelles.",
     noProjectDefaultDescription:
       "Les conversations sans projet héritent de ce réglage, sauf dérogation d'un responsable.",
     noProjectDescription:
       "Définissez le réglage par défaut des conversations créées sans projet répertorié.",
-    title: "Mises à jour par e-mail",
+    title: "Nouvelles par e-mail",
   },
   he: {
     defaultAriaLabel: "עדכוני דוא״ל מופעלים כברירת מחדל",
@@ -106,8 +106,7 @@ export const projectConversationUpdatesActivationTranslations: Record<
       "יש להוסיף כתובת דוא״ל מנוטרת ליצירת קשר עם המשתתפים לפני שליחת עדכונים.",
     noProjectDefaultDescription:
       "שיחות ללא פרויקט יורשות את ההגדרה, אלא אם בעלים משנה אותה.",
-    noProjectDescription:
-      "הגדרת ברירת המחדל לשיחות שנוצרו ללא פרויקט רשום.",
+    noProjectDescription: "הגדרת ברירת המחדל לשיחות שנוצרו ללא פרויקט רשום.",
     title: "עדכוני דוא״ל",
   },
   ja: {
@@ -165,8 +164,7 @@ export const projectConversationUpdatesActivationTranslations: Record<
       "除非负责人另行设置，此项目中的对话会继承此设置。",
     listedDescription: "设置 {projectTitle} 中对话的默认值。",
     missingContact: "发送电子邮件更新前，请添加有人查收的参与者联系邮箱。",
-    noProjectDefaultDescription:
-      "除非负责人另行设置，无项目对话会继承此设置。",
+    noProjectDefaultDescription: "除非负责人另行设置，无项目对话会继承此设置。",
     noProjectDescription: "设置未归入公开项目的对话的默认值。",
     title: "电子邮件更新",
   },
@@ -178,8 +176,7 @@ export const projectConversationUpdatesActivationTranslations: Record<
       "除非負責人另行設定，此專案中的對話會沿用此設定。",
     listedDescription: "設定 {projectTitle} 中對話的預設值。",
     missingContact: "傳送電子郵件更新前，請新增有人查收的參與者聯絡信箱。",
-    noProjectDefaultDescription:
-      "除非負責人另行設定，無專案對話會沿用此設定。",
+    noProjectDefaultDescription: "除非負責人另行設定，無專案對話會沿用此設定。",
     noProjectDescription: "設定未歸入公開專案的對話的預設值。",
     title: "電子郵件更新",
   },

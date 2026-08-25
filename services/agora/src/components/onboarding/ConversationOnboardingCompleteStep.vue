@@ -23,6 +23,7 @@
         :scope-kind="scopeKind"
       />
       <ZKButton
+        v-if="showReviewAnswers"
         button-type="compactButton"
         flat
         color="primary"
@@ -54,6 +55,7 @@ defineProps<{
   reviewAnswersLabel: string;
   continueWithoutSavingLabel: string | undefined;
   showConversationUpdatesPreference: boolean;
+  showReviewAnswers: boolean;
   scopeKind: ConversationUpdateScopeSummary["kind"];
   isSaving: boolean;
 }>();

@@ -42,13 +42,13 @@ export const emailUpdateReportTranslations = {
     successDescription: "Thank you. We will review this Email Update.",
   },
   es: {
-    pageTitle: "Denunciar una actualización por correo",
+    pageTitle: "Denunciar una novedad",
     loading: "Cargando el formulario de denuncia",
     unavailableTitle: "Este enlace no está disponible",
     unavailableDescription:
       "Puede que el enlace no sea válido, haya caducado o corresponda a otra acción.",
     returnHome: "Volver a Agora",
-    title: "Denunciar esta actualización por correo",
+    title: "Denunciar esta novedad",
     description: "Cuéntanos qué problema había en «{subject}».",
     spam: "Correo no deseado",
     abuse: "Contenido abusivo",
@@ -60,16 +60,16 @@ export const emailUpdateReportTranslations = {
     submitting: "Enviando",
     submitFailed: "No hemos podido enviar tu denuncia. Inténtalo de nuevo.",
     successTitle: "Denuncia recibida",
-    successDescription: "Gracias. Revisaremos esta actualización por correo.",
+    successDescription: "Gracias. Revisaremos esta novedad.",
   },
   fr: {
-    pageTitle: "Signaler une mise à jour par e-mail",
+    pageTitle: "Signaler une nouvelle",
     loading: "Chargement du formulaire de signalement",
     unavailableTitle: "Ce lien n'est pas disponible",
     unavailableDescription:
       "Le lien est peut-être invalide, expiré ou destiné à une autre action.",
     returnHome: "Retourner sur Agora",
-    title: "Signaler cette mise à jour par e-mail",
+    title: "Signaler cette nouvelle",
     description: "Dites-nous ce qui n'allait pas dans « {subject} ».",
     spam: "Courrier indésirable",
     abuse: "Contenu abusif",
@@ -82,7 +82,7 @@ export const emailUpdateReportTranslations = {
     submitFailed:
       "Nous n'avons pas pu envoyer votre signalement. Veuillez réessayer.",
     successTitle: "Signalement reçu",
-    successDescription: "Merci. Nous examinerons cette mise à jour par e-mail.",
+    successDescription: "Merci. Nous examinerons cette nouvelle.",
   },
   "zh-Hant": {
     pageTitle: "檢舉電子郵件更新",

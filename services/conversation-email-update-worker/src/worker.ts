@@ -295,7 +295,7 @@ export function createConversationEmailUpdateWorker({
         const conversations = await getUpdateConversationLinks({
             db,
             updateId: work.updateId,
-            recipientId: undefined,
+            kind: "test",
             siteBaseUrl: config.siteBaseUrl,
         });
         const rendered = renderConversationEmail({

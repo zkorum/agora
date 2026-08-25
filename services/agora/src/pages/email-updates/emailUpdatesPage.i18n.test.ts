@@ -25,7 +25,10 @@ describe("emailUpdatesPageTranslations", () => {
       }
     }
     expect(emailUpdatesPageTranslations.fr.pageTitle).toBe(
-      "Actualités par e-mail"
+      "Nouvelles par e-mail"
+    );
+    expect(emailUpdatesPageTranslations.es.pageTitle).toBe(
+      "Novedades por correo"
     );
   });
 });

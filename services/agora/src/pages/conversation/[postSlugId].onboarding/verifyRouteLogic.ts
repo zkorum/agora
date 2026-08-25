@@ -1,5 +1,6 @@
 import type { SurveyStatusCheckResponse } from "src/shared/types/dto";
 import type { ParticipationMode } from "src/shared/types/zod";
+import type { ConversationEmailUpdateOnboardingResolution } from "src/utils/api/conversationUpdates/useConversationEmailUpdateQueries";
 import type { SurveyFormData } from "src/utils/api/survey/useSurveyQueries";
 import {
   type ConversationRouteContext,
@@ -63,6 +64,7 @@ export function resolveVerifyRouteDecision({
   surveyStatus,
   surveyForm,
   requirementState,
+  emailUpdateResolution,
   routeContext = normalConversationRouteContext,
 }: {
   exactVerifyRoute: boolean;
@@ -74,6 +76,7 @@ export function resolveVerifyRouteDecision({
   surveyStatus: SurveyStatusCheckResponse | undefined;
   surveyForm: SurveyFormData | undefined;
   requirementState: VerifyRouteRequirementState;
+  emailUpdateResolution: ConversationEmailUpdateOnboardingResolution;
   routeContext?: ConversationRouteContext;
 }): VerifyRouteDecision {
   if (!exactVerifyRoute || isInitialLoading) {
@@ -149,6 +152,25 @@ export function resolveVerifyRouteDecision({
             conversationSlugId,
             routeContext,
           }),
+      },
+    });
+  }
+
+  if (emailUpdateResolution.status === "loading") {
+    return createDecision({ navigation: { kind: "none" } });
+  }
+
+  if (
+    emailUpdateResolution.status === "required" ||
+    emailUpdateResolution.status === "transient_error"
+  ) {
+    return createDecision({
+      navigation: {
+        kind: "redirect",
+        path: getConversationSurveyCompletePath({
+          conversationSlugId,
+          routeContext,
+        }),
       },
     });
   }

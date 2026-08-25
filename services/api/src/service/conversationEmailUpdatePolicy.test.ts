@@ -3,6 +3,7 @@ import {
     decideConversationEmailFinalSend,
     decideConversationEmailTestRateLimit,
     resolveConversationEmailOnboardingAction,
+    resolveConversationEmailParticipantPreferenceScope,
     resolveConversationEmailPreference,
     resolveConversationEmailSendingAvailability,
     type ConversationEmailTestedBasis,
@@ -56,6 +57,82 @@ describe("resolveConversationEmailPreference", () => {
     });
 });
 
+describe("resolveConversationEmailParticipantPreferenceScope", () => {
+    const cases: {
+        scopeKind: "project" | "no_project";
+        projectDefaultEnabled: boolean;
+        conversationOverrideEnabled: boolean | undefined;
+        expected: "project" | "conversation" | undefined;
+    }[] = [
+        {
+            scopeKind: "no_project",
+            projectDefaultEnabled: true,
+            conversationOverrideEnabled: undefined,
+            expected: "conversation",
+        },
+        {
+            scopeKind: "no_project",
+            projectDefaultEnabled: false,
+            conversationOverrideEnabled: true,
+            expected: "conversation",
+        },
+        {
+            scopeKind: "project",
+            projectDefaultEnabled: true,
+            conversationOverrideEnabled: undefined,
+            expected: "project",
+        },
+        {
+            scopeKind: "project",
+            projectDefaultEnabled: true,
+            conversationOverrideEnabled: true,
+            expected: "project",
+        },
+        {
+            scopeKind: "project",
+            projectDefaultEnabled: false,
+            conversationOverrideEnabled: true,
+            expected: "conversation",
+        },
+        {
+            scopeKind: "project",
+            projectDefaultEnabled: true,
+            conversationOverrideEnabled: false,
+            expected: undefined,
+        },
+        {
+            scopeKind: "project",
+            projectDefaultEnabled: false,
+            conversationOverrideEnabled: undefined,
+            expected: undefined,
+        },
+        {
+            scopeKind: "project",
+            projectDefaultEnabled: false,
+            conversationOverrideEnabled: false,
+            expected: undefined,
+        },
+    ];
+
+    it.each(cases)(
+        "resolves $scopeKind default=$projectDefaultEnabled override=$conversationOverrideEnabled",
+        ({
+            scopeKind,
+            projectDefaultEnabled,
+            conversationOverrideEnabled,
+            expected,
+        }) => {
+            expect(
+                resolveConversationEmailParticipantPreferenceScope({
+                    scopeKind,
+                    projectDefaultEnabled,
+                    conversationOverrideEnabled,
+                }),
+            ).toBe(expected);
+        },
+    );
+});
+
 describe("resolveConversationEmailSendingAvailability", () => {
     const availableFacts = {
         operationallyEnabled: true,
@@ -106,11 +183,16 @@ describe("resolveConversationEmailOnboardingAction", () => {
                 hasVerifiedEmail: true,
                 preferenceState: "undisclosed",
                 availability: { available: true },
-                scope: { kind: "project", projectSlug: "public-plan" },
+                scope: {
+                    kind: "project",
+                    projectSlug: "public-plan",
+                    conversationSlugId: "budget-priorities",
+                },
             }),
         ).toEqual({
             operation: "set_project_preference",
             projectSlug: "public-plan",
+            conversationSlugId: "budget-priorities",
             initialEnabled: true,
         });
     });
@@ -124,7 +206,10 @@ describe("resolveConversationEmailOnboardingAction", () => {
                     available: false,
                     reason: "configuration_disabled",
                 },
-                scope: { kind: "no_project", conversationSlugId: "direct01" },
+                scope: {
+                    kind: "conversation",
+                    conversationSlugId: "direct01",
+                },
             }),
         ).toBeUndefined();
     });

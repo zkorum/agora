@@ -186,6 +186,7 @@ import ZKSwitch from "src/components/ui-library/ZKSwitch.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ConversationEmailUpdatePreferenceGroup } from "src/shared/types/dto";
 import { useBackendConversationEmailUpdatesApi } from "src/utils/api/conversationUpdates/conversationEmailUpdates";
+import { useRemoveConversationEmailUpdateSummaryQueries } from "src/utils/api/conversationUpdates/useConversationEmailUpdateQueries";
 import { useNotify } from "src/utils/ui/notify";
 import { onMounted, ref, watch } from "vue";
 
@@ -193,6 +194,10 @@ import {
   type ConversationUpdatePreferenceSettingsTranslations,
   conversationUpdatePreferenceSettingsTranslations,
 } from "./ConversationUpdatePreferenceSettings.i18n";
+import {
+  type EmailUpdateResumeNotificationTranslations,
+  emailUpdateResumeNotificationTranslations,
+} from "./emailUpdateResumeNotification.i18n";
 
 type ProjectPreferenceGroup = Extract<
   ConversationEmailUpdatePreferenceGroup,
@@ -200,9 +205,15 @@ type ProjectPreferenceGroup = Extract<
 >;
 
 const emailUpdatesApi = useBackendConversationEmailUpdatesApi();
+const removeConversationEmailUpdateSummaryQueries =
+  useRemoveConversationEmailUpdateSummaryQueries();
 const { t } =
   useComponentI18n<ConversationUpdatePreferenceSettingsTranslations>(
     conversationUpdatePreferenceSettingsTranslations
+  );
+const { t: tEmailUpdateResume } =
+  useComponentI18n<EmailUpdateResumeNotificationTranslations>(
+    emailUpdateResumeNotificationTranslations
   );
 const { showNotifyMessage } = useNotify();
 const search = ref("");
@@ -319,6 +330,7 @@ async function setGlobalPaused(paused: boolean): Promise<void> {
       rollbackGlobalPreference({ key, generation, previousValue });
       showNotifyMessage(t("savePreferenceError"));
     } else {
+      removeConversationEmailUpdateSummaryQueries(response.result);
       globalPaused.value = response.result.globalPaused;
       showNotifyMessage(
         t(response.result.globalPaused ? "pauseSaved" : "resumeSaved")
@@ -366,7 +378,7 @@ async function setProjectPreference({
       operation: "set_project_preference",
       projectSlug: group.projectSlug,
       enabled,
-      source: "settings",
+      source: { kind: "settings" },
     });
     if (!isCurrentMutation({ key, generation })) {
       return;
@@ -385,16 +397,22 @@ async function setProjectPreference({
       });
       showNotifyMessage(t("savePreferenceError"));
     } else {
+      removeConversationEmailUpdateSummaryQueries(response.result);
+      if (response.result.globalResumed) {
+        globalPaused.value = false;
+      }
       setProjectState({
         projectSlug: group.projectSlug,
         state: response.result.state,
       });
       showNotifyMessage(
-        t(
-          response.result.state === "enabled"
-            ? "preferenceOnSaved"
-            : "preferenceOffSaved"
-        )
+        response.result.globalResumed
+          ? tEmailUpdateResume("preferenceSavedAndGlobalResumed")
+          : t(
+              response.result.state === "enabled"
+                ? "preferenceOnSaved"
+                : "preferenceOffSaved"
+            )
       );
     }
   } catch (error) {
@@ -456,14 +474,15 @@ async function setConversationPreference({
       return;
     }
     shouldReconcile = true;
-    const savedPreference =
+    const savedResult =
       response.success &&
       response.result.operation === "set_conversation_preference"
-        ? response.result.conversationPreferences.find(
-            (preference) => preference.conversationSlugId === conversationSlugId
-          )
+        ? response.result
         : undefined;
-    if (savedPreference === undefined) {
+    const savedPreference = savedResult?.conversationPreferences.find(
+      (preference) => preference.conversationSlugId === conversationSlugId
+    );
+    if (savedResult === undefined || savedPreference === undefined) {
       rollbackConversationPreference({
         key,
         generation,
@@ -472,16 +491,22 @@ async function setConversationPreference({
       });
       showNotifyMessage(t("savePreferenceError"));
     } else {
+      removeConversationEmailUpdateSummaryQueries(savedResult);
+      if (savedResult.globalResumed) {
+        globalPaused.value = false;
+      }
       setConversationState({
         conversationSlugId,
         state: savedPreference.state,
       });
       showNotifyMessage(
-        t(
-          savedPreference.state === "enabled"
-            ? "preferenceOnSaved"
-            : "preferenceOffSaved"
-        )
+        savedResult.globalResumed
+          ? tEmailUpdateResume("preferenceSavedAndGlobalResumed")
+          : t(
+              savedPreference.state === "enabled"
+                ? "preferenceOnSaved"
+                : "preferenceOffSaved"
+            )
       );
     }
   } catch (error) {

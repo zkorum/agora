@@ -9,11 +9,18 @@ import type {
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useConversationOnboardingStore } from "src/stores/conversationOnboarding";
 import { useUserStore } from "src/stores/user";
+import { useConversationEmailUpdateSummaryQuery } from "src/utils/api/conversationUpdates/useConversationEmailUpdateQueries";
 import { useSurveyStatusQuery } from "src/utils/api/survey/useSurveyQueries";
 import { getHistoryPosition } from "src/utils/nav/historyBack";
 import { getConversationRouteContextFromRoute } from "src/utils/router/conversationRouteContext";
 import { deriveSurveyRequirementState } from "src/utils/survey/requirements";
-import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from "vue";
+import {
+  computed,
+  type ComputedRef,
+  type MaybeRefOrGetter,
+  ref,
+  toValue,
+} from "vue";
 import { useRoute } from "vue-router";
 
 export interface ParticipationGateState {
@@ -80,7 +87,6 @@ export function useParticipationGate({
     conversationSlugId: computed(() => toValue(conversationSlugId)),
     enabled: computed(() => isAuthInitialized.value),
   });
-
   const requirementState = computed(() => {
     return deriveSurveyRequirementState({
       participationMode: toValue(participationMode),
@@ -90,6 +96,16 @@ export function useParticipationGate({
       hasEmailVerification: hasEmailVerification.value,
       verifiedEventTicketList: Array.from(verifiedEventTickets.value),
     });
+  });
+  const resolveEmailUpdates = ref(false);
+  const emailUpdateSummaryQuery = useConversationEmailUpdateSummaryQuery({
+    conversationSlugId: computed(() => toValue(conversationSlugId)),
+    enabled: computed(
+      () =>
+        !requirementState.value.needsAuth &&
+        !requirementState.value.needsTicket &&
+        resolveEmailUpdates.value
+    ),
   });
 
   const effectiveSurveyGate = computed(() => {
@@ -132,6 +148,24 @@ export function useParticipationGate({
 
   async function shouldOpenParticipationModal(): Promise<boolean> {
     if (requirementState.value.needsAuth || requirementState.value.needsTicket) {
+      return true;
+    }
+
+    if (!resolveEmailUpdates.value) {
+      resolveEmailUpdates.value = true;
+      await emailUpdateSummaryQuery.refetch();
+    } else if (
+      emailUpdateSummaryQuery.onboardingResolution.value.status === "loading"
+    ) {
+      await emailUpdateSummaryQuery.refetch();
+    }
+
+    const emailUpdateStatus =
+      emailUpdateSummaryQuery.onboardingResolution.value.status;
+    if (
+      emailUpdateStatus === "required" ||
+      emailUpdateStatus === "transient_error"
+    ) {
       return true;
     }
 
@@ -182,7 +216,7 @@ export function useParticipationGate({
     switch (reason) {
       case "survey_required":
       case "survey_outdated":
-        await openNextSurveyStep();
+        await openParticipationOnboarding();
         return "handled";
       case "account_required":
       case "strong_verification_required":

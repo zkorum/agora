@@ -1,5 +1,25 @@
 export type ConversationEmailUpdateScopeKind = "project" | "no_project";
 
+export type ConversationEmailParticipantPreferenceScope =
+    | "project"
+    | "conversation";
+
+export function resolveConversationEmailParticipantPreferenceScope({
+    scopeKind,
+    projectDefaultEnabled,
+    conversationOverrideEnabled,
+}: {
+    scopeKind: ConversationEmailUpdateScopeKind;
+    projectDefaultEnabled: boolean;
+    conversationOverrideEnabled: boolean | null | undefined;
+}): ConversationEmailParticipantPreferenceScope | undefined {
+    const configuredEnabled =
+        conversationOverrideEnabled ?? projectDefaultEnabled;
+    if (!configuredEnabled) return undefined;
+    if (scopeKind === "no_project") return "conversation";
+    return projectDefaultEnabled ? "project" : "conversation";
+}
+
 export interface ConversationEmailPreferenceState {
     globalPaused: boolean;
     projectEnabled: boolean | undefined;
@@ -70,6 +90,7 @@ export type ConversationEmailOnboardingAction =
     | {
           operation: "set_project_preference";
           projectSlug: string;
+          conversationSlugId: string;
           initialEnabled: boolean;
       }
     | {
@@ -88,8 +109,12 @@ export function resolveConversationEmailOnboardingAction({
     preferenceState: "disabled" | "enabled" | "undisclosed";
     availability: ConversationEmailSendingAvailability;
     scope:
-        | { kind: "project"; projectSlug: string }
-        | { kind: "no_project"; conversationSlugId: string };
+        | {
+              kind: "project";
+              projectSlug: string;
+              conversationSlugId: string;
+          }
+        | { kind: "conversation"; conversationSlugId: string };
 }): ConversationEmailOnboardingAction | undefined {
     if (
         !hasVerifiedEmail ||
@@ -102,6 +127,7 @@ export function resolveConversationEmailOnboardingAction({
         ? {
               operation: "set_project_preference",
               projectSlug: scope.projectSlug,
+              conversationSlugId: scope.conversationSlugId,
               initialEnabled: true,
           }
         : {

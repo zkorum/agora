@@ -83,6 +83,7 @@ import {
     decideConversationEmailFinalSend,
     decideConversationEmailTestRateLimit,
     resolveConversationEmailOnboardingAction,
+    resolveConversationEmailParticipantPreferenceScope,
     resolveConversationEmailPreference,
     resolveConversationEmailSendingAvailability,
 } from "./conversationEmailUpdatePolicy.js";
@@ -896,6 +897,17 @@ async function countEligibleAudience({
     cutoffAt: Date;
     excludedUserIds: readonly string[];
 }): Promise<number> {
+    const selectedConversation = selection.conversations.at(0);
+    if (selectedConversation === undefined) return 0;
+    const preferenceScope =
+        resolveConversationEmailParticipantPreferenceScope({
+            scopeKind: selectedConversation.scope_kind,
+            projectDefaultEnabled:
+                selectedConversation.project_default_enabled,
+            conversationOverrideEnabled:
+                selectedConversation.conversation_override,
+        });
+    if (preferenceScope === undefined) return 0;
     const conversationIds = selection.conversations.map(
         (row) => row.conversation_id,
     );
@@ -905,7 +917,7 @@ async function countEligibleAudience({
         scope: { kind: "conversation_ids", conversationIds },
     }).as("participation");
     const preferenceCondition =
-        selection.project.scope_kind === "project"
+        preferenceScope === "project"
             ? and(
                   eq(
                       conversationEmailUpdateUserProjectPreferenceTable.enabled,
@@ -2137,6 +2149,86 @@ async function loadPreferenceRows({
     };
 }
 
+async function loadConversationPreferenceState({
+    db,
+    userId,
+    projectId,
+    conversationId,
+    preferenceScope,
+}: {
+    db: PostgresJsDatabase;
+    userId: string;
+    projectId: number;
+    conversationId: number;
+    preferenceScope: "project" | "conversation" | undefined;
+}): Promise<{
+    globalPaused: boolean;
+    projectEnabled: boolean | undefined;
+    conversationEnabled: boolean | undefined;
+}> {
+    const [globalRows, projectRows, conversationRows] = await Promise.all([
+        db
+            .select({
+                pausedAt:
+                    conversationEmailUpdateUserGlobalSettingTable.pausedAt,
+            })
+            .from(conversationEmailUpdateUserGlobalSettingTable)
+            .where(
+                eq(
+                    conversationEmailUpdateUserGlobalSettingTable.userId,
+                    userId,
+                ),
+            )
+            .limit(1),
+        preferenceScope === "project"
+            ? db
+                  .select({
+                      enabled:
+                          conversationEmailUpdateUserProjectPreferenceTable.enabled,
+                  })
+                  .from(conversationEmailUpdateUserProjectPreferenceTable)
+                  .where(
+                      and(
+                          eq(
+                              conversationEmailUpdateUserProjectPreferenceTable.userId,
+                              userId,
+                          ),
+                          eq(
+                              conversationEmailUpdateUserProjectPreferenceTable.projectId,
+                              projectId,
+                          ),
+                      ),
+                  )
+                  .limit(1)
+            : Promise.resolve([]),
+        db
+            .select({
+                enabled:
+                    conversationEmailUpdateUserConversationPreferenceTable.enabled,
+            })
+            .from(conversationEmailUpdateUserConversationPreferenceTable)
+            .where(
+                and(
+                    eq(
+                        conversationEmailUpdateUserConversationPreferenceTable.userId,
+                        userId,
+                    ),
+                    eq(
+                        conversationEmailUpdateUserConversationPreferenceTable.conversationId,
+                        conversationId,
+                    ),
+                ),
+            )
+            .limit(1),
+    ]);
+    return {
+        globalPaused:
+            globalRows.at(0)?.pausedAt !== null && globalRows.length > 0,
+        projectEnabled: projectRows.at(0)?.enabled,
+        conversationEnabled: conversationRows.at(0)?.enabled,
+    };
+}
+
 async function queryProjectConfigurationRows({
     db,
     projectSlug,
@@ -2572,6 +2664,33 @@ async function lockUser({
         .from(userTable)
         .where(eq(userTable.id, userId))
         .for("update");
+}
+
+async function resumeGloballyPausedEmailUpdates({
+    db,
+    userId,
+    now,
+}: {
+    db: PostgresJsDatabase;
+    userId: string;
+    now: Date;
+}): Promise<boolean> {
+    const resumedRows = await db
+        .update(conversationEmailUpdateUserGlobalSettingTable)
+        .set({ pausedAt: null, updatedAt: now })
+        .where(
+            and(
+                eq(
+                    conversationEmailUpdateUserGlobalSettingTable.userId,
+                    userId,
+                ),
+                isNotNull(
+                    conversationEmailUpdateUserGlobalSettingTable.pausedAt,
+                ),
+            ),
+        )
+        .returning({ userId: conversationEmailUpdateUserGlobalSettingTable.userId });
+    return resumedRows.length > 0;
 }
 
 async function lockProject({
@@ -3551,6 +3670,20 @@ export function createConversationEmailUpdateService({
                                 reason: "sending_disabled",
                             } as const;
                         }
+                        const participantPreferenceScope =
+                            resolveConversationEmailParticipantPreferenceScope({
+                                scopeKind: project.scope_kind,
+                                projectDefaultEnabled:
+                                    project.project_default_enabled,
+                                conversationOverrideEnabled:
+                                    project.conversation_override,
+                            });
+                        if (participantPreferenceScope === undefined) {
+                            return {
+                                success: false,
+                                reason: "sending_disabled",
+                            } as const;
+                        }
                         const ownerCopySet = await resolveRequiredOwnerCopies({
                             db: tx,
                             projectId: attempt.project_id,
@@ -3609,6 +3742,7 @@ export function createConversationEmailUpdateService({
                                 acceptedTestAttemptId: attempt.attempt_id,
                                 acceptedByUserId: userId,
                                 status: "preparing",
+                                participantPreferenceScope,
                                 audienceCutoffAt: now,
                                 displayedParticipantEstimate:
                                     request.displayedParticipantEstimate,
@@ -3775,15 +3909,17 @@ export function createConversationEmailUpdateService({
 
         updatePreference: async ({ userId, request }) => {
             return await getPrimaryDatabase(db).transaction(async (tx) => {
-                await lockUser({ db: tx, userId });
-                if ((await getPrimaryEmail({ db: tx, userId })) === undefined) {
-                    return {
-                        success: false,
-                        reason: "verified_email_required",
-                    };
-                }
                 const now = new Date();
                 if (request.operation === "set_global_pause") {
+                    await lockUser({ db: tx, userId });
+                    if (
+                        (await getPrimaryEmail({ db: tx, userId })) === undefined
+                    ) {
+                        return {
+                            success: false,
+                            reason: "verified_email_required",
+                        };
+                    }
                     await tx
                         .insert(conversationEmailUpdateUserGlobalSettingTable)
                         .values({
@@ -3820,6 +3956,7 @@ export function createConversationEmailUpdateService({
                                 ),
                             ),
                         )
+                        .for("update")
                         .limit(1);
                     const project = projectRows.at(0);
                     if (project === undefined) {
@@ -3828,20 +3965,135 @@ export function createConversationEmailUpdateService({
                             reason: "project_not_found",
                         };
                     }
-                    const config = await getProjectConfigurationRow({
-                        db: tx,
-                        projectSlug: request.projectSlug,
-                        now,
-                    });
+                    await lockUser({ db: tx, userId });
+                    const existingOnboardingPreference =
+                        request.source.kind === "onboarding"
+                            ? await tx
+                                  .select({
+                                      enabled:
+                                          conversationEmailUpdateUserProjectPreferenceTable.enabled,
+                                  })
+                                  .from(
+                                      conversationEmailUpdateUserProjectPreferenceTable,
+                                  )
+                                  .where(
+                                      and(
+                                          eq(
+                                              conversationEmailUpdateUserProjectPreferenceTable.userId,
+                                              userId,
+                                          ),
+                                          eq(
+                                              conversationEmailUpdateUserProjectPreferenceTable.projectId,
+                                              project.id,
+                                          ),
+                                      ),
+                                  )
+                                  .limit(1)
+                            : [];
                     if (
-                        config?.feature_available !== true ||
-                        config.safety_blocked
+                        existingOnboardingPreference.at(0)?.enabled ===
+                        request.enabled
+                    ) {
+                        const globalResumed = request.enabled
+                            ? await resumeGloballyPausedEmailUpdates({
+                                  db: tx,
+                                  userId,
+                                  now,
+                              })
+                            : false;
+                        return {
+                            success: true,
+                            result: {
+                                operation: request.operation,
+                                projectSlug: request.projectSlug,
+                                state: request.enabled
+                                    ? "enabled"
+                                    : "disabled",
+                                globalResumed,
+                            },
+                        };
+                    }
+                    if (
+                        (await getPrimaryEmail({ db: tx, userId })) === undefined
                     ) {
                         return {
                             success: false,
-                            reason: "feature_not_available",
+                            reason: "verified_email_required",
                         };
                     }
+                    if (request.source.kind === "onboarding") {
+                        const sourceConfig =
+                            await getConversationConfigurationRow({
+                                db: tx,
+                                conversationSlugId:
+                                    request.source.conversationSlugId,
+                                now,
+                            });
+                        const sourcePreferenceScope =
+                            sourceConfig === undefined
+                                ? undefined
+                                : resolveConversationEmailParticipantPreferenceScope(
+                                      {
+                                          scopeKind: sourceConfig.scope_kind,
+                                          projectDefaultEnabled:
+                                              sourceConfig.default_enabled,
+                                          conversationOverrideEnabled:
+                                              sourceConfig.override_enabled,
+                                      },
+                                  );
+                        const sourceAvailability =
+                            sourceConfig === undefined
+                                ? undefined
+                                : resolveConversationEmailSendingAvailability({
+                                      operationallyEnabled: sendingEnabled,
+                                      featureAvailable:
+                                          sourceConfig.feature_available,
+                                      safetyBlocked: sourceConfig.safety_blocked,
+                                      configuredEnabled:
+                                          sourceConfig.override_enabled ??
+                                          sourceConfig.default_enabled,
+                                      hasParticipantContactEmail:
+                                          normalizeContactEmail(
+                                              sourceConfig.contact_email,
+                                          ) !== undefined,
+                                  });
+                        if (
+                            sourceConfig?.project_id !== project.id ||
+                            sourcePreferenceScope !== "project" ||
+                            sourceAvailability?.available !== true ||
+                            existingOnboardingPreference.length > 0
+                        ) {
+                            return {
+                                success: false,
+                                reason: "feature_not_available",
+                            };
+                        }
+                    } else {
+                        const config = await getProjectConfigurationRow({
+                            db: tx,
+                            projectSlug: request.projectSlug,
+                            now,
+                        });
+                        if (config === undefined) {
+                            return {
+                                success: false,
+                                reason: "project_not_found",
+                            };
+                        }
+                        if (!config.feature_available || config.safety_blocked) {
+                            return {
+                                success: false,
+                                reason: "feature_not_available",
+                            };
+                        }
+                    }
+                    const globalResumed = request.enabled
+                        ? await resumeGloballyPausedEmailUpdates({
+                              db: tx,
+                              userId,
+                              now,
+                          })
+                        : false;
                     await tx
                         .insert(
                             conversationEmailUpdateUserProjectPreferenceTable,
@@ -3851,7 +4103,7 @@ export function createConversationEmailUpdateService({
                             projectId: project.id,
                             enabled: request.enabled,
                             choiceAt: now,
-                            choiceSource: request.source,
+                            choiceSource: request.source.kind,
                         })
                         .onConflictDoUpdate({
                             target: [
@@ -3861,7 +4113,7 @@ export function createConversationEmailUpdateService({
                             set: {
                                 enabled: request.enabled,
                                 choiceAt: now,
-                                choiceSource: request.source,
+                                choiceSource: request.source.kind,
                             },
                         });
                     return {
@@ -3870,18 +4122,106 @@ export function createConversationEmailUpdateService({
                             operation: request.operation,
                             projectSlug: request.projectSlug,
                             state: request.enabled ? "enabled" : "disabled",
+                            globalResumed,
                         },
                     };
                 }
+                const initialConfig = await getConversationConfigurationRow({
+                    db: tx,
+                    conversationSlugId: request.conversationSlugId,
+                    now,
+                });
+                if (
+                    initialConfig === undefined ||
+                    !(await lockProject({
+                        db: tx,
+                        projectId: initialConfig.project_id,
+                    }))
+                ) {
+                    return {
+                        success: false,
+                        reason: "conversation_not_found",
+                    };
+                }
+                await lockUser({ db: tx, userId });
                 const config = await getConversationConfigurationRow({
                     db: tx,
                     conversationSlugId: request.conversationSlugId,
                     now,
                 });
-                if (config === undefined) {
+                if (config?.project_id !== initialConfig.project_id) {
                     return {
                         success: false,
                         reason: "conversation_not_found",
+                    };
+                }
+                const preferenceScope =
+                    resolveConversationEmailParticipantPreferenceScope({
+                        scopeKind: config.scope_kind,
+                        projectDefaultEnabled: config.default_enabled,
+                        conversationOverrideEnabled: config.override_enabled,
+                    });
+                const preferenceState = await loadConversationPreferenceState({
+                    db: tx,
+                    userId,
+                    projectId: config.project_id,
+                    conversationId: config.conversation_id,
+                    preferenceScope,
+                });
+                if (
+                    request.source === "onboarding" &&
+                    preferenceState.conversationEnabled ===
+                    request.enabled
+                ) {
+                    const globalResumed = request.enabled
+                        ? await resumeGloballyPausedEmailUpdates({
+                              db: tx,
+                              userId,
+                              now,
+                          })
+                        : false;
+                    const resolvedEnabled =
+                        preferenceScope === "project"
+                            ? resolveConversationEmailPreference({
+                                  globalPaused:
+                                      preferenceState.globalPaused &&
+                                      !globalResumed,
+                                  projectEnabled:
+                                      preferenceState.projectEnabled,
+                                  conversationEnabled: request.enabled,
+                                  scopeKind: "project",
+                              })
+                            : resolveConversationEmailPreference({
+                                  globalPaused:
+                                      preferenceState.globalPaused &&
+                                      !globalResumed,
+                                  projectEnabled: undefined,
+                                  conversationEnabled: request.enabled,
+                                  scopeKind: "no_project",
+                              });
+                    return {
+                        success: true,
+                        result: {
+                            operation: request.operation,
+                            projectPreference: undefined,
+                            globalResumed,
+                            conversationPreferences: [
+                                {
+                                    conversationSlugId:
+                                        request.conversationSlugId,
+                                    state: request.enabled
+                                        ? "enabled"
+                                        : "disabled",
+                                    resolvedEnabled,
+                                },
+                            ],
+                        },
+                    };
+                }
+                if ((await getPrimaryEmail({ db: tx, userId })) === undefined) {
+                    return {
+                        success: false,
+                        reason: "verified_email_required",
                     };
                 }
                 if (!config.feature_available || config.safety_blocked) {
@@ -3894,7 +4234,46 @@ export function createConversationEmailUpdateService({
                     | { projectSlug: string; state: "enabled" }
                     | undefined;
                 let conversationIds = [config.conversation_id];
-                if (request.enabled && config.scope_kind === "project") {
+                if (
+                    preferenceScope === undefined ||
+                    (request.source === "onboarding" &&
+                        preferenceScope !== "conversation")
+                ) {
+                    return {
+                        success: false,
+                        reason: "feature_not_available",
+                    };
+                }
+                if (request.source === "onboarding") {
+                    const availability =
+                        resolveConversationEmailSendingAvailability({
+                            operationallyEnabled: sendingEnabled,
+                            featureAvailable: config.feature_available,
+                            safetyBlocked: config.safety_blocked,
+                            configuredEnabled:
+                                config.override_enabled ?? config.default_enabled,
+                            hasParticipantContactEmail:
+                                normalizeContactEmail(config.contact_email) !==
+                                undefined,
+                        });
+                    if (
+                        !availability.available ||
+                        preferenceState.conversationEnabled !== undefined
+                    ) {
+                        return {
+                            success: false,
+                            reason: "feature_not_available",
+                        };
+                    }
+                }
+                const globalResumed = request.enabled
+                    ? await resumeGloballyPausedEmailUpdates({
+                          db: tx,
+                          userId,
+                          now,
+                      })
+                    : false;
+                if (request.enabled && preferenceScope === "project") {
                     const preferences = await tx
                         .select({
                             enabled:
@@ -3998,14 +4377,23 @@ export function createConversationEmailUpdateService({
                     result: {
                         operation: request.operation,
                         projectPreference,
-                        conversationPreferences: changedRows.map((row) => ({
-                            conversationSlugId: row.slugId,
-                            state:
+                        globalResumed,
+                        conversationPreferences: changedRows.map((row) => {
+                            const enabled =
                                 row.id === config.conversation_id &&
-                                request.enabled
-                                    ? ("enabled" as const)
-                                    : ("disabled" as const),
-                        })),
+                                request.enabled;
+                            const state: "enabled" | "disabled" = enabled
+                                ? "enabled"
+                                : "disabled";
+                            return {
+                                conversationSlugId: row.slugId,
+                                state,
+                                resolvedEnabled:
+                                    enabled &&
+                                    (!preferenceState.globalPaused ||
+                                        globalResumed),
+                            };
+                        }),
                     },
                 };
             });
@@ -4194,34 +4582,37 @@ export function createConversationEmailUpdateService({
                     reason: "feature_not_available",
                 };
             }
-            const [accessRows, primaryEmail, preferenceRows] =
+            const preferenceScope =
+                resolveConversationEmailParticipantPreferenceScope({
+                    scopeKind: row.scope_kind,
+                    projectDefaultEnabled: row.default_enabled,
+                    conversationOverrideEnabled: row.override_enabled,
+                });
+            const [canAccessWorkspace, primaryEmail, preferenceState] =
                 await Promise.all([
-                    listAuthorizedConversations({
+                    hasConversationEmailUpdateCapability({
                         db,
                         userId,
+                        projectId: row.project_id,
                         now,
                     }),
                     getPrimaryEmail({ db, userId }),
-                    loadPreferenceRows({
+                    loadConversationPreferenceState({
                         db,
                         userId,
-                        now,
+                        projectId: row.project_id,
+                        conversationId: row.conversation_id,
+                        preferenceScope,
                     }),
                 ]);
-            const canAccessWorkspace = accessRows.some(
-                (access) => access.conversation_id === row.conversation_id,
-            );
-            const conversationPreference = preferenceRows.conversationRows.find(
-                (preference) =>
-                    preference.conversation_id === row.conversation_id,
-            )?.enabled;
-            const projectPreference = preferenceRows.projectRows.find(
-                (preference) => preference.project_id === row.project_id,
-            )?.enabled;
+            const applicablePreference =
+                preferenceScope === "project"
+                    ? preferenceState.projectEnabled
+                    : preferenceState.conversationEnabled;
             const state =
-                conversationPreference === undefined
+                applicablePreference === undefined
                     ? "undisclosed"
-                    : conversationPreference
+                    : applicablePreference
                       ? "enabled"
                       : "disabled";
             const availability = resolveConversationEmailSendingAvailability({
@@ -4244,27 +4635,40 @@ export function createConversationEmailUpdateService({
                         : {
                               state,
                               resolvedEnabled:
-                                  resolveConversationEmailPreference({
-                                      globalPaused: preferenceRows.globalPaused,
-                                      projectEnabled: projectPreference,
-                                      conversationEnabled:
-                                          conversationPreference,
-                                      scopeKind: row.scope_kind,
-                                  }),
+                                  preferenceScope === "project"
+                                      ? resolveConversationEmailPreference({
+                                            globalPaused:
+                                                preferenceState.globalPaused,
+                                            projectEnabled:
+                                                preferenceState.projectEnabled,
+                                            conversationEnabled:
+                                                preferenceState.conversationEnabled,
+                                            scopeKind: "project",
+                                        })
+                                      : resolveConversationEmailPreference({
+                                            globalPaused:
+                                                preferenceState.globalPaused,
+                                            projectEnabled: undefined,
+                                            conversationEnabled:
+                                                preferenceState.conversationEnabled,
+                                            scopeKind: "no_project",
+                                        }),
                               onboardingAction:
                                   resolveConversationEmailOnboardingAction({
                                       hasVerifiedEmail: true,
                                       preferenceState: state,
                                       availability,
                                       scope:
-                                          row.scope_kind === "project"
+                                          preferenceScope === "project"
                                               ? {
                                                     kind: "project",
                                                     projectSlug:
                                                         row.project_slug,
+                                                    conversationSlugId:
+                                                        row.conversation_slug_id,
                                                 }
                                               : {
-                                                    kind: "no_project",
+                                                    kind: "conversation",
                                                     conversationSlugId:
                                                         row.conversation_slug_id,
                                                 },

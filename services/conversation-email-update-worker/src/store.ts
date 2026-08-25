@@ -24,6 +24,7 @@ import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import {
     conversationEmailUpdateActionTokenTable,
     conversationEmailUpdateConversationTable,
+    conversationEmailUpdateDeliveryAttemptConversationTable,
     conversationEmailUpdateDeliveryAttemptTable,
     conversationEmailUpdateDeliveryTable,
     conversationEmailUpdateEmailSuppressionTable,
@@ -819,17 +820,29 @@ export async function finalizeTestAttempt({
     });
 }
 
-export async function getUpdateConversationLinks({
-    db,
-    updateId,
-    recipientId,
-    siteBaseUrl,
-}: {
+interface AuthorizedConversation extends ConversationLink {
+    conversationId: number;
+}
+
+type GetUpdateConversationLinksParams = {
     db: PostgresDatabase;
     updateId: number;
-    recipientId: bigint | undefined;
     siteBaseUrl: string;
-}): Promise<ConversationLink[]> {
+} & (
+    | { kind: "test" }
+    | {
+          kind: "owner_copy";
+          recipientId: bigint;
+      }
+);
+
+export async function getUpdateConversationLinks(
+    params: GetUpdateConversationLinksParams,
+): Promise<AuthorizedConversation[]> {
+    const { db, updateId, siteBaseUrl } = params;
+    const baseUrl = new URL(siteBaseUrl);
+    const recipientId =
+        params.kind === "owner_copy" ? params.recipientId : undefined;
     const recipientScope = db
         .select({
             conversationId:
@@ -852,6 +865,8 @@ export async function getUpdateConversationLinks({
         );
     const rows = await db
         .select({
+            conversationId:
+                conversationEmailUpdateConversationTable.conversationId,
             title: conversationEmailUpdateConversationTable.conversationTitleSnapshot,
             slugId: conversationTable.slugId,
             projectSlug: projectTable.slug,
@@ -885,18 +900,45 @@ export async function getUpdateConversationLinks({
             ),
             asc(conversationEmailUpdateConversationTable.conversationId),
         );
-    const baseUrl = new URL(siteBaseUrl);
-    return rows.map((row) => ({
-        title: row.title,
+    return rows.map((row) =>
+        toAuthorizedConversation({ ...row, baseUrl }),
+    );
+}
+
+function toAuthorizedConversation({
+    conversationId,
+    title,
+    slugId,
+    projectSlug,
+    autoProvisionedForOrganizationId,
+    baseUrl,
+}: {
+    conversationId: number;
+    title: string;
+    slugId: string;
+    projectSlug: string;
+    autoProvisionedForOrganizationId: number | null;
+    baseUrl: URL;
+}): AuthorizedConversation {
+    return {
+        conversationId,
+        title,
         url: buildConversationLinkUrl({
             baseUrl,
-            conversationSlugId: row.slugId,
+            conversationSlugId: slugId,
             route:
-                row.autoProvisionedForOrganizationId === null
-                    ? { kind: "project", projectSlug: row.projectSlug }
+                autoProvisionedForOrganizationId === null
+                    ? { kind: "project", projectSlug }
                     : { kind: "conversation" },
         }),
-    }));
+    };
+}
+
+function toNonEmptyArray<Value>(
+    values: readonly Value[],
+): [Value, ...Value[]] | undefined {
+    const first = values.at(0);
+    return first === undefined ? undefined : [first, ...values.slice(1)];
 }
 
 export function buildConversationLinkUrl({
@@ -1243,9 +1285,10 @@ export async function materializeOneDeliveryPage({
                             conversationEmailUpdateDeliveryTable.materializationCursorUserId,
                         audienceCutoffAt:
                             conversationEmailUpdateDeliveryTable.audienceCutoffAt,
+                        participantPreferenceScope:
+                            conversationEmailUpdateDeliveryTable.participantPreferenceScope,
                         materializedParticipantCount:
                             conversationEmailUpdateDeliveryTable.materializedParticipantCount,
-                        scopeKind: conversationEmailUpdateTable.scopeKind,
                         createdByUserId:
                             conversationEmailUpdateTable.createdByUserId,
                         authorizingOrganizationId:
@@ -1349,6 +1392,8 @@ export async function materializeOneDeliveryPage({
                 cutoffAt: delivery.audienceCutoffAt,
                 scope: { kind: "update", updateId: delivery.updateId },
             }).as("participation");
+            const participantPreferenceScope =
+                delivery.participantPreferenceScope;
             const qualified = tx
                 .selectDistinct({
                     userId: participation.userId,
@@ -1383,7 +1428,7 @@ export async function materializeOneDeliveryPage({
                 )
                 .where(
                     and(
-                        delivery.scopeKind === "listed_project"
+                        participantPreferenceScope === "project"
                             ? and(
                                   eq(
                                       conversationEmailUpdateUserProjectPreferenceTable.enabled,
@@ -2194,8 +2239,8 @@ interface AuthorizedRecipientCommon {
     language: SupportedDisplayLanguageCodes;
     projectId: number;
     authorizingOrganizationId: number;
-    scopeKind: "listed_project" | "no_project";
-    conversations: ConversationLink[];
+    participantPreferenceScope: "project" | "conversation";
+    conversations: [AuthorizedConversation, ...AuthorizedConversation[]];
 }
 
 interface RecipientActionDetailsCommon {
@@ -2233,11 +2278,11 @@ function createActionToken(): { raw: string; hash: string } {
 export function createRecipientActions({
     siteBaseUrl,
     kind,
-    scopeKind,
+    participantPreferenceScope,
 }: {
     siteBaseUrl: string;
     kind: AuthorizedRecipient["kind"];
-    scopeKind: AuthorizedRecipient["scopeKind"];
+    participantPreferenceScope: AuthorizedRecipient["participantPreferenceScope"];
 }): RecipientActionDetails {
     const unsubscribe = createActionToken();
     const manage = createActionToken();
@@ -2251,7 +2296,9 @@ export function createRecipientActions({
     const actionDetails: RecipientActionDetailsCommon = {
         actions: {
             unsubscribeScope:
-                scopeKind === "listed_project" ? "project" : "conversation",
+                participantPreferenceScope === "project"
+                    ? "project"
+                    : "conversation",
             unsubscribeUrl: actionUrls.visibleUnsubscribeUrl,
             manageUrl: actionUrls.manageUrl,
             reportUrl: actionUrls.reportUrl,
@@ -2327,7 +2374,8 @@ export async function authorizeRecipientSend({
                     projectId: conversationEmailUpdateTable.projectId,
                     authorizingOrganizationId:
                         conversationEmailUpdateTable.authorizingOrganizationId,
-                    scopeKind: conversationEmailUpdateTable.scopeKind,
+                    participantPreferenceScope:
+                        conversationEmailUpdateDeliveryTable.participantPreferenceScope,
                     createdByUserId:
                         conversationEmailUpdateTable.createdByUserId,
                 })
@@ -2369,6 +2417,7 @@ export async function authorizeRecipientSend({
                 .for("update", { of: conversationEmailUpdateRecipientTable })
         ).at(0);
         if (recipient === undefined) return undefined;
+        const participantPreferenceScope = recipient.participantPreferenceScope;
 
         if (
             await isScopeBlocked({
@@ -2492,6 +2541,7 @@ export async function authorizeRecipientSend({
             return undefined;
         }
 
+        let eligibleConversations: AuthorizedConversation[];
         if (recipient.kind === "participant") {
             const globalPause = await tx
                 .select({
@@ -2518,7 +2568,7 @@ export async function authorizeRecipientSend({
                 });
                 return undefined;
             }
-            if (recipient.scopeKind === "listed_project") {
+            if (participantPreferenceScope === "project") {
                 const projectPreference = await tx
                     .select({
                         userId: conversationEmailUpdateUserProjectPreferenceTable.userId,
@@ -2554,8 +2604,40 @@ export async function authorizeRecipientSend({
                 .select({
                     conversationId:
                         conversationEmailUpdateRecipientConversationTable.conversationId,
+                    title: conversationEmailUpdateConversationTable.conversationTitleSnapshot,
+                    slugId: conversationTable.slugId,
+                    projectSlug: projectTable.slug,
+                    autoProvisionedForOrganizationId:
+                        projectTable.autoProvisionedForOrganizationId,
                 })
                 .from(conversationEmailUpdateRecipientConversationTable)
+                .innerJoin(
+                    conversationEmailUpdateConversationTable,
+                    and(
+                        eq(
+                            conversationEmailUpdateConversationTable.updateId,
+                            conversationEmailUpdateRecipientConversationTable.updateId,
+                        ),
+                        eq(
+                            conversationEmailUpdateConversationTable.conversationId,
+                            conversationEmailUpdateRecipientConversationTable.conversationId,
+                        ),
+                    ),
+                )
+                .innerJoin(
+                    conversationTable,
+                    eq(
+                        conversationTable.id,
+                        conversationEmailUpdateRecipientConversationTable.conversationId,
+                    ),
+                )
+                .innerJoin(
+                    projectTable,
+                    eq(
+                        projectTable.id,
+                        conversationEmailUpdateConversationTable.projectId,
+                    ),
+                )
                 .leftJoin(
                     conversationEmailUpdateUserConversationPreferenceTable,
                     and(
@@ -2575,7 +2657,7 @@ export async function authorizeRecipientSend({
                             conversationEmailUpdateRecipientConversationTable.recipientId,
                             recipient.recipientId,
                         ),
-                        recipient.scopeKind === "listed_project"
+                        participantPreferenceScope === "project"
                             ? or(
                                   isNull(
                                       conversationEmailUpdateUserConversationPreferenceTable.userId,
@@ -2591,7 +2673,14 @@ export async function authorizeRecipientSend({
                               ),
                     ),
                 )
-                .limit(1);
+                .orderBy(
+                    asc(
+                        conversationEmailUpdateConversationTable.conversationTitleSnapshot,
+                    ),
+                    asc(
+                        conversationEmailUpdateRecipientConversationTable.conversationId,
+                    ),
+                );
             if (conversationPreference.length === 0) {
                 await skipClaimedRecipient({
                     tx,
@@ -2600,6 +2689,14 @@ export async function authorizeRecipientSend({
                 });
                 return undefined;
             }
+            const baseUrl = new URL(siteBaseUrl);
+            eligibleConversations = conversationPreference.map(
+                (conversation) =>
+                    toAuthorizedConversation({
+                        ...conversation,
+                        baseUrl,
+                    }),
+            );
             const frequencyCapped = await tx
                 .select({ id: conversationEmailUpdateRecipientTable.id })
                 .from(conversationEmailUpdateRecipientTable)
@@ -2644,6 +2741,14 @@ export async function authorizeRecipientSend({
                 });
                 return undefined;
             }
+        } else {
+            eligibleConversations = await getUpdateConversationLinks({
+                db: tx,
+                updateId: recipient.updateId,
+                kind: "owner_copy",
+                recipientId: recipient.recipientId,
+                siteBaseUrl,
+            });
         }
 
         const attemptNumber = recipient.attemptCount + 1;
@@ -2651,8 +2756,17 @@ export async function authorizeRecipientSend({
         const actionDetails = createRecipientActions({
             siteBaseUrl,
             kind: recipient.kind,
-            scopeKind: recipient.scopeKind,
+            participantPreferenceScope,
         });
+        const nonEmptyConversations = toNonEmptyArray(eligibleConversations);
+        if (nonEmptyConversations === undefined) {
+            await skipClaimedRecipient({
+                tx,
+                claimed,
+                reason: "scope_safety_blocked",
+            });
+            return undefined;
+        }
         const authorized: AuthorizedRecipient = {
             recipientId: recipient.recipientId,
             deliveryId: recipient.deliveryId,
@@ -2670,13 +2784,8 @@ export async function authorizeRecipientSend({
             language: recipient.language,
             projectId: recipient.projectId,
             authorizingOrganizationId: recipient.authorizingOrganizationId,
-            scopeKind: recipient.scopeKind,
-            conversations: await getUpdateConversationLinks({
-                db: tx,
-                updateId: recipient.updateId,
-                recipientId: recipient.recipientId,
-                siteBaseUrl,
-            }),
+            participantPreferenceScope,
+            conversations: nonEmptyConversations,
             ...actionDetails,
         };
         if (
@@ -2745,25 +2854,34 @@ async function markRecipientAttempting({
         outcome: "send_authorized",
         authorizedAt: currentTimestamp(),
     });
+    await tx
+        .insert(conversationEmailUpdateDeliveryAttemptConversationTable)
+        .values(
+            authorized.conversations.map((conversation) => ({
+                attemptPublicId: authorized.attemptPublicId,
+                recipientId: authorized.recipientId,
+                conversationId: conversation.conversationId,
+            })),
+        );
     await tx.insert(conversationEmailUpdateActionTokenTable).values([
         {
             tokenHash: authorized.actionTokens.unsubscribeHash,
-            recipientId: authorized.recipientId,
+            attemptPublicId: authorized.attemptPublicId,
             action:
-                authorized.scopeKind === "listed_project"
+                authorized.participantPreferenceScope === "project"
                     ? "unsubscribe_project"
                     : "unsubscribe_conversation",
             expiresAt: sql<Date>`now() + interval '365 days'`,
         },
         {
             tokenHash: authorized.actionTokens.manageHash,
-            recipientId: authorized.recipientId,
+            attemptPublicId: authorized.attemptPublicId,
             action: "manage_preferences",
             expiresAt: sql<Date>`now() + interval '90 days'`,
         },
         {
             tokenHash: authorized.actionTokens.reportHash,
-            recipientId: authorized.recipientId,
+            attemptPublicId: authorized.attemptPublicId,
             action: "report",
             expiresAt: sql<Date>`now() + interval '90 days'`,
         },

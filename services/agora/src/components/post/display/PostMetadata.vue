@@ -98,10 +98,11 @@
 import { storeToRefs } from "pinia";
 import { copyToClipboard, useQuasar } from "quasar";
 import PreParticipationIntentionDialog from "src/components/authentication/intention/PreParticipationIntentionDialog.vue";
+import { createConversationUpdatePreferenceAction } from "src/components/conversationUpdates/conversationUpdatePreferenceAction";
 import {
-  createConversationUpdatePreferenceAction,
-  resolveConversationUpdatePreferenceEnabled,
-} from "src/components/conversationUpdates/conversationUpdatePreferenceAction";
+  type EmailUpdateResumeNotificationTranslations,
+  emailUpdateResumeNotificationTranslations,
+} from "src/components/conversationUpdates/emailUpdateResumeNotification.i18n";
 import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue";
 import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
 import ZKActionDialog from "src/components/ui-library/ZKActionDialog.vue";
@@ -120,6 +121,7 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import type { ContentAction } from "src/utils/actions/core/types";
 import { useContentActions } from "src/utils/actions/definitions/content-actions";
 import { useBackendConversationEmailUpdatesApi } from "src/utils/api/conversationUpdates/conversationEmailUpdates";
+import { useRemoveConversationEmailUpdateSummaryQueries } from "src/utils/api/conversationUpdates/useConversationEmailUpdateQueries";
 import { useMaxDiffApi } from "src/utils/api/maxdiff/maxdiff";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 import {
@@ -180,6 +182,8 @@ const postActions = useContentActions();
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 const conversationEmailUpdatesApi = useBackendConversationEmailUpdatesApi();
+const removeConversationEmailUpdateSummaryQueries =
+  useRemoveConversationEmailUpdateSummaryQueries();
 
 const { muteUser } = useBackendUserMuteApi();
 const { invalidateFeed } = useInvalidateFeedQuery();
@@ -189,6 +193,10 @@ const openConversationMutation = useOpenConversationMutation();
 const { t } = useComponentI18n<PostMetadataTranslations>(
   postMetadataTranslations
 );
+const { t: tEmailUpdateResume } =
+  useComponentI18n<EmailUpdateResumeNotificationTranslations>(
+    emailUpdateResumeNotificationTranslations
+  );
 
 const showReportDialog = ref(false);
 const showLoginDialog = ref(false);
@@ -513,9 +521,7 @@ function addConversationUpdateActions(): void {
 
   const participantPreference = summary?.participantPreference;
   if (participantPreference !== undefined) {
-    const enabled = resolveConversationUpdatePreferenceEnabled(
-      participantPreference
-    );
+    const enabled = participantPreference.resolvedEnabled;
     additions.push(
       createConversationUpdatePreferenceAction({
         id: "conversationEmailUpdates",
@@ -562,7 +568,7 @@ async function updateConversationUpdatePreference(
     ...previousSummary,
     participantPreference: {
       ...previousPreference,
-      state: enabled ? "enabled" : "disabled",
+      resolvedEnabled: enabled,
     },
   };
   addConversationUpdateActions();
@@ -600,22 +606,25 @@ async function updateConversationUpdatePreference(
       await loadConversationUpdateActions();
       return;
     }
+    removeConversationEmailUpdateSummaryQueries(response.result);
     const currentSummary = conversationEmailUpdateSummary.value;
     if (currentSummary?.participantPreference !== undefined) {
       conversationEmailUpdateSummary.value = {
         ...currentSummary,
         participantPreference: {
           ...currentSummary.participantPreference,
-          state: savedPreference.state,
+          resolvedEnabled: savedPreference.resolvedEnabled,
         },
       };
     }
     notify.showNotifyMessage(
-      t(
-        savedPreference.state === "enabled"
-          ? "emailUpdatesPreferenceSaveEnabled"
-          : "emailUpdatesPreferenceSaveDisabled"
-      )
+      response.result.globalResumed
+        ? tEmailUpdateResume("preferenceSavedAndGlobalResumed")
+        : t(
+            savedPreference.state === "enabled"
+              ? "emailUpdatesPreferenceSaveEnabled"
+              : "emailUpdatesPreferenceSaveDisabled"
+          )
     );
   } catch (error) {
     if (

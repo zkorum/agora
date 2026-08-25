@@ -79,20 +79,20 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     savePreferenceError: "Couldn’t save your email update preference.",
   },
   es: {
-    emailUpdates: "Actualizaciones por correo electrónico",
+    emailUpdates: "Novedades por correo",
     heading: "Elige qué te hace volver",
     description:
       "Define tus opciones con precisión. Las preferencias del proyecto se aplican de forma predeterminada, pero puedes hacer excepciones por conversación.",
     searchLabel: "Buscar proyectos y conversaciones",
     tryAgain: "Intentar de nuevo",
-    pauseAll: "Pausar todas las actualizaciones por correo electrónico",
+    pauseAll: "Pausar todas las novedades por correo",
     pauseDescription:
       "Tus opciones de proyectos y conversaciones seguirán guardadas.",
     saving: "Guardando...",
     pausedDescription:
-      "Todas las actualizaciones por correo electrónico están pausadas. Tus opciones siguen guardadas y puedes modificarlas.",
+      "Todas las novedades por correo están pausadas. Tus opciones siguen guardadas y puedes modificarlas.",
     empty:
-      "Ninguna preferencia de actualizaciones por correo electrónico coincide con esta búsqueda.",
+      "Ninguna preferencia de seguimiento por correo coincide con esta búsqueda.",
     projects: "Proyectos",
     projectsDescription:
       "Define una opción predeterminada y ajusta cada conversación.",
@@ -100,45 +100,45 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     noProjectDescription:
       "Cada una de estas conversaciones tiene su propia opción.",
     projectUnavailable:
-      "La preferencia de este proyecto no está disponible temporalmente.",
+      "La preferencia de seguimiento por correo de este proyecto no está disponible temporalmente.",
     conversationUnavailable:
-      "La preferencia de esta conversación no está disponible temporalmente.",
-    receiveEmailUpdatesFor:
-      "Recibir actualizaciones por correo electrónico de {name}",
+      "La preferencia de seguimiento por correo de esta conversación no está disponible temporalmente.",
+    receiveEmailUpdatesFor: "Seguir {name} por correo",
     loadMore: "Cargar más",
-    projectOn: "Activadas para este proyecto",
-    projectOff: "Desactivadas para este proyecto",
-    projectUnset: "No hay una opción guardada para el proyecto",
-    conversationOn: "Activadas para esta conversación",
-    conversationOff: "Desactivadas para esta conversación",
+    projectOn: "Seguimiento activado para este proyecto",
+    projectOff: "Seguimiento desactivado para este proyecto",
+    projectUnset: "Sin preferencia de seguimiento para el proyecto",
+    conversationOn: "Seguimiento activado para esta conversación",
+    conversationOff: "Seguimiento desactivado para esta conversación",
     verifiedEmailRequired:
-      "Verifica una dirección de correo electrónico antes de cambiar estas preferencias.",
+      "Verifica una dirección de correo electrónico antes de cambiar tu preferencia de seguimiento por correo.",
     preferencesUnavailable:
-      "Las preferencias de actualizaciones por correo electrónico no están disponibles ahora.",
+      "Las preferencias de seguimiento por correo no están disponibles ahora.",
     morePreferencesUnavailable:
-      "No se pudieron cargar más preferencias de actualizaciones por correo electrónico.",
-    pauseSaved: "Actualizaciones por correo electrónico pausadas.",
-    resumeSaved: "Actualizaciones por correo electrónico reanudadas.",
-    preferenceOnSaved: "Preferencia guardada: activada.",
-    preferenceOffSaved: "Preferencia guardada: desactivada.",
+      "No se pudieron cargar más preferencias de seguimiento por correo.",
+    pauseSaved: "Novedades por correo pausadas.",
+    resumeSaved: "Novedades por correo reanudadas.",
+    preferenceOnSaved: "Preferencia de seguimiento por correo guardada: activada.",
+    preferenceOffSaved:
+      "Preferencia de seguimiento por correo guardada: desactivada.",
     savePreferenceError:
-      "No se pudo guardar tu preferencia de actualizaciones por correo electrónico.",
+      "No se pudo guardar tu preferencia de seguimiento por correo.",
   },
   fr: {
-    emailUpdates: "Actualités par e-mail",
+    emailUpdates: "Nouvelles par e-mail",
     heading: "Choisissez ce qui vous fait revenir",
     description:
       "Précisez vos choix. Les préférences du projet s’appliquent par défaut, mais chaque conversation peut faire exception.",
     searchLabel: "Rechercher des projets et des conversations",
     tryAgain: "Réessayer",
-    pauseAll: "Suspendre toutes les actualités par e-mail",
+    pauseAll: "Suspendre toutes les nouvelles par e-mail",
     pauseDescription:
       "Vos choix de projets et de conversations restent enregistrés.",
     saving: "Enregistrement...",
     pausedDescription:
-      "Toutes les actualités par e-mail sont suspendues. Vos choix restent enregistrés et peuvent encore être modifiés.",
+      "Toutes les nouvelles par e-mail sont suspendues. Vos choix restent enregistrés et peuvent encore être modifiés.",
     empty:
-      "Aucune préférence d’actualités par e-mail ne correspond à cette recherche.",
+      "Aucune préférence de suivi par e-mail ne correspond à cette recherche.",
     projects: "Projets",
     projectsDescription:
       "Définissez un choix par défaut, puis ajustez chaque conversation.",
@@ -146,28 +146,30 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     noProjectDescription:
       "Chacune de ces conversations possède son propre choix explicite.",
     projectUnavailable:
-      "La préférence de ce projet est temporairement indisponible.",
+      "La préférence de suivi par e-mail de ce projet est temporairement indisponible.",
     conversationUnavailable:
-      "La préférence de cette conversation est temporairement indisponible.",
-    receiveEmailUpdatesFor: "Recevoir les actualités par e-mail de {name}",
+      "La préférence de suivi par e-mail de cette conversation est temporairement indisponible.",
+    receiveEmailUpdatesFor: "Suivre {name} par e-mail",
     loadMore: "Charger plus",
-    projectOn: "Activées pour ce projet",
-    projectOff: "Désactivées pour ce projet",
-    projectUnset: "Aucun choix de projet enregistré",
-    conversationOn: "Activées pour cette conversation",
-    conversationOff: "Désactivées pour cette conversation",
+    projectOn: "Suivi activé pour ce projet",
+    projectOff: "Suivi désactivé pour ce projet",
+    projectUnset: "Aucune préférence de suivi pour le projet",
+    conversationOn: "Suivi activé pour cette conversation",
+    conversationOff: "Suivi désactivé pour cette conversation",
     verifiedEmailRequired:
-      "Vérifiez une adresse e-mail avant de modifier ces préférences.",
+      "Vérifiez une adresse e-mail avant de modifier votre préférence de suivi par e-mail.",
     preferencesUnavailable:
-      "Les préférences d’actualités par e-mail sont indisponibles pour le moment.",
+      "Les préférences de suivi par e-mail sont indisponibles pour le moment.",
     morePreferencesUnavailable:
-      "Impossible de charger davantage de préférences d’actualités par e-mail.",
-    pauseSaved: "Actualités par e-mail suspendues.",
-    resumeSaved: "Actualités par e-mail réactivées.",
-    preferenceOnSaved: "Préférence enregistrée : activée.",
-    preferenceOffSaved: "Préférence enregistrée : désactivée.",
+      "Impossible de charger davantage de préférences de suivi par e-mail.",
+    pauseSaved: "Nouvelles par e-mail suspendues.",
+    resumeSaved: "Nouvelles par e-mail réactivées.",
+    preferenceOnSaved:
+      "Préférence de suivi par e-mail enregistrée : activée.",
+    preferenceOffSaved:
+      "Préférence de suivi par e-mail enregistrée : désactivée.",
     savePreferenceError:
-      "Impossible d’enregistrer votre préférence d’actualités par e-mail.",
+      "Impossible d’enregistrer votre préférence de suivi par e-mail.",
   },
   "zh-Hant": {
     emailUpdates: "電子郵件更新",

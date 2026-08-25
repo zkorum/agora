@@ -117,26 +117,39 @@
                                                         "scope": {
                                                             "type": "object",
                                                             "properties": {
-                                                                "conversationSlugId": {
-                                                                    "type": "string",
-                                                                    "maxLength": 10
-                                                                },
-                                                                "title": {
-                                                                    "type": "string",
-                                                                    "minLength": 1,
-                                                                    "maxLength": 140
-                                                                },
                                                                 "kind": {
                                                                     "type": "string",
                                                                     "enum": [
-                                                                        "conversation"
+                                                                        "no_project"
                                                                     ]
+                                                                },
+                                                                "conversations": {
+                                                                    "minItems": 1,
+                                                                    "type": "array",
+                                                                    "items": {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "conversationSlugId": {
+                                                                                "type": "string",
+                                                                                "maxLength": 10
+                                                                            },
+                                                                            "title": {
+                                                                                "type": "string",
+                                                                                "minLength": 1,
+                                                                                "maxLength": 140
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "conversationSlugId",
+                                                                            "title"
+                                                                        ],
+                                                                        "additionalProperties": false
+                                                                    }
                                                                 }
                                                             },
                                                             "required": [
-                                                                "conversationSlugId",
-                                                                "title",
-                                                                "kind"
+                                                                "kind",
+                                                                "conversations"
                                                             ],
                                                             "additionalProperties": false
                                                         }
@@ -38391,11 +38404,57 @@
                                                 "type": "boolean"
                                             },
                                             "source": {
-                                                "type": "string",
-                                                "enum": [
-                                                    "onboarding",
-                                                    "menu",
-                                                    "settings"
+                                                "oneOf": [
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "kind": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "onboarding"
+                                                                ]
+                                                            },
+                                                            "conversationSlugId": {
+                                                                "type": "string",
+                                                                "maxLength": 10
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "kind",
+                                                            "conversationSlugId"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "kind": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "menu"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "kind"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "kind": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "settings"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "kind"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    }
                                                 ]
                                             }
                                         },
@@ -38502,12 +38561,16 @@
                                                                         "disabled",
                                                                         "enabled"
                                                                     ]
+                                                                },
+                                                                "globalResumed": {
+                                                                    "type": "boolean"
                                                                 }
                                                             },
                                                             "required": [
                                                                 "operation",
                                                                 "projectSlug",
-                                                                "state"
+                                                                "state",
+                                                                "globalResumed"
                                                             ],
                                                             "additionalProperties": false
                                                         },
@@ -38542,6 +38605,9 @@
                                                                     ],
                                                                     "additionalProperties": false
                                                                 },
+                                                                "globalResumed": {
+                                                                    "type": "boolean"
+                                                                },
                                                                 "conversationPreferences": {
                                                                     "type": "array",
                                                                     "items": {
@@ -38557,11 +38623,15 @@
                                                                                     "disabled",
                                                                                     "enabled"
                                                                                 ]
+                                                                            },
+                                                                            "resolvedEnabled": {
+                                                                                "type": "boolean"
                                                                             }
                                                                         },
                                                                         "required": [
                                                                             "conversationSlugId",
-                                                                            "state"
+                                                                            "state",
+                                                                            "resolvedEnabled"
                                                                         ],
                                                                         "additionalProperties": false
                                                                     }
@@ -38569,6 +38639,7 @@
                                                             },
                                                             "required": [
                                                                 "operation",
+                                                                "globalResumed",
                                                                 "conversationPreferences"
                                                             ],
                                                             "additionalProperties": false
@@ -39119,6 +39190,10 @@
                                                                             "maxLength": 65,
                                                                             "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
                                                                         },
+                                                                        "conversationSlugId": {
+                                                                            "type": "string",
+                                                                            "maxLength": 10
+                                                                        },
                                                                         "initialEnabled": {
                                                                             "type": "boolean"
                                                                         }
@@ -39126,6 +39201,7 @@
                                                                     "required": [
                                                                         "operation",
                                                                         "projectSlug",
+                                                                        "conversationSlugId",
                                                                         "initialEnabled"
                                                                     ],
                                                                     "additionalProperties": false

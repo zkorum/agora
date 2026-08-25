@@ -9,6 +9,11 @@ const api = vi.hoisted(() => ({
 }));
 const showNotifyMessage = vi.hoisted(() => vi.fn());
 
+vi.mock(
+  "src/utils/api/conversationUpdates/useConversationEmailUpdateQueries",
+  () => ({ useRemoveConversationEmailUpdateSummaryQueries: () => () => {} })
+);
+
 vi.mock("src/utils/api/conversationUpdates/conversationEmailUpdates", () => ({
   useBackendConversationEmailUpdatesApi: () => api,
 }));
@@ -116,6 +121,26 @@ const pausedNoProjectGroup = {
   })),
 } satisfies ConversationEmailUpdatePreferenceGroup;
 
+const disabledProjectGroup = {
+  ...projectGroup,
+  state: "disabled",
+  resolvedEnabled: false,
+} satisfies ConversationEmailUpdatePreferenceGroup;
+
+const disabledNoProjectGroup = {
+  kind: "no_project",
+  availability: "available",
+  conversations: [
+    {
+      conversationSlugId: "conversation-two",
+      conversationTitle: "Conversation Two",
+      state: "disabled",
+      resolvedEnabled: false,
+      availability: "available",
+    },
+  ],
+} satisfies ConversationEmailUpdatePreferenceGroup;
+
 const mountedApps: App[] = [];
 const QInputStub = defineComponent({
   name: "QInput",
@@ -208,6 +233,79 @@ describe("ConversationUpdatePreferenceSettings", () => {
     ).toBe("true");
     expect(getButton(container, "Load more")).toBeDefined();
     expect(showNotifyMessage).toHaveBeenCalledWith("Email Updates paused.");
+  });
+
+  it("reports when a project opt-in resumes global Email Updates", async () => {
+    api.getPreferences
+      .mockResolvedValueOnce({
+        success: true,
+        globalPaused: true,
+        groups: [disabledProjectGroup],
+        nextCursor: undefined,
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        globalPaused: false,
+        groups: [projectGroup],
+        nextCursor: undefined,
+      });
+    api.updatePreference.mockResolvedValue({
+      success: true,
+      result: {
+        operation: "set_project_preference",
+        projectSlug: "project-one",
+        state: "enabled",
+        globalResumed: true,
+      },
+    });
+
+    const container = mountComponent();
+    await flushPromises();
+    getButton(container, "Receive Email Updates for Project One").click();
+    await flushPromises();
+
+    expect(showNotifyMessage).toHaveBeenCalledWith(
+      "Email Updates were turned back on globally, and your preference was saved."
+    );
+  });
+
+  it("reports when a conversation opt-in resumes global Email Updates", async () => {
+    api.getPreferences
+      .mockResolvedValueOnce({
+        success: true,
+        globalPaused: true,
+        groups: [disabledNoProjectGroup],
+        nextCursor: undefined,
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        globalPaused: false,
+        groups: [noProjectGroup],
+        nextCursor: undefined,
+      });
+    api.updatePreference.mockResolvedValue({
+      success: true,
+      result: {
+        operation: "set_conversation_preference",
+        globalResumed: true,
+        conversationPreferences: [
+          {
+            conversationSlugId: "conversation-two",
+            state: "enabled",
+            resolvedEnabled: true,
+          },
+        ],
+      },
+    });
+
+    const container = mountComponent();
+    await flushPromises();
+    getButton(container, "Receive Email Updates for Conversation Two").click();
+    await flushPromises();
+
+    expect(showNotifyMessage).toHaveBeenCalledWith(
+      "Email Updates were turned back on globally, and your preference was saved."
+    );
   });
 
   it("rolls back a failed preference and shows the localized error", async () => {
@@ -509,7 +607,7 @@ describe("ConversationUpdatePreferenceSettings", () => {
       operation: "set_project_preference",
       projectSlug: "project-one",
       enabled: false,
-      source: "settings",
+      source: { kind: "settings" },
     });
     expect(api.updatePreference).toHaveBeenNthCalledWith(3, {
       operation: "set_conversation_preference",

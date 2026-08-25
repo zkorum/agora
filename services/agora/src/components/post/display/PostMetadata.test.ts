@@ -12,6 +12,14 @@ const api = vi.hoisted(() => ({
 }));
 const showNotifyMessage = vi.hoisted(() => vi.fn());
 const routerPush = vi.hoisted(() => vi.fn());
+const removeSummaryQueries = vi.hoisted(() => vi.fn());
+
+vi.mock(
+  "src/utils/api/conversationUpdates/useConversationEmailUpdateQueries",
+  () => ({
+    useRemoveConversationEmailUpdateSummaryQueries: () => removeSummaryQueries,
+  })
+);
 
 vi.mock("pinia", () => ({
   storeToRefs: (store: object) => store,
@@ -244,6 +252,7 @@ beforeEach(() => {
   api.updatePreference.mockReset();
   showNotifyMessage.mockReset();
   routerPush.mockReset();
+  removeSummaryQueries.mockReset();
 });
 
 afterEach(() => {
@@ -284,8 +293,8 @@ describe("PostMetadata email update actions", () => {
   );
 
   it.each([
-    ["enabled", false, "true"],
-    ["disabled", true, "false"],
+    ["enabled", false, "false"],
+    ["disabled", true, "true"],
     ["undisclosed", false, "false"],
     ["undisclosed", true, "true"],
   ])(
@@ -339,8 +348,22 @@ describe("PostMetadata email update actions", () => {
       success: true,
       result: {
         operation: "set_conversation_preference",
+        projectPreference: {
+          projectSlug: "project-one",
+          state: "enabled",
+        },
+        globalResumed: true,
         conversationPreferences: [
-          { conversationSlugId: "conversation-one", state: "enabled" },
+          {
+            conversationSlugId: "conversation-one",
+            state: "enabled",
+            resolvedEnabled: true,
+          },
+          {
+            conversationSlugId: "conversation-two",
+            state: "disabled",
+            resolvedEnabled: false,
+          },
         ],
       },
     });
@@ -350,8 +373,28 @@ describe("PostMetadata email update actions", () => {
       false
     );
     expect(showNotifyMessage).toHaveBeenCalledWith(
-      "emailUpdatesPreferenceSaveEnabled"
+      "preferenceSavedAndGlobalResumed"
     );
+    expect(removeSummaryQueries).toHaveBeenCalledWith({
+      operation: "set_conversation_preference",
+      projectPreference: {
+        projectSlug: "project-one",
+        state: "enabled",
+      },
+      globalResumed: true,
+      conversationPreferences: [
+        {
+          conversationSlugId: "conversation-one",
+          state: "enabled",
+          resolvedEnabled: true,
+        },
+        {
+          conversationSlugId: "conversation-two",
+          state: "disabled",
+          resolvedEnabled: false,
+        },
+      ],
+    });
   });
 
   it("restores the exact toggle state when saving fails", async () => {
@@ -374,13 +417,13 @@ describe("PostMetadata email update actions", () => {
 
     expect(
       getButton(container, "receiveEmailUpdatesLabel").dataset.checked
-    ).toBe("false");
+    ).toBe("true");
     write.resolve({ success: false, reason: "feature_not_available" });
     await flushPromises();
 
     expect(
       getButton(container, "receiveEmailUpdatesLabel").dataset.checked
-    ).toBe("true");
+    ).toBe("false");
     expect(showNotifyMessage).toHaveBeenCalledWith(
       "emailUpdatesPreferenceSaveError"
     );
@@ -426,8 +469,13 @@ describe("PostMetadata email update actions", () => {
       success: true,
       result: {
         operation: "set_conversation_preference",
+        globalResumed: false,
         conversationPreferences: [
-          { conversationSlugId: "conversation-one", state: "enabled" },
+          {
+            conversationSlugId: "conversation-one",
+            state: "enabled",
+            resolvedEnabled: true,
+          },
         ],
       },
     });

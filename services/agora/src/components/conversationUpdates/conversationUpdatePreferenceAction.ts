@@ -1,6 +1,6 @@
 import type { HandlerContentAction } from "src/utils/actions/core/types";
 
-export function resolveConversationUpdatePreferenceEnabled({
+export function resolveEmailUpdatePreferenceChoiceEnabled({
   state,
   resolvedEnabled,
 }: {

@@ -714,6 +714,11 @@ export const conversationEmailUpdateScopeKindEnum = pgEnum(
     ["listed_project", "no_project"],
 );
 
+export const conversationEmailUpdateParticipantPreferenceScopeEnum = pgEnum(
+    "conversation_email_update_participant_preference_scope",
+    ["project", "conversation"],
+);
+
 export const conversationEmailUpdateTestAttemptStatusEnum = pgEnum(
     "conversation_email_update_test_attempt_status",
     [
@@ -6234,6 +6239,10 @@ export const conversationEmailUpdateDeliveryTable = pgTable(
             .notNull()
             .references(() => userTable.id),
         status: conversationEmailUpdateDeliveryStatusEnum("status").notNull(),
+        participantPreferenceScope:
+            conversationEmailUpdateParticipantPreferenceScopeEnum(
+                "participant_preference_scope",
+            ).notNull(),
         failureReason:
             conversationEmailUpdateFailureReasonEnum("failure_reason"),
         stopReason: conversationEmailUpdateStopReasonEnum("stop_reason"),
@@ -6570,6 +6579,10 @@ export const conversationEmailUpdateDeliveryAttemptTable = pgTable(
             table.recipientId,
             table.attemptNumber,
         ),
+        unique("conversation_email_update_attempt_public_recipient_unique").on(
+            table.publicId,
+            table.recipientId,
+        ),
         uniqueIndex("conversation_email_update_attempt_provider_message_unique")
             .on(table.providerMessageId)
             .where(isNotNull(table.providerMessageId)),
@@ -6596,6 +6609,41 @@ export const conversationEmailUpdateDeliveryAttemptTable = pgTable(
         check(
             "conversation_email_update_attempt_email_canonical_check",
             sql`${table.emailSnapshot} = lower(btrim(${table.emailSnapshot}))`,
+        ),
+    ],
+);
+
+/** @service api */
+export const conversationEmailUpdateDeliveryAttemptConversationTable = pgTable(
+    "conversation_email_update_delivery_attempt_conversation",
+    {
+        attemptPublicId: uuid("attempt_public_id").notNull(),
+        recipientId: bigint("recipient_id", { mode: "bigint" }).notNull(),
+        conversationId: integer("conversation_id").notNull(),
+    },
+    (table) => [
+        primaryKey({
+            columns: [table.attemptPublicId, table.conversationId],
+        }),
+        foreignKey({
+            columns: [table.attemptPublicId, table.recipientId],
+            foreignColumns: [
+                conversationEmailUpdateDeliveryAttemptTable.publicId,
+                conversationEmailUpdateDeliveryAttemptTable.recipientId,
+            ],
+            name: "email_update_attempt_scope_attempt_fk",
+        }),
+        foreignKey({
+            columns: [table.recipientId, table.conversationId],
+            foreignColumns: [
+                conversationEmailUpdateRecipientConversationTable.recipientId,
+                conversationEmailUpdateRecipientConversationTable.conversationId,
+            ],
+            name: "email_update_attempt_scope_recipient_fk",
+        }),
+        index("conversation_email_update_attempt_scope_recipient_idx").on(
+            table.recipientId,
+            table.conversationId,
         ),
     ],
 );
@@ -6679,9 +6727,11 @@ export const conversationEmailUpdateActionTokenTable = pgTable(
             .primaryKey()
             .generatedAlwaysAsIdentity(),
         tokenHash: varchar("token_hash", { length: 64 }).notNull().unique(),
-        recipientId: bigint("recipient_id", { mode: "bigint" })
+        attemptPublicId: uuid("attempt_public_id")
             .notNull()
-            .references(() => conversationEmailUpdateRecipientTable.id),
+            .references(
+                () => conversationEmailUpdateDeliveryAttemptTable.publicId,
+            ),
         action: conversationEmailUpdateActionEnum("action").notNull(),
         createdAt: timestamp("created_at", { mode: "date", precision: 0 })
             .defaultNow()
@@ -6693,8 +6743,8 @@ export const conversationEmailUpdateActionTokenTable = pgTable(
         lastUsedAt: timestamp("last_used_at", { mode: "date", precision: 0 }),
     },
     (table) => [
-        index("conversation_email_update_action_recipient_idx").on(
-            table.recipientId,
+        index("conversation_email_update_action_attempt_idx").on(
+            table.attemptPublicId,
         ),
         check(
             "conversation_email_update_action_expiry_check",

@@ -538,8 +538,14 @@ describe("conversation-scoped worker", () => {
             kind: "participant",
             projectId: 5,
             authorizingOrganizationId: 6,
-            scopeKind: "listed_project",
-            conversations: [],
+            participantPreferenceScope: "project",
+            conversations: [
+                {
+                    conversationId: 10,
+                    title: "Private conversation",
+                    url: "https://example.com/conversation/private",
+                },
+            ],
             actions: {
                 unsubscribeScope: "project",
                 unsubscribeUrl:
@@ -749,8 +755,14 @@ describe("conversation-scoped worker", () => {
             kind: "participant",
             projectId: 7,
             authorizingOrganizationId: 8,
-            scopeKind: "listed_project",
-            conversations: [],
+            participantPreferenceScope: "project",
+            conversations: [
+                {
+                    conversationId: 11,
+                    title: "Accepted conversation",
+                    url: "https://example.com/conversation/accepted",
+                },
+            ],
             actions: {
                 unsubscribeScope: "project",
                 unsubscribeUrl:
@@ -835,8 +847,14 @@ describe("conversation-scoped worker", () => {
             kind: "conversation_owner_copy",
             projectId: 10,
             authorizingOrganizationId: 11,
-            scopeKind: "listed_project",
-            conversations: [],
+            participantPreferenceScope: "project",
+            conversations: [
+                {
+                    conversationId: 12,
+                    title: "Owner conversation",
+                    url: "https://example.com/conversation/owner",
+                },
+            ],
             actions: {
                 unsubscribeScope: "project",
                 unsubscribeUrl:

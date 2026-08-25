@@ -7,6 +7,8 @@ import { getPrimaryDatabase } from "@/shared-backend/db.js";
 import {
     conversationEmailUpdateActionTokenTable,
     conversationEmailUpdateConversationTable,
+    conversationEmailUpdateDeliveryAttemptConversationTable,
+    conversationEmailUpdateDeliveryAttemptTable,
     conversationEmailUpdateDeliveryTable,
     conversationEmailUpdateRecipientConversationTable,
     conversationEmailUpdateRecipientTable,
@@ -156,12 +158,16 @@ async function loadAction({
     const query = db
         .select({
             token_id: conversationEmailUpdateActionTokenTable.id,
+            attempt_public_id:
+                conversationEmailUpdateActionTokenTable.attemptPublicId,
             action: conversationEmailUpdateActionTokenTable.action,
             recipient_id: conversationEmailUpdateRecipientTable.id,
             recipient_user_id: conversationEmailUpdateRecipientTable.userId,
             recipient_kind: conversationEmailUpdateRecipientTable.kind,
             update_id: conversationEmailUpdateTable.id,
             update_scope_kind: conversationEmailUpdateTable.scopeKind,
+            participant_preference_scope:
+                conversationEmailUpdateDeliveryTable.participantPreferenceScope,
             update_project_id: conversationEmailUpdateTable.projectId,
             project_slug: projectTable.slug,
             project_title_snapshot:
@@ -170,10 +176,17 @@ async function loadAction({
         })
         .from(conversationEmailUpdateActionTokenTable)
         .innerJoin(
+            conversationEmailUpdateDeliveryAttemptTable,
+            eq(
+                conversationEmailUpdateDeliveryAttemptTable.publicId,
+                conversationEmailUpdateActionTokenTable.attemptPublicId,
+            ),
+        )
+        .innerJoin(
             conversationEmailUpdateRecipientTable,
             eq(
                 conversationEmailUpdateRecipientTable.id,
-                conversationEmailUpdateActionTokenTable.recipientId,
+                conversationEmailUpdateDeliveryAttemptTable.recipientId,
             ),
         )
         .innerJoin(
@@ -216,11 +229,12 @@ async function loadAction({
 type ActionRow = NonNullable<Awaited<ReturnType<typeof loadAction>>>;
 
 function hasValidActionBinding(action: ActionRow): boolean {
+    const participantPreferenceScope = action.participant_preference_scope;
     if (action.action === "unsubscribe_project") {
-        return action.update_scope_kind === "listed_project";
+        return participantPreferenceScope === "project";
     }
     if (action.action === "unsubscribe_conversation") {
-        return action.update_scope_kind === "no_project";
+        return participantPreferenceScope === "conversation";
     }
     return true;
 }
@@ -240,6 +254,23 @@ async function loadRecipientConversations({
             title: conversationEmailUpdateConversationTable.conversationTitleSnapshot,
         })
         .from(conversationEmailUpdateRecipientConversationTable)
+        .innerJoin(
+            conversationEmailUpdateDeliveryAttemptConversationTable,
+            and(
+                eq(
+                    conversationEmailUpdateDeliveryAttemptConversationTable.attemptPublicId,
+                    action.attempt_public_id,
+                ),
+                eq(
+                    conversationEmailUpdateDeliveryAttemptConversationTable.recipientId,
+                    conversationEmailUpdateRecipientConversationTable.recipientId,
+                ),
+                eq(
+                    conversationEmailUpdateDeliveryAttemptConversationTable.conversationId,
+                    conversationEmailUpdateRecipientConversationTable.conversationId,
+                ),
+            ),
+        )
         .innerJoin(
             conversationEmailUpdateConversationTable,
             and(
@@ -303,7 +334,8 @@ async function loadBoundScope({
             return undefined;
         }
     }
-    return action.update_scope_kind === "listed_project"
+    const participantPreferenceScope = action.participant_preference_scope;
+    return participantPreferenceScope === "project"
         ? {
               kind: "project",
               projectSlug: action.project_slug,
@@ -409,6 +441,46 @@ async function disableConversation({
         });
 }
 
+async function disableConversations({
+    db,
+    userId,
+    conversationIds,
+    now,
+}: {
+    db: PostgresJsDatabase;
+    userId: string;
+    conversationIds: readonly number[];
+    now: Date;
+}): Promise<void> {
+    if (conversationIds.length === 0) return;
+    await db
+        .insert(conversationEmailUpdateUserConversationPreferenceTable)
+        .values(
+            conversationIds.map(
+                (
+                    conversationId,
+                ): typeof conversationEmailUpdateUserConversationPreferenceTable.$inferInsert => ({
+                    userId,
+                    conversationId,
+                    enabled: false,
+                    choiceAt: now,
+                    choiceSource: "unsubscribe",
+                }),
+            ),
+        )
+        .onConflictDoUpdate({
+            target: [
+                conversationEmailUpdateUserConversationPreferenceTable.userId,
+                conversationEmailUpdateUserConversationPreferenceTable.conversationId,
+            ],
+            set: {
+                enabled: false,
+                choiceAt: now,
+                choiceSource: "unsubscribe",
+            },
+        });
+}
+
 export function createConversationEmailUpdateActionService({
     db,
 }: {
@@ -444,19 +516,21 @@ export function createConversationEmailUpdateActionService({
             });
             if (scope === undefined) return unavailable;
             if (action.action === "unsubscribe_conversation") {
-                const conversation = scope.conversations.at(0);
-                return conversation === undefined
-                    ? unavailable
-                    : {
-                          success: true,
-                          action: "unsubscribe_conversation",
-                          scope: {
-                              kind: "conversation",
-                              conversationSlugId:
-                                  conversation.conversationSlugId,
-                              title: conversation.title,
-                          },
-                      };
+                if (scope.kind !== "no_project") return unavailable;
+                return {
+                    success: true,
+                    action: "unsubscribe_conversation",
+                    scope: {
+                        kind: "no_project",
+                        conversations: scope.conversations.map(
+                            (conversation) => ({
+                                conversationSlugId:
+                                    conversation.conversationSlugId,
+                                title: conversation.title,
+                            }),
+                        ),
+                    },
+                };
             }
             if (action.action === "manage_preferences") {
                 return {
@@ -509,12 +583,12 @@ export function createConversationEmailUpdateActionService({
                         action,
                     });
                     if (scope?.kind !== "no_project") return unavailable;
-                    const conversation = scope.conversations.at(0);
-                    if (conversation === undefined) return unavailable;
-                    await disableConversation({
+                    await disableConversations({
                         db: tx,
                         userId: action.recipient_user_id,
-                        conversationId: conversation.conversationId,
+                        conversationIds: scope.conversations.map(
+                            (conversation) => conversation.conversationId,
+                        ),
                         now,
                     });
                 }

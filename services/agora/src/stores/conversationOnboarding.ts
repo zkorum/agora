@@ -15,6 +15,7 @@ export const useConversationOnboardingStore = defineStore(
     const routeContext = ref<ConversationRouteContext>(normalConversationRouteContext);
     const isResumeMode = ref(false);
     const justCompletedSurvey = ref(false);
+    const emailUpdateConsentSkipped = ref(false);
 
     function startManualEntry({
       conversationSlugId: nextConversationSlugId,
@@ -38,6 +39,7 @@ export const useConversationOnboardingStore = defineStore(
       returnHistoryPosition.value = nextReturnHistoryPosition ?? null;
       isResumeMode.value = false;
       justCompletedSurvey.value = false;
+      emailUpdateConsentSkipped.value = false;
     }
 
     function startResumeEntry({
@@ -62,6 +64,11 @@ export const useConversationOnboardingStore = defineStore(
       returnHistoryPosition.value = nextReturnHistoryPosition ?? null;
       isResumeMode.value = true;
       justCompletedSurvey.value = false;
+      emailUpdateConsentSkipped.value = false;
+    }
+
+    function markEmailUpdateConsentSkipped(): void {
+      emailUpdateConsentSkipped.value = true;
     }
 
     function markJustCompletedSurvey({
@@ -103,6 +110,7 @@ export const useConversationOnboardingStore = defineStore(
       routeContext.value = normalConversationRouteContext;
       isResumeMode.value = false;
       justCompletedSurvey.value = false;
+      emailUpdateConsentSkipped.value = false;
     }
 
     return {
@@ -112,9 +120,11 @@ export const useConversationOnboardingStore = defineStore(
       routeContext,
       isResumeMode,
       justCompletedSurvey,
+      emailUpdateConsentSkipped,
       startManualEntry,
       startResumeEntry,
       markJustCompletedSurvey,
+      markEmailUpdateConsentSkipped,
       clearForConversation,
     };
   }

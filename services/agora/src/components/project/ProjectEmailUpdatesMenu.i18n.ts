@@ -34,15 +34,13 @@ export const projectEmailUpdatesMenuTranslations: Record<
   },
   es: {
     projectActions: "Acciones del proyecto",
-    receiveUpdates: "Recibir actualizaciones por correo de este proyecto",
-    manageUpdates: "Gestionar las actualizaciones por correo de este proyecto",
-    viewHistory:
-      "Ver el historial de actualizaciones por correo de este proyecto",
-    saveEnabled: "Las actualizaciones por correo están activadas para este proyecto.",
-    saveDisabled:
-      "Las actualizaciones por correo están desactivadas para este proyecto.",
+    receiveUpdates: "Seguir el proyecto por correo",
+    manageUpdates: "Gestionar el seguimiento del proyecto por correo",
+    viewHistory: "Ver el historial de novedades del proyecto",
+    saveEnabled: "El seguimiento del proyecto por correo está activado.",
+    saveDisabled: "El seguimiento del proyecto por correo está desactivado.",
     saveError:
-      "No se pudo guardar tu preferencia de actualizaciones por correo.",
+      "No se pudo guardar tu preferencia de seguimiento por correo.",
   },
   fa: {
     projectActions: "اقدامات پروژه",
@@ -55,14 +53,13 @@ export const projectEmailUpdatesMenuTranslations: Record<
   },
   fr: {
     projectActions: "Actions du projet",
-    receiveUpdates: "Recevoir les actualités par e-mail de ce projet",
-    manageUpdates: "Gérer les actualités par e-mail de ce projet",
-    viewHistory: "Voir l’historique des actualités par e-mail de ce projet",
-    saveEnabled: "Les actualités par e-mail sont activées pour ce projet.",
-    saveDisabled:
-      "Les actualités par e-mail sont désactivées pour ce projet.",
+    receiveUpdates: "Suivre le projet par e-mail",
+    manageUpdates: "Gérer le suivi du projet par e-mail",
+    viewHistory: "Voir l’historique des nouvelles du projet",
+    saveEnabled: "Le suivi du projet par e-mail est activé.",
+    saveDisabled: "Le suivi du projet par e-mail est désactivé.",
     saveError:
-      "Impossible d’enregistrer votre préférence d’actualités par e-mail.",
+      "Impossible d’enregistrer votre préférence de suivi par e-mail.",
   },
   "zh-Hans": {
     projectActions: "项目操作",

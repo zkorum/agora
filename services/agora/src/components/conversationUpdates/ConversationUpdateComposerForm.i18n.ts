@@ -103,11 +103,11 @@ export const conversationUpdateComposerFormTranslations: Record<
       "البريد الإلكتروني اختياري للمشاركين في بعض المحادثات المحددة. يشمل عدد المستلمين المؤهلين فقط المشاركين الذين أكدوا بريدهم الإلكتروني واشتركوا في تحديثات البريد الإلكتروني.",
   },
   es: {
-    composeUpdate: "Redactar actualización",
-    heading: "Escriba una vez y envíe con el contexto de cada participante",
+    composeUpdate: "Redactar una novedad",
+    heading: "Escribe una vez y envía con el contexto de cada participante",
     testDialogTitle: "¿Enviar este correo de prueba?",
     testEmailNotice:
-      "Esta prueba se envía únicamente a la persona facilitadora en {email}. Nadie más recibirá nada hasta que envíe la actualización real.",
+      "Esta prueba se envía únicamente a la persona facilitadora en {email}. Nadie más recibirá nada hasta que envíes la novedad real.",
     cancel: "Cancelar",
     zeroAudienceWarning:
       "Actualmente no hay participantes que puedan recibir este correo. Las opciones de prueba y envío estarán disponibles cuando haya al menos una persona participante elegible.",
@@ -115,28 +115,28 @@ export const conversationUpdateComposerFormTranslations: Record<
     subjectHint: "Máximo de {max} caracteres Unicode",
     messageLabel: "Mensaje",
     editorPlaceholder:
-      "Posibles actualizaciones:\n• Comparta resultados\n• Comparta cambios recientes\n• Destaque nuevas propuestas\n• Invite a volver y votar las propuestas añadidas recientemente para mejorar el análisis a medida que aumenta la participación\n\nRecuerde: este correo se enviará a todas las personas participantes elegibles, tanto si respondieron a algunas propuestas como si no respondieron a ninguna.\n\nLos enlaces a las conversaciones seleccionadas se añaden automáticamente al final del correo, usando sus páginas de proyecto cuando corresponda. No necesita incluirlos aquí, aunque puede hacerlo.",
+      "Posibles novedades:\n• Comparte resultados\n• Comparte cambios recientes\n• Destaca nuevas propuestas\n• Invita a volver y votar las propuestas añadidas recientemente para mejorar el análisis a medida que aumenta la participación\n\nRecuerda: este correo se enviará a todas las personas participantes elegibles, tanto si respondieron a algunas propuestas como si no respondieron a ninguna.\n\nLos enlaces a las conversaciones seleccionadas se añaden automáticamente al final del correo, usando sus páginas de proyecto cuando corresponda. No necesitas incluirlos aquí, aunque puedes hacerlo.",
     policyWarning:
-      "Limite esta actualización estrictamente a las conversaciones seleccionadas. No se permiten la publicidad, la recaudación de fondos, las campañas políticas ni la promoción no relacionada.",
+      "Limita esta novedad estrictamente a las conversaciones seleccionadas. No se permiten la publicidad, la recaudación de fondos, las campañas políticas ni la promoción no relacionada.",
     contentConfirmation:
-      "Confirmo que esta actualización cumple las reglas de contenido de las actualizaciones por correo",
+      "Confirmo que esta novedad cumple las reglas de contenido de las novedades por correo",
     ownerCopySingular:
-      "La actualización real llegará a las personas participantes elegibles y a {count} responsable de proyecto autorizado. Quien pertenezca a ambos grupos recibirá una sola copia como responsable.",
+      "La novedad real llegará a las personas participantes elegibles y a {count} responsable de proyecto autorizado. Quien pertenezca a ambos grupos recibirá una sola copia como responsable.",
     ownerCopyPlural:
-      "La actualización real llegará a las personas participantes elegibles y a {count} responsables de proyecto autorizados. Quien pertenezca a ambos grupos recibirá una sola copia como responsable.",
+      "La novedad real llegará a las personas participantes elegibles y a {count} responsables de proyecto autorizados. Quien pertenezca a ambos grupos recibirá una sola copia como responsable.",
     testPassed:
-      "Esta versión exacta del correo superó la prueba. Si cambia el alcance, la dirección de respuesta, el asunto o el mensaje, deberá realizar otra prueba correctamente.",
+      "Esta versión exacta del correo superó la prueba. Si cambias el alcance, la dirección de respuesta, el asunto o el mensaje, tendrás que realizar otra prueba correctamente.",
     testRequired:
-      "Envíe correctamente un correo de prueba de esta versión exacta antes de revisar el envío real.",
+      "Envía correctamente un correo de prueba de esta versión exacta antes de revisar el envío real.",
     sendAnotherTest: "Enviar otro correo de prueba",
     sendTest: "Enviar correo de prueba",
     reviewAndSend: "Revisar y enviar",
     replyToConversation: "Responder a (correo de la conversación)",
     replyToProject: "Responder a (correo del proyecto)",
     optionalEmailAllWarning:
-      "El correo electrónico es opcional para quienes participan en las conversaciones seleccionadas. El recuento de destinatarios elegibles solo incluye a quienes verificaron su correo y aceptaron recibir actualizaciones por correo.",
+      "El correo es opcional para quienes participan en las conversaciones seleccionadas. El recuento de destinatarios elegibles solo incluye a quienes verificaron su dirección de correo electrónico y aceptaron las novedades por correo.",
     optionalEmailSomeWarning:
-      "El correo electrónico es opcional para quienes participan en algunas conversaciones seleccionadas. El recuento de destinatarios elegibles solo incluye a quienes verificaron su correo y aceptaron recibir actualizaciones por correo.",
+      "El correo es opcional para quienes participan en algunas conversaciones seleccionadas. El recuento de destinatarios elegibles solo incluye a quienes verificaron su dirección de correo electrónico y aceptaron las novedades por correo.",
   },
   fa: {
     composeUpdate: "نوشتن به‌روزرسانی",
@@ -175,11 +175,11 @@ export const conversationUpdateComposerFormTranslations: Record<
       "ایمیل برای شرکت‌کنندگان در برخی گفت‌وگوهای انتخاب‌شده اختیاری است. شمار دریافت‌کنندگان واجد شرایط فقط شامل کسانی است که ایمیل خود را تأیید کرده و دریافت به‌روزرسانی‌های ایمیلی را پذیرفته‌اند.",
   },
   fr: {
-    composeUpdate: "Rédiger une actualité",
+    composeUpdate: "Rédiger une nouvelle",
     heading: "Écrivez une fois, envoyez avec le contexte de chaque participant",
     testDialogTitle: "Envoyer cet e-mail de test ?",
     testEmailNotice:
-      "Ce test est envoyé uniquement à la personne facilitatrice à l'adresse {email}. Personne d'autre ne recevra quoi que ce soit avant l'envoi de l'actualité réelle.",
+      "Ce test est envoyé uniquement à la personne facilitatrice à l'adresse {email}. Personne d'autre ne recevra quoi que ce soit avant l'envoi de la nouvelle réelle.",
     cancel: "Annuler",
     zeroAudienceWarning:
       "Aucun participant ne peut actuellement recevoir cet e-mail. Le test et l'envoi seront disponibles dès qu'au moins un participant sera éligible.",
@@ -187,15 +187,15 @@ export const conversationUpdateComposerFormTranslations: Record<
     subjectHint: "{max} caractères Unicode au maximum",
     messageLabel: "Message",
     editorPlaceholder:
-      "Actualités possibles :\n• Partagez les résultats\n• Partagez les changements récents\n• Mettez en avant les nouvelles propositions\n• Invitez les participants à revenir voter sur les propositions récemment ajoutées afin d'améliorer l'analyse à mesure que la participation augmente\n\nRappel : cet e-mail sera envoyé à tous les participants éligibles, qu'ils aient répondu à certaines propositions ou à aucune.\n\nLes liens vers les conversations sélectionnées sont ajoutés automatiquement à la fin de l'e-mail, via leur page de projet le cas échéant. Vous n'avez pas besoin de les inclure ici, mais vous pouvez le faire.",
+      "Nouvelles possibles :\n• Partagez les résultats\n• Partagez les changements récents\n• Mettez en avant les nouvelles propositions\n• Invitez les participants à revenir voter sur les propositions récemment ajoutées afin d'améliorer l'analyse à mesure que la participation augmente\n\nRappel : cet e-mail sera envoyé à tous les participants éligibles, qu'ils aient répondu à certaines propositions ou à aucune.\n\nLes liens vers les conversations sélectionnées sont ajoutés automatiquement à la fin de l'e-mail, via leur page de projet le cas échéant. Vous n'avez pas besoin de les inclure ici, mais vous pouvez le faire.",
     policyWarning:
-      "Limitez strictement cette actualité aux conversations sélectionnées. La publicité, la collecte de fonds, les campagnes politiques et les promotions sans rapport sont interdites.",
+      "Limitez strictement cette nouvelle aux conversations sélectionnées. La publicité, la collecte de fonds, les campagnes politiques et les promotions sans rapport sont interdites.",
     contentConfirmation:
-      "Je confirme que cette actualité respecte les règles de contenu des actualités par e-mail",
+      "Je confirme que cette nouvelle respecte les règles de contenu des nouvelles par e-mail",
     ownerCopySingular:
-      "L'actualité réelle sera envoyée aux participants éligibles ainsi qu'à {count} gestionnaire de projet autorisé. Toute personne appartenant aux deux groupes recevra une seule copie en tant que gestionnaire.",
+      "La nouvelle réelle sera envoyée aux participants éligibles ainsi qu'à {count} gestionnaire de projet autorisé. Toute personne appartenant aux deux groupes recevra une seule copie en tant que gestionnaire.",
     ownerCopyPlural:
-      "L'actualité réelle sera envoyée aux participants éligibles ainsi qu'à {count} gestionnaires de projet autorisés. Toute personne appartenant aux deux groupes recevra une seule copie en tant que gestionnaire.",
+      "La nouvelle réelle sera envoyée aux participants éligibles ainsi qu'à {count} gestionnaires de projet autorisés. Toute personne appartenant aux deux groupes recevra une seule copie en tant que gestionnaire.",
     testPassed:
       "Cette version exacte de l'e-mail a réussi le test. Toute modification de la portée, de l'adresse de réponse, de l'objet ou du message exige un nouveau test réussi.",
     testRequired:
@@ -206,9 +206,9 @@ export const conversationUpdateComposerFormTranslations: Record<
     replyToConversation: "Répondre à (e-mail de la conversation)",
     replyToProject: "Répondre à (e-mail du projet)",
     optionalEmailAllWarning:
-      "L'e-mail est facultatif pour les participants aux conversations sélectionnées. Le nombre de destinataires éligibles comprend uniquement les participants qui ont vérifié leur adresse e-mail et accepté les actualités par e-mail.",
+      "L'e-mail est facultatif pour les participants aux conversations sélectionnées. Le nombre de destinataires éligibles comprend uniquement les participants qui ont vérifié leur adresse e-mail et accepté les nouvelles par e-mail.",
     optionalEmailSomeWarning:
-      "L'e-mail est facultatif pour les participants à certaines conversations sélectionnées. Le nombre de destinataires éligibles comprend uniquement les participants qui ont vérifié leur adresse e-mail et accepté les actualités par e-mail.",
+      "L'e-mail est facultatif pour les participants à certaines conversations sélectionnées. Le nombre de destinataires éligibles comprend uniquement les participants qui ont vérifié leur adresse e-mail et accepté les nouvelles par e-mail.",
   },
   "zh-Hans": {
     composeUpdate: "撰写动态",

@@ -96,18 +96,15 @@ export const postMetadataTranslations: Record<
     alreadyOpen: "Esta conversación ya está abierta",
     syncSuccess: "Sincronización desde GitHub exitosa",
     syncError: "Error al sincronizar desde GitHub",
-    manageEmailUpdatesLabel:
-      "Gestionar las actualizaciones por correo de esta conversación",
-    viewEmailUpdateHistoryLabel:
-      "Ver el historial de actualizaciones por correo de esta conversación",
-    receiveEmailUpdatesLabel:
-      "Recibir actualizaciones por correo de esta conversación",
+    manageEmailUpdatesLabel: "Gestionar el seguimiento de la conversación por correo",
+    viewEmailUpdateHistoryLabel: "Ver el historial de novedades de la conversación",
+    receiveEmailUpdatesLabel: "Seguir la conversación por correo",
     emailUpdatesPreferenceSaveEnabled:
-      "Las actualizaciones por correo están activadas para esta conversación.",
+      "El seguimiento de la conversación por correo está activado.",
     emailUpdatesPreferenceSaveDisabled:
-      "Las actualizaciones por correo están desactivadas para esta conversación.",
+      "El seguimiento de la conversación por correo está desactivado.",
     emailUpdatesPreferenceSaveError:
-      "No se pudo guardar tu preferencia de actualizaciones por correo.",
+      "No se pudo guardar tu preferencia de seguimiento por correo.",
   },
   fa: {
     closeConfirmMessage:
@@ -151,18 +148,16 @@ export const postMetadataTranslations: Record<
     alreadyOpen: "Cette conversation est déjà ouverte",
     syncSuccess: "Synchronisation depuis GitHub réussie",
     syncError: "Échec de la synchronisation depuis GitHub",
-    manageEmailUpdatesLabel:
-      "Gérer les actualités par e-mail de cette conversation",
+    manageEmailUpdatesLabel: "Gérer le suivi de la conversation par e-mail",
     viewEmailUpdateHistoryLabel:
-      "Voir l’historique des actualités par e-mail de cette conversation",
-    receiveEmailUpdatesLabel:
-      "Recevoir les actualités par e-mail de cette conversation",
+      "Voir l’historique des nouvelles de la conversation",
+    receiveEmailUpdatesLabel: "Suivre la conversation par e-mail",
     emailUpdatesPreferenceSaveEnabled:
-      "Les actualités par e-mail sont activées pour cette conversation.",
+      "Le suivi de la conversation par e-mail est activé.",
     emailUpdatesPreferenceSaveDisabled:
-      "Les actualités par e-mail sont désactivées pour cette conversation.",
+      "Le suivi de la conversation par e-mail est désactivé.",
     emailUpdatesPreferenceSaveError:
-      "Impossible d’enregistrer votre préférence d’actualités par e-mail.",
+      "Impossible d’enregistrer votre préférence de suivi par e-mail.",
   },
   "zh-Hans": {
     closeConfirmMessage: "您确定要关闭此对话吗？用户将无法发布新意见或投票。",

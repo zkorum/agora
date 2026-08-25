@@ -127,34 +127,34 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     introTitle:
       "Mantén conectados a los participantes con el trabajo al que se unieron",
     introDescription:
-      "Comparte una actualización concreta sobre las conversaciones seleccionadas, prueba el correo exacto y revisa los envíos aceptados en un solo lugar.",
+      "Comparte una novedad concreta sobre las conversaciones seleccionadas, prueba el correo exacto y revisa los envíos aceptados en un solo lugar.",
     tryAgain: "Intentar de nuevo",
     verifyEmailBanner:
-      "Verifica tu dirección de correo antes de redactar o probar una actualización por correo. El historial seguirá disponible.",
+      "Verifica tu dirección de correo electrónico antes de redactar o probar una novedad. El historial seguirá disponible.",
     verifyEmail: "Verificar correo",
     retry: "Reintentar",
     compose: "Redactar",
     history: "Historial",
     loadMore: "Cargar más",
-    sendDialogTitle: "¿Enviar esta actualización?",
-    sendUpdate: "Enviar actualización",
+    sendDialogTitle: "¿Enviar esta novedad?",
+    sendUpdate: "Enviar la novedad",
     cancel: "Cancelar",
     audienceSummary: "Actualmente hay {count} destinatarios aptos",
     sendWarning:
-      "Primero se envían las copias obligatorias a los responsables. La entrega a los participantes no se puede cancelar una vez aceptada la actualización.",
+      "Primero se envían las copias obligatorias a los responsables. La entrega a los participantes no se puede cancelar una vez aceptada la novedad.",
     verifyDialogTitle: "¿Verificar tu correo?",
     continueVerification: "Continuar con la verificación",
     notNow: "Ahora no",
     verifyDialogDescription:
-      "Necesitas un correo verificado para redactar actualizaciones y recibir el correo de prueba exacto antes del envío. Volverás aquí después de verificarlo.",
+      "Necesitas una dirección de correo electrónico verificada para redactar novedades y recibir el correo de prueba exacto antes del envío. Volverás aquí después de verificarla.",
     workspaceUnavailable:
-      "Las actualizaciones por correo no están disponibles ahora.",
+      "Las novedades por correo no están disponibles ahora.",
     audienceEstimateUnavailable:
       "No se pudo cargar el número de destinatarios aptos.",
     historyUnavailable:
-      "El historial de actualizaciones por correo no está disponible ahora.",
+      "El historial de novedades por correo no está disponible ahora.",
     moreHistoryUnavailable:
-      "No se pudo cargar más historial de actualizaciones por correo.",
+      "No se pudo cargar más historial de novedades por correo.",
     queueingTest: "Poniendo en cola tu correo de prueba...",
     testQueued:
       "Prueba en cola. Esperando a que el proveedor de correo la acepte...",
@@ -171,21 +171,20 @@ export const conversationUpdatesWorkspaceTranslations: Record<
       "La entrega de prueba falló porque el proveedor de correo la rechazó definitivamente.",
     testDeliveryUnknown:
       "La entrega de prueba falló por un motivo desconocido.",
-    updateSendUnavailable: "No se pudo enviar la actualización.",
-    contextNotFound:
-      "No se encontró este contexto de actualizaciones por correo.",
+    updateSendUnavailable: "No se pudo enviar la novedad.",
+    contextNotFound: "No se encontró este contexto de novedades por correo.",
     scopeUnavailable:
-      "El ámbito seleccionado ya no está disponible para las actualizaciones por correo.",
+      "El ámbito seleccionado ya no está disponible para las novedades por correo.",
     conversationsUnavailable:
       "Una o más conversaciones seleccionadas ya no están disponibles en este ámbito.",
     sendingDisabled:
-      "Las actualizaciones por correo están desactivadas para esta selección.",
+      "Las novedades por correo están desactivadas para esta selección.",
     contentInvalid:
       "El asunto o el mensaje no son válidos. Revisa el contenido e inténtalo de nuevo.",
     missingContactEmail:
-      "Añade un correo de contacto para participantes antes de enviar una prueba.",
+      "Añade una dirección de correo electrónico de contacto para participantes antes de enviar una prueba.",
     verifyBeforeTest:
-      "Verifica una dirección de correo antes de enviar un correo de prueba.",
+      "Verifica una dirección de correo electrónico antes de enviar un correo de prueba.",
     noEligibleParticipants:
       "Actualmente no hay participantes aptos para recibir este correo.",
     testRateLimited:
@@ -195,43 +194,43 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     testNotAccepted:
       "El proveedor de correo no ha aceptado la prueba. Envía otra antes de reintentarlo.",
     testUsed:
-      "Esta prueba ya autorizó una actualización. Envía otra antes de reintentarlo.",
+      "Esta prueba ya autorizó una novedad. Envía otra antes de reintentarlo.",
     deliveryAlreadyActive:
-      "Ya hay otra entrega de actualizaciones por correo activa para este proyecto.",
+      "Ya hay otra entrega de novedades por correo activa para este proyecto.",
     ownerCopyUnavailable:
       "Las copias obligatorias para los responsables de las conversaciones no se pueden entregar ahora.",
   },
   fr: {
     introTitle: "Gardez les participants liés au travail qu’ils ont rejoint",
     introDescription:
-      "Partagez une actualité ciblée sur les conversations sélectionnées, testez l’e-mail exact et consultez les envois acceptés au même endroit.",
+      "Partagez une nouvelle ciblée sur les conversations sélectionnées, testez l’e-mail exact et consultez les envois acceptés au même endroit.",
     tryAgain: "Réessayer",
     verifyEmailBanner:
-      "Vérifiez votre adresse e-mail avant de rédiger ou tester une actualité par e-mail. L’historique reste disponible.",
+      "Vérifiez votre adresse e-mail avant de rédiger ou tester une nouvelle. L’historique reste disponible.",
     verifyEmail: "Vérifier l’e-mail",
     retry: "Réessayer",
     compose: "Rédiger",
     history: "Historique",
     loadMore: "Charger plus",
-    sendDialogTitle: "Envoyer cette actualité ?",
-    sendUpdate: "Envoyer l’actualité",
+    sendDialogTitle: "Envoyer cette nouvelle ?",
+    sendUpdate: "Envoyer la nouvelle",
     cancel: "Annuler",
     audienceSummary: "Actuellement {count} destinataires éligibles",
     sendWarning:
-      "Les copies obligatoires aux responsables sont envoyées en premier. L’envoi aux participants ne peut plus être annulé après l’acceptation de l’actualité.",
+      "Les copies obligatoires aux responsables sont envoyées en premier. L’envoi aux participants ne peut plus être annulé après l’acceptation de la nouvelle.",
     verifyDialogTitle: "Vérifier votre e-mail ?",
     continueVerification: "Continuer vers la vérification",
     notNow: "Pas maintenant",
     verifyDialogDescription:
-      "Une adresse e-mail vérifiée est nécessaire pour rédiger des actualités et recevoir l’e-mail de test exact avant l’envoi. Vous reviendrez ici après la vérification.",
+      "Une adresse e-mail vérifiée est nécessaire pour rédiger des nouvelles et recevoir l’e-mail de test exact avant l’envoi. Vous reviendrez ici après la vérification.",
     workspaceUnavailable:
-      "Les actualités par e-mail sont indisponibles pour le moment.",
+      "Les nouvelles par e-mail sont indisponibles pour le moment.",
     audienceEstimateUnavailable:
       "Impossible de charger le nombre de destinataires éligibles.",
     historyUnavailable:
-      "L’historique des actualités par e-mail est indisponible pour le moment.",
+      "L’historique des nouvelles par e-mail est indisponible pour le moment.",
     moreHistoryUnavailable:
-      "Impossible de charger davantage d’historique des actualités par e-mail.",
+      "Impossible de charger davantage d’historique des nouvelles par e-mail.",
     queueingTest: "Mise en file de votre e-mail de test...",
     testQueued:
       "Test mis en file. En attente de l’acceptation du fournisseur d’e-mail...",
@@ -247,14 +246,14 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     testDeliveryPermanent:
       "L’envoi du test a échoué car le fournisseur d’e-mail l’a définitivement refusé.",
     testDeliveryUnknown: "L’envoi du test a échoué pour une raison inconnue.",
-    updateSendUnavailable: "Impossible d’envoyer l’actualité.",
-    contextNotFound: "Ce contexte d’actualités par e-mail est introuvable.",
+    updateSendUnavailable: "Impossible d’envoyer la nouvelle.",
+    contextNotFound: "Ce contexte de nouvelles par e-mail est introuvable.",
     scopeUnavailable:
-      "Le périmètre sélectionné n’est plus disponible pour les actualités par e-mail.",
+      "Le périmètre sélectionné n’est plus disponible pour les nouvelles par e-mail.",
     conversationsUnavailable:
       "Une ou plusieurs conversations sélectionnées ne sont plus disponibles dans ce périmètre.",
     sendingDisabled:
-      "Les actualités par e-mail sont désactivées pour cette sélection.",
+      "Les nouvelles par e-mail sont désactivées pour cette sélection.",
     contentInvalid:
       "L’objet ou le message n’est pas valide. Vérifiez le contenu et réessayez.",
     missingContactEmail:
@@ -270,9 +269,9 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     testNotAccepted:
       "Le fournisseur d’e-mail n’a pas accepté le test. Envoyez-en un autre avant de réessayer.",
     testUsed:
-      "Ce test a déjà autorisé une actualité. Envoyez-en un autre avant de réessayer.",
+      "Ce test a déjà autorisé une nouvelle. Envoyez-en un autre avant de réessayer.",
     deliveryAlreadyActive:
-      "Un autre envoi d’actualité par e-mail est déjà actif pour ce projet.",
+      "Un autre envoi de nouvelle par e-mail est déjà actif pour ce projet.",
     ownerCopyUnavailable:
       "Les copies obligatoires aux responsables des conversations ne peuvent pas être envoyées actuellement.",
   },

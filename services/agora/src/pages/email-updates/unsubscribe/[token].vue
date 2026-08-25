@@ -101,9 +101,13 @@ const unsubscribeDescription = computed(() => {
     return "";
   }
   const resolution = state.value.resolution;
-  return resolution.scope.kind === "project"
-    ? t("projectDescription", { title: resolution.scope.title })
-    : t("conversationDescription", { title: resolution.scope.title });
+  if (resolution.scope.kind === "project") {
+    return t("projectDescription", { title: resolution.scope.title });
+  }
+  const conversation = resolution.scope.conversations.at(0);
+  return resolution.scope.conversations.length === 1 && conversation !== undefined
+    ? t("conversationDescription", { title: conversation.title })
+    : t("conversationsDescription");
 });
 
 watch(

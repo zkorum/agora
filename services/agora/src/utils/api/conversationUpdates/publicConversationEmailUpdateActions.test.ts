@@ -29,9 +29,10 @@ describe("public conversation Email Updates actions API", () => {
       success: true,
       action: "unsubscribe_conversation",
       scope: {
-        kind: "conversation",
-        conversationSlugId: "conv1",
-        title: "A conversation",
+        kind: "no_project",
+        conversations: [
+          { conversationSlugId: "conv1", title: "A conversation" },
+        ],
       },
     };
     const { client, requests } = createClient({ responseData });

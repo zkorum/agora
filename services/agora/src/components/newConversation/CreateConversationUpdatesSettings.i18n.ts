@@ -61,14 +61,14 @@ export const createConversationUpdatesSettingsTranslations: Record<
     useDefault: "استخدام {source}",
   },
   es: {
-    controlLabel: "Actualizaciones por correo: {value} ({source})",
-    emailUpdates: "Actualizaciones por correo",
+    controlLabel: "Novedades por correo: {value} ({source})",
+    emailUpdates: "Novedades por correo",
     enableAriaLabel:
-      "Activar las actualizaciones por correo para {conversationTitle}",
+      "Activar Novedades de la conversación para {conversationTitle}",
     inheritsDescription:
       "Usa el valor predeterminado {defaultValue} de {scopeLabel}.",
     manualUpdatesSubtitle:
-      "Envía manualmente actualizaciones ocasionales por correo a quienes se suscriban.",
+      "Envía manualmente novedades ocasionales por correo a quienes se suscriban.",
     noProjectDefault: "valor predeterminado de Sin proyecto",
     noProjectGroup: "el grupo Sin proyecto",
     off: "Desactivadas",
@@ -100,21 +100,19 @@ export const createConversationUpdatesSettingsTranslations: Record<
     useDefault: "استفاده از {source}",
   },
   fr: {
-    controlLabel: "Mises à jour par e-mail : {value} ({source})",
-    emailUpdates: "Mises à jour par e-mail",
+    controlLabel: "Nouvelles par e-mail : {value} ({source})",
+    emailUpdates: "Nouvelles par e-mail",
     enableAriaLabel:
-      "Activer les mises à jour par e-mail pour {conversationTitle}",
-    inheritsDescription:
-      "Utilise le réglage {defaultValue} de {scopeLabel}.",
+      "Activer les Nouvelles de la conversation pour {conversationTitle}",
+    inheritsDescription: "Utilise le réglage {defaultValue} de {scopeLabel}.",
     manualUpdatesSubtitle:
-      "Envoyez manuellement des mises à jour occasionnelles aux participants inscrits.",
+      "Envoyez manuellement des nouvelles occasionnelles par e-mail aux participants inscrits.",
     noProjectDefault: "réglage par défaut Sans projet",
     noProjectGroup: "le groupe Sans projet",
     off: "Désactivées",
     on: "Activées",
     override: "dérogation",
-    overridesDescription:
-      "Remplace le réglage {defaultValue} de {scopeLabel}.",
+    overridesDescription: "Remplace le réglage {defaultValue} de {scopeLabel}.",
     projectDefault: "réglage par défaut du projet",
     projectFallback: "le projet",
     useDefault: "Utiliser {source}",
@@ -132,8 +130,7 @@ export const createConversationUpdatesSettingsTranslations: Record<
     off: "כבוי",
     on: "פעיל",
     override: "שינוי",
-    overridesDescription:
-      "החלפת ברירת המחדל {defaultValue} של {scopeLabel}.",
+    overridesDescription: "החלפת ברירת המחדל {defaultValue} של {scopeLabel}.",
     projectDefault: "ברירת המחדל של הפרויקט",
     projectFallback: "הפרויקט",
     useDefault: "שימוש ב{source}",
@@ -142,8 +139,7 @@ export const createConversationUpdatesSettingsTranslations: Record<
     controlLabel: "メール更新：{value}（{source}）",
     emailUpdates: "メール更新",
     enableAriaLabel: "{conversationTitle}のメール更新を有効にする",
-    inheritsDescription:
-      "{scopeLabel}の既定値「{defaultValue}」を使用します。",
+    inheritsDescription: "{scopeLabel}の既定値「{defaultValue}」を使用します。",
     manualUpdatesSubtitle:
       "登録した参加者に、ときどき手動でメール更新を送信します。",
     noProjectDefault: "プロジェクトなしの既定値",
@@ -180,8 +176,7 @@ export const createConversationUpdatesSettingsTranslations: Record<
   ru: {
     controlLabel: "Почтовые обновления: {value} ({source})",
     emailUpdates: "Почтовые обновления",
-    enableAriaLabel:
-      "Включить почтовые обновления для «{conversationTitle}»",
+    enableAriaLabel: "Включить почтовые обновления для «{conversationTitle}»",
     inheritsDescription:
       "Используется значение «{defaultValue}» из области «{scopeLabel}».",
     manualUpdatesSubtitle:
@@ -202,8 +197,7 @@ export const createConversationUpdatesSettingsTranslations: Record<
     emailUpdates: "电子邮件更新",
     enableAriaLabel: "为{conversationTitle}开启电子邮件更新",
     inheritsDescription: "使用{scopeLabel}的{defaultValue}默认值。",
-    manualUpdatesSubtitle:
-      "不定期手动向选择接收更新的参与者发送电子邮件。",
+    manualUpdatesSubtitle: "不定期手动向选择接收更新的参与者发送电子邮件。",
     noProjectDefault: "无项目默认值",
     noProjectGroup: "无项目组",
     off: "关闭",
@@ -219,8 +213,7 @@ export const createConversationUpdatesSettingsTranslations: Record<
     emailUpdates: "電子郵件更新",
     enableAriaLabel: "為{conversationTitle}開啟電子郵件更新",
     inheritsDescription: "使用{scopeLabel}的{defaultValue}預設值。",
-    manualUpdatesSubtitle:
-      "不定期手動向選擇接收更新的參與者傳送電子郵件。",
+    manualUpdatesSubtitle: "不定期手動向選擇接收更新的參與者傳送電子郵件。",
     noProjectDefault: "無專案預設值",
     noProjectGroup: "無專案群組",
     off: "關閉",

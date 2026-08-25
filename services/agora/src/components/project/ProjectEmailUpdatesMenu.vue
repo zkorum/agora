@@ -23,8 +23,12 @@ import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
 import {
   createConversationUpdatePreferenceAction,
-  resolveConversationUpdatePreferenceEnabled,
+  resolveEmailUpdatePreferenceChoiceEnabled,
 } from "src/components/conversationUpdates/conversationUpdatePreferenceAction";
+import {
+  type EmailUpdateResumeNotificationTranslations,
+  emailUpdateResumeNotificationTranslations,
+} from "src/components/conversationUpdates/emailUpdateResumeNotification.i18n";
 import ZKActionDialog from "src/components/ui-library/ZKActionDialog.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
@@ -35,6 +39,7 @@ import type {
   ContentActionContext,
 } from "src/utils/actions/core/types";
 import { useBackendConversationEmailUpdatesApi } from "src/utils/api/conversationUpdates/conversationEmailUpdates";
+import { useRemoveConversationEmailUpdateSummaryQueries } from "src/utils/api/conversationUpdates/useConversationEmailUpdateQueries";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, ref, watch } from "vue";
 
@@ -52,7 +57,13 @@ const notify = useNotify();
 const { t } = useComponentI18n<ProjectEmailUpdatesMenuTranslations>(
   projectEmailUpdatesMenuTranslations
 );
+const { t: tEmailUpdateResume } =
+  useComponentI18n<EmailUpdateResumeNotificationTranslations>(
+    emailUpdateResumeNotificationTranslations
+  );
 const emailUpdatesApi = useBackendConversationEmailUpdatesApi();
+const removeConversationEmailUpdateSummaryQueries =
+  useRemoveConversationEmailUpdateSummaryQueries();
 const authenticationStore = useAuthenticationStore();
 const { isLoggedIn } = storeToRefs(authenticationStore);
 const showDialog = ref(false);
@@ -85,7 +96,7 @@ const actions = computed<ContentAction[]>(() => {
   const projectActions: ContentAction[] = [];
   const participantPreference = currentSummary.participantPreference;
   if (participantPreference !== undefined) {
-    const preferenceEnabled = resolveConversationUpdatePreferenceEnabled(
+    const preferenceEnabled = resolveEmailUpdatePreferenceChoiceEnabled(
       participantPreference
     );
     projectActions.push(
@@ -170,7 +181,7 @@ async function updatePreference(enabled: boolean): Promise<void> {
       operation: "set_project_preference",
       projectSlug,
       enabled,
-      source: "menu",
+      source: { kind: "menu" },
     });
     if (!isCurrentPreferenceMutation({ generation, projectSlug })) {
       return;
@@ -185,6 +196,7 @@ async function updatePreference(enabled: boolean): Promise<void> {
       await loadSummary();
       return;
     }
+    removeConversationEmailUpdateSummaryQueries(response.result);
     const currentSummary = summary.value;
     if (currentSummary?.participantPreference !== undefined) {
       summary.value = {
@@ -196,7 +208,11 @@ async function updatePreference(enabled: boolean): Promise<void> {
       };
     }
     notify.showNotifyMessage(
-      t(response.result.state === "enabled" ? "saveEnabled" : "saveDisabled")
+      response.result.globalResumed
+        ? tEmailUpdateResume("preferenceSavedAndGlobalResumed")
+        : t(
+            response.result.state === "enabled" ? "saveEnabled" : "saveDisabled"
+          )
     );
   } catch (error) {
     if (!isCurrentPreferenceMutation({ generation, projectSlug })) {

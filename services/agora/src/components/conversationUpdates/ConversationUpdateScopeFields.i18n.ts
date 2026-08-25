@@ -97,19 +97,19 @@ export const conversationUpdateScopeFieldsTranslations: Record<
     projectLabel: "Proyecto",
     chooseProject: "Elegir un proyecto",
     projectAuthorizationDescription:
-      "La autorización se deduce de sus membresías de proyecto elegibles.",
+      "La autorización se deduce de tus membresías de proyecto elegibles.",
     conversationsHeading: "Conversaciones",
     recipientIntersectionDescription:
       "El correo añadirá automáticamente la intersección específica de cada destinatario.",
     includedConversationsLabel: "Conversaciones incluidas",
     conversationPlaceholder:
-      "Seleccione al menos una conversación (obligatorio)",
+      "Selecciona al menos una conversación (obligatorio)",
     chooseConversations: "Elegir conversaciones",
     clearAll: "Borrar todo",
-    noProjectHint: "Elija una conversación elegible creada sin un proyecto.",
+    noProjectHint: "Elige una conversación elegible creada sin un proyecto.",
     noProjectDialogSubtitle:
-      "Elija exactamente una conversación creada sin un proyecto.",
-    projectDialogSubtitle: "Elija una o más conversaciones de este proyecto.",
+      "Elige exactamente una conversación creada sin un proyecto.",
+    projectDialogSubtitle: "Elige una o más conversaciones de este proyecto.",
     selectAllEligibleSingular: "Seleccionar la {count} conversación elegible",
     selectAllEligiblePlural: "Seleccionar las {count} conversaciones elegibles",
     eligibleWithoutProjectSingular:
@@ -118,8 +118,7 @@ export const conversationUpdateScopeFieldsTranslations: Record<
       "{count} conversaciones elegibles sin proyecto",
     eligibleConversationSingular: "{count} conversación elegible",
     eligibleConversationPlural: "{count} conversaciones elegibles",
-    updatesDisabled:
-      "Las actualizaciones por correo están desactivadas para esta conversación",
+    updatesDisabled: "Novedades de la conversación desactivadas",
     participantEstimateSingular:
       "Aproximadamente {count} participante antes de los filtros de consentimiento por correo",
     participantEstimatePlural:
@@ -181,8 +180,7 @@ export const conversationUpdateScopeFieldsTranslations: Record<
     eligibleWithoutProjectPlural: "{count} conversations éligibles sans projet",
     eligibleConversationSingular: "{count} conversation éligible",
     eligibleConversationPlural: "{count} conversations éligibles",
-    updatesDisabled:
-      "Les actualités par e-mail sont désactivées pour cette conversation",
+    updatesDisabled: "Nouvelles de la conversation désactivées",
     participantEstimateSingular:
       "Environ {count} participant avant les filtres de consentement par e-mail",
     participantEstimatePlural:

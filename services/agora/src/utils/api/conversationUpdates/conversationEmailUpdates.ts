@@ -189,6 +189,7 @@ export function useBackendConversationEmailUpdatesApi() {
         request
       ),
       responseSchema: Dto.conversationEmailUpdateConversationSummaryResponse,
+      timeoutMs: 15_000,
     });
   }
 

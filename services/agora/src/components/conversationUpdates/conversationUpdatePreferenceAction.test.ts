@@ -5,7 +5,7 @@ import { postMetadataTranslations } from "../post/display/PostMetadata.i18n";
 import { projectEmailUpdatesMenuTranslations } from "../project/ProjectEmailUpdatesMenu.i18n";
 import {
   createConversationUpdatePreferenceAction,
-  resolveConversationUpdatePreferenceEnabled,
+  resolveEmailUpdatePreferenceChoiceEnabled,
 } from "./conversationUpdatePreferenceAction";
 
 const context: ContentActionContext = {
@@ -74,22 +74,22 @@ describe("createConversationUpdatePreferenceAction", () => {
   });
 });
 
-describe("resolveConversationUpdatePreferenceEnabled", () => {
+describe("resolveEmailUpdatePreferenceChoiceEnabled", () => {
   it("uses the inherited result only for an undisclosed preference", () => {
     expect(
-      resolveConversationUpdatePreferenceEnabled({
+      resolveEmailUpdatePreferenceChoiceEnabled({
         state: "undisclosed",
         resolvedEnabled: true,
       })
     ).toBe(true);
     expect(
-      resolveConversationUpdatePreferenceEnabled({
+      resolveEmailUpdatePreferenceChoiceEnabled({
         state: "enabled",
         resolvedEnabled: false,
       })
     ).toBe(true);
     expect(
-      resolveConversationUpdatePreferenceEnabled({
+      resolveEmailUpdatePreferenceChoiceEnabled({
         state: "disabled",
         resolvedEnabled: true,
       })

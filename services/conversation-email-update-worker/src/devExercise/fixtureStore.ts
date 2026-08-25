@@ -4,6 +4,7 @@ import {
     conversationContentTable,
     conversationEmailUpdateActionTokenTable,
     conversationEmailUpdateConversationTable,
+    conversationEmailUpdateDeliveryAttemptConversationTable,
     conversationEmailUpdateDeliveryAttemptTable,
     conversationEmailUpdateDeliveryTable,
     conversationEmailUpdateRecipientConversationTable,
@@ -824,10 +825,17 @@ async function observeDatabase({
                 .select({ value: count() })
                 .from(conversationEmailUpdateActionTokenTable)
                 .innerJoin(
+                    conversationEmailUpdateDeliveryAttemptTable,
+                    eq(
+                        conversationEmailUpdateDeliveryAttemptTable.publicId,
+                        conversationEmailUpdateActionTokenTable.attemptPublicId,
+                    ),
+                )
+                .innerJoin(
                     conversationEmailUpdateRecipientTable,
                     eq(
                         conversationEmailUpdateRecipientTable.id,
-                        conversationEmailUpdateActionTokenTable.recipientId,
+                        conversationEmailUpdateDeliveryAttemptTable.recipientId,
                     ),
                 )
                 .where(
@@ -1508,6 +1516,17 @@ async function deleteOwnedUpdateArtifacts({
             const recipientIds = recipientChunk.map(
                 (recipient) => recipient.id,
             );
+            const attempts = await tx
+                .select({
+                    publicId: conversationEmailUpdateDeliveryAttemptTable.publicId,
+                })
+                .from(conversationEmailUpdateDeliveryAttemptTable)
+                .where(
+                    inArray(
+                        conversationEmailUpdateDeliveryAttemptTable.recipientId,
+                        recipientIds,
+                    ),
+                );
             await tx
                 .delete(conversationEmailUpdateReportTable)
                 .where(
@@ -1516,14 +1535,29 @@ async function deleteOwnedUpdateArtifacts({
                         recipientIds,
                     ),
                 );
-            await tx
-                .delete(conversationEmailUpdateActionTokenTable)
-                .where(
-                    inArray(
-                        conversationEmailUpdateActionTokenTable.recipientId,
-                        recipientIds,
-                    ),
+            if (attempts.length > 0) {
+                const attemptPublicIds = attempts.map(
+                    (attempt) => attempt.publicId,
                 );
+                await tx
+                    .delete(conversationEmailUpdateActionTokenTable)
+                    .where(
+                        inArray(
+                            conversationEmailUpdateActionTokenTable.attemptPublicId,
+                            attemptPublicIds,
+                        ),
+                    );
+                await tx
+                    .delete(
+                        conversationEmailUpdateDeliveryAttemptConversationTable,
+                    )
+                    .where(
+                        inArray(
+                            conversationEmailUpdateDeliveryAttemptConversationTable.attemptPublicId,
+                            attemptPublicIds,
+                        ),
+                    );
+            }
             await tx
                 .delete(conversationEmailUpdateDeliveryAttemptTable)
                 .where(

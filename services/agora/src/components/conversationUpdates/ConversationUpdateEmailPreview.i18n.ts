@@ -47,17 +47,17 @@ export const conversationUpdateEmailPreviewTranslations: Record<
   },
   es: {
     emailPreview: "Vista previa del correo",
-    defaultSubject: "Asunto de su actualización",
+    defaultSubject: "Asunto de tu novedad",
     eligibleRecipientSingular: "Actualmente {count} destinatario elegible",
     eligibleRecipientPlural: "Actualmente {count} destinatarios elegibles",
     fromLabel: "De",
     replyToLabel: "Responder a",
-    messagePlaceholder: "Su mensaje aparecerá aquí mientras escribe.",
-    conversationPlaceholder: "Seleccione una conversación para continuar.",
+    messagePlaceholder: "Tu mensaje aparecerá aquí mientras escribes.",
+    conversationPlaceholder: "Selecciona una conversación para continuar.",
     managePreferences:
-      "Gestionar preferencias o darse de baja de conversaciones específicas",
+      "Gestionar tus preferencias de seguimiento por correo o dejar de seguir conversaciones concretas",
     seeMore: "Ver más",
-    unsubscribeFrom: "Darse de baja de {name}",
+    unsubscribeFrom: "Dejar de seguir {name} por correo",
   },
   fa: {
     emailPreview: "پیش‌نمایش ایمیل",
@@ -74,7 +74,7 @@ export const conversationUpdateEmailPreviewTranslations: Record<
   },
   fr: {
     emailPreview: "Aperçu de l’e-mail",
-    defaultSubject: "Objet de votre actualité",
+    defaultSubject: "Objet de votre nouvelle",
     eligibleRecipientSingular: "Actuellement {count} destinataire éligible",
     eligibleRecipientPlural: "Actuellement {count} destinataires éligibles",
     fromLabel: "De",
@@ -82,9 +82,9 @@ export const conversationUpdateEmailPreviewTranslations: Record<
     messagePlaceholder: "Votre message apparaîtra ici pendant la rédaction.",
     conversationPlaceholder: "Sélectionnez une conversation pour continuer.",
     managePreferences:
-      "Gérer les préférences ou se désabonner de certaines conversations",
+      "Gérer vos préférences de suivi par e-mail ou ne plus suivre certaines conversations",
     seeMore: "Voir plus",
-    unsubscribeFrom: "Se désabonner de {name}",
+    unsubscribeFrom: "Ne plus suivre {name} par e-mail",
   },
   "zh-Hans": {
     emailPreview: "邮件预览",

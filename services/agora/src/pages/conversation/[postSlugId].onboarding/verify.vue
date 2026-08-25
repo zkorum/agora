@@ -9,6 +9,7 @@ import { useConversationOnboardingRoute } from "src/composables/conversation/use
 import { useConversationSurveyState } from "src/composables/conversation/useConversationSurveyState";
 import { useConversationOnboardingStore } from "src/stores/conversationOnboarding";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
+import { useConversationEmailUpdateSummaryQuery } from "src/utils/api/conversationUpdates/useConversationEmailUpdateQueries";
 import { computed, watch } from "vue";
 import { useRouter } from "vue-router";
 
@@ -40,6 +41,26 @@ const {
   hasLoadError,
 } = useConversationSurveyState({ conversationSlugId: routeConversationSlugId });
 
+const shouldResolveEmailUpdateConsent = computed(() => {
+  const surveyGate = surveyStatus.value?.surveyGate;
+  const requiredSurveyIsBlocking =
+    surveyGate?.hasSurvey === true &&
+    !surveyGate.isOptional &&
+    !surveyGate.canParticipate;
+  return (
+    conversationData.value !== undefined &&
+    surveyStatus.value !== undefined &&
+    !conversationOnboardingStore.emailUpdateConsentSkipped &&
+    !requirementState.value.needsAuth &&
+    !requirementState.value.needsTicket &&
+    (conversationOnboardingStore.isResumeMode || requiredSurveyIsBlocking)
+  );
+});
+const emailUpdateSummaryQuery = useConversationEmailUpdateSummaryQuery({
+  conversationSlugId: routeConversationSlugId,
+  enabled: shouldResolveEmailUpdateConsent,
+});
+
 const isExactVerifyRoute = computed(() => {
   const routeName = String(route.name ?? "");
   return routeName === "/conversation/[postSlugId].onboarding/verify";
@@ -54,6 +75,7 @@ watch(
     surveyStatus,
     surveyForm,
     requirementState,
+    emailUpdateSummaryQuery.onboardingResolution,
   ],
   ([
     exactVerifyRoute,
@@ -63,6 +85,7 @@ watch(
     statusData,
     formData,
     requirements,
+    emailUpdateResolution,
   ]) => {
     const decision = resolveVerifyRouteDecision({
       exactVerifyRoute: exactVerifyRoute,
@@ -79,6 +102,7 @@ watch(
       surveyStatus: statusData,
       surveyForm: formData,
       requirementState: requirements,
+      emailUpdateResolution,
       routeContext: routeContext.value,
     });
 

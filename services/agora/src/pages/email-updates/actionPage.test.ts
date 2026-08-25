@@ -55,9 +55,10 @@ describe("Email Updates action page helpers", () => {
         success: true,
         action: "unsubscribe_conversation",
         scope: {
-          kind: "conversation",
-          conversationSlugId: "conv1",
-          title: "Conversation",
+          kind: "no_project",
+          conversations: [
+            { conversationSlugId: "conv1", title: "Conversation" },
+          ],
         },
       })
     ).toBeUndefined();

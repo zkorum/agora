@@ -3006,17 +3006,20 @@ export const ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf1
 export type ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf1ActionEnum = typeof ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf1ActionEnum[keyof typeof ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf1ActionEnum];
 
 export interface ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf1Scope {
-    'conversationSlugId': string;
-    'title': string;
     'kind': ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf1ScopeKindEnum;
+    'conversations': Array<ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf1ScopeConversationsInner>;
 }
 
 export const ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf1ScopeKindEnum = {
-    Conversation: 'conversation',
+    NoProject: 'no_project',
 } as const;
 
 export type ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf1ScopeKindEnum = typeof ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf1ScopeKindEnum[keyof typeof ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf1ScopeKindEnum];
 
+export interface ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf1ScopeConversationsInner {
+    'conversationSlugId': string;
+    'title': string;
+}
 export interface ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2 {
     'success': boolean;
     'action': ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2ActionEnum;
@@ -3032,13 +3035,13 @@ export type ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2A
 /**
  * @type ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2Scope
  */
-export type ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2Scope = ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2ScopeOneOf | ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2ScopeOneOf1;
+export type ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2Scope = ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf1Scope | ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2ScopeOneOf;
 
 export interface ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2ScopeOneOf {
     'kind': ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2ScopeOneOfKindEnum;
     'projectSlug': string;
     'title': string;
-    'conversations': Array<ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2ScopeOneOfConversationsInner>;
+    'conversations': Array<ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf1ScopeConversationsInner>;
 }
 
 export const ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2ScopeOneOfKindEnum = {
@@ -3047,21 +3050,6 @@ export const ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2
 
 export type ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2ScopeOneOfKindEnum = typeof ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2ScopeOneOfKindEnum[keyof typeof ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2ScopeOneOfKindEnum];
 
-export interface ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2ScopeOneOf1 {
-    'kind': ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2ScopeOneOf1KindEnum;
-    'conversations': Array<ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2ScopeOneOfConversationsInner>;
-}
-
-export const ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2ScopeOneOf1KindEnum = {
-    NoProject: 'no_project',
-} as const;
-
-export type ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2ScopeOneOf1KindEnum = typeof ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2ScopeOneOf1KindEnum[keyof typeof ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2ScopeOneOf1KindEnum];
-
-export interface ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2ScopeOneOfConversationsInner {
-    'conversationSlugId': string;
-    'title': string;
-}
 export interface ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf3 {
     'success': boolean;
     'action': ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf3ActionEnum;
@@ -3335,7 +3323,7 @@ export interface ApiV1ConversationEmailUpdateHistoryListPost200ResponseOneOfItem
     'audienceEstimate': number;
     'ownerCopyCount': number;
     'scope': ApiV1ConversationEmailUpdateHistoryListPost200ResponseOneOfItemsInnerOneOfScope;
-    'conversations': Array<ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2ScopeOneOfConversationsInner>;
+    'conversations': Array<ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf1ScopeConversationsInner>;
     'bodyHtml': string;
     'status': ApiV1ConversationEmailUpdateHistoryListPost200ResponseOneOfItemsInnerOneOfStatusEnum;
 }
@@ -3357,7 +3345,7 @@ export interface ApiV1ConversationEmailUpdateHistoryListPost200ResponseOneOfItem
     'audienceEstimate': number;
     'ownerCopyCount': number;
     'scope': ApiV1ConversationEmailUpdateHistoryListPost200ResponseOneOfItemsInnerOneOfScope;
-    'conversations': Array<ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2ScopeOneOfConversationsInner>;
+    'conversations': Array<ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf1ScopeConversationsInner>;
     'bodyHtml': string;
     'status': ApiV1ConversationEmailUpdateHistoryListPost200ResponseOneOfItemsInnerOneOf1StatusEnum;
     'reason': ApiV1ConversationEmailUpdateHistoryListPost200ResponseOneOfItemsInnerOneOf1ReasonEnum;
@@ -3383,7 +3371,7 @@ export interface ApiV1ConversationEmailUpdateHistoryListPost200ResponseOneOfItem
     'audienceEstimate': number;
     'ownerCopyCount': number;
     'scope': ApiV1ConversationEmailUpdateHistoryListPost200ResponseOneOfItemsInnerOneOfScope;
-    'conversations': Array<ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf2ScopeOneOfConversationsInner>;
+    'conversations': Array<ApiV1ConversationEmailUpdateActionResolvePost200ResponseAnyOfOneOf1ScopeConversationsInner>;
     'bodyHtml': string;
     'status': ApiV1ConversationEmailUpdateHistoryListPost200ResponseOneOfItemsInnerOneOf2StatusEnum;
     'reason': ApiV1ConversationEmailUpdateHistoryListPost200ResponseOneOfItemsInnerOneOf2ReasonEnum;
@@ -3580,6 +3568,7 @@ export interface ApiV1ConversationEmailUpdatePreferencesUpdatePost200ResponseOne
     'operation': ApiV1ConversationEmailUpdatePreferencesUpdatePost200ResponseOneOfResultOneOf1OperationEnum;
     'projectSlug': string;
     'state': ApiV1ConversationEmailUpdatePreferencesUpdatePost200ResponseOneOfResultOneOf1StateEnum;
+    'globalResumed': boolean;
 }
 
 export const ApiV1ConversationEmailUpdatePreferencesUpdatePost200ResponseOneOfResultOneOf1OperationEnum = {
@@ -3597,6 +3586,7 @@ export type ApiV1ConversationEmailUpdatePreferencesUpdatePost200ResponseOneOfRes
 export interface ApiV1ConversationEmailUpdatePreferencesUpdatePost200ResponseOneOfResultOneOf2 {
     'operation': ApiV1ConversationEmailUpdatePreferencesUpdatePost200ResponseOneOfResultOneOf2OperationEnum;
     'projectPreference'?: ApiV1ConversationEmailUpdatePreferencesUpdatePost200ResponseOneOfResultOneOf2ProjectPreference;
+    'globalResumed': boolean;
     'conversationPreferences': Array<ApiV1ConversationEmailUpdatePreferencesUpdatePost200ResponseOneOfResultOneOf2ConversationPreferencesInner>;
 }
 
@@ -3609,6 +3599,7 @@ export type ApiV1ConversationEmailUpdatePreferencesUpdatePost200ResponseOneOfRes
 export interface ApiV1ConversationEmailUpdatePreferencesUpdatePost200ResponseOneOfResultOneOf2ConversationPreferencesInner {
     'conversationSlugId': string;
     'state': ApiV1ConversationEmailUpdatePreferencesUpdatePost200ResponseOneOfResultOneOf2ConversationPreferencesInnerStateEnum;
+    'resolvedEnabled': boolean;
 }
 
 export const ApiV1ConversationEmailUpdatePreferencesUpdatePost200ResponseOneOfResultOneOf2ConversationPreferencesInnerStateEnum = {
@@ -3650,7 +3641,7 @@ export interface ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1 
     'operation': ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1OperationEnum;
     'projectSlug': string;
     'enabled': boolean;
-    'source': ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1SourceEnum;
+    'source': ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1Source;
 }
 
 export const ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1OperationEnum = {
@@ -3658,13 +3649,42 @@ export const ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1Opera
 } as const;
 
 export type ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1OperationEnum = typeof ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1OperationEnum[keyof typeof ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1OperationEnum];
-export const ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1SourceEnum = {
+
+/**
+ * @type ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1Source
+ */
+export type ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1Source = ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1SourceOneOf | ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1SourceOneOf1 | ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1SourceOneOf2;
+
+export interface ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1SourceOneOf {
+    'kind': ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1SourceOneOfKindEnum;
+    'conversationSlugId': string;
+}
+
+export const ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1SourceOneOfKindEnum = {
     Onboarding: 'onboarding',
+} as const;
+
+export type ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1SourceOneOfKindEnum = typeof ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1SourceOneOfKindEnum[keyof typeof ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1SourceOneOfKindEnum];
+
+export interface ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1SourceOneOf1 {
+    'kind': ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1SourceOneOf1KindEnum;
+}
+
+export const ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1SourceOneOf1KindEnum = {
     Menu: 'menu',
+} as const;
+
+export type ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1SourceOneOf1KindEnum = typeof ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1SourceOneOf1KindEnum[keyof typeof ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1SourceOneOf1KindEnum];
+
+export interface ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1SourceOneOf2 {
+    'kind': ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1SourceOneOf2KindEnum;
+}
+
+export const ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1SourceOneOf2KindEnum = {
     Settings: 'settings',
 } as const;
 
-export type ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1SourceEnum = typeof ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1SourceEnum[keyof typeof ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1SourceEnum];
+export type ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1SourceOneOf2KindEnum = typeof ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1SourceOneOf2KindEnum[keyof typeof ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf1SourceOneOf2KindEnum];
 
 export interface ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf2 {
     'operation': ApiV1ConversationEmailUpdatePreferencesUpdatePostRequestOneOf2OperationEnum;
@@ -3767,6 +3787,7 @@ export type ApiV1ConversationEmailUpdateSummaryGetPost200ResponseOneOfParticipan
 export interface ApiV1ConversationEmailUpdateSummaryGetPost200ResponseOneOfParticipantPreferenceOnboardingActionOneOf {
     'operation': ApiV1ConversationEmailUpdateSummaryGetPost200ResponseOneOfParticipantPreferenceOnboardingActionOneOfOperationEnum;
     'projectSlug': string;
+    'conversationSlugId': string;
     'initialEnabled': boolean;
 }
 

@@ -7,6 +7,7 @@ export interface EmailUpdateUnsubscribeTranslations {
   title: string;
   projectDescription: string;
   conversationDescription: string;
+  conversationsDescription: string;
   confirm: string;
   submitting: string;
   submitFailed: string;
@@ -27,6 +28,8 @@ export const emailUpdateUnsubscribeTranslations = {
       "Stop Email Updates for every listed conversation in the project “{title}”.",
     conversationDescription:
       "Stop Email Updates for the conversation “{title}”.",
+    conversationsDescription:
+      "Stop Email Updates for every conversation listed in this email.",
     confirm: "Confirm unsubscribe",
     submitting: "Unsubscribing",
     submitFailed: "We could not unsubscribe you. Please try again.",
@@ -34,40 +37,44 @@ export const emailUpdateUnsubscribeTranslations = {
     successDescription: "You will no longer receive these Email Updates.",
   },
   es: {
-    pageTitle: "Darse de baja de las actualizaciones por correo",
-    loading: "Cargando la configuración de las actualizaciones por correo",
+    pageTitle: "Dejar de recibir novedades por correo",
+    loading: "Cargando la configuración de novedades por correo",
     unavailableTitle: "Este enlace no está disponible",
     unavailableDescription:
       "Puede que el enlace no sea válido, haya caducado o corresponda a otra acción.",
     returnHome: "Volver a Agora",
-    title: "¿Dejar de recibir actualizaciones por correo?",
+    title: "¿Dejar de recibir novedades por correo?",
     projectDescription:
-      "Deja de recibir actualizaciones por correo de todas las conversaciones indicadas del proyecto «{title}».",
+      "Deja de recibir las novedades del proyecto «{title}» en todas las conversaciones indicadas.",
     conversationDescription:
-      "Deja de recibir actualizaciones por correo de la conversación «{title}».",
+      "Deja de recibir las novedades de la conversación «{title}».",
+    conversationsDescription:
+      "Deja de recibir las novedades de todas las conversaciones incluidas en este correo.",
     confirm: "Confirmar la baja",
     submitting: "Tramitando la baja",
     submitFailed: "No hemos podido darte de baja. Inténtalo de nuevo.",
     successTitle: "Te has dado de baja",
-    successDescription: "Ya no recibirás estas actualizaciones por correo.",
+    successDescription: "Ya no recibirás estas novedades por correo.",
   },
   fr: {
-    pageTitle: "Se désabonner des mises à jour par e-mail",
-    loading: "Chargement des paramètres des mises à jour par e-mail",
+    pageTitle: "Se désabonner des nouvelles par e-mail",
+    loading: "Chargement des paramètres des nouvelles par e-mail",
     unavailableTitle: "Ce lien n'est pas disponible",
     unavailableDescription:
       "Le lien est peut-être invalide, expiré ou destiné à une autre action.",
     returnHome: "Retourner sur Agora",
-    title: "Se désabonner des mises à jour par e-mail ?",
+    title: "Se désabonner des nouvelles par e-mail ?",
     projectDescription:
-      "Désactivez les mises à jour par e-mail pour toutes les conversations répertoriées du projet « {title} ».",
+      "Ne recevez plus les nouvelles du projet « {title} » dans toutes les conversations répertoriées.",
     conversationDescription:
-      "Désactivez les mises à jour par e-mail pour la conversation « {title} ».",
+      "Ne recevez plus les nouvelles de la conversation « {title} ».",
+    conversationsDescription:
+      "Ne recevez plus les nouvelles de toutes les conversations mentionnées dans cet e-mail.",
     confirm: "Confirmer le désabonnement",
     submitting: "Désabonnement en cours",
     submitFailed: "Nous n'avons pas pu vous désabonner. Veuillez réessayer.",
     successTitle: "Désabonnement confirmé",
-    successDescription: "Vous ne recevrez plus ces mises à jour par e-mail.",
+    successDescription: "Vous ne recevrez plus ces nouvelles par e-mail.",
   },
   "zh-Hant": {
     pageTitle: "取消訂閱電子郵件更新",
@@ -78,6 +85,7 @@ export const emailUpdateUnsubscribeTranslations = {
     title: "要取消訂閱電子郵件更新嗎？",
     projectDescription: "停止接收「{title}」專案中所有列出對話的電子郵件更新。",
     conversationDescription: "停止接收「{title}」對話的電子郵件更新。",
+    conversationsDescription: "停止接收此電子郵件中列出的所有對話更新。",
     confirm: "確認取消訂閱",
     submitting: "正在取消訂閱",
     submitFailed: "無法取消訂閱，請再試一次。",
@@ -93,6 +101,7 @@ export const emailUpdateUnsubscribeTranslations = {
     title: "要取消订阅电子邮件更新吗？",
     projectDescription: "停止接收“{title}”项目中所有已列出对话的电子邮件更新。",
     conversationDescription: "停止接收“{title}”对话的电子邮件更新。",
+    conversationsDescription: "停止接收此电子邮件中列出的所有对话更新。",
     confirm: "确认取消订阅",
     submitting: "正在取消订阅",
     submitFailed: "无法取消订阅，请重试。",
@@ -110,6 +119,8 @@ export const emailUpdateUnsubscribeTranslations = {
     projectDescription:
       "プロジェクト「{title}」に掲載されているすべての会話のメール更新を停止します。",
     conversationDescription: "会話「{title}」のメール更新を停止します。",
+    conversationsDescription:
+      "このメールに記載されているすべての会話のメール更新を停止します。",
     confirm: "配信停止を確定",
     submitting: "配信を停止しています",
     submitFailed: "配信を停止できませんでした。もう一度お試しください。",
@@ -128,6 +139,8 @@ export const emailUpdateUnsubscribeTranslations = {
       "أوقف تحديثات البريد الإلكتروني لجميع المحادثات المدرجة في مشروع «{title}».",
     conversationDescription:
       "أوقف تحديثات البريد الإلكتروني للمحادثة «{title}».",
+    conversationsDescription:
+      "أوقف تحديثات البريد الإلكتروني لجميع المحادثات المدرجة في هذه الرسالة.",
     confirm: "تأكيد إلغاء الاشتراك",
     submitting: "جارٍ إلغاء الاشتراك",
     submitFailed: "تعذر إلغاء اشتراكك. يُرجى المحاولة مرة أخرى.",
@@ -146,6 +159,8 @@ export const emailUpdateUnsubscribeTranslations = {
       "دریافت به‌روزرسانی‌های ایمیلی همه گفتگوهای فهرست‌شده در پروژه «{title}» را متوقف کنید.",
     conversationDescription:
       "دریافت به‌روزرسانی‌های ایمیلی گفتگوی «{title}» را متوقف کنید.",
+    conversationsDescription:
+      "دریافت به‌روزرسانی‌های ایمیلی همه گفتگوهای فهرست‌شده در این ایمیل را متوقف کنید.",
     confirm: "تأیید لغو دریافت",
     submitting: "در حال لغو دریافت",
     submitFailed: "نتوانستیم دریافت را لغو کنیم. لطفاً دوباره تلاش کنید.",
@@ -164,6 +179,8 @@ export const emailUpdateUnsubscribeTranslations = {
     projectDescription:
       "הפסקת עדכוני הדוא״ל לכל השיחות הרשומות בפרויקט ״{title}״.",
     conversationDescription: "הפסקת עדכוני הדוא״ל לשיחה ״{title}״.",
+    conversationsDescription:
+      "הפסקת עדכוני הדוא״ל לכל השיחות המופיעות בהודעה הזו.",
     confirm: "אישור ביטול ההרשמה",
     submitting: "ההרשמה מתבטלת",
     submitFailed: "לא הצלחנו לבטל את ההרשמה. נסו שוב.",
@@ -182,6 +199,8 @@ export const emailUpdateUnsubscribeTranslations = {
       "«{title}» долбоорундагы тизмеленген бардык талкуулар үчүн электрондук жаңыртууларды токтотуңуз.",
     conversationDescription:
       "«{title}» талкуусу үчүн электрондук жаңыртууларды токтотуңуз.",
+    conversationsDescription:
+      "Бул катта көрсөтүлгөн бардык талкуулар үчүн электрондук жаңыртууларды токтотуңуз.",
     confirm: "Жазылуудан баш тартууну ырастоо",
     submitting: "Жазылуудан баш тартылууда",
     submitFailed: "Сизди жазылуудан чыгара алган жокпуз. Кайра аракет кылыңыз.",
@@ -200,6 +219,8 @@ export const emailUpdateUnsubscribeTranslations = {
       "Отключите почтовые обновления для всех указанных обсуждений проекта «{title}».",
     conversationDescription:
       "Отключите почтовые обновления для обсуждения «{title}».",
+    conversationsDescription:
+      "Отключите почтовые обновления для всех обсуждений, указанных в этом письме.",
     confirm: "Подтвердить отписку",
     submitting: "Выполняется отписка",
     submitFailed: "Не удалось отписать вас. Попробуйте ещё раз.",

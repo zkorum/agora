@@ -114,10 +114,10 @@ export const conversationUpdateHistoryListTranslations: Record<
   },
   es: {
     deliveryHistory: "Historial de entrega",
-    sentUpdates: "Actualizaciones enviadas",
-    emptyHeading: "Aún no se enviaron actualizaciones por correo",
+    sentUpdates: "Novedades enviadas",
+    emptyHeading: "Aún no se han enviado novedades por correo",
     emptyDescription:
-      "Las actualizaciones aceptadas aparecerán aquí con su estado de entrega.",
+      "Las novedades aceptadas aparecerán aquí con su estado de entrega.",
     audienceSingular: "{count} destinatario elegible al revisar el envío",
     audiencePlural: "{count} destinatarios elegibles al revisar el envío",
     conversationSingular: "{count} conversación",
@@ -192,10 +192,10 @@ export const conversationUpdateHistoryListTranslations: Record<
   },
   fr: {
     deliveryHistory: "Historique d’envoi",
-    sentUpdates: "Actualités envoyées",
-    emptyHeading: "Aucune actualité par e-mail envoyée pour le moment",
+    sentUpdates: "Nouvelles envoyées",
+    emptyHeading: "Aucune nouvelle n’a encore été envoyée par e-mail",
     emptyDescription:
-      "Les actualités acceptées apparaîtront ici avec leur statut d’envoi.",
+      "Les nouvelles acceptées apparaîtront ici avec leur statut d’envoi.",
     audienceSingular: "{count} destinataire éligible lors de la vérification",
     audiencePlural: "{count} destinataires éligibles lors de la vérification",
     conversationSingular: "{count} conversation",

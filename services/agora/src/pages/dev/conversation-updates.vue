@@ -34,9 +34,18 @@
         </SpaLink>
       </q-card-actions>
       <q-card-section>
+        <q-btn-toggle
+          v-model="onboardingScopeKind"
+          unelevated
+          no-caps
+          toggle-color="primary"
+          color="white"
+          text-color="primary"
+          :options="onboardingScopeOptions"
+        />
         <ConversationUpdateOnboardingConsent
           v-model="onboardingConsent"
-          scope-kind="project"
+          :scope-kind="onboardingScopeKind"
         />
       </q-card-section>
     </q-card>
@@ -291,6 +300,14 @@ const bodyPlainText = ref(
 );
 const contentConfirmed = ref(false);
 const onboardingConsent = ref(true);
+const onboardingScopeKind = ref<"no-project" | "project">("project");
+const onboardingScopeOptions: Array<{
+  label: string;
+  value: "no-project" | "project";
+}> = [
+  { label: "Project preference", value: "project" },
+  { label: "Conversation preference", value: "no-project" },
+];
 const hasSuccessfulTest = ref(false);
 const notice = ref<string>();
 const showPreferenceDialog = ref(false);

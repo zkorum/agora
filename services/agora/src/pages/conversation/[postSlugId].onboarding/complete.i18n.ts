@@ -3,6 +3,8 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 export interface ConversationSurveyCompleteTranslations {
   title: string;
   description: string;
+  emailUpdateTitle: string;
+  emailUpdateDescription: string;
   continueLabel: string;
   reviewAnswersLabel: string;
   emailUpdateSummaryLoadError: string;
@@ -18,6 +20,9 @@ export const conversationSurveyCompleteTranslations: Record<
   en: {
     title: "Answers saved",
     description: "You can now vote on statements in this consultation.",
+    emailUpdateTitle: "Welcome to the conversation",
+    emailUpdateDescription:
+      "Choose your email update preference before continuing.",
     continueLabel: "Continue",
     reviewAnswersLabel: "View my answers",
     emailUpdateSummaryLoadError:
@@ -31,6 +36,9 @@ export const conversationSurveyCompleteTranslations: Record<
   ar: {
     title: "تم حفظ الإجابات",
     description: "يمكنك الآن التصويت على المقترحات في هذه الاستشارة.",
+    emailUpdateTitle: "مرحبًا بك في المحادثة",
+    emailUpdateDescription:
+      "اختر تفضيلك لتحديثات البريد الإلكتروني قبل المتابعة.",
     continueLabel: "متابعة",
     reviewAnswersLabel: "عرض إجاباتي",
     emailUpdateSummaryLoadError:
@@ -44,19 +52,25 @@ export const conversationSurveyCompleteTranslations: Record<
   es: {
     title: "Respuestas guardadas",
     description: "Ahora puedes votar en proposiciones en esta consulta.",
+    emailUpdateTitle: "Te damos la bienvenida a la conversación",
+    emailUpdateDescription:
+      "Elige tu preferencia de seguimiento por correo antes de continuar.",
     continueLabel: "Continuar",
     reviewAnswersLabel: "Ver mis respuestas",
     emailUpdateSummaryLoadError:
-      "No se pudieron cargar las opciones de actualizaciones. Puedes reintentar o continuar sin guardar una opción.",
+      "No se pudo cargar tu preferencia de seguimiento por correo. Puedes reintentar o continuar sin guardarla.",
     retryLabel: "Intentar de nuevo",
     emailUpdatePreferenceSaveError:
-      "No se pudo guardar tu opción de actualizaciones. Inténtalo de nuevo.",
+      "No se pudo guardar tu preferencia de seguimiento por correo. Inténtalo de nuevo.",
     continueWithoutSavingLabel:
-      "Continuar sin guardar una opción de actualizaciones",
+      "Continuar sin guardar la preferencia de seguimiento por correo",
   },
   fa: {
     title: "پاسخ‌ها ذخیره شدند",
     description: "اکنون می‌توانید به گزاره‌های این مشورت رأی دهید.",
+    emailUpdateTitle: "به گفت‌وگو خوش آمدید",
+    emailUpdateDescription:
+      "پیش از ادامه، ترجیح خود را برای به‌روزرسانی‌های ایمیلی انتخاب کنید.",
     continueLabel: "ادامه",
     reviewAnswersLabel: "مشاهده پاسخ‌های من",
     emailUpdateSummaryLoadError:
@@ -70,19 +84,25 @@ export const conversationSurveyCompleteTranslations: Record<
     title: "Réponses enregistrées",
     description:
       "Vous pouvez maintenant voter sur les propositions de la consultation.",
+    emailUpdateTitle: "Bienvenue dans la conversation",
+    emailUpdateDescription:
+      "Choisissez votre préférence de suivi par e-mail avant de continuer.",
     continueLabel: "Continuer",
     reviewAnswersLabel: "Voir mes réponses",
     emailUpdateSummaryLoadError:
-      "Les choix d’actualités par e-mail n’ont pas pu être chargés. Vous pouvez réessayer ou continuer sans enregistrer de choix.",
+      "Votre préférence de suivi par e-mail n’a pas pu être chargée. Vous pouvez réessayer ou continuer sans l’enregistrer.",
     retryLabel: "Réessayer",
     emailUpdatePreferenceSaveError:
-      "Votre choix d’actualités par e-mail n’a pas pu être enregistré. Veuillez réessayer.",
+      "Votre préférence de suivi par e-mail n’a pas pu être enregistrée. Veuillez réessayer.",
     continueWithoutSavingLabel:
-      "Continuer sans enregistrer de choix d’actualités par e-mail",
+      "Continuer sans enregistrer la préférence de suivi par e-mail",
   },
   he: {
     title: "התשובות נשמרו",
     description: "אפשר עכשיו להצביע על הצהרות בהתייעצות הזו.",
+    emailUpdateTitle: "ברוכים הבאים לשיחה",
+    emailUpdateDescription:
+      "יש לבחור את העדפת העדכונים בדוא״ל לפני שממשיכים.",
     continueLabel: "המשך",
     reviewAnswersLabel: "הצגת התשובות שלי",
     emailUpdateSummaryLoadError:
@@ -95,6 +115,9 @@ export const conversationSurveyCompleteTranslations: Record<
   ja: {
     title: "回答を保存しました",
     description: "この相談の意見に投票できるようになりました。",
+    emailUpdateTitle: "会話へようこそ",
+    emailUpdateDescription:
+      "続行する前に、メール更新の受信設定を選択してください。",
     continueLabel: "続ける",
     reviewAnswersLabel: "自分の回答を見る",
     emailUpdateSummaryLoadError:
@@ -107,6 +130,9 @@ export const conversationSurveyCompleteTranslations: Record<
   ky: {
     title: "Жооптор сакталды",
     description: "Эми бул кеңешүүдөгү пикирлерге добуш бере аласыз.",
+    emailUpdateTitle: "Талкууга кош келиңиз",
+    emailUpdateDescription:
+      "Улантуудан мурун электрондук кат жаңыртуулары боюнча тандооңузду белгилеңиз.",
     continueLabel: "Улантуу",
     reviewAnswersLabel: "Жоопторумду көрүү",
     emailUpdateSummaryLoadError:
@@ -120,6 +146,9 @@ export const conversationSurveyCompleteTranslations: Record<
     title: "Ответы сохранены",
     description:
       "Теперь вы можете голосовать по высказываниям в этом обсуждении.",
+    emailUpdateTitle: "Добро пожаловать в обсуждение",
+    emailUpdateDescription:
+      "Перед продолжением выберите настройку почтовых обновлений.",
     continueLabel: "Продолжить",
     reviewAnswersLabel: "Посмотреть мои ответы",
     emailUpdateSummaryLoadError:
@@ -133,6 +162,8 @@ export const conversationSurveyCompleteTranslations: Record<
   "zh-Hans": {
     title: "回答已保存",
     description: "你现在可以对本次咨询中的意见投票。",
+    emailUpdateTitle: "欢迎加入对话",
+    emailUpdateDescription: "继续前，请选择是否接收邮件动态。",
     continueLabel: "继续",
     reviewAnswersLabel: "查看我的回答",
     emailUpdateSummaryLoadError:
@@ -144,6 +175,8 @@ export const conversationSurveyCompleteTranslations: Record<
   "zh-Hant": {
     title: "回答已儲存",
     description: "你現在可以對本次諮詢中的意見投票。",
+    emailUpdateTitle: "歡迎加入對話",
+    emailUpdateDescription: "繼續前，請選擇是否接收電子郵件動態。",
     continueLabel: "繼續",
     reviewAnswersLabel: "查看我的回答",
     emailUpdateSummaryLoadError:

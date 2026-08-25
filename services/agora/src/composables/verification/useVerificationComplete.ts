@@ -4,6 +4,7 @@ import { emailVerificationStore } from "src/stores/onboarding/email";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
 import { phoneVerificationStore } from "src/stores/onboarding/phone";
 import { useBackendAuthApi } from "src/utils/api/auth";
+import { getConversationSurveyVerifyPath } from "src/utils/survey/navigation";
 import { useRouter } from "vue-router";
 
 export function useVerificationComplete() {
@@ -27,10 +28,10 @@ export function useVerificationComplete() {
     if (onboardingMode == "LOGIN") {
       if (conversationOnboardingStore.conversationSlugId !== null) {
         await router.replace({
-          name: "/conversation/[postSlugId].onboarding/verify",
-          params: {
-            postSlugId: conversationOnboardingStore.conversationSlugId,
-          },
+          path: getConversationSurveyVerifyPath({
+            conversationSlugId: conversationOnboardingStore.conversationSlugId,
+            routeContext: conversationOnboardingStore.routeContext,
+          }),
         });
         return;
       }

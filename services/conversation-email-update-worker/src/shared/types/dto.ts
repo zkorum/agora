@@ -3300,7 +3300,16 @@ export class Dto {
                     operation: z.literal("set_project_preference"),
                     projectSlug: zodProjectSlug,
                     enabled: z.boolean(),
-                    source: z.enum(["onboarding", "menu", "settings"]),
+                    source: z.discriminatedUnion("kind", [
+                        z
+                            .object({
+                                kind: z.literal("onboarding"),
+                                conversationSlugId: zodSlugId,
+                            })
+                            .strict(),
+                        z.object({ kind: z.literal("menu") }).strict(),
+                        z.object({ kind: z.literal("settings") }).strict(),
+                    ]),
                 })
                 .strict(),
             z
@@ -3329,6 +3338,7 @@ export class Dto {
                                 operation: z.literal("set_project_preference"),
                                 projectSlug: zodProjectSlug,
                                 state: zodConversationEmailUpdatePreferenceChoice,
+                                globalResumed: z.boolean(),
                             })
                             .strict(),
                         z
@@ -3343,11 +3353,13 @@ export class Dto {
                                     })
                                     .strict()
                                     .optional(),
+                                globalResumed: z.boolean(),
                                 conversationPreferences: z.array(
                                     z
                                         .object({
                                             conversationSlugId: zodSlugId,
                                             state: zodConversationEmailUpdatePreferenceChoice,
+                                            resolvedEnabled: z.boolean(),
                                         })
                                         .strict(),
                                 ),
@@ -3466,6 +3478,7 @@ export class Dto {
                                                 "set_project_preference",
                                             ),
                                             projectSlug: zodProjectSlug,
+                                            conversationSlugId: zodSlugId,
                                             initialEnabled: z.boolean(),
                                         })
                                         .strict(),
@@ -3553,8 +3566,13 @@ export class Dto {
                 .object({
                     success: z.literal(true),
                     action: z.literal("unsubscribe_conversation"),
-                    scope: zodConversationEmailUpdateActionConversation
-                        .extend({ kind: z.literal("conversation") })
+                    scope: z
+                        .object({
+                            kind: z.literal("no_project"),
+                            conversations: z
+                                .array(zodConversationEmailUpdateActionConversation)
+                                .min(1),
+                        })
                         .strict(),
                 })
                 .strict(),

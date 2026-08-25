@@ -8,6 +8,11 @@ const api = vi.hoisted(() => ({
 }));
 const showNotifyMessage = vi.hoisted(() => vi.fn());
 
+vi.mock(
+  "src/utils/api/conversationUpdates/useConversationEmailUpdateQueries",
+  () => ({ useRemoveConversationEmailUpdateSummaryQueries: () => () => {} })
+);
+
 vi.mock("pinia", () => ({
   storeToRefs: (store: object) => store,
 }));
@@ -161,11 +166,12 @@ describe("ProjectEmailUpdatesMenu", () => {
   );
 
   it.each([
-    ["disabled", "enabled", "saveEnabled"],
-    ["enabled", "disabled", "saveDisabled"],
+    ["disabled", "enabled", false, "saveEnabled"],
+    ["disabled", "enabled", true, "preferenceSavedAndGlobalResumed"],
+    ["enabled", "disabled", false, "saveDisabled"],
   ])(
     "optimistically saves a %s to %s toggle and keeps the drawer open",
-    async (initialState, savedState, successMessage) => {
+    async (initialState, savedState, globalResumed, successMessage) => {
       const write = deferred();
       api.getProjectSummary.mockResolvedValue({
         success: true,
@@ -200,6 +206,7 @@ describe("ProjectEmailUpdatesMenu", () => {
           operation: "set_project_preference",
           projectSlug: "project-one",
           state: savedState,
+          globalResumed,
         },
       });
       await flushPromises();
@@ -282,6 +289,7 @@ describe("ProjectEmailUpdatesMenu", () => {
         operation: "set_project_preference",
         projectSlug: "project-one",
         state: "enabled",
+        globalResumed: false,
       },
     });
     await flushPromises();

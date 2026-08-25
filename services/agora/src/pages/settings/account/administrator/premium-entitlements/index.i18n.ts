@@ -97,7 +97,7 @@ const es: AdministratorPremiumEntitlementsTranslations = {
   eventTicketFeature: "Entrada para evento",
   analysisVariantsFeature: "Variantes de análisis (2-6 grupos)",
   dynamicTranslationFeature: "Traducción dinámica",
-  conversationEmailUpdateFeature: "Actualizaciones por correo electrónico",
+  conversationEmailUpdateFeature: "Novedades por correo",
 };
 
 const fa: AdministratorPremiumEntitlementsTranslations = {
@@ -147,7 +147,7 @@ const fr: AdministratorPremiumEntitlementsTranslations = {
   eventTicketFeature: "Billet d’événement",
   analysisVariantsFeature: "Variantes d’analyse (2 à 6 groupes)",
   dynamicTranslationFeature: "Traduction dynamique",
-  conversationEmailUpdateFeature: "Suivi des conversations par e-mail",
+  conversationEmailUpdateFeature: "Nouvelles par e-mail",
 };
 
 const he: AdministratorPremiumEntitlementsTranslations = {

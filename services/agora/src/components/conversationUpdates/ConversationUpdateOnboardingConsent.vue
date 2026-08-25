@@ -2,7 +2,7 @@
   <ZKCheckbox
     v-model="checked"
     :label="checkboxLabel"
-    :description="t('description')"
+    :description="checkboxDescription"
     :required="false"
     :disabled="false"
   />
@@ -30,5 +30,10 @@ const { t } = useComponentI18n<ConversationUpdateOnboardingConsentTranslations>(
 
 const checkboxLabel = computed(() =>
   props.scopeKind === "project" ? t("projectLabel") : t("conversationLabel")
+);
+const checkboxDescription = computed(() =>
+  props.scopeKind === "project"
+    ? t("projectDescription")
+    : t("conversationDescription")
 );
 </script>
