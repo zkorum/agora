@@ -1535,8 +1535,7 @@ async function updateSelectedProjectConversationUpdatesDefault(
     });
     if (!response.success || response.configuration.target !== "project") {
       selectedProjectConversationUpdatesConfiguration.value = configuration;
-      conversationUpdatesConfigurationError.value =
-        "The Email Update default could not be saved.";
+      showNotifyMessage("The Email Update default could not be saved.");
       return;
     }
     selectedProjectConversationUpdatesConfiguration.value =
@@ -1544,8 +1543,7 @@ async function updateSelectedProjectConversationUpdatesDefault(
   } catch (error) {
     console.error("Failed to save project Email Update configuration", error);
     selectedProjectConversationUpdatesConfiguration.value = configuration;
-    conversationUpdatesConfigurationError.value =
-      "The Email Update default could not be saved.";
+    showNotifyMessage("The Email Update default could not be saved.");
   }
 }
 
