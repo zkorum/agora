@@ -25,6 +25,7 @@
       <ZKSwitch
         v-model="enabled"
         :aria-label="t('defaultAriaLabel')"
+        :disable="!hasParticipantContactEmail && !enabled"
       />
     </div>
   </ZKCard>

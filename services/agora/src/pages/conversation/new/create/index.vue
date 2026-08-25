@@ -69,6 +69,7 @@
             :has-participant-contact-email="
               selectedEmailUpdatesConfiguration.hasParticipantContactEmail
             "
+            mode="create"
           />
         </template>
       </NewConversationControlBar>

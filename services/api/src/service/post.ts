@@ -40,10 +40,12 @@ import { createConversationViewSnapshotsFromCurrentState } from "@/service/conve
 import { queueConversationSettingsUpdatedEvent } from "@/service/realtimeEventOutbox.js";
 import {
     hasProjectCapability,
+    hasProjectParticipantContactEmail,
     getProjectLanguageSettings,
     requireProjectCapability,
     resolveConversationCreateTarget,
 } from "@/service/projectAccess.js";
+import { lockConversationEmailUpdateProject } from "@/service/conversationEmailUpdateProjectLock.js";
 import {
     buildGoogleConversationLanguageDetectionCorpus,
     buildConversationLanguageDetectionCorpus,
@@ -290,6 +292,23 @@ export async function createNewPost({
 
     await db.transaction(async (tx) => {
         const now = new Date();
+        if (request.conversationEmailUpdateEnabledOverride === true) {
+            const projectLocked = await lockConversationEmailUpdateProject({
+                db: tx,
+                projectId: target.projectId,
+            });
+            if (
+                !projectLocked ||
+                !(await hasProjectParticipantContactEmail({
+                    db: tx,
+                    projectId: target.projectId,
+                }))
+            ) {
+                throw httpErrors.badRequest(
+                    "Email Updates require a participant contact email",
+                );
+            }
+        }
         const polisConfigRows =
             conversationType === "polis"
                 ? await tx

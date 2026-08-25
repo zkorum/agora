@@ -285,12 +285,34 @@ export async function getOrCreateDefaultProjectForOrganization({
             directoryVisibility: "unlisted",
             autoProvisionedForOrganizationId: organizationId,
         })
+        .onConflictDoNothing()
         .returning({ projectId: projectTable.id });
     const inserted = insertedRows.at(0);
     if (inserted === undefined) {
-        throw httpErrors.internalServerError(
-            "Failed to create default project",
-        );
+        const concurrentlyInsertedRows = await db
+            .select({ projectId: projectTable.id })
+            .from(projectTable)
+            .where(
+                eq(
+                    projectTable.autoProvisionedForOrganizationId,
+                    organizationId,
+                ),
+            )
+            .limit(1);
+        const concurrentlyInserted = concurrentlyInsertedRows.at(0);
+        if (concurrentlyInserted === undefined) {
+            throw httpErrors.internalServerError(
+                "Failed to create default project",
+            );
+        }
+        await db
+            .insert(projectOrganizationOwnershipTable)
+            .values({
+                projectId: concurrentlyInserted.projectId,
+                organizationId,
+            })
+            .onConflictDoNothing();
+        return concurrentlyInserted;
     }
 
     const insertedContentRows = await db

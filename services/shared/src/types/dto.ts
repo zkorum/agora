@@ -340,6 +340,20 @@ const zodAdminOrganizationOption = z
         canUseDynamicTranslation: z.boolean(),
     })
     .strict();
+const zodAdminNoProjectEmailUpdatesContact = z
+    .object({
+        name: z.string().trim().min(1).max(MAX_LENGTH_NAME_CREATOR),
+        email: zodEmail,
+    })
+    .strict();
+const zodAdminNoProjectEmailUpdatesConfiguration = z
+    .object({
+        hasEntitlement: z.boolean(),
+        defaultEnabled: z.boolean(),
+        contact: zodAdminNoProjectEmailUpdatesContact.optional(),
+        canDeleteContact: z.boolean(),
+    })
+    .strict();
 const zodCreateProjectFailureReason = z.enum([
     "unknown_organization_slug",
     "organization_not_listed",
@@ -2168,6 +2182,66 @@ export class Dto {
             organization: zodAdminOrganization.optional(),
         })
         .strict();
+    static getAdminNoProjectEmailUpdatesRequest = z
+        .object({ organizationSlug: zodOrganizationSlug })
+        .strict();
+    static getAdminNoProjectEmailUpdatesResponse = z.discriminatedUnion(
+        "success",
+        [
+            z
+                .object({
+                    success: z.literal(true),
+                    configuration: zodAdminNoProjectEmailUpdatesConfiguration,
+                })
+                .strict(),
+            z
+                .object({
+                    success: z.literal(false),
+                    reason: z.literal("organization_not_found"),
+                })
+                .strict(),
+        ],
+    );
+    static updateAdminNoProjectEmailUpdatesRequest = z.discriminatedUnion(
+        "defaultEnabled",
+        [
+            z
+                .object({
+                    organizationSlug: zodOrganizationSlug,
+                    defaultEnabled: z.literal(true),
+                    contact: zodAdminNoProjectEmailUpdatesContact,
+                })
+                .strict(),
+            z
+                .object({
+                    organizationSlug: zodOrganizationSlug,
+                    defaultEnabled: z.literal(false),
+                    contact: zodAdminNoProjectEmailUpdatesContact.optional(),
+                })
+                .strict(),
+        ],
+    );
+    static updateAdminNoProjectEmailUpdatesResponse = z.discriminatedUnion(
+        "success",
+        [
+            z
+                .object({
+                    success: z.literal(true),
+                    configuration: zodAdminNoProjectEmailUpdatesConfiguration,
+                })
+                .strict(),
+            z
+                .object({
+                    success: z.literal(false),
+                    reason: z.enum([
+                        "organization_not_found",
+                        "entitlement_required",
+                        "contact_in_use",
+                    ]),
+                })
+                .strict(),
+        ],
+    );
     static getOrganizationMembersRequest = z
         .object({
             organizationName: zodOrganizationSlug,
@@ -3134,10 +3208,7 @@ export class Dto {
             z
                 .object({
                     success: z.literal(false),
-                    reason: z.enum([
-                        "context_not_found",
-                        "invalid_cursor",
-                    ]),
+                    reason: z.enum(["context_not_found", "invalid_cursor"]),
                 })
                 .strict(),
         ],
@@ -3647,7 +3718,9 @@ export class Dto {
                         .object({
                             kind: z.literal("no_project"),
                             conversations: z
-                                .array(zodConversationEmailUpdateActionConversation)
+                                .array(
+                                    zodConversationEmailUpdateActionConversation,
+                                )
                                 .min(1),
                         })
                         .strict(),
@@ -3881,6 +3954,21 @@ export type GetOrganizationDetailsRequest = z.infer<
 >;
 export type GetOrganizationDetailsResponse = z.infer<
     typeof Dto.getOrganizationDetailsResponse
+>;
+export type AdminNoProjectEmailUpdatesConfiguration = z.infer<
+    typeof zodAdminNoProjectEmailUpdatesConfiguration
+>;
+export type GetAdminNoProjectEmailUpdatesRequest = z.infer<
+    typeof Dto.getAdminNoProjectEmailUpdatesRequest
+>;
+export type GetAdminNoProjectEmailUpdatesResponse = z.infer<
+    typeof Dto.getAdminNoProjectEmailUpdatesResponse
+>;
+export type UpdateAdminNoProjectEmailUpdatesRequest = z.infer<
+    typeof Dto.updateAdminNoProjectEmailUpdatesRequest
+>;
+export type UpdateAdminNoProjectEmailUpdatesResponse = z.infer<
+    typeof Dto.updateAdminNoProjectEmailUpdatesResponse
 >;
 export type OrganizationMember = z.infer<typeof Dto.organizationMember>;
 export type GetOrganizationMembersResponse = z.infer<

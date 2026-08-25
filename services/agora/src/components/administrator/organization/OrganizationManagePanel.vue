@@ -120,6 +120,12 @@
         </form>
       </ZKCard>
 
+      <OrganizationNoProjectEmailUpdates
+        :key="selectedOrganization.slug"
+        :organization-slug="selectedOrganization.slug"
+        :organization-name="selectedOrganization.name"
+      />
+
       <ZKCard padding="1rem" class="cardBackground">
         <form class="section" @submit.prevent="submitAddMember">
           <AdminSectionHeader
@@ -264,6 +270,7 @@
 
 <script setup lang="ts">
 import AdminSectionHeader from "src/components/administrator/AdminSectionHeader.vue";
+import OrganizationNoProjectEmailUpdates from "src/components/administrator/organization/OrganizationNoProjectEmailUpdates.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";

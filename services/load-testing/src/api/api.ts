@@ -156,6 +156,69 @@ export const ApiV1AdministratorOrganizationLocalizationUpdatePostRequestLanguage
 export type ApiV1AdministratorOrganizationLocalizationUpdatePostRequestLanguageCodeEnum = typeof ApiV1AdministratorOrganizationLocalizationUpdatePostRequestLanguageCodeEnum[keyof typeof ApiV1AdministratorOrganizationLocalizationUpdatePostRequestLanguageCodeEnum];
 
 /**
+ * @type ApiV1AdministratorOrganizationNoProjectEmailUpdatesGetPost200Response
+ */
+export type ApiV1AdministratorOrganizationNoProjectEmailUpdatesGetPost200Response = ApiV1AdministratorOrganizationNoProjectEmailUpdatesGetPost200ResponseOneOf | ApiV1AdministratorOrganizationNoProjectEmailUpdatesGetPost200ResponseOneOf1;
+
+export interface ApiV1AdministratorOrganizationNoProjectEmailUpdatesGetPost200ResponseOneOf {
+    'success': boolean;
+    'configuration': ApiV1AdministratorOrganizationNoProjectEmailUpdatesGetPost200ResponseOneOfConfiguration;
+}
+export interface ApiV1AdministratorOrganizationNoProjectEmailUpdatesGetPost200ResponseOneOf1 {
+    'success': boolean;
+    'reason': ApiV1AdministratorOrganizationNoProjectEmailUpdatesGetPost200ResponseOneOf1ReasonEnum;
+}
+
+export const ApiV1AdministratorOrganizationNoProjectEmailUpdatesGetPost200ResponseOneOf1ReasonEnum = {
+    OrganizationNotFound: 'organization_not_found',
+} as const;
+
+export type ApiV1AdministratorOrganizationNoProjectEmailUpdatesGetPost200ResponseOneOf1ReasonEnum = typeof ApiV1AdministratorOrganizationNoProjectEmailUpdatesGetPost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1AdministratorOrganizationNoProjectEmailUpdatesGetPost200ResponseOneOf1ReasonEnum];
+
+export interface ApiV1AdministratorOrganizationNoProjectEmailUpdatesGetPost200ResponseOneOfConfiguration {
+    'hasEntitlement': boolean;
+    'defaultEnabled': boolean;
+    'contact'?: ApiV1AdministratorOrganizationNoProjectEmailUpdatesGetPost200ResponseOneOfConfigurationContact;
+    'canDeleteContact': boolean;
+}
+export interface ApiV1AdministratorOrganizationNoProjectEmailUpdatesGetPost200ResponseOneOfConfigurationContact {
+    'name': string;
+    'email': string;
+}
+/**
+ * @type ApiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePost200Response
+ */
+export type ApiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePost200Response = ApiV1AdministratorOrganizationNoProjectEmailUpdatesGetPost200ResponseOneOf | ApiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePost200ResponseOneOf;
+
+export interface ApiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePost200ResponseOneOf {
+    'success': boolean;
+    'reason': ApiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePost200ResponseOneOfReasonEnum;
+}
+
+export const ApiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePost200ResponseOneOfReasonEnum = {
+    OrganizationNotFound: 'organization_not_found',
+    EntitlementRequired: 'entitlement_required',
+    ContactInUse: 'contact_in_use',
+} as const;
+
+export type ApiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePost200ResponseOneOfReasonEnum = typeof ApiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePost200ResponseOneOfReasonEnum[keyof typeof ApiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePost200ResponseOneOfReasonEnum];
+
+/**
+ * @type ApiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePostRequest
+ */
+export type ApiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePostRequest = ApiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePostRequestOneOf | ApiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePostRequestOneOf1;
+
+export interface ApiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePostRequestOneOf {
+    'organizationSlug': string;
+    'defaultEnabled': boolean;
+    'contact': ApiV1AdministratorOrganizationNoProjectEmailUpdatesGetPost200ResponseOneOfConfigurationContact;
+}
+export interface ApiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePostRequestOneOf1 {
+    'organizationSlug': string;
+    'defaultEnabled': boolean;
+    'contact'?: ApiV1AdministratorOrganizationNoProjectEmailUpdatesGetPost200ResponseOneOfConfigurationContact;
+}
+/**
  * @type ApiV1AdministratorOrganizationSlugUpdatePost200Response
  */
 export type ApiV1AdministratorOrganizationSlugUpdatePost200Response = ApiV1AdministratorOrganizationSlugUpdatePost200ResponseOneOf | ApiV1ConversationEmailUpdateActionUnsubscribePost200ResponseOneOf;
@@ -8891,6 +8954,82 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @param {ApiV1AdministratorOrganizationGetOrganizationDetailsPostRequest} apiV1AdministratorOrganizationGetOrganizationDetailsPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorOrganizationNoProjectEmailUpdatesGetPost: async (apiV1AdministratorOrganizationGetOrganizationDetailsPostRequest: ApiV1AdministratorOrganizationGetOrganizationDetailsPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1AdministratorOrganizationGetOrganizationDetailsPostRequest' is not null or undefined
+            assertParamExists('apiV1AdministratorOrganizationNoProjectEmailUpdatesGetPost', 'apiV1AdministratorOrganizationGetOrganizationDetailsPostRequest', apiV1AdministratorOrganizationGetOrganizationDetailsPostRequest)
+            const localVarPath = `/api/v1/administrator/organization/no-project-email-updates/get`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorOrganizationGetOrganizationDetailsPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePostRequest} apiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePost: async (apiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePostRequest: ApiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePostRequest' is not null or undefined
+            assertParamExists('apiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePost', 'apiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePostRequest', apiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePostRequest)
+            const localVarPath = `/api/v1/administrator/organization/no-project-email-updates/update`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {ApiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest} apiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -13937,6 +14076,30 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {ApiV1AdministratorOrganizationGetOrganizationDetailsPostRequest} apiV1AdministratorOrganizationGetOrganizationDetailsPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1AdministratorOrganizationNoProjectEmailUpdatesGetPost(apiV1AdministratorOrganizationGetOrganizationDetailsPostRequest: ApiV1AdministratorOrganizationGetOrganizationDetailsPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AdministratorOrganizationNoProjectEmailUpdatesGetPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorOrganizationNoProjectEmailUpdatesGetPost(apiV1AdministratorOrganizationGetOrganizationDetailsPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorOrganizationNoProjectEmailUpdatesGetPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePostRequest} apiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePost(apiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePostRequest: ApiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePost(apiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {ApiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest} apiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -15619,6 +15782,24 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @param {ApiV1AdministratorOrganizationGetOrganizationDetailsPostRequest} apiV1AdministratorOrganizationGetOrganizationDetailsPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorOrganizationNoProjectEmailUpdatesGetPost(apiV1AdministratorOrganizationGetOrganizationDetailsPostRequest: ApiV1AdministratorOrganizationGetOrganizationDetailsPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AdministratorOrganizationNoProjectEmailUpdatesGetPost200Response> {
+            return localVarFp.apiV1AdministratorOrganizationNoProjectEmailUpdatesGetPost(apiV1AdministratorOrganizationGetOrganizationDetailsPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePostRequest} apiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePost(apiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePostRequest: ApiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePost200Response> {
+            return localVarFp.apiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePost(apiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @param {ApiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest} apiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -16907,6 +17088,26 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1AdministratorOrganizationLocalizationUpdatePost(apiV1AdministratorOrganizationLocalizationUpdatePostRequest: ApiV1AdministratorOrganizationLocalizationUpdatePostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1AdministratorOrganizationLocalizationUpdatePost(apiV1AdministratorOrganizationLocalizationUpdatePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1AdministratorOrganizationGetOrganizationDetailsPostRequest} apiV1AdministratorOrganizationGetOrganizationDetailsPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1AdministratorOrganizationNoProjectEmailUpdatesGetPost(apiV1AdministratorOrganizationGetOrganizationDetailsPostRequest: ApiV1AdministratorOrganizationGetOrganizationDetailsPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AdministratorOrganizationNoProjectEmailUpdatesGetPost(apiV1AdministratorOrganizationGetOrganizationDetailsPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePostRequest} apiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePost(apiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePostRequest: ApiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePost(apiV1AdministratorOrganizationNoProjectEmailUpdatesUpdatePostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

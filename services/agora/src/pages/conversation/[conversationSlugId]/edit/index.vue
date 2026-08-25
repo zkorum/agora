@@ -80,6 +80,7 @@
               conversationUpdatesConfiguration?.participantContactEmail !==
               undefined
             "
+            mode="edit"
             @update:model-value="updateConversationUpdatesConfiguration"
           />
         </template>

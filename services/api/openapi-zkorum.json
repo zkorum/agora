@@ -27597,6 +27597,317 @@
                 }
             }
         },
+        "/api/v1/administrator/organization/no-project-email-updates/get": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "organizationSlug": {
+                                        "type": "string",
+                                        "maxLength": 65,
+                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                    }
+                                },
+                                "required": [
+                                    "organizationSlug"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
+                                                "configuration": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "hasEntitlement": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "defaultEnabled": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "contact": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "name": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 65
+                                                                },
+                                                                "email": {
+                                                                    "type": "string",
+                                                                    "maxLength": 254,
+                                                                    "format": "email",
+                                                                    "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "name",
+                                                                "email"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        },
+                                                        "canDeleteContact": {
+                                                            "type": "boolean"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "hasEntitlement",
+                                                        "defaultEnabled",
+                                                        "canDeleteContact"
+                                                    ],
+                                                    "additionalProperties": false
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "configuration"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "organization_not_found"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/administrator/organization/no-project-email-updates/update": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "oneOf": [
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "organizationSlug": {
+                                                "type": "string",
+                                                "maxLength": 65,
+                                                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                            },
+                                            "defaultEnabled": {
+                                                "type": "boolean",
+                                                "enum": [
+                                                    true
+                                                ]
+                                            },
+                                            "contact": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "name": {
+                                                        "type": "string",
+                                                        "minLength": 1,
+                                                        "maxLength": 65
+                                                    },
+                                                    "email": {
+                                                        "type": "string",
+                                                        "maxLength": 254,
+                                                        "format": "email",
+                                                        "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "name",
+                                                    "email"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        },
+                                        "required": [
+                                            "organizationSlug",
+                                            "defaultEnabled",
+                                            "contact"
+                                        ],
+                                        "additionalProperties": false
+                                    },
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "organizationSlug": {
+                                                "type": "string",
+                                                "maxLength": 65,
+                                                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                            },
+                                            "defaultEnabled": {
+                                                "type": "boolean",
+                                                "enum": [
+                                                    false
+                                                ]
+                                            },
+                                            "contact": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "name": {
+                                                        "type": "string",
+                                                        "minLength": 1,
+                                                        "maxLength": 65
+                                                    },
+                                                    "email": {
+                                                        "type": "string",
+                                                        "maxLength": 254,
+                                                        "format": "email",
+                                                        "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "name",
+                                                    "email"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        },
+                                        "required": [
+                                            "organizationSlug",
+                                            "defaultEnabled"
+                                        ],
+                                        "additionalProperties": false
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
+                                                "configuration": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "hasEntitlement": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "defaultEnabled": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "contact": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "name": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 65
+                                                                },
+                                                                "email": {
+                                                                    "type": "string",
+                                                                    "maxLength": 254,
+                                                                    "format": "email",
+                                                                    "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "name",
+                                                                "email"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        },
+                                                        "canDeleteContact": {
+                                                            "type": "boolean"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "hasEntitlement",
+                                                        "defaultEnabled",
+                                                        "canDeleteContact"
+                                                    ],
+                                                    "additionalProperties": false
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "configuration"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "organization_not_found",
+                                                        "entitlement_required",
+                                                        "contact_in_use"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/administrator/organization/create-organization": {
             "post": {
                 "requestBody": {

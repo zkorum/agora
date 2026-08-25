@@ -4,8 +4,11 @@ import {
   type AdminOrganizationProperties,
   type CreateOrganizationRequest,
   Dto,
+  type GetAdminNoProjectEmailUpdatesResponse,
   type GetOrganizationDetailsRequest,
   type OrganizationMember,
+  type UpdateAdminNoProjectEmailUpdatesRequest,
+  type UpdateAdminNoProjectEmailUpdatesResponse,
   type UpdateOrganizationLocalizationRequest,
   type UpdateOrganizationSlugRequest,
 } from "src/shared/types/dto";
@@ -92,6 +95,44 @@ export function useBackendAdministratorOrganizationApi() {
     } catch (e) {
       console.error(e);
       showNotifyMessage(t("failedToFetchOrganizations"));
+      return undefined;
+    }
+  }
+
+  async function getNoProjectEmailUpdates({
+    organizationSlug,
+  }: {
+    organizationSlug: string;
+  }): Promise<GetAdminNoProjectEmailUpdatesResponse | undefined> {
+    try {
+      const params = Dto.getAdminNoProjectEmailUpdatesRequest.parse({
+        organizationSlug,
+      });
+      return await postWithUcan({
+        url: "/api/v1/administrator/organization/no-project-email-updates/get",
+        data: params,
+        responseSchema: Dto.getAdminNoProjectEmailUpdatesResponse,
+      });
+    } catch (e) {
+      console.error(e);
+      showNotifyMessage(t("failedToFetchOrganizations"));
+      return undefined;
+    }
+  }
+
+  async function updateNoProjectEmailUpdates(
+    data: UpdateAdminNoProjectEmailUpdatesRequest
+  ): Promise<UpdateAdminNoProjectEmailUpdatesResponse | undefined> {
+    try {
+      const params = Dto.updateAdminNoProjectEmailUpdatesRequest.parse(data);
+      return await postWithUcan({
+        url: "/api/v1/administrator/organization/no-project-email-updates/update",
+        data: params,
+        responseSchema: Dto.updateAdminNoProjectEmailUpdatesResponse,
+      });
+    } catch (e) {
+      console.error(e);
+      showNotifyMessage(t("failedToUpdateOrganization"));
       return undefined;
     }
   }
@@ -283,8 +324,10 @@ export function useBackendAdministratorOrganizationApi() {
     addUserOrganizationMapping,
     removeUserOrganizationMapping,
     getOrganizationDetails,
+    getNoProjectEmailUpdates,
     getOrganizationOptions,
     getOrganizationMembers,
     getOrganizationsByUsername,
+    updateNoProjectEmailUpdates,
   };
 }

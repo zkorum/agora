@@ -233,6 +233,10 @@ import {
     updateOrganizationSlug,
 } from "./service/administrator/organization.js";
 import {
+    getAdminNoProjectEmailUpdates,
+    updateAdminNoProjectEmailUpdates,
+} from "./service/administrator/organizationEmailUpdates.js";
+import {
     archiveProject,
     createProject,
     getAllProjects,
@@ -5777,6 +5781,41 @@ server.after(() => {
                 db,
                 baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
                 organizationSlug: request.body.organizationSlug,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/administrator/organization/no-project-email-updates/get`,
+        schema: {
+            body: Dto.getAdminNoProjectEmailUpdatesRequest,
+            response: { 200: Dto.getAdminNoProjectEmailUpdatesResponse },
+        },
+        handler: async (request) => {
+            await requireSiteOrgAdmin(request);
+            return await getAdminNoProjectEmailUpdates({
+                db,
+                organizationSlug: request.body.organizationSlug,
+                now: nowZeroMs(),
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/administrator/organization/no-project-email-updates/update`,
+        schema: {
+            body: Dto.updateAdminNoProjectEmailUpdatesRequest,
+            response: { 200: Dto.updateAdminNoProjectEmailUpdatesResponse },
+        },
+        handler: async (request) => {
+            const userId = await requireSiteOrgAdmin(request);
+            return await updateAdminNoProjectEmailUpdates({
+                db,
+                userId,
+                request: request.body,
+                now: nowZeroMs(),
             });
         },
     });
