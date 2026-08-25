@@ -98,32 +98,32 @@ export const opinionWritingGuidelinesDialogTranslations: Record<
     title: "Consejos para Escribir Buenas Proposiciones",
     singleIdeaTitle: "Una idea específica",
     singleIdeaDescription:
-      "Enfócate en un solo punto sobre el que otros puedan votar",
+      "Enfóquese en un solo punto sobre el que otros puedan votar",
     singleIdeaExampleGood:
       "Los conductores de viajes compartidos deben tener los mismos requisitos de seguro que los taxistas",
     singleIdeaExampleBad:
       "Uber debería prohibirse y los taxis necesitan mejores aplicaciones y sistemas de calificación",
     easyVoteTitle: "Fácil de estar de acuerdo/en desacuerdo",
-    easyVoteDescription: "Evita declaraciones complejas o de múltiples partes",
+    easyVoteDescription: "Evite declaraciones complejas o de múltiples partes",
     easyVoteExampleGood:
       "Las empresas de redes sociales deben ser responsables de la desinformación en sus plataformas",
     easyVoteExampleBad:
       "La regulación de las redes sociales es compleja y depende de varios factores y contextos culturales",
-    keepBriefTitle: "Sé breve",
-    keepBriefDescription: "Apunta a 280 caracteres o menos",
+    keepBriefTitle: "Sea breve",
+    keepBriefDescription: "Apunte a 280 caracteres o menos",
     keepBriefExampleGood:
       "El transporte público debería ser gratuito para estudiantes",
     keepBriefExampleBad:
       "Creo que los sistemas de transporte municipal deberían considerar implementar políticas de tarifas de costo reducido o cero para personas inscritas en programas educativos porque...",
-    beClearTitle: "Sé claro",
-    beClearDescription: "Otros deberían entender tu punto inmediatamente",
+    beClearTitle: "Sea claro",
+    beClearDescription: "Otros deberían entender su punto inmediatamente",
     beClearExampleGood:
       "El trabajo remoto aumenta la productividad de los empleados",
     beClearExampleBad:
       "Los paradigmas de teletrabajo requieren reconsideración de las dinámicas organizacionales",
-    dontCombineTitle: "No combines",
+    dontCombineTitle: "No combine",
     dontCombineDescription:
-      'Divide "A y B" en proposiciones separadas para una votación más clara',
+      'Divida "A y B" en proposiciones separadas para una votación más clara',
     dontCombineExampleBad:
       "Necesitamos atención médica universal y matrícula universitaria gratuita",
     dontCombineExampleGood1:

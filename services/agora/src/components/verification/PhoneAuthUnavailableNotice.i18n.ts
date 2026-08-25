@@ -23,9 +23,9 @@ export const phoneAuthUnavailableNoticeTranslations: Record<
   },
   es: {
     technicalUnavailable:
-      "La autenticación por teléfono no está disponible temporalmente debido a un problema técnico. Usa otro método e inténtalo más tarde.",
+      "La autenticación por teléfono no está disponible temporalmente debido a un problema técnico. Use otro método e inténtelo más tarde.",
     registrationUnavailable:
-      "El registro por teléfono no está disponible actualmente. Si ya tienes una cuenta con un número de teléfono, aún puedes iniciar sesión.",
+      "El registro por teléfono no está disponible actualmente. Si ya tiene una cuenta con un número de teléfono, aún puede iniciar sesión.",
   },
   fa: {
     technicalUnavailable:

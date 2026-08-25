@@ -129,7 +129,7 @@ export const opinionGroupVisualizationTranslations: Record<
     analysisPreview: "Vista Previa del Análisis",
     devConversationTitle: "Vista previa de análisis de desarrollo",
     commentPlaceholder:
-      "Selecciona la pestaña de análisis para probar el comportamiento fijo del grupo.",
+      "Seleccione la pestaña de análisis para probar el comportamiento fijo del grupo.",
   },
   fa: {
     analysisTabTest: "آزمایش زبانه تحلیل",

@@ -140,7 +140,7 @@ export const conversationSurveyStepTranslations: Record<
     addQuestionButton: "Agregar pregunta",
     pageTitle: "Encuesta de la conversación",
     pageDescription:
-      "Configura el paso de encuesta que aparece antes de que los participantes puedan votar sobre propuestas o crear nuevas.",
+      "Configure el paso de encuesta que aparece antes de que los participantes puedan votar sobre propuestas o crear nuevas.",
     optionalSurveyToggleLabel:
       "Permitir que los participantes omitan la encuesta",
     optionalSurveyToggleHint:
@@ -151,7 +151,7 @@ export const conversationSurveyStepTranslations: Record<
       "Esta pregunta se trata como opcional porque el paso de encuesta se puede omitir.",
     noQuestionsTitle: "Aún no hay encuesta",
     noQuestionsDescription:
-      "Déjalo vacío para publicar sin encuesta o agrega preguntas ahora.",
+      "Déjelo vacío para publicar sin encuesta o agregue preguntas ahora.",
     questionLabel: "Pregunta {number}",
     requiredLabel: "Obligatoria",
     optionalLabel: "Opcional",
@@ -173,10 +173,10 @@ export const conversationSurveyStepTranslations: Record<
     choiceDisplayList: "Lista",
     choiceDisplayDropdown: "Desplegable con búsqueda",
     surveyValidationError:
-      "Completa todas las preguntas de la encuesta antes de publicar.",
+      "Complete todas las preguntas de la encuesta antes de publicar.",
     publishError: "Error al intentar crear una nueva conversación",
     largeOptionCountWarning:
-      "Esta pregunta está configurada como Lista y tiene {count} opciones. Considera usar Automático o Desplegable con búsqueda para que los participantes puedan revisar las respuestas más rápido.",
+      "Esta pregunta está configurada como Lista y tiene {count} opciones. Considere usar Automático o Desplegable con búsqueda para que los participantes puedan revisar las respuestas más rápido.",
     confirmRemoveQuestionMessage: "¿Eliminar esta pregunta de la encuesta?",
     confirmRemoveOptionMessage: "¿Eliminar esta opción de la pregunta?",
     confirmRemoveQuestionButtonLabel: "Eliminar pregunta",

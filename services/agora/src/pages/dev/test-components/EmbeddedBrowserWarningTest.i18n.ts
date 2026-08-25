@@ -25,7 +25,7 @@ export const embeddedBrowserWarningTestTranslations: Record<
   es: {
     embeddedBrowserWarning: "Advertencia de navegador integrado",
     embeddedBrowserWarningDescription:
-      "Prueba el diálogo de advertencia del navegador integrado que aparece cuando los usuarios abren la aplicación en un navegador integrado (Telegram, WeChat, etc.)",
+      "Pruebe el diálogo de advertencia del navegador integrado que aparece cuando los usuarios abren la aplicación en un navegador integrado (Telegram, WeChat, etc.)",
     openWarningButton: "Abrir diálogo de advertencia",
   },
   fa: {

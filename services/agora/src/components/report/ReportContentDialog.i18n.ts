@@ -46,9 +46,9 @@ export const reportContentDialogTranslations: Record<
     submitReportTitle: "Enviar un reporte",
     improveCommunityText:
       "Gracias por ayudarnos a mejorar la comunidad. ¿Cuál es el problema con esta {reportType}?",
-    thanksForFeedbackTitle: "¡Gracias por tu comentario!",
+    thanksForFeedbackTitle: "¡Gracias por su comentario!",
     flaggingReasonText:
-      "¿Por qué estás marcando esta {reportType} como {selectedReason}?",
+      "¿Por qué está marcando esta {reportType} como {selectedReason}?",
     addExplanationLabel: "Añadir explicación",
     skipButton: "Omitir",
     submitButton: "Enviar",

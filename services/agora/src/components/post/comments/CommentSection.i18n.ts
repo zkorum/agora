@@ -68,15 +68,15 @@ export const commentSectionTranslations: Record<
     emptyDiscover: "Aún no hay proposiciones disponibles",
     emptyNew: "No hay proposiciones nuevas",
     emptyModerated: "No hay proposiciones moderadas",
-    emptyMyVotes: "Aún no has votado en ninguna proposición",
+    emptyMyVotes: "Aún no ha votado en ninguna proposición",
     emptyHidden: "No hay proposiciones ocultas",
     retryLoadingOpinions: "Reintentar cargar proposiciones",
-    voteUnlockSingular: "1 voto más para desbloquear tu análisis de cluster",
+    voteUnlockSingular: "1 voto más para desbloquear su análisis de cluster",
     voteUnlockPlural:
-      "{count} votos más para desbloquear tu análisis de cluster",
+      "{count} votos más para desbloquear su análisis de cluster",
     notEnoughOpinions:
-      "Crea más proposiciones para votar y permitir el clustering",
-    clusteredBanner: "¡Te han asignado un cluster!",
+      "Cree más proposiciones para votar y permitir el clustering",
+    clusteredBanner: "¡Se le ha asignado un cluster!",
     viewAnalysis: "Ver análisis",
     statementRemovedByModerator:
       "Esta proposición ha sido eliminada por un moderador.",

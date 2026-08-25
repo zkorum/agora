@@ -33,7 +33,7 @@ export const asyncStateHandlerTranslations: Record<
     loading: "Cargando...",
     retrying: "Reintentando...",
     errorTitle: "Algo salió mal",
-    defaultErrorMessage: "Ocurrió un error inesperado. Inténtalo de nuevo.",
+    defaultErrorMessage: "Ocurrió un error inesperado. Inténtelo de nuevo.",
     emptyMessage: "No hay datos disponibles",
     retry: "Reintentar",
   },

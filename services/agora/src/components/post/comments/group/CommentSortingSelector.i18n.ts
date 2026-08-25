@@ -52,7 +52,7 @@ export const commentSortingSelectorTranslations: Record<
     filterTitle: "Filtrar proposiciones por:",
     discover: "Descubrir",
     discoverDescription:
-      "Proposiciones variadas y emergentes para asignarte a un grupo y mantener el análisis en evolución",
+      "Proposiciones variadas y emergentes para asignarle a un grupo y mantener el análisis en evolución",
     new: "Nuevo",
     newDescription: "Proposiciones más recientes",
     moderationHistory: "Historial de moderación",
@@ -61,7 +61,7 @@ export const commentSortingSelectorTranslations: Record<
     hidden: "Oculto",
     hiddenDescription: "Proposiciones eliminadas por moderadores",
     myVotes: "Mis Votos",
-    myVotesDescription: "Proposiciones en las que has votado",
+    myVotesDescription: "Proposiciones en las que ha votado",
   },
   fa: {
     filterTitle: "فیلتر گزاره‌ها بر اساس:",

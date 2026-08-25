@@ -41,7 +41,7 @@ export const verifyPhoneTranslations: Record<
   es: {
     title: "Verificar teléfono",
     alreadyHasPhone:
-      "Ya tienes un número de teléfono vinculado a tu cuenta",
+      "Ya tiene un número de teléfono vinculado a su cuenta",
     throttled:
       "Demasiados intentos—por favor, espere antes de intentar de nuevo",
     invalidPhoneNumber:

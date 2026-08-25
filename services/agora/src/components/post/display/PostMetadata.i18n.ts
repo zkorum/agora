@@ -82,7 +82,7 @@ export const postMetadataTranslations: Record<
   },
   es: {
     closeConfirmMessage:
-      "¿Estás seguro de que quieres cerrar esta conversación? Los usuarios no podrán publicar nuevas proposiciones o votos.",
+      "¿Está seguro de que quiere cerrar esta conversación? Los usuarios no podrán publicar nuevas proposiciones o votos.",
     closeConfirmButton: "Cerrar conversación",
     reopenConfirmMessage:
       "¿Reabrir esta conversación? Los usuarios podrán publicar proposiciones y votar de nuevo.",
@@ -90,8 +90,8 @@ export const postMetadataTranslations: Record<
     cancelButton: "Cancelar",
     closeSuccess: "Conversación cerrada exitosamente",
     openSuccess: "Conversación abierta exitosamente",
-    closeNotAllowed: "No tienes permiso para cerrar esta conversación",
-    openNotAllowed: "No tienes permiso para abrir esta conversación",
+    closeNotAllowed: "No tiene permiso para cerrar esta conversación",
+    openNotAllowed: "No tiene permiso para abrir esta conversación",
     alreadyClosed: "Esta conversación ya está cerrada",
     alreadyOpen: "Esta conversación ya está abierta",
     syncSuccess: "Sincronización desde GitHub exitosa",
@@ -104,7 +104,7 @@ export const postMetadataTranslations: Record<
     emailUpdatesPreferenceSaveDisabled:
       "El seguimiento de la conversación por correo está desactivado.",
     emailUpdatesPreferenceSaveError:
-      "No se pudo guardar tu preferencia de seguimiento por correo.",
+      "No se pudo guardar su preferencia de seguimiento por correo.",
   },
   fa: {
     closeConfirmMessage:

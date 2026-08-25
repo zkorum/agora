@@ -99,7 +99,7 @@ export const sessionSettingsTranslations: Record<
   },
   es: {
     pageTitle: "Sesiones",
-    description: "Revisa tus sesiones activas.",
+    description: "Revise sus sesiones activas.",
     currentSession: "Sesión actual",
     otherSession: "Otra sesión",
     started: "Inicio:",
@@ -115,16 +115,16 @@ export const sessionSettingsTranslations: Record<
       "Se revocarán todas las sesiones activas, incluida esta.",
     confirm: "Confirmar",
     cancel: "Cancelar",
-    loadFailed: "No se pudieron cargar las sesiones. Inténtalo de nuevo.",
-    revokeFailed: "No se pudo revocar el acceso. Inténtalo de nuevo.",
+    loadFailed: "No se pudieron cargar las sesiones. Inténtelo de nuevo.",
+    revokeFailed: "No se pudo revocar el acceso. Inténtelo de nuevo.",
     logoutAllFailed: "No se pudo confirmar el cierre de sesión en el servidor.",
     localOnlyTitle: "¿Borrar solo este dispositivo?",
     localOnlyMessage:
-      "Se borrarán los datos y las claves locales de la cuenta, pero las sesiones del servidor pueden seguir activas hasta que las revoques tras iniciar sesión de nuevo o caduquen.",
+      "Se borrarán los datos y las claves locales de la cuenta, pero las sesiones del servidor pueden seguir activas hasta que las revoque tras iniciar sesión de nuevo o caduquen.",
     clearLocalData: "Borrar este dispositivo",
     retry: "Reintentar",
     localCleanupFailed:
-      "Puede que queden datos o claves de la cuenta en este dispositivo. Permanece en esta página y vuelve a intentarlo para cerrar sesión de forma segura.",
+      "Puede que queden datos o claves de la cuenta en este dispositivo. Permanezca en esta página y vuelva a intentarlo para cerrar sesión de forma segura.",
     retryLocalCleanup: "Reintentar el borrado",
     navigationFailed:
       "La sesión local se cerró, pero no se pudo abrir la página de inicio.",

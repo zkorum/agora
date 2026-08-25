@@ -21,7 +21,7 @@ export const topicSelectionStepTranslations: Record<
     closeButton: "إغلاق",
   },
   es: {
-    title: "Selecciona los temas que te interesan para comenzar",
+    title: "Seleccione los temas que le interesan para comenzar",
     backButton: "Atrás",
     closeButton: "Cerrar",
   },

@@ -94,21 +94,21 @@ export const editConversationTranslations: Record<
   es: {
     saveButton: "Guardar",
     titlePlaceholder: "Título de la conversación",
-    bodyPlaceholder: "¿Qué tienes en mente?",
+    bodyPlaceholder: "¿Qué tiene en mente?",
     updateSuccess: "Conversación actualizada exitosamente",
     updateError: "Error al actualizar la conversación",
     notFoundError: "Conversación no encontrada",
-    notAuthorError: "No eres el facilitador de esta conversación",
+    notAuthorError: "No es el facilitador de esta conversación",
     conversationLockedError:
       "Esta conversación está bloqueada y no se puede editar",
     notFoundErrorTitle: "Conversación no encontrada",
     notFoundErrorMessage: "Error al cargar la conversación",
-    notAuthorErrorTitle: "No eres el facilitador de esta conversación",
+    notAuthorErrorTitle: "No es el facilitador de esta conversación",
     notAuthorErrorMessage: "Solo el facilitador puede editar esta conversación",
     conversationLockedErrorTitle:
       "Esta conversación está bloqueada y no se puede editar",
     conversationLockedErrorMessage:
-      "Por favor contacta a un moderador si necesitas desbloquear esta conversación",
+      "Por favor contacte a un moderador si necesita desbloquear esta conversación",
     invalidAccessSettingsError:
       "Configuración de acceso inválida. No se puede requerir inicio de sesión para conversaciones privadas.",
     loadingErrorTitle: "Error al cargar la conversación",
@@ -119,7 +119,7 @@ export const editConversationTranslations: Record<
       "El acceso premium expiró. Todavía puede actualizar la configuración normal, pero los cambios de contenido premium están deshabilitados.",
     premiumAccessExpiredError: "El acceso premium expiró para este cambio.",
     premiumAccessRequiredError:
-      "Esta configuración no está disponible con tu plan actual.",
+      "Esta configuración no está disponible con su plan actual.",
   },
   fa: {
     saveButton: "ذخیره",

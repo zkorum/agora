@@ -17,7 +17,7 @@ export const featuredConversationBannerTranslations: Record<
   },
   es: {
     message:
-      "Ayuda a dar forma al futuro de Agora Citizen Network — vota por las funciones que construiremos",
+      "Ayude a dar forma al futuro de Agora Citizen Network — vote por las funciones que construiremos",
   },
   fa: { message: "به شکل‌دهی آینده Agora Citizen Network کمک کنید — رأی دهید که کدام ویژگی‌ها را بعداً بسازیم" },
   fr: {

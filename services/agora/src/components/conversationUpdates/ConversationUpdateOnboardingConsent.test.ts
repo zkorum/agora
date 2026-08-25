@@ -89,12 +89,12 @@ describe("ConversationUpdateOnboardingConsent", () => {
 
     expect(text).toContain("Seguir el proyecto por correo");
     expect(text).toContain("redactadas y enviadas por quienes facilitan");
-    expect(text).toContain("permitirte volver a participar");
+    expect(text).toContain("permitirle volver a participar");
     expect(text).toContain("publicidad");
     expect(text).toContain("recaudación de fondos");
     expect(text).toContain("campañas políticas");
     expect(text).toContain("promoción que no esté relacionada");
-    expect(text).toContain("Puedes cambiar esta opción");
+    expect(text).toContain("Puede cambiar esta opción");
   });
 });
 

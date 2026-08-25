@@ -43,14 +43,14 @@ export const emailUpdatePreferencesTranslations = {
     returnHome: "Volver a Agora",
     title: "Preferencia de seguimiento por correo",
     description:
-      "Deja de seguir este proyecto o conversaciones concretas. Este enlace no permite volver a activar el seguimiento por correo.",
+      "Deje de seguir este proyecto o conversaciones concretas. Este enlace no permite volver a activar el seguimiento por correo.",
     project: "Proyecto",
     conversation: "Conversación",
     optOut: "Dejar de recibir",
     optOutTarget: "Dejar de seguir {title} por correo",
     optingOut: "Tramitando la baja",
     optedOut: "Recepción desactivada",
-    submitFailed: "No se ha podido tramitar la baja. Inténtalo de nuevo.",
+    submitFailed: "No se ha podido tramitar la baja. Inténtelo de nuevo.",
   },
   fr: {
     pageTitle: "Préférence de suivi par e-mail",

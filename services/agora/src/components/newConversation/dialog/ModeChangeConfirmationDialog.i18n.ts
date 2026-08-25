@@ -40,7 +40,7 @@ export const modeChangeConfirmationDialogTranslations: Record<
       "Cambiar al modo de importación borrará los siguientes campos del borrador de conversación:",
     title: "Título",
     bodyText: "Texto del cuerpo",
-    settingsPreserved: "Se conservarán tus demás ajustes compatibles.",
+    settingsPreserved: "Se conservarán sus demás ajustes compatibles.",
     cancel: "Cancelar",
     continue: "Continuar",
   },

@@ -248,7 +248,7 @@ export const analysisPageTranslations: Record<
     retryingAnalysis: "Reintentando cargar análisis...",
     analysisErrorTitle: "Error al cargar el análisis",
     analysisErrorMessage:
-      "No se pudieron cargar los datos del análisis. Inténtalo de nuevo.",
+      "No se pudieron cargar los datos del análisis. Inténtelo de nuevo.",
     noAnalysisData:
       "Los datos de análisis no están disponibles para esta conversación",
     retryAnalysis: "Reintentar carga",
@@ -256,7 +256,7 @@ export const analysisPageTranslations: Record<
     report: "Informe",
     analysisViewTitle: "Número de grupos",
     analysisViewSortingCaption:
-      "Elige cómo se muestran los grupos de opinión. Las puntuaciones son solo para el punto de control seleccionado y pueden cambiar.",
+      "Elija cómo se muestran los grupos de opinión. Las puntuaciones son solo para el punto de control seleccionado y pueden cambiar.",
     facilitatorPreference: "Preferencia del facilitador",
     recommendedDefault: "Automático",
     groupsLabel: "{count} grupos",

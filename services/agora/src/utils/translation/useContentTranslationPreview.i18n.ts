@@ -24,11 +24,11 @@ export const contentTranslationPreviewTranslations: Record<
       "أنت تطلب الترجمات بسرعة كبيرة. يرجى الانتظار قليلًا ثم المحاولة مرة أخرى.",
   },
   es: {
-    translationFailed: "La traducción falló. Inténtalo de nuevo más tarde.",
+    translationFailed: "La traducción falló. Inténtelo de nuevo más tarde.",
     translationNotEnabled:
       "La traducción ya no está activada para esta conversación.",
     translationRateLimited:
-      "Estás solicitando traducciones demasiado rápido. Espera un momento e inténtalo de nuevo.",
+      "Está solicitando traducciones demasiado rápido. Espere un momento e inténtelo de nuevo.",
   },
   fa: {
     translationFailed: "ترجمه انجام نشد. لطفاً بعداً دوباره تلاش کنید.",

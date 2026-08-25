@@ -50,7 +50,7 @@ export const conversationLanguageSettingDialogTranslations: Record<
   es: {
     languagesTitle: "Idiomas",
     languagesDescription:
-      "Elige los idiomas que Agora debe admitir en esta conversación.",
+      "Elija los idiomas que Agora debe admitir en esta conversación.",
     languageAutoLabel: "Auto",
     detectedLanguageAfterPublishing:
       "Detectar idioma principal después de publicar",
@@ -61,12 +61,12 @@ export const conversationLanguageSettingDialogTranslations: Record<
     autoDetectUnsupportedDescription:
       "Detectado: {language}. No es compatible con las traducciones.",
     additionalLanguagesEmptyDescription:
-      "Añade hasta 2 idiomas de destino adicionales. Si Auto detecta uno de ellos, cuenta una sola vez.",
+      "Añada hasta 2 idiomas de destino adicionales. Si Auto detecta uno de ellos, cuenta una sola vez.",
     additionalLanguagesDescription:
-      "Elige hasta 2 idiomas de destino adicionales. Si Auto detecta uno de ellos, cuenta una sola vez.",
+      "Elija hasta 2 idiomas de destino adicionales. Si Auto detecta uno de ellos, cuenta una sola vez.",
     dynamicTranslationTitle: "Traducción dinámica",
     dynamicTranslationDescription:
-      "Traduce el título, el cuerpo, las proposiciones y las encuestas a los idiomas seleccionados.",
+      "Traduzca el título, el cuerpo, las proposiciones y las encuestas a los idiomas seleccionados.",
     dynamicTranslationOn: "Activada",
     dynamicTranslationOff: "Desactivada",
     languageSearchPlaceholder: "Buscar idiomas",

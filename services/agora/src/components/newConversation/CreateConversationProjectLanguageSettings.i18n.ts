@@ -52,18 +52,18 @@ export const createConversationProjectLanguageSettingsTranslations: Record<
     projectLabel: "Proyecto",
     noProjectLabel: "Sin proyecto",
     projectSelectionDescription:
-      "Elige el proyecto de la lista al que pertenece esta conversación o no selecciones ningún proyecto.",
+      "Elija el proyecto de la lista al que pertenece esta conversación o no seleccione ningún proyecto.",
     projectLanguagesDescription:
-      "Elige si esta conversación debe heredar la configuración de idioma del proyecto o sobrescribirla.",
+      "Elija si esta conversación debe heredar la configuración de idioma del proyecto o sobrescribirla.",
     inheritProjectLanguagesTitle: "Heredar idiomas del proyecto",
     inheritProjectLanguagesDescription:
-      "Usa la configuración de idioma y traducción del proyecto seleccionado.",
+      "Use la configuración de idioma y traducción del proyecto seleccionado.",
     inheritedProjectLanguagesDescription:
-      "Usa la configuración de idioma del proyecto seleccionado.",
+      "Use la configuración de idioma del proyecto seleccionado.",
     customLanguagesDescription:
       "Configuración de idioma personalizada para esta conversación.",
     noProjectLanguagesDescription:
-      "No hay proyecto seleccionado. Usa configuración de idioma específica para la conversación.",
+      "No hay proyecto seleccionado. Use configuración de idioma específica para la conversación.",
     usingProjectLanguagesDescription:
       "Usando la configuración de idioma de {projectTitle}.",
     overridingProjectLanguagesDescription:

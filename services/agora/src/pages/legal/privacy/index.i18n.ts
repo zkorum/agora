@@ -3043,7 +3043,7 @@ export const privacyPolicyContent = {
           },
           {
             tag: "h3",
-            children: ["Tu perfil de Ágora"],
+            children: ["Su perfil de Ágora"],
           },
           {
             tag: "p",
@@ -3465,7 +3465,7 @@ export const privacyPolicyContent = {
                         children: [
                           {
                             tag: "strong",
-                            children: ["Acciones que tomas"],
+                            children: ["Acciones que toma"],
                           },
                           " (Publicaciones, Opiniones, Respuestas, Reacciones, Encuestas) ",
                         ],
@@ -3696,7 +3696,7 @@ export const privacyPolicyContent = {
         children: [
           {
             tag: "h2",
-            children: ["3. ¿Con quién compartimos tus datos personales?"],
+            children: ["3. ¿Con quién compartimos sus datos personales?"],
           },
           {
             tag: "p",
@@ -3709,7 +3709,7 @@ export const privacyPolicyContent = {
             children: [
               {
                 tag: "li",
-                children: ["Tú;"],
+                children: ["Usted;"],
               },
               {
                 tag: "li",
@@ -3754,12 +3754,12 @@ export const privacyPolicyContent = {
         children: [
           {
             tag: "h2",
-            children: ["4. ¿Cuánto tiempo conservamos tus datos personales?"],
+            children: ["4. ¿Cuánto tiempo conservamos sus datos personales?"],
           },
           {
             tag: "p",
             children: [
-              " 4.1. Tus datos personales sólo serán tratados durante el tiempo necesario para lograr las finalidades descritas anteriormente o, cuando te hayamos solicitado tu consentimiento, hasta que retires tu consentimiento. ",
+              " 4.1. Sus datos personales sólo serán tratados durante el tiempo necesario para lograr las finalidades descritas anteriormente o, cuando le hayamos solicitado su consentimiento, hasta que retire su consentimiento. ",
             ],
           },
           {
@@ -3958,7 +3958,7 @@ export const privacyPolicyContent = {
         children: [
           {
             tag: "h2",
-            children: ["6. Tus derechos respecto a tus datos personales"],
+            children: ["6. Sus derechos respecto a sus datos personales"],
           },
           {
             tag: "p",
@@ -3969,7 +3969,7 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              " 6.2. Dependiendo del tratamiento y de la base jurídica, como interesado tienes una serie de posibilidades para mantener el control sobre tus datos personales: ",
+              " 6.2. Dependiendo del tratamiento y de la base jurídica, como interesado tiene una serie de posibilidades para mantener el control sobre sus datos personales: ",
             ],
           },
           {
@@ -4062,12 +4062,12 @@ export const privacyPolicyContent = {
           },
           {
             tag: "h3",
-            children: ["6.7. Cómo eliminar tu cuenta:"],
+            children: ["6.7. Cómo eliminar su cuenta:"],
           },
           {
             tag: "p",
             children: [
-              " Cuando eliminas tu cuenta, es ",
+              " Cuando elimina su cuenta, es ",
               {
                 tag: "strong",
                 children: ["inmediatamente inaccesible"],
@@ -6573,7 +6573,7 @@ export const privacyPolicyContent = {
             children: [
               {
                 tag: "li",
-                children: ["Toi;"],
+                children: ["Vous;"],
               },
               {
                 tag: "li",

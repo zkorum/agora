@@ -82,7 +82,7 @@ export const checkpointTimelineTestTranslations: Record<
   es: {
     title: "Cronología de puntos de control",
     description:
-      "Prueba la cronología horizontal escalonada con conjuntos pequeños y grandes de puntos de control, estados en vivo o congelados y distintos motivos para los puntos de control.",
+      "Pruebe la cronología horizontal escalonada con conjuntos pequeños y grandes de puntos de control, estados en vivo o congelados y distintos motivos para los puntos de control.",
     smallSet: "Conjunto pequeño",
     manySet: "Muchos puntos de control",
     addCheckpoint: "Añadir punto de control",

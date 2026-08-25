@@ -71,11 +71,11 @@ export const createConversationUpdatesSettingsTranslations: Record<
     enableAriaLabel:
       "Activar Novedades de la conversación para {conversationTitle}",
     inheritsDescription:
-      "Usa el valor predeterminado {defaultValue} de {scopeLabel}.",
+      "Use el valor predeterminado {defaultValue} de {scopeLabel}.",
     manualUpdatesSubtitle:
-      "Envía manualmente novedades ocasionales por correo a quienes se suscriban.",
+      "Envíe manualmente novedades ocasionales por correo a quienes se suscriban.",
     missingContact:
-      "Añade una dirección de correo electrónico de contacto supervisada antes de enviar novedades.",
+      "Añada una dirección de correo electrónico de contacto supervisada antes de enviar novedades.",
     noProjectDefault: "valor predeterminado de Sin proyecto",
     noProjectGroup: "el grupo Sin proyecto",
     off: "Desactivadas",

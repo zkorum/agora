@@ -35,7 +35,7 @@ export const polisUrlInputTranslations: Record<
   es: {
     importTitle: "Importar Conversación desde Polis",
     description:
-      "Pega una URL de Polis a continuación para importar una conversación.",
+      "Pegue una URL de Polis a continuación para importar una conversación.",
     validUrlExamples: "Ejemplos de URL válidas:",
     urlPlaceholder: "ej., https://pol.is/xxxxx",
     polisTerms: "Términos de uso de Pol.is",

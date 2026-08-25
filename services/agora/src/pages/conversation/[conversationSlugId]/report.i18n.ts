@@ -61,7 +61,7 @@ export const reportPageTranslations: Record<
     loadingError: "Error al cargar los datos de la conversación",
     narrowScreenTitle: "Se requiere una pantalla más grande",
     narrowScreenMessage:
-      "Este informe está diseñado para pantallas más grandes. Ábrelo en un ordenador o tableta.",
+      "Este informe está diseñado para pantallas más grandes. Ábralo en un ordenador o tableta.",
     goBack: "Volver",
     allStatementsOrderNewest: "Más recientes primero",
     allStatementsOrderAgreement: "Más aprobadas primero",

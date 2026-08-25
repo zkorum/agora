@@ -16,7 +16,7 @@ export const mutedUsersTranslations: Record<SupportedDisplayLanguageCodes, Muted
   },
   es: {
     title: "Usuarios silenciados",
-    emptyMessage: "No tienes usuarios silenciados",
+    emptyMessage: "No tiene usuarios silenciados",
   },
   fa: { title: "کاربران بی‌صدا شده", emptyMessage: "شما هیچ کاربر بی‌صدا شده‌ای ندارید" },
   fr: {

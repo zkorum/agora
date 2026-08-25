@@ -40,7 +40,7 @@ export const projectEmailUpdatesMenuTranslations: Record<
     saveEnabled: "El seguimiento del proyecto por correo está activado.",
     saveDisabled: "El seguimiento del proyecto por correo está desactivado.",
     saveError:
-      "No se pudo guardar tu preferencia de seguimiento por correo.",
+      "No se pudo guardar su preferencia de seguimiento por correo.",
   },
   fa: {
     projectActions: "اقدامات پروژه",

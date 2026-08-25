@@ -40,7 +40,7 @@ export const analysisPreferenceDialogTranslations: Record<
     groupsDescription:
       "Usar {count} grupos por defecto en la vista de preferencia del facilitador.",
     unavailableDescription:
-      "Esta configuración no está disponible con tu plan actual.",
+      "Esta configuración no está disponible con su plan actual.",
   },
   fa: {
     recommendedDefaultTitle: "خودکار",

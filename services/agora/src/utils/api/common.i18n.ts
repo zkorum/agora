@@ -60,22 +60,22 @@ export const commonApiTranslations: Record<
     timeoutError:
       "Se agotó el tiempo de espera. El servidor está tardando más de lo esperado en responder.",
     networkError:
-      "Error de red. Por favor verifica tu conexión a internet e inténtalo de nuevo.",
+      "Error de red. Por favor verifique su conexión a internet e inténtelo de nuevo.",
     requestCanceled: "La solicitud fue cancelada.",
     invalidRequest:
-      "Solicitud inválida. Por favor verifica tu entrada e inténtalo de nuevo.",
-    serverError: "Error del servidor. Por favor inténtalo de nuevo más tarde.",
+      "Solicitud inválida. Por favor verifique su entrada e inténtelo de nuevo.",
+    serverError: "Error del servidor. Por favor inténtelo de nuevo más tarde.",
     tooManyRedirects:
-      "Demasiadas redirecciones. Por favor contacta soporte si esto continúa.",
+      "Demasiadas redirecciones. Por favor contacte soporte si esto continúa.",
     configurationError:
-      "Error de configuración. Por favor actualiza la página e inténtalo de nuevo.",
+      "Error de configuración. Por favor actualice la página e inténtelo de nuevo.",
     featureNotSupported:
-      "Esta función ya no es compatible. Por favor actualiza tu aplicación.",
+      "Esta función ya no es compatible. Por favor actualice su aplicación.",
     operationNotSupported:
-      "Esta operación no es compatible en tu entorno actual.",
-    invalidUrl: "URL de solicitud inválida. Por favor contacta soporte.",
+      "Esta operación no es compatible en su entorno actual.",
+    invalidUrl: "URL de solicitud inválida. Por favor contacte soporte.",
     unexpectedError:
-      "Ocurrió un error inesperado. Por favor inténtalo de nuevo.",
+      "Ocurrió un error inesperado. Por favor inténtelo de nuevo.",
     noInternetConnection: "Sin conexión a internet",
   },
   fa: {

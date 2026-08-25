@@ -61,11 +61,11 @@ export const commentGroupTranslations: Record<
     loadingOpinions: "Cargando proposiciones...",
     retrying: "Reintentando...",
     opinionsLoadFailed: "No se pudieron cargar las proposiciones",
-    unexpectedErrorRetry: "Algo salió mal. Inténtalo de nuevo.",
+    unexpectedErrorRetry: "Algo salió mal. Inténtelo de nuevo.",
     retryLoadOpinions: "Reintentar carga de proposiciones",
     commentsSection: "Sección con {count} proposiciones",
     navigationHelp:
-      "Usa las teclas de flecha para navegar entre las proposiciones.",
+      "Use las teclas de flecha para navegar entre las proposiciones.",
     firstCommentHighlighted: "La primera proposición está destacada.",
     commentMetadata: "Proposición de {username}, publicada el {date}.",
     highlightedCommentMetadata: "Esta proposición está destacada.",

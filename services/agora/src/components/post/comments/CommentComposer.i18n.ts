@@ -55,9 +55,9 @@ export const commentComposerTranslations: Record<
     opinionWritingGuidelines: "إرشادات كتابة المقترحات",
   },
   es: {
-    placeholder: "Añade tu proposición",
+    placeholder: "Añada su proposición",
     placeholderExpanded:
-      "Enfócate en un solo punto con el que sea fácil estar de acuerdo o en desacuerdo",
+      "Enfóquese en un solo punto con el que sea fácil estar de acuerdo o en desacuerdo",
     postButton: "Publicar",
     conversationLockedError:
       "No se puede crear una proposición porque la conversación está bloqueada",
@@ -65,11 +65,11 @@ export const commentComposerTranslations: Record<
     createOpinionError: "Error al intentar crear una nueva proposición",
     eventTicketRequiredTitle: "Entrada del evento requerida",
     eventTicketRequiredMessage:
-      "Necesitas verificar tu entrada de Devconnect 2025 para participar en esta conversación.",
+      "Necesita verificar su entrada de Devconnect 2025 para participar en esta conversación.",
     exitPromptTitle: "¿Guardar proposición como borrador?",
-    exitPromptDescription: "Tu borrador estará aquí cuando regreses.",
+    exitPromptDescription: "Su borrador estará aquí cuando regrese.",
     validationWarningMultipleIdeas:
-      "Consejo: Esto podría contener múltiples ideas - asegúrate de que los votantes puedan estar claramente de acuerdo o en desacuerdo",
+      "Consejo: Esto podría contener múltiples ideas - asegúrese de que los votantes puedan estar claramente de acuerdo o en desacuerdo",
     opinionWritingGuidelines: "Pautas para escribir proposiciones",
   },
   fa: {

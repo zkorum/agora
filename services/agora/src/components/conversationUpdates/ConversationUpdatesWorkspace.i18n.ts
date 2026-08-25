@@ -125,12 +125,12 @@ export const conversationUpdatesWorkspaceTranslations: Record<
   },
   es: {
     introTitle:
-      "Mantén conectados a los participantes con el trabajo al que se unieron",
+      "Mantenga conectados a los participantes con el trabajo al que se unieron",
     introDescription:
-      "Comparte una novedad concreta sobre las conversaciones seleccionadas, prueba el correo exacto y revisa los envíos aceptados en un solo lugar.",
+      "Comparta una novedad concreta sobre las conversaciones seleccionadas, pruebe el correo exacto y revise los envíos aceptados en un solo lugar.",
     tryAgain: "Intentar de nuevo",
     verifyEmailBanner:
-      "Verifica tu dirección de correo electrónico antes de redactar o probar una novedad. El historial seguirá disponible.",
+      "Verifique su dirección de correo electrónico antes de redactar o probar una novedad. El historial seguirá disponible.",
     verifyEmail: "Verificar correo",
     retry: "Reintentar",
     compose: "Redactar",
@@ -142,11 +142,11 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     audienceSummary: "Actualmente hay {count} destinatarios aptos",
     sendWarning:
       "Primero se envían las copias obligatorias a los responsables. La entrega a los participantes no se puede cancelar una vez aceptada la novedad.",
-    verifyDialogTitle: "¿Verificar tu correo?",
+    verifyDialogTitle: "¿Verificar su correo?",
     continueVerification: "Continuar con la verificación",
     notNow: "Ahora no",
     verifyDialogDescription:
-      "Necesitas una dirección de correo electrónico verificada para redactar novedades y recibir el correo de prueba exacto antes del envío. Volverás aquí después de verificarla.",
+      "Necesita una dirección de correo electrónico verificada para redactar novedades y recibir el correo de prueba exacto antes del envío. Volverá aquí después de verificarla.",
     workspaceUnavailable:
       "Las novedades por correo no están disponibles ahora.",
     audienceEstimateUnavailable:
@@ -155,7 +155,7 @@ export const conversationUpdatesWorkspaceTranslations: Record<
       "El historial de novedades por correo no está disponible ahora.",
     moreHistoryUnavailable:
       "No se pudo cargar más historial de novedades por correo.",
-    queueingTest: "Poniendo en cola tu correo de prueba...",
+    queueingTest: "Poniendo en cola su correo de prueba...",
     testQueued:
       "Prueba en cola. Esperando a que el proveedor de correo la acepte...",
     testQueueUnavailable: "No se pudo poner en cola el correo de prueba.",
@@ -180,21 +180,21 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     sendingDisabled:
       "Las novedades por correo están desactivadas para esta selección.",
     contentInvalid:
-      "El asunto o el mensaje no son válidos. Revisa el contenido e inténtalo de nuevo.",
+      "El asunto o el mensaje no son válidos. Revise el contenido e inténtelo de nuevo.",
     missingContactEmail:
-      "Añade una dirección de correo electrónico de contacto para participantes antes de enviar una prueba.",
+      "Añada una dirección de correo electrónico de contacto para participantes antes de enviar una prueba.",
     verifyBeforeTest:
-      "Verifica una dirección de correo electrónico antes de enviar un correo de prueba.",
+      "Verifique una dirección de correo electrónico antes de enviar un correo de prueba.",
     noEligibleParticipants:
       "Actualmente no hay participantes aptos para recibir este correo.",
     testRateLimited:
-      "Se solicitaron demasiados correos de prueba. Inténtalo de nuevo después de {retryAt}.",
+      "Se solicitaron demasiados correos de prueba. Inténtelo de nuevo después de {retryAt}.",
     successfulTestNotFound:
-      "No se encontró la prueba correcta. Envía otra prueba antes de reintentarlo.",
+      "No se encontró la prueba correcta. Envíe otra prueba antes de reintentarlo.",
     testNotAccepted:
-      "El proveedor de correo no ha aceptado la prueba. Envía otra antes de reintentarlo.",
+      "El proveedor de correo no ha aceptado la prueba. Envíe otra antes de reintentarlo.",
     testUsed:
-      "Esta prueba ya autorizó una novedad. Envía otra antes de reintentarlo.",
+      "Esta prueba ya autorizó una novedad. Envíe otra antes de reintentarlo.",
     deliveryAlreadyActive:
       "Ya hay otra entrega de novedades por correo activa para este proyecto.",
     ownerCopyUnavailable:

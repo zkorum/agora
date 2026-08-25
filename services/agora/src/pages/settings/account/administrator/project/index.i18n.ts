@@ -342,16 +342,16 @@ const es: AdministratorProjectTranslations = {
   bannerIsFullPathLabel: "La ruta del banner del proyecto es una URL completa",
   contentLocalizationsTitle: "Contenido localizado del proyecto",
   contentLocalizationsDescription:
-    "Añade versiones manuales del título, el contenido y, opcionalmente, el banner para los idiomas adicionales del proyecto configurados arriba.",
+    "Añada versiones manuales del título, el contenido y, opcionalmente, el banner para los idiomas adicionales del proyecto configurados arriba.",
   localizationLanguageLabel: "Idioma",
   addLocalizationButton: "Añadir contenido localizado",
   updateLocalizationButton: "Actualizar contenido localizado",
   editLocalizationButton: "Editar",
   noLocalizationLanguagesMessage:
-    "Elige idiomas adicionales para el proyecto antes de añadir contenido localizado.",
+    "Elija idiomas adicionales para el proyecto antes de añadir contenido localizado.",
   machineTranslationPreviewTitle: "Traducción automática disponible",
   machineTranslationPreviewDescription:
-    "Úsala como borrador manual si tiene suficiente calidad o solo necesita pequeños ajustes. Al guardar el proyecto, se aprobará como contenido manual.",
+    "Úsela como borrador manual si tiene suficiente calidad o solo necesita pequeños ajustes. Al guardar el proyecto, se aprobará como contenido manual.",
   useMachineTranslationButton: "Usar como borrador manual",
   machineTranslationIncomplete: "Traducción incompleta",
   attributionsTitle: "Atribuciones públicas de organizaciones",
@@ -362,7 +362,7 @@ const es: AdministratorProjectTranslations = {
   realOrganizationLabel: "Organización existente",
   externalLanguageLabel: "Idioma de la organización externa",
   externalLanguageHint:
-    "Elige el idioma utilizado para el nombre y la descripción de esta organización.",
+    "Elija el idioma utilizado para el nombre y la descripción de esta organización.",
   externalNameLabel: "Nombre de la organización externa",
   externalDescriptionLabel: "Descripción de la organización externa",
   externalWebsiteLabel: "Sitio web de la organización externa",
@@ -384,7 +384,7 @@ const es: AdministratorProjectTranslations = {
   externalOrganizationSource: "Organización externa",
   contactTitle: "Contacto para participantes",
   contactDescription:
-    "Opcional. Si añades datos de contacto, se requiere un nombre de contacto y una dirección de correo electrónico o una página de contacto HTTPS.",
+    "Opcional. Si añade datos de contacto, se requiere un nombre de contacto y una dirección de correo electrónico o una página de contacto HTTPS.",
   contactFirstNameLabel: "Nombre del contacto",
   contactLastNameLabel: "Apellidos del contacto",
   contactRoleLabel: "Nombre del rol del contacto",
@@ -395,26 +395,26 @@ const es: AdministratorProjectTranslations = {
     "La ruta de la imagen del contacto es una URL completa",
   contactOrganizationLabel: "Afiliación organizativa del contacto",
   websiteUrlHint:
-    "Usa una URL HTTPS completa, por ejemplo, https://example.org.",
+    "Use una URL HTTPS completa, por ejemplo, https://example.org.",
   websiteUrlError:
     "La URL del sitio web debe usar HTTPS y no puede contener credenciales incorporadas.",
   createButton: "Crear proyecto",
   manageTitle: "Gestionar proyectos",
   manageDescription:
-    "Edita el slug del proyecto y la configuración de idioma a nivel del proyecto. Cada sección se guarda por separado.",
+    "Edite el slug del proyecto y la configuración de idioma a nivel del proyecto. Cada sección se guarda por separado.",
   selectProjectLabel: "Proyecto",
   projectLinkLabel: "Enlace del proyecto",
   copyProjectLinkLabel: "Copiar enlace del proyecto",
   copyProjectLinkFailed: "No se pudo copiar el enlace del proyecto",
   noProjectsMessage:
-    "Todavía no hay proyectos que gestionar. Primero crea un proyecto.",
+    "Todavía no hay proyectos que gestionar. Primero cree un proyecto.",
   projectLanguageSettingsLabel: "Idiomas del proyecto",
   projectLanguageSettingsDescription:
-    "Configura la traducción dinámica y los idiomas de destino adicionales.",
+    "Configure la traducción dinámica y los idiomas de destino adicionales.",
   projectLanguageEntitlementLoadingDescription:
     "Comprobando el acceso de la organización propietaria a la traducción dinámica...",
   projectLanguageEntitlementRequiredDescription:
-    "Selecciona al menos una organización propietaria con derecho a traducción dinámica para configurar los idiomas del proyecto.",
+    "Seleccione al menos una organización propietaria con derecho a traducción dinámica para configurar los idiomas del proyecto.",
   autoLanguageLabel: "Automático",
   dynamicTranslationEnabledLabel: "Traducción dinámica activada",
   dynamicTranslationDisabledLabel: "Traducción dinámica desactivada",
@@ -424,7 +424,7 @@ const es: AdministratorProjectTranslations = {
   saveSlugButton: "Guardar slug",
   slugWarningTitle: "¿Cambiar el enlace público?",
   slugWarningDescription:
-    "Cambiar este slug puede romper enlaces que ya se hayan visitado o compartido. Continúa solo si estás seguro.",
+    "Cambiar este slug puede romper enlaces que ya se hayan visitado o compartido. Continúe solo si está seguro.",
   confirmSlugChangeButton: "Cambiar slug",
   deleteProjectButton: "Eliminar proyecto",
   deleteProjectTitle: "¿Eliminar proyecto?",
@@ -438,7 +438,7 @@ const es: AdministratorProjectTranslations = {
   changeSlugDangerDescription:
     "Cambiar este slug puede romper enlaces públicos que ya se hayan visitado o compartido.",
   deleteDangerTitle: "Eliminar este proyecto",
-  deleteDangerDescription: "Elimina este proyecto.",
+  deleteDangerDescription: "Elimine este proyecto.",
 };
 
 const fa: AdministratorProjectTranslations = {

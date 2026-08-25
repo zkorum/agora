@@ -55,13 +55,13 @@ export const projectConversationUpdatesActivationTranslations: Record<
     listedDefaultDescription:
       "Las conversaciones de este proyecto heredan esta opción salvo que un responsable la anule.",
     listedDescription:
-      "Define el valor predeterminado de las conversaciones de {projectTitle}.",
+      "Defina el valor predeterminado de las conversaciones de {projectTitle}.",
     missingContact:
-      "Añade una dirección de correo electrónico de contacto supervisada antes de enviar novedades.",
+      "Añada una dirección de correo electrónico de contacto supervisada antes de enviar novedades.",
     noProjectDefaultDescription:
       "Las conversaciones sin proyecto heredan esta opción salvo que un responsable la anule.",
     noProjectDescription:
-      "Define el valor predeterminado de las conversaciones creadas sin un proyecto listado.",
+      "Defina el valor predeterminado de las conversaciones creadas sin un proyecto listado.",
     title: "Novedades por correo",
   },
   fa: {

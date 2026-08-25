@@ -69,23 +69,23 @@ export const exportPageTranslations: Record<
   es: {
     pageTitle: "Exportar Conversación",
     pageDescription:
-      "Descarga una exportación CSV de todas las proposiciones y votos de esta conversación.",
+      "Descargue una exportación CSV de todas las proposiciones y votos de esta conversación.",
     previousExports: "Exportaciones Anteriores",
     conversationLoadError:
-      "Error al cargar los detalles de la conversación. Por favor, inténtalo de nuevo.",
+      "Error al cargar los detalles de la conversación. Por favor, inténtelo de nuevo.",
     exportRequestError:
-      "Error al crear la exportación. Por favor, inténtalo de nuevo.",
+      "Error al crear la exportación. Por favor, inténtelo de nuevo.",
     exportCooldownMinutes:
-      "Período de espera activo. Puedes solicitar otra exportación en {minutes} minuto(s).",
+      "Período de espera activo. Puede solicitar otra exportación en {minutes} minuto(s).",
     exportCooldownSeconds:
-      "Período de espera activo. Puedes solicitar otra exportación en {seconds} segundo(s).",
+      "Período de espera activo. Puede solicitar otra exportación en {seconds} segundo(s).",
     viewConversation: "Ver conversación",
     requestExportAriaLabel: "Solicitar exportación de datos de conversación",
     errorActiveExportInProgress:
-      "Ya hay una exportación en progreso. Por favor, espera a que se complete.",
+      "Ya hay una exportación en progreso. Por favor, espere a que se complete.",
     errorConversationNotFound: "Conversación no encontrada",
     errorNoOpinions:
-      "Esta conversación no tiene proposiciones para exportar. Añade algunas proposiciones primero.",
+      "Esta conversación no tiene proposiciones para exportar. Añada algunas proposiciones primero.",
     errorUnsupportedConversationType:
       "La exportación aún no está disponible para conversaciones de priorización.",
     exportFeatureDisabled: "La función de exportación está deshabilitada",

@@ -20,7 +20,7 @@ export const useCommentQueriesTranslations: Record<
   es: {
     commentDeletedSuccessfully: "Proposición eliminada exitosamente",
     failedToDeleteComment:
-      "Error al eliminar la proposición. Inténtalo de nuevo.",
+      "Error al eliminar la proposición. Inténtelo de nuevo.",
     failedToCreateComment: "No se pudo crear el comentario. Inténtelo de nuevo.",
     failedToCreateCommentWithReason: "No se pudo crear el comentario: {reason}",
   },

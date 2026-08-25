@@ -18,7 +18,7 @@ export const emailUpdateResumeNotificationTranslations: Record<
   },
   es: {
     preferenceSavedAndGlobalResumed:
-      "Las novedades por correo se volvieron a activar globalmente y se guardó tu preferencia.",
+      "Las novedades por correo se volvieron a activar globalmente y se guardó su preferencia.",
   },
   fa: {
     preferenceSavedAndGlobalResumed:

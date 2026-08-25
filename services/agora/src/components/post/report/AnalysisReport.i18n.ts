@@ -105,7 +105,7 @@ export const analysisReportTranslations: Record<
       "¿Qué divide a los participantes entre los grupos de opinión?",
     allStatementsLong: "Todas las afirmaciones",
     surveySubtitle:
-      "Consulta cómo se responde cada pregunta de la encuesta en general o dentro de cada grupo de opinión.",
+      "Consulte cómo se responde cada pregunta de la encuesta en general o dentro de cada grupo de opinión.",
     surveyGroupSubtitle: "Aquí solo se incluyen las respuestas de este grupo de opinión.",
     agreementsSubtitle:
       "Consenso entre grupos, no una mayoría simple. Solo se muestran las más significativas estadísticamente primero.",

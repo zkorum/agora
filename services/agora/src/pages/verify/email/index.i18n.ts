@@ -43,7 +43,7 @@ export const verifyEmailTranslations: Record<
   es: {
     title: "Verificar correo electrónico",
     alreadyHasEmail:
-      "Ya tienes una dirección de correo electrónico vinculada a tu cuenta",
+      "Ya tiene una dirección de correo electrónico vinculada a su cuenta",
     throttled:
       "Demasiados intentos—por favor, espere antes de intentar de nuevo",
     unreachable:

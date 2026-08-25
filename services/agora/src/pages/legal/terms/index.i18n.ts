@@ -1730,7 +1730,7 @@ export const termsOfServiceContent: Record<
                     external: true,
                   },
                   {
-                    text: " si no tienes 18 años o más.",
+                    text: " si no tiene 18 años o más.",
                   },
                 ],
               },
@@ -1801,7 +1801,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "Sujeto a estos Términos, Agora le otorga una licencia no exclusiva, intransferible y revocable para utilizar los Servicios. No puedes:",
+                text: "Sujeto a estos Términos, Agora le otorga una licencia no exclusiva, intransferible y revocable para utilizar los Servicios. No puede:",
               },
             ],
           },
@@ -1920,7 +1920,7 @@ export const termsOfServiceContent: Record<
         ],
       },
       {
-        heading: "4. Tu contenido",
+        heading: "4. Su contenido",
         blocks: [
           {
             type: "paragraph",
@@ -2126,7 +2126,7 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "4. Tu contenido,",
+                    text: "4. Su contenido,",
                   },
                 ],
               },
@@ -2164,7 +2164,7 @@ export const termsOfServiceContent: Record<
             type: "subheading",
             content: [
               {
-                text: "Cómo eliminar tu cuenta:",
+                text: "Cómo eliminar su cuenta:",
               },
             ],
           },
@@ -2210,7 +2210,7 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "Genera una nueva prueba con Rarimo:",
+                    text: "Genere una nueva prueba con Rarimo:",
                     kind: "strong",
                   },
                   {
@@ -2422,7 +2422,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "Queremos que tengas una experiencia positiva en Agora. Si tiene algún problema o disputa, acepta intentar primero resolverlo con nosotros de manera informal. Puede comunicarse con nosotros si tiene algún comentario o inquietud en ",
+                text: "Queremos que tenga una experiencia positiva en Agora. Si tiene algún problema o disputa, acepta intentar primero resolverlo con nosotros de manera informal. Puede comunicarse con nosotros si tiene algún comentario o inquietud en ",
               },
               {
                 text: "legal@zkorum.com",

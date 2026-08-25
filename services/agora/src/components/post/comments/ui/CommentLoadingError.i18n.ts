@@ -19,7 +19,7 @@ export const commentLoadingErrorTranslations: Record<
   },
   es: {
     defaultRetryLabel: "Intentar de nuevo",
-    defaultErrorMessage: "Algo salió mal. Inténtalo de nuevo.",
+    defaultErrorMessage: "Algo salió mal. Inténtelo de nuevo.",
   },
   fa: {
     defaultRetryLabel: "تلاش مجدد",

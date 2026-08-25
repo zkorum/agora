@@ -30,7 +30,7 @@ export const seedOpinionItemTranslations: Record<
     inputTextPlaceholder: "Ingrese texto",
     deleteOpinion: "Eliminar Proposición",
     confirmDeleteMessage:
-      "¿Estás seguro de que quieres eliminar esta proposición?",
+      "¿Está seguro de que desea eliminar esta proposición?",
     confirmDeleteConfirm: "Eliminar",
     confirmDeleteCancel: "Cancelar",
   },

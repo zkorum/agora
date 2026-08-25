@@ -70,9 +70,9 @@ export const commentActionBarTranslations: Record<
     passAriaLabel: "Inseguro sobre esta proposición. Recuento actual:",
     agreeAriaLabel: "De acuerdo con la proposición. Acuerdos actuales:",
     keepVotingToDiscoverGroup:
-      "Vota en al menos {minVotes} proposiciones para ser asignado a un grupo",
-    keepVotingToRefineAnalysis: "Sigue votando para refinar el análisis",
-    assignedGroup: "¡Te han asignado un grupo!",
+      "Vote en al menos {minVotes} proposiciones para ser asignado a un grupo",
+    keepVotingToRefineAnalysis: "Siga votando para refinar el análisis",
+    assignedGroup: "¡Se le ha asignado un grupo!",
     viewAnalysis: "Ver análisis",
   },
   fa: {

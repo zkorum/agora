@@ -32,7 +32,7 @@ export const visibilityOptionsDialogTranslations: Record<
       "Esta conversación será visible para todos los usuarios en el feed principal de Ágora",
     privateTitle: "Privado",
     privateDescription:
-      "Solo visible para aquellos con quienes compartas un enlace o código QR",
+      "Solo visible para aquellos con quienes comparta un enlace o código QR",
   },
   fa: {
     publicTitle: "عمومی",

@@ -189,7 +189,7 @@ export const editSurveyTranslations: Record<
     deleteButton: "Eliminar encuesta",
     title: "Editar encuesta",
     description:
-      "Configura el paso de encuesta que aparece antes de que los participantes puedan votar sobre propuestas o crear nuevas.",
+      "Configure el paso de encuesta que aparece antes de que los participantes puedan votar sobre propuestas o crear nuevas.",
     optionalSurveyToggleLabel:
       "Permitir que los participantes omitan la encuesta",
     optionalSurveyToggleHint:
@@ -200,7 +200,7 @@ export const editSurveyTranslations: Record<
       "Esta pregunta se trata como opcional porque el paso de encuesta se puede omitir.",
     loadError: "No se pudo cargar la configuración de la encuesta.",
     validationError:
-      "Completa todas las preguntas de la encuesta antes de guardar.",
+      "Complete todas las preguntas de la encuesta antes de guardar.",
     saveError: "No se pudo guardar la configuración de la encuesta.",
     deleteError: "No se pudo eliminar la encuesta.",
     confirmDeleteMessage: "¿Eliminar esta encuesta de la conversación?",
@@ -214,7 +214,7 @@ export const editSurveyTranslations: Record<
     noChangesSummary: "Todavía no hay cambios en la encuesta.",
     noSurveyTitle: "Aún no hay encuesta",
     noSurveyDescription:
-      "Agrega preguntas o deja la conversación sin encuesta.",
+      "Agregue preguntas o deje la conversación sin encuesta.",
     questionTitle: "Pregunta {number}",
     removeLabel: "Eliminar",
     questionTypeLabel: "Tipo de pregunta",
@@ -236,17 +236,17 @@ export const editSurveyTranslations: Record<
     choiceDisplayDropdown: "Desplegable con búsqueda",
     questionSemanticChangeLabel: "Invalidar respuestas a esta pregunta",
     questionSemanticChangeHint:
-      "Activa esto cuando la nueva redacción cambie el significado de la pregunta.",
+      "Active esto cuando la nueva redacción cambie el significado de la pregunta.",
     optionSemanticChangeLabel: "Invalidar respuestas que usan esta opción",
     optionSemanticChangeHint:
-      "Activa esto cuando la nueva redacción cambie el significado de esta opción.",
+      "Active esto cuando la nueva redacción cambie el significado de esta opción.",
     confirmRemoveQuestionMessage: "¿Eliminar esta pregunta de la encuesta?",
     confirmRemoveOptionMessage: "¿Eliminar esta opción de la pregunta?",
     confirmRemoveQuestionButtonLabel: "Eliminar pregunta",
     confirmRemoveOptionButtonLabel: "Eliminar opción",
     cancelLabel: "Cancelar",
     largeOptionCountWarning:
-      "Esta pregunta está configurada como Lista y tiene {count} opciones. Considera usar Automático o Desplegable con búsqueda para que los participantes puedan revisar las respuestas más rápido.",
+      "Esta pregunta está configurada como Lista y tiene {count} opciones. Considere usar Automático o Desplegable con búsqueda para que los participantes puedan revisar las respuestas más rápido.",
   },
   fa: {
     saveButton: "ذخیره نظرسنجی",

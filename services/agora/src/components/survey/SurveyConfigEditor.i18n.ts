@@ -89,7 +89,7 @@ export const surveyConfigEditorTranslations: Record<
       "Se aplica por separado al conjunto de participantes y a cada grupo de opinión.",
       `Si alguna opción de esta pregunta tiene 1-${String(maxHiddenResponses)} respuestas contabilizadas, los recuentos y porcentajes públicos de toda la pregunta se ocultan en ese bloque. Las opciones con 0 o ${String(threshold)}+ respuestas no activan la ocultación.`,
       "Las personas facilitadoras aún pueden ver los resultados agregados completos.",
-      "Actívalo para comunidades pequeñas donde las respuestas podrían revelar quién es quién, por ejemplo si solo hay unas pocas mujeres en un equipo o unas pocas personas de un equipo concreto.",
+      "Actívelo para comunidades pequeñas donde las respuestas podrían revelar quién es quién, por ejemplo si solo hay unas pocas mujeres en un equipo o unas pocas personas de un equipo concreto.",
     ],
     publicAggregateSuppressionLearnMoreTitle:
       "Acerca de los resultados públicos ocultos",
@@ -98,7 +98,7 @@ export const surveyConfigEditorTranslations: Record<
     publicAggregateSuppressionConfirmMessage: {
       beforeEmphasis:
         "Después de guardar esta encuesta con resultados públicos ocultos, ",
-      emphasis: "no podrás desactivarlo para esta pregunta",
+      emphasis: "no podrá desactivarlo para esta pregunta",
       afterEmphasis:
         ". Las personas participantes lo verán como una garantía de privacidad.",
     },

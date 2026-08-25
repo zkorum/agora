@@ -179,18 +179,18 @@ const es: AdministratorOrganizationTranslations = {
   manageTab: "Gestionar",
   createTitle: "Crear organización",
   createDescription:
-    "Primero crea el perfil predeterminado de la organización. Después de crearlo, añade traducciones desde la pestaña Gestionar.",
+    "Primero cree el perfil predeterminado de la organización. Después de crearlo, añada traducciones desde la pestaña Gestionar.",
   existingTitle: "Gestionar organizaciones existentes",
   loadingOrganizationsMessage: "Cargando organizaciones...",
   noOrganizationsMessage: "No hay ninguna organización activa registrada.",
   selectOrganizationLabel: "Organización",
   editTitle: "Editar organización",
   editDescription:
-    "Elige un idioma de visualización, edita el perfil localizado correspondiente y, si quieres, establécelo como perfil público predeterminado.",
+    "Elija un idioma de visualización, edite el perfil localizado correspondiente y, si quiere, establézcalo como perfil público predeterminado.",
   saveSlugButton: "Guardar slug",
   slugWarningTitle: "¿Cambiar el enlace público?",
   slugWarningDescription:
-    "Cambiar este slug puede inutilizar enlaces que ya se hayan visitado o compartido. Continúa solo si estás seguro.",
+    "Cambiar este slug puede inutilizar enlaces que ya se hayan visitado o compartido. Continúe solo si está seguro.",
   confirmSlugChangeButton: "Cambiar slug",
   languageLabel: "Idioma de visualización",
   defaultLanguageLabel:
@@ -200,10 +200,10 @@ const es: AdministratorOrganizationTranslations = {
   descriptionLabel: "Descripción",
   imagePathLabel: "Ruta de la imagen",
   imagePathHint:
-    "Usa un nombre de archivo de imagen como avatar_default_0.png o una URL HTTPS completa.",
+    "Use un nombre de archivo de imagen como avatar_default_0.png o una URL HTTPS completa.",
   websiteUrlLabel: "URL del sitio web",
   websiteUrlHint:
-    "Usa una URL HTTPS completa, por ejemplo https://example.org.",
+    "Use una URL HTTPS completa, por ejemplo https://example.org.",
   websiteUrlError:
     "La URL del sitio web debe usar HTTPS y no puede contener credenciales incrustadas.",
   createButton: "Crear organización",
@@ -214,17 +214,17 @@ const es: AdministratorOrganizationTranslations = {
   deleteConfirmMessage: "Esto eliminará esta organización.",
   addMemberTitle: "Membresías",
   membershipDescription:
-    "Añade un nombre de usuario a la organización seleccionada.",
+    "Añada un nombre de usuario a la organización seleccionada.",
   usernameLabel: "Nombre de usuario",
   addUserButton: "Añadir usuario",
   removeUserButton: "Quitar usuario",
   memberListTitle: "Miembros de la organización",
   memberListDescription:
-    "Obtén la lista actual de miembros y después quita usuarios directamente de ella.",
+    "Obtenga la lista actual de miembros y después quite usuarios directamente de ella.",
   fetchMembersButton: "Obtener miembros",
   noMembersMessage: "No se encontraron miembros en esta organización.",
   localizationMissingHint:
-    "Todavía no hay ninguna localización guardada para este idioma. El formulario se ha rellenado previamente con el perfil predeterminado para que puedas traducirlo rápidamente.",
+    "Todavía no hay ninguna localización guardada para este idioma. El formulario se ha rellenado previamente con el perfil predeterminado para que pueda traducirlo rápidamente.",
   defaultLanguageBadge: "Predeterminado",
   localizationReadyBadge: "Guardado",
   localizationMissingBadge: "Falta",
@@ -233,7 +233,7 @@ const es: AdministratorOrganizationTranslations = {
   changeSlugDangerDescription:
     "Cambiar este slug puede inutilizar enlaces públicos que ya se hayan visitado o compartido.",
   deleteDangerTitle: "Eliminar esta organización",
-  deleteDangerDescription: "Elimina esta organización.",
+  deleteDangerDescription: "Elimine esta organización.",
 };
 
 const fa: AdministratorOrganizationTranslations = {

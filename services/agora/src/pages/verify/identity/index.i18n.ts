@@ -24,8 +24,8 @@ export const verifyIdentityTranslations: Record<
     verifyWithPhone: "التحقق برقم الهاتف",
   },
   es: {
-    title: "Verifica tu identidad",
-    description: "Elige un método de verificación",
+    title: "Verifique su identidad",
+    description: "Elija un método de verificación",
     verifyWithRarimo: "Verificar con Rarimo",
     verifyWithPhone: "Verificar con número de teléfono",
   },

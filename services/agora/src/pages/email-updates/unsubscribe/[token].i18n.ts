@@ -45,16 +45,16 @@ export const emailUpdateUnsubscribeTranslations = {
     returnHome: "Volver a Agora",
     title: "¿Dejar de recibir novedades por correo?",
     projectDescription:
-      "Deja de recibir las novedades del proyecto «{title}» en todas las conversaciones indicadas.",
+      "Deje de recibir las novedades del proyecto «{title}» en todas las conversaciones indicadas.",
     conversationDescription:
-      "Deja de recibir las novedades de la conversación «{title}».",
+      "Deje de recibir las novedades de la conversación «{title}».",
     conversationsDescription:
-      "Deja de recibir las novedades de todas las conversaciones incluidas en este correo.",
+      "Deje de recibir las novedades de todas las conversaciones incluidas en este correo.",
     confirm: "Confirmar la baja",
     submitting: "Tramitando la baja",
-    submitFailed: "No hemos podido darte de baja. Inténtalo de nuevo.",
-    successTitle: "Te has dado de baja",
-    successDescription: "Ya no recibirás estas novedades por correo.",
+    submitFailed: "No hemos podido darle de baja. Inténtelo de nuevo.",
+    successTitle: "Se ha dado de baja",
+    successDescription: "Ya no recibirá estas novedades por correo.",
   },
   fr: {
     pageTitle: "Se désabonner des nouvelles par e-mail",

@@ -166,7 +166,7 @@ export const conversationSurveyOnboardingTranslations: Record<
     currentStatusLabel: "Estado actual",
     welcomeTitle: "Bienvenido",
     welcomeDescription:
-      "Completa el flujo de acceso de esta conversación antes de participar.",
+      "Complete el flujo de acceso de esta conversación antes de participar.",
     surveyStatusLoading: "Cargando",
     surveyStatusComplete: "Completa",
     surveyStatusNeedsUpdate: "Necesita actualización",
@@ -175,37 +175,37 @@ export const conversationSurveyOnboardingTranslations: Record<
     surveyStatusNotStarted: "No iniciada",
     surveyStatusNoSurvey: "Sin encuesta",
     surveyUnavailableTitle: "Encuesta no disponible",
-    verifyAccountTitle: "Verifica tu cuenta primero",
-    verifyTicketTitle: "Verifica tu boleto primero",
+    verifyAccountTitle: "Verifique su cuenta primero",
+    verifyTicketTitle: "Verifique su boleto primero",
     ticketVerifiedTitle: "Boleto verificado",
     surveyCompleteTitle: "Encuesta completada",
-    surveyUpdateTitle: "Actualiza tu encuesta",
-    surveyWithdrawnTitle: "Reanuda tu encuesta",
-    surveyInProgressTitle: "Continúa tu encuesta",
+    surveyUpdateTitle: "Actualice su encuesta",
+    surveyWithdrawnTitle: "Reanude su encuesta",
+    surveyInProgressTitle: "Continúe su encuesta",
     optionalSurveyTitle: "Encuesta opcional",
     requiredSurveyTitle: "Encuesta obligatoria",
     surveyUnavailableDescription:
       "Esta conversación no tiene actualmente una encuesta.",
     verifyAccountDescription:
-      "Completa el inicio de sesión o la verificación requerida antes de abrir la encuesta.",
+      "Complete el inicio de sesión o la verificación requerida antes de abrir la encuesta.",
     verifyTicketDescription:
-      "Verifica tu boleto del evento antes de continuar a la encuesta.",
+      "Verifique su boleto del evento antes de continuar a la encuesta.",
     ticketVerifiedDescription:
-      "Tu boleto del evento está verificado para esta conversación.",
+      "Su boleto del evento está verificado para esta conversación.",
     surveyCompleteDescription:
-      "Tus respuestas guardadas son válidas para esta conversación.",
+      "Sus respuestas guardadas son válidas para esta conversación.",
     surveyUpdateDescription:
-      "Esta encuesta cambió desde tus últimas respuestas guardadas.",
+      "Esta encuesta cambió desde sus últimas respuestas guardadas.",
     surveyWithdrawnDescription:
-      "Puedes reabrir la encuesta y volver a responder en cualquier momento.",
+      "Puede reabrir la encuesta y volver a responder en cualquier momento.",
     surveyInProgressAvailableDescription:
-      "Puedes continuar o revisar tus respuestas guardadas.",
+      "Puede continuar o revisar sus respuestas guardadas.",
     surveyInProgressRequiredDescription:
-      "Termina la encuesta para desbloquear la participación en esta conversación.",
+      "Termine la encuesta para desbloquear la participación en esta conversación.",
     surveyNotStartedAvailableDescription:
-      "Esta conversación tiene una encuesta opcional que puedes abrir cuando quieras.",
+      "Esta conversación tiene una encuesta opcional que puede abrir cuando quiera.",
     surveyNotStartedRequiredDescription:
-      "Completa la encuesta antes de participar en esta conversación.",
+      "Complete la encuesta antes de participar en esta conversación.",
     backToConversationLabel: "Volver a la conversación",
     continueLabel: "Continuar",
     verifyTicketLabel: "Verificar boleto",

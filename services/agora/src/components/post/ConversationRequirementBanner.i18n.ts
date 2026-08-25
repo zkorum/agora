@@ -126,9 +126,9 @@ export const conversationRequirementBannerTranslations: Record<
     startSurveyLabel: "بدء الاستبيان",
   },
   es: {
-    requiredAccessTitle: "Completa los pasos requeridos",
+    requiredAccessTitle: "Complete los pasos requeridos",
     requiredAccessMessage:
-      "Completa los pasos de acceso requeridos y luego continúa a la encuesta.",
+      "Complete los pasos de acceso requeridos y luego continúe a la encuesta.",
     surveyAvailableTitle: "Encuesta disponible",
     surveyCompleteTitle: "Encuesta completada",
     surveyUpdateTitle: "La encuesta necesita actualización",
@@ -140,27 +140,27 @@ export const conversationRequirementBannerTranslations: Record<
     ticketRequiredTitle: "Se requiere verificación del boleto",
     ticketVerifiedTitle: "Boleto verificado",
     openViaOnboardingMessage:
-      "Continúa por el flujo de acceso para abrir la encuesta de esta conversación.",
+      "Continúe por el flujo de acceso para abrir la encuesta de esta conversación.",
     verifyTicketMessage:
-      "Verifica primero tu boleto del evento y luego continúa a la encuesta.",
+      "Verifique primero su boleto del evento y luego continúe a la encuesta.",
     ticketRequiredMessage:
-      "Verifica tu boleto del evento antes de participar en esta conversación.",
+      "Verifique su boleto del evento antes de participar en esta conversación.",
     ticketVerifiedMessage:
-      "Tu boleto del evento está verificado para esta conversación.",
+      "Su boleto del evento está verificado para esta conversación.",
     surveyUpToDateMessage:
-      "Tus respuestas están actualizadas para esta conversación.",
+      "Sus respuestas están actualizadas para esta conversación.",
     surveyChangedMessage:
-      "Esta encuesta cambió. Actualiza tus respuestas para seguir participando.",
+      "Esta encuesta cambió. Actualice sus respuestas para seguir participando.",
     surveyWithdrawnMessage:
-      "Reanuda la encuesta si quieres participar de nuevo.",
+      "Reanude la encuesta si quiere participar de nuevo.",
     surveyInProgressAvailableMessage:
-      "Puedes continuar o revisar tus respuestas guardadas en cualquier momento.",
+      "Puede continuar o revisar sus respuestas guardadas en cualquier momento.",
     surveyInProgressRequiredMessage:
-      "Continúa la encuesta para desbloquear la participación en esta conversación.",
+      "Continúe la encuesta para desbloquear la participación en esta conversación.",
     optionalSurveyMessage:
-      "Esta conversación tiene una encuesta que puedes completar cuando quieras.",
+      "Esta conversación tiene una encuesta que puede completar cuando quiera.",
     requiredSurveyMessage:
-      "Completa la encuesta antes de participar en esta conversación.",
+      "Complete la encuesta antes de participar en esta conversación.",
     continueLabel: "Continuar",
     reviewAnswersLabel: "Revisar respuestas",
     updateAnswersLabel: "Actualizar respuestas",

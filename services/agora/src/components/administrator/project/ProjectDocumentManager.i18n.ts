@@ -98,10 +98,10 @@ export const projectDocumentManagerTranslations: Readonly<
     ...en,
     title: "Documentos del proyecto",
     description:
-      "Sube documentos restringidos a participantes e indica un nombre en cada idioma pertinente.",
-    publicationWarningTitle: "Revisa antes de publicar",
+      "Suba documentos restringidos a participantes e indique un nombre en cada idioma pertinente.",
+    publicationWarningTitle: "Revise antes de publicar",
     publicationWarningBody:
-      "Los archivos para participantes se pueden descargar. No incluyas nombres, datos de contacto, identificadores de cuenta o participante, votos o respuestas sin agregar, grupos demográficos pequeños, secretos ni datos ocultos sin anonimizar. El HTML puede ejecutar scripts, pero los recursos remotos y las solicitudes de red están bloqueados; sube solo informes autónomos de confianza. Aplica el mismo cuidado a los archivos privados.",
+      "Los archivos para participantes se pueden descargar. No incluya nombres, datos de contacto, identificadores de cuenta o participante, votos o respuestas sin agregar, grupos demográficos pequeños, secretos ni datos ocultos sin anonimizar. El HTML puede ejecutar scripts, pero los recursos remotos y las solicitudes de red están bloqueados; suba solo informes autónomos de confianza. Aplique el mismo cuidado a los archivos privados.",
     participantFileLabel: "Archivo anonimizado para participantes",
     participantFileHint:
       "Obligatorio. Disponible solo para participantes identificados y responsables del proyecto.",
@@ -123,8 +123,8 @@ export const projectDocumentManagerTranslations: Readonly<
     deleteComplete: "Documento eliminado",
     deleteFailed: "No se pudo eliminar el documento",
     ownerVersionAvailable: "Incluye una versión privada para responsables",
-    invalidFile: "Elige un archivo no vacío en un formato compatible.",
-    invalidName: "Indica un nombre para el documento en cada idioma.",
+    invalidFile: "Elija un archivo no vacío en un formato compatible.",
+    invalidName: "Indique un nombre para el documento en cada idioma.",
     mismatchedFiles: "Ambos archivos deben usar la misma extensión.",
     invalidDownloadFileName:
       "Cada nombre de descarga debe conservar la extensión del archivo.",

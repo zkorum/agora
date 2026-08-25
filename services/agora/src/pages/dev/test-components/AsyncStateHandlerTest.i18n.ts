@@ -73,7 +73,7 @@ export const asyncStateHandlerTestTranslations: Record<
   es: {
     asyncStateHandler: "Manejador de Estado Asíncrono",
     asyncStateHandlerDescription:
-      "Prueba el componente AsyncStateHandler con diferentes estados asíncronos, personalizaciones y anulaciones de slots para ver cómo maneja los estados de carga, error, vacío y éxito.",
+      "Pruebe el componente AsyncStateHandler con diferentes estados asíncronos, personalizaciones y anulaciones de slots para ver cómo maneja los estados de carga, error, vacío y éxito.",
     simulateLoading: "Cargando",
     simulateError: "Error",
     simulateEmpty: "Vacío",

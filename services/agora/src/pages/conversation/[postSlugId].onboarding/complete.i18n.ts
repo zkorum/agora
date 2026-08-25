@@ -51,17 +51,17 @@ export const conversationSurveyCompleteTranslations: Record<
   },
   es: {
     title: "Respuestas guardadas",
-    description: "Ahora puedes votar en proposiciones en esta consulta.",
-    emailUpdateTitle: "Te damos la bienvenida a la conversación",
+    description: "Ahora puede votar en proposiciones en esta consulta.",
+    emailUpdateTitle: "Le damos la bienvenida a la conversación",
     emailUpdateDescription:
-      "Elige tu preferencia de seguimiento por correo antes de continuar.",
+      "Elija su preferencia de seguimiento por correo antes de continuar.",
     continueLabel: "Continuar",
     reviewAnswersLabel: "Ver mis respuestas",
     emailUpdateSummaryLoadError:
-      "No se pudo cargar tu preferencia de seguimiento por correo. Puedes reintentar o continuar sin guardarla.",
+      "No se pudo cargar su preferencia de seguimiento por correo. Puede reintentar o continuar sin guardarla.",
     retryLabel: "Intentar de nuevo",
     emailUpdatePreferenceSaveError:
-      "No se pudo guardar tu preferencia de seguimiento por correo. Inténtalo de nuevo.",
+      "No se pudo guardar su preferencia de seguimiento por correo. Inténtelo de nuevo.",
     continueWithoutSavingLabel:
       "Continuar sin guardar la preferencia de seguimiento por correo",
   },

@@ -33,9 +33,9 @@ export const conversationUpdateOnboardingConsentTranslations: Record<
     projectLabel: "Seguir el proyecto por correo",
     conversationLabel: "Seguir la conversación por correo",
     projectDescription:
-      "Estas novedades son redactadas y enviadas por quienes facilitan el proyecto para mantenerte al día y permitirte volver a participar. No se permite publicidad, recaudación de fondos, campañas políticas ni promoción que no esté relacionada con el proyecto. Puedes cambiar esta opción cuando quieras en los ajustes de correo.",
+      "Estas novedades son redactadas y enviadas por quienes facilitan el proyecto para mantenerle al día y permitirle volver a participar. No se permite publicidad, recaudación de fondos, campañas políticas ni promoción que no esté relacionada con el proyecto. Puede cambiar esta opción cuando quiera en los ajustes de correo.",
     conversationDescription:
-      "Estas novedades son redactadas y enviadas por quienes facilitan la conversación para mantenerte al día y permitirte volver a participar. No se permite publicidad, recaudación de fondos, campañas políticas ni promoción que no esté relacionada con la conversación. Puedes cambiar esta opción cuando quieras en los ajustes de correo.",
+      "Estas novedades son redactadas y enviadas por quienes facilitan la conversación para mantenerle al día y permitirle volver a participar. No se permite publicidad, recaudación de fondos, campañas políticas ni promoción que no esté relacionada con la conversación. Puede cambiar esta opción cuando quiera en los ajustes de correo.",
   },
   fa: {
     projectLabel: "گاهی به‌روزرسانی‌های این پروژه را برایم ایمیل کن",

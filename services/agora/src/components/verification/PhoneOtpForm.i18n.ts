@@ -86,7 +86,7 @@ export const phoneOtpFormTranslations: Record<
     restrictedPhoneType:
       "Lo siento, este número de teléfono no es compatible por razones de seguridad. Por favor, pruebe con otro.",
     alreadyHasCredential:
-      "Ya tienes un número de teléfono vinculado a tu cuenta",
+      "Ya tiene un número de teléfono vinculado a su cuenta",
   },
   fa: {
     instructions: "کد ۶ رقمی ارسال شده به شماره تلفن را وارد کنید",

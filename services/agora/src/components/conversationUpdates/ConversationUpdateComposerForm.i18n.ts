@@ -104,10 +104,10 @@ export const conversationUpdateComposerFormTranslations: Record<
   },
   es: {
     composeUpdate: "Redactar una novedad",
-    heading: "Escribe una vez y envía con el contexto de cada participante",
+    heading: "Escriba una vez y envíe con el contexto de cada participante",
     testDialogTitle: "¿Enviar este correo de prueba?",
     testEmailNotice:
-      "Esta prueba se envía únicamente a la persona facilitadora en {email}. Nadie más recibirá nada hasta que envíes la novedad real.",
+      "Esta prueba se envía únicamente a la persona facilitadora en {email}. Nadie más recibirá nada hasta que envíe la novedad real.",
     cancel: "Cancelar",
     zeroAudienceWarning:
       "Actualmente no hay participantes que puedan recibir este correo. Las opciones de prueba y envío estarán disponibles cuando haya al menos una persona participante elegible.",
@@ -115,9 +115,9 @@ export const conversationUpdateComposerFormTranslations: Record<
     subjectHint: "Máximo de {max} caracteres Unicode",
     messageLabel: "Mensaje",
     editorPlaceholder:
-      "Posibles novedades:\n• Comparte resultados\n• Comparte cambios recientes\n• Destaca nuevas propuestas\n• Invita a volver y votar las propuestas añadidas recientemente para mejorar el análisis a medida que aumenta la participación\n\nRecuerda: este correo se enviará a todas las personas participantes elegibles, tanto si respondieron a algunas propuestas como si no respondieron a ninguna.\n\nLos enlaces a las conversaciones seleccionadas se añaden automáticamente al final del correo, usando sus páginas de proyecto cuando corresponda. No necesitas incluirlos aquí, aunque puedes hacerlo.",
+      "Posibles novedades:\n• Comparta resultados\n• Comparta cambios recientes\n• Destaque nuevas propuestas\n• Invite a volver y votar las propuestas añadidas recientemente para mejorar el análisis a medida que aumenta la participación\n\nRecuerde: este correo se enviará a todas las personas participantes elegibles, tanto si respondieron a algunas propuestas como si no respondieron a ninguna.\n\nLos enlaces a las conversaciones seleccionadas se añaden automáticamente al final del correo, usando sus páginas de proyecto cuando corresponda. No necesita incluirlos aquí, aunque puede hacerlo.",
     policyWarning:
-      "Limita esta novedad estrictamente a las conversaciones seleccionadas. No se permiten la publicidad, la recaudación de fondos, las campañas políticas ni la promoción no relacionada.",
+      "Limite esta novedad estrictamente a las conversaciones seleccionadas. No se permiten la publicidad, la recaudación de fondos, las campañas políticas ni la promoción no relacionada.",
     contentConfirmation:
       "Confirmo que esta novedad cumple las reglas de contenido de las novedades por correo",
     ownerCopySingular:
@@ -125,9 +125,9 @@ export const conversationUpdateComposerFormTranslations: Record<
     ownerCopyPlural:
       "La novedad real llegará a las personas participantes elegibles y a {count} responsables de proyecto autorizados. Quien pertenezca a ambos grupos recibirá una sola copia como responsable.",
     testPassed:
-      "Esta versión exacta del correo superó la prueba. Si cambias el alcance, la dirección de respuesta, el asunto o el mensaje, tendrás que realizar otra prueba correctamente.",
+      "Esta versión exacta del correo superó la prueba. Si cambia el alcance, la dirección de respuesta, el asunto o el mensaje, tendrá que realizar otra prueba correctamente.",
     testRequired:
-      "Envía correctamente un correo de prueba de esta versión exacta antes de revisar el envío real.",
+      "Envíe correctamente un correo de prueba de esta versión exacta antes de revisar el envío real.",
     sendAnotherTest: "Enviar otro correo de prueba",
     sendTest: "Enviar correo de prueba",
     reviewAndSend: "Revisar y enviar",

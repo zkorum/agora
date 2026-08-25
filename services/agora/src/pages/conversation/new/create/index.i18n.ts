@@ -86,7 +86,7 @@ export const createConversationTranslations: Record<
     organizationUnavailable:
       "La organización seleccionada ya no está disponible.",
     missingProjectCreateCapability:
-      "No tienes permiso para crear conversaciones en los proyectos listados de esta organización.",
+      "No tiene permiso para crear conversaciones en los proyectos listados de esta organización.",
     missingRequiredCsvFiles: "Faltan los archivos CSV obligatorios",
     csvImportError: "Error al importar la conversación desde CSV",
     polisImportError: "Error al intentar importar la conversación desde Polis",

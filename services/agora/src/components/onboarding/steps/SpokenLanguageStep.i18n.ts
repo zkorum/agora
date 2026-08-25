@@ -18,7 +18,7 @@ export const spokenLanguageStepTranslations: Record<
     nextButton: "التالي",
   },
   es: {
-    title: "¿Qué idiomas hablas?",
+    title: "¿Qué idiomas habla?",
     nextButton: "Siguiente",
   },
   fa: {

@@ -63,16 +63,16 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     tryAgain: "Intentar de nuevo",
     receiveEmailUpdates: "Recibir novedades por correo",
     updatesOnDescription:
-      "Recibirás novedades de los proyectos y las conversaciones que hayas seleccionado.",
+      "Recibirá novedades de los proyectos y las conversaciones que haya seleccionado.",
     updatesPausedDescription:
-      "Todas las novedades por correo están pausadas. Tus opciones de proyectos y conversaciones siguen guardadas.",
+      "Todas las novedades por correo están pausadas. Sus opciones de proyectos y conversaciones siguen guardadas.",
     empty:
       "Ninguna preferencia de seguimiento por correo coincide con esta búsqueda.",
     projects: "Proyectos",
     noProject: "Sin proyecto",
     loadMore: "Cargar más",
     verifiedEmailRequired:
-      "Verifica una dirección de correo electrónico antes de cambiar tu preferencia de seguimiento por correo.",
+      "Verifique una dirección de correo electrónico antes de cambiar su preferencia de seguimiento por correo.",
     preferencesUnavailable:
       "Las preferencias de seguimiento por correo no están disponibles ahora.",
     morePreferencesUnavailable:
@@ -84,7 +84,7 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     preferenceOffSaved:
       "Preferencia de seguimiento por correo guardada: desactivada.",
     savePreferenceError:
-      "No se pudo guardar tu preferencia de seguimiento por correo.",
+      "No se pudo guardar su preferencia de seguimiento por correo.",
   },
   fr: {
     sectionDescription:

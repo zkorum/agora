@@ -103,29 +103,29 @@ export const conversationSurveyQuestionTranslations: Record<
     needsUpdateLabel: "Necesita actualización",
     requiredLabel: "Obligatoria",
     optionalLabel: "Opcional",
-    selectOptionLabel: "Selecciona una opción",
-    writeAnswerPlaceholder: "Escribe tu respuesta",
+    selectOptionLabel: "Seleccione una opción",
+    writeAnswerPlaceholder: "Escriba su respuesta",
     previousLabel: "Anterior",
     finishLaterLabel: "Terminar después",
     nextLabel: "Siguiente",
     reviewAnswersLabel: "Revisar respuestas",
     multiChoiceBetweenDescription:
-      "Elige entre {min} y {max} opciones.",
-    multiChoiceAtLeastDescription: "Elige al menos {min} opciones.",
+      "Elija entre {min} y {max} opciones.",
+    multiChoiceAtLeastDescription: "Elija al menos {min} opciones.",
     optionalMultiChoiceBetweenDescription:
-      "Déjalo en blanco o elige entre {min} y {max} opciones.",
+      "Déjelo en blanco o elija entre {min} y {max} opciones.",
     optionalMultiChoiceAtLeastDescription:
-      "Déjalo en blanco o elige al menos {min} opciones.",
-    chooseOneOptionDescription: "Elige una opción.",
-    chooseZeroOrOneOptionDescription: "Elige cero o una opción.",
+      "Déjelo en blanco o elija al menos {min} opciones.",
+    chooseOneOptionDescription: "Elija una opción.",
+    chooseZeroOrOneOptionDescription: "Elija cero o una opción.",
     publicAggregateSuppressionNotice:
       "Los resultados públicos pueden ocultar grupos muy pequeños para proteger la privacidad de los participantes.",
-    writeAnswerDescription: "Escribe tu respuesta abajo.",
+    writeAnswerDescription: "Escriba su respuesta abajo.",
     freeTextHelp:
       "{count} / {max} caracteres. Mínimo {min} al responder.",
     conversationClosedMessage:
       "Esta conversación ya no está abierta para participar.",
-    failedToSaveAnswerMessage: "No se pudo guardar tu respuesta.",
+    failedToSaveAnswerMessage: "No se pudo guardar su respuesta.",
   },
   fa: {
     failedToLoadSurveyTitle: "بارگیری نظرسنجی انجام نشد",

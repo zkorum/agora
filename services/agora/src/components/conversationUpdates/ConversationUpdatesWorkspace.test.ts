@@ -274,7 +274,7 @@ describe("ConversationUpdatesWorkspace", () => {
     await flushAudienceEstimate();
 
     expect(container.textContent).toContain(
-      "Mantén conectados a los participantes con el trabajo al que se unieron"
+      "Mantenga conectados a los participantes con el trabajo al que se unieron"
     );
     expect(container.textContent).toContain("Redactar");
     expect(container.textContent).toContain("Historial");
@@ -301,7 +301,7 @@ describe("ConversationUpdatesWorkspace", () => {
     await flushPromises();
 
     expect(showNotifyMessage).toHaveBeenCalledWith(
-      `Se solicitaron demasiados correos de prueba. Inténtalo de nuevo después de ${retryAt.toLocaleString("es")}.`
+      `Se solicitaron demasiados correos de prueba. Inténtelo de nuevo después de ${retryAt.toLocaleString("es")}.`
     );
   });
 

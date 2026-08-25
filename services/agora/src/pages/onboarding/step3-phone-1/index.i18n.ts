@@ -47,7 +47,7 @@ export const phoneOnboardingTranslations: Record<
     pageTitle: "Verificar con número de teléfono",
     preferPrivateLogin: "Prefiero iniciar sesión con privacidad completa",
     preferEmailLogin: "Prefiero usar mi correo electrónico",
-    alreadyHasPhone: "Ya tienes un número de teléfono vinculado a tu cuenta",
+    alreadyHasPhone: "Ya tiene un número de teléfono vinculado a su cuenta",
     throttled:
       "Demasiados intentos—por favor, espere antes de intentar de nuevo",
     invalidPhoneNumber:

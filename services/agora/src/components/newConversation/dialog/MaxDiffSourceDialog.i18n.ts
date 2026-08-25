@@ -25,10 +25,10 @@ export const maxDiffSourceDialogTranslations: Record<
   },
   es: {
     manualTitle: "Manual",
-    manualDescription: "Añade proposiciones para clasificarlas manualmente",
+    manualDescription: "Añada proposiciones para clasificarlas manualmente",
     githubTitle: "GitHub",
     githubDescription:
-      "Importa elementos de incidencias de GitHub con una etiqueta específica",
+      "Importe elementos de incidencias de GitHub con una etiqueta específica",
   },
   fa: {
     manualTitle: "دستی",

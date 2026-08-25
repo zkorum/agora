@@ -29,7 +29,7 @@ export const verifyHardTranslations: Record<
   es: {
     title: "Iniciar sesión",
     description:
-      "Verifica una credencial para participar en esta conversación",
+      "Verifique una credencial para participar en esta conversación",
     verifyWithRarimo: "Iniciar sesión con Rarimo",
     verifyWithPhone: "Iniciar sesión con número de teléfono",
     verifyWithEmail: "Iniciar sesión con correo electrónico",

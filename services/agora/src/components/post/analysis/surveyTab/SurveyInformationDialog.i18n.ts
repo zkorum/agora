@@ -22,7 +22,7 @@ export const surveyInformationDialogTranslations: Record<
   es: {
     title: "Encuesta",
     description:
-      "Esta pestaña muestra cómo respondieron a cada pregunta las personas incluidas en el análisis seleccionado. Los resultados generales combinan a esas personas y, cuando existen grupos de opinión, puedes comparar respuestas por grupo.\n\nSi la supresión por privacidad está activada para una pregunta, los resultados públicos ocultan grupos muy pequeños en todos los puntos de control. Las personas propietarias pueden alternar entre la vista pública suprimida y la vista agregada completa.\n\nUna vez activada para una pregunta, la supresión por privacidad no puede desactivarse, para que las personas participantes puedan confiar en esa garantía pública de privacidad.",
+      "Esta pestaña muestra cómo respondieron a cada pregunta las personas incluidas en el análisis seleccionado. Los resultados generales combinan a esas personas y, cuando existen grupos de opinión, puede comparar respuestas por grupo.\n\nSi la supresión por privacidad está activada para una pregunta, los resultados públicos ocultan grupos muy pequeños en todos los puntos de control. Las personas propietarias pueden alternar entre la vista pública suprimida y la vista agregada completa.\n\nUna vez activada para una pregunta, la supresión por privacidad no puede desactivarse, para que las personas participantes puedan confiar en esa garantía pública de privacidad.",
   },
   fa: {
     title: "نظرسنجی",

@@ -32,11 +32,11 @@ export const meTabTranslations: Record<
   },
   es: {
     whereDoIStandTitle: "¿Dónde me sitúo?",
-    notAssignedToGroup: "No estás asignado a ningún grupo",
-    youAgreeWith: "Estás de acuerdo con",
-    voteToUnlock: "Vota más proposiciones para desbloquear",
-    keepVotingToRefineAnalysis: "Sigue votando para refinar el análisis",
-    voteMore: "Vota más",
+    notAssignedToGroup: "No está asignado a ningún grupo",
+    youAgreeWith: "Está de acuerdo con",
+    voteToUnlock: "Vote más proposiciones para desbloquear",
+    keepVotingToRefineAnalysis: "Siga votando para refinar el análisis",
+    voteMore: "Vote más",
   },
   fa: {
     whereDoIStandTitle: "جایگاه من",

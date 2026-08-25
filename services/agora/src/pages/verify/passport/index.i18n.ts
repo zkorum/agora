@@ -32,7 +32,7 @@ export const verifyPassportTranslations: Record<
       "Rarimo es una billetera de identidad con tecnología ZK que convierte su pasaporte en una ID digital anónima, almacenada en su dispositivo, para que pueda demostrar que es un humano único sin compartir datos personales con nadie.",
     preferPhoneVerification: "Prefiero verificar con mi número de teléfono",
     alreadyHasPassport:
-      "Ya tienes un pasaporte verificado vinculado a tu cuenta",
+      "Ya tiene un pasaporte verificado vinculado a su cuenta",
   },
   fa: {
     title: "تأیید هویت",

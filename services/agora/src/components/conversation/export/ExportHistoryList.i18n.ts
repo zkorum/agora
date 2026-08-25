@@ -35,7 +35,7 @@ export const exportHistoryListTranslations: Record<
   es: {
     loadingExports: "Cargando exportaciones...",
     noExportsYet:
-      "Aún no hay exportaciones. Solicita tu primera exportación arriba.",
+      "Aún no hay exportaciones. Solicite su primera exportación arriba.",
     errorLoadingExports: "Error al cargar el historial de exportaciones",
     statusProcessing: "Procesando",
     statusCompleted: "Completado",

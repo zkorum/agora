@@ -94,7 +94,7 @@ export const conversationReviewTranslations: Record<
     maxDiffSeedDescription:
       "La priorización requiere al menos 4 declaraciones. Recomendamos de 10 a 25 para la mejor experiencia.",
     addStatementShortcut:
-      "Pulsa Mayús + Intro mientras escribes para iniciar otra proposición.",
+      "Pulse Mayús + Intro mientras escribe para iniciar otra proposición.",
     needMinimumForMaxDiff:
       "Se requieren al menos 4 declaraciones para la priorización.",
     addOpinion: "Añadir Proposición",
@@ -106,7 +106,7 @@ export const conversationReviewTranslations: Record<
     errorCreatingConversation: "Error al intentar crear una nueva conversación",
     githubSyncTitle: "Elementos de GitHub",
     githubSyncDescription:
-      "Estos elementos se sincronizarán desde incidencias de GitHub. No se pueden editar aquí; gestiónalos en GitHub.",
+      "Estos elementos se sincronizarán desde incidencias de GitHub. No se pueden editar aquí; gestiónelos en GitHub.",
     loadingGithubPreview: "Cargando incidencias de GitHub...",
     noGithubIssuesFound:
       "No se encontraron incidencias con la etiqueta configurada. Los elementos se sincronizarán cuando se creen incidencias o se etiqueten en GitHub.",

@@ -96,10 +96,10 @@ export const conversationSurveySummaryTranslations: Record<
     failedToLoadSurveyTitle: "No se pudo cargar la encuesta",
     tryAgainLabel: "Intentar de nuevo",
     currentStatusLabel: "Estado actual",
-    reviewAnswersTitle: "Revisa tus respuestas",
-    continueSurveyTitle: "Continúa tu encuesta",
+    reviewAnswersTitle: "Revise sus respuestas",
+    continueSurveyTitle: "Continúe su encuesta",
     summaryDescriptionComplete:
-      "Tus respuestas a la encuesta están guardadas y actualizadas.",
+      "Sus respuestas a la encuesta están guardadas y actualizadas.",
     summaryDescriptionPending:
       "Algunas preguntas aún requieren atención antes de desbloquear totalmente la participación.",
     statusComplete: "Completa",
@@ -120,7 +120,7 @@ export const conversationSurveySummaryTranslations: Record<
     confirmWithdrawButtonLabel: "Retirar respuesta",
     withdrawDialogCancelLabel: "Cancelar",
     confirmWithdrawMessage: "¿Retirar esta respuesta de la encuesta?",
-    failedToWithdrawMessage: "No se pudo retirar tu respuesta de la encuesta.",
+    failedToWithdrawMessage: "No se pudo retirar su respuesta de la encuesta.",
   },
   fa: {
     failedToLoadSurveyTitle: "بارگیری نظرسنجی انجام نشد",

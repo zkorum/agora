@@ -113,7 +113,7 @@ export const settingsTranslations: Record<
     notVerified: "Sin verificar",
     phoneNumber: "Número de teléfono",
     emailAddress: "Correo electrónico",
-    clickToAdd: "Toca para agregar",
+    clickToAdd: "Toque para agregar",
     deleteAccount: "Eliminar cuenta",
     deleteGuestAccount: "Eliminar cuenta de invitado",
     profile: "Perfil",
@@ -132,15 +132,15 @@ export const settingsTranslations: Record<
     componentTesting: "🔧 Pruebas de componentes",
     accountDeleted: "Cuenta eliminada",
     accountDeletionFailed:
-      "¡Ups! Error al eliminar la cuenta. Inténtalo de nuevo",
+      "¡Ups! Error al eliminar la cuenta. Inténtelo de nuevo",
     deleteAccountDialogTitle: "Eliminar cuenta",
     deleteAccountDialogMessage:
-      "Tu cuenta se eliminará permanentemente de inmediato. Esta acción no se puede deshacer. Los datos pueden permanecer en copias de seguridad y servicios de terceros hasta 30 días.\n\nPara confirmar, escribe DELETE a continuación:",
+      "Su cuenta se eliminará permanentemente de inmediato. Esta acción no se puede deshacer. Los datos pueden permanecer en copias de seguridad y servicios de terceros hasta 30 días.\n\nPara confirmar, escriba DELETE a continuación:",
     deleteGuestAccountDialogMessage:
-      "Tu cuenta de invitado se eliminará permanentemente de inmediato. Esta acción no se puede deshacer. Los datos pueden permanecer en copias de seguridad hasta 30 días.\n\nPara confirmar, escribe DELETE a continuación:",
-    deleteAccountDialogPlaceholder: "Escribe DELETE para confirmar",
+      "Su cuenta de invitado se eliminará permanentemente de inmediato. Esta acción no se puede deshacer. Los datos pueden permanecer en copias de seguridad hasta 30 días.\n\nPara confirmar, escriba DELETE a continuación:",
+    deleteAccountDialogPlaceholder: "Escriba DELETE para confirmar",
     deleteAccountDialogError:
-      "Falló la solicitud de eliminación de cuenta. Intenta de nuevo más tarde.",
+      "Falló la solicitud de eliminación de cuenta. Intente de nuevo más tarde.",
   },
   fa: {
     pageTitle: "تنظیمات",

@@ -97,19 +97,19 @@ export const conversationUpdateScopeFieldsTranslations: Record<
     projectLabel: "Proyecto",
     chooseProject: "Elegir un proyecto",
     projectAuthorizationDescription:
-      "La autorización se deduce de tus membresías de proyecto elegibles.",
+      "La autorización se deduce de sus membresías de proyecto elegibles.",
     conversationsHeading: "Conversaciones",
     recipientIntersectionDescription:
       "El correo añadirá automáticamente la intersección específica de cada destinatario.",
     includedConversationsLabel: "Conversaciones incluidas",
     conversationPlaceholder:
-      "Selecciona al menos una conversación (obligatorio)",
+      "Seleccione al menos una conversación (obligatorio)",
     chooseConversations: "Elegir conversaciones",
     clearAll: "Borrar todo",
-    noProjectHint: "Elige una conversación elegible creada sin un proyecto.",
+    noProjectHint: "Elija una conversación elegible creada sin un proyecto.",
     noProjectDialogSubtitle:
-      "Elige exactamente una conversación creada sin un proyecto.",
-    projectDialogSubtitle: "Elige una o más conversaciones de este proyecto.",
+      "Elija exactamente una conversación creada sin un proyecto.",
+    projectDialogSubtitle: "Elija una o más conversaciones de este proyecto.",
     selectAllEligibleSingular: "Seleccionar la {count} conversación elegible",
     selectAllEligiblePlural: "Seleccionar las {count} conversaciones elegibles",
     eligibleWithoutProjectSingular:

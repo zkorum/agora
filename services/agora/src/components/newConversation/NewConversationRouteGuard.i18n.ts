@@ -19,7 +19,7 @@ export const newConversationRouteGuardTranslations: Record<
   },
   es: {
     saveConversationDraft: "¿Guardar conversación como borrador?",
-    draftWillBeHere: "Tu borrador de conversación estará aquí cuando regreses.",
+    draftWillBeHere: "Su borrador de conversación estará aquí cuando regrese.",
   },
   fa: {
     saveConversationDraft: "گفتگو به عنوان پیش‌نویس ذخیره شود؟",

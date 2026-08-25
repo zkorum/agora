@@ -80,7 +80,7 @@ export const emailOtpFormTranslations: Record<
     tooManyAttempts:
       "Demasiados intentos—por favor, espere antes de solicitar un nuevo código",
     alreadyHasCredential:
-      "Ya tienes una dirección de correo electrónico vinculada a tu cuenta",
+      "Ya tiene una dirección de correo electrónico vinculada a su cuenta",
     unreachable:
       "Esta dirección de correo electrónico no parece existir—use una diferente",
     disposable:

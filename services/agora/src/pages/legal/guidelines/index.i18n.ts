@@ -384,7 +384,7 @@ export const guidelinesContent: Record<
         {
           heading: "2.1 Discurso respetuoso",
           rules: [
-            "Participa en los debates con respeto mutuo.",
+            "Participe en los debates con respeto mutuo.",
             "No se permiten ataques personales, insultos ni acoso.",
             "Los desacuerdos deben expresarse de forma constructiva.",
           ],
@@ -489,7 +489,7 @@ export const guidelinesContent: Record<
       closing:
         "Estas directrices están concebidas para fomentar un espacio de debates relevantes, respetuosos y de impacto. ¡Gracias por formar parte de Agora Citizen Network!",
       contactBeforeEmail:
-        "Si tienes alguna pregunta o inquietud sobre nuestras Directrices de la comunidad, escríbenos a ",
+        "Si tiene alguna pregunta o inquietud sobre nuestras Directrices de la comunidad, escríbanos a ",
       contactAfterEmail: ".",
     },
   },

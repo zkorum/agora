@@ -126,7 +126,7 @@ export const maxDiffResultsTabTranslations: Record<
   es: {
     title: "Clasificación de la comunidad",
     noResults:
-      "Aún no hay datos de clasificación. ¡Sé el primero en participar!",
+      "Aún no hay datos de clasificación. ¡Sea el primero en participar!",
     subtitle: "Agregado a partir de los votos de todos los participantes",
     score: "Puntuación: {score}",
     loadingError: "Error al cargar los resultados.",
@@ -143,9 +143,9 @@ export const maxDiffResultsTabTranslations: Record<
       "Los elementos se sincronizan desde issues de GitHub con la etiqueta configurada. Los nuevos issues se añaden automáticamente al grupo de votación al ser etiquetados.",
     communityLearnMoreReference: "Más información:",
     meLearnMorePersonal:
-      "Tu clasificación se basa únicamente en las comparaciones que has hecho. Una vez que compares suficientes declaraciones, emerge una clasificación personal completa.",
+      "Su clasificación se basa únicamente en las comparaciones que ha hecho. Una vez que compare suficientes declaraciones, emerge una clasificación personal completa.",
     meLearnMoreCounts:
-      "Tus votos también alimentan la clasificación de la comunidad inmediatamente. No necesitas terminar tu clasificación personal primero.",
+      "Sus votos también alimentan la clasificación de la comunidad inmediatamente. No necesita terminar su clasificación personal primero.",
     tabSummary: "Resumen",
     tabMe: "Yo",
     tabResults: "Resultados",
@@ -153,12 +153,12 @@ export const maxDiffResultsTabTranslations: Record<
     tabCanceled: "Cancelado",
     noItems: "No hay elementos en esta categoría.",
     meTitle: "Mi clasificación",
-    meSubtitle: "Tu ordenamiento personal basado en tus comparaciones",
+    meSubtitle: "Su ordenamiento personal basado en sus comparaciones",
     meVotesCounted:
-      "Tus votos ya están contados en la clasificación de la comunidad",
+      "Sus votos ya están contados en la clasificación de la comunidad",
     meProgress: "{percent}% completo · {votes} votos emitidos",
-    meStartVoting: "Empieza a votar para desbloquear tu clasificación",
-    meKeepVoting: "Sigue votando para desbloquear tu clasificación completa",
+    meStartVoting: "Empiece a votar para desbloquear su clasificación",
+    meKeepVoting: "Siga votando para desbloquear su clasificación completa",
     completedLearnMoreManual:
       "Elementos marcados como completados por el facilitador de la conversación. Su puntuación de clasificación se fijó al completarlos.",
     completedLearnMoreGitHub:

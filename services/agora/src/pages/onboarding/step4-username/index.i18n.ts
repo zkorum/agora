@@ -21,7 +21,7 @@ export const step4UsernameTranslations: Record<
     usernameInUse: "اسم المستخدم مُستخدم بالفعل",
   },
   es: {
-    title: "Elige tu nombre de usuario",
+    title: "Elija su nombre de usuario",
     howToAppear: "¿Cómo quiere aparecer en Agora?",
     usernameInUse: "El nombre de usuario ya está en uso",
   },
