@@ -104,23 +104,6 @@ const noProjectGroup = {
   ],
 } satisfies ConversationEmailUpdatePreferenceGroup;
 
-const pausedProjectGroup = {
-  ...projectGroup,
-  resolvedEnabled: false,
-  conversations: projectGroup.conversations.map((conversation) => ({
-    ...conversation,
-    resolvedEnabled: false,
-  })),
-} satisfies ConversationEmailUpdatePreferenceGroup;
-
-const pausedNoProjectGroup = {
-  ...noProjectGroup,
-  conversations: noProjectGroup.conversations.map((conversation) => ({
-    ...conversation,
-    resolvedEnabled: false,
-  })),
-} satisfies ConversationEmailUpdatePreferenceGroup;
-
 const disabledProjectGroup = {
   ...projectGroup,
   state: "disabled",
@@ -158,6 +141,27 @@ const QInputStub = defineComponent({
       });
   },
 });
+const QExpansionItemStub = defineComponent({
+  name: "QExpansionItem",
+  props: { modelValue: { type: Boolean, required: true } },
+  emits: ["update:modelValue"],
+  setup(props, { emit, slots }) {
+    return () =>
+      h("section", { class: "expansion-item" }, [
+        h(
+          "div",
+          {
+            class: "expansion-item__header",
+            onClick: () => emit("update:modelValue", !props.modelValue),
+          },
+          slots.header?.()
+        ),
+        props.modelValue
+          ? h("div", { class: "expansion-item__content" }, slots.default?.())
+          : null,
+      ]);
+  },
+});
 
 beforeEach(() => {
   api.getPreferences.mockReset();
@@ -173,7 +177,67 @@ afterEach(() => {
 });
 
 describe("ConversationUpdatePreferenceSettings", () => {
-  it("refreshes every loaded page after changing the global pause", async () => {
+  it("auto-expands small projects without redundant descriptions", async () => {
+    api.getPreferences.mockResolvedValue({
+      success: true,
+      globalPaused: false,
+      groups: [projectGroup, noProjectGroup],
+      nextCursor: undefined,
+    });
+
+    const container = mountComponent();
+    await flushPromises();
+
+    expect(container.textContent).toContain(
+      "Your project and conversation choices stay saved."
+    );
+    expect(container.textContent).not.toContain("On for this project");
+    expect(container.textContent).not.toContain("On for this conversation");
+    expect(container.textContent).toContain("Conversation One");
+    expect(container.textContent).toContain("Conversation Two");
+
+    const noProjectHeading = [...container.querySelectorAll("h2")].find(
+      (heading) => heading.textContent === "No Project"
+    );
+    expect(noProjectHeading?.closest("section")?.textContent).toContain(
+      "Conversation Two"
+    );
+  });
+
+  it("keeps projects with more than five conversations collapsed", async () => {
+    const largeProjectGroup = {
+      ...projectGroup,
+      conversations: Array.from({ length: 6 }, (_, index) => ({
+        ...projectGroup.conversations[0],
+        conversationSlugId: `conversation-${String(index + 1)}`,
+        conversationTitle: `Conversation ${String(index + 1)}`,
+      })),
+    } satisfies ConversationEmailUpdatePreferenceGroup;
+    api.getPreferences.mockResolvedValue({
+      success: true,
+      globalPaused: false,
+      groups: [largeProjectGroup],
+      nextCursor: undefined,
+    });
+
+    const container = mountComponent();
+    await flushPromises();
+
+    expect(container.textContent).not.toContain("Conversation 1");
+
+    const projectHeader = container.querySelector<HTMLElement>(
+      ".expansion-item__header"
+    );
+    if (projectHeader === null) {
+      throw new Error("Project expansion header not found");
+    }
+    projectHeader.click();
+    await nextTick();
+
+    expect(container.textContent).toContain("Conversation 1");
+  });
+
+  it("applies global pause without rereading loaded pages", async () => {
     api.getPreferences
       .mockResolvedValueOnce({
         success: true,
@@ -185,18 +249,6 @@ describe("ConversationUpdatePreferenceSettings", () => {
         success: true,
         globalPaused: false,
         groups: [noProjectGroup],
-        nextCursor: "no-project",
-      })
-      .mockResolvedValueOnce({
-        success: true,
-        globalPaused: true,
-        groups: [pausedProjectGroup],
-        nextCursor: "project:project-one",
-      })
-      .mockResolvedValueOnce({
-        success: true,
-        globalPaused: true,
-        groups: [pausedNoProjectGroup],
         nextCursor: "no-project",
       });
     api.updatePreference.mockResolvedValue({
@@ -217,8 +269,8 @@ describe("ConversationUpdatePreferenceSettings", () => {
       operation: "set_global_pause",
       paused: true,
     });
-    expect(api.getPreferences).toHaveBeenCalledTimes(4);
-    expect(api.getPreferences).toHaveBeenNthCalledWith(4, {
+    expect(api.getPreferences).toHaveBeenCalledTimes(2);
+    expect(api.getPreferences).toHaveBeenNthCalledWith(2, {
       search: undefined,
       cursor: "project:project-one",
       limit: 20,
@@ -230,6 +282,9 @@ describe("ConversationUpdatePreferenceSettings", () => {
     expect(
       getButton(container, "Receive Email Updates for Conversation Two").dataset
         .enabled
+    ).toBe("true");
+    expect(
+      getButton(container, "Pause all Email Updates").dataset.enabled
     ).toBe("true");
     expect(getButton(container, "Load more")).toBeDefined();
     expect(showNotifyMessage).toHaveBeenCalledWith("Email Updates paused.");
@@ -361,7 +416,7 @@ describe("ConversationUpdatePreferenceSettings", () => {
     );
   });
 
-  it("drops a stale load-more response after a refresh", async () => {
+  it("preserves a confirmed mutation over an in-flight stale page", async () => {
     const stalePage = deferred<{
       success: true;
       globalPaused: false;
@@ -375,13 +430,7 @@ describe("ConversationUpdatePreferenceSettings", () => {
         groups: [projectGroup],
         nextCursor: "project:project-one",
       })
-      .mockReturnValueOnce(stalePage.promise)
-      .mockResolvedValueOnce({
-        success: true,
-        globalPaused: true,
-        groups: [pausedProjectGroup],
-        nextCursor: undefined,
-      });
+      .mockReturnValueOnce(stalePage.promise);
     api.updatePreference.mockResolvedValue({
       success: true,
       result: { operation: "set_global_pause", globalPaused: true },
@@ -402,7 +451,10 @@ describe("ConversationUpdatePreferenceSettings", () => {
     });
     await flushPromises();
 
-    expect(container.textContent).not.toContain("Conversation Two");
+    expect(container.textContent).toContain("Conversation Two");
+    expect(
+      getButton(container, "Pause all Email Updates").dataset.enabled
+    ).toBe("true");
     expect(
       getButton(container, "Receive Email Updates for Project One").dataset
         .enabled
@@ -469,6 +521,71 @@ describe("ConversationUpdatePreferenceSettings", () => {
     });
     expect(container.textContent).toContain("Search Result");
     expect(container.textContent).not.toContain("Conversation Two");
+  });
+
+  it("finishes search loading without losing a concurrent mutation", async () => {
+    const searchLoad = deferred<{
+      success: true;
+      globalPaused: false;
+      groups: ConversationEmailUpdatePreferenceGroup[];
+      nextCursor: undefined;
+    }>();
+    const projectWrite = deferred<{
+      success: true;
+      result: {
+        operation: "set_project_preference";
+        projectSlug: string;
+        state: "disabled";
+        globalResumed: false;
+      };
+    }>();
+    api.getPreferences
+      .mockResolvedValueOnce({
+        success: true,
+        globalPaused: false,
+        groups: [projectGroup],
+        nextCursor: undefined,
+      })
+      .mockReturnValueOnce(searchLoad.promise);
+    api.updatePreference.mockReturnValueOnce(projectWrite.promise);
+
+    const container = mountComponent();
+    await flushPromises();
+
+    getButton(container, "Receive Email Updates for Project One").click();
+    const searchInput = container.querySelector<HTMLInputElement>(
+      'input[aria-label="Search projects and conversations"]'
+    );
+    if (searchInput === null) {
+      throw new Error("Search input not found");
+    }
+    searchInput.value = "Project";
+    searchInput.dispatchEvent(new Event("input"));
+    await flushPromises();
+
+    projectWrite.resolve({
+      success: true,
+      result: {
+        operation: "set_project_preference",
+        projectSlug: "project-one",
+        state: "disabled",
+        globalResumed: false,
+      },
+    });
+    await flushPromises();
+    searchLoad.resolve({
+      success: true,
+      globalPaused: false,
+      groups: [projectGroup],
+      nextCursor: undefined,
+    });
+    await flushPromises();
+
+    expect(container.textContent).not.toContain("Loading");
+    expect(
+      getButton(container, "Receive Email Updates for Project One").dataset
+        .enabled
+    ).toBe("false");
   });
 
   it("does not roll back another successful overlapping preference write", async () => {
@@ -634,6 +751,7 @@ function mountComponent(): HTMLElement {
     })
   );
   app.component("QInput", QInputStub);
+  app.component("QExpansionItem", QExpansionItemStub);
   mountedApps.push(app);
   app.mount(container);
   return container;
