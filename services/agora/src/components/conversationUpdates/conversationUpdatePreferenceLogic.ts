@@ -1,13 +1,11 @@
 import type { ConversationEmailUpdatePreferenceGroup } from "src/shared/types/dto";
 
 import type {
-  ConversationEmailUpdatePreference,
   ConversationEmailUpdatePreferenceOverride,
   ConversationEmailUpdatePreferenceResult,
-  ProjectEmailUpdatePreferenceGroup,
 } from "./conversationUpdatePreferenceTypes";
 
-export const AUTO_EXPAND_PROJECT_CONVERSATION_LIMIT = 5;
+export const AUTO_EXPAND_PREFERENCE_GROUP_LIMIT = 5;
 export const CONVERSATION_UPDATE_PREFERENCE_PAGE_SIZE = 20;
 
 export function getPreferenceOverrideKey(
@@ -22,24 +20,15 @@ export function getPreferenceOverrideKey(
   return `conversation:${preference.conversationSlugId}`;
 }
 
-export function getProjectPreferenceGroups(
-  groups: readonly ConversationEmailUpdatePreferenceGroup[]
-): readonly ProjectEmailUpdatePreferenceGroup[] {
-  return groups.filter(
-    (group): group is ProjectEmailUpdatePreferenceGroup =>
-      group.kind === "project"
-  );
+export function getPreferenceGroupKey(
+  group: ConversationEmailUpdatePreferenceGroup
+): string {
+  return group.kind === "project"
+    ? `project:${group.projectSlug}`
+    : "no-project";
 }
 
-export function getNoProjectConversations(
-  groups: readonly ConversationEmailUpdatePreferenceGroup[]
-): readonly ConversationEmailUpdatePreference[] {
-  return groups.flatMap((group) =>
-    group.kind === "no_project" ? group.conversations : []
-  );
-}
-
-export function getAutoExpandedProjectSlugs({
+export function getAutoExpandedPreferenceGroupKeys({
   groups,
   expandAll,
 }: {
@@ -48,10 +37,10 @@ export function getAutoExpandedProjectSlugs({
 }): ReadonlySet<string> {
   return new Set(
     groups.flatMap((group) =>
-      group.kind === "project" &&
+      group.conversations.length > 0 &&
       (expandAll ||
-        group.conversations.length <= AUTO_EXPAND_PROJECT_CONVERSATION_LIMIT)
-        ? [group.projectSlug]
+        group.conversations.length <= AUTO_EXPAND_PREFERENCE_GROUP_LIMIT)
+        ? [getPreferenceGroupKey(group)]
         : []
     )
   );

@@ -4,8 +4,17 @@
     :class="{ 'conversation-preference-row--nested': nested }"
   >
     <q-item-section>
-      <SpaLink :to="`/conversation/${conversation.conversationSlugId}`">
-        {{ conversation.conversationTitle }}
+      <SpaLink
+        class="conversation-preference-row__link"
+        :to="destination"
+        :target="openInNewTab ? '_blank' : undefined"
+        :rel="openInNewTab ? 'noopener noreferrer' : undefined"
+      >
+        <ConversationUpdatePreferenceAvatar
+          :fallback-label="conversation.conversationTitle"
+          :owner="owner"
+        />
+        <span>{{ conversation.conversationTitle }}</span>
       </SpaLink>
     </q-item-section>
     <q-item-section side>
@@ -34,11 +43,16 @@ import {
   type ConversationUpdatePreferenceControlsTranslations,
   conversationUpdatePreferenceControlsTranslations,
 } from "./conversationUpdatePreferenceControls.i18n";
+import ConversationUpdatePreferenceAvatar from "./ConversationUpdatePreferenceAvatar.vue";
 import type { ConversationEmailUpdatePreference } from "./conversationUpdatePreferenceTypes";
+import type { ConversationEmailUpdatePreferenceAvatar } from "src/shared/types/dto";
 
 defineProps<{
   conversation: ConversationEmailUpdatePreference;
+  destination: string;
   nested: boolean;
+  openInNewTab: boolean;
+  owner: ConversationEmailUpdatePreferenceAvatar | undefined;
   saving: boolean;
 }>();
 
@@ -59,7 +73,11 @@ const { t } =
     padding-inline-start: 2.5rem;
   }
 
-  a {
+  &__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    width: fit-content;
     color: $color-text-strong;
     font-weight: var(--font-weight-medium);
   }

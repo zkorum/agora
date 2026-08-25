@@ -98,7 +98,10 @@
 import { storeToRefs } from "pinia";
 import { copyToClipboard, useQuasar } from "quasar";
 import PreParticipationIntentionDialog from "src/components/authentication/intention/PreParticipationIntentionDialog.vue";
-import { createConversationUpdatePreferenceAction } from "src/components/conversationUpdates/conversationUpdatePreferenceAction";
+import {
+  createConversationUpdatePreferenceAction,
+  resolveEmailUpdatePreferenceChoiceEnabled,
+} from "src/components/conversationUpdates/conversationUpdatePreferenceAction";
 import {
   type EmailUpdateResumeNotificationTranslations,
   emailUpdateResumeNotificationTranslations,
@@ -521,7 +524,9 @@ function addConversationUpdateActions(): void {
 
   const participantPreference = summary?.participantPreference;
   if (participantPreference !== undefined) {
-    const enabled = participantPreference.resolvedEnabled;
+    const enabled = resolveEmailUpdatePreferenceChoiceEnabled(
+      participantPreference
+    );
     additions.push(
       createConversationUpdatePreferenceAction({
         id: "conversationEmailUpdates",
@@ -568,6 +573,7 @@ async function updateConversationUpdatePreference(
     ...previousSummary,
     participantPreference: {
       ...previousPreference,
+      state: enabled ? "enabled" : "disabled",
       resolvedEnabled: enabled,
     },
   };
@@ -613,6 +619,7 @@ async function updateConversationUpdatePreference(
         ...currentSummary,
         participantPreference: {
           ...currentSummary.participantPreference,
+          state: savedPreference.state,
           resolvedEnabled: savedPreference.resolvedEnabled,
         },
       };

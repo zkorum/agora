@@ -34,6 +34,8 @@ if [ -d "$SERVICES_DIR/conversation-email-update-worker" ]; then
     rsync -av --delete --delete-excluded \
         --include='/config.ts' \
         --include='/conversationEmailUpdateParticipation.ts' \
+        --include='/conversationEmailUpdatePreference.ts' \
+        --include='/conversationEmailUpdatePreferencePolicy.ts' \
         --include='/conversationEmailUpdateSnsIngress.ts' \
         --include='/db.ts' \
         --include='/logger.ts' \

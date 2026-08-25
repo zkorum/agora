@@ -9,7 +9,6 @@ export interface ConversationUpdatePreferenceSettingsTranslations {
   updatesOnDescription: string;
   updatesPausedDescription: string;
   empty: string;
-  projects: string;
   noProject: string;
   loadMore: string;
   verifiedEmailRequired: string;
@@ -39,7 +38,6 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     updatesPausedDescription:
       "All Email Updates are paused. Your project and conversation choices stay saved.",
     empty: "No Email Update preferences match this search.",
-    projects: "Projects",
     noProject: "No Project",
     loadMore: "Load more",
     verifiedEmailRequired:
@@ -68,7 +66,6 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
       "Todas las novedades por correo están pausadas. Sus opciones de proyectos y conversaciones siguen guardadas.",
     empty:
       "Ninguna preferencia de seguimiento por correo coincide con esta búsqueda.",
-    projects: "Proyectos",
     noProject: "Sin proyecto",
     loadMore: "Cargar más",
     verifiedEmailRequired:
@@ -100,7 +97,6 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
       "Toutes les nouvelles par e-mail sont suspendues. Vos choix de projets et de conversations restent enregistrés.",
     empty:
       "Aucune préférence de suivi par e-mail ne correspond à cette recherche.",
-    projects: "Projets",
     noProject: "Sans projet",
     loadMore: "Charger plus",
     verifiedEmailRequired:
@@ -129,7 +125,6 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     updatesPausedDescription:
       "所有電子郵件更新都已暫停。你的專案和對話選擇會保留。",
     empty: "沒有符合此搜尋的電子郵件更新偏好。",
-    projects: "專案",
     noProject: "無專案",
     loadMore: "載入更多",
     verifiedEmailRequired: "請先驗證電子郵件地址，再變更電子郵件更新偏好。",
@@ -153,7 +148,6 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     updatesPausedDescription:
       "所有电子邮件更新都已暂停。你的项目和对话选择会保留。",
     empty: "没有符合此搜索的电子邮件更新偏好。",
-    projects: "项目",
     noProject: "无项目",
     loadMore: "加载更多",
     verifiedEmailRequired: "请先验证电子邮件地址，再更改电子邮件更新偏好。",
@@ -177,7 +171,6 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     updatesPausedDescription:
       "すべてのメール更新は一時停止されています。プロジェクトと会話の選択内容は保存されたままです。",
     empty: "検索に一致するメール更新設定はありません。",
-    projects: "プロジェクト",
     noProject: "プロジェクトなし",
     loadMore: "さらに読み込む",
     verifiedEmailRequired:
@@ -202,7 +195,6 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     updatesPausedDescription:
       "جميع تحديثات البريد الإلكتروني متوقفة مؤقتًا. ستبقى خيارات المشاريع والمحادثات محفوظة.",
     empty: "لا توجد تفضيلات لتحديثات البريد الإلكتروني تطابق هذا البحث.",
-    projects: "المشاريع",
     noProject: "بلا مشروع",
     loadMore: "تحميل المزيد",
     verifiedEmailRequired:
@@ -229,7 +221,6 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     updatesPausedDescription:
       "همهٔ به‌روزرسانی‌های ایمیلی موقتاً متوقف شده‌اند. انتخاب‌های شما برای پروژه‌ها و گفتگوها ذخیره می‌مانند.",
     empty: "هیچ تنظیم به‌روزرسانی ایمیلی با این جستجو مطابقت ندارد.",
-    projects: "پروژه‌ها",
     noProject: "بدون پروژه",
     loadMore: "بارگیری بیشتر",
     verifiedEmailRequired:
@@ -255,7 +246,6 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     updatesPausedDescription:
       "כל העדכונים בדוא״ל מושהים. הבחירות שלכם בפרויקטים ובשיחות יישארו שמורות.",
     empty: "אין העדפות לעדכונים בדוא״ל שתואמות לחיפוש.",
-    projects: "פרויקטים",
     noProject: "ללא פרויקט",
     loadMore: "טעינת עוד",
     verifiedEmailRequired: "יש לאמת כתובת דוא״ל לפני שינוי העדפות העדכונים.",
@@ -280,7 +270,6 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     updatesPausedDescription:
       "Бардык электрондук почта жаңыртуулары тындырылды. Долбоор жана маек тандоолоруңуз сакталат.",
     empty: "Бул издөөгө туура келген электрондук почта жөндөөлөрү жок.",
-    projects: "Долбоорлор",
     noProject: "Долбоорсуз",
     loadMore: "Дагы жүктөө",
     verifiedEmailRequired:
@@ -309,7 +298,6 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
       "Все обновления по электронной почте приостановлены. Ваш выбор проектов и обсуждений сохранится.",
     empty:
       "Нет настроек обновлений по электронной почте, соответствующих поиску.",
-    projects: "Проекты",
     noProject: "Без проекта",
     loadMore: "Загрузить ещё",
     verifiedEmailRequired:

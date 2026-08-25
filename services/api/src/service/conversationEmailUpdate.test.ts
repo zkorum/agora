@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { resolveConversationEmailPreference } from "@/shared-backend/conversationEmailUpdatePreference.js";
 import { Dto } from "@/shared/types/dto.js";
 import {
     buildConversationEmailPreferenceGroups,
@@ -10,7 +11,6 @@ import {
     resolveRequiredOwnerCopySet,
     type RequiredOwnerSnapshot,
 } from "./conversationEmailUpdate.js";
-import { resolveConversationEmailPreference } from "./conversationEmailUpdatePolicy.js";
 
 const workspaceRows = [
     {
@@ -284,7 +284,7 @@ describe("resolveConversationEmailPreference", () => {
         ).toBe(true);
     });
 
-    it("requires an explicit project choice for listed projects", () => {
+    it("uses conversation overrides before listed project choices", () => {
         expect(
             resolveConversationEmailPreference({
                 globalPaused: false,
@@ -292,7 +292,7 @@ describe("resolveConversationEmailPreference", () => {
                 conversationEnabled: true,
                 scopeKind: "project",
             }),
-        ).toBe(false);
+        ).toBe(true);
         expect(
             resolveConversationEmailPreference({
                 globalPaused: false,
@@ -309,6 +309,14 @@ describe("resolveConversationEmailPreference", () => {
                 scopeKind: "project",
             }),
         ).toBe(false);
+        expect(
+            resolveConversationEmailPreference({
+                globalPaused: false,
+                projectEnabled: false,
+                conversationEnabled: true,
+                scopeKind: "project",
+            }),
+        ).toBe(true);
     });
 
     it("requires an explicit conversation choice for No Project", () => {
@@ -407,15 +415,116 @@ describe("resolveRequiredOwnerCopySet", () => {
 });
 
 describe("buildConversationEmailPreferenceGroups", () => {
+    it("includes conversations inheriting a project preference", () => {
+        const groups = buildConversationEmailPreferenceGroups({
+            globalPaused: false,
+            ownerByProjectId: new Map([
+                [
+                    7,
+                    {
+                        kind: "organization",
+                        displayName: "Plan Owners",
+                        imageUrl: "https://images.example/owner.png",
+                    },
+                ],
+            ]),
+            projectRows: [
+                {
+                    project_id: 7,
+                    project_slug: "public-plan",
+                    project_title: "Public Plan",
+                    enabled: true,
+                    available: true,
+                },
+            ],
+            conversationRows: [
+                {
+                    project_id: 7,
+                    project_slug: "public-plan",
+                    project_title: "Public Plan",
+                    auto_provisioned_for_organization_id: null,
+                    scope_kind: "project",
+                    conversation_id: 11,
+                    conversation_slug_id: "child001",
+                    conversation_title: "Inherited conversation",
+                    enabled: true,
+                    available: true,
+                },
+            ],
+        });
+
+        expect(groups[0]).toMatchObject({
+            kind: "project",
+            state: "enabled",
+            owner: {
+                kind: "organization",
+                displayName: "Plan Owners",
+                imageUrl: "https://images.example/owner.png",
+            },
+            conversations: [
+                {
+                    conversationSlugId: "child001",
+                    state: "enabled",
+                    resolvedEnabled: true,
+                },
+            ],
+        });
+    });
+
+    it("keeps an explicit conversation enabled when its project is disabled", () => {
+        const groups = buildConversationEmailPreferenceGroups({
+            globalPaused: false,
+            ownerByProjectId: new Map(),
+            projectRows: [
+                {
+                    project_id: 7,
+                    project_slug: "public-plan",
+                    project_title: "Public Plan",
+                    enabled: false,
+                    available: true,
+                },
+            ],
+            conversationRows: [
+                {
+                    project_id: 7,
+                    project_slug: "public-plan",
+                    project_title: "Public Plan",
+                    auto_provisioned_for_organization_id: null,
+                    scope_kind: "project",
+                    conversation_id: 11,
+                    conversation_slug_id: "child001",
+                    conversation_title: "Explicit conversation",
+                    enabled: true,
+                    available: true,
+                },
+            ],
+        });
+
+        expect(groups[0]).toMatchObject({
+            kind: "project",
+            state: "disabled",
+            resolvedEnabled: false,
+            conversations: [
+                {
+                    conversationSlugId: "child001",
+                    state: "enabled",
+                    resolvedEnabled: true,
+                },
+            ],
+        });
+    });
+
     it("emits an undisclosed project group for a child-only exception", () => {
         const groups = buildConversationEmailPreferenceGroups({
             globalPaused: false,
+            ownerByProjectId: new Map(),
             projectRows: [],
             conversationRows: [
                 {
                     project_id: 7,
                     project_slug: "public-plan",
                     project_title: "Public Plan",
+                    auto_provisioned_for_organization_id: null,
                     scope_kind: "project",
                     conversation_id: 11,
                     conversation_slug_id: "child001",
@@ -450,12 +559,22 @@ describe("buildConversationEmailPreferenceGroups", () => {
     it("groups explicit No Project choices separately", () => {
         const groups = buildConversationEmailPreferenceGroups({
             globalPaused: false,
+            ownerByProjectId: new Map([
+                [
+                    9,
+                    {
+                        kind: "user",
+                        displayName: "direct-owner",
+                    },
+                ],
+            ]),
             projectRows: [],
             conversationRows: [
                 {
                     project_id: 9,
                     project_slug: "personal",
                     project_title: "Personal",
+                    auto_provisioned_for_organization_id: 5,
                     scope_kind: "no_project",
                     conversation_id: 12,
                     conversation_slug_id: "direct01",
@@ -474,6 +593,10 @@ describe("buildConversationEmailPreferenceGroups", () => {
                     {
                         conversationSlugId: "direct01",
                         conversationTitle: "Direct conversation",
+                        owner: {
+                            kind: "user",
+                            displayName: "direct-owner",
+                        },
                         state: "enabled",
                         resolvedEnabled: true,
                         availability: "temporarily_unavailable",

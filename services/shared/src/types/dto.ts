@@ -953,6 +953,33 @@ const zodConversationEmailUpdatePreferenceConversation = z
         availability: zodConversationEmailUpdateAvailability,
     })
     .strict();
+const zodConversationEmailUpdatePreferenceAvatar = z.discriminatedUnion(
+    "kind",
+    [
+        z
+            .object({
+                kind: z.literal("user"),
+                displayName: z
+                    .string()
+                    .trim()
+                    .min(1)
+                    .max(MAX_LENGTH_NAME_CREATOR),
+                imageUrl: z.url().optional(),
+            })
+            .strict(),
+        z
+            .object({
+                kind: z.literal("organization"),
+                displayName: z
+                    .string()
+                    .trim()
+                    .min(1)
+                    .max(MAX_LENGTH_NAME_CREATOR),
+                imageUrl: z.url().optional(),
+            })
+            .strict(),
+    ],
+);
 const zodConversationEmailUpdatePreferenceGroup = z.discriminatedUnion("kind", [
     z
         .object({
@@ -962,6 +989,7 @@ const zodConversationEmailUpdatePreferenceGroup = z.discriminatedUnion("kind", [
             state: zodConversationEmailUpdatePreferenceState,
             resolvedEnabled: z.boolean(),
             availability: zodConversationEmailUpdateAvailability,
+            owner: zodConversationEmailUpdatePreferenceAvatar.optional(),
             conversations: z.array(
                 zodConversationEmailUpdatePreferenceConversation,
             ),
@@ -972,7 +1000,9 @@ const zodConversationEmailUpdatePreferenceGroup = z.discriminatedUnion("kind", [
             kind: z.literal("no_project"),
             availability: zodConversationEmailUpdateAvailability,
             conversations: z.array(
-                zodConversationEmailUpdatePreferenceConversation,
+                zodConversationEmailUpdatePreferenceConversation.extend({
+                    owner: zodConversationEmailUpdatePreferenceAvatar.optional(),
+                }),
             ),
         })
         .strict(),
@@ -4385,6 +4415,9 @@ export type ConversationEmailUpdateSelection = z.infer<
 >;
 export type ConversationEmailUpdatePreferenceGroup = z.infer<
     typeof zodConversationEmailUpdatePreferenceGroup
+>;
+export type ConversationEmailUpdatePreferenceAvatar = z.infer<
+    typeof zodConversationEmailUpdatePreferenceAvatar
 >;
 export type ConversationEmailUpdateActionResolveRequest = z.infer<
     typeof Dto.conversationEmailUpdateActionResolveRequest

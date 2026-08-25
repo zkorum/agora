@@ -103,7 +103,7 @@ describe("buildWorkspaceAudienceEstimateQuery", () => {
             '"conversation_email_update_user_project_preference"."enabled" =',
         );
         expect(query.sql).toContain(
-            '"conversation_email_update_user_conversation_preference"."enabled" is null or "conversation_email_update_user_conversation_preference"."enabled" <>',
+            '"conversation_email_update_user_conversation_preference"."user_id" is null',
         );
         expect(query.sql).toContain(
             '"conversation_email_update_user_conversation_preference"."enabled" =',
@@ -127,10 +127,13 @@ describe("buildWorkspaceAudienceEstimateQuery", () => {
         expect(query.sql).toContain(
             '"conversation_email_update_user_global_setting"."paused_at" is null',
         );
+        expect(query.sql).toContain(
+            '"conversation_email_update_user_global_setting"."updated_at" <=',
+        );
 
         expect(
             query.params.filter((param) => param === cutoffAt.toISOString()),
-        ).toHaveLength(3);
+        ).toHaveLength(7);
         expect(query.params.filter((param) => param === 41)).toHaveLength(4);
         expect(query.params.filter((param) => param === 42)).toHaveLength(4);
         expect(query.params.filter((param) => param === 7)).toHaveLength(1);

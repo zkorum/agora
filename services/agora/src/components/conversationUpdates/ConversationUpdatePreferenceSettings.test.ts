@@ -31,8 +31,8 @@ vi.mock("src/components/ui-library/SpaLink.vue", () => ({
   default: defineComponent({
     name: "SpaLink",
     props: { to: { type: String, required: true } },
-    setup(_props, { slots }) {
-      return () => h("a", slots.default?.());
+    setup(props, { slots }) {
+      return () => h("a", { href: props.to }, slots.default?.());
     },
   }),
 }));
@@ -199,11 +199,22 @@ describe("ConversationUpdatePreferenceSettings", () => {
     expect(container.textContent).toContain("Conversation One");
     expect(container.textContent).toContain("Conversation Two");
 
-    const noProjectHeading = [...container.querySelectorAll("h2")].find(
-      (heading) => heading.textContent === "No Project"
+    const noProjectHeader = [
+      ...container.querySelectorAll(".expansion-item__header"),
+    ].find(
+      (header) => header.textContent?.includes("No Project") === true
     );
-    expect(noProjectHeading?.closest("section")?.textContent).toContain(
-      "Conversation Two"
+    expect(noProjectHeader).toBeDefined();
+    expect(container.querySelectorAll("h2")).toHaveLength(0);
+    const noProjectConversationLink = [
+      ...container.querySelectorAll<HTMLAnchorElement>("a"),
+    ].find((link) => link.textContent === "Conversation Two");
+    expect(noProjectConversationLink?.getAttribute("href")).toBe(
+      "/conversation/conversation-two"
+    );
+    expect(noProjectConversationLink?.getAttribute("target")).toBeNull();
+    expect(noProjectConversationLink?.classList).toContain(
+      "conversation-preference-row__link"
     );
   });
 

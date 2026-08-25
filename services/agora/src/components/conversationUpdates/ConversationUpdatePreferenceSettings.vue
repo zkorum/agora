@@ -46,50 +46,33 @@
         {{ t("empty") }}
       </p>
 
-      <ConversationUpdatePreferenceSection
-        v-if="projectGroups.length > 0"
-        :title="t('projects')"
+      <q-list
+        v-if="groups.length > 0"
+        bordered
+        separator
+        class="preference-settings__groups"
       >
-        <ConversationUpdateProjectPreferenceItem
-          v-for="group in projectGroups"
-          :key="group.projectSlug"
-          :expanded="expandedProjectSlugs.has(group.projectSlug)"
+        <ConversationUpdatePreferenceGroupItem
+          v-for="group in groups"
+          :key="getPreferenceGroupKey(group)"
+          :expanded="expandedGroupKeys.has(getPreferenceGroupKey(group))"
           :group="group"
+          :label="group.kind === 'project' ? group.projectTitle : t('noProject')"
           :saving-conversation-slug-ids="savingConversationSlugIds"
-          :saving-project="savingProjectSlugs.has(group.projectSlug)"
+          :saving-project="
+            group.kind === 'project' &&
+            savingProjectSlugs.has(group.projectSlug)
+          "
           @update:expanded="
-            setProjectExpanded({
-              projectSlug: group.projectSlug,
+            setGroupExpanded({
+              groupKey: getPreferenceGroupKey(group),
               expanded: $event,
             })
           "
-          @set-project-enabled="
-            setProjectPreference({ group, enabled: $event })
-          "
+          @set-project-enabled="setProjectPreference"
           @set-conversation-enabled="setConversationPreference"
         />
-      </ConversationUpdatePreferenceSection>
-
-      <ConversationUpdatePreferenceSection
-        v-if="noProjectConversations.length > 0"
-        :title="t('noProject')"
-      >
-        <ConversationUpdatePreferenceRow
-          v-for="conversation in noProjectConversations"
-          :key="conversation.conversationSlugId"
-          :conversation="conversation"
-          :nested="false"
-          :saving="
-            savingConversationSlugIds.has(conversation.conversationSlugId)
-          "
-          @set-enabled="
-            setConversationPreference({
-              conversationSlugId: conversation.conversationSlugId,
-              enabled: $event,
-            })
-          "
-        />
-      </ConversationUpdatePreferenceSection>
+      </q-list>
 
       <div v-if="nextCursor !== undefined" class="preference-settings__more">
         <ZKButton
@@ -115,13 +98,12 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKInfoBanner from "src/components/ui-library/ZKInfoBanner.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 
-import ConversationUpdatePreferenceRow from "./ConversationUpdatePreferenceRow.vue";
-import ConversationUpdatePreferenceSection from "./ConversationUpdatePreferenceSection.vue";
+import ConversationUpdatePreferenceGroupItem from "./ConversationUpdatePreferenceGroupItem.vue";
+import { getPreferenceGroupKey } from "./conversationUpdatePreferenceLogic";
 import {
   type ConversationUpdatePreferenceSettingsTranslations,
   conversationUpdatePreferenceSettingsTranslations,
 } from "./ConversationUpdatePreferenceSettings.i18n";
-import ConversationUpdateProjectPreferenceItem from "./ConversationUpdateProjectPreferenceItem.vue";
 import { useConversationUpdatePreferences } from "./useConversationUpdatePreferences";
 
 const { t } =
@@ -129,7 +111,7 @@ const { t } =
     conversationUpdatePreferenceSettingsTranslations
   );
 const {
-  expandedProjectSlugs,
+  expandedGroupKeys,
   globalEnabled,
   groups,
   isGlobalSaving,
@@ -139,15 +121,13 @@ const {
   loadFirstPage,
   loadMore,
   nextCursor,
-  noProjectConversations,
   paginationError,
-  projectGroups,
   savingConversationSlugIds,
   savingProjectSlugs,
   search,
   setConversationPreference,
   setGlobalEnabled,
-  setProjectExpanded,
+  setGroupExpanded,
   setProjectPreference,
   updateSearch,
 } = useConversationUpdatePreferences();
@@ -165,6 +145,11 @@ const {
     margin: 1rem 0;
     color: $color-text-weak;
     text-align: center;
+  }
+
+  &__groups {
+    overflow: hidden;
+    border-radius: 1rem;
   }
 
   &__more {

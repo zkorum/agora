@@ -8,6 +8,11 @@ export type ProjectEmailUpdatePreferenceGroup = Extract<
   { kind: "project" }
 >;
 
+export type NoProjectEmailUpdatePreferenceGroup = Extract<
+  ConversationEmailUpdatePreferenceGroup,
+  { kind: "no_project" }
+>;
+
 export type ConversationEmailUpdatePreference =
   ConversationEmailUpdatePreferenceGroup["conversations"][number];
 

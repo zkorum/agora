@@ -524,6 +524,7 @@ server.setErrorHandler((error: FastifyError, _request, reply) => {
 const db = await createDb(config, log);
 const conversationEmailUpdateService = createConversationEmailUpdateService({
     db,
+    baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
     sendingEnabled:
         config.CONVERSATION_EMAIL_UPDATES_ENABLED &&
         !config.CONVERSATION_EMAIL_UPDATES_KILL_SWITCH,

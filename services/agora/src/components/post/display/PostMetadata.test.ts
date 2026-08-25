@@ -293,12 +293,12 @@ describe("PostMetadata email update actions", () => {
   );
 
   it.each([
-    ["enabled", false, "false"],
-    ["disabled", true, "true"],
+    ["enabled", false, "true"],
+    ["disabled", true, "false"],
     ["undisclosed", false, "false"],
     ["undisclosed", true, "true"],
   ])(
-    "renders %s with resolved=%s as checked=%s",
+    "renders choice %s with resolved=%s as checked=%s",
     async (state, resolvedEnabled, expectedChecked) => {
       api.getConversationSummary.mockResolvedValue({
         success: true,
@@ -334,6 +334,12 @@ describe("PostMetadata email update actions", () => {
     getButton(container, "receiveEmailUpdatesLabel").click();
     await nextTick();
 
+    expect(api.updatePreference).toHaveBeenCalledWith({
+      operation: "set_conversation_preference",
+      conversationSlugId: "conversation-one",
+      enabled: true,
+      source: "menu",
+    });
     expect(
       getButton(container, "receiveEmailUpdatesLabel").dataset.checked
     ).toBe("true");
@@ -348,21 +354,12 @@ describe("PostMetadata email update actions", () => {
       success: true,
       result: {
         operation: "set_conversation_preference",
-        projectPreference: {
-          projectSlug: "project-one",
-          state: "enabled",
-        },
         globalResumed: true,
         conversationPreferences: [
           {
             conversationSlugId: "conversation-one",
             state: "enabled",
             resolvedEnabled: true,
-          },
-          {
-            conversationSlugId: "conversation-two",
-            state: "disabled",
-            resolvedEnabled: false,
           },
         ],
       },
@@ -377,21 +374,12 @@ describe("PostMetadata email update actions", () => {
     );
     expect(removeSummaryQueries).toHaveBeenCalledWith({
       operation: "set_conversation_preference",
-      projectPreference: {
-        projectSlug: "project-one",
-        state: "enabled",
-      },
       globalResumed: true,
       conversationPreferences: [
         {
           conversationSlugId: "conversation-one",
           state: "enabled",
           resolvedEnabled: true,
-        },
-        {
-          conversationSlugId: "conversation-two",
-          state: "disabled",
-          resolvedEnabled: false,
         },
       ],
     });
@@ -417,13 +405,13 @@ describe("PostMetadata email update actions", () => {
 
     expect(
       getButton(container, "receiveEmailUpdatesLabel").dataset.checked
-    ).toBe("true");
+    ).toBe("false");
     write.resolve({ success: false, reason: "feature_not_available" });
     await flushPromises();
 
     expect(
       getButton(container, "receiveEmailUpdatesLabel").dataset.checked
-    ).toBe("false");
+    ).toBe("true");
     expect(showNotifyMessage).toHaveBeenCalledWith(
       "emailUpdatesPreferenceSaveError"
     );

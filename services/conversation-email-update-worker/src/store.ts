@@ -20,6 +20,10 @@ import {
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { alias } from "drizzle-orm/pg-core";
 import { buildConversationEmailParticipationQuery } from "@/shared-backend/conversationEmailUpdateParticipation.js";
+import {
+    buildConversationEmailGlobalPreferenceCondition,
+    buildConversationEmailPreferenceCondition,
+} from "@/shared-backend/conversationEmailUpdatePreference.js";
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import {
     conversationEmailUpdateActionTokenTable,
@@ -1401,6 +1405,13 @@ export async function materializeOneDeliveryPage({
                 })
                 .from(participation)
                 .leftJoin(
+                    conversationEmailUpdateUserGlobalSettingTable,
+                    eq(
+                        conversationEmailUpdateUserGlobalSettingTable.userId,
+                        participation.userId,
+                    ),
+                )
+                .leftJoin(
                     conversationEmailUpdateUserProjectPreferenceTable,
                     and(
                         eq(
@@ -1428,42 +1439,13 @@ export async function materializeOneDeliveryPage({
                 )
                 .where(
                     and(
-                        participantPreferenceScope === "project"
-                            ? and(
-                                  eq(
-                                      conversationEmailUpdateUserProjectPreferenceTable.enabled,
-                                      true,
-                                  ),
-                                  lte(
-                                      conversationEmailUpdateUserProjectPreferenceTable.choiceAt,
-                                      delivery.audienceCutoffAt,
-                                  ),
-                                  or(
-                                      isNull(
-                                          conversationEmailUpdateUserConversationPreferenceTable.userId,
-                                      ),
-                                      and(
-                                          eq(
-                                              conversationEmailUpdateUserConversationPreferenceTable.enabled,
-                                              true,
-                                          ),
-                                          lte(
-                                              conversationEmailUpdateUserConversationPreferenceTable.choiceAt,
-                                              delivery.audienceCutoffAt,
-                                          ),
-                                      ),
-                                  ),
-                              )
-                            : and(
-                                  eq(
-                                      conversationEmailUpdateUserConversationPreferenceTable.enabled,
-                                      true,
-                                  ),
-                                  lte(
-                                      conversationEmailUpdateUserConversationPreferenceTable.choiceAt,
-                                      delivery.audienceCutoffAt,
-                                  ),
-                              ),
+                        buildConversationEmailGlobalPreferenceCondition({
+                            choiceAtOrBefore: delivery.audienceCutoffAt,
+                        }),
+                        buildConversationEmailPreferenceCondition({
+                            preferenceScope: participantPreferenceScope,
+                            choiceAtOrBefore: delivery.audienceCutoffAt,
+                        }),
                     ),
                 )
                 .as("qualified");
@@ -2568,38 +2550,6 @@ export async function authorizeRecipientSend({
                 });
                 return undefined;
             }
-            if (participantPreferenceScope === "project") {
-                const projectPreference = await tx
-                    .select({
-                        userId: conversationEmailUpdateUserProjectPreferenceTable.userId,
-                    })
-                    .from(conversationEmailUpdateUserProjectPreferenceTable)
-                    .where(
-                        and(
-                            eq(
-                                conversationEmailUpdateUserProjectPreferenceTable.userId,
-                                recipient.userId,
-                            ),
-                            eq(
-                                conversationEmailUpdateUserProjectPreferenceTable.projectId,
-                                recipient.projectId,
-                            ),
-                            eq(
-                                conversationEmailUpdateUserProjectPreferenceTable.enabled,
-                                true,
-                            ),
-                        ),
-                    )
-                    .limit(1);
-                if (projectPreference.length === 0) {
-                    await skipClaimedRecipient({
-                        tx,
-                        claimed,
-                        reason: "project_preference_disabled",
-                    });
-                    return undefined;
-                }
-            }
             const conversationPreference = await tx
                 .select({
                     conversationId:
@@ -2639,6 +2589,19 @@ export async function authorizeRecipientSend({
                     ),
                 )
                 .leftJoin(
+                    conversationEmailUpdateUserProjectPreferenceTable,
+                    and(
+                        eq(
+                            conversationEmailUpdateUserProjectPreferenceTable.userId,
+                            recipient.userId,
+                        ),
+                        eq(
+                            conversationEmailUpdateUserProjectPreferenceTable.projectId,
+                            recipient.projectId,
+                        ),
+                    ),
+                )
+                .leftJoin(
                     conversationEmailUpdateUserConversationPreferenceTable,
                     and(
                         eq(
@@ -2657,20 +2620,9 @@ export async function authorizeRecipientSend({
                             conversationEmailUpdateRecipientConversationTable.recipientId,
                             recipient.recipientId,
                         ),
-                        participantPreferenceScope === "project"
-                            ? or(
-                                  isNull(
-                                      conversationEmailUpdateUserConversationPreferenceTable.userId,
-                                  ),
-                                  eq(
-                                      conversationEmailUpdateUserConversationPreferenceTable.enabled,
-                                      true,
-                                  ),
-                              )
-                            : eq(
-                                  conversationEmailUpdateUserConversationPreferenceTable.enabled,
-                                  true,
-                              ),
+                        buildConversationEmailPreferenceCondition({
+                            preferenceScope: participantPreferenceScope,
+                        }),
                     ),
                 )
                 .orderBy(

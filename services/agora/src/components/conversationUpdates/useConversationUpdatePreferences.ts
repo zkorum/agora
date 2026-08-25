@@ -8,11 +8,9 @@ import { computed, onMounted, ref, watch } from "vue";
 import {
   applyPreferenceOverrides,
   CONVERSATION_UPDATE_PREFERENCE_PAGE_SIZE,
-  getAutoExpandedProjectSlugs,
-  getNoProjectConversations,
+  getAutoExpandedPreferenceGroupKeys,
   getPreferenceOverrideKey,
   getPreferenceOverridesFromResult,
-  getProjectPreferenceGroups,
   setPreferenceOverrides,
 } from "./conversationUpdatePreferenceLogic";
 import {
@@ -55,7 +53,7 @@ export function useConversationUpdatePreferences() {
   const pendingOverrides = ref<
     ReadonlyMap<string, ConversationEmailUpdatePreferenceOverride>
   >(new Map());
-  const expandedProjectSlugs = ref<ReadonlySet<string>>(new Set());
+  const expandedGroupKeys = ref<ReadonlySet<string>>(new Set());
   const nextCursor = ref<string | undefined>(undefined);
   const isInitialLoading = ref(true);
   const isLoadingMore = ref(false);
@@ -78,12 +76,6 @@ export function useConversationUpdatePreferences() {
   );
   const groups = computed(() => preferenceState.value.groups);
   const globalEnabled = computed(() => !preferenceState.value.globalPaused);
-  const projectGroups = computed(() =>
-    getProjectPreferenceGroups(groups.value)
-  );
-  const noProjectConversations = computed(() =>
-    getNoProjectConversations(groups.value)
-  );
   const isGlobalSaving = computed(() => pendingOverrides.value.has("global"));
   const savingProjectSlugs = computed<ReadonlySet<string>>(
     () =>
@@ -129,7 +121,7 @@ export function useConversationUpdatePreferences() {
       }
       serverGlobalPaused.value = response.globalPaused;
       serverGroups.value = response.groups;
-      expandedProjectSlugs.value = getAutoExpandedProjectSlugs({
+      expandedGroupKeys.value = getAutoExpandedPreferenceGroupKeys({
         groups: response.groups,
         expandAll: trimmedSearch !== "",
       });
@@ -170,9 +162,9 @@ export function useConversationUpdatePreferences() {
       }
       serverGlobalPaused.value = response.globalPaused;
       serverGroups.value = [...serverGroups.value, ...response.groups];
-      expandedProjectSlugs.value = new Set([
-        ...expandedProjectSlugs.value,
-        ...getAutoExpandedProjectSlugs({
+      expandedGroupKeys.value = new Set([
+        ...expandedGroupKeys.value,
+        ...getAutoExpandedPreferenceGroupKeys({
           groups: response.groups,
           expandAll: trimmedSearch !== "",
         }),
@@ -365,20 +357,20 @@ export function useConversationUpdatePreferences() {
     search.value = value === null ? "" : String(value);
   }
 
-  function setProjectExpanded({
-    projectSlug,
+  function setGroupExpanded({
+    groupKey,
     expanded,
   }: {
-    projectSlug: string;
+    groupKey: string;
     expanded: boolean;
   }): void {
-    const nextExpandedProjectSlugs = new Set(expandedProjectSlugs.value);
+    const nextExpandedGroupKeys = new Set(expandedGroupKeys.value);
     if (expanded) {
-      nextExpandedProjectSlugs.add(projectSlug);
+      nextExpandedGroupKeys.add(groupKey);
     } else {
-      nextExpandedProjectSlugs.delete(projectSlug);
+      nextExpandedGroupKeys.delete(groupKey);
     }
-    expandedProjectSlugs.value = nextExpandedProjectSlugs;
+    expandedGroupKeys.value = nextExpandedGroupKeys;
   }
 
   function getPreferencesError(
@@ -394,7 +386,7 @@ export function useConversationUpdatePreferences() {
   });
 
   return {
-    expandedProjectSlugs,
+    expandedGroupKeys,
     globalEnabled,
     groups,
     isGlobalSaving,
@@ -404,15 +396,13 @@ export function useConversationUpdatePreferences() {
     loadFirstPage,
     loadMore,
     nextCursor,
-    noProjectConversations,
     paginationError,
-    projectGroups,
     savingConversationSlugIds,
     savingProjectSlugs,
     search,
     setConversationPreference,
     setGlobalEnabled,
-    setProjectExpanded,
+    setGroupExpanded,
     setProjectPreference,
     updateSearch,
   };

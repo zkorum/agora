@@ -2,39 +2,74 @@ import { describe, expect, it } from "vitest";
 
 import {
   applyPreferenceOverrides,
-  AUTO_EXPAND_PROJECT_CONVERSATION_LIMIT,
-  getAutoExpandedProjectSlugs,
+  AUTO_EXPAND_PREFERENCE_GROUP_LIMIT,
+  getAutoExpandedPreferenceGroupKeys,
   getPreferenceOverridesFromResult,
   setPreferenceOverrides,
 } from "./conversationUpdatePreferenceLogic";
-import type { ProjectEmailUpdatePreferenceGroup } from "./conversationUpdatePreferenceTypes";
+import type {
+  NoProjectEmailUpdatePreferenceGroup,
+  ProjectEmailUpdatePreferenceGroup,
+} from "./conversationUpdatePreferenceTypes";
 
 describe("conversationUpdatePreferenceLogic", () => {
   it("auto-expands projects at the configured conversation limit", () => {
     const projectAtLimit = createProjectGroup(
-      AUTO_EXPAND_PROJECT_CONVERSATION_LIMIT
+      AUTO_EXPAND_PREFERENCE_GROUP_LIMIT
     );
     const projectOverLimit = {
-      ...createProjectGroup(AUTO_EXPAND_PROJECT_CONVERSATION_LIMIT + 1),
+      ...createProjectGroup(AUTO_EXPAND_PREFERENCE_GROUP_LIMIT + 1),
       projectSlug: "project-over-limit",
     } satisfies ProjectEmailUpdatePreferenceGroup;
 
-    const expandedProjectSlugs = getAutoExpandedProjectSlugs({
+    const expandedGroupKeys = getAutoExpandedPreferenceGroupKeys({
       groups: [projectAtLimit, projectOverLimit],
       expandAll: false,
     });
 
-    expect(expandedProjectSlugs).toEqual(new Set([projectAtLimit.projectSlug]));
+    expect(expandedGroupKeys).toEqual(
+      new Set([`project:${projectAtLimit.projectSlug}`])
+    );
   });
 
   it("expands every project for search results", () => {
     const project = createProjectGroup(
-      AUTO_EXPAND_PROJECT_CONVERSATION_LIMIT + 1
+      AUTO_EXPAND_PREFERENCE_GROUP_LIMIT + 1
     );
 
     expect(
-      getAutoExpandedProjectSlugs({ groups: [project], expandAll: true })
-    ).toEqual(new Set([project.projectSlug]));
+      getAutoExpandedPreferenceGroupKeys({ groups: [project], expandAll: true })
+    ).toEqual(new Set([`project:${project.projectSlug}`]));
+  });
+
+  it("does not expand an empty project group", () => {
+    const project = createProjectGroup(0);
+
+    expect(
+      getAutoExpandedPreferenceGroupKeys({ groups: [project], expandAll: true })
+    ).toEqual(new Set());
+  });
+
+  it("applies the same expansion threshold to No Project", () => {
+    const noProjectAtLimit = createNoProjectGroup(
+      AUTO_EXPAND_PREFERENCE_GROUP_LIMIT
+    );
+    const noProjectOverLimit = createNoProjectGroup(
+      AUTO_EXPAND_PREFERENCE_GROUP_LIMIT + 1
+    );
+
+    expect(
+      getAutoExpandedPreferenceGroupKeys({
+        groups: [noProjectAtLimit],
+        expandAll: false,
+      })
+    ).toEqual(new Set(["no-project"]));
+    expect(
+      getAutoExpandedPreferenceGroupKeys({
+        groups: [noProjectOverLimit],
+        expandAll: false,
+      })
+    ).toEqual(new Set());
   });
 
   it("applies every authoritative change from a conversation result", () => {
@@ -97,5 +132,15 @@ function createProjectGroup(
       resolvedEnabled: false,
       availability: "available",
     })),
+  };
+}
+
+function createNoProjectGroup(
+  conversationCount: number
+): NoProjectEmailUpdatePreferenceGroup {
+  return {
+    kind: "no_project",
+    availability: "available",
+    conversations: createProjectGroup(conversationCount).conversations,
   };
 }

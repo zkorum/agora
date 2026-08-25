@@ -38511,6 +38511,60 @@
                                                                             "temporarily_unavailable"
                                                                         ]
                                                                     },
+                                                                    "owner": {
+                                                                        "oneOf": [
+                                                                            {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "kind": {
+                                                                                        "type": "string",
+                                                                                        "enum": [
+                                                                                            "user"
+                                                                                        ]
+                                                                                    },
+                                                                                    "displayName": {
+                                                                                        "type": "string",
+                                                                                        "minLength": 1,
+                                                                                        "maxLength": 65
+                                                                                    },
+                                                                                    "imageUrl": {
+                                                                                        "type": "string",
+                                                                                        "format": "uri"
+                                                                                    }
+                                                                                },
+                                                                                "required": [
+                                                                                    "kind",
+                                                                                    "displayName"
+                                                                                ],
+                                                                                "additionalProperties": false
+                                                                            },
+                                                                            {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "kind": {
+                                                                                        "type": "string",
+                                                                                        "enum": [
+                                                                                            "organization"
+                                                                                        ]
+                                                                                    },
+                                                                                    "displayName": {
+                                                                                        "type": "string",
+                                                                                        "minLength": 1,
+                                                                                        "maxLength": 65
+                                                                                    },
+                                                                                    "imageUrl": {
+                                                                                        "type": "string",
+                                                                                        "format": "uri"
+                                                                                    }
+                                                                                },
+                                                                                "required": [
+                                                                                    "kind",
+                                                                                    "displayName"
+                                                                                ],
+                                                                                "additionalProperties": false
+                                                                            }
+                                                                        ]
+                                                                    },
                                                                     "conversations": {
                                                                         "type": "array",
                                                                         "items": {
@@ -38610,6 +38664,60 @@
                                                                                     "enum": [
                                                                                         "available",
                                                                                         "temporarily_unavailable"
+                                                                                    ]
+                                                                                },
+                                                                                "owner": {
+                                                                                    "oneOf": [
+                                                                                        {
+                                                                                            "type": "object",
+                                                                                            "properties": {
+                                                                                                "kind": {
+                                                                                                    "type": "string",
+                                                                                                    "enum": [
+                                                                                                        "user"
+                                                                                                    ]
+                                                                                                },
+                                                                                                "displayName": {
+                                                                                                    "type": "string",
+                                                                                                    "minLength": 1,
+                                                                                                    "maxLength": 65
+                                                                                                },
+                                                                                                "imageUrl": {
+                                                                                                    "type": "string",
+                                                                                                    "format": "uri"
+                                                                                                }
+                                                                                            },
+                                                                                            "required": [
+                                                                                                "kind",
+                                                                                                "displayName"
+                                                                                            ],
+                                                                                            "additionalProperties": false
+                                                                                        },
+                                                                                        {
+                                                                                            "type": "object",
+                                                                                            "properties": {
+                                                                                                "kind": {
+                                                                                                    "type": "string",
+                                                                                                    "enum": [
+                                                                                                        "organization"
+                                                                                                    ]
+                                                                                                },
+                                                                                                "displayName": {
+                                                                                                    "type": "string",
+                                                                                                    "minLength": 1,
+                                                                                                    "maxLength": 65
+                                                                                                },
+                                                                                                "imageUrl": {
+                                                                                                    "type": "string",
+                                                                                                    "format": "uri"
+                                                                                                }
+                                                                                            },
+                                                                                            "required": [
+                                                                                                "kind",
+                                                                                                "displayName"
+                                                                                            ],
+                                                                                            "additionalProperties": false
+                                                                                        }
                                                                                     ]
                                                                                 }
                                                                             },
