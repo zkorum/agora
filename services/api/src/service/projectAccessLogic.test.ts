@@ -1,11 +1,42 @@
 import { describe, expect, it } from "vitest";
 import {
+    getConversationCreateEmailUpdateConfiguration,
     getProjectIdsWithCapabilityFromGrants,
     hasActivePremiumFeatureEntitlement,
     hasCapabilityForProject,
     type OrganizationCapabilityGrant,
     type ProjectOrganizationOwnershipGrant,
 } from "@/service/projectAccessLogic.js";
+
+describe("getConversationCreateEmailUpdateConfiguration", () => {
+    it("offers entitled No Project settings off before a container exists", () => {
+        expect(
+            getConversationCreateEmailUpdateConfiguration({
+                canConfigure: true,
+                participantContactEmail: undefined,
+                scopeDefaultEnabled: undefined,
+            }),
+        ).toEqual({
+            canConfigure: true,
+            hasParticipantContactEmail: false,
+            scopeDefaultEnabled: false,
+        });
+    });
+
+    it("reports when an existing scope can be enabled", () => {
+        expect(
+            getConversationCreateEmailUpdateConfiguration({
+                canConfigure: true,
+                participantContactEmail: "updates@example.com",
+                scopeDefaultEnabled: true,
+            }),
+        ).toEqual({
+            canConfigure: true,
+            hasParticipantContactEmail: true,
+            scopeDefaultEnabled: true,
+        });
+    });
+});
 
 describe("hasCapabilityForProject", () => {
     const capabilityGrants: OrganizationCapabilityGrant[] = [

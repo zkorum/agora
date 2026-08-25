@@ -66,6 +66,9 @@
               selectedEmailUpdatesConfiguration.scopeDefaultEnabled
             "
             :can-configure="selectedEmailUpdatesConfiguration.canConfigure"
+            :has-participant-contact-email="
+              selectedEmailUpdatesConfiguration.hasParticipantContactEmail
+            "
           />
         </template>
       </NewConversationControlBar>

@@ -6,6 +6,7 @@ export interface CreateConversationUpdatesSettingsTranslations {
   enableAriaLabel: string;
   inheritsDescription: string;
   manualUpdatesSubtitle: string;
+  missingContact: string;
   noProjectDefault: string;
   noProjectGroup: string;
   off: string;
@@ -24,6 +25,8 @@ const en: CreateConversationUpdatesSettingsTranslations = {
   inheritsDescription: "Uses the {defaultValue} default from {scopeLabel}.",
   manualUpdatesSubtitle:
     "Send occasional manual email updates to participants who opt in.",
+  missingContact:
+    "Add a monitored participant contact email before sending Email Updates.",
   noProjectDefault: "No Project default",
   noProjectGroup: "the No Project group",
   off: "Off",
@@ -49,6 +52,8 @@ export const createConversationUpdatesSettingsTranslations: Record<
       "يستخدم الإعداد الافتراضي {defaultValue} من {scopeLabel}.",
     manualUpdatesSubtitle:
       "أرسل يدويًا تحديثات بريد إلكتروني من حين لآخر إلى المشاركين المشتركين.",
+    missingContact:
+      "أضف بريدًا إلكترونيًا مراقبًا لجهة اتصال المشاركين قبل إرسال تحديثات البريد الإلكتروني.",
     noProjectDefault: "الإعداد الافتراضي بلا مشروع",
     noProjectGroup: "مجموعة بلا مشروع",
     off: "متوقف",
@@ -69,6 +74,8 @@ export const createConversationUpdatesSettingsTranslations: Record<
       "Usa el valor predeterminado {defaultValue} de {scopeLabel}.",
     manualUpdatesSubtitle:
       "Envía manualmente novedades ocasionales por correo a quienes se suscriban.",
+    missingContact:
+      "Añade una dirección de correo electrónico de contacto supervisada antes de enviar novedades.",
     noProjectDefault: "valor predeterminado de Sin proyecto",
     noProjectGroup: "el grupo Sin proyecto",
     off: "Desactivadas",
@@ -88,6 +95,8 @@ export const createConversationUpdatesSettingsTranslations: Record<
       "از پیش‌فرض {defaultValue} در {scopeLabel} استفاده می‌کند.",
     manualUpdatesSubtitle:
       "گاه‌به‌گاه به‌صورت دستی برای شرکت‌کنندگان عضو، به‌روزرسانی ایمیلی بفرستید.",
+    missingContact:
+      "پیش از ارسال به‌روزرسانی‌های ایمیلی، یک ایمیل پاسخ‌گویی‌شده برای ارتباط با شرکت‌کنندگان اضافه کنید.",
     noProjectDefault: "پیش‌فرض بدون پروژه",
     noProjectGroup: "گروه بدون پروژه",
     off: "خاموش",
@@ -107,6 +116,8 @@ export const createConversationUpdatesSettingsTranslations: Record<
     inheritsDescription: "Utilise le réglage {defaultValue} de {scopeLabel}.",
     manualUpdatesSubtitle:
       "Envoyez manuellement des nouvelles occasionnelles par e-mail aux participants inscrits.",
+    missingContact:
+      "Ajoutez une adresse e-mail de contact suivie pour les participants avant d'envoyer des nouvelles.",
     noProjectDefault: "réglage par défaut Sans projet",
     noProjectGroup: "le groupe Sans projet",
     off: "Désactivées",
@@ -125,6 +136,8 @@ export const createConversationUpdatesSettingsTranslations: Record<
       "נעשה שימוש בברירת המחדל {defaultValue} של {scopeLabel}.",
     manualUpdatesSubtitle:
       "שליחה ידנית של עדכוני דוא״ל מזדמנים למשתתפים שבחרו להצטרף.",
+    missingContact:
+      "יש להוסיף כתובת דוא״ל מנוטרת ליצירת קשר עם המשתתפים לפני שליחת עדכונים.",
     noProjectDefault: "ברירת המחדל ללא פרויקט",
     noProjectGroup: "הקבוצה ללא פרויקט",
     off: "כבוי",
@@ -142,6 +155,8 @@ export const createConversationUpdatesSettingsTranslations: Record<
     inheritsDescription: "{scopeLabel}の既定値「{defaultValue}」を使用します。",
     manualUpdatesSubtitle:
       "登録した参加者に、ときどき手動でメール更新を送信します。",
+    missingContact:
+      "メール更新を送信する前に、確認される参加者向け連絡先メールを追加してください。",
     noProjectDefault: "プロジェクトなしの既定値",
     noProjectGroup: "プロジェクトなしグループ",
     off: "オフ",
@@ -162,6 +177,8 @@ export const createConversationUpdatesSettingsTranslations: Record<
       "{scopeLabel} аймагындагы {defaultValue} демейки маанисин колдонот.",
     manualUpdatesSubtitle:
       "Катталган катышуучуларга маал-маалы менен жаңыртууларды кол менен жөнөтүңүз.",
+    missingContact:
+      "Электрондук жаңыртууларды жөнөтүүдөн мурун көзөмөлдөнгөн байланыш дарегин кошуңуз.",
     noProjectDefault: "Долбоорсуз демейки жөндөө",
     noProjectGroup: "Долбоорсуз топ",
     off: "Өчүк",
@@ -181,6 +198,8 @@ export const createConversationUpdatesSettingsTranslations: Record<
       "Используется значение «{defaultValue}» из области «{scopeLabel}».",
     manualUpdatesSubtitle:
       "Вручную отправляйте редкие почтовые обновления подписавшимся участникам.",
+    missingContact:
+      "Добавьте отслеживаемый контактный адрес для участников перед отправкой обновлений.",
     noProjectDefault: "настройка по умолчанию без проекта",
     noProjectGroup: "группа без проекта",
     off: "Выкл.",
@@ -198,6 +217,7 @@ export const createConversationUpdatesSettingsTranslations: Record<
     enableAriaLabel: "为{conversationTitle}开启电子邮件更新",
     inheritsDescription: "使用{scopeLabel}的{defaultValue}默认值。",
     manualUpdatesSubtitle: "不定期手动向选择接收更新的参与者发送电子邮件。",
+    missingContact: "发送电子邮件更新前，请添加有人查收的参与者联系邮箱。",
     noProjectDefault: "无项目默认值",
     noProjectGroup: "无项目组",
     off: "关闭",
@@ -214,6 +234,7 @@ export const createConversationUpdatesSettingsTranslations: Record<
     enableAriaLabel: "為{conversationTitle}開啟電子郵件更新",
     inheritsDescription: "使用{scopeLabel}的{defaultValue}預設值。",
     manualUpdatesSubtitle: "不定期手動向選擇接收更新的參與者傳送電子郵件。",
+    missingContact: "傳送電子郵件更新前，請新增有人查收的參與者聯絡信箱。",
     noProjectDefault: "無專案預設值",
     noProjectGroup: "無專案群組",
     off: "關閉",

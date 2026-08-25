@@ -404,6 +404,7 @@ const zodConversationLanguageSettingsSource = z.enum([
 const zodConversationCreateEmailUpdateConfiguration = z
     .object({
         canConfigure: z.boolean(),
+        hasParticipantContactEmail: z.boolean(),
         scopeDefaultEnabled: z.boolean(),
     })
     .strict();

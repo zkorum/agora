@@ -4213,12 +4213,16 @@
                                                                     "canConfigure": {
                                                                         "type": "boolean"
                                                                     },
+                                                                    "hasParticipantContactEmail": {
+                                                                        "type": "boolean"
+                                                                    },
                                                                     "scopeDefaultEnabled": {
                                                                         "type": "boolean"
                                                                     }
                                                                 },
                                                                 "required": [
                                                                     "canConfigure",
+                                                                    "hasParticipantContactEmail",
                                                                     "scopeDefaultEnabled"
                                                                 ],
                                                                 "additionalProperties": false
@@ -4240,12 +4244,16 @@
                                                         "canConfigure": {
                                                             "type": "boolean"
                                                         },
+                                                        "hasParticipantContactEmail": {
+                                                            "type": "boolean"
+                                                        },
                                                         "scopeDefaultEnabled": {
                                                             "type": "boolean"
                                                         }
                                                     },
                                                     "required": [
                                                         "canConfigure",
+                                                        "hasParticipantContactEmail",
                                                         "scopeDefaultEnabled"
                                                     ],
                                                     "additionalProperties": false

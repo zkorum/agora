@@ -16,6 +16,7 @@
             v-for="option in settingOptions"
             :key="option.id"
             clickable
+            :disable="option.disabled"
             @click="selectSetting(option.value)"
           >
             <q-item-section>
@@ -27,6 +28,7 @@
                 :model-value="settingMode"
                 :val="option.id"
                 :aria-label="option.title"
+                :disable="option.disabled"
               />
             </q-item-section>
           </q-item>
@@ -52,6 +54,7 @@ const props = defineProps<{
   projectTitle: string | undefined;
   scopeDefaultEnabled: boolean;
   canConfigure: boolean;
+  hasParticipantContactEmail: boolean;
 }>();
 
 type SettingMode = "inherit" | "off" | "on";
@@ -60,6 +63,7 @@ interface SettingOption {
   title: string;
   description: string;
   value: boolean | undefined;
+  disabled: boolean;
 }
 
 const override = defineModel<boolean | undefined>({ required: true });
@@ -98,26 +102,32 @@ const settingOptions = computed<readonly SettingOption[]>(() => {
     defaultValue,
     scopeLabel,
   });
-  return [
+  const options: SettingOption[] = [
     {
       id: "inherit",
       title: t("useDefault", { source: defaultSource }),
       description: t("inheritsDescription", { defaultValue, scopeLabel }),
       value: undefined,
-    },
-    {
-      id: "on",
-      title: t("on"),
-      description: overrideDescription,
-      value: true,
-    },
-    {
-      id: "off",
-      title: t("off"),
-      description: overrideDescription,
-      value: false,
+      disabled: false,
     },
   ];
+  options.push({
+    id: "on",
+    title: t("on"),
+    description: props.hasParticipantContactEmail
+      ? overrideDescription
+      : t("missingContact"),
+    value: true,
+    disabled: !props.hasParticipantContactEmail,
+  });
+  options.push({
+    id: "off",
+    title: t("off"),
+    description: overrideDescription,
+    value: false,
+    disabled: false,
+  });
+  return options;
 });
 
 function selectSetting(value: boolean | undefined): void {

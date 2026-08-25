@@ -76,6 +76,10 @@
             :can-configure="
               conversationUpdatesConfiguration?.canConfigure === true
             "
+            :has-participant-contact-email="
+              conversationUpdatesConfiguration?.participantContactEmail !==
+              undefined
+            "
             @update:model-value="updateConversationUpdatesConfiguration"
           />
         </template>

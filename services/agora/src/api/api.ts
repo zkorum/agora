@@ -6872,6 +6872,7 @@ export type ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInnerDef
 
 export interface ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInnerEmailUpdates {
     'canConfigure': boolean;
+    'hasParticipantContactEmail': boolean;
     'scopeDefaultEnabled': boolean;
 }
 export interface ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInnerLanguageSettings {

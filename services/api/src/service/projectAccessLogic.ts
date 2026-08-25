@@ -20,6 +20,26 @@ export interface PremiumEntitlementGrant {
     expiresAt: Date | null;
 }
 
+export function getConversationCreateEmailUpdateConfiguration({
+    canConfigure,
+    participantContactEmail,
+    scopeDefaultEnabled,
+}: {
+    canConfigure: boolean;
+    participantContactEmail: string | null | undefined;
+    scopeDefaultEnabled: boolean | undefined;
+}): {
+    canConfigure: boolean;
+    hasParticipantContactEmail: boolean;
+    scopeDefaultEnabled: boolean;
+} {
+    return {
+        canConfigure,
+        hasParticipantContactEmail: participantContactEmail != null,
+        scopeDefaultEnabled: scopeDefaultEnabled ?? false,
+    };
+}
+
 export function hasCapabilityForProject({
     capabilityGrants,
     projectOwnerships,

@@ -45,6 +45,7 @@ describe("conversation creation DTO", () => {
             success: true,
             noProjectEmailUpdates: {
                 canConfigure: true,
+                hasParticipantContactEmail: false,
                 scopeDefaultEnabled: false,
             },
             projectList: [
@@ -58,6 +59,7 @@ describe("conversation creation DTO", () => {
                     },
                     emailUpdates: {
                         canConfigure: true,
+                        hasParticipantContactEmail: true,
                         scopeDefaultEnabled: true,
                     },
                 },
@@ -68,12 +70,14 @@ describe("conversation creation DTO", () => {
             success: true,
             noProjectEmailUpdates: {
                 canConfigure: true,
+                hasParticipantContactEmail: false,
                 scopeDefaultEnabled: false,
             },
             projectList: [
                 {
                     emailUpdates: {
                         canConfigure: true,
+                        hasParticipantContactEmail: true,
                         scopeDefaultEnabled: true,
                     },
                 },

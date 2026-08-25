@@ -1,5 +1,5 @@
 import { httpErrors } from "@fastify/sensible";
-import { and, eq, gt, inArray, isNull, lte, or } from "drizzle-orm";
+import { and, eq, gt, inArray, isNotNull, isNull, lte, or } from "drizzle-orm";
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import {
     conversationTable,
@@ -23,6 +23,7 @@ import type { PremiumFeature } from "@/shared/types/zod.js";
 import type { InheritableProjectLanguageSettingsInput } from "@/service/translationLanguageSetting.js";
 import {
     type AllProjectCapability,
+    getConversationCreateEmailUpdateConfiguration,
     getProjectIdsWithCapabilityFromGrants,
     hasActivePremiumFeatureEntitlement,
     hasCapabilityForProject,
@@ -543,10 +544,11 @@ export async function getConversationCreateProjectOptions({
         return {
             success: true,
             projectList: [],
-            noProjectEmailUpdates: {
+            noProjectEmailUpdates: getConversationCreateEmailUpdateConfiguration({
                 canConfigure: false,
+                participantContactEmail: undefined,
                 scopeDefaultEnabled: false,
-            },
+            }),
         };
     }
 
@@ -644,8 +646,16 @@ export async function getConversationCreateProjectOptions({
             .select({
                 conversationEmailUpdateDefaultEnabled:
                     projectTable.conversationEmailUpdateDefaultEnabled,
+                participantContactEmail: projectContactTable.email,
             })
             .from(projectTable)
+            .leftJoin(
+                projectContactTable,
+                and(
+                    eq(projectContactTable.projectId, projectTable.id),
+                    isNull(projectContactTable.deletedAt),
+                ),
+            )
             .where(
                 and(
                     eq(
@@ -708,11 +718,12 @@ export async function getConversationCreateProjectOptions({
     const noProject = noProjectRows.at(0);
     return {
         success: true,
-        noProjectEmailUpdates: {
+        noProjectEmailUpdates: getConversationCreateEmailUpdateConfiguration({
             canConfigure: canConfigureEmailUpdates,
+            participantContactEmail: noProject?.participantContactEmail,
             scopeDefaultEnabled:
-                noProject?.conversationEmailUpdateDefaultEnabled ?? false,
-        },
+                noProject?.conversationEmailUpdateDefaultEnabled,
+        }),
         projectList: availableProjectRows.map((project) => ({
             projectSlug: project.projectSlug,
             projectTitle: project.projectTitle,
@@ -725,13 +736,12 @@ export async function getConversationCreateProjectOptions({
                 targetLanguageCodes:
                     targetLanguageCodesByProjectId.get(project.projectId) ?? [],
             },
-            emailUpdates: {
-                canConfigure:
-                    canConfigureEmailUpdates &&
-                    project.participantContactEmail !== null,
+            emailUpdates: getConversationCreateEmailUpdateConfiguration({
+                canConfigure: canConfigureEmailUpdates,
+                participantContactEmail: project.participantContactEmail,
                 scopeDefaultEnabled:
                     project.conversationEmailUpdateDefaultEnabled,
-            },
+            }),
         })),
     };
 }
@@ -827,6 +837,7 @@ export async function hasProjectParticipantContactEmail({
         .where(
             and(
                 eq(projectContactTable.projectId, projectId),
+                isNotNull(projectContactTable.email),
                 isNull(projectContactTable.deletedAt),
             ),
         )
