@@ -1,16 +1,11 @@
 <template>
-  <q-card flat bordered class="global-pause-card">
-    <q-card-section class="global-pause-card__content">
+  <q-card flat bordered class="settings-toggle-card">
+    <q-card-section class="settings-toggle-card__content">
       <div>
-        <strong>{{ title }}</strong>
+        <strong>{{ label }}</strong>
         <span>{{ description }}</span>
       </div>
-      <ZKSwitch
-        :model-value="paused"
-        :disable="saving"
-        :aria-label="title"
-        @update:model-value="emit('setPaused', $event)"
-      />
+      <ZKSwitch v-model="enabled" :disable="disabled" :aria-label="label" />
     </q-card-section>
   </q-card>
 </template>
@@ -20,18 +15,15 @@ import ZKSwitch from "src/components/ui-library/ZKSwitch.vue";
 
 defineProps<{
   description: string;
-  paused: boolean;
-  saving: boolean;
-  title: string;
+  disabled: boolean;
+  label: string;
 }>();
 
-const emit = defineEmits<{
-  setPaused: [paused: boolean];
-}>();
+const enabled = defineModel<boolean>({ required: true });
 </script>
 
 <style scoped lang="scss">
-.global-pause-card {
+.settings-toggle-card {
   overflow: hidden;
   border-color: rgba($primary, 0.28);
   border-radius: 1rem;

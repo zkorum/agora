@@ -1,9 +1,9 @@
 <template>
   <section class="preference-settings">
-    <div class="preference-settings__intro">
-      <span>{{ t("emailUpdates") }}</span>
-      <h1>{{ t("heading") }}</h1>
-    </div>
+    <SettingsSectionHeader
+      :title="undefined"
+      :descriptions="[t('sectionDescription'), t('recommendationDescription')]"
+    />
 
     <q-input
       :model-value="search"
@@ -32,12 +32,14 @@
         variant="warning"
       />
 
-      <ConversationUpdateGlobalPauseCard
-        :title="t('pauseAll')"
-        :description="t('pauseDescription')"
-        :paused="globalPaused"
-        :saving="isGlobalSaving"
-        @set-paused="setGlobalPaused"
+      <SettingsToggleCard
+        :label="t('receiveEmailUpdates')"
+        :description="
+          t(globalEnabled ? 'updatesOnDescription' : 'updatesPausedDescription')
+        "
+        :model-value="globalEnabled"
+        :disabled="isGlobalSaving"
+        @update:model-value="setGlobalEnabled"
       />
 
       <p v-if="groups.length === 0" class="preference-settings__empty">
@@ -107,11 +109,12 @@
 <script setup lang="ts">
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
+import SettingsSectionHeader from "src/components/ui-library/SettingsSectionHeader.vue";
+import SettingsToggleCard from "src/components/ui-library/SettingsToggleCard.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKInfoBanner from "src/components/ui-library/ZKInfoBanner.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 
-import ConversationUpdateGlobalPauseCard from "./ConversationUpdateGlobalPauseCard.vue";
 import ConversationUpdatePreferenceRow from "./ConversationUpdatePreferenceRow.vue";
 import ConversationUpdatePreferenceSection from "./ConversationUpdatePreferenceSection.vue";
 import {
@@ -127,7 +130,7 @@ const { t } =
   );
 const {
   expandedProjectSlugs,
-  globalPaused,
+  globalEnabled,
   groups,
   isGlobalSaving,
   isInitialLoading,
@@ -143,7 +146,7 @@ const {
   savingProjectSlugs,
   search,
   setConversationPreference,
-  setGlobalPaused,
+  setGlobalEnabled,
   setProjectExpanded,
   setProjectPreference,
   updateSearch,
@@ -157,24 +160,6 @@ const {
   width: min(100%, 46rem);
   margin-inline: auto;
   padding: 1rem;
-
-  &__intro {
-    padding: 1rem 0 0.5rem;
-
-    > span {
-      color: $primary;
-      font-size: 0.78rem;
-      font-weight: var(--font-weight-semibold);
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
-
-    h1 {
-      margin: 0.35rem 0 0.5rem;
-      color: $color-text-strong;
-      font-size: clamp(1.55rem, 5vw, 2.2rem);
-    }
-  }
 
   &__empty {
     margin: 1rem 0;

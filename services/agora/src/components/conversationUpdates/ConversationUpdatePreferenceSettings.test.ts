@@ -189,7 +189,10 @@ describe("ConversationUpdatePreferenceSettings", () => {
     await flushPromises();
 
     expect(container.textContent).toContain(
-      "Your project and conversation choices stay saved."
+      "You’ll receive updates from your selected projects and conversations."
+    );
+    expect(getButton(container, "Receive Email Updates").dataset.enabled).toBe(
+      "true"
     );
     expect(container.textContent).not.toContain("On for this project");
     expect(container.textContent).not.toContain("On for this conversation");
@@ -262,7 +265,7 @@ describe("ConversationUpdatePreferenceSettings", () => {
     getButton(container, "Load more").click();
     await flushPromises();
 
-    getButton(container, "Pause all Email Updates").click();
+    getButton(container, "Receive Email Updates").click();
     await flushPromises();
 
     expect(api.updatePreference).toHaveBeenCalledWith({
@@ -283,11 +286,46 @@ describe("ConversationUpdatePreferenceSettings", () => {
       getButton(container, "Receive Email Updates for Conversation Two").dataset
         .enabled
     ).toBe("true");
-    expect(
-      getButton(container, "Pause all Email Updates").dataset.enabled
-    ).toBe("true");
+    expect(getButton(container, "Receive Email Updates").dataset.enabled).toBe(
+      "false"
+    );
     expect(getButton(container, "Load more")).toBeDefined();
     expect(showNotifyMessage).toHaveBeenCalledWith("Email Updates paused.");
+  });
+
+  it("shows paused delivery as off and turns it back on", async () => {
+    api.getPreferences.mockResolvedValue({
+      success: true,
+      globalPaused: true,
+      groups: [projectGroup],
+      nextCursor: undefined,
+    });
+    api.updatePreference.mockResolvedValue({
+      success: true,
+      result: { operation: "set_global_pause", globalPaused: false },
+    });
+
+    const container = mountComponent();
+    await flushPromises();
+
+    const globalSwitch = getButton(container, "Receive Email Updates");
+    expect(globalSwitch.dataset.enabled).toBe("false");
+    expect(container.textContent).toContain(
+      "All Email Updates are paused. Your project and conversation choices stay saved."
+    );
+
+    globalSwitch.click();
+    await flushPromises();
+
+    expect(api.updatePreference).toHaveBeenCalledWith({
+      operation: "set_global_pause",
+      paused: false,
+    });
+    expect(globalSwitch.dataset.enabled).toBe("true");
+    expect(container.textContent).toContain(
+      "You’ll receive updates from your selected projects and conversations."
+    );
+    expect(showNotifyMessage).toHaveBeenCalledWith("Email Updates resumed.");
   });
 
   it("reports when a project opt-in resumes global Email Updates", async () => {
@@ -395,9 +433,7 @@ describe("ConversationUpdatePreferenceSettings", () => {
 
     expect(projectSwitch.dataset.enabled).toBe("false");
     expect(projectSwitch.disabled).toBe(true);
-    expect(getButton(container, "Pause all Email Updates").disabled).toBe(
-      false
-    );
+    expect(getButton(container, "Receive Email Updates").disabled).toBe(false);
     expect(
       getButton(container, "Receive Email Updates for Conversation Two")
         .disabled
@@ -440,7 +476,7 @@ describe("ConversationUpdatePreferenceSettings", () => {
     await flushPromises();
 
     getButton(container, "Load more").click();
-    getButton(container, "Pause all Email Updates").click();
+    getButton(container, "Receive Email Updates").click();
     await flushPromises();
 
     stalePage.resolve({
@@ -452,9 +488,9 @@ describe("ConversationUpdatePreferenceSettings", () => {
     await flushPromises();
 
     expect(container.textContent).toContain("Conversation Two");
-    expect(
-      getButton(container, "Pause all Email Updates").dataset.enabled
-    ).toBe("true");
+    expect(getButton(container, "Receive Email Updates").dataset.enabled).toBe(
+      "false"
+    );
     expect(
       getButton(container, "Receive Email Updates for Project One").dataset
         .enabled
@@ -647,9 +683,7 @@ describe("ConversationUpdatePreferenceSettings", () => {
       getButton(container, "Receive Email Updates for Conversation Two")
         .disabled
     ).toBe(true);
-    expect(getButton(container, "Pause all Email Updates").disabled).toBe(
-      false
-    );
+    expect(getButton(container, "Receive Email Updates").disabled).toBe(false);
 
     conversationWrite.resolve({
       success: true,
@@ -705,7 +739,7 @@ describe("ConversationUpdatePreferenceSettings", () => {
     await flushPromises();
 
     const switches = [
-      getButton(container, "Pause all Email Updates"),
+      getButton(container, "Receive Email Updates"),
       getButton(container, "Receive Email Updates for Project One"),
       getButton(container, "Receive Email Updates for Conversation Two"),
     ];

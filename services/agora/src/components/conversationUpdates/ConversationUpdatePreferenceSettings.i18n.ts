@@ -1,12 +1,13 @@
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 
 export interface ConversationUpdatePreferenceSettingsTranslations {
-  emailUpdates: string;
-  heading: string;
+  sectionDescription: string;
+  recommendationDescription: string;
   searchLabel: string;
   tryAgain: string;
-  pauseAll: string;
-  pauseDescription: string;
+  receiveEmailUpdates: string;
+  updatesOnDescription: string;
+  updatesPausedDescription: string;
   empty: string;
   projects: string;
   noProject: string;
@@ -26,12 +27,17 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
   ConversationUpdatePreferenceSettingsTranslations
 > = {
   en: {
-    emailUpdates: "Email Updates",
-    heading: "Choose what brings you back",
+    sectionDescription:
+      "Occasional email updates from facilitators keep you informed about selected projects and conversations and invite you to participate again. No advertising, fundraising, political campaigning, or unrelated promotion.",
+    recommendationDescription:
+      "We recommend keeping them on so you don’t miss important developments. You can change this anytime.",
     searchLabel: "Search projects and conversations",
     tryAgain: "Try again",
-    pauseAll: "Pause all Email Updates",
-    pauseDescription: "Your project and conversation choices stay saved.",
+    receiveEmailUpdates: "Receive Email Updates",
+    updatesOnDescription:
+      "You’ll receive updates from your selected projects and conversations.",
+    updatesPausedDescription:
+      "All Email Updates are paused. Your project and conversation choices stay saved.",
     empty: "No Email Update preferences match this search.",
     projects: "Projects",
     noProject: "No Project",
@@ -49,13 +55,17 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     savePreferenceError: "Couldn’t save your email update preference.",
   },
   es: {
-    emailUpdates: "Novedades por correo",
-    heading: "Elige qué te hace volver",
+    sectionDescription:
+      "Las novedades ocasionales por correo de quienes facilitan los proyectos y las conversaciones le permiten mantenerse al día y le invitan a volver a participar. Sin publicidad, recaudación de fondos, campañas políticas ni promociones no relacionadas.",
+    recommendationDescription:
+      "Le recomendamos mantenerlas activadas para no perderse novedades importantes. Puede cambiar esta opción cuando quiera.",
     searchLabel: "Buscar proyectos y conversaciones",
     tryAgain: "Intentar de nuevo",
-    pauseAll: "Pausar todas las novedades por correo",
-    pauseDescription:
-      "Tus opciones de proyectos y conversaciones seguirán guardadas.",
+    receiveEmailUpdates: "Recibir novedades por correo",
+    updatesOnDescription:
+      "Recibirás novedades de los proyectos y las conversaciones que hayas seleccionado.",
+    updatesPausedDescription:
+      "Todas las novedades por correo están pausadas. Tus opciones de proyectos y conversaciones siguen guardadas.",
     empty:
       "Ninguna preferencia de seguimiento por correo coincide con esta búsqueda.",
     projects: "Proyectos",
@@ -77,13 +87,17 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
       "No se pudo guardar tu preferencia de seguimiento por correo.",
   },
   fr: {
-    emailUpdates: "Nouvelles par e-mail",
-    heading: "Choisissez ce qui vous fait revenir",
+    sectionDescription:
+      "Les nouvelles occasionnelles par e-mail des facilitateurs vous tiennent informé des projets et conversations sélectionnés et vous invitent à participer à nouveau. Sans publicité, appel aux dons, campagne politique ni promotion sans rapport.",
+    recommendationDescription:
+      "Nous vous recommandons de les garder activées pour ne manquer aucune évolution importante. Vous pouvez modifier ce choix à tout moment.",
     searchLabel: "Rechercher des projets et des conversations",
     tryAgain: "Réessayer",
-    pauseAll: "Suspendre toutes les nouvelles par e-mail",
-    pauseDescription:
-      "Vos choix de projets et de conversations restent enregistrés.",
+    receiveEmailUpdates: "Recevoir les nouvelles par e-mail",
+    updatesOnDescription:
+      "Vous recevrez les nouvelles des projets et conversations sélectionnés.",
+    updatesPausedDescription:
+      "Toutes les nouvelles par e-mail sont suspendues. Vos choix de projets et de conversations restent enregistrés.",
     empty:
       "Aucune préférence de suivi par e-mail ne correspond à cette recherche.",
     projects: "Projets",
@@ -104,12 +118,16 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
       "Impossible d’enregistrer votre préférence de suivi par e-mail.",
   },
   "zh-Hant": {
-    emailUpdates: "電子郵件更新",
-    heading: "選擇讓你再次回來的內容",
+    sectionDescription:
+      "協作者傳送的不定期電子郵件動態，讓你掌握所選專案和對話的消息並再次參與。不包含廣告、募款、政治宣傳或無關推廣。",
+    recommendationDescription:
+      "建議保持開啟，以免錯過重要進展。你可以隨時變更此選項。",
     searchLabel: "搜尋專案和對話",
     tryAgain: "再試一次",
-    pauseAll: "暫停所有電子郵件更新",
-    pauseDescription: "你的專案和對話選擇會保留。",
+    receiveEmailUpdates: "接收電子郵件更新",
+    updatesOnDescription: "你會收到所選專案和對話的更新。",
+    updatesPausedDescription:
+      "所有電子郵件更新都已暫停。你的專案和對話選擇會保留。",
     empty: "沒有符合此搜尋的電子郵件更新偏好。",
     projects: "專案",
     noProject: "無專案",
@@ -124,12 +142,16 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     savePreferenceError: "無法儲存你的電子郵件更新偏好。",
   },
   "zh-Hans": {
-    emailUpdates: "电子邮件更新",
-    heading: "选择让你再次回来的内容",
+    sectionDescription:
+      "协作者发送的不定期邮件动态，让你掌握所选项目和对话的消息并再次参与。不包含广告、募款、政治宣传或无关推广。",
+    recommendationDescription:
+      "建议保持开启，以免错过重要进展。你可以随时更改此选项。",
     searchLabel: "搜索项目和对话",
     tryAgain: "重试",
-    pauseAll: "暂停所有电子邮件更新",
-    pauseDescription: "你的项目和对话选择会保留。",
+    receiveEmailUpdates: "接收电子邮件更新",
+    updatesOnDescription: "你会收到所选项目和对话的更新。",
+    updatesPausedDescription:
+      "所有电子邮件更新都已暂停。你的项目和对话选择会保留。",
     empty: "没有符合此搜索的电子邮件更新偏好。",
     projects: "项目",
     noProject: "无项目",
@@ -144,12 +166,16 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     savePreferenceError: "无法保存你的电子邮件更新偏好。",
   },
   ja: {
-    emailUpdates: "メール更新",
-    heading: "再訪のきっかけを選ぶ",
+    sectionDescription:
+      "ファシリテーターから届く不定期のメール更新で、選択したプロジェクトや会話の情報を確認し、再び参加できます。広告、資金集め、政治運動、無関係な宣伝は含まれません。",
+    recommendationDescription:
+      "重要な進展を見逃さないよう、オンのままにすることをおすすめします。この設定はいつでも変更できます。",
     searchLabel: "プロジェクトと会話を検索",
     tryAgain: "もう一度試す",
-    pauseAll: "すべてのメール更新を一時停止",
-    pauseDescription: "プロジェクトと会話の設定は保存されたままです。",
+    receiveEmailUpdates: "メール更新を受け取る",
+    updatesOnDescription: "選択したプロジェクトと会話の更新を受け取ります。",
+    updatesPausedDescription:
+      "すべてのメール更新は一時停止されています。プロジェクトと会話の選択内容は保存されたままです。",
     empty: "検索に一致するメール更新設定はありません。",
     projects: "プロジェクト",
     noProject: "プロジェクトなし",
@@ -165,12 +191,16 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     savePreferenceError: "メール更新設定を保存できませんでした。",
   },
   ar: {
-    emailUpdates: "تحديثات البريد الإلكتروني",
-    heading: "اختر ما يعيدك",
+    sectionDescription:
+      "تبقيك تحديثات البريد الإلكتروني العرضية من الميسّرين على اطلاع بالمشاريع والمحادثات المحددة وتدعوك للمشاركة مجددًا. لا إعلانات أو جمع تبرعات أو حملات سياسية أو ترويج غير ذي صلة.",
+    recommendationDescription:
+      "نوصي بإبقائها مفعّلة حتى لا تفوتك التطورات المهمة. يمكنك تغيير هذا الخيار في أي وقت.",
     searchLabel: "البحث في المشاريع والمحادثات",
     tryAgain: "حاول مجددًا",
-    pauseAll: "إيقاف جميع تحديثات البريد الإلكتروني مؤقتًا",
-    pauseDescription: "ستبقى خيارات المشاريع والمحادثات محفوظة.",
+    receiveEmailUpdates: "تلقي تحديثات البريد الإلكتروني",
+    updatesOnDescription: "ستتلقى تحديثات من المشاريع والمحادثات التي اخترتها.",
+    updatesPausedDescription:
+      "جميع تحديثات البريد الإلكتروني متوقفة مؤقتًا. ستبقى خيارات المشاريع والمحادثات محفوظة.",
     empty: "لا توجد تفضيلات لتحديثات البريد الإلكتروني تطابق هذا البحث.",
     projects: "المشاريع",
     noProject: "بلا مشروع",
@@ -187,12 +217,17 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     savePreferenceError: "تعذر حفظ تفضيل تحديثات البريد الإلكتروني.",
   },
   fa: {
-    emailUpdates: "به‌روزرسانی‌های ایمیلی",
-    heading: "انتخاب کنید چه چیزی شما را بازمی‌گرداند",
+    sectionDescription:
+      "به‌روزرسانی‌های ایمیلی گاه‌به‌گاه تسهیل‌گران، شما را از پروژه‌ها و گفت‌وگوهای انتخاب‌شده باخبر می‌کند و برای مشارکت دوباره دعوت می‌کند. بدون تبلیغات، جمع‌آوری کمک مالی، کارزار سیاسی یا ترویج نامرتبط.",
+    recommendationDescription:
+      "پیشنهاد می‌کنیم آن‌ها را روشن نگه دارید تا رویدادهای مهم را از دست ندهید. هر زمان بخواهید می‌توانید این گزینه را تغییر دهید.",
     searchLabel: "جستجوی پروژه‌ها و گفتگوها",
     tryAgain: "تلاش دوباره",
-    pauseAll: "توقف موقت همه به‌روزرسانی‌های ایمیلی",
-    pauseDescription: "انتخاب‌های پروژه و گفتگو ذخیره می‌مانند.",
+    receiveEmailUpdates: "دریافت به‌روزرسانی‌های ایمیلی",
+    updatesOnDescription:
+      "به‌روزرسانی‌های پروژه‌ها و گفتگوهای انتخاب‌شده را دریافت خواهید کرد.",
+    updatesPausedDescription:
+      "همهٔ به‌روزرسانی‌های ایمیلی موقتاً متوقف شده‌اند. انتخاب‌های شما برای پروژه‌ها و گفتگوها ذخیره می‌مانند.",
     empty: "هیچ تنظیم به‌روزرسانی ایمیلی با این جستجو مطابقت ندارد.",
     projects: "پروژه‌ها",
     noProject: "بدون پروژه",
@@ -209,12 +244,16 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     savePreferenceError: "تنظیم به‌روزرسانی ایمیلی شما ذخیره نشد.",
   },
   he: {
-    emailUpdates: "עדכונים בדוא״ל",
-    heading: "בחרו מה יחזיר אתכם",
+    sectionDescription:
+      "עדכונים מזדמנים בדוא״ל מהמנחים משאירים אתכם מעודכנים בפרויקטים ובשיחות שבחרתם ומזמינים אתכם להשתתף שוב. ללא פרסום, גיוס תרומות, תעמולה פוליטית או קידום שאינו קשור.",
+    recommendationDescription:
+      "מומלץ להשאיר אותם פעילים כדי לא להחמיץ התפתחויות חשובות. אפשר לשנות זאת בכל עת.",
     searchLabel: "חיפוש פרויקטים ושיחות",
     tryAgain: "ניסיון נוסף",
-    pauseAll: "השהיית כל העדכונים בדוא״ל",
-    pauseDescription: "הבחירות לפרויקטים ולשיחות יישארו שמורות.",
+    receiveEmailUpdates: "קבלת עדכונים בדוא״ל",
+    updatesOnDescription: "תקבלו עדכונים מהפרויקטים ומהשיחות שבחרתם.",
+    updatesPausedDescription:
+      "כל העדכונים בדוא״ל מושהים. הבחירות שלכם בפרויקטים ובשיחות יישארו שמורות.",
     empty: "אין העדפות לעדכונים בדוא״ל שתואמות לחיפוש.",
     projects: "פרויקטים",
     noProject: "ללא פרויקט",
@@ -229,12 +268,17 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     savePreferenceError: "לא ניתן לשמור את העדפת העדכונים בדוא״ל.",
   },
   ky: {
-    emailUpdates: "Электрондук почта жаңыртуулары",
-    heading: "Сизди кайра алып келген нерсени тандаңыз",
+    sectionDescription:
+      "Фасилитаторлордун маал-маалы менен келген электрондук каттары сизди тандалган долбоорлор жана талкуулар тууралуу кабардар кылып, кайра катышууга чакырат. Жарнама, каражат чогултуу, саясий үгүт же тиешеси жок илгерилетүү болбойт.",
+    recommendationDescription:
+      "Маанилүү өзгөрүүлөрдү өткөрүп жибербөө үчүн аларды күйгүзүп коюуну сунуштайбыз. Муну каалаган убакта өзгөртө аласыз.",
     searchLabel: "Долбоорлорду жана маектерди издөө",
     tryAgain: "Кайра аракет кылуу",
-    pauseAll: "Бардык электрондук почта жаңыртууларын тындыруу",
-    pauseDescription: "Долбоор жана маек тандоолоруңуз сакталат.",
+    receiveEmailUpdates: "Электрондук почта жаңыртууларын алуу",
+    updatesOnDescription:
+      "Тандалган долбоорлор жана маектер боюнча жаңыртууларды аласыз.",
+    updatesPausedDescription:
+      "Бардык электрондук почта жаңыртуулары тындырылды. Долбоор жана маек тандоолоруңуз сакталат.",
     empty: "Бул издөөгө туура келген электрондук почта жөндөөлөрү жок.",
     projects: "Долбоорлор",
     noProject: "Долбоорсуз",
@@ -252,12 +296,17 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     savePreferenceError: "Электрондук почта жаңыртуу жөндөөңүз сакталган жок.",
   },
   ru: {
-    emailUpdates: "Обновления по электронной почте",
-    heading: "Выберите, что поможет вам вернуться",
+    sectionDescription:
+      "Периодические письма от фасилитаторов помогают следить за выбранными проектами и обсуждениями и приглашают снова участвовать. Без рекламы, сбора средств, политической агитации и несвязанного продвижения.",
+    recommendationDescription:
+      "Рекомендуем оставить их включёнными, чтобы не пропустить важные события. Вы можете изменить этот выбор в любое время.",
     searchLabel: "Поиск проектов и обсуждений",
     tryAgain: "Повторить",
-    pauseAll: "Приостановить все обновления по электронной почте",
-    pauseDescription: "Настройки проектов и обсуждений останутся сохранены.",
+    receiveEmailUpdates: "Получать обновления по электронной почте",
+    updatesOnDescription:
+      "Вы будете получать обновления по выбранным проектам и обсуждениям.",
+    updatesPausedDescription:
+      "Все обновления по электронной почте приостановлены. Ваш выбор проектов и обсуждений сохранится.",
     empty:
       "Нет настроек обновлений по электронной почте, соответствующих поиску.",
     projects: "Проекты",

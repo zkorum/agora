@@ -6,21 +6,18 @@
   <div>
     <div class="container">
       <!-- Display language section -->
-      <div class="section-header">
-        <p class="section-title">{{ t("displayLanguageTitle") }}</p>
-        <p class="section-description">
-          {{ t("displayLanguageDescription") }}
-        </p>
-      </div>
+      <SettingsSectionHeader
+        :title="t('displayLanguageTitle')"
+        :descriptions="[t('displayLanguageDescription')]"
+      />
       <ListSection :settings-item-list="displayLanguageSettings" />
 
       <!-- Additional languages section -->
-      <div v-if="authStore.isGuestOrLoggedIn" class="section-header">
-        <p class="section-title">{{ t("additionalLanguagesTitle") }}</p>
-        <p class="section-description">
-          {{ t("additionalLanguagesDescription") }}
-        </p>
-      </div>
+      <SettingsSectionHeader
+        v-if="authStore.isGuestOrLoggedIn"
+        :title="t('additionalLanguagesTitle')"
+        :descriptions="[t('additionalLanguagesDescription')]"
+      />
       <ListSection
         v-if="authStore.isGuestOrLoggedIn"
         :settings-item-list="additionalLanguageSettings"
@@ -32,6 +29,7 @@
 <script setup lang="ts">
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import ListSection from "src/components/ui-library/ListSection.vue";
+import SettingsSectionHeader from "src/components/ui-library/SettingsSectionHeader.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useAuthenticationStore } from "src/stores/authentication";
@@ -45,7 +43,11 @@ import {
   languagesSettingsTranslations,
 } from "./index.i18n";
 
-const { isActive } = usePageLayout({ enableFooter: false, reducedWidth: true, addBottomPadding: true });
+const { isActive } = usePageLayout({
+  enableFooter: false,
+  reducedWidth: true,
+  addBottomPadding: true,
+});
 
 const { t } = useComponentI18n<LanguagesSettingsTranslations>(
   languagesSettingsTranslations
@@ -105,25 +107,4 @@ const additionalLanguageSettings = computed((): SettingsInterface[] => {
   padding-right: 0.5rem;
 }
 
-.section-header {
-  margin-bottom: 1rem;
-  margin-top: 1.5rem;
-
-  &:first-child {
-    margin-top: 0;
-  }
-}
-
-.section-title {
-  font-size: 1rem;
-  font-weight: var(--font-weight-semibold);
-  color: #1f2937;
-}
-
-.section-description {
-  font-size: 0.9rem;
-  color: #6b7280;
-  margin: 0;
-  line-height: 1.4;
-}
 </style>

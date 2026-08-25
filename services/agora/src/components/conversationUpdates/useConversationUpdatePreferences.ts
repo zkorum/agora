@@ -77,7 +77,7 @@ export function useConversationUpdatePreferences() {
     })
   );
   const groups = computed(() => preferenceState.value.groups);
-  const globalPaused = computed(() => preferenceState.value.globalPaused);
+  const globalEnabled = computed(() => !preferenceState.value.globalPaused);
   const projectGroups = computed(() =>
     getProjectPreferenceGroups(groups.value)
   );
@@ -191,10 +191,10 @@ export function useConversationUpdatePreferences() {
     }
   }
 
-  async function setGlobalPaused(paused: boolean): Promise<void> {
+  async function setGlobalEnabled(enabled: boolean): Promise<void> {
     const optimisticPreference = {
       kind: "global",
-      paused,
+      paused: !enabled,
     } satisfies ConversationEmailUpdatePreferenceOverride;
     if (!beginMutation(optimisticPreference)) {
       return;
@@ -202,7 +202,7 @@ export function useConversationUpdatePreferences() {
     try {
       const response = await emailUpdatesApi.updatePreference({
         operation: "set_global_pause",
-        paused,
+        paused: !enabled,
       });
       if (
         !response.success ||
@@ -395,7 +395,7 @@ export function useConversationUpdatePreferences() {
 
   return {
     expandedProjectSlugs,
-    globalPaused,
+    globalEnabled,
     groups,
     isGlobalSaving,
     isInitialLoading,
@@ -411,7 +411,7 @@ export function useConversationUpdatePreferences() {
     savingProjectSlugs,
     search,
     setConversationPreference,
-    setGlobalPaused,
+    setGlobalEnabled,
     setProjectExpanded,
     setProjectPreference,
     updateSearch,
