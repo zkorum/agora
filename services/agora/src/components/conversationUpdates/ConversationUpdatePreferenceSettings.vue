@@ -49,8 +49,6 @@
         </q-card-section>
       </q-card>
 
-      <ZKInfoBanner v-if="globalPaused" :message="t('pausedDescription')" />
-
       <p v-if="groups.length === 0" class="preference-settings__empty">
         {{ t("empty") }}
       </p>

@@ -9,7 +9,6 @@ export interface ConversationUpdatePreferenceSettingsTranslations {
   pauseAll: string;
   pauseDescription: string;
   saving: string;
-  pausedDescription: string;
   empty: string;
   projects: string;
   projectsDescription: string;
@@ -48,8 +47,6 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     pauseAll: "Pause all Email Updates",
     pauseDescription: "Your project and conversation choices stay saved.",
     saving: "Saving...",
-    pausedDescription:
-      "All Email Updates are paused. Your choices below remain saved and can still be changed.",
     empty: "No Email Update preferences match this search.",
     projects: "Projects",
     projectsDescription: "Set a default, then adjust individual conversations.",
@@ -89,8 +86,6 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     pauseDescription:
       "Tus opciones de proyectos y conversaciones seguirán guardadas.",
     saving: "Guardando...",
-    pausedDescription:
-      "Todas las novedades por correo están pausadas. Tus opciones siguen guardadas y puedes modificarlas.",
     empty:
       "Ninguna preferencia de seguimiento por correo coincide con esta búsqueda.",
     projects: "Proyectos",
@@ -135,8 +130,6 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     pauseDescription:
       "Vos choix de projets et de conversations restent enregistrés.",
     saving: "Enregistrement...",
-    pausedDescription:
-      "Toutes les nouvelles par e-mail sont suspendues. Vos choix restent enregistrés et peuvent encore être modifiés.",
     empty:
       "Aucune préférence de suivi par e-mail ne correspond à cette recherche.",
     projects: "Projets",
@@ -181,8 +174,6 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     pauseAll: "暫停所有電子郵件更新",
     pauseDescription: "你的專案和對話選擇會保留。",
     saving: "儲存中...",
-    pausedDescription:
-      "所有電子郵件更新都已暫停。下方選擇仍會保留，也可以繼續修改。",
     empty: "沒有符合此搜尋的電子郵件更新偏好。",
     projects: "專案",
     projectsDescription: "先設定預設值，再調整個別對話。",
@@ -216,8 +207,6 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     pauseAll: "暂停所有电子邮件更新",
     pauseDescription: "你的项目和对话选择会保留。",
     saving: "正在保存...",
-    pausedDescription:
-      "所有电子邮件更新都已暂停。下方选择仍会保留，也可以继续修改。",
     empty: "没有符合此搜索的电子邮件更新偏好。",
     projects: "项目",
     projectsDescription: "先设置默认值，再调整单个对话。",
@@ -251,8 +240,6 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     pauseAll: "すべてのメール更新を一時停止",
     pauseDescription: "プロジェクトと会話の設定は保存されたままです。",
     saving: "保存中...",
-    pausedDescription:
-      "すべてのメール更新を一時停止しています。以下の設定は保存され、引き続き変更できます。",
     empty: "検索に一致するメール更新設定はありません。",
     projects: "プロジェクト",
     projectsDescription: "標準設定を決めてから、会話ごとに調整します。",
@@ -287,8 +274,6 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     pauseAll: "إيقاف جميع تحديثات البريد الإلكتروني مؤقتًا",
     pauseDescription: "ستبقى خيارات المشاريع والمحادثات محفوظة.",
     saving: "جارٍ الحفظ...",
-    pausedDescription:
-      "جميع تحديثات البريد الإلكتروني متوقفة مؤقتًا. ستبقى خياراتك أدناه محفوظة ويمكنك تعديلها.",
     empty: "لا توجد تفضيلات لتحديثات البريد الإلكتروني تطابق هذا البحث.",
     projects: "المشاريع",
     projectsDescription: "عيّن خيارًا افتراضيًا، ثم عدّل كل محادثة.",
@@ -324,8 +309,6 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     pauseAll: "توقف موقت همه به‌روزرسانی‌های ایمیلی",
     pauseDescription: "انتخاب‌های پروژه و گفتگو ذخیره می‌مانند.",
     saving: "در حال ذخیره...",
-    pausedDescription:
-      "همه به‌روزرسانی‌های ایمیلی موقتاً متوقف شده‌اند. انتخاب‌های زیر ذخیره می‌مانند و همچنان قابل تغییرند.",
     empty: "هیچ تنظیم به‌روزرسانی ایمیلی با این جستجو مطابقت ندارد.",
     projects: "پروژه‌ها",
     projectsDescription: "یک پیش‌فرض تعیین کنید و سپس هر گفتگو را تنظیم کنید.",
@@ -361,8 +344,6 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     pauseAll: "השהיית כל העדכונים בדוא״ל",
     pauseDescription: "הבחירות לפרויקטים ולשיחות יישארו שמורות.",
     saving: "בשמירה...",
-    pausedDescription:
-      "כל העדכונים בדוא״ל מושהים. הבחירות שלמטה נשארות שמורות ועדיין אפשר לשנות אותן.",
     empty: "אין העדפות לעדכונים בדוא״ל שתואמות לחיפוש.",
     projects: "פרויקטים",
     projectsDescription: "הגדירו ברירת מחדל ואז התאימו כל שיחה.",
@@ -396,8 +377,6 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     pauseAll: "Бардык электрондук почта жаңыртууларын тындыруу",
     pauseDescription: "Долбоор жана маек тандоолоруңуз сакталат.",
     saving: "Сакталууда...",
-    pausedDescription:
-      "Бардык электрондук почта жаңыртуулары тындырылды. Төмөнкү тандоолоруңуз сакталат жана аларды өзгөртө аласыз.",
     empty: "Бул издөөгө туура келген электрондук почта жөндөөлөрү жок.",
     projects: "Долбоорлор",
     projectsDescription:
@@ -435,8 +414,6 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     pauseAll: "Приостановить все обновления по электронной почте",
     pauseDescription: "Настройки проектов и обсуждений останутся сохранены.",
     saving: "Сохранение...",
-    pausedDescription:
-      "Все обновления по электронной почте приостановлены. Настройки ниже сохранены, и их по-прежнему можно менять.",
     empty:
       "Нет настроек обновлений по электронной почте, соответствующих поиску.",
     projects: "Проекты",
