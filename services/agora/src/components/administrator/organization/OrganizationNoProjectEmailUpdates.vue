@@ -12,7 +12,7 @@
     />
 
     <ZKCard padding="1rem" class="card-background">
-      <form class="section" @submit.prevent="saveContact">
+      <form ref="contactForm" class="section" @submit.prevent="saveContact">
         <AdminSectionHeader
           :title="t('contactTitle')"
           :description="t('contactDescription')"
@@ -123,6 +123,7 @@ const { showNotifyMessage } = useNotify();
 const configuration = ref<AdminNoProjectEmailUpdatesConfiguration>();
 const contactName = ref("");
 const contactEmail = ref("");
+const contactForm = ref<HTMLFormElement>();
 const contactNameInput = ref<{ focus: () => void }>();
 const isSaving = ref(false);
 const showDeleteConfirmDialog = ref(false);
@@ -185,6 +186,7 @@ function setContactEmail(value: unknown): void {
 
 async function focusContactName(): Promise<void> {
   await nextTick();
+  contactForm.value?.scrollIntoView({ behavior: "smooth", block: "center" });
   contactNameInput.value?.focus();
 }
 
