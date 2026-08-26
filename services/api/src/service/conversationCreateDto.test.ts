@@ -85,3 +85,27 @@ describe("conversation creation DTO", () => {
         });
     });
 });
+
+describe("conversation update DTO", () => {
+    it.each([undefined, null, true, false])(
+        "preserves the Email Updates override command %s",
+        (conversationEmailUpdateEnabledOverride) => {
+            const request = Dto.updateConversationRequest.parse({
+                conversationSlugId: "conv-one",
+                conversationTitle: "Updated conversation",
+                conversationBody: undefined,
+                isIndexed: true,
+                participationMode: "account_required",
+                multilingualSetting: {
+                    additionalLanguageCodes: [],
+                    dynamicTranslationEnabled: false,
+                },
+                conversationEmailUpdateEnabledOverride,
+            });
+
+            expect(request.conversationEmailUpdateEnabledOverride).toBe(
+                conversationEmailUpdateEnabledOverride,
+            );
+        },
+    );
+});

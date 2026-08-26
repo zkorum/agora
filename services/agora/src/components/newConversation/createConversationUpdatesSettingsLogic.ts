@@ -35,3 +35,16 @@ export function hasConversationUpdatesSettingChanged({
 }): boolean {
   return currentOverride !== originalOverride;
 }
+
+export function getConversationUpdatesOverrideUpdate({
+  currentOverride,
+  originalOverride,
+}: {
+  currentOverride: boolean | undefined;
+  originalOverride: boolean | undefined;
+}): boolean | null | undefined {
+  if (currentOverride === originalOverride) {
+    return undefined;
+  }
+  return currentOverride ?? null;
+}

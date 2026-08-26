@@ -33,7 +33,6 @@
     <div v-else class="container">
       <NewConversationControlBar
         v-model:is-private="isPrivate"
-        v-model:participation-mode="participationMode"
         v-model:requires-event-ticket="requiresEventTicket"
         v-model:post-as="postAs"
         v-model:import-settings="importSettings"
@@ -44,6 +43,7 @@
         v-model:conversation-type-config="conversationTypeConfig"
         v-model:ai-labeling-enabled="aiLabelingEnabled"
         v-model:preferred-opinion-group-count="preferredOpinionGroupCount"
+        :participation-mode="participationMode"
         :is-edit-mode="true"
         :can-add-event-ticket="canAddEventTicket"
         :can-change-event-ticket="canChangeEventTicket"
@@ -55,6 +55,7 @@
         :detected-source-language-code="visibleDetectedSourceLanguageCode"
         :detected-raw-language-code="visibleDetectedRawLanguageCode"
         :auto-detection-status="visibleAutoDetectionStatus"
+        @update:participation-mode="updateParticipationModeWithReachWarning"
       >
         <template #extra-controls>
           <CreateConversationProjectLanguageSettings
@@ -81,10 +82,15 @@
               undefined
             "
             mode="edit"
-            @update:model-value="updateConversationUpdatesConfiguration"
+            @update:model-value="updateEmailUpdatesWithReachWarning"
           />
         </template>
       </NewConversationControlBar>
+
+      <ConversationUpdatesPartialEmailReachDialog
+        v-model="partialEmailReachWarningMode"
+        @action="handlePartialEmailReachAction"
+      />
 
       <ZKCard
         v-if="showPremiumEditRestrictedBanner"
@@ -153,9 +159,22 @@ import Button from "primevue/button";
 import Editor from "src/components/editor/Editor.vue";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import ConversationUpdatesPartialEmailReachDialog from "src/components/newConversation/ConversationUpdatesPartialEmailReachDialog.vue";
+import {
+  areConversationUpdatesReachStatesEqual,
+  type ConversationUpdatesReachState,
+  getPartialEmailReachWarning,
+  getUnacknowledgedPartialEmailReachWarning,
+  type PartialEmailReachAction,
+  type PartialEmailReachParticipationMode,
+  resolvePartialEmailReachAction,
+} from "src/components/newConversation/conversationUpdatesPartialEmailReachLogic";
 import CreateConversationProjectLanguageSettings from "src/components/newConversation/CreateConversationProjectLanguageSettings.vue";
 import CreateConversationUpdatesSettings from "src/components/newConversation/CreateConversationUpdatesSettings.vue";
-import { hasConversationUpdatesSettingChanged } from "src/components/newConversation/createConversationUpdatesSettingsLogic";
+import {
+  getConversationUpdatesOverrideUpdate,
+  hasConversationUpdatesSettingChanged,
+} from "src/components/newConversation/createConversationUpdatesSettingsLogic";
 import NewConversationControlBar from "src/components/newConversation/NewConversationControlBar.vue";
 import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
@@ -426,10 +445,106 @@ const conversationUpdatesConfiguration = ref<
 >(undefined);
 const conversationUpdatesOverride = ref<boolean | undefined>(undefined);
 const originalConversationUpdatesOverride = ref<boolean | undefined>(undefined);
-const isConversationUpdatesConfigurationSaving = ref(false);
 const conversationUpdatesScopeDefault = computed(
   () => conversationUpdatesConfiguration.value?.scopeDefaultEnabled ?? false
 );
+const partialEmailReachWarningMode = ref<
+  PartialEmailReachParticipationMode | undefined
+>(undefined);
+const acknowledgedPartialEmailReachState = ref<
+  ConversationUpdatesReachState | undefined
+>(undefined);
+
+function getEditConversationUpdatesReachState({
+  mode,
+  override,
+}: {
+  mode: ParticipationMode;
+  override: boolean | undefined;
+}): ConversationUpdatesReachState {
+  const configuration = conversationUpdatesConfiguration.value;
+  return {
+    participationMode: mode,
+    effectiveEmailUpdatesEnabled:
+      configuration !== undefined &&
+      configuration.participantContactEmail !== undefined &&
+      (override ?? configuration.scopeDefaultEnabled),
+  };
+}
+
+function showReachWarningForTransition({
+  previous,
+  next,
+}: {
+  previous: ConversationUpdatesReachState;
+  next: ConversationUpdatesReachState;
+}): void {
+  if (
+    !areConversationUpdatesReachStatesEqual({ left: previous, right: next })
+  ) {
+    acknowledgedPartialEmailReachState.value = undefined;
+  }
+  const warningMode = getPartialEmailReachWarning({
+    previous,
+    next,
+  });
+  if (warningMode !== undefined) {
+    partialEmailReachWarningMode.value = warningMode;
+  }
+}
+
+function updateParticipationModeWithReachWarning(
+  mode: ParticipationMode
+): void {
+  const previous = getEditConversationUpdatesReachState({
+    mode: participationMode.value,
+    override: conversationUpdatesOverride.value,
+  });
+  participationMode.value = mode;
+  showReachWarningForTransition({
+    previous,
+    next: getEditConversationUpdatesReachState({
+      mode,
+      override: conversationUpdatesOverride.value,
+    }),
+  });
+}
+
+function updateEmailUpdatesWithReachWarning(
+  override: boolean | undefined
+): void {
+  const previous = getEditConversationUpdatesReachState({
+    mode: participationMode.value,
+    override: conversationUpdatesOverride.value,
+  });
+  conversationUpdatesOverride.value = override;
+  showReachWarningForTransition({
+    previous,
+    next: getEditConversationUpdatesReachState({
+      mode: participationMode.value,
+      override,
+    }),
+  });
+}
+
+function handlePartialEmailReachAction(action: PartialEmailReachAction): void {
+  const resolution = resolvePartialEmailReachAction({
+    action,
+    participationMode: participationMode.value,
+    conversationEmailUpdateEnabledOverride: conversationUpdatesOverride.value,
+  });
+  participationMode.value = resolution.participationMode;
+  conversationUpdatesOverride.value =
+    resolution.conversationEmailUpdateEnabledOverride;
+  acknowledgedPartialEmailReachState.value =
+    action === "keep_updates_on"
+      ? getEditConversationUpdatesReachState({
+          mode: participationMode.value,
+          override: conversationUpdatesOverride.value,
+        })
+      : undefined;
+  partialEmailReachWarningMode.value = undefined;
+}
 
 function getConversationTypeConfig(): ConversationTypeConfig {
   if (conversationType.value === "ranking") {
@@ -491,7 +606,6 @@ const isSaveButtonDisabled = computed(() => {
     isSaveButtonLoading.value ||
     !isDataLoaded.value ||
     !canSave.value ||
-    isConversationUpdatesConfigurationSaving.value ||
     isTitleOverLimit.value ||
     isBodyOverLimit.value
   );
@@ -541,6 +655,11 @@ function validateSubmission(): {
 
 async function performSave(): Promise<void> {
   try {
+    const conversationEmailUpdateEnabledOverride =
+      getConversationUpdatesOverrideUpdate({
+        currentOverride: conversationUpdatesOverride.value,
+        originalOverride: originalConversationUpdatesOverride.value,
+      });
     const response = await updateMutation.mutateAsync({
       conversationSlugId: conversationSlugId,
       conversationTitle: title.value,
@@ -550,6 +669,9 @@ async function performSave(): Promise<void> {
       isIndexed: !isPrivate.value,
       participationMode: participationMode.value,
       requiresEventTicket: requiresEventTicket.value,
+      ...(conversationEmailUpdateEnabledOverride === undefined
+        ? {}
+        : { conversationEmailUpdateEnabledOverride }),
       ...(conversationType.value === "polis"
         ? {
             aiLabelingEnabled: aiLabelingEnabled.value,
@@ -595,6 +717,12 @@ async function performSave(): Promise<void> {
           errorMsg = t("premiumAccessRequiredError");
           break;
         }
+        case "feature_not_available":
+        case "missing_participant_contact_email":
+        case "active_delivery_conflict": {
+          errorMsg = t("updateError");
+          break;
+        }
         case "plain_text_too_long":
         case "html_too_long": {
           errorMsg = t("updateError");
@@ -624,6 +752,19 @@ async function onSave(): Promise<void> {
     if (validation.errorField) {
       await handleValidationError(validation.errorField);
     }
+    return;
+  }
+
+  const reachState = getEditConversationUpdatesReachState({
+    mode: participationMode.value,
+    override: conversationUpdatesOverride.value,
+  });
+  const warningMode = getUnacknowledgedPartialEmailReachWarning({
+    state: reachState,
+    acknowledgedState: acknowledgedPartialEmailReachState.value,
+  });
+  if (warningMode !== undefined) {
+    partialEmailReachWarningMode.value = warningMode;
     return;
   }
 
@@ -667,45 +808,6 @@ async function loadConversationUpdatesConfiguration(): Promise<void> {
       "Failed to load conversation Email Update configuration",
       error
     );
-  }
-}
-
-async function updateConversationUpdatesConfiguration(
-  override: boolean | undefined
-): Promise<void> {
-  const previousConfiguration = conversationUpdatesConfiguration.value;
-  const previousOverride = conversationUpdatesOverride.value;
-  if (
-    previousConfiguration === undefined ||
-    !previousConfiguration.canConfigure
-  ) {
-    return;
-  }
-  conversationUpdatesOverride.value = override;
-  isConversationUpdatesConfigurationSaving.value = true;
-  try {
-    const response = await conversationEmailUpdatesApi.updateConfiguration({
-      target: "conversation",
-      conversationSlugId,
-      setting:
-        override === undefined ? "inherit" : override ? "enabled" : "disabled",
-    });
-    if (!response.success || response.configuration.target !== "conversation") {
-      conversationUpdatesOverride.value = previousOverride;
-      showNotifyMessage("The Email Update setting could not be saved.");
-      return;
-    }
-    applyConversationUpdatesConfiguration(response.configuration);
-  } catch (error) {
-    console.error(
-      "Failed to save conversation Email Update configuration",
-      error
-    );
-    conversationUpdatesConfiguration.value = previousConfiguration;
-    conversationUpdatesOverride.value = previousOverride;
-    showNotifyMessage("The Email Update setting could not be saved.");
-  } finally {
-    isConversationUpdatesConfigurationSaving.value = false;
   }
 }
 
@@ -804,6 +906,11 @@ onMounted(async () => {
     };
 
     await loadConversationUpdatesConfiguration();
+    acknowledgedPartialEmailReachState.value =
+      getEditConversationUpdatesReachState({
+        mode: participationMode.value,
+        override: conversationUpdatesOverride.value,
+      });
 
     isDataLoaded.value = true;
   } catch (error) {

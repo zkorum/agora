@@ -1,6 +1,7 @@
 // Edit conversation functionality
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { log } from "@/app.js";
+import { getPrimaryDatabase } from "@/shared-backend/db.js";
 import {
     conversationContentTable,
     conversationTable,
@@ -76,6 +77,7 @@ import {
     sourceLanguageToDisplayLanguage,
 } from "./translationLanguageSetting.js";
 import { normalizeUserRichTextInput } from "./richText.js";
+import { updateConversationEmailUpdateOverrideInTransaction } from "./conversationEmailUpdate.js";
 import {
     createEagerContentTranslationWorkForKnownConversation,
     fetchCurrentSurveyQuestionSources,
@@ -359,6 +361,7 @@ export async function updateConversation({
         aiLabelingEnabled,
         preferredOpinionGroupCount,
         surveyConfig,
+        conversationEmailUpdateEnabledOverride,
     } = data;
 
     let sanitizedBody = conversationBody;
@@ -388,7 +391,7 @@ export async function updateConversation({
         }
     }
 
-    const result = await db.transaction(async (tx) => {
+    const result = await getPrimaryDatabase(db).transaction(async (tx) => {
         const now = new Date();
         // Get conversation and check authorization
         const conversationResults = await tx
@@ -713,6 +716,26 @@ export async function updateConversation({
                 return {
                     success: false,
                     reason: "premium_access_required",
+                } as const;
+            }
+        }
+
+        if (conversationEmailUpdateEnabledOverride !== undefined) {
+            const emailUpdateResult =
+                await updateConversationEmailUpdateOverrideInTransaction({
+                    db: tx,
+                    userId,
+                    conversationSlugId,
+                    enabledOverride: conversationEmailUpdateEnabledOverride,
+                    now,
+                });
+            if (!emailUpdateResult.success) {
+                if (emailUpdateResult.reason === "target_not_found") {
+                    return { success: false, reason: "not_found" } as const;
+                }
+                return {
+                    success: false,
+                    reason: emailUpdateResult.reason,
                 } as const;
             }
         }

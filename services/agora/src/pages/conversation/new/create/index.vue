@@ -31,7 +31,6 @@
     <div class="container">
       <NewConversationControlBar
         v-model:is-private="isPrivate"
-        v-model:participation-mode="participationMode"
         v-model:requires-event-ticket="requiresEventTicket"
         v-model:post-as="postAs"
         v-model:conversation-type-config="conversationTypeConfig"
@@ -42,22 +41,25 @@
         v-model:multilingual-setting="multilingualSetting"
         v-model:ai-labeling-enabled="aiLabelingEnabled"
         v-model:preferred-opinion-group-count="preferredOpinionGroupCount"
+        :participation-mode="participationMode"
         :hide-language-setting="selectedProjectSlug !== undefined"
+        @update:participation-mode="updateParticipationModeWithReachWarning"
       >
         <template #extra-controls>
           <CreateConversationProjectLanguageSettings
             v-if="projectLanguageProjects.length > 0"
-            v-model:selected-project-slug="selectedProjectSlug"
             v-model:inherit-project-languages="inheritProjectLanguages"
             v-model:override-multilingual-setting="multilingualSetting"
+            :selected-project-slug="selectedProjectSlug"
             :project-list="projectLanguageProjects"
+            @update:selected-project-slug="updateProjectWithReachWarning"
           />
           <CreateConversationUpdatesSettings
             v-if="
               conversationDraft.importSettings.importType === null &&
               selectedEmailUpdatesConfiguration !== undefined
             "
-            v-model="conversationEmailUpdateEnabledOverride"
+            :model-value="conversationEmailUpdateEnabledOverride"
             :scope-kind="
               selectedProjectSlug === undefined ? 'no-project' : 'project'
             "
@@ -70,9 +72,15 @@
               selectedEmailUpdatesConfiguration.hasParticipantContactEmail
             "
             mode="create"
+            @update:model-value="updateEmailUpdatesWithReachWarning"
           />
         </template>
       </NewConversationControlBar>
+
+      <ConversationUpdatesPartialEmailReachDialog
+        v-model="partialEmailReachWarningMode"
+        @action="handlePartialEmailReachAction"
+      />
 
       <!-- Active Import Banner -->
       <ActiveImportBanner
@@ -196,6 +204,16 @@ import PreParticipationIntentionDialog from "src/components/authentication/inten
 import ActiveImportBanner from "src/components/conversation/import/ActiveImportBanner.vue";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
+import ConversationUpdatesPartialEmailReachDialog from "src/components/newConversation/ConversationUpdatesPartialEmailReachDialog.vue";
+import {
+  areConversationUpdatesReachStatesEqual,
+  type ConversationUpdatesReachState,
+  getPartialEmailReachWarning,
+  getUnacknowledgedPartialEmailReachWarning,
+  type PartialEmailReachAction,
+  type PartialEmailReachParticipationMode,
+  resolvePartialEmailReachAction,
+} from "src/components/newConversation/conversationUpdatesPartialEmailReachLogic";
 import type { CreateConversationProjectLanguageProject } from "src/components/newConversation/CreateConversationProjectLanguageSettings.vue";
 import CreateConversationProjectLanguageSettings from "src/components/newConversation/CreateConversationProjectLanguageSettings.vue";
 import CreateConversationUpdatesSettings from "src/components/newConversation/CreateConversationUpdatesSettings.vue";
@@ -215,7 +233,10 @@ import {
   MAX_LENGTH_TITLE,
 } from "src/shared/shared";
 import type { GetConversationCreateProjectOptionsResponse } from "src/shared/types/dto";
-import type { ConversationTypeConfig } from "src/shared/types/zod";
+import type {
+  ConversationTypeConfig,
+  ParticipationMode,
+} from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
@@ -370,7 +391,137 @@ const selectedEmailUpdatesConfiguration = computed(() =>
     ? noProjectEmailUpdates.value
     : selectedProjectOption.value?.emailUpdates
 );
+const partialEmailReachWarningMode = ref<
+  PartialEmailReachParticipationMode | undefined
+>(undefined);
+const acknowledgedPartialEmailReachState = ref<
+  ConversationUpdatesReachState | undefined
+>(undefined);
 let projectOptionsRequestId = 0;
+
+function getCreateConversationUpdatesReachState({
+  mode,
+  override,
+  configuration,
+}: {
+  mode: ParticipationMode;
+  override: boolean | undefined;
+  configuration: ConversationCreateEmailUpdates | undefined;
+}): ConversationUpdatesReachState {
+  return {
+    participationMode: mode,
+    effectiveEmailUpdatesEnabled:
+      configuration !== undefined &&
+      configuration.hasParticipantContactEmail &&
+      (override ?? configuration.scopeDefaultEnabled),
+  };
+}
+
+function showReachWarningForTransition({
+  previous,
+  next,
+}: {
+  previous: ConversationUpdatesReachState;
+  next: ConversationUpdatesReachState;
+}): void {
+  if (
+    !areConversationUpdatesReachStatesEqual({ left: previous, right: next })
+  ) {
+    acknowledgedPartialEmailReachState.value = undefined;
+  }
+  const warningMode = getPartialEmailReachWarning({
+    previous,
+    next,
+  });
+  if (warningMode !== undefined) {
+    partialEmailReachWarningMode.value = warningMode;
+  }
+}
+
+function updateParticipationModeWithReachWarning(
+  mode: ParticipationMode
+): void {
+  const configuration = selectedEmailUpdatesConfiguration.value;
+  const previous = getCreateConversationUpdatesReachState({
+    mode: participationMode.value,
+    override: conversationEmailUpdateEnabledOverride.value,
+    configuration,
+  });
+  participationMode.value = mode;
+  showReachWarningForTransition({
+    previous,
+    next: getCreateConversationUpdatesReachState({
+      mode,
+      override: conversationEmailUpdateEnabledOverride.value,
+      configuration,
+    }),
+  });
+}
+
+function updateEmailUpdatesWithReachWarning(
+  override: boolean | undefined
+): void {
+  const configuration = selectedEmailUpdatesConfiguration.value;
+  const previous = getCreateConversationUpdatesReachState({
+    mode: participationMode.value,
+    override: conversationEmailUpdateEnabledOverride.value,
+    configuration,
+  });
+  conversationEmailUpdateEnabledOverride.value = override;
+  showReachWarningForTransition({
+    previous,
+    next: getCreateConversationUpdatesReachState({
+      mode: participationMode.value,
+      override,
+      configuration,
+    }),
+  });
+}
+
+function updateProjectWithReachWarning(projectSlug: string | undefined): void {
+  const previous = getCreateConversationUpdatesReachState({
+    mode: participationMode.value,
+    override: conversationEmailUpdateEnabledOverride.value,
+    configuration: selectedEmailUpdatesConfiguration.value,
+  });
+  const configuration =
+    projectSlug === undefined
+      ? noProjectEmailUpdates.value
+      : conversationCreateProjectOptions.value.find(
+          (project) => project.projectSlug === projectSlug
+        )?.emailUpdates;
+  selectedProjectSlug.value = projectSlug;
+  conversationEmailUpdateEnabledOverride.value = undefined;
+  showReachWarningForTransition({
+    previous,
+    next: getCreateConversationUpdatesReachState({
+      mode: participationMode.value,
+      override: undefined,
+      configuration,
+    }),
+  });
+}
+
+function handlePartialEmailReachAction(action: PartialEmailReachAction): void {
+  const resolution = resolvePartialEmailReachAction({
+    action,
+    participationMode: participationMode.value,
+    conversationEmailUpdateEnabledOverride:
+      conversationEmailUpdateEnabledOverride.value,
+  });
+  participationMode.value = resolution.participationMode;
+  conversationEmailUpdateEnabledOverride.value =
+    resolution.conversationEmailUpdateEnabledOverride;
+  acknowledgedPartialEmailReachState.value =
+    action === "keep_updates_on"
+      ? getCreateConversationUpdatesReachState({
+          mode: participationMode.value,
+          override: conversationEmailUpdateEnabledOverride.value,
+          configuration: selectedEmailUpdatesConfiguration.value,
+        })
+      : undefined;
+  partialEmailReachWarningMode.value = undefined;
+}
 
 // Disable the warning since Vue template refs can be potentially null
 // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
@@ -418,6 +569,11 @@ watch(
     profileDataLoaded,
     organizationList,
   }) => {
+    const previousReachState = getCreateConversationUpdatesReachState({
+      mode: participationMode.value,
+      override: conversationEmailUpdateEnabledOverride.value,
+      configuration: selectedEmailUpdatesConfiguration.value,
+    });
     const requestId = ++projectOptionsRequestId;
     conversationCreateProjectOptions.value = [];
     noProjectEmailUpdates.value = undefined;
@@ -464,6 +620,14 @@ watch(
 
     conversationCreateProjectOptions.value = response.projectList;
     noProjectEmailUpdates.value = response.noProjectEmailUpdates;
+    showReachWarningForTransition({
+      previous: previousReachState,
+      next: getCreateConversationUpdatesReachState({
+        mode: participationMode.value,
+        override: conversationEmailUpdateEnabledOverride.value,
+        configuration: selectedEmailUpdatesConfiguration.value,
+      }),
+    });
   },
   { immediate: true }
 );
@@ -710,6 +874,22 @@ async function onSubmit(): Promise<void> {
       scrollToCsvUpload();
     }
     return;
+  }
+
+  if (conversationDraft.value.importSettings.importType === null) {
+    const reachState = getCreateConversationUpdatesReachState({
+      mode: participationMode.value,
+      override: conversationEmailUpdateEnabledOverride.value,
+      configuration: selectedEmailUpdatesConfiguration.value,
+    });
+    const warningMode = getUnacknowledgedPartialEmailReachWarning({
+      state: reachState,
+      acknowledgedState: acknowledgedPartialEmailReachState.value,
+    });
+    if (warningMode !== undefined) {
+      partialEmailReachWarningMode.value = warningMode;
+      return;
+    }
   }
 
   isSubmitButtonLoading.value = true;
