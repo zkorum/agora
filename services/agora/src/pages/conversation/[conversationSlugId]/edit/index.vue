@@ -155,6 +155,7 @@ import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import CreateConversationProjectLanguageSettings from "src/components/newConversation/CreateConversationProjectLanguageSettings.vue";
 import CreateConversationUpdatesSettings from "src/components/newConversation/CreateConversationUpdatesSettings.vue";
+import { hasConversationUpdatesSettingChanged } from "src/components/newConversation/createConversationUpdatesSettingsLogic";
 import NewConversationControlBar from "src/components/newConversation/NewConversationControlBar.vue";
 import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
@@ -376,6 +377,15 @@ const hasUnsavedChanges = computed(() => {
     return true;
   }
 
+  if (
+    hasConversationUpdatesSettingChanged({
+      currentOverride: conversationUpdatesOverride.value,
+      originalOverride: originalConversationUpdatesOverride.value,
+    })
+  ) {
+    return true;
+  }
+
   return false;
 });
 
@@ -415,6 +425,8 @@ const conversationUpdatesConfiguration = ref<
   ConversationUpdatesConfiguration | undefined
 >(undefined);
 const conversationUpdatesOverride = ref<boolean | undefined>(undefined);
+const originalConversationUpdatesOverride = ref<boolean | undefined>(undefined);
+const isConversationUpdatesConfigurationSaving = ref(false);
 const conversationUpdatesScopeDefault = computed(
   () => conversationUpdatesConfiguration.value?.scopeDefaultEnabled ?? false
 );
@@ -479,6 +491,7 @@ const isSaveButtonDisabled = computed(() => {
     isSaveButtonLoading.value ||
     !isDataLoaded.value ||
     !canSave.value ||
+    isConversationUpdatesConfigurationSaving.value ||
     isTitleOverLimit.value ||
     isBodyOverLimit.value
   );
@@ -647,6 +660,8 @@ async function loadConversationUpdatesConfiguration(): Promise<void> {
       return;
     }
     applyConversationUpdatesConfiguration(response.configuration);
+    originalConversationUpdatesOverride.value =
+      conversationUpdatesOverride.value;
   } catch (error) {
     console.error(
       "Failed to load conversation Email Update configuration",
@@ -667,6 +682,7 @@ async function updateConversationUpdatesConfiguration(
     return;
   }
   conversationUpdatesOverride.value = override;
+  isConversationUpdatesConfigurationSaving.value = true;
   try {
     const response = await conversationEmailUpdatesApi.updateConfiguration({
       target: "conversation",
@@ -688,6 +704,8 @@ async function updateConversationUpdatesConfiguration(
     conversationUpdatesConfiguration.value = previousConfiguration;
     conversationUpdatesOverride.value = previousOverride;
     showNotifyMessage("The Email Update setting could not be saved.");
+  } finally {
+    isConversationUpdatesConfigurationSaving.value = false;
   }
 }
 

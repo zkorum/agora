@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   canSelectConversationUpdatesSetting,
+  hasConversationUpdatesSettingChanged,
   shouldShowConversationUpdatesSettings,
 } from "./createConversationUpdatesSettingsLogic";
 
@@ -89,4 +90,25 @@ describe("canSelectConversationUpdatesSetting", () => {
       })
     ).toBe(false);
   });
+});
+
+describe("hasConversationUpdatesSettingChanged", () => {
+  it.each([
+    [undefined, undefined, false],
+    [true, true, false],
+    [false, false, false],
+    [undefined, true, true],
+    [undefined, false, true],
+    [true, false, true],
+  ])(
+    "compares current override %s with original override %s",
+    (currentOverride, originalOverride, expected) => {
+      expect(
+        hasConversationUpdatesSettingChanged({
+          currentOverride,
+          originalOverride,
+        })
+      ).toBe(expected);
+    }
+  );
 });

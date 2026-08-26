@@ -25,3 +25,13 @@ export function canSelectConversationUpdatesSetting({
     (value === undefined && !scopeDefaultEnabled)
   );
 }
+
+export function hasConversationUpdatesSettingChanged({
+  currentOverride,
+  originalOverride,
+}: {
+  currentOverride: boolean | undefined;
+  originalOverride: boolean | undefined;
+}): boolean {
+  return currentOverride !== originalOverride;
+}
