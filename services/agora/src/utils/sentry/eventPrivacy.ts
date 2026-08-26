@@ -89,23 +89,29 @@ const safeContextsSchema = z.object({
     .optional(),
 });
 
-function isSingleNonAppExceptionMatching({
-  event,
-  pattern,
-}: {
-  event: Event;
-  pattern: RegExp;
-}): boolean {
+function isBenignResizeObserverEvent(event: Event): boolean {
   const exceptions = event.exception?.values;
   if (exceptions?.length !== 1) {
     return false;
   }
   const exception = exceptions[0];
-  return (
-    exception?.value !== undefined &&
-    pattern.test(exception.value) &&
-    exception.stacktrace?.frames?.some((frame) => frame.in_app === true) !==
-      true
+  if (
+    exception?.value === undefined ||
+    !RESIZE_OBSERVER_ERROR.test(exception.value)
+  ) {
+    return false;
+  }
+
+  const inAppFrames =
+    exception.stacktrace?.frames?.filter((frame) => frame.in_app === true) ??
+    [];
+  return inAppFrames.every(
+    (frame) =>
+      frame.filename !== undefined &&
+      !JAVASCRIPT_ASSET_PATH.test(frame.filename) &&
+      frame.function === "?" &&
+      frame.lineno === 0 &&
+      frame.colno === 0
   );
 }
 
@@ -177,7 +183,7 @@ export function shouldIgnoreSentryEvent(event: Event): boolean {
   return (
     isCefSharpCrawlerEvent(event) ||
     isMetaInjectedPageHideError(event) ||
-    isSingleNonAppExceptionMatching({ event, pattern: RESIZE_OBSERVER_ERROR })
+    isBenignResizeObserverEvent(event)
   );
 }
 

@@ -240,6 +240,32 @@ describe("ignored Sentry events", () => {
     ).toBe(true);
   });
 
+  it("ignores a ResizeObserver error with a synthetic document frame", () => {
+    expect(
+      shouldIgnoreSentryEvent({
+        exception: {
+          values: [
+            {
+              type: "Error",
+              value: "ResizeObserver loop limit exceeded",
+              stacktrace: {
+                frames: [
+                  {
+                    filename: "/settings/languages/display-language/",
+                    function: "?",
+                    lineno: 0,
+                    colno: 0,
+                    in_app: true,
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      })
+    ).toBe(true);
+  });
+
   it("retains unrelated errors", () => {
     expect(
       shouldIgnoreSentryEvent({
@@ -255,19 +281,43 @@ describe("ignored Sentry events", () => {
     ).toBe(false);
   });
 
-  it("retains mixed and in-app ResizeObserver events", () => {
+  it.each([
+    {
+      name: "a bundled application frame",
+      frame: {
+        filename: "/assets/application.js",
+        function: "resizeLayout",
+        lineno: 42,
+        colno: 5,
+        in_app: true,
+      },
+    },
+    {
+      name: "an inline application frame",
+      frame: {
+        filename: "/settings/languages/display-language/",
+        function: "resizeLayout",
+        lineno: 1,
+        colno: 5,
+        in_app: true,
+      },
+    },
+  ])("retains a ResizeObserver error with $name", ({ frame }) => {
     expect(
       shouldIgnoreSentryEvent({
         exception: {
           values: [
             {
               value: "ResizeObserver loop limit exceeded",
-              stacktrace: { frames: [{ in_app: true }] },
+              stacktrace: { frames: [frame] },
             },
           ],
         },
       })
     ).toBe(false);
+  });
+
+  it("retains mixed ResizeObserver events", () => {
     expect(
       shouldIgnoreSentryEvent({
         exception: {
