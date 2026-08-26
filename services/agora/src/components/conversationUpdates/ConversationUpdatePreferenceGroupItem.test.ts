@@ -56,14 +56,14 @@ describe("ConversationUpdatePreferenceGroupItem", () => {
     expect(container.textContent).toContain("Conversation One");
     const links = container.querySelectorAll<HTMLAnchorElement>("a");
     expect(links[0]?.getAttribute("href")).toBe("/project/project-one");
-    expect(links[0]?.target).toBe("_blank");
+    expect(links[0]?.getAttribute("target")).toBeNull();
     expect(links[0]?.querySelector("img")?.getAttribute("src")).toBe(
       "https://images.example/project-owner.png"
     );
     expect(links[1]?.getAttribute("href")).toBe(
       "/project/project-one/conversation/conversation-one"
     );
-    expect(links[1]?.target).toBe("_blank");
+    expect(links[1]?.getAttribute("target")).toBeNull();
     expect(links[1]?.querySelector("img")?.getAttribute("src")).toBe(
       "https://images.example/project-owner.png"
     );
@@ -98,7 +98,9 @@ describe("ConversationUpdatePreferenceGroupItem", () => {
     expect(links[0]?.querySelector("img")?.getAttribute("alt")).toBe(
       "standalone-owner"
     );
-    expect(container.querySelector(".preference-group-item__switch")).toBeNull();
+    expect(
+      container.querySelector(".preference-group-item__switch")
+    ).toBeNull();
   });
 });
 

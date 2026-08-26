@@ -2,7 +2,11 @@
   <section class="preference-settings">
     <SettingsSectionHeader
       :title="undefined"
-      :descriptions="[t('sectionDescription'), t('recommendationDescription')]"
+      :descriptions="[
+        t('sectionDescription'),
+        t('preferenceHierarchyDescription'),
+        t('recommendationDescription'),
+      ]"
     />
 
     <q-input
@@ -57,7 +61,9 @@
           :key="getPreferenceGroupKey(group)"
           :expanded="expandedGroupKeys.has(getPreferenceGroupKey(group))"
           :group="group"
-          :label="group.kind === 'project' ? group.projectTitle : t('noProject')"
+          :label="
+            group.kind === 'project' ? group.projectTitle : t('noProject')
+          "
           :saving-conversation-slug-ids="savingConversationSlugIds"
           :saving-project="
             group.kind === 'project' &&

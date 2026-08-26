@@ -2151,15 +2151,274 @@ function getPreferenceScopeKind({
     return directoryVisibility === "listed" ? "project" : "unavailable";
 }
 
+type PreferenceGroupKey =
+    | { kind: "project"; projectId: number; projectSlug: string }
+    | { kind: "no_project" };
+
+function preferenceGroupCursor(group: PreferenceGroupKey): string {
+    return group.kind === "project"
+        ? `project:${group.projectSlug}`
+        : "no-project";
+}
+
+export async function queryPreferenceGroupPage({
+    db,
+    userId,
+    request,
+}: {
+    db: PostgresJsDatabase;
+    userId: string;
+    request: ConversationEmailUpdatePreferencesRequest;
+}): Promise<
+    | {
+          success: true;
+          groupKeys: PreferenceGroupKey[];
+          nextCursor: string | undefined;
+      }
+    | { success: false }
+> {
+    const explicitConversationPreference = exists(
+        db
+            .select({
+                id: conversationEmailUpdateUserConversationPreferenceTable.conversationId,
+            })
+            .from(conversationEmailUpdateUserConversationPreferenceTable)
+            .innerJoin(
+                conversationTable,
+                eq(
+                    conversationTable.id,
+                    conversationEmailUpdateUserConversationPreferenceTable.conversationId,
+                ),
+            )
+            .where(
+                and(
+                    eq(
+                        conversationEmailUpdateUserConversationPreferenceTable.userId,
+                        userId,
+                    ),
+                    eq(conversationTable.projectId, projectTable.id),
+                ),
+            ),
+    );
+    const projectPreference = exists(
+        db
+            .select({
+                id: conversationEmailUpdateUserProjectPreferenceTable.projectId,
+            })
+            .from(conversationEmailUpdateUserProjectPreferenceTable)
+            .where(
+                and(
+                    eq(
+                        conversationEmailUpdateUserProjectPreferenceTable.userId,
+                        userId,
+                    ),
+                    eq(
+                        conversationEmailUpdateUserProjectPreferenceTable.projectId,
+                        projectTable.id,
+                    ),
+                ),
+            ),
+    );
+    const search = request.search?.toLocaleLowerCase();
+    const matchingConversation = exists(
+        db
+            .select({ id: conversationTable.id })
+            .from(conversationTable)
+            .leftJoin(
+                conversationEmailUpdateUserConversationPreferenceTable,
+                and(
+                    eq(
+                        conversationEmailUpdateUserConversationPreferenceTable.conversationId,
+                        conversationTable.id,
+                    ),
+                    eq(
+                        conversationEmailUpdateUserConversationPreferenceTable.userId,
+                        userId,
+                    ),
+                ),
+            )
+            .leftJoin(
+                conversationEmailUpdateUserProjectPreferenceTable,
+                and(
+                    eq(
+                        conversationEmailUpdateUserProjectPreferenceTable.projectId,
+                        conversationTable.projectId,
+                    ),
+                    eq(
+                        conversationEmailUpdateUserProjectPreferenceTable.userId,
+                        userId,
+                    ),
+                ),
+            )
+            .leftJoin(
+                conversationContentTable,
+                eq(
+                    conversationContentTable.id,
+                    conversationTable.currentContentId,
+                ),
+            )
+            .where(
+                and(
+                    eq(conversationTable.projectId, projectTable.id),
+                    or(
+                        isNotNull(
+                            conversationEmailUpdateUserConversationPreferenceTable.enabled,
+                        ),
+                        and(
+                            isNotNull(
+                                conversationEmailUpdateUserProjectPreferenceTable.enabled,
+                            ),
+                            isNull(projectTable.deletedAt),
+                            eq(projectTable.directoryVisibility, "listed"),
+                            isNotNull(conversationTable.currentContentId),
+                            eq(conversationTable.isImporting, false),
+                        ),
+                    ),
+                    search === undefined
+                        ? undefined
+                        : gt(
+                              sql<number>`strpos(lower(coalesce(${conversationContentTable.title}, ${conversationTable.slugId})), ${search})`,
+                              0,
+                          ),
+                ),
+            ),
+    );
+    const projectConditions = and(
+        or(
+            projectPreference,
+            and(
+                isNull(projectTable.autoProvisionedForOrganizationId),
+                explicitConversationPreference,
+            ),
+        ),
+        search === undefined
+            ? undefined
+            : or(
+                  gt(
+                      sql<number>`strpos(lower(${projectTable.title}), ${search})`,
+                      0,
+                  ),
+                  and(
+                      isNull(projectTable.autoProvisionedForOrganizationId),
+                      matchingConversation,
+                  ),
+              ),
+    );
+    const noProjectConditions = and(
+        eq(
+            conversationEmailUpdateUserConversationPreferenceTable.userId,
+            userId,
+        ),
+        isNotNull(projectTable.autoProvisionedForOrganizationId),
+        search === undefined
+            ? undefined
+            : gt(
+                  sql<number>`strpos(lower(coalesce(${conversationContentTable.title}, ${conversationTable.slugId})), ${search})`,
+                  0,
+              ),
+    );
+    const noProjectRows = await db
+        .select({ id: conversationTable.id })
+        .from(conversationEmailUpdateUserConversationPreferenceTable)
+        .innerJoin(
+            conversationTable,
+            eq(
+                conversationTable.id,
+                conversationEmailUpdateUserConversationPreferenceTable.conversationId,
+            ),
+        )
+        .innerJoin(
+            projectTable,
+            eq(projectTable.id, conversationTable.projectId),
+        )
+        .leftJoin(
+            conversationContentTable,
+            eq(conversationContentTable.id, conversationTable.currentContentId),
+        )
+        .where(noProjectConditions)
+        .limit(1);
+    const hasNoProject = noProjectRows.length === 1;
+
+    if (request.cursor === "no-project") {
+        return hasNoProject
+            ? { success: true, groupKeys: [], nextCursor: undefined }
+            : { success: false };
+    }
+
+    let cursorProjectId: number | undefined;
+    if (request.cursor !== undefined) {
+        if (!request.cursor.startsWith("project:")) {
+            return { success: false };
+        }
+        const cursorSlug = request.cursor.slice("project:".length);
+        const cursorRows = await db
+            .select({ projectId: projectTable.id })
+            .from(projectTable)
+            .where(and(eq(projectTable.slug, cursorSlug), projectConditions))
+            .orderBy(projectTable.id)
+            .limit(1);
+        const cursorProject = cursorRows.at(0);
+        if (cursorProject === undefined) {
+            return { success: false };
+        }
+        cursorProjectId = cursorProject.projectId;
+    }
+
+    const projectRows = await db
+        .select({
+            projectId: projectTable.id,
+            projectSlug: projectTable.slug,
+        })
+        .from(projectTable)
+        .where(
+            and(
+                projectConditions,
+                cursorProjectId === undefined
+                    ? undefined
+                    : gt(projectTable.id, cursorProjectId),
+            ),
+        )
+        .orderBy(projectTable.id)
+        .limit(request.limit + 1);
+    const projectKeys = projectRows.map(
+        (row): PreferenceGroupKey => ({
+            kind: "project",
+            projectId: row.projectId,
+            projectSlug: row.projectSlug,
+        }),
+    );
+    const hasMoreProjects = projectKeys.length > request.limit;
+    const groupKeys = projectKeys.slice(0, request.limit);
+    if (!hasMoreProjects && hasNoProject && groupKeys.length < request.limit) {
+        groupKeys.push({ kind: "no_project" });
+    }
+    const lastGroup = groupKeys.at(-1);
+    const hasMore =
+        hasMoreProjects ||
+        (hasNoProject &&
+            !groupKeys.some((group) => group.kind === "no_project"));
+    return {
+        success: true,
+        groupKeys,
+        nextCursor:
+            hasMore && lastGroup !== undefined
+                ? preferenceGroupCursor(lastGroup)
+                : undefined,
+    };
+}
+
 async function queryPreferenceProjects({
     db,
     userId,
     now,
+    projectIds,
 }: {
     db: PostgresJsDatabase;
     userId: string;
     now: Date;
+    projectIds: readonly number[];
 }) {
+    if (projectIds.length === 0) return [];
     const rows = await db
         .select({
             project_id: projectTable.id,
@@ -2272,9 +2531,12 @@ async function queryPreferenceProjects({
             ),
         )
         .where(
-            eq(
-                conversationEmailUpdateUserProjectPreferenceTable.userId,
-                userId,
+            and(
+                eq(
+                    conversationEmailUpdateUserProjectPreferenceTable.userId,
+                    userId,
+                ),
+                inArray(projectTable.id, projectIds),
             ),
         )
         .orderBy(projectTable.id);
@@ -2297,11 +2559,29 @@ async function queryPreferenceConversations({
     db,
     userId,
     now,
+    projectIds,
+    includeNoProject,
 }: {
     db: PostgresJsDatabase;
     userId: string;
     now: Date;
+    projectIds: readonly number[];
+    includeNoProject: boolean;
 }) {
+    const projectGroupCondition =
+        projectIds.length === 0
+            ? undefined
+            : and(
+                  isNull(projectTable.autoProvisionedForOrganizationId),
+                  inArray(projectTable.id, projectIds),
+              );
+    const selectedGroupCondition = includeNoProject
+        ? or(
+              projectGroupCondition,
+              isNotNull(projectTable.autoProvisionedForOrganizationId),
+          )
+        : projectGroupCondition;
+    if (selectedGroupCondition === undefined) return [];
     const rows = await db
         .select({
             project_id: projectTable.id,
@@ -2462,19 +2742,22 @@ async function queryPreferenceConversations({
             ),
         )
         .where(
-            or(
-                isNotNull(
-                    conversationEmailUpdateUserConversationPreferenceTable.enabled,
-                ),
-                and(
+            and(
+                selectedGroupCondition,
+                or(
                     isNotNull(
-                        conversationEmailUpdateUserProjectPreferenceTable.enabled,
+                        conversationEmailUpdateUserConversationPreferenceTable.enabled,
                     ),
-                    isNull(projectTable.deletedAt),
-                    eq(projectTable.directoryVisibility, "listed"),
-                    isNull(projectTable.autoProvisionedForOrganizationId),
-                    isNotNull(conversationTable.currentContentId),
-                    eq(conversationTable.isImporting, false),
+                    and(
+                        isNotNull(
+                            conversationEmailUpdateUserProjectPreferenceTable.enabled,
+                        ),
+                        isNull(projectTable.deletedAt),
+                        eq(projectTable.directoryVisibility, "listed"),
+                        isNull(projectTable.autoProvisionedForOrganizationId),
+                        isNotNull(conversationTable.currentContentId),
+                        eq(conversationTable.isImporting, false),
+                    ),
                 ),
             ),
         )
@@ -2545,8 +2828,7 @@ export function resolvePreferenceAvatar({
         });
         return {
             kind: source.username === null ? "organization" : "user",
-            displayName:
-                source.username ?? source.organizationDisplayName,
+            displayName: source.username ?? source.organizationDisplayName,
             ...(imageUrl === undefined ? {} : { imageUrl }),
         };
     }
@@ -2579,9 +2861,7 @@ async function loadPreferenceOwnerByProjectId({
     projectIds: readonly number[];
     noProjectProjectIds: ReadonlySet<number>;
     baseImageServiceUrl: string;
-}): Promise<
-    ReadonlyMap<number, ConversationEmailUpdatePreferenceAvatar>
-> {
+}): Promise<ReadonlyMap<number, ConversationEmailUpdatePreferenceAvatar>> {
     const uniqueProjectIds = [...new Set(projectIds)];
     if (uniqueProjectIds.length === 0) {
         return new Map();
@@ -2593,8 +2873,7 @@ async function loadPreferenceOwnerByProjectId({
                 organizationId: organizationTable.id,
                 organizationDisplayName: organizationTable.displayName,
                 organizationImagePath: organizationTable.imagePath,
-                organizationIsFullImagePath:
-                    organizationTable.isFullImagePath,
+                organizationIsFullImagePath: organizationTable.isFullImagePath,
                 organizationDeletedAt: organizationTable.deletedAt,
                 username: userTable.username,
                 externalOrganizationId: projectExternalOrganizationTable.id,
@@ -2648,8 +2927,7 @@ async function loadPreferenceOwnerByProjectId({
                 organizationId: organizationTable.id,
                 organizationDisplayName: organizationTable.displayName,
                 organizationImagePath: organizationTable.imagePath,
-                organizationIsFullImagePath:
-                    organizationTable.isFullImagePath,
+                organizationIsFullImagePath: organizationTable.isFullImagePath,
                 organizationDeletedAt: organizationTable.deletedAt,
                 username: userTable.username,
                 externalOrganizationId: sql<null>`NULL`,
@@ -2721,11 +2999,13 @@ async function loadPreferenceRows({
     userId,
     now,
     baseImageServiceUrl,
+    groupKeys,
 }: {
     db: PostgresJsDatabase;
     userId: string;
     now: Date;
     baseImageServiceUrl: string;
+    groupKeys: readonly PreferenceGroupKey[];
 }): Promise<{
     globalPaused: boolean;
     projectRows: PreferenceProjectDao[];
@@ -2735,6 +3015,12 @@ async function loadPreferenceRows({
         ConversationEmailUpdatePreferenceAvatar
     >;
 }> {
+    const projectIds = groupKeys.flatMap((group) =>
+        group.kind === "project" ? [group.projectId] : [],
+    );
+    const includeNoProject = groupKeys.some(
+        (group) => group.kind === "no_project",
+    );
     const [globalRows, projectRows, conversationRows] = await Promise.all([
         db
             .select({
@@ -2749,8 +3035,14 @@ async function loadPreferenceRows({
                 ),
             )
             .limit(1),
-        queryPreferenceProjects({ db, userId, now }),
-        queryPreferenceConversations({ db, userId, now }),
+        queryPreferenceProjects({ db, userId, now, projectIds }),
+        queryPreferenceConversations({
+            db,
+            userId,
+            now,
+            projectIds,
+            includeNoProject,
+        }),
     ]);
     const ownerByProjectId = await loadPreferenceOwnerByProjectId({
         db,
@@ -4425,61 +4717,29 @@ export function createConversationEmailUpdateService({
                     reason: "verified_email_required",
                 };
             }
-            const rows = await loadPreferenceRows({
+            const page = await queryPreferenceGroupPage({
                 db,
                 userId,
-                now: new Date(),
-                baseImageServiceUrl,
+                request,
             });
-            let groups = buildConversationEmailPreferenceGroups(rows);
-            if (request.search !== undefined) {
-                const search = request.search.toLocaleLowerCase();
-                groups = groups.filter((group) =>
-                    group.kind === "project"
-                        ? group.projectTitle
-                              .toLocaleLowerCase()
-                              .includes(search) ||
-                          group.conversations.some((conversation) =>
-                              conversation.conversationTitle
-                                  .toLocaleLowerCase()
-                                  .includes(search),
-                          )
-                        : group.conversations.some((conversation) =>
-                              conversation.conversationTitle
-                                  .toLocaleLowerCase()
-                                  .includes(search),
-                          ),
-                );
-            }
-            const cursorFor = (
-                group: ConversationEmailUpdatePreferenceGroup,
-            ): string =>
-                group.kind === "project"
-                    ? `project:${group.projectSlug}`
-                    : "no-project";
-            const startIndex =
-                request.cursor === undefined
-                    ? 0
-                    : groups.findIndex(
-                          (group) => cursorFor(group) === request.cursor,
-                      ) + 1;
-            if (request.cursor !== undefined && startIndex === 0) {
+            if (!page.success) {
                 return {
                     success: false,
                     reason: "preferences_unavailable",
                 };
             }
-            const page = groups.slice(startIndex, startIndex + request.limit);
-            const lastGroup = page.at(-1);
+            const rows = await loadPreferenceRows({
+                db,
+                userId,
+                now: new Date(),
+                baseImageServiceUrl,
+                groupKeys: page.groupKeys,
+            });
             return Dto.conversationEmailUpdatePreferencesResponse.parse({
                 success: true,
                 globalPaused: rows.globalPaused,
-                groups: page,
-                nextCursor:
-                    startIndex + page.length < groups.length &&
-                    lastGroup !== undefined
-                        ? cursorFor(lastGroup)
-                        : undefined,
+                groups: buildConversationEmailPreferenceGroups(rows),
+                nextCursor: page.nextCursor,
             });
         },
 

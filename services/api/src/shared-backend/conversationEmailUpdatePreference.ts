@@ -13,12 +13,14 @@ export {
 } from "./conversationEmailUpdatePreferencePolicy.js";
 export type { ConversationEmailUpdatePreferenceScope } from "./conversationEmailUpdatePreferencePolicy.js";
 
-function sqlAnd(first: SQL, ...rest: SQL[]): SQL {
-    return sql`(${sql.join([first, ...rest], sql` AND `)})`;
+type SqlConditions = [SQL, ...SQL[]];
+
+function sqlAnd(conditions: SqlConditions): SQL {
+    return sql`(${sql.join(conditions, sql` AND `)})`;
 }
 
-function sqlOr(first: SQL, ...rest: SQL[]): SQL {
-    return sql`(${sql.join([first, ...rest], sql` OR `)})`;
+function sqlOr(conditions: SqlConditions): SQL {
+    return sql`(${sql.join(conditions, sql` OR `)})`;
 }
 
 export function buildConversationEmailGlobalPreferenceCondition({
@@ -31,16 +33,16 @@ export function buildConversationEmailGlobalPreferenceCondition({
     );
     if (choiceAtOrBefore === undefined) return currentlyEnabled;
 
-    return sqlAnd(
+    return sqlAnd([
         currentlyEnabled,
-        sqlOr(
+        sqlOr([
             isNull(conversationEmailUpdateUserGlobalSettingTable.userId),
             lte(
                 conversationEmailUpdateUserGlobalSettingTable.updatedAt,
                 choiceAtOrBefore,
             ),
-        ),
-    );
+        ]),
+    ]);
 }
 
 export function buildConversationEmailPreferenceCondition({
@@ -57,19 +59,19 @@ export function buildConversationEmailPreferenceCondition({
     const conversationEnabled =
         choiceAtOrBefore === undefined
             ? conversationPreferenceEnabled
-            : sqlAnd(
+            : sqlAnd([
                   conversationPreferenceEnabled,
                   lte(
                       conversationEmailUpdateUserConversationPreferenceTable.choiceAt,
                       choiceAtOrBefore,
                   ),
-              );
+              ]);
     if (preferenceScope === "conversation") return conversationEnabled;
 
-    return sqlOr(
+    return sqlOr([
         conversationEnabled,
         choiceAtOrBefore === undefined
-            ? sqlAnd(
+            ? sqlAnd([
                   isNull(
                       conversationEmailUpdateUserConversationPreferenceTable.userId,
                   ),
@@ -77,8 +79,8 @@ export function buildConversationEmailPreferenceCondition({
                       conversationEmailUpdateUserProjectPreferenceTable.enabled,
                       true,
                   ),
-              )
-            : sqlAnd(
+              ])
+            : sqlAnd([
                   isNull(
                       conversationEmailUpdateUserConversationPreferenceTable.userId,
                   ),
@@ -90,6 +92,6 @@ export function buildConversationEmailPreferenceCondition({
                       conversationEmailUpdateUserProjectPreferenceTable.choiceAt,
                       choiceAtOrBefore,
                   ),
-              ),
-    );
+              ]),
+    ]);
 }

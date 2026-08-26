@@ -12,8 +12,6 @@
           v-if="group.kind === 'project'"
           class="preference-group-item__link"
           :to="`/project/${group.projectSlug}`"
-          target="_blank"
-          rel="noopener noreferrer"
           @click.stop
         >
           <ConversationUpdatePreferenceAvatar
@@ -47,9 +45,10 @@
         v-for="conversation in group.conversations"
         :key="conversation.conversationSlugId"
         :conversation="conversation"
-        :destination="getConversationDestination(conversation.conversationSlugId)"
+        :destination="
+          getConversationDestination(conversation.conversationSlugId)
+        "
         :nested="true"
-        :open-in-new-tab="group.kind === 'project'"
         :owner="getConversationOwner(conversation)"
         :saving="savingConversationSlugIds.has(conversation.conversationSlugId)"
         @set-enabled="
@@ -93,10 +92,12 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   setConversationEnabled: [preference: ConversationEmailUpdatePreferenceChange];
-  setProjectEnabled: [preference: {
-    group: ProjectEmailUpdatePreferenceGroup;
-    enabled: boolean;
-  }];
+  setProjectEnabled: [
+    preference: {
+      group: ProjectEmailUpdatePreferenceGroup;
+      enabled: boolean;
+    },
+  ];
 }>();
 const expanded = defineModel<boolean>("expanded", { required: true });
 const { t } =

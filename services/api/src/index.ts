@@ -90,7 +90,6 @@ import {
     canConfigureConversationEmailUpdatesForOrganization,
     getConversationCreateProjectOptions,
     getProjectLanguageSettings,
-    hasProjectParticipantContactEmail,
     resolveConversationCreateTargetResult,
 } from "@/service/projectAccess.js";
 import {
@@ -3894,32 +3893,17 @@ server.after(() => {
             }
             if (
                 createConversationRequest.conversationEmailUpdateEnabledOverride !==
-                undefined
+                    undefined &&
+                !(await canConfigureConversationEmailUpdatesForOrganization({
+                    db: getPrimaryDatabase(db),
+                    userId: deviceStatus.userId,
+                    organizationId: createTargetResult.target.organizationId,
+                    now: nowZeroMs(),
+                }))
             ) {
-                const canConfigureEmailUpdates =
-                    await canConfigureConversationEmailUpdatesForOrganization({
-                        db,
-                        userId: deviceStatus.userId,
-                        organizationId:
-                            createTargetResult.target.organizationId,
-                        now: nowZeroMs(),
-                    });
-                if (!canConfigureEmailUpdates) {
-                    throw server.httpErrors.forbidden(
-                        "Missing conversation_email_update access",
-                    );
-                }
-                if (
-                    createConversationRequest.conversationEmailUpdateEnabledOverride &&
-                    !(await hasProjectParticipantContactEmail({
-                        db,
-                        projectId: createTargetResult.target.projectId,
-                    }))
-                ) {
-                    throw server.httpErrors.badRequest(
-                        "Email Updates require a participant contact email",
-                    );
-                }
+                throw server.httpErrors.forbidden(
+                    "Missing conversation_email_update access",
+                );
             }
             if (
                 createConversationRequest.languageSettingsSource ===

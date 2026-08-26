@@ -1,6 +1,7 @@
 import { httpErrors } from "@fastify/sensible";
 import { and, eq, gt, inArray, isNotNull, isNull, lte, or } from "drizzle-orm";
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
+import { getPrimaryDatabase } from "@/shared-backend/db.js";
 import {
     conversationTable,
     organizationLocalizationTable,
@@ -250,47 +251,29 @@ export async function getOrCreateDefaultProjectForOrganization({
     db: PostgresDatabase;
     organizationId: number;
 }): Promise<{ projectId: number }> {
-    const existingRows = await db
-        .select({ projectId: projectTable.id })
-        .from(projectTable)
-        .where(
-            eq(projectTable.autoProvisionedForOrganizationId, organizationId),
-        )
-        .limit(1);
-    const existing = existingRows.at(0);
-    if (existing !== undefined) {
-        await db
-            .insert(projectOrganizationOwnershipTable)
-            .values({ projectId: existing.projectId, organizationId })
-            .onConflictDoNothing();
+    return await getPrimaryDatabase(db).transaction(async (tx) => {
+        const organizationRows = await tx
+            .select({ displayName: organizationTable.displayName })
+            .from(organizationTable)
+            .where(
+                and(
+                    eq(organizationTable.id, organizationId),
+                    isNull(organizationTable.deletedAt),
+                ),
+            )
+            .limit(1)
+            .for("update");
+        const organization = organizationRows.at(0);
+        if (organization === undefined) {
+            throw httpErrors.notFound("Organization not found");
+        }
 
-        return existing;
-    }
-
-    const organizationRows = await db
-        .select({ displayName: organizationTable.displayName })
-        .from(organizationTable)
-        .where(eq(organizationTable.id, organizationId))
-        .limit(1);
-    const organization = organizationRows.at(0);
-    if (organization === undefined) {
-        throw httpErrors.notFound("Organization not found");
-    }
-
-    const insertedRows = await db
-        .insert(projectTable)
-        .values({
-            slug: defaultProjectSlug(organizationId),
-            title: organization.displayName,
-            directoryVisibility: "unlisted",
-            autoProvisionedForOrganizationId: organizationId,
-        })
-        .onConflictDoNothing()
-        .returning({ projectId: projectTable.id });
-    const inserted = insertedRows.at(0);
-    if (inserted === undefined) {
-        const concurrentlyInsertedRows = await db
-            .select({ projectId: projectTable.id })
+        const existingRows = await tx
+            .select({
+                projectId: projectTable.id,
+                currentContentId: projectTable.currentContentId,
+                deletedAt: projectTable.deletedAt,
+            })
             .from(projectTable)
             .where(
                 eq(
@@ -298,53 +281,75 @@ export async function getOrCreateDefaultProjectForOrganization({
                     organizationId,
                 ),
             )
-            .limit(1);
-        const concurrentlyInserted = concurrentlyInsertedRows.at(0);
-        if (concurrentlyInserted === undefined) {
+            .limit(1)
+            .for("update");
+        const existing = existingRows.at(0);
+        const project =
+            existing ??
+            (
+                await tx
+                    .insert(projectTable)
+                    .values({
+                        slug: defaultProjectSlug(organizationId),
+                        title: organization.displayName,
+                        directoryVisibility: "unlisted",
+                        autoProvisionedForOrganizationId: organizationId,
+                    })
+                    .returning({
+                        projectId: projectTable.id,
+                        currentContentId: projectTable.currentContentId,
+                        deletedAt: projectTable.deletedAt,
+                    })
+            ).at(0);
+        if (project === undefined) {
             throw httpErrors.internalServerError(
                 "Failed to create default project",
             );
         }
-        await db
+
+        if (project.deletedAt !== null) {
+            await tx
+                .update(projectTable)
+                .set({
+                    directoryVisibility: "unlisted",
+                    deletedAt: null,
+                    updatedAt: new Date(),
+                })
+                .where(eq(projectTable.id, project.projectId));
+        }
+
+        if (project.currentContentId === null) {
+            const insertedContentRows = await tx
+                .insert(projectContentTable)
+                .values({
+                    projectId: project.projectId,
+                    title: organization.displayName,
+                    subtitle: null,
+                    body: null,
+                    bodyPlainText: "",
+                    bannerPath: null,
+                    bannerIsFullPath: false,
+                })
+                .returning({ contentId: projectContentTable.id });
+            const insertedContent = insertedContentRows.at(0);
+            if (insertedContent === undefined) {
+                throw httpErrors.internalServerError(
+                    "Failed to create default project content",
+                );
+            }
+            await tx
+                .update(projectTable)
+                .set({ currentContentId: insertedContent.contentId })
+                .where(eq(projectTable.id, project.projectId));
+        }
+
+        await tx
             .insert(projectOrganizationOwnershipTable)
-            .values({
-                projectId: concurrentlyInserted.projectId,
-                organizationId,
-            })
+            .values({ projectId: project.projectId, organizationId })
             .onConflictDoNothing();
-        return concurrentlyInserted;
-    }
 
-    const insertedContentRows = await db
-        .insert(projectContentTable)
-        .values({
-            projectId: inserted.projectId,
-            title: organization.displayName,
-            subtitle: null,
-            body: null,
-            bodyPlainText: "",
-            bannerPath: null,
-            bannerIsFullPath: false,
-        })
-        .returning({ contentId: projectContentTable.id });
-    const insertedContent = insertedContentRows.at(0);
-    if (insertedContent === undefined) {
-        throw httpErrors.internalServerError(
-            "Failed to create default project content",
-        );
-    }
-
-    await db
-        .update(projectTable)
-        .set({ currentContentId: insertedContent.contentId })
-        .where(eq(projectTable.id, inserted.projectId));
-
-    await db
-        .insert(projectOrganizationOwnershipTable)
-        .values({ projectId: inserted.projectId, organizationId })
-        .onConflictDoNothing();
-
-    return inserted;
+        return { projectId: project.projectId };
+    });
 }
 
 export async function resolveConversationCreateTarget({
@@ -566,11 +571,12 @@ export async function getConversationCreateProjectOptions({
         return {
             success: true,
             projectList: [],
-            noProjectEmailUpdates: getConversationCreateEmailUpdateConfiguration({
-                canConfigure: false,
-                participantContactEmail: undefined,
-                scopeDefaultEnabled: false,
-            }),
+            noProjectEmailUpdates:
+                getConversationCreateEmailUpdateConfiguration({
+                    canConfigure: false,
+                    participantContactEmail: undefined,
+                    scopeDefaultEnabled: false,
+                }),
         };
     }
 
@@ -846,6 +852,110 @@ export async function canConfigureConversationEmailUpdatesForOrganization({
     return rows.length === 1;
 }
 
+export async function lockConversationEmailUpdateConfigurationAccess({
+    db,
+    userId,
+    projectId,
+    organizationId,
+    now,
+}: {
+    db: PostgresDatabase;
+    userId: string;
+    projectId: number;
+    organizationId: number;
+    now: Date;
+}): Promise<boolean> {
+    const rows = await db
+        .select({ membershipId: organizationMembershipTable.id })
+        .from(projectOrganizationOwnershipTable)
+        .innerJoin(
+            organizationTable,
+            and(
+                eq(
+                    organizationTable.id,
+                    projectOrganizationOwnershipTable.organizationId,
+                ),
+                isNull(organizationTable.deletedAt),
+            ),
+        )
+        .innerJoin(
+            organizationMembershipTable,
+            and(
+                eq(
+                    organizationMembershipTable.organizationId,
+                    projectOrganizationOwnershipTable.organizationId,
+                ),
+                eq(organizationMembershipTable.userId, userId),
+                isNull(organizationMembershipTable.deletedAt),
+            ),
+        )
+        .innerJoin(
+            userTable,
+            and(
+                eq(userTable.id, organizationMembershipTable.userId),
+                eq(userTable.isDeleted, false),
+            ),
+        )
+        .innerJoin(
+            organizationMembershipAllProjectCapabilityTable,
+            and(
+                eq(
+                    organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
+                    organizationMembershipTable.id,
+                ),
+                eq(
+                    organizationMembershipAllProjectCapabilityTable.capability,
+                    "conversation_email_update",
+                ),
+                isNull(
+                    organizationMembershipAllProjectCapabilityTable.deletedAt,
+                ),
+            ),
+        )
+        .innerJoin(
+            premiumFeatureEntitlementTable,
+            and(
+                eq(
+                    premiumFeatureEntitlementTable.organizationId,
+                    projectOrganizationOwnershipTable.organizationId,
+                ),
+                eq(
+                    premiumFeatureEntitlementTable.feature,
+                    "conversation_email_update",
+                ),
+                lte(premiumFeatureEntitlementTable.startsAt, now),
+                isNull(premiumFeatureEntitlementTable.revokedAt),
+                or(
+                    isNull(premiumFeatureEntitlementTable.expiresAt),
+                    gt(premiumFeatureEntitlementTable.expiresAt, now),
+                ),
+            ),
+        )
+        .where(
+            and(
+                eq(projectOrganizationOwnershipTable.projectId, projectId),
+                eq(
+                    projectOrganizationOwnershipTable.organizationId,
+                    organizationId,
+                ),
+                isNull(projectOrganizationOwnershipTable.deletedAt),
+            ),
+        )
+        .limit(1)
+        .for("update", {
+            of: [
+                projectOrganizationOwnershipTable,
+                organizationTable,
+                organizationMembershipTable,
+                userTable,
+                organizationMembershipAllProjectCapabilityTable,
+                premiumFeatureEntitlementTable,
+            ],
+        });
+
+    return rows.length === 1;
+}
+
 export async function hasProjectParticipantContactEmail({
     db,
     projectId,
@@ -864,6 +974,28 @@ export async function hasProjectParticipantContactEmail({
             ),
         )
         .limit(1);
+    return rows.length === 1;
+}
+
+export async function lockProjectParticipantContactEmail({
+    db,
+    projectId,
+}: {
+    db: PostgresDatabase;
+    projectId: number;
+}): Promise<boolean> {
+    const rows = await db
+        .select({ id: projectContactTable.id })
+        .from(projectContactTable)
+        .where(
+            and(
+                eq(projectContactTable.projectId, projectId),
+                isNotNull(projectContactTable.email),
+                isNull(projectContactTable.deletedAt),
+            ),
+        )
+        .limit(1)
+        .for("update");
     return rows.length === 1;
 }
 

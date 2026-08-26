@@ -636,7 +636,7 @@ describe("conversation email update action service", () => {
         ).toEqual({ success: false, reason: "unavailable" });
     });
 
-    it("keeps repeated direct project unsubscribe disabled and records token use", async () => {
+    it("disables a project and its positive conversation overrides", async () => {
         await seedAction({
             token: TOKEN,
             action: "unsubscribe_project",
@@ -652,6 +652,41 @@ describe("conversation email update action service", () => {
                 choiceAt: new Date("2025-01-01"),
                 choiceSource: "settings",
             });
+        await db
+            .insert(conversationEmailUpdateUserConversationPreferenceTable)
+            .values([
+                {
+                    userId: USER_ID,
+                    conversationId: 10,
+                    enabled: true,
+                    choiceAt: new Date("2025-01-01"),
+                    choiceSource: "settings",
+                },
+                {
+                    userId: USER_ID,
+                    conversationId: 11,
+                    enabled: false,
+                    choiceAt: new Date("2025-01-02"),
+                    choiceSource: "settings",
+                },
+            ]);
+        await sqlClient`
+            INSERT INTO "project" ("id", "slug")
+            VALUES (2, 'other-project')
+        `;
+        await sqlClient`
+            INSERT INTO "conversation" ("id", "project_id", "slug_id")
+            VALUES (12, 2, 'conv0003')
+        `;
+        await db
+            .insert(conversationEmailUpdateUserConversationPreferenceTable)
+            .values({
+                userId: USER_ID,
+                conversationId: 12,
+                enabled: true,
+                choiceAt: new Date("2025-01-03"),
+                choiceSource: "settings",
+            });
 
         expect(await service.unsubscribe({ token: TOKEN })).toEqual({
             success: true,
@@ -662,6 +697,21 @@ describe("conversation email update action service", () => {
         const preferences = await db
             .select()
             .from(conversationEmailUpdateUserProjectPreferenceTable);
+        const conversationPreferences = await db
+            .select({
+                conversationId:
+                    conversationEmailUpdateUserConversationPreferenceTable.conversationId,
+                enabled:
+                    conversationEmailUpdateUserConversationPreferenceTable.enabled,
+                choiceAt:
+                    conversationEmailUpdateUserConversationPreferenceTable.choiceAt,
+                choiceSource:
+                    conversationEmailUpdateUserConversationPreferenceTable.choiceSource,
+            })
+            .from(conversationEmailUpdateUserConversationPreferenceTable)
+            .orderBy(
+                conversationEmailUpdateUserConversationPreferenceTable.conversationId,
+            );
         const tokens = await db
             .select({
                 lastUsedAt: conversationEmailUpdateActionTokenTable.lastUsedAt,
@@ -677,6 +727,30 @@ describe("conversation email update action service", () => {
                 choiceSource: "unsubscribe",
             },
         ]);
+        expect(conversationPreferences).toMatchObject([
+            {
+                conversationId: 10,
+                enabled: false,
+                choiceSource: "unsubscribe",
+            },
+            {
+                conversationId: 11,
+                enabled: false,
+                choiceSource: "settings",
+            },
+            {
+                conversationId: 12,
+                enabled: true,
+                choiceSource: "settings",
+            },
+        ]);
+        expect(conversationPreferences.at(0)?.choiceAt).toBeInstanceOf(Date);
+        expect(conversationPreferences.at(1)?.choiceAt).toEqual(
+            new Date("2025-01-02"),
+        );
+        expect(conversationPreferences.at(2)?.choiceAt).toEqual(
+            new Date("2025-01-03"),
+        );
         expect(tokens.at(0)?.lastUsedAt).toBeInstanceOf(Date);
     });
 

@@ -4,12 +4,7 @@
     :class="{ 'conversation-preference-row--nested': nested }"
   >
     <q-item-section>
-      <SpaLink
-        class="conversation-preference-row__link"
-        :to="destination"
-        :target="openInNewTab ? '_blank' : undefined"
-        :rel="openInNewTab ? 'noopener noreferrer' : undefined"
-      >
+      <SpaLink class="conversation-preference-row__link" :to="destination">
         <ConversationUpdatePreferenceAvatar
           :fallback-label="conversation.conversationTitle"
           :owner="owner"
@@ -51,7 +46,6 @@ defineProps<{
   conversation: ConversationEmailUpdatePreference;
   destination: string;
   nested: boolean;
-  openInNewTab: boolean;
   owner: ConversationEmailUpdatePreferenceAvatar | undefined;
   saving: boolean;
 }>();

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { and, eq, gt } from "drizzle-orm";
+import { and, eq, exists, gt } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
@@ -406,6 +406,39 @@ async function disableProject({
                 choiceSource: "unsubscribe",
             },
         });
+    await db
+        .update(conversationEmailUpdateUserConversationPreferenceTable)
+        .set({
+            enabled: false,
+            choiceAt: now,
+            choiceSource: "unsubscribe",
+        })
+        .where(
+            and(
+                eq(
+                    conversationEmailUpdateUserConversationPreferenceTable.userId,
+                    userId,
+                ),
+                eq(
+                    conversationEmailUpdateUserConversationPreferenceTable.enabled,
+                    true,
+                ),
+                exists(
+                    db
+                        .select({ id: conversationTable.id })
+                        .from(conversationTable)
+                        .where(
+                            and(
+                                eq(
+                                    conversationTable.id,
+                                    conversationEmailUpdateUserConversationPreferenceTable.conversationId,
+                                ),
+                                eq(conversationTable.projectId, projectId),
+                            ),
+                        ),
+                ),
+            ),
+        );
 }
 
 async function disableConversation({

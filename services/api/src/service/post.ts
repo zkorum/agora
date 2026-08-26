@@ -40,12 +40,14 @@ import { createConversationViewSnapshotsFromCurrentState } from "@/service/conve
 import { queueConversationSettingsUpdatedEvent } from "@/service/realtimeEventOutbox.js";
 import {
     hasProjectCapability,
-    hasProjectParticipantContactEmail,
     getProjectLanguageSettings,
+    lockConversationEmailUpdateConfigurationAccess,
+    lockProjectParticipantContactEmail,
     requireProjectCapability,
     resolveConversationCreateTarget,
 } from "@/service/projectAccess.js";
 import { lockConversationEmailUpdateProject } from "@/service/conversationEmailUpdateProjectLock.js";
+import { getPrimaryDatabase } from "@/shared-backend/db.js";
 import {
     buildGoogleConversationLanguageDetectionCorpus,
     buildConversationLanguageDetectionCorpus,
@@ -290,16 +292,30 @@ export async function createNewPost({
     let eagerContentTranslationWorkIds: number[] | undefined;
     let createdConversationId: number | undefined;
 
-    await db.transaction(async (tx) => {
+    await getPrimaryDatabase(db).transaction(async (tx) => {
         const now = new Date();
-        if (request.conversationEmailUpdateEnabledOverride === true) {
+        if (request.conversationEmailUpdateEnabledOverride !== undefined) {
             const projectLocked = await lockConversationEmailUpdateProject({
                 db: tx,
                 projectId: target.projectId,
             });
             if (
                 !projectLocked ||
-                !(await hasProjectParticipantContactEmail({
+                !(await lockConversationEmailUpdateConfigurationAccess({
+                    db: tx,
+                    userId: authorId,
+                    projectId: target.projectId,
+                    organizationId: target.organizationId,
+                    now,
+                }))
+            ) {
+                throw httpErrors.forbidden(
+                    "Missing conversation_email_update access",
+                );
+            }
+            if (
+                request.conversationEmailUpdateEnabledOverride &&
+                !(await lockProjectParticipantContactEmail({
                     db: tx,
                     projectId: target.projectId,
                 }))

@@ -2,6 +2,7 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 
 export interface ConversationUpdatePreferenceSettingsTranslations {
   sectionDescription: string;
+  preferenceHierarchyDescription: string;
   recommendationDescription: string;
   searchLabel: string;
   tryAgain: string;
@@ -28,6 +29,8 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
   en: {
     sectionDescription:
       "Occasional email updates from facilitators keep you informed about selected projects and conversations and invite you to participate again. No advertising, fundraising, political campaigning, or unrelated promotion.",
+    preferenceHierarchyDescription:
+      "A project setting is the default for its conversations. Individual conversation choices override it.",
     recommendationDescription:
       "We recommend keeping them on so you don’t miss important developments. You can change this anytime.",
     searchLabel: "Search projects and conversations",
@@ -55,6 +58,8 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
   es: {
     sectionDescription:
       "Las novedades ocasionales por correo de quienes facilitan los proyectos y las conversaciones le permiten mantenerse al día y le invitan a volver a participar. Sin publicidad, recaudación de fondos, campañas políticas ni promociones no relacionadas.",
+    preferenceHierarchyDescription:
+      "La configuración de un proyecto se aplica de forma predeterminada a sus conversaciones. Las opciones de cada conversación la sustituyen.",
     recommendationDescription:
       "Le recomendamos mantenerlas activadas para no perderse novedades importantes. Puede cambiar esta opción cuando quiera.",
     searchLabel: "Buscar proyectos y conversaciones",
@@ -86,6 +91,8 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
   fr: {
     sectionDescription:
       "Les nouvelles occasionnelles par e-mail des facilitateurs vous tiennent informé des projets et conversations sélectionnés et vous invitent à participer à nouveau. Sans publicité, appel aux dons, campagne politique ni promotion sans rapport.",
+    preferenceHierarchyDescription:
+      "Le réglage d’un projet s’applique par défaut à ses conversations. Le choix de chaque conversation le remplace.",
     recommendationDescription:
       "Nous vous recommandons de les garder activées pour ne manquer aucune évolution importante. Vous pouvez modifier ce choix à tout moment.",
     searchLabel: "Rechercher des projets et des conversations",
@@ -116,6 +123,8 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
   "zh-Hant": {
     sectionDescription:
       "協作者傳送的不定期電子郵件動態，讓你掌握所選專案和對話的消息並再次參與。不包含廣告、募款、政治宣傳或無關推廣。",
+    preferenceHierarchyDescription:
+      "專案設定是其中對話的預設值。個別對話的選擇會優先套用。",
     recommendationDescription:
       "建議保持開啟，以免錯過重要進展。你可以隨時變更此選項。",
     searchLabel: "搜尋專案和對話",
@@ -139,6 +148,8 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
   "zh-Hans": {
     sectionDescription:
       "协作者发送的不定期邮件动态，让你掌握所选项目和对话的消息并再次参与。不包含广告、募款、政治宣传或无关推广。",
+    preferenceHierarchyDescription:
+      "项目设置是其中对话的默认值。单个对话的选择会优先应用。",
     recommendationDescription:
       "建议保持开启，以免错过重要进展。你可以随时更改此选项。",
     searchLabel: "搜索项目和对话",
@@ -162,6 +173,8 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
   ja: {
     sectionDescription:
       "ファシリテーターから届く不定期のメール更新で、選択したプロジェクトや会話の情報を確認し、再び参加できます。広告、資金集め、政治運動、無関係な宣伝は含まれません。",
+    preferenceHierarchyDescription:
+      "プロジェクトの設定は、その会話に適用される既定値です。会話ごとの選択が優先されます。",
     recommendationDescription:
       "重要な進展を見逃さないよう、オンのままにすることをおすすめします。この設定はいつでも変更できます。",
     searchLabel: "プロジェクトと会話を検索",
@@ -186,6 +199,8 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
   ar: {
     sectionDescription:
       "تبقيك تحديثات البريد الإلكتروني العرضية من الميسّرين على اطلاع بالمشاريع والمحادثات المحددة وتدعوك للمشاركة مجددًا. لا إعلانات أو جمع تبرعات أو حملات سياسية أو ترويج غير ذي صلة.",
+    preferenceHierarchyDescription:
+      "إعداد المشروع هو الإعداد الافتراضي لمحادثاته، وتكون لاختيارات المحادثات الفردية الأولوية عليه.",
     recommendationDescription:
       "نوصي بإبقائها مفعّلة حتى لا تفوتك التطورات المهمة. يمكنك تغيير هذا الخيار في أي وقت.",
     searchLabel: "البحث في المشاريع والمحادثات",
@@ -211,6 +226,8 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
   fa: {
     sectionDescription:
       "به‌روزرسانی‌های ایمیلی گاه‌به‌گاه تسهیل‌گران، شما را از پروژه‌ها و گفت‌وگوهای انتخاب‌شده باخبر می‌کند و برای مشارکت دوباره دعوت می‌کند. بدون تبلیغات، جمع‌آوری کمک مالی، کارزار سیاسی یا ترویج نامرتبط.",
+    preferenceHierarchyDescription:
+      "تنظیم پروژه، پیش‌فرض گفتگوهای آن است و انتخاب هر گفتگوی جداگانه بر آن اولویت دارد.",
     recommendationDescription:
       "پیشنهاد می‌کنیم آن‌ها را روشن نگه دارید تا رویدادهای مهم را از دست ندهید. هر زمان بخواهید می‌توانید این گزینه را تغییر دهید.",
     searchLabel: "جستجوی پروژه‌ها و گفتگوها",
@@ -237,6 +254,8 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
   he: {
     sectionDescription:
       "עדכונים מזדמנים בדוא״ל מהמנחים משאירים אתכם מעודכנים בפרויקטים ובשיחות שבחרתם ומזמינים אתכם להשתתף שוב. ללא פרסום, גיוס תרומות, תעמולה פוליטית או קידום שאינו קשור.",
+    preferenceHierarchyDescription:
+      "הגדרת הפרויקט היא ברירת המחדל לשיחות שבו. בחירה בשיחה מסוימת גוברת עליה.",
     recommendationDescription:
       "מומלץ להשאיר אותם פעילים כדי לא להחמיץ התפתחויות חשובות. אפשר לשנות זאת בכל עת.",
     searchLabel: "חיפוש פרויקטים ושיחות",
@@ -260,6 +279,8 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
   ky: {
     sectionDescription:
       "Фасилитаторлордун маал-маалы менен келген электрондук каттары сизди тандалган долбоорлор жана талкуулар тууралуу кабардар кылып, кайра катышууга чакырат. Жарнама, каражат чогултуу, саясий үгүт же тиешеси жок илгерилетүү болбойт.",
+    preferenceHierarchyDescription:
+      "Долбоордун жөндөөсү андагы маектер үчүн баштапкы тандоо болот. Ар бир маекке өзүнчө жасалган тандоо андан жогору турат.",
     recommendationDescription:
       "Маанилүү өзгөрүүлөрдү өткөрүп жибербөө үчүн аларды күйгүзүп коюуну сунуштайбыз. Муну каалаган убакта өзгөртө аласыз.",
     searchLabel: "Долбоорлорду жана маектерди издөө",
@@ -287,6 +308,8 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
   ru: {
     sectionDescription:
       "Периодические письма от фасилитаторов помогают следить за выбранными проектами и обсуждениями и приглашают снова участвовать. Без рекламы, сбора средств, политической агитации и несвязанного продвижения.",
+    preferenceHierarchyDescription:
+      "Настройка проекта применяется к его обсуждениям по умолчанию. Выбор для отдельного обсуждения имеет приоритет.",
     recommendationDescription:
       "Рекомендуем оставить их включёнными, чтобы не пропустить важные события. Вы можете изменить этот выбор в любое время.",
     searchLabel: "Поиск проектов и обсуждений",
