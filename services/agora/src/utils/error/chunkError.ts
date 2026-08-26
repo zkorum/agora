@@ -13,7 +13,6 @@ const RELOAD_COOLDOWN_MS = 10_000;
 export type ChunkReloadResult = "blocked" | "pending" | "started";
 
 const recoveryStartedAtByError = new WeakMap<Error, number>();
-const chunkErrorsWithStartedRecovery = new WeakSet<Error>();
 
 export function isChunkLoadError(error: unknown): error is Error {
   if (!(error instanceof Error)) return false;
@@ -23,7 +22,7 @@ export function isChunkLoadError(error: unknown): error is Error {
 }
 
 export function hasChunkErrorRecoveryStarted(error: unknown): boolean {
-  return error instanceof Error && chunkErrorsWithStartedRecovery.has(error);
+  return error instanceof Error && recoveryStartedAtByError.has(error);
 }
 
 /**
@@ -54,7 +53,6 @@ export function reloadForChunkError({
     ) {
       return "pending";
     }
-    recoveryStartedAtByError.delete(error);
   }
 
   if (!navigator.onLine) {
@@ -83,6 +81,5 @@ export function reloadForChunkError({
     window.location.reload();
   }
   recoveryStartedAtByError.set(error, now);
-  chunkErrorsWithStartedRecovery.add(error);
   return "started";
 }
