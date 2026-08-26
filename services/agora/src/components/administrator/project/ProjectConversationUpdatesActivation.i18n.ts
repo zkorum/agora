@@ -1,8 +1,12 @@
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 
 export interface ProjectConversationUpdatesActivationTranslations {
+  configurationUnavailable: string;
   defaultAriaLabel: string;
+  defaultDisabledSaved: string;
+  defaultEnabledSaved: string;
   defaultLabel: string;
+  defaultSaveError: string;
   editParticipantContact: string;
   listedDefaultDescription: string;
   listedDescription: string;
@@ -13,8 +17,13 @@ export interface ProjectConversationUpdatesActivationTranslations {
 }
 
 const en: ProjectConversationUpdatesActivationTranslations = {
+  configurationUnavailable:
+    "Email Updates configuration is unavailable for this project.",
   defaultAriaLabel: "Email Updates on by default",
+  defaultDisabledSaved: "Email Updates are now off by default.",
+  defaultEnabledSaved: "Email Updates are now on by default.",
   defaultLabel: "On by default",
+  defaultSaveError: "The Email Updates default could not be saved.",
   editParticipantContact: "Edit participant contact",
   listedDefaultDescription:
     "Conversations in this project inherit this setting unless an owner overrides them.",
@@ -34,8 +43,16 @@ export const projectConversationUpdatesActivationTranslations: Record<
 > = {
   en,
   ar: {
+    configurationUnavailable:
+      "إعداد تحديثات البريد الإلكتروني غير متاح لهذا المشروع.",
     defaultAriaLabel: "تشغيل تحديثات البريد الإلكتروني افتراضيًا",
+    defaultDisabledSaved:
+      "تم إيقاف تحديثات البريد الإلكتروني افتراضيًا.",
+    defaultEnabledSaved:
+      "تم تشغيل تحديثات البريد الإلكتروني افتراضيًا.",
     defaultLabel: "مفعّلة افتراضيًا",
+    defaultSaveError:
+      "تعذر حفظ الإعداد الافتراضي لتحديثات البريد الإلكتروني.",
     editParticipantContact: "تعديل جهة اتصال المشاركين",
     listedDefaultDescription:
       "ترث محادثات هذا المشروع هذا الإعداد ما لم يتجاوزه أحد المالكين.",
@@ -49,8 +66,16 @@ export const projectConversationUpdatesActivationTranslations: Record<
     title: "تحديثات البريد الإلكتروني",
   },
   es: {
+    configurationUnavailable:
+      "La configuración de novedades por correo no está disponible para este proyecto.",
     defaultAriaLabel: "Novedades por correo activadas por defecto",
+    defaultDisabledSaved:
+      "Las novedades por correo están desactivadas por defecto.",
+    defaultEnabledSaved:
+      "Las novedades por correo están activadas por defecto.",
     defaultLabel: "Activadas por defecto",
+    defaultSaveError:
+      "No se pudo guardar el valor predeterminado de las novedades por correo.",
     editParticipantContact: "Editar contacto de participantes",
     listedDefaultDescription:
       "Las conversaciones de este proyecto heredan esta opción salvo que un responsable la anule.",
@@ -65,8 +90,16 @@ export const projectConversationUpdatesActivationTranslations: Record<
     title: "Novedades por correo",
   },
   fa: {
+    configurationUnavailable:
+      "پیکربندی به‌روزرسانی ایمیلی برای این پروژه در دسترس نیست.",
     defaultAriaLabel: "روشن بودن پیش‌فرض به‌روزرسانی‌های ایمیلی",
+    defaultDisabledSaved:
+      "به‌روزرسانی‌های ایمیلی اکنون به‌طور پیش‌فرض خاموش هستند.",
+    defaultEnabledSaved:
+      "به‌روزرسانی‌های ایمیلی اکنون به‌طور پیش‌فرض روشن هستند.",
     defaultLabel: "به‌طور پیش‌فرض روشن",
+    defaultSaveError:
+      "پیش‌فرض به‌روزرسانی ایمیلی ذخیره نشد.",
     editParticipantContact: "ویرایش راه ارتباطی شرکت‌کنندگان",
     listedDefaultDescription:
       "گفتگوهای این پروژه این تنظیم را به ارث می‌برند، مگر اینکه یکی از مالکان آن را تغییر دهد.",
@@ -80,8 +113,16 @@ export const projectConversationUpdatesActivationTranslations: Record<
     title: "به‌روزرسانی‌های ایمیلی",
   },
   fr: {
+    configurationUnavailable:
+      "La configuration des nouvelles par e-mail n’est pas disponible pour ce projet.",
     defaultAriaLabel: "Nouvelles par e-mail activées par défaut",
+    defaultDisabledSaved:
+      "Les nouvelles par e-mail sont maintenant désactivées par défaut.",
+    defaultEnabledSaved:
+      "Les nouvelles par e-mail sont maintenant activées par défaut.",
     defaultLabel: "Activées par défaut",
+    defaultSaveError:
+      "Impossible d’enregistrer le réglage par défaut des nouvelles par e-mail.",
     editParticipantContact: "Modifier le contact des participants",
     listedDefaultDescription:
       "Les conversations de ce projet héritent de ce réglage, sauf dérogation d'un responsable.",
@@ -96,8 +137,13 @@ export const projectConversationUpdatesActivationTranslations: Record<
     title: "Nouvelles par e-mail",
   },
   he: {
+    configurationUnavailable:
+      "הגדרת עדכוני הדוא״ל אינה זמינה לפרויקט הזה.",
     defaultAriaLabel: "עדכוני דוא״ל מופעלים כברירת מחדל",
+    defaultDisabledSaved: "עדכוני דוא״ל כבויים כעת כברירת מחדל.",
+    defaultEnabledSaved: "עדכוני דוא״ל מופעלים כעת כברירת מחדל.",
     defaultLabel: "מופעל כברירת מחדל",
+    defaultSaveError: "לא ניתן לשמור את ברירת המחדל של עדכוני הדוא״ל.",
     editParticipantContact: "עריכת איש הקשר למשתתפים",
     listedDefaultDescription:
       "השיחות בפרויקט הזה יורשות את ההגדרה, אלא אם בעלים משנה אותה.",
@@ -110,8 +156,13 @@ export const projectConversationUpdatesActivationTranslations: Record<
     title: "עדכוני דוא״ל",
   },
   ja: {
+    configurationUnavailable:
+      "このプロジェクトではメール更新の設定を利用できません。",
     defaultAriaLabel: "メール更新を既定でオン",
+    defaultDisabledSaved: "メール更新は既定でオフになりました。",
+    defaultEnabledSaved: "メール更新は既定でオンになりました。",
     defaultLabel: "既定でオン",
+    defaultSaveError: "メール更新の既定値を保存できませんでした。",
     editParticipantContact: "参加者向け連絡先を編集",
     listedDefaultDescription:
       "所有者が上書きしない限り、このプロジェクトの会話にはこの設定が継承されます。",
@@ -125,8 +176,16 @@ export const projectConversationUpdatesActivationTranslations: Record<
     title: "メール更新",
   },
   ky: {
+    configurationUnavailable:
+      "Бул долбоор үчүн электрондук жаңыртуу жөндөөсү жеткиликсиз.",
     defaultAriaLabel: "Электрондук жаңыртуулар демейки боюнча күйүк",
+    defaultDisabledSaved:
+      "Электрондук жаңыртуулар эми демейки боюнча өчүк.",
+    defaultEnabledSaved:
+      "Электрондук жаңыртуулар эми демейки боюнча күйүк.",
     defaultLabel: "Демейки боюнча күйүк",
+    defaultSaveError:
+      "Электрондук жаңыртуулардын демейки жөндөөсү сакталган жок.",
     editParticipantContact: "Катышуучулардын байланышын түзөтүү",
     listedDefaultDescription:
       "Ээси өзгөртпөсө, бул долбоордогу талкуулар ушул жөндөөнү мурастайт.",
@@ -141,8 +200,16 @@ export const projectConversationUpdatesActivationTranslations: Record<
     title: "Электрондук жаңыртуулар",
   },
   ru: {
+    configurationUnavailable:
+      "Настройка почтовых обновлений недоступна для этого проекта.",
     defaultAriaLabel: "Почтовые обновления включены по умолчанию",
+    defaultDisabledSaved:
+      "Почтовые обновления теперь выключены по умолчанию.",
+    defaultEnabledSaved:
+      "Почтовые обновления теперь включены по умолчанию.",
     defaultLabel: "Включены по умолчанию",
+    defaultSaveError:
+      "Не удалось сохранить настройку почтовых обновлений по умолчанию.",
     editParticipantContact: "Изменить контакт для участников",
     listedDefaultDescription:
       "Обсуждения этого проекта наследуют настройку, если владелец её не переопределит.",
@@ -157,8 +224,12 @@ export const projectConversationUpdatesActivationTranslations: Record<
     title: "Почтовые обновления",
   },
   "zh-Hans": {
+    configurationUnavailable: "此项目无法使用电子邮件更新配置。",
     defaultAriaLabel: "默认开启电子邮件更新",
+    defaultDisabledSaved: "电子邮件更新现已默认关闭。",
+    defaultEnabledSaved: "电子邮件更新现已默认开启。",
     defaultLabel: "默认开启",
+    defaultSaveError: "无法保存电子邮件更新默认设置。",
     editParticipantContact: "编辑参与者联系方式",
     listedDefaultDescription:
       "除非负责人另行设置，此项目中的对话会继承此设置。",
@@ -169,8 +240,12 @@ export const projectConversationUpdatesActivationTranslations: Record<
     title: "电子邮件更新",
   },
   "zh-Hant": {
+    configurationUnavailable: "此專案無法使用電子郵件更新設定。",
     defaultAriaLabel: "預設開啟電子郵件更新",
+    defaultDisabledSaved: "電子郵件更新現已預設關閉。",
+    defaultEnabledSaved: "電子郵件更新現已預設開啟。",
     defaultLabel: "預設開啟",
+    defaultSaveError: "無法儲存電子郵件更新預設設定。",
     editParticipantContact: "編輯參與者聯絡方式",
     listedDefaultDescription:
       "除非負責人另行設定，此專案中的對話會沿用此設定。",

@@ -6,6 +6,7 @@
       :project-title="organizationName"
       :has-participant-contact-email="configuration.contact !== undefined"
       :has-entitlement="configuration.hasEntitlement"
+      :disabled="isSaving"
       @update:model-value="updateDefaultEnabled"
       @edit-contact="focusContactName"
     />
@@ -23,6 +24,7 @@
             outlined
             :label="t('contactNameLabel')"
             autocomplete="name"
+            :disable="isSaving"
             @update:model-value="setContactName"
           />
           <q-input
@@ -31,6 +33,7 @@
             type="email"
             :label="t('contactEmailLabel')"
             autocomplete="email"
+            :disable="isSaving"
             @update:model-value="setContactEmail"
           />
         </div>
@@ -79,6 +82,10 @@
 
 <script setup lang="ts">
 import AdminSectionHeader from "src/components/administrator/AdminSectionHeader.vue";
+import {
+  type ProjectConversationUpdatesActivationTranslations,
+  projectConversationUpdatesActivationTranslations,
+} from "src/components/administrator/project/ProjectConversationUpdatesActivation.i18n";
 import ProjectConversationUpdatesActivation from "src/components/administrator/project/ProjectConversationUpdatesActivation.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
@@ -106,6 +113,10 @@ const props = defineProps<{
 const { t } = useComponentI18n<OrganizationNoProjectEmailUpdatesTranslations>(
   organizationNoProjectEmailUpdatesTranslations
 );
+const { t: tActivation } =
+  useComponentI18n<ProjectConversationUpdatesActivationTranslations>(
+    projectConversationUpdatesActivationTranslations
+  );
 const { getNoProjectEmailUpdates, updateNoProjectEmailUpdates } =
   useBackendAdministratorOrganizationApi();
 const { showNotifyMessage } = useNotify();
@@ -179,13 +190,25 @@ async function focusContactName(): Promise<void> {
 
 async function updateDefaultEnabled(defaultEnabled: boolean): Promise<void> {
   const current = configuration.value;
-  if (current === undefined || isSaving.value) {
+  if (
+    current === undefined ||
+    isSaving.value ||
+    defaultEnabled === current.defaultEnabled
+  ) {
     return;
   }
-  await updateConfiguration({
+  const organizationSlug = props.organizationSlug;
+  configuration.value = { ...current, defaultEnabled };
+  const result = await updateConfiguration({
     defaultEnabled,
     contact: current.contact,
+    successMessage: tActivation(
+      defaultEnabled ? "defaultEnabledSaved" : "defaultDisabledSaved"
+    ),
   });
+  if (result === "failed" && organizationSlug === props.organizationSlug) {
+    configuration.value = current;
+  }
 }
 
 async function saveContact(): Promise<void> {
@@ -195,6 +218,7 @@ async function saveContact(): Promise<void> {
   await updateConfiguration({
     defaultEnabled: contactRequest.value.data.defaultEnabled,
     contact: contactRequest.value.data.contact,
+    successMessage: t("saved"),
   });
 }
 
@@ -210,30 +234,39 @@ async function deleteContact(): Promise<void> {
   await updateConfiguration({
     defaultEnabled: current.defaultEnabled,
     contact: undefined,
+    successMessage: t("saved"),
   });
 }
+
+type UpdateConfigurationResult = "saved" | "failed" | "stale";
 
 async function updateConfiguration({
   defaultEnabled,
   contact,
+  successMessage,
 }: {
   defaultEnabled: boolean;
   contact: { name: string; email: string } | undefined;
-}): Promise<void> {
+  successMessage: string;
+}): Promise<UpdateConfigurationResult> {
+  const organizationSlug = props.organizationSlug;
   const request = Dto.updateAdminNoProjectEmailUpdatesRequest.safeParse({
-    organizationSlug: props.organizationSlug,
+    organizationSlug,
     defaultEnabled,
     contact,
   });
   if (!request.success) {
     showNotifyMessage(t("missingContact"));
-    return;
+    return "failed";
   }
   isSaving.value = true;
   const response = await updateNoProjectEmailUpdates(request.data);
   isSaving.value = false;
+  if (organizationSlug !== props.organizationSlug) {
+    return "stale";
+  }
   if (response === undefined) {
-    return;
+    return "failed";
   }
   if (!response.success) {
     showNotifyMessage(
@@ -245,10 +278,11 @@ async function updateConfiguration({
               : "organizationNotFound"
       )
     );
-    return;
+    return "failed";
   }
   setConfiguration(response.configuration);
-  showNotifyMessage(t("saved"));
+  showNotifyMessage(successMessage);
+  return "saved";
 }
 </script>
 

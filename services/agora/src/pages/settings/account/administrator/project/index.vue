@@ -372,6 +372,7 @@
             selectedProjectConversationUpdatesConfiguration?.canConfigure ===
             true
           "
+          :disabled="isSavingProjectConversationUpdatesDefault"
           @edit-contact="scrollToManageContact"
         />
 
@@ -798,6 +799,10 @@ import { copyToClipboard, useQuasar } from "quasar";
 import AdminSectionHeader from "src/components/administrator/AdminSectionHeader.vue";
 import ProjectBodyEditor from "src/components/administrator/project/ProjectBodyEditor.vue";
 import ProjectContentLocalizationEditor from "src/components/administrator/project/ProjectContentLocalizationEditor.vue";
+import {
+  type ProjectConversationUpdatesActivationTranslations,
+  projectConversationUpdatesActivationTranslations,
+} from "src/components/administrator/project/ProjectConversationUpdatesActivation.i18n";
 import ProjectConversationUpdatesActivation from "src/components/administrator/project/ProjectConversationUpdatesActivation.vue";
 import ProjectDocumentManager from "src/components/administrator/project/ProjectDocumentManager.vue";
 import ProjectExternalOrganizationLocalizationEditor from "src/components/administrator/project/ProjectExternalOrganizationLocalizationEditor.vue";
@@ -884,6 +889,10 @@ const { isActive } = usePageLayout({ reducedWidth: true });
 const { t } = useComponentI18n<AdministratorProjectTranslations>(
   administratorProjectTranslations
 );
+const { t: tConversationUpdates } =
+  useComponentI18n<ProjectConversationUpdatesActivationTranslations>(
+    projectConversationUpdatesActivationTranslations
+  );
 const { getOrganizationOptions } = useBackendAdministratorOrganizationApi();
 const {
   deleteProject,
@@ -914,7 +923,9 @@ const selectedProjectConversationUpdatesConfiguration = ref<
 const conversationUpdatesConfigurationError = ref<string | undefined>(
   undefined
 );
+const isSavingProjectConversationUpdatesDefault = ref(false);
 let conversationUpdatesConfigurationRequestId = 0;
+let conversationUpdatesMutationGeneration = 0;
 const selectedProjectConversationUpdatesEnabled = computed({
   get: () =>
     selectedProjectConversationUpdatesConfiguration.value?.defaultEnabled ??
@@ -1486,6 +1497,8 @@ watch(selectedProjectSlug, async (projectSlug) => {
 
 watch(selectedProject, async (project) => {
   const requestId = ++conversationUpdatesConfigurationRequestId;
+  conversationUpdatesMutationGeneration += 1;
+  isSavingProjectConversationUpdatesDefault.value = false;
   selectedProjectConversationUpdatesConfiguration.value = undefined;
   conversationUpdatesConfigurationError.value = undefined;
   if (project === undefined) {
@@ -1499,9 +1512,13 @@ watch(selectedProject, async (project) => {
     if (requestId !== conversationUpdatesConfigurationRequestId) {
       return;
     }
-    if (!response.success || response.configuration.target !== "project") {
+    if (
+      !response.success ||
+      response.configuration.target !== "project" ||
+      response.configuration.projectSlug !== project.projectSlug
+    ) {
       conversationUpdatesConfigurationError.value =
-        "Email Update configuration is unavailable for this project.";
+        tConversationUpdates("configurationUnavailable");
       return;
     }
     selectedProjectConversationUpdatesConfiguration.value =
@@ -1510,7 +1527,7 @@ watch(selectedProject, async (project) => {
     console.error("Failed to load project Email Update configuration", error);
     if (requestId === conversationUpdatesConfigurationRequestId) {
       conversationUpdatesConfigurationError.value =
-        "Email Update configuration is unavailable for this project.";
+        tConversationUpdates("configurationUnavailable");
     }
   }
 });
@@ -1519,9 +1536,17 @@ async function updateSelectedProjectConversationUpdatesDefault(
   enabled: boolean
 ): Promise<void> {
   const configuration = selectedProjectConversationUpdatesConfiguration.value;
-  if (configuration === undefined || !configuration.canConfigure) {
+  if (
+    configuration === undefined ||
+    !configuration.canConfigure ||
+    isSavingProjectConversationUpdatesDefault.value ||
+    enabled === configuration.defaultEnabled
+  ) {
     return;
   }
+  const projectSlug = configuration.projectSlug;
+  const generation = ++conversationUpdatesMutationGeneration;
+  isSavingProjectConversationUpdatesDefault.value = true;
   selectedProjectConversationUpdatesConfiguration.value = {
     ...configuration,
     defaultEnabled: enabled,
@@ -1530,21 +1555,57 @@ async function updateSelectedProjectConversationUpdatesDefault(
   try {
     const response = await conversationEmailUpdatesApi.updateConfiguration({
       target: "project",
-      projectSlug: configuration.projectSlug,
+      projectSlug,
       defaultEnabled: enabled,
     });
-    if (!response.success || response.configuration.target !== "project") {
+    if (!isCurrentConversationUpdatesMutation({ generation, projectSlug })) {
+      return;
+    }
+    if (
+      !response.success ||
+      response.configuration.target !== "project" ||
+      response.configuration.projectSlug !== projectSlug
+    ) {
       selectedProjectConversationUpdatesConfiguration.value = configuration;
-      showNotifyMessage("The Email Update default could not be saved.");
+      showNotifyMessage(tConversationUpdates("defaultSaveError"));
       return;
     }
     selectedProjectConversationUpdatesConfiguration.value =
       response.configuration;
+    showNotifyMessage(
+      tConversationUpdates(
+        response.configuration.defaultEnabled
+          ? "defaultEnabledSaved"
+          : "defaultDisabledSaved"
+      )
+    );
   } catch (error) {
+    if (!isCurrentConversationUpdatesMutation({ generation, projectSlug })) {
+      return;
+    }
     console.error("Failed to save project Email Update configuration", error);
     selectedProjectConversationUpdatesConfiguration.value = configuration;
-    showNotifyMessage("The Email Update default could not be saved.");
+    showNotifyMessage(tConversationUpdates("defaultSaveError"));
+  } finally {
+    if (isCurrentConversationUpdatesMutation({ generation, projectSlug })) {
+      isSavingProjectConversationUpdatesDefault.value = false;
+    }
   }
+}
+
+function isCurrentConversationUpdatesMutation({
+  generation,
+  projectSlug,
+}: {
+  generation: number;
+  projectSlug: string;
+}): boolean {
+  return (
+    generation === conversationUpdatesMutationGeneration &&
+    selectedProject.value?.projectSlug === projectSlug &&
+    selectedProjectConversationUpdatesConfiguration.value?.projectSlug ===
+      projectSlug
+  );
 }
 
 watch(selectedProject, (project) => {

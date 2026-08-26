@@ -25,7 +25,7 @@
       <ZKSwitch
         v-model="enabled"
         :aria-label="t('defaultAriaLabel')"
-        :disable="!hasParticipantContactEmail && !enabled"
+        :disable="disabled || (!hasParticipantContactEmail && !enabled)"
       />
     </div>
   </ZKCard>
@@ -49,6 +49,7 @@ const props = defineProps<{
   projectTitle: string;
   hasParticipantContactEmail: boolean;
   hasEntitlement: boolean;
+  disabled: boolean;
 }>();
 const emit = defineEmits<{
   editContact: [];
