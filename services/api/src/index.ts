@@ -5780,7 +5780,7 @@ server.after(() => {
         handler: async (request) => {
             await requireSiteOrgAdmin(request);
             return await getAdminNoProjectEmailUpdates({
-                db,
+                db: getPrimaryDatabase(db),
                 organizationSlug: request.body.organizationSlug,
                 now: nowZeroMs(),
             });

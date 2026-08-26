@@ -18,7 +18,10 @@
             :fallback-label="label"
             :owner="group.owner"
           />
-          <strong>{{ label }}</strong>
+          <span class="preference-group-item__project-text">
+            <strong>{{ label }}</strong>
+            <small>{{ t("projectDefaultDescription") }}</small>
+          </span>
         </SpaLink>
         <strong v-else class="preference-group-item__label">
           {{ label }}
@@ -31,7 +34,7 @@
             :disable="
               group.availability === 'temporarily_unavailable' || savingProject
             "
-            :aria-label="t('receiveEmailUpdatesFor', { name: label })"
+            :aria-label="t('receiveEmailUpdatesByDefaultFor', { name: label })"
             @update:model-value="
               emit('setProjectEnabled', { group, enabled: $event })
             "
@@ -133,6 +136,17 @@ function getConversationOwner(
 
   &__label {
     color: $color-text-strong;
+  }
+
+  &__project-text {
+    display: grid;
+    gap: 0.125rem;
+
+    small {
+      color: $color-text-weak;
+      font-size: 0.75rem;
+      line-height: 1.25;
+    }
   }
 
   &__switch {

@@ -201,9 +201,7 @@ describe("ConversationUpdatePreferenceSettings", () => {
 
     const noProjectHeader = [
       ...container.querySelectorAll(".expansion-item__header"),
-    ].find(
-      (header) => header.textContent?.includes("No Project") === true
-    );
+    ].find((header) => header.textContent?.includes("No Project") === true);
     expect(noProjectHeader).toBeDefined();
     expect(container.querySelectorAll("h2")).toHaveLength(0);
     const noProjectConversationLink = [
@@ -290,7 +288,7 @@ describe("ConversationUpdatePreferenceSettings", () => {
       limit: 20,
     });
     expect(
-      getButton(container, "Receive Email Updates for Project One").dataset
+      getButton(container, "Email Updates by default for Project One").dataset
         .enabled
     ).toBe("true");
     expect(
@@ -365,7 +363,7 @@ describe("ConversationUpdatePreferenceSettings", () => {
 
     const container = mountComponent();
     await flushPromises();
-    getButton(container, "Receive Email Updates for Project One").click();
+    getButton(container, "Email Updates by default for Project One").click();
     await flushPromises();
 
     expect(showNotifyMessage).toHaveBeenCalledWith(
@@ -437,7 +435,7 @@ describe("ConversationUpdatePreferenceSettings", () => {
 
     const projectSwitch = getButton(
       container,
-      "Receive Email Updates for Project One"
+      "Email Updates by default for Project One"
     );
     projectSwitch.click();
     await flushPromises();
@@ -503,7 +501,7 @@ describe("ConversationUpdatePreferenceSettings", () => {
       "false"
     );
     expect(
-      getButton(container, "Receive Email Updates for Project One").dataset
+      getButton(container, "Email Updates by default for Project One").dataset
         .enabled
     ).toBe("true");
   });
@@ -599,7 +597,7 @@ describe("ConversationUpdatePreferenceSettings", () => {
     const container = mountComponent();
     await flushPromises();
 
-    getButton(container, "Receive Email Updates for Project One").click();
+    getButton(container, "Email Updates by default for Project One").click();
     const searchInput = container.querySelector<HTMLInputElement>(
       'input[aria-label="Search projects and conversations"]'
     );
@@ -630,7 +628,7 @@ describe("ConversationUpdatePreferenceSettings", () => {
 
     expect(container.textContent).not.toContain("Loading");
     expect(
-      getButton(container, "Receive Email Updates for Project One").dataset
+      getButton(container, "Email Updates by default for Project One").dataset
         .enabled
     ).toBe("false");
   });
@@ -683,12 +681,12 @@ describe("ConversationUpdatePreferenceSettings", () => {
     const container = mountComponent();
     await flushPromises();
 
-    getButton(container, "Receive Email Updates for Project One").click();
+    getButton(container, "Email Updates by default for Project One").click();
     getButton(container, "Receive Email Updates for Conversation Two").click();
     await flushPromises();
 
     expect(
-      getButton(container, "Receive Email Updates for Project One").disabled
+      getButton(container, "Email Updates by default for Project One").disabled
     ).toBe(true);
     expect(
       getButton(container, "Receive Email Updates for Conversation Two")
@@ -708,7 +706,7 @@ describe("ConversationUpdatePreferenceSettings", () => {
     await flushPromises();
 
     expect(
-      getButton(container, "Receive Email Updates for Project One").disabled
+      getButton(container, "Email Updates by default for Project One").disabled
     ).toBe(true);
     expect(
       getButton(container, "Receive Email Updates for Conversation Two")
@@ -722,7 +720,7 @@ describe("ConversationUpdatePreferenceSettings", () => {
     await flushPromises();
 
     expect(
-      getButton(container, "Receive Email Updates for Project One").dataset
+      getButton(container, "Email Updates by default for Project One").dataset
         .enabled
     ).toBe("true");
     expect(
@@ -751,7 +749,7 @@ describe("ConversationUpdatePreferenceSettings", () => {
 
     const switches = [
       getButton(container, "Receive Email Updates"),
-      getButton(container, "Receive Email Updates for Project One"),
+      getButton(container, "Email Updates by default for Project One"),
       getButton(container, "Receive Email Updates for Conversation Two"),
     ];
     for (const preferenceSwitch of switches) {

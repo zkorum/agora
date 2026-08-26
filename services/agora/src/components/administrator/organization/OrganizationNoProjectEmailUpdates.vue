@@ -1,12 +1,21 @@
 <template>
-  <div v-if="configuration?.hasEntitlement" class="section">
+  <PageLoadingSpinner v-if="isLoading" />
+
+  <ErrorRetryBlock
+    v-else-if="loadError !== undefined"
+    :title="loadError"
+    :retry-label="t('tryAgain')"
+    @retry="loadConfiguration"
+  />
+
+  <div v-else-if="configuration?.hasEntitlement" class="section">
     <ProjectConversationUpdatesActivation
       :model-value="configuration.defaultEnabled"
       activation-kind="no-project-container"
       :project-title="organizationName"
       :has-participant-contact-email="configuration.contact !== undefined"
       :has-entitlement="configuration.hasEntitlement"
-      :disabled="isSaving"
+      :disabled="isSaving || isContactDirty"
       @update:model-value="updateDefaultEnabled"
       @edit-contact="focusContactName"
     />
@@ -87,6 +96,8 @@ import {
   projectConversationUpdatesActivationTranslations,
 } from "src/components/administrator/project/ProjectConversationUpdatesActivation.i18n";
 import ProjectConversationUpdatesActivation from "src/components/administrator/project/ProjectConversationUpdatesActivation.vue";
+import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
+import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
@@ -126,6 +137,8 @@ const contactEmail = ref("");
 const contactForm = ref<HTMLFormElement>();
 const contactNameInput = ref<{ focus: () => void }>();
 const isSaving = ref(false);
+const isLoading = ref(true);
+const loadError = ref<string>();
 const showDeleteConfirmDialog = ref(false);
 let loadRequestId = 0;
 
@@ -142,6 +155,13 @@ const contactRequest = computed(() =>
 const canSaveContact = computed(
   () => !isSaving.value && contactRequest.value.success
 );
+const isContactDirty = computed(() => {
+  const savedContact = configuration.value?.contact;
+  return (
+    contactName.value !== (savedContact?.name ?? "") ||
+    contactEmail.value !== (savedContact?.email ?? "")
+  );
+});
 
 watch(
   () => props.organizationSlug,
@@ -153,15 +173,22 @@ watch(
 
 async function loadConfiguration(): Promise<void> {
   const requestId = ++loadRequestId;
+  isLoading.value = true;
+  loadError.value = undefined;
   configuration.value = undefined;
   const response = await getNoProjectEmailUpdates({
     organizationSlug: props.organizationSlug,
   });
-  if (requestId !== loadRequestId || response === undefined) {
+  if (requestId !== loadRequestId) {
+    return;
+  }
+  isLoading.value = false;
+  if (response === undefined) {
+    loadError.value = t("configurationUnavailable");
     return;
   }
   if (!response.success) {
-    showNotifyMessage(t("organizationNotFound"));
+    loadError.value = t("organizationNotFound");
     return;
   }
   setConfiguration(response.configuration);
@@ -195,6 +222,7 @@ async function updateDefaultEnabled(defaultEnabled: boolean): Promise<void> {
   if (
     current === undefined ||
     isSaving.value ||
+    isContactDirty.value ||
     defaultEnabled === current.defaultEnabled
   ) {
     return;
@@ -226,11 +254,7 @@ async function saveContact(): Promise<void> {
 
 async function deleteContact(): Promise<void> {
   const current = configuration.value;
-  if (
-    current === undefined ||
-    !current.canDeleteContact ||
-    isSaving.value
-  ) {
+  if (current === undefined || !current.canDeleteContact || isSaving.value) {
     return;
   }
   await updateConfiguration({
@@ -276,8 +300,8 @@ async function updateConfiguration({
         response.reason === "contact_in_use"
           ? "contactInUse"
           : response.reason === "entitlement_required"
-              ? "entitlementRequired"
-              : "organizationNotFound"
+            ? "entitlementRequired"
+            : "organizationNotFound"
       )
     );
     return "failed";

@@ -15,6 +15,7 @@
       clearable
       debounce="350"
       :label="t('searchLabel')"
+      :maxlength="CONVERSATION_EMAIL_UPDATE_PREFERENCE_SEARCH_MAX_LENGTH"
       @update:model-value="updateSearch"
     >
       <template #prepend><q-icon name="mdi-magnify" /></template>
@@ -103,6 +104,7 @@ import SettingsToggleCard from "src/components/ui-library/SettingsToggleCard.vue
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKInfoBanner from "src/components/ui-library/ZKInfoBanner.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { CONVERSATION_EMAIL_UPDATE_PREFERENCE_SEARCH_MAX_LENGTH } from "src/shared/types/dto";
 
 import ConversationUpdatePreferenceGroupItem from "./ConversationUpdatePreferenceGroupItem.vue";
 import { getPreferenceGroupKey } from "./conversationUpdatePreferenceLogic";

@@ -96,6 +96,7 @@ import {
     resolveConversationEmailParticipantPreferenceScope,
     resolveConversationEmailSendingAvailability,
 } from "./conversationEmailUpdatePolicy.js";
+import { lockConversationEmailUpdateProject } from "./conversationEmailUpdateProjectLock.js";
 import { normalizeUserRichTextInput } from "./richText.js";
 
 const NO_PROJECT_TITLE = "No Project";
@@ -3612,21 +3613,6 @@ async function resumeGloballyPausedEmailUpdates({
     return resumedRows.length > 0;
 }
 
-async function lockProject({
-    db,
-    projectId,
-}: {
-    db: PostgresJsDatabase;
-    projectId: number;
-}): Promise<boolean> {
-    const rows = await db
-        .select({ id: projectTable.id })
-        .from(projectTable)
-        .where(eq(projectTable.id, projectId))
-        .for("update");
-    return rows.length === 1;
-}
-
 async function lockActiveEmailUpdateAuthorization({
     db,
     projectId,
@@ -4406,7 +4392,7 @@ export function createConversationEmailUpdateService({
                             } as const;
                         }
                         if (
-                            !(await lockProject({
+                            !(await lockConversationEmailUpdateProject({
                                 db: tx,
                                 projectId: attempt.project_id,
                             }))
@@ -4711,14 +4697,18 @@ export function createConversationEmailUpdateService({
         },
 
         getPreferences: async ({ userId, request }) => {
-            if ((await getPrimaryEmail({ db, userId })) === undefined) {
+            const preferenceDb = getPrimaryDatabase(db);
+            if (
+                (await getPrimaryEmail({ db: preferenceDb, userId })) ===
+                undefined
+            ) {
                 return {
                     success: false,
                     reason: "verified_email_required",
                 };
             }
             const page = await queryPreferenceGroupPage({
-                db,
+                db: preferenceDb,
                 userId,
                 request,
             });
@@ -4729,7 +4719,7 @@ export function createConversationEmailUpdateService({
                 };
             }
             const rows = await loadPreferenceRows({
-                db,
+                db: preferenceDb,
                 userId,
                 now: new Date(),
                 baseImageServiceUrl,
@@ -4973,7 +4963,7 @@ export function createConversationEmailUpdateService({
                 });
                 if (
                     initialConfig === undefined ||
-                    !(await lockProject({
+                    !(await lockConversationEmailUpdateProject({
                         db: tx,
                         projectId: initialConfig.project_id,
                     }))
@@ -5175,7 +5165,7 @@ export function createConversationEmailUpdateService({
                     });
                     if (
                         initialRow === undefined ||
-                        !(await lockProject({
+                        !(await lockConversationEmailUpdateProject({
                             db: tx,
                             projectId: initialRow.project_id,
                         }))
@@ -5246,7 +5236,7 @@ export function createConversationEmailUpdateService({
                     });
                     if (
                         initialRow === undefined ||
-                        !(await lockProject({
+                        !(await lockConversationEmailUpdateProject({
                             db: tx,
                             projectId: initialRow.project_id,
                         }))

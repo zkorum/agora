@@ -1,5 +1,8 @@
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type { ConversationEmailUpdatePreferenceGroup } from "src/shared/types/dto";
+import {
+  CONVERSATION_EMAIL_UPDATE_PREFERENCE_SEARCH_MAX_LENGTH,
+  type ConversationEmailUpdatePreferenceGroup,
+} from "src/shared/types/dto";
 import { useBackendConversationEmailUpdatesApi } from "src/utils/api/conversationUpdates/conversationEmailUpdates";
 import { useRemoveConversationEmailUpdateSummaryQueries } from "src/utils/api/conversationUpdates/useConversationEmailUpdateQueries";
 import { useNotify } from "src/utils/ui/notify";
@@ -60,6 +63,9 @@ export function useConversationUpdatePreferences() {
   const loadError = ref<string | undefined>(undefined);
   const paginationError = ref<string | undefined>(undefined);
   let queryRequestId = 0;
+  let nextMutationRevision = 0;
+  let reloadAfterMutations = false;
+  const latestMutationRevisionByKey = new Map<string, number>();
 
   const effectiveOverrides = computed(() =>
     setPreferenceOverrides({
@@ -102,6 +108,11 @@ export function useConversationUpdatePreferences() {
 
   async function loadFirstPage(): Promise<void> {
     const requestId = ++queryRequestId;
+    const mutationRevision = nextMutationRevision;
+    const protectedOverrideKeys = new Set(pendingOverrides.value.keys());
+    if (protectedOverrideKeys.size > 0) {
+      protectedOverrideKeys.add("global");
+    }
     isLoadingMore.value = false;
     paginationError.value = undefined;
     isInitialLoading.value = true;
@@ -121,6 +132,13 @@ export function useConversationUpdatePreferences() {
       }
       serverGlobalPaused.value = response.globalPaused;
       serverGroups.value = response.groups;
+      confirmedOverrides.value = new Map(
+        [...confirmedOverrides.value].filter(
+          ([key]) =>
+            protectedOverrideKeys.has(key) ||
+            (latestMutationRevisionByKey.get(key) ?? 0) > mutationRevision
+        )
+      );
       expandedGroupKeys.value = getAutoExpandedPreferenceGroupKeys({
         groups: response.groups,
         expandAll: trimmedSearch !== "",
@@ -188,7 +206,8 @@ export function useConversationUpdatePreferences() {
       kind: "global",
       paused: !enabled,
     } satisfies ConversationEmailUpdatePreferenceOverride;
-    if (!beginMutation(optimisticPreference)) {
+    const revision = beginMutation(optimisticPreference);
+    if (revision === undefined) {
       return;
     }
     try {
@@ -203,7 +222,7 @@ export function useConversationUpdatePreferences() {
         showNotifyMessage(t("savePreferenceError"));
         return;
       }
-      confirmMutation(response.result);
+      confirmMutation({ result: response.result, revision });
       removeConversationEmailUpdateSummaryQueries(response.result);
       showNotifyMessage(
         t(response.result.globalPaused ? "pauseSaved" : "resumeSaved")
@@ -211,6 +230,7 @@ export function useConversationUpdatePreferences() {
     } catch (error) {
       console.error("Failed to update the Email Updates global pause", error);
       showNotifyMessage(t("savePreferenceError"));
+      reloadAfterMutations = true;
     } finally {
       finishMutation(optimisticPreference);
     }
@@ -228,7 +248,8 @@ export function useConversationUpdatePreferences() {
       projectSlug: group.projectSlug,
       state: enabled ? "enabled" : "disabled",
     } satisfies ConversationEmailUpdatePreferenceOverride;
-    if (!beginMutation(optimisticPreference)) {
+    const revision = beginMutation(optimisticPreference);
+    if (revision === undefined) {
       return;
     }
     try {
@@ -246,7 +267,7 @@ export function useConversationUpdatePreferences() {
         showNotifyMessage(t("savePreferenceError"));
         return;
       }
-      confirmMutation(response.result);
+      confirmMutation({ result: response.result, revision });
       removeConversationEmailUpdateSummaryQueries(response.result);
       showNotifyMessage(
         response.result.globalResumed
@@ -263,6 +284,7 @@ export function useConversationUpdatePreferences() {
         error
       );
       showNotifyMessage(t("savePreferenceError"));
+      reloadAfterMutations = true;
     } finally {
       finishMutation(optimisticPreference);
     }
@@ -278,7 +300,8 @@ export function useConversationUpdatePreferences() {
       state: enabled ? "enabled" : "disabled",
       resolvedEnabled: undefined,
     } satisfies ConversationEmailUpdatePreferenceOverride;
-    if (!beginMutation(optimisticPreference)) {
+    const revision = beginMutation(optimisticPreference);
+    if (revision === undefined) {
       return;
     }
     try {
@@ -300,7 +323,7 @@ export function useConversationUpdatePreferences() {
         showNotifyMessage(t("savePreferenceError"));
         return;
       }
-      confirmMutation(savedResult);
+      confirmMutation({ result: savedResult, revision });
       removeConversationEmailUpdateSummaryQueries(savedResult);
       showNotifyMessage(
         savedResult.globalResumed
@@ -317,6 +340,7 @@ export function useConversationUpdatePreferences() {
         error
       );
       showNotifyMessage(t("savePreferenceError"));
+      reloadAfterMutations = true;
     } finally {
       finishMutation(optimisticPreference);
     }
@@ -324,16 +348,22 @@ export function useConversationUpdatePreferences() {
 
   function beginMutation(
     preference: ConversationEmailUpdatePreferenceOverride
-  ): boolean {
+  ): number | undefined {
     const key = getPreferenceOverrideKey(preference);
     if (pendingOverrides.value.has(key)) {
-      return false;
+      return undefined;
     }
+    if (pendingOverrides.value.size > 0) {
+      reloadAfterMutations = true;
+    }
+    const revision = ++nextMutationRevision;
+    latestMutationRevisionByKey.set(key, revision);
+    latestMutationRevisionByKey.set("global", revision);
     pendingOverrides.value = setPreferenceOverrides({
       overrides: pendingOverrides.value,
       preferences: [preference],
     });
-    return true;
+    return revision;
   }
 
   function finishMutation(
@@ -342,19 +372,39 @@ export function useConversationUpdatePreferences() {
     const nextPendingOverrides = new Map(pendingOverrides.value);
     nextPendingOverrides.delete(getPreferenceOverrideKey(preference));
     pendingOverrides.value = nextPendingOverrides;
+    if (nextPendingOverrides.size === 0 && reloadAfterMutations) {
+      reloadAfterMutations = false;
+      void loadFirstPage();
+    }
   }
 
-  function confirmMutation(
-    result: ConversationEmailUpdatePreferenceResult
-  ): void {
+  function confirmMutation({
+    result,
+    revision,
+  }: {
+    result: ConversationEmailUpdatePreferenceResult;
+    revision: number;
+  }): void {
+    const currentPreferences = getPreferenceOverridesFromResult(result).filter(
+      (preference) =>
+        (latestMutationRevisionByKey.get(
+          getPreferenceOverrideKey(preference)
+        ) ?? 0) <= revision
+    );
     confirmedOverrides.value = setPreferenceOverrides({
       overrides: confirmedOverrides.value,
-      preferences: getPreferenceOverridesFromResult(result),
+      preferences: currentPreferences,
     });
   }
 
   function updateSearch(value: string | number | null): void {
-    search.value = value === null ? "" : String(value);
+    search.value =
+      value === null
+        ? ""
+        : String(value).slice(
+            0,
+            CONVERSATION_EMAIL_UPDATE_PREFERENCE_SEARCH_MAX_LENGTH
+          );
   }
 
   function setGroupExpanded({

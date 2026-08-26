@@ -115,7 +115,6 @@ export function useBackendAdministratorOrganizationApi() {
       });
     } catch (e) {
       console.error(e);
-      showNotifyMessage(t("failedToFetchOrganizations"));
       return undefined;
     }
   }
@@ -132,7 +131,6 @@ export function useBackendAdministratorOrganizationApi() {
       });
     } catch (e) {
       console.error(e);
-      showNotifyMessage(t("failedToUpdateOrganization"));
       return undefined;
     }
   }

@@ -2,6 +2,7 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 
 export interface OrganizationNoProjectEmailUpdatesTranslations {
   cancel: string;
+  configurationUnavailable: string;
   contactDescription: string;
   contactEmailLabel: string;
   contactInUse: string;
@@ -14,10 +15,13 @@ export interface OrganizationNoProjectEmailUpdatesTranslations {
   organizationNotFound: string;
   saveContact: string;
   saved: string;
+  tryAgain: string;
 }
 
 const en: OrganizationNoProjectEmailUpdatesTranslations = {
   cancel: "Cancel",
+  configurationUnavailable:
+    "No Project Email Updates settings are unavailable right now.",
   contactDescription:
     "Used as the monitored participant contact for conversations created without a listed project.",
   contactEmailLabel: "Contact email",
@@ -32,6 +36,7 @@ const en: OrganizationNoProjectEmailUpdatesTranslations = {
   organizationNotFound: "The organization could not be found.",
   saveContact: "Save contact",
   saved: "No Project Email Updates settings saved.",
+  tryAgain: "Try again",
 };
 
 export const organizationNoProjectEmailUpdatesTranslations: Record<
@@ -41,6 +46,8 @@ export const organizationNoProjectEmailUpdatesTranslations: Record<
   en,
   ar: {
     cancel: "إلغاء",
+    configurationUnavailable:
+      "إعدادات تحديثات البريد الإلكتروني بلا مشروع غير متاحة الآن.",
     contactDescription:
       "تُستخدم كجهة اتصال مراقبة للمشاركين في المحادثات المنشأة دون مشروع مدرج.",
     contactEmailLabel: "بريد جهة الاتصال",
@@ -50,14 +57,19 @@ export const organizationNoProjectEmailUpdatesTranslations: Record<
     contactTitle: "جهة اتصال المشاركين بلا مشروع",
     deleteConfirmation: "حذف جهة اتصال المشاركين بلا مشروع؟",
     deleteContact: "حذف جهة الاتصال",
-    entitlementRequired: "لا تملك هذه المنظمة صلاحية تحديثات البريد الإلكتروني.",
-    missingContact: "أضف جهة اتصال للمشاركين قبل تفعيل تحديثات البريد الإلكتروني.",
+    entitlementRequired:
+      "لا تملك هذه المنظمة صلاحية تحديثات البريد الإلكتروني.",
+    missingContact:
+      "أضف جهة اتصال للمشاركين قبل تفعيل تحديثات البريد الإلكتروني.",
     organizationNotFound: "تعذر العثور على المنظمة.",
     saveContact: "حفظ جهة الاتصال",
     saved: "تم حفظ إعدادات تحديثات البريد الإلكتروني بلا مشروع.",
+    tryAgain: "حاول مجددًا",
   },
   es: {
     cancel: "Cancelar",
+    configurationUnavailable:
+      "La configuración Sin proyecto no está disponible ahora.",
     contactDescription:
       "Se usa como contacto supervisado para participantes en conversaciones creadas sin un proyecto listado.",
     contactEmailLabel: "Correo de contacto",
@@ -74,9 +86,12 @@ export const organizationNoProjectEmailUpdatesTranslations: Record<
     organizationNotFound: "No se encontró la organización.",
     saveContact: "Guardar contacto",
     saved: "Se guardó la configuración Sin proyecto.",
+    tryAgain: "Intentar de nuevo",
   },
   fa: {
     cancel: "لغو",
+    configurationUnavailable:
+      "تنظیمات به‌روزرسانی ایمیلی بدون پروژه اکنون در دسترس نیست.",
     contactDescription:
       "به‌عنوان راه ارتباطی تحت نظارت برای شرکت‌کنندگان گفتگوهای بدون پروژه فهرست‌شده استفاده می‌شود.",
     contactEmailLabel: "ایمیل تماس",
@@ -92,9 +107,12 @@ export const organizationNoProjectEmailUpdatesTranslations: Record<
     organizationNotFound: "سازمان یافت نشد.",
     saveContact: "ذخیره راه ارتباطی",
     saved: "تنظیمات بدون پروژه ذخیره شد.",
+    tryAgain: "تلاش دوباره",
   },
   fr: {
     cancel: "Annuler",
+    configurationUnavailable:
+      "Les réglages Sans projet sont indisponibles pour le moment.",
     contactDescription:
       "Utilisé comme contact suivi des participants pour les conversations créées sans projet répertorié.",
     contactEmailLabel: "E-mail de contact",
@@ -111,9 +129,11 @@ export const organizationNoProjectEmailUpdatesTranslations: Record<
     organizationNotFound: "L’organisation est introuvable.",
     saveContact: "Enregistrer le contact",
     saved: "Les réglages Sans projet ont été enregistrés.",
+    tryAgain: "Réessayer",
   },
   he: {
     cancel: "ביטול",
+    configurationUnavailable: "הגדרות ללא פרויקט אינן זמינות כרגע.",
     contactDescription:
       "משמש כאיש קשר מנוטר למשתתפים בשיחות שנוצרו ללא פרויקט רשום.",
     contactEmailLabel: "דוא״ל ליצירת קשר",
@@ -128,9 +148,11 @@ export const organizationNoProjectEmailUpdatesTranslations: Record<
     organizationNotFound: "הארגון לא נמצא.",
     saveContact: "שמירת איש קשר",
     saved: "הגדרות ללא פרויקט נשמרו.",
+    tryAgain: "ניסיון נוסף",
   },
   ja: {
     cancel: "キャンセル",
+    configurationUnavailable: "プロジェクトなしの設定は現在利用できません。",
     contactDescription:
       "一覧表示されるプロジェクトなしで作成された会話の参加者向け連絡先として使用されます。",
     contactEmailLabel: "連絡先メール",
@@ -141,13 +163,16 @@ export const organizationNoProjectEmailUpdatesTranslations: Record<
     deleteConfirmation: "参加者向け連絡先を削除しますか？",
     deleteContact: "連絡先を削除",
     entitlementRequired: "この組織はメール更新を利用できません。",
-    missingContact: "メール更新を有効にする前に参加者向け連絡先を追加してください。",
+    missingContact:
+      "メール更新を有効にする前に参加者向け連絡先を追加してください。",
     organizationNotFound: "組織が見つかりません。",
     saveContact: "連絡先を保存",
     saved: "プロジェクトなしの設定を保存しました。",
+    tryAgain: "もう一度試す",
   },
   ky: {
     cancel: "Жокко чыгаруу",
+    configurationUnavailable: "Долбоорсуз жөндөөлөр учурда жеткиликсиз.",
     contactDescription:
       "Тизмедеги долбоорсуз түзүлгөн талкуулар үчүн көзөмөлдөнгөн байланыш катары колдонулат.",
     contactEmailLabel: "Байланыш электрондук дареги",
@@ -163,9 +188,11 @@ export const organizationNoProjectEmailUpdatesTranslations: Record<
     organizationNotFound: "Уюм табылган жок.",
     saveContact: "Байланышты сактоо",
     saved: "Долбоорсуз жөндөөлөр сакталды.",
+    tryAgain: "Кайра аракет кылуу",
   },
   ru: {
     cancel: "Отмена",
+    configurationUnavailable: "Настройки без проекта сейчас недоступны.",
     contactDescription:
       "Используется как отслеживаемый контакт для участников обсуждений без указанного проекта.",
     contactEmailLabel: "Контактный адрес",
@@ -175,16 +202,20 @@ export const organizationNoProjectEmailUpdatesTranslations: Record<
     contactTitle: "Контакт для участников без проекта",
     deleteConfirmation: "Удалить контакт для участников без проекта?",
     deleteContact: "Удалить контакт",
-    entitlementRequired: "У этой организации нет доступа к почтовым обновлениям.",
+    entitlementRequired:
+      "У этой организации нет доступа к почтовым обновлениям.",
     missingContact:
       "Добавьте контакт для участников перед включением почтовых обновлений.",
     organizationNotFound: "Организация не найдена.",
     saveContact: "Сохранить контакт",
     saved: "Настройки без проекта сохранены.",
+    tryAgain: "Повторить",
   },
   "zh-Hans": {
     cancel: "取消",
-    contactDescription: "用于未归入公开项目的对话，作为有人查收的参与者联系方式。",
+    configurationUnavailable: "无项目设置目前不可用。",
+    contactDescription:
+      "用于未归入公开项目的对话，作为有人查收的参与者联系方式。",
     contactEmailLabel: "联系邮箱",
     contactInUse: "删除联系人前，请关闭无项目默认设置和所有对话单独设置。",
     contactNameLabel: "联系人姓名",
@@ -196,10 +227,13 @@ export const organizationNoProjectEmailUpdatesTranslations: Record<
     organizationNotFound: "找不到该组织。",
     saveContact: "保存联系人",
     saved: "已保存无项目设置。",
+    tryAgain: "重试",
   },
   "zh-Hant": {
     cancel: "取消",
-    contactDescription: "用於未歸入公開專案的對話，作為有人查收的參與者聯絡方式。",
+    configurationUnavailable: "無專案設定目前無法使用。",
+    contactDescription:
+      "用於未歸入公開專案的對話，作為有人查收的參與者聯絡方式。",
     contactEmailLabel: "聯絡信箱",
     contactInUse: "刪除聯絡人前，請關閉無專案預設設定和所有對話個別設定。",
     contactNameLabel: "聯絡人姓名",
@@ -211,5 +245,6 @@ export const organizationNoProjectEmailUpdatesTranslations: Record<
     organizationNotFound: "找不到該組織。",
     saveContact: "儲存聯絡人",
     saved: "已儲存無專案設定。",
+    tryAgain: "再試一次",
   },
 };

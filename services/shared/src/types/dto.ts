@@ -724,6 +724,7 @@ const zodConversationEmailUpdateAvailability = z.enum([
     "available",
     "temporarily_unavailable",
 ]);
+export const CONVERSATION_EMAIL_UPDATE_PREFERENCE_SEARCH_MAX_LENGTH = 100;
 const zodConversationEmailUpdateCursor = z.string().trim().min(1).max(200);
 const zodConversationEmailUpdateConversationBase = z
     .object({
@@ -3438,7 +3439,12 @@ export class Dto {
     );
     static conversationEmailUpdatePreferencesRequest = z
         .object({
-            search: z.string().trim().min(1).max(100).optional(),
+            search: z
+                .string()
+                .trim()
+                .min(1)
+                .max(CONVERSATION_EMAIL_UPDATE_PREFERENCE_SEARCH_MAX_LENGTH)
+                .optional(),
             cursor: zodConversationEmailUpdateCursor.optional(),
             limit: z.number().int().min(1).max(50).optional().default(20),
         })
