@@ -23,7 +23,7 @@
 
       <ZKInfoBanner
         v-if="audienceEstimateAvailable && audienceEstimate === 0"
-        :message="t('zeroAudienceWarning')"
+        :message="zeroAudienceWarning"
         variant="error"
       />
 
@@ -66,7 +66,11 @@
       />
 
       <ZKInfoBanner
-        v-if="relatedConversationOwnerCount > 0"
+        v-if="
+          audienceEstimateAvailable &&
+          relatedConversationOwnerCount > 0 &&
+          audienceEstimate > 0
+        "
         :message="ownerCopyMessage"
       />
 
@@ -231,6 +235,13 @@ const subjectHint = computed(() =>
   t("subjectHint", {
     max: formatNumber(CONVERSATION_EMAIL_UPDATE_SUBJECT_MAX_LENGTH),
   })
+);
+const zeroAudienceWarning = computed(() =>
+  props.relatedConversationOwnerCount === 0
+    ? t("zeroAudienceWarning")
+    : t("zeroAudienceOwnerCopyWarning", {
+        count: formatNumber(props.relatedConversationOwnerCount),
+      })
 );
 const emailReachWarning = computed<string | undefined>(() => {
   const optionalEmailConversationCount = selectedConversations.value.filter(

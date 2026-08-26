@@ -7,6 +7,7 @@ export interface ConversationUpdateComposerFormTranslations {
   testEmailNotice: string;
   cancel: string;
   zeroAudienceWarning: string;
+  zeroAudienceOwnerCopyWarning: string;
   subjectLabel: string;
   subjectHint: string;
   messageLabel: string;
@@ -40,6 +41,8 @@ export const conversationUpdateComposerFormTranslations: Record<
     cancel: "Cancel",
     zeroAudienceWarning:
       "No participants are currently eligible to receive this email. Testing and sending will become available when at least one participant is eligible.",
+    zeroAudienceOwnerCopyWarning:
+      "No participants are currently eligible. Authorized project managers listed for a separate owner copy: {count}. Testing and sending require at least one eligible participant.",
     subjectLabel: "Subject",
     subjectHint: "Maximum {max} Unicode characters",
     messageLabel: "Message",
@@ -77,6 +80,8 @@ export const conversationUpdateComposerFormTranslations: Record<
     cancel: "إلغاء",
     zeroAudienceWarning:
       "لا يوجد حاليًا مشاركون مؤهلون لتلقي هذا البريد الإلكتروني. سيصبح الاختبار والإرسال متاحين عندما يكون هناك مشارك مؤهل واحد على الأقل.",
+    zeroAudienceOwnerCopyWarning:
+      "لا يوجد حاليًا مشاركون مؤهلون. مديرو المشروع المخوّلون المدرجون لتلقي نسخة مالك منفصلة: {count}. يتطلب الاختبار والإرسال مشاركًا مؤهلًا واحدًا على الأقل.",
     subjectLabel: "الموضوع",
     subjectHint: "الحد الأقصى {max} من محارف Unicode",
     messageLabel: "الرسالة",
@@ -114,6 +119,8 @@ export const conversationUpdateComposerFormTranslations: Record<
     cancel: "Cancelar",
     zeroAudienceWarning:
       "Actualmente no hay participantes que puedan recibir este correo. Las opciones de prueba y envío estarán disponibles cuando haya al menos una persona participante elegible.",
+    zeroAudienceOwnerCopyWarning:
+      "Actualmente no hay participantes elegibles. Responsables de proyecto autorizados que recibirán una copia separada: {count}. Las pruebas y el envío requieren al menos una persona participante elegible.",
     subjectLabel: "Asunto",
     subjectHint: "Máximo de {max} caracteres Unicode",
     messageLabel: "Mensaje",
@@ -151,6 +158,8 @@ export const conversationUpdateComposerFormTranslations: Record<
     cancel: "لغو",
     zeroAudienceWarning:
       "در حال حاضر هیچ شرکت‌کننده‌ای واجد شرایط دریافت این ایمیل نیست. آزمایش و ارسال زمانی فعال می‌شود که دست‌کم یک شرکت‌کننده واجد شرایط باشد.",
+    zeroAudienceOwnerCopyWarning:
+      "در حال حاضر هیچ شرکت‌کننده‌ای واجد شرایط نیست. مدیران پروژه مجاز که برای دریافت نسخه جداگانه مالک فهرست شده‌اند: {count}. آزمایش و ارسال به دست‌کم یک شرکت‌کننده واجد شرایط نیاز دارد.",
     subjectLabel: "موضوع",
     subjectHint: "حداکثر {max} نویسه یونیکد",
     messageLabel: "پیام",
@@ -188,6 +197,8 @@ export const conversationUpdateComposerFormTranslations: Record<
     cancel: "Annuler",
     zeroAudienceWarning:
       "Aucun participant ne peut actuellement recevoir cet e-mail. Le test et l'envoi seront disponibles dès qu'au moins un participant sera éligible.",
+    zeroAudienceOwnerCopyWarning:
+      "Aucun participant n'est actuellement éligible. Gestionnaires de projet autorisés prévus pour une copie distincte : {count}. Le test et l'envoi nécessitent au moins un participant éligible.",
     subjectLabel: "Objet",
     subjectHint: "{max} caractères Unicode au maximum",
     messageLabel: "Message",
@@ -225,6 +236,8 @@ export const conversationUpdateComposerFormTranslations: Record<
     cancel: "取消",
     zeroAudienceWarning:
       "目前没有符合条件的参与者可以接收此邮件。至少有一名参与者符合条件后，测试和发送功能才会可用。",
+    zeroAudienceOwnerCopyWarning:
+      "目前没有符合条件的参与者。将单独收到管理员副本的获授权项目管理员：{count}。测试和发送至少需要一名符合条件的参与者。",
     subjectLabel: "主题",
     subjectHint: "最多 {max} 个 Unicode 字符",
     messageLabel: "消息",
@@ -260,6 +273,8 @@ export const conversationUpdateComposerFormTranslations: Record<
     cancel: "取消",
     zeroAudienceWarning:
       "目前沒有符合資格的參與者可以接收此郵件。至少有一名參與者符合資格後，測試和傳送功能才會開放。",
+    zeroAudienceOwnerCopyWarning:
+      "目前沒有符合資格的參與者。將另行收到管理員副本的獲授權專案管理員：{count}。測試和傳送至少需要一名符合資格的參與者。",
     subjectLabel: "主旨",
     subjectHint: "最多 {max} 個 Unicode 字元",
     messageLabel: "訊息",
@@ -295,6 +310,8 @@ export const conversationUpdateComposerFormTranslations: Record<
     cancel: "ביטול",
     zeroAudienceWarning:
       "אין כרגע משתתפים שזכאים לקבל את הודעת הדוא״ל הזו. הבדיקה והשליחה יהיו זמינות כשיהיה לפחות משתתף זכאי אחד.",
+    zeroAudienceOwnerCopyWarning:
+      "אין כרגע משתתפים זכאים. מנהלי פרויקט מורשים הרשומים לקבלת עותק בעלים נפרד: {count}. בדיקה ושליחה מחייבות לפחות משתתף זכאי אחד.",
     subjectLabel: "נושא",
     subjectHint: "עד {max} תווי Unicode",
     messageLabel: "הודעה",
@@ -331,6 +348,8 @@ export const conversationUpdateComposerFormTranslations: Record<
     cancel: "キャンセル",
     zeroAudienceWarning:
       "現在、このメールを受け取れる参加者はいません。対象となる参加者が1人以上になると、テストと送信が可能になります。",
+    zeroAudienceOwnerCopyWarning:
+      "現在、対象となる参加者はいません。別途管理者向けコピーを受け取る承認済みプロジェクト管理者：{count}人。テストと送信には対象となる参加者が1人以上必要です。",
     subjectLabel: "件名",
     subjectHint: "Unicode文字は最大{max}文字",
     messageLabel: "メッセージ",
@@ -368,6 +387,8 @@ export const conversationUpdateComposerFormTranslations: Record<
     cancel: "Жокко чыгаруу",
     zeroAudienceWarning:
       "Учурда бул катты алууга жарамдуу катышуучулар жок. Кеминде бир жарамдуу катышуучу болгондо сыноо жана жөнөтүү жеткиликтүү болот.",
+    zeroAudienceOwnerCopyWarning:
+      "Учурда жарамдуу катышуучулар жок. Өзүнчө ээсинин көчүрмөсүн ала турган ыйгарым укуктуу долбоор менеджерлери: {count}. Сыноо жана жөнөтүү үчүн кеминде бир жарамдуу катышуучу керек.",
     subjectLabel: "Тема",
     subjectHint: "Эң көбү {max} Unicode белгиси",
     messageLabel: "Билдирүү",
@@ -405,6 +426,8 @@ export const conversationUpdateComposerFormTranslations: Record<
     cancel: "Отмена",
     zeroAudienceWarning:
       "Сейчас нет участников, которым можно отправить это письмо. Тестирование и отправка станут доступны, когда появится хотя бы один подходящий участник.",
+    zeroAudienceOwnerCopyWarning:
+      "Сейчас нет подходящих участников. Уполномоченные менеджеры проекта, которым предназначена отдельная копия владельца: {count}. Для тестирования и отправки нужен хотя бы один подходящий участник.",
     subjectLabel: "Тема",
     subjectHint: "Не более {max} символов Unicode",
     messageLabel: "Сообщение",
