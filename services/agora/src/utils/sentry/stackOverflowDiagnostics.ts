@@ -1,4 +1,5 @@
 import type { ErrorEvent, Exception } from "@sentry/vue";
+import { isMaximumCallStackException } from "src/utils/sentry/stackOverflow";
 
 /**
  * Diagnostics for the Sentry issue reported as:
@@ -8,29 +9,24 @@ import type { ErrorEvent, Exception } from "@sentry/vue";
  * `<font>` elements that Agora does not render. Browser page translators are
  * known to inject that markup, but the anonymous frame cannot prove whether the
  * translator or application code exhausted the stack. These fields let us
- * correlate future events with translated DOM and frame ownership before
- * deciding whether any product behavior or Sentry filtering should change.
+ * correlate ambiguous events with translated DOM and frame ownership. Events
+ * containing the known deep `Ik`/`Gk` cycle attributed entirely to one host
+ * document are filtered earlier because cross-framework production evidence
+ * identifies that exact signature as injected browser script. Other events
+ * reach here so near-matches remain observable.
  *
  * DOM inspection is limited to this exact error and records only structural,
  * bucketed metadata. It never records DOM text, HTML, language, or attributes.
  */
 const MAX_FONT_ELEMENTS_TO_INSPECT = 100;
 const MAX_FONT_ANCESTORS_TO_INSPECT = 50;
-const MAXIMUM_CALL_STACK_ERROR = /^Maximum call stack size exceeded\.?$/;
 
 type FrameOrigin = "in_app" | "non_app" | "unknown";
 type TranslationDomEvidence = "google_class" | "nested_font" | "both" | "none";
 type CountBucket = "0" | "1" | "2-4" | "5-9" | "10-49" | "50+";
 
 function getStackOverflowExceptions(event: ErrorEvent): Exception[] {
-  return (
-    event.exception?.values?.filter(
-      (exception) =>
-        exception.type === "RangeError" &&
-        exception.value !== undefined &&
-        MAXIMUM_CALL_STACK_ERROR.test(exception.value)
-    ) ?? []
-  );
+  return event.exception?.values?.filter(isMaximumCallStackException) ?? [];
 }
 
 export function isStackOverflowEvent(event: ErrorEvent): boolean {
