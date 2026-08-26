@@ -42,7 +42,7 @@
             "fast-xml-parser": ">=5.7.0",
             "brace-expansion": "2.1.4",
             "minimatch": "9.0.7",
-            "postcss": "8.5.10",
+            "postcss": "8.5.26",
             "protobufjs": "7.6.5",
             "@tootallnate/once": "3.0.1"
         }
