@@ -288,9 +288,47 @@ describe("PostMetadata email update actions", () => {
       ).toBe("true");
       expect(
         container.querySelectorAll('[data-testid="action-drawer"] button')
-      ).toHaveLength(2);
+      ).toHaveLength(3);
     }
   );
+
+  it("hides participant actions when the summary has no preference", async () => {
+    api.getConversationSummary.mockResolvedValue({
+      success: true,
+      authoringAction: "compose",
+    });
+
+    const container = mountMetadata();
+    getMenuButton(container).click();
+    await flushPromises();
+
+    expect(getButton(container, "manageEmailUpdatesLabel").textContent).toBe(
+      "manageEmailUpdatesLabel"
+    );
+    expect(findButton(container, "receiveEmailUpdatesLabel")).toBeUndefined();
+    expect(findButton(container, "manageMyEmailUpdatesLabel")).toBeUndefined();
+  });
+
+  it("opens the history tab for a history-only owner action", async () => {
+    api.getConversationSummary.mockResolvedValue({
+      success: true,
+      authoringAction: "history",
+    });
+
+    const container = mountMetadata();
+    getMenuButton(container).click();
+    await flushPromises();
+    getButton(container, "viewEmailUpdateHistoryLabel").click();
+    await flushPromises();
+
+    expect(routerPush).toHaveBeenCalledWith({
+      path: "/email-updates/",
+      query: {
+        tab: "history",
+        conversationSlugId: "conversation-one",
+      },
+    });
+  });
 
   it.each([
     ["enabled", false, "true"],
@@ -516,13 +554,20 @@ function getMenuButton(container: HTMLElement): HTMLButtonElement {
 }
 
 function getButton(container: HTMLElement, label: string): HTMLButtonElement {
-  const button = [...container.querySelectorAll("button")].find(
-    (candidate) => candidate.getAttribute("aria-label") === label
-  );
+  const button = findButton(container, label);
   if (button === undefined) {
     throw new Error(`Button not found: ${label}`);
   }
   return button;
+}
+
+function findButton(
+  container: HTMLElement,
+  label: string
+): HTMLButtonElement | undefined {
+  return [...container.querySelectorAll("button")].find(
+    (candidate) => candidate.getAttribute("aria-label") === label
+  );
 }
 
 async function flushPromises(): Promise<void> {

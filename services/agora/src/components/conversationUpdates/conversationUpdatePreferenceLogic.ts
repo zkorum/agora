@@ -1,6 +1,7 @@
 import type { ConversationEmailUpdatePreferenceGroup } from "src/shared/types/dto";
 
 import type {
+  ConversationEmailUpdatePreference,
   ConversationEmailUpdatePreferenceOverride,
   ConversationEmailUpdatePreferenceResult,
 } from "./conversationUpdatePreferenceTypes";
@@ -59,36 +60,84 @@ export function applyPreferenceOverrides({
   groups: readonly ConversationEmailUpdatePreferenceGroup[];
 } {
   const globalOverride = overrides.get("global");
+  const effectiveGlobalPaused =
+    globalOverride?.kind === "global" ? globalOverride.paused : globalPaused;
   return {
-    globalPaused:
-      globalOverride?.kind === "global" ? globalOverride.paused : globalPaused,
+    globalPaused: effectiveGlobalPaused,
     groups: groups.map((group) => {
+      if (group.kind === "no_project") {
+        return {
+          ...group,
+          conversations: group.conversations.map((conversation) =>
+            applyConversationPreferenceOverride({
+              conversation,
+              effectiveGlobalPaused,
+              projectEnabled: undefined,
+              overrides,
+            })
+          ),
+        };
+      }
       const projectOverride =
-        group.kind === "project"
-          ? overrides.get(`project:${group.projectSlug}`)
-          : undefined;
+        overrides.get(`project:${group.projectSlug}`);
+      const state =
+        projectOverride?.kind === "project"
+          ? projectOverride.state
+          : group.state;
+      const projectEnabled = state === "enabled";
       return {
         ...group,
-        ...(projectOverride?.kind === "project"
-          ? { state: projectOverride.state }
-          : {}),
-        conversations: group.conversations.map((conversation) => {
-          const conversationOverride = overrides.get(
-            `conversation:${conversation.conversationSlugId}`
-          );
-          if (conversationOverride?.kind !== "conversation") {
-            return conversation;
-          }
-          return {
-            ...conversation,
-            state: conversationOverride.state,
-            resolvedEnabled:
-              conversationOverride.resolvedEnabled ??
-              conversation.resolvedEnabled,
-          };
-        }),
+        state,
+        resolvedEnabled: !effectiveGlobalPaused && projectEnabled,
+        conversations: group.conversations.map((conversation) =>
+          applyConversationPreferenceOverride({
+            conversation,
+            effectiveGlobalPaused,
+            projectEnabled,
+            overrides,
+          })
+        ),
       };
     }),
+  };
+}
+
+function applyConversationPreferenceOverride({
+  conversation,
+  effectiveGlobalPaused,
+  projectEnabled,
+  overrides,
+}: {
+  conversation: ConversationEmailUpdatePreference;
+  effectiveGlobalPaused: boolean;
+  projectEnabled: boolean | undefined;
+  overrides: ReadonlyMap<string, ConversationEmailUpdatePreferenceOverride>;
+}): ConversationEmailUpdatePreference {
+  const conversationOverride = overrides.get(
+    `conversation:${conversation.conversationSlugId}`
+  );
+  if (conversationOverride?.kind === "conversation") {
+    return {
+      ...conversation,
+      preferenceKind: "explicit",
+      state: conversationOverride.state,
+      resolvedEnabled:
+        !effectiveGlobalPaused && conversationOverride.state === "enabled",
+    };
+  }
+  if (conversation.preferenceKind === "explicit") {
+    return {
+      ...conversation,
+      resolvedEnabled:
+        !effectiveGlobalPaused && conversation.state === "enabled",
+    };
+  }
+  return {
+    ...conversation,
+    resolvedEnabled:
+      conversation.preferenceKind === "project_inherited" &&
+      !effectiveGlobalPaused &&
+      projectEnabled === true,
   };
 }
 
@@ -98,38 +147,33 @@ export function getPreferenceOverridesFromResult(
   if (result.operation === "set_global_pause") {
     return [{ kind: "global", paused: result.globalPaused }];
   }
-  if (result.operation === "set_project_preference") {
-    return [
-      ...(result.globalResumed
-        ? [{ kind: "global", paused: false } as const]
-        : []),
-      {
-        kind: "project",
-        projectSlug: result.projectSlug,
-        state: result.state,
-      },
-    ];
+  const overrides: ConversationEmailUpdatePreferenceOverride[] = [];
+  if (result.globalResumed) {
+    overrides.push({ kind: "global", paused: false });
   }
-  return [
-    ...(result.globalResumed
-      ? [{ kind: "global", paused: false } as const]
-      : []),
-    ...(result.projectPreference === undefined
-      ? []
-      : [
-          {
-            kind: "project",
-            projectSlug: result.projectPreference.projectSlug,
-            state: result.projectPreference.state,
-          } as const,
-        ]),
-    ...result.conversationPreferences.map((preference) => ({
-      kind: "conversation" as const,
+  if (result.operation === "set_project_preference") {
+    overrides.push({
+      kind: "project",
+      projectSlug: result.projectSlug,
+      state: result.state,
+    });
+    return overrides;
+  }
+  if (result.projectPreference !== undefined) {
+    overrides.push({
+      kind: "project",
+      projectSlug: result.projectPreference.projectSlug,
+      state: result.projectPreference.state,
+    });
+  }
+  for (const preference of result.conversationPreferences) {
+    overrides.push({
+      kind: "conversation",
       conversationSlugId: preference.conversationSlugId,
       state: preference.state,
-      resolvedEnabled: preference.resolvedEnabled,
-    })),
-  ];
+    });
+  }
+  return overrides;
 }
 
 export function setPreferenceOverrides({

@@ -6965,6 +6965,24 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
+        url: `/api/${apiVersion}/conversation/email-update/preferences/conversations/get`,
+        schema: {
+            body: Dto.conversationEmailUpdatePreferenceConversationsRequest,
+            response: {
+                200: Dto.conversationEmailUpdatePreferenceConversationsResponse,
+            },
+        },
+        handler: async (request) => {
+            const userId = await requireAuthenticatedUserId(request);
+            return conversationEmailUpdateService.getPreferenceConversations({
+                userId,
+                request: request.body,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
         url: `/api/${apiVersion}/conversation/email-update/configuration/get`,
         schema: {
             body: Dto.conversationEmailUpdateConfigurationRequest,

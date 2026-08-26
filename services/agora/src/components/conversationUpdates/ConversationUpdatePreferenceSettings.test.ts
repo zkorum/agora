@@ -1,9 +1,13 @@
-import type { ConversationEmailUpdatePreferenceGroup } from "src/shared/types/dto";
+import type {
+  ConversationEmailUpdatePreferenceFocus,
+  ConversationEmailUpdatePreferenceGroup,
+} from "src/shared/types/dto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { type App, createApp, defineComponent, h, nextTick } from "vue";
 import { createI18n } from "vue-i18n";
 
 const api = vi.hoisted(() => ({
+  getPreferenceConversations: vi.fn(),
   getPreferences: vi.fn(),
   updatePreference: vi.fn(),
 }));
@@ -46,9 +50,6 @@ vi.mock("src/components/ui-library/ZKButton.vue", () => ({
     },
   }),
 }));
-vi.mock("src/components/ui-library/ZKInfoBanner.vue", () => ({
-  default: defineComponent(() => () => null),
-}));
 vi.mock("src/components/ui-library/ZKSwitch.vue", () => ({
   default: defineComponent({
     name: "ZKSwitch",
@@ -83,6 +84,7 @@ const projectGroup = {
     {
       conversationSlugId: "conversation-one",
       conversationTitle: "Conversation One",
+      preferenceKind: "explicit",
       state: "enabled",
       resolvedEnabled: true,
       availability: "available",
@@ -97,6 +99,7 @@ const noProjectGroup = {
     {
       conversationSlugId: "conversation-two",
       conversationTitle: "Conversation Two",
+      preferenceKind: "explicit",
       state: "enabled",
       resolvedEnabled: true,
       availability: "available",
@@ -117,6 +120,7 @@ const disabledNoProjectGroup = {
     {
       conversationSlugId: "conversation-two",
       conversationTitle: "Conversation Two",
+      preferenceKind: "explicit",
       state: "disabled",
       resolvedEnabled: false,
       availability: "available",
@@ -164,6 +168,7 @@ const QExpansionItemStub = defineComponent({
 });
 
 beforeEach(() => {
+  api.getPreferenceConversations.mockReset();
   api.getPreferences.mockReset();
   api.updatePreference.mockReset();
   showNotifyMessage.mockReset();
@@ -177,6 +182,199 @@ afterEach(() => {
 });
 
 describe("ConversationUpdatePreferenceSettings", () => {
+  it("requests an exact conversation focus", async () => {
+    api.getPreferences.mockResolvedValue({
+      success: true,
+      globalPaused: false,
+      groups: [projectGroup],
+      nextCursor: undefined,
+    });
+
+    mountComponent({
+      initialFocus: {
+        kind: "conversation",
+        conversationSlugId: "conversation-one",
+      },
+      initialSearch: "ignored search",
+    });
+    await flushPromises();
+
+    expect(api.getPreferences).toHaveBeenCalledWith({
+      mode: "focus",
+      focus: {
+        kind: "conversation",
+        conversationSlugId: "conversation-one",
+      },
+    });
+  });
+
+  it("uses a blocking retry state when the initial load fails", async () => {
+    api.getPreferences.mockResolvedValue({
+      success: false,
+      reason: "preferences_unavailable",
+    });
+
+    const container = mountComponent();
+    await flushPromises();
+
+    expect(container.textContent).toContain("Error");
+    expect(showNotifyMessage).not.toHaveBeenCalled();
+  });
+
+  it("shows a retry state when a changed query fails", async () => {
+    api.getPreferences
+      .mockResolvedValueOnce({
+        success: true,
+        globalPaused: false,
+        groups: [projectGroup],
+        nextCursor: undefined,
+      })
+      .mockResolvedValueOnce({
+        success: false,
+        reason: "preferences_unavailable",
+      });
+
+    const container = mountComponent();
+    await flushPromises();
+    const searchInput = container.querySelector<HTMLInputElement>(
+      'input[aria-label="Search projects and conversations"]'
+    );
+    if (searchInput === null) {
+      throw new Error("Search input not found");
+    }
+    searchInput.value = "Project";
+    searchInput.dispatchEvent(new Event("input"));
+    await flushPromises();
+
+    expect(container.textContent).toContain("Error");
+    expect(container.textContent).not.toContain("Project One");
+    expect(showNotifyMessage).not.toHaveBeenCalled();
+  });
+
+  it("disables stale pagination and mutations while a changed query loads", async () => {
+    const searchPage = deferred<{
+      success: true;
+      globalPaused: false;
+      groups: ConversationEmailUpdatePreferenceGroup[];
+      nextCursor: undefined;
+    }>();
+    api.getPreferences
+      .mockResolvedValueOnce({
+        success: true,
+        globalPaused: false,
+        groups: [
+          { ...projectGroup, conversationNextCursor: "conversation-cursor" },
+        ],
+        nextCursor: "group-cursor",
+      })
+      .mockReturnValueOnce(searchPage.promise);
+
+    const container = mountComponent();
+    await flushPromises();
+    const searchInput = container.querySelector<HTMLInputElement>(
+      'input[aria-label="Search projects and conversations"]'
+    );
+    if (searchInput === null) {
+      throw new Error("Search input not found");
+    }
+    searchInput.value = "Project";
+    searchInput.dispatchEvent(new Event("input"));
+    await flushPromises();
+
+    expect(container.textContent).not.toContain("Load more");
+    expect(container.textContent).not.toContain("Show more");
+    expect(getButton(container, "Receive Email Updates").disabled).toBe(true);
+    expect(
+      getButton(container, "Email Updates by default for Project One").disabled
+    ).toBe(true);
+
+    searchPage.resolve({
+      success: true,
+      globalPaused: false,
+      groups: [projectGroup],
+      nextCursor: undefined,
+    });
+    await flushPromises();
+  });
+
+  it("offers an inline retry when loading another group page fails", async () => {
+    api.getPreferences
+      .mockResolvedValueOnce({
+        success: true,
+        globalPaused: false,
+        groups: [projectGroup],
+        nextCursor: "opaque-group-cursor",
+      })
+      .mockResolvedValueOnce({
+        success: false,
+        reason: "preferences_unavailable",
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        globalPaused: false,
+        groups: [noProjectGroup],
+        nextCursor: undefined,
+      });
+
+    const container = mountComponent();
+    await flushPromises();
+    getButton(container, "Load more").click();
+    await flushPromises();
+
+    expect(container.textContent).toContain(
+      "Email Update preferences are unavailable right now."
+    );
+    getButton(container, "Try again").click();
+    await flushPromises();
+
+    expect(container.textContent).toContain("Conversation Two");
+    expect(container.textContent).not.toContain(
+      "Email Update preferences are unavailable right now."
+    );
+  });
+
+  it("appends a backend-authorized conversation page within its group", async () => {
+    api.getPreferences.mockResolvedValue({
+      success: true,
+      globalPaused: false,
+      groups: [
+        {
+          ...projectGroup,
+          conversationNextCursor: "opaque-conversation-cursor",
+        },
+      ],
+      nextCursor: undefined,
+    });
+    api.getPreferenceConversations.mockResolvedValue({
+      success: true,
+      conversations: [
+        {
+          conversationSlugId: "conversation-next",
+          conversationTitle: "Conversation Next",
+          preferenceKind: "project_inherited",
+          state: "undisclosed",
+          resolvedEnabled: true,
+          availability: "available",
+        },
+      ],
+      nextCursor: undefined,
+    });
+
+    const container = mountComponent();
+    await flushPromises();
+    getButton(container, "Show more").click();
+    await flushPromises();
+
+    expect(api.getPreferenceConversations).toHaveBeenCalledWith({
+      scope: { kind: "project", projectSlug: "project-one" },
+      search: undefined,
+      cursor: "opaque-conversation-cursor",
+    });
+    expect(container.textContent).toContain("Conversation Next");
+    expect(container.textContent).toContain("Inherited from project");
+    expect(container.textContent).not.toContain("Show more");
+  });
+
   it("auto-expands small projects without redundant descriptions", async () => {
     api.getPreferences.mockResolvedValue({
       success: true,
@@ -255,7 +453,7 @@ describe("ConversationUpdatePreferenceSettings", () => {
         success: true,
         globalPaused: false,
         groups: [projectGroup],
-        nextCursor: "project:project-one",
+        nextCursor: "opaque-group-cursor",
       })
       .mockResolvedValueOnce({
         success: true,
@@ -283,8 +481,9 @@ describe("ConversationUpdatePreferenceSettings", () => {
     });
     expect(api.getPreferences).toHaveBeenCalledTimes(2);
     expect(api.getPreferences).toHaveBeenNthCalledWith(2, {
+      mode: "browse",
       search: undefined,
-      cursor: "project:project-one",
+      cursor: "opaque-group-cursor",
       limit: 20,
     });
     expect(
@@ -299,7 +498,7 @@ describe("ConversationUpdatePreferenceSettings", () => {
       "false"
     );
     expect(getButton(container, "Load more")).toBeDefined();
-    expect(showNotifyMessage).toHaveBeenCalledWith("Email Updates paused.");
+    expect(showNotifyMessage).not.toHaveBeenCalled();
   });
 
   it("shows paused delivery as off and turns it back on", async () => {
@@ -334,7 +533,7 @@ describe("ConversationUpdatePreferenceSettings", () => {
     expect(container.textContent).toContain(
       "You’ll receive updates from your selected projects and conversations."
     );
-    expect(showNotifyMessage).toHaveBeenCalledWith("Email Updates resumed.");
+    expect(showNotifyMessage).not.toHaveBeenCalled();
   });
 
   it("reports when a project opt-in resumes global Email Updates", async () => {
@@ -442,11 +641,11 @@ describe("ConversationUpdatePreferenceSettings", () => {
 
     expect(projectSwitch.dataset.enabled).toBe("false");
     expect(projectSwitch.disabled).toBe(true);
-    expect(getButton(container, "Receive Email Updates").disabled).toBe(false);
+    expect(getButton(container, "Receive Email Updates").disabled).toBe(true);
     expect(
       getButton(container, "Receive Email Updates for Conversation Two")
         .disabled
-    ).toBe(false);
+    ).toBe(true);
 
     projectWrite.resolve({
       success: false,
@@ -456,6 +655,71 @@ describe("ConversationUpdatePreferenceSettings", () => {
 
     expect(projectSwitch.dataset.enabled).toBe("true");
     expect(projectSwitch.disabled).toBe(false);
+    expect(showNotifyMessage).toHaveBeenCalledWith(
+      "Couldn’t save your email update preference."
+    );
+  });
+
+  it("reconciles an unexpected successful mutation response", async () => {
+    api.getPreferences
+      .mockResolvedValueOnce({
+        success: true,
+        globalPaused: false,
+        groups: [projectGroup],
+        nextCursor: undefined,
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        globalPaused: false,
+        groups: [disabledProjectGroup],
+        nextCursor: undefined,
+      });
+    api.updatePreference.mockResolvedValue({
+      success: true,
+      result: { operation: "set_global_pause", globalPaused: false },
+    });
+
+    const container = mountComponent();
+    await flushPromises();
+    getButton(container, "Email Updates by default for Project One").click();
+    await flushPromises();
+
+    expect(api.getPreferences).toHaveBeenCalledTimes(2);
+    expect(
+      getButton(container, "Email Updates by default for Project One").dataset
+        .enabled
+    ).toBe("false");
+    expect(showNotifyMessage).toHaveBeenCalledWith(
+      "Couldn’t save your email update preference."
+    );
+  });
+
+  it("keeps an uncertain mutation blocked when reconciliation fails", async () => {
+    api.getPreferences
+      .mockResolvedValueOnce({
+        success: true,
+        globalPaused: false,
+        groups: [projectGroup],
+        nextCursor: undefined,
+      })
+      .mockResolvedValueOnce({
+        success: false,
+        reason: "preferences_unavailable",
+      });
+    api.updatePreference.mockResolvedValue({
+      success: true,
+      result: { operation: "set_global_pause", globalPaused: false },
+    });
+
+    const container = mountComponent();
+    await flushPromises();
+    getButton(container, "Email Updates by default for Project One").click();
+    await flushPromises();
+
+    expect(api.getPreferences).toHaveBeenCalledTimes(2);
+    expect(container.textContent).toContain("Error");
+    expect(container.textContent).not.toContain("Project One");
+    expect(showNotifyMessage).toHaveBeenCalledTimes(1);
     expect(showNotifyMessage).toHaveBeenCalledWith(
       "Couldn’t save your email update preference."
     );
@@ -473,7 +737,7 @@ describe("ConversationUpdatePreferenceSettings", () => {
         success: true,
         globalPaused: false,
         groups: [projectGroup],
-        nextCursor: "project:project-one",
+        nextCursor: "opaque-group-cursor",
       })
       .mockReturnValueOnce(stalePage.promise);
     api.updatePreference.mockResolvedValue({
@@ -561,11 +825,90 @@ describe("ConversationUpdatePreferenceSettings", () => {
     await flushPromises();
 
     expect(api.getPreferences).toHaveBeenNthCalledWith(3, {
+      mode: "browse",
       search: "Search",
       limit: 20,
     });
     expect(container.textContent).toContain("Search Result");
     expect(container.textContent).not.toContain("Conversation Two");
+  });
+
+  it("keeps a newer conversation page locked when a stale request finishes", async () => {
+    const stalePage = deferred<{
+      success: true;
+      conversations: typeof projectGroup.conversations;
+      nextCursor: undefined;
+    }>();
+    const currentPage = deferred<{
+      success: true;
+      conversations: typeof projectGroup.conversations;
+      nextCursor: undefined;
+    }>();
+    api.getPreferences
+      .mockResolvedValueOnce({
+        success: true,
+        globalPaused: false,
+        groups: [
+          { ...projectGroup, conversationNextCursor: "stale-conversation-cursor" },
+        ],
+        nextCursor: undefined,
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        globalPaused: false,
+        groups: [
+          {
+            ...projectGroup,
+            conversationNextCursor: "current-conversation-cursor",
+          },
+        ],
+        nextCursor: undefined,
+      });
+    api.getPreferenceConversations
+      .mockReturnValueOnce(stalePage.promise)
+      .mockReturnValueOnce(currentPage.promise);
+
+    const container = mountComponent();
+    await flushPromises();
+    getButton(container, "Show more").click();
+
+    const searchInput = container.querySelector<HTMLInputElement>(
+      'input[aria-label="Search projects and conversations"]'
+    );
+    if (searchInput === null) {
+      throw new Error("Search input not found");
+    }
+    searchInput.value = "Project";
+    searchInput.dispatchEvent(new Event("input"));
+    await flushPromises();
+    getButton(container, "Show more").click();
+
+    stalePage.resolve({
+      success: true,
+      conversations: projectGroup.conversations,
+      nextCursor: undefined,
+    });
+    await flushPromises();
+
+    expect(
+      [...container.querySelectorAll("button")].some(
+        (button) => button.textContent === "Show more"
+      )
+    ).toBe(false);
+
+    currentPage.resolve({
+      success: true,
+      conversations: [
+        {
+          ...projectGroup.conversations[0],
+          conversationSlugId: "current-conversation",
+          conversationTitle: "Current Conversation",
+        },
+      ],
+      nextCursor: undefined,
+    });
+    await flushPromises();
+    expect(container.textContent).toContain("Current Conversation");
   });
 
   it("finishes search loading without losing a concurrent mutation", async () => {
@@ -633,7 +976,7 @@ describe("ConversationUpdatePreferenceSettings", () => {
     ).toBe("false");
   });
 
-  it("does not roll back another successful overlapping preference write", async () => {
+  it("serializes writes that can change the effective preference hierarchy", async () => {
     const projectWrite = deferred<{
       success: false;
       reason: "feature_not_available";
@@ -655,6 +998,7 @@ describe("ConversationUpdatePreferenceSettings", () => {
         {
           conversationSlugId: "conversation-two",
           conversationTitle: "Conversation Two",
+          preferenceKind: "explicit",
           state: "disabled",
           resolvedEnabled: false,
           availability: "available",
@@ -685,6 +1029,7 @@ describe("ConversationUpdatePreferenceSettings", () => {
     getButton(container, "Receive Email Updates for Conversation Two").click();
     await flushPromises();
 
+    expect(api.updatePreference).toHaveBeenCalledTimes(1);
     expect(
       getButton(container, "Email Updates by default for Project One").disabled
     ).toBe(true);
@@ -692,7 +1037,17 @@ describe("ConversationUpdatePreferenceSettings", () => {
       getButton(container, "Receive Email Updates for Conversation Two")
         .disabled
     ).toBe(true);
-    expect(getButton(container, "Receive Email Updates").disabled).toBe(false);
+    expect(getButton(container, "Receive Email Updates").disabled).toBe(true);
+
+    projectWrite.resolve({
+      success: false,
+      reason: "feature_not_available",
+    });
+    await flushPromises();
+
+    getButton(container, "Receive Email Updates for Conversation Two").click();
+    await flushPromises();
+    expect(api.updatePreference).toHaveBeenCalledTimes(2);
 
     conversationWrite.resolve({
       success: true,
@@ -706,20 +1061,6 @@ describe("ConversationUpdatePreferenceSettings", () => {
     await flushPromises();
 
     expect(
-      getButton(container, "Email Updates by default for Project One").disabled
-    ).toBe(true);
-    expect(
-      getButton(container, "Receive Email Updates for Conversation Two")
-        .disabled
-    ).toBe(false);
-
-    projectWrite.resolve({
-      success: false,
-      reason: "feature_not_available",
-    });
-    await flushPromises();
-
-    expect(
       getButton(container, "Email Updates by default for Project One").dataset
         .enabled
     ).toBe("true");
@@ -728,14 +1069,11 @@ describe("ConversationUpdatePreferenceSettings", () => {
         .enabled
     ).toBe("false");
     expect(showNotifyMessage).toHaveBeenCalledWith(
-      "Email update preference saved: off."
-    );
-    expect(showNotifyMessage).toHaveBeenCalledWith(
       "Couldn’t save your email update preference."
     );
   });
 
-  it("blocks overlapping writes for the same preference key", async () => {
+  it("blocks all overlapping preference writes", async () => {
     api.getPreferences.mockResolvedValue({
       success: true,
       globalPaused: false,
@@ -758,22 +1096,10 @@ describe("ConversationUpdatePreferenceSettings", () => {
     }
     await nextTick();
 
-    expect(api.updatePreference).toHaveBeenCalledTimes(3);
+    expect(api.updatePreference).toHaveBeenCalledTimes(1);
     expect(api.updatePreference).toHaveBeenNthCalledWith(1, {
       operation: "set_global_pause",
       paused: true,
-    });
-    expect(api.updatePreference).toHaveBeenNthCalledWith(2, {
-      operation: "set_project_preference",
-      projectSlug: "project-one",
-      enabled: false,
-      source: { kind: "settings" },
-    });
-    expect(api.updatePreference).toHaveBeenNthCalledWith(3, {
-      operation: "set_conversation_preference",
-      conversationSlugId: "conversation-two",
-      enabled: false,
-      source: "settings",
     });
     expect(
       switches.every((preferenceSwitch) => preferenceSwitch.disabled)
@@ -782,10 +1108,19 @@ describe("ConversationUpdatePreferenceSettings", () => {
   });
 });
 
-function mountComponent(): HTMLElement {
+function mountComponent({
+  initialFocus = undefined,
+  initialSearch = undefined,
+}: {
+  initialFocus?: ConversationEmailUpdatePreferenceFocus;
+  initialSearch?: string;
+} = {}): HTMLElement {
   const container = document.createElement("div");
   document.body.append(container);
-  const app = createApp(ConversationUpdatePreferenceSettings);
+  const app = createApp(ConversationUpdatePreferenceSettings, {
+    initialFocus,
+    initialSearch,
+  });
   app.use(
     createI18n({
       legacy: false,

@@ -10,6 +10,7 @@ import {
     resolveConversationEmailUpdateWorkspaceContext,
     resolvePreferenceAvatar,
     resolveRequiredOwnerCopySet,
+    shouldExposeConversationEmailUpdateParticipantPreference,
     type RequiredOwnerSnapshot,
 } from "./conversationEmailUpdate.js";
 
@@ -155,28 +156,89 @@ describe("conversationEmailUpdateWorkspaceResponse", () => {
 });
 
 describe("resolveConversationEmailUpdateAuthoringAction", () => {
-    it("keeps the workspace visible when sending is currently blocked", () => {
+    it("offers composition when an accessible conversation is configured", () => {
         expect(
             resolveConversationEmailUpdateAuthoringAction({
                 canAccessWorkspace: true,
+                hasConfiguredConversation: true,
                 hasHistory: false,
             }),
         ).toBe("compose");
     });
 
-    it("falls back to history without current authoring access", () => {
+    it("falls back to history when configuration or access prevents authoring", () => {
         expect(
             resolveConversationEmailUpdateAuthoringAction({
                 canAccessWorkspace: false,
+                hasConfiguredConversation: true,
                 hasHistory: true,
             }),
         ).toBe("history");
         expect(
             resolveConversationEmailUpdateAuthoringAction({
-                canAccessWorkspace: false,
+                canAccessWorkspace: true,
+                hasConfiguredConversation: false,
+                hasHistory: true,
+            }),
+        ).toBe("history");
+    });
+
+    it("hides the action without authoring access or history", () => {
+        expect(
+            resolveConversationEmailUpdateAuthoringAction({
+                canAccessWorkspace: true,
+                hasConfiguredConversation: false,
                 hasHistory: false,
             }),
         ).toBe("none");
+    });
+});
+
+describe("shouldExposeConversationEmailUpdateParticipantPreference", () => {
+    it("requires an available preference scope", () => {
+        expect(
+            shouldExposeConversationEmailUpdateParticipantPreference({
+                featureAvailable: true,
+                hasPrimaryEmail: true,
+                preferenceScope: undefined,
+                safetyBlocked: false,
+            }),
+        ).toBe(false);
+        expect(
+            shouldExposeConversationEmailUpdateParticipantPreference({
+                featureAvailable: true,
+                hasPrimaryEmail: true,
+                preferenceScope: "conversation",
+                safetyBlocked: false,
+            }),
+        ).toBe(true);
+    });
+
+    it("hides preferences without email or when safety blocked", () => {
+        expect(
+            shouldExposeConversationEmailUpdateParticipantPreference({
+                featureAvailable: true,
+                hasPrimaryEmail: false,
+                preferenceScope: "conversation",
+                safetyBlocked: false,
+            }),
+        ).toBe(false);
+        expect(
+            shouldExposeConversationEmailUpdateParticipantPreference({
+                featureAvailable: true,
+                hasPrimaryEmail: true,
+                preferenceScope: "conversation",
+                safetyBlocked: true,
+            }),
+        ).toBe(false);
+        expect(
+            shouldExposeConversationEmailUpdateParticipantPreference({
+                featureAvailable: false,
+                hasPrimaryEmail: true,
+                preferenceScope: "conversation",
+                safetyBlocked: false,
+            }),
+        ).toBe(false);
     });
 });
 
@@ -471,6 +533,7 @@ describe("buildConversationEmailPreferenceGroups", () => {
     it("includes conversations inheriting a project preference", () => {
         const groups = buildConversationEmailPreferenceGroups({
             globalPaused: false,
+            conversationNextCursorByGroup: new Map(),
             ownerByProjectId: new Map([
                 [
                     7,
@@ -499,7 +562,8 @@ describe("buildConversationEmailPreferenceGroups", () => {
                     conversation_id: 11,
                     conversation_slug_id: "child001",
                     conversation_title: "Inherited conversation",
-                    enabled: true,
+                    conversation_enabled: undefined,
+                    project_enabled: true,
                     available: true,
                 },
             ],
@@ -516,7 +580,8 @@ describe("buildConversationEmailPreferenceGroups", () => {
             conversations: [
                 {
                     conversationSlugId: "child001",
-                    state: "enabled",
+                    preferenceKind: "project_inherited",
+                    state: "undisclosed",
                     resolvedEnabled: true,
                 },
             ],
@@ -526,6 +591,7 @@ describe("buildConversationEmailPreferenceGroups", () => {
     it("keeps an explicit conversation enabled when its project is disabled", () => {
         const groups = buildConversationEmailPreferenceGroups({
             globalPaused: false,
+            conversationNextCursorByGroup: new Map(),
             ownerByProjectId: new Map(),
             projectRows: [
                 {
@@ -545,7 +611,8 @@ describe("buildConversationEmailPreferenceGroups", () => {
                     conversation_id: 11,
                     conversation_slug_id: "child001",
                     conversation_title: "Explicit conversation",
-                    enabled: true,
+                    conversation_enabled: true,
+                    project_enabled: false,
                     available: true,
                 },
             ],
@@ -558,6 +625,7 @@ describe("buildConversationEmailPreferenceGroups", () => {
             conversations: [
                 {
                     conversationSlugId: "child001",
+                    preferenceKind: "explicit",
                     state: "enabled",
                     resolvedEnabled: true,
                 },
@@ -568,6 +636,7 @@ describe("buildConversationEmailPreferenceGroups", () => {
     it("emits an undisclosed project group for a child-only exception", () => {
         const groups = buildConversationEmailPreferenceGroups({
             globalPaused: false,
+            conversationNextCursorByGroup: new Map(),
             ownerByProjectId: new Map(),
             projectRows: [],
             conversationRows: [
@@ -579,7 +648,8 @@ describe("buildConversationEmailPreferenceGroups", () => {
                     conversation_id: 11,
                     conversation_slug_id: "child001",
                     conversation_title: "Child statement",
-                    enabled: false,
+                    conversation_enabled: false,
+                    project_enabled: undefined,
                     available: true,
                 },
             ],
@@ -597,6 +667,7 @@ describe("buildConversationEmailPreferenceGroups", () => {
                     {
                         conversationSlugId: "child001",
                         conversationTitle: "Child statement",
+                        preferenceKind: "explicit",
                         state: "disabled",
                         resolvedEnabled: false,
                         availability: "available",
@@ -609,6 +680,7 @@ describe("buildConversationEmailPreferenceGroups", () => {
     it("groups explicit No Project choices separately", () => {
         const groups = buildConversationEmailPreferenceGroups({
             globalPaused: false,
+            conversationNextCursorByGroup: new Map(),
             ownerByProjectId: new Map([
                 [
                     9,
@@ -628,7 +700,8 @@ describe("buildConversationEmailPreferenceGroups", () => {
                     conversation_id: 12,
                     conversation_slug_id: "direct01",
                     conversation_title: "Direct conversation",
-                    enabled: true,
+                    conversation_enabled: true,
+                    project_enabled: undefined,
                     available: false,
                 },
             ],
@@ -646,6 +719,7 @@ describe("buildConversationEmailPreferenceGroups", () => {
                             kind: "user",
                             displayName: "direct-owner",
                         },
+                        preferenceKind: "explicit",
                         state: "enabled",
                         resolvedEnabled: true,
                         availability: "temporarily_unavailable",

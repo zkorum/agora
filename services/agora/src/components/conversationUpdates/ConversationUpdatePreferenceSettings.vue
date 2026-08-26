@@ -1,5 +1,14 @@
 <template>
-  <section class="preference-settings">
+  <section
+    class="preference-settings"
+    :aria-busy="
+      isInitialLoading ||
+      isRefreshing ||
+      isLoadingMore ||
+      loadingConversationGroupKeys.size > 0 ||
+      isPreferenceSaving
+    "
+  >
     <SettingsSectionHeader
       :title="undefined"
       :descriptions="[
@@ -31,19 +40,13 @@
     />
 
     <template v-else>
-      <ZKInfoBanner
-        v-if="paginationError !== undefined"
-        :message="paginationError"
-        variant="warning"
-      />
-
       <SettingsToggleCard
         :label="t('receiveEmailUpdates')"
         :description="
           t(globalEnabled ? 'updatesOnDescription' : 'updatesPausedDescription')
         "
         :model-value="globalEnabled"
-        :disabled="isGlobalSaving"
+        :disabled="isPreferenceSaving || isRefreshing"
         @update:model-value="setGlobalEnabled"
       />
 
@@ -62,14 +65,19 @@
           :key="getPreferenceGroupKey(group)"
           :expanded="expandedGroupKeys.has(getPreferenceGroupKey(group))"
           :group="group"
+          :conversation-pagination-error="
+            conversationPaginationErrors.get(getPreferenceGroupKey(group))
+          "
+          :controls-disabled="isPreferenceSaving || isRefreshing"
+          :is-loading-more-conversations="
+            loadingConversationGroupKeys.has(getPreferenceGroupKey(group))
+          "
           :label="
             group.kind === 'project' ? group.projectTitle : t('noProject')
           "
-          :saving-conversation-slug-ids="savingConversationSlugIds"
-          :saving-project="
-            group.kind === 'project' &&
-            savingProjectSlugs.has(group.projectSlug)
-          "
+          :retry-label="t('tryAgain')"
+          :show-more-label="t('showMore')"
+          @load-more-conversations="loadMoreConversations"
           @update:expanded="
             setGroupExpanded({
               groupKey: getPreferenceGroupKey(group),
@@ -81,15 +89,17 @@
         />
       </q-list>
 
-      <div v-if="nextCursor !== undefined" class="preference-settings__more">
-        <ZKButton
-          button-type="standardButton"
-          outline
-          color="primary"
-          :label="t('loadMore')"
-          :loading="isLoadingMore"
-          :disable="isLoadingMore"
-          @click="loadMore"
+      <div
+        v-if="!isRefreshing && nextCursor !== undefined"
+        class="preference-settings__more"
+      >
+        <ZKLoadMore
+          :error-message="paginationError"
+          :is-loading="isLoadingMore"
+          :loading-label="t('loadingMore')"
+          :load-more-label="t('loadMore')"
+          :retry-label="t('tryAgain')"
+          @action="loadMore"
         />
       </div>
     </template>
@@ -101,10 +111,12 @@ import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import SettingsSectionHeader from "src/components/ui-library/SettingsSectionHeader.vue";
 import SettingsToggleCard from "src/components/ui-library/SettingsToggleCard.vue";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
-import ZKInfoBanner from "src/components/ui-library/ZKInfoBanner.vue";
+import ZKLoadMore from "src/components/ui-library/ZKLoadMore.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { CONVERSATION_EMAIL_UPDATE_PREFERENCE_SEARCH_MAX_LENGTH } from "src/shared/types/dto";
+import {
+  CONVERSATION_EMAIL_UPDATE_PREFERENCE_SEARCH_MAX_LENGTH,
+  type ConversationEmailUpdatePreferenceFocus,
+} from "src/shared/types/dto";
 
 import ConversationUpdatePreferenceGroupItem from "./ConversationUpdatePreferenceGroupItem.vue";
 import { getPreferenceGroupKey } from "./conversationUpdatePreferenceLogic";
@@ -114,31 +126,40 @@ import {
 } from "./ConversationUpdatePreferenceSettings.i18n";
 import { useConversationUpdatePreferences } from "./useConversationUpdatePreferences";
 
+const props = defineProps<{
+  initialFocus: ConversationEmailUpdatePreferenceFocus | undefined;
+  initialSearch: string | undefined;
+}>();
 const { t } =
   useComponentI18n<ConversationUpdatePreferenceSettingsTranslations>(
     conversationUpdatePreferenceSettingsTranslations
   );
 const {
   expandedGroupKeys,
+  conversationPaginationErrors,
   globalEnabled,
   groups,
-  isGlobalSaving,
   isInitialLoading,
   isLoadingMore,
+  isPreferenceSaving,
+  isRefreshing,
+  loadingConversationGroupKeys,
   loadError,
   loadFirstPage,
   loadMore,
+  loadMoreConversations,
   nextCursor,
   paginationError,
-  savingConversationSlugIds,
-  savingProjectSlugs,
   search,
   setConversationPreference,
   setGlobalEnabled,
   setGroupExpanded,
   setProjectPreference,
   updateSearch,
-} = useConversationUpdatePreferences();
+} = useConversationUpdatePreferences({
+  initialFocus: () => props.initialFocus,
+  initialSearch: () => props.initialSearch,
+});
 </script>
 
 <style scoped lang="scss">

@@ -3488,6 +3488,36 @@ export interface ApiV1ConversationEmailUpdateHistoryListPostRequest {
     'limit'?: number;
 }
 /**
+ * @type ApiV1ConversationEmailUpdatePreferencesConversationsGetPost200Response
+ */
+export type ApiV1ConversationEmailUpdatePreferencesConversationsGetPost200Response = ApiV1ConversationEmailUpdatePreferencesConversationsGetPost200ResponseOneOf | ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOf1;
+
+export interface ApiV1ConversationEmailUpdatePreferencesConversationsGetPost200ResponseOneOf {
+    'success': boolean;
+    'conversations': Array<ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInner>;
+    'nextCursor'?: string;
+}
+export interface ApiV1ConversationEmailUpdatePreferencesConversationsGetPostRequest {
+    'scope': ApiV1ConversationEmailUpdatePreferencesConversationsGetPostRequestScope;
+    'search'?: string;
+    'cursor': string;
+}
+/**
+ * @type ApiV1ConversationEmailUpdatePreferencesConversationsGetPostRequestScope
+ */
+export type ApiV1ConversationEmailUpdatePreferencesConversationsGetPostRequestScope = ApiV1ConversationEmailUpdateActionManageOptOutPostRequestTargetOneOf | ApiV1ConversationEmailUpdatePreferencesConversationsGetPostRequestScopeOneOf;
+
+export interface ApiV1ConversationEmailUpdatePreferencesConversationsGetPostRequestScopeOneOf {
+    'kind': ApiV1ConversationEmailUpdatePreferencesConversationsGetPostRequestScopeOneOfKindEnum;
+}
+
+export const ApiV1ConversationEmailUpdatePreferencesConversationsGetPostRequestScopeOneOfKindEnum = {
+    NoProject: 'no_project',
+} as const;
+
+export type ApiV1ConversationEmailUpdatePreferencesConversationsGetPostRequestScopeOneOfKindEnum = typeof ApiV1ConversationEmailUpdatePreferencesConversationsGetPostRequestScopeOneOfKindEnum[keyof typeof ApiV1ConversationEmailUpdatePreferencesConversationsGetPostRequestScopeOneOfKindEnum];
+
+/**
  * @type ApiV1ConversationEmailUpdatePreferencesGetPost200Response
  */
 export type ApiV1ConversationEmailUpdatePreferencesGetPost200Response = ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOf | ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOf1;
@@ -3524,6 +3554,7 @@ export interface ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfG
     'availability': ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfAvailabilityEnum;
     'owner'?: ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfOwner;
     'conversations': Array<ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInner>;
+    'conversationNextCursor'?: string;
 }
 
 export const ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfKindEnum = {
@@ -3548,7 +3579,8 @@ export type ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroups
 export interface ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOf1 {
     'kind': ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOf1KindEnum;
     'availability': ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOf1AvailabilityEnum;
-    'conversations': Array<ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOf1ConversationsInner>;
+    'conversations': Array<ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInner>;
+    'conversationNextCursor'?: string;
 }
 
 export const ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOf1KindEnum = {
@@ -3563,48 +3595,92 @@ export const ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroup
 
 export type ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOf1AvailabilityEnum = typeof ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOf1AvailabilityEnum[keyof typeof ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOf1AvailabilityEnum];
 
-export interface ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOf1ConversationsInner {
+/**
+ * @type ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInner
+ */
+export type ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInner = ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf | ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf1 | ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf2;
+
+export interface ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf {
     'conversationSlugId': string;
     'conversationTitle': string;
-    'state': ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOf1ConversationsInnerStateEnum;
     'resolvedEnabled': boolean;
-    'availability': ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOf1ConversationsInnerAvailabilityEnum;
+    'availability': ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOfAvailabilityEnum;
     'owner'?: ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfOwner;
+    'preferenceKind': ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOfPreferenceKindEnum;
+    'state': ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOfStateEnum;
 }
 
-export const ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOf1ConversationsInnerStateEnum = {
-    Disabled: 'disabled',
-    Enabled: 'enabled',
-} as const;
-
-export type ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOf1ConversationsInnerStateEnum = typeof ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOf1ConversationsInnerStateEnum[keyof typeof ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOf1ConversationsInnerStateEnum];
-export const ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOf1ConversationsInnerAvailabilityEnum = {
+export const ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOfAvailabilityEnum = {
     Available: 'available',
     TemporarilyUnavailable: 'temporarily_unavailable',
 } as const;
 
-export type ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOf1ConversationsInnerAvailabilityEnum = typeof ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOf1ConversationsInnerAvailabilityEnum[keyof typeof ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOf1ConversationsInnerAvailabilityEnum];
+export type ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOfAvailabilityEnum = typeof ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOfAvailabilityEnum[keyof typeof ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOfAvailabilityEnum];
+export const ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOfPreferenceKindEnum = {
+    Explicit: 'explicit',
+} as const;
 
-export interface ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInner {
+export type ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOfPreferenceKindEnum = typeof ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOfPreferenceKindEnum[keyof typeof ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOfPreferenceKindEnum];
+export const ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOfStateEnum = {
+    Disabled: 'disabled',
+    Enabled: 'enabled',
+} as const;
+
+export type ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOfStateEnum = typeof ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOfStateEnum[keyof typeof ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOfStateEnum];
+
+export interface ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf1 {
     'conversationSlugId': string;
     'conversationTitle': string;
-    'state': ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerStateEnum;
     'resolvedEnabled': boolean;
-    'availability': ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerAvailabilityEnum;
+    'availability': ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf1AvailabilityEnum;
+    'owner'?: ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfOwner;
+    'preferenceKind': ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf1PreferenceKindEnum;
+    'state': ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf1StateEnum;
 }
 
-export const ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerStateEnum = {
-    Disabled: 'disabled',
-    Enabled: 'enabled',
-} as const;
-
-export type ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerStateEnum = typeof ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerStateEnum[keyof typeof ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerStateEnum];
-export const ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerAvailabilityEnum = {
+export const ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf1AvailabilityEnum = {
     Available: 'available',
     TemporarilyUnavailable: 'temporarily_unavailable',
 } as const;
 
-export type ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerAvailabilityEnum = typeof ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerAvailabilityEnum[keyof typeof ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerAvailabilityEnum];
+export type ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf1AvailabilityEnum = typeof ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf1AvailabilityEnum[keyof typeof ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf1AvailabilityEnum];
+export const ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf1PreferenceKindEnum = {
+    ProjectInherited: 'project_inherited',
+} as const;
+
+export type ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf1PreferenceKindEnum = typeof ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf1PreferenceKindEnum[keyof typeof ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf1PreferenceKindEnum];
+export const ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf1StateEnum = {
+    Undisclosed: 'undisclosed',
+} as const;
+
+export type ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf1StateEnum = typeof ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf1StateEnum[keyof typeof ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf1StateEnum];
+
+export interface ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf2 {
+    'conversationSlugId': string;
+    'conversationTitle': string;
+    'resolvedEnabled': boolean;
+    'availability': ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf2AvailabilityEnum;
+    'owner'?: ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfOwner;
+    'preferenceKind': ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf2PreferenceKindEnum;
+    'state': ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf2StateEnum;
+}
+
+export const ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf2AvailabilityEnum = {
+    Available: 'available',
+    TemporarilyUnavailable: 'temporarily_unavailable',
+} as const;
+
+export type ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf2AvailabilityEnum = typeof ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf2AvailabilityEnum[keyof typeof ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf2AvailabilityEnum];
+export const ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf2PreferenceKindEnum = {
+    Undisclosed: 'undisclosed',
+} as const;
+
+export type ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf2PreferenceKindEnum = typeof ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf2PreferenceKindEnum[keyof typeof ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf2PreferenceKindEnum];
+export const ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf2StateEnum = {
+    Undisclosed: 'undisclosed',
+} as const;
+
+export type ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf2StateEnum = typeof ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf2StateEnum[keyof typeof ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfConversationsInnerOneOf2StateEnum];
 
 /**
  * @type ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfOwner
@@ -3635,11 +3711,35 @@ export const ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroup
 
 export type ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfOwnerOneOf1KindEnum = typeof ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfOwnerOneOf1KindEnum[keyof typeof ApiV1ConversationEmailUpdatePreferencesGetPost200ResponseOneOfGroupsInnerOneOfOwnerOneOf1KindEnum];
 
-export interface ApiV1ConversationEmailUpdatePreferencesGetPostRequest {
+/**
+ * @type ApiV1ConversationEmailUpdatePreferencesGetPostRequest
+ */
+export type ApiV1ConversationEmailUpdatePreferencesGetPostRequest = ApiV1ConversationEmailUpdatePreferencesGetPostRequestOneOf | ApiV1ConversationEmailUpdatePreferencesGetPostRequestOneOf1;
+
+export interface ApiV1ConversationEmailUpdatePreferencesGetPostRequestOneOf {
+    'mode': ApiV1ConversationEmailUpdatePreferencesGetPostRequestOneOfModeEnum;
     'search'?: string;
     'cursor'?: string;
     'limit'?: number;
 }
+
+export const ApiV1ConversationEmailUpdatePreferencesGetPostRequestOneOfModeEnum = {
+    Browse: 'browse',
+} as const;
+
+export type ApiV1ConversationEmailUpdatePreferencesGetPostRequestOneOfModeEnum = typeof ApiV1ConversationEmailUpdatePreferencesGetPostRequestOneOfModeEnum[keyof typeof ApiV1ConversationEmailUpdatePreferencesGetPostRequestOneOfModeEnum];
+
+export interface ApiV1ConversationEmailUpdatePreferencesGetPostRequestOneOf1 {
+    'mode': ApiV1ConversationEmailUpdatePreferencesGetPostRequestOneOf1ModeEnum;
+    'focus': ApiV1ConversationEmailUpdateActionManageOptOutPostRequestTarget;
+}
+
+export const ApiV1ConversationEmailUpdatePreferencesGetPostRequestOneOf1ModeEnum = {
+    Focus: 'focus',
+} as const;
+
+export type ApiV1ConversationEmailUpdatePreferencesGetPostRequestOneOf1ModeEnum = typeof ApiV1ConversationEmailUpdatePreferencesGetPostRequestOneOf1ModeEnum[keyof typeof ApiV1ConversationEmailUpdatePreferencesGetPostRequestOneOf1ModeEnum];
+
 /**
  * @type ApiV1ConversationEmailUpdatePreferencesUpdatePost200Response
  */
@@ -5613,6 +5713,9 @@ export const ApiV1ConversationUpdatePost200ResponseOneOfReasonEnum = {
     InvalidAccessSettings: 'invalid_access_settings',
     PremiumAccessExpired: 'premium_access_expired',
     PremiumAccessRequired: 'premium_access_required',
+    FeatureNotAvailable: 'feature_not_available',
+    MissingParticipantContactEmail: 'missing_participant_contact_email',
+    ActiveDeliveryConflict: 'active_delivery_conflict',
     PlainTextTooLong: 'plain_text_too_long',
     HtmlTooLong: 'html_too_long',
 } as const;
@@ -5631,6 +5734,7 @@ export interface ApiV1ConversationUpdatePostRequest {
     'aiLabelingEnabled'?: boolean;
     'preferredOpinionGroupCount'?: number | null;
     'surveyConfig'?: ApiV1ConversationCreatePostRequestOneOfSurveyConfig | null;
+    'conversationEmailUpdateEnabledOverride'?: boolean | null;
 }
 
 export const ApiV1ConversationUpdatePostRequestParticipationModeEnum = {
@@ -10723,6 +10827,44 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @param {ApiV1ConversationEmailUpdatePreferencesConversationsGetPostRequest} apiV1ConversationEmailUpdatePreferencesConversationsGetPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationEmailUpdatePreferencesConversationsGetPost: async (apiV1ConversationEmailUpdatePreferencesConversationsGetPostRequest: ApiV1ConversationEmailUpdatePreferencesConversationsGetPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ConversationEmailUpdatePreferencesConversationsGetPostRequest' is not null or undefined
+            assertParamExists('apiV1ConversationEmailUpdatePreferencesConversationsGetPost', 'apiV1ConversationEmailUpdatePreferencesConversationsGetPostRequest', apiV1ConversationEmailUpdatePreferencesConversationsGetPostRequest)
+            const localVarPath = `/api/v1/conversation/email-update/preferences/conversations/get`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ConversationEmailUpdatePreferencesConversationsGetPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {ApiV1ConversationEmailUpdatePreferencesGetPostRequest} apiV1ConversationEmailUpdatePreferencesGetPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -14684,6 +14826,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {ApiV1ConversationEmailUpdatePreferencesConversationsGetPostRequest} apiV1ConversationEmailUpdatePreferencesConversationsGetPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ConversationEmailUpdatePreferencesConversationsGetPost(apiV1ConversationEmailUpdatePreferencesConversationsGetPostRequest: ApiV1ConversationEmailUpdatePreferencesConversationsGetPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationEmailUpdatePreferencesConversationsGetPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationEmailUpdatePreferencesConversationsGetPost(apiV1ConversationEmailUpdatePreferencesConversationsGetPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationEmailUpdatePreferencesConversationsGetPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {ApiV1ConversationEmailUpdatePreferencesGetPostRequest} apiV1ConversationEmailUpdatePreferencesGetPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -16249,6 +16403,15 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @param {ApiV1ConversationEmailUpdatePreferencesConversationsGetPostRequest} apiV1ConversationEmailUpdatePreferencesConversationsGetPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationEmailUpdatePreferencesConversationsGetPost(apiV1ConversationEmailUpdatePreferencesConversationsGetPostRequest: ApiV1ConversationEmailUpdatePreferencesConversationsGetPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationEmailUpdatePreferencesConversationsGetPost200Response> {
+            return localVarFp.apiV1ConversationEmailUpdatePreferencesConversationsGetPost(apiV1ConversationEmailUpdatePreferencesConversationsGetPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @param {ApiV1ConversationEmailUpdatePreferencesGetPostRequest} apiV1ConversationEmailUpdatePreferencesGetPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -17602,6 +17765,16 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1ConversationEmailUpdateHistoryListPost(apiV1ConversationEmailUpdateHistoryListPostRequest: ApiV1ConversationEmailUpdateHistoryListPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1ConversationEmailUpdateHistoryListPost(apiV1ConversationEmailUpdateHistoryListPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1ConversationEmailUpdatePreferencesConversationsGetPostRequest} apiV1ConversationEmailUpdatePreferencesConversationsGetPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1ConversationEmailUpdatePreferencesConversationsGetPost(apiV1ConversationEmailUpdatePreferencesConversationsGetPostRequest: ApiV1ConversationEmailUpdatePreferencesConversationsGetPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationEmailUpdatePreferencesConversationsGetPost(apiV1ConversationEmailUpdatePreferencesConversationsGetPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

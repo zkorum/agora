@@ -12,13 +12,11 @@ export interface ConversationUpdatePreferenceSettingsTranslations {
   empty: string;
   noProject: string;
   loadMore: string;
+  loadingMore: string;
+  showMore: string;
   verifiedEmailRequired: string;
   preferencesUnavailable: string;
   morePreferencesUnavailable: string;
-  pauseSaved: string;
-  resumeSaved: string;
-  preferenceOnSaved: string;
-  preferenceOffSaved: string;
   savePreferenceError: string;
 }
 
@@ -43,16 +41,14 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     empty: "No Email Update preferences match this search.",
     noProject: "No Project",
     loadMore: "Load more",
+    loadingMore: "Loading more preferences",
+    showMore: "Show more",
     verifiedEmailRequired:
       "Verify an email address before changing Email Update preferences.",
     preferencesUnavailable:
       "Email Update preferences are unavailable right now.",
     morePreferencesUnavailable:
       "More Email Update preferences could not be loaded.",
-    pauseSaved: "Email Updates paused.",
-    resumeSaved: "Email Updates resumed.",
-    preferenceOnSaved: "Email update preference saved: on.",
-    preferenceOffSaved: "Email update preference saved: off.",
     savePreferenceError: "Couldn’t save your email update preference.",
   },
   es: {
@@ -73,18 +69,14 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
       "Ninguna preferencia de seguimiento por correo coincide con esta búsqueda.",
     noProject: "Sin proyecto",
     loadMore: "Cargar más",
+    loadingMore: "Cargando más preferencias",
+    showMore: "Mostrar más",
     verifiedEmailRequired:
       "Verifique una dirección de correo electrónico antes de cambiar su preferencia de seguimiento por correo.",
     preferencesUnavailable:
       "Las preferencias de seguimiento por correo no están disponibles ahora.",
     morePreferencesUnavailable:
       "No se pudieron cargar más preferencias de seguimiento por correo.",
-    pauseSaved: "Novedades por correo pausadas.",
-    resumeSaved: "Novedades por correo reanudadas.",
-    preferenceOnSaved:
-      "Preferencia de seguimiento por correo guardada: activada.",
-    preferenceOffSaved:
-      "Preferencia de seguimiento por correo guardada: desactivada.",
     savePreferenceError:
       "No se pudo guardar su preferencia de seguimiento por correo.",
   },
@@ -106,17 +98,14 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
       "Aucune préférence de suivi par e-mail ne correspond à cette recherche.",
     noProject: "Sans projet",
     loadMore: "Charger plus",
+    loadingMore: "Chargement de préférences supplémentaires",
+    showMore: "Afficher plus",
     verifiedEmailRequired:
       "Vérifiez une adresse e-mail avant de modifier votre préférence de suivi par e-mail.",
     preferencesUnavailable:
       "Les préférences de suivi par e-mail sont indisponibles pour le moment.",
     morePreferencesUnavailable:
       "Impossible de charger davantage de préférences de suivi par e-mail.",
-    pauseSaved: "Nouvelles par e-mail suspendues.",
-    resumeSaved: "Nouvelles par e-mail réactivées.",
-    preferenceOnSaved: "Préférence de suivi par e-mail enregistrée : activée.",
-    preferenceOffSaved:
-      "Préférence de suivi par e-mail enregistrée : désactivée.",
     savePreferenceError:
       "Impossible d’enregistrer votre préférence de suivi par e-mail.",
   },
@@ -136,13 +125,11 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     empty: "沒有符合此搜尋的電子郵件更新偏好。",
     noProject: "無專案",
     loadMore: "載入更多",
+    loadingMore: "正在載入更多偏好設定",
+    showMore: "顯示更多",
     verifiedEmailRequired: "請先驗證電子郵件地址，再變更電子郵件更新偏好。",
     preferencesUnavailable: "目前無法使用電子郵件更新偏好。",
     morePreferencesUnavailable: "無法載入更多電子郵件更新偏好。",
-    pauseSaved: "電子郵件更新已暫停。",
-    resumeSaved: "電子郵件更新已恢復。",
-    preferenceOnSaved: "偏好已儲存：開啟。",
-    preferenceOffSaved: "偏好已儲存：關閉。",
     savePreferenceError: "無法儲存你的電子郵件更新偏好。",
   },
   "zh-Hans": {
@@ -161,13 +148,11 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     empty: "没有符合此搜索的电子邮件更新偏好。",
     noProject: "无项目",
     loadMore: "加载更多",
+    loadingMore: "正在加载更多偏好设置",
+    showMore: "显示更多",
     verifiedEmailRequired: "请先验证电子邮件地址，再更改电子邮件更新偏好。",
     preferencesUnavailable: "目前无法使用电子邮件更新偏好。",
     morePreferencesUnavailable: "无法加载更多电子邮件更新偏好。",
-    pauseSaved: "电子邮件更新已暂停。",
-    resumeSaved: "电子邮件更新已恢复。",
-    preferenceOnSaved: "偏好已保存：开启。",
-    preferenceOffSaved: "偏好已保存：关闭。",
     savePreferenceError: "无法保存你的电子邮件更新偏好。",
   },
   ja: {
@@ -186,14 +171,12 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     empty: "検索に一致するメール更新設定はありません。",
     noProject: "プロジェクトなし",
     loadMore: "さらに読み込む",
+    loadingMore: "さらに設定を読み込んでいます",
+    showMore: "さらに表示",
     verifiedEmailRequired:
       "メール更新設定を変更する前に、メールアドレスを確認してください。",
     preferencesUnavailable: "メール更新設定は現在利用できません。",
     morePreferencesUnavailable: "メール更新設定をさらに読み込めませんでした。",
-    pauseSaved: "メール更新を一時停止しました。",
-    resumeSaved: "メール更新を再開しました。",
-    preferenceOnSaved: "メール更新設定をオンで保存しました。",
-    preferenceOffSaved: "メール更新設定をオフで保存しました。",
     savePreferenceError: "メール更新設定を保存できませんでした。",
   },
   ar: {
@@ -212,15 +195,13 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     empty: "لا توجد تفضيلات لتحديثات البريد الإلكتروني تطابق هذا البحث.",
     noProject: "بلا مشروع",
     loadMore: "تحميل المزيد",
+    loadingMore: "جارٍ تحميل المزيد من التفضيلات",
+    showMore: "عرض المزيد",
     verifiedEmailRequired:
       "تحقق من عنوان بريد إلكتروني قبل تغيير تفضيلات التحديثات.",
     preferencesUnavailable: "تفضيلات تحديثات البريد الإلكتروني غير متاحة الآن.",
     morePreferencesUnavailable:
       "تعذر تحميل المزيد من تفضيلات تحديثات البريد الإلكتروني.",
-    pauseSaved: "تم إيقاف تحديثات البريد الإلكتروني مؤقتًا.",
-    resumeSaved: "تم استئناف تحديثات البريد الإلكتروني.",
-    preferenceOnSaved: "تم حفظ التفضيل: مفعّل.",
-    preferenceOffSaved: "تم حفظ التفضيل: متوقف.",
     savePreferenceError: "تعذر حفظ تفضيل تحديثات البريد الإلكتروني.",
   },
   fa: {
@@ -240,15 +221,13 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     empty: "هیچ تنظیم به‌روزرسانی ایمیلی با این جستجو مطابقت ندارد.",
     noProject: "بدون پروژه",
     loadMore: "بارگیری بیشتر",
+    loadingMore: "در حال بارگیری تنظیمات بیشتر",
+    showMore: "نمایش بیشتر",
     verifiedEmailRequired:
       "پیش از تغییر تنظیمات، یک نشانی ایمیل را تأیید کنید.",
     preferencesUnavailable: "تنظیمات به‌روزرسانی ایمیلی اکنون در دسترس نیست.",
     morePreferencesUnavailable:
       "تنظیمات بیشتری از به‌روزرسانی ایمیلی بارگیری نشد.",
-    pauseSaved: "به‌روزرسانی‌های ایمیلی متوقف شدند.",
-    resumeSaved: "به‌روزرسانی‌های ایمیلی از سر گرفته شدند.",
-    preferenceOnSaved: "تنظیم ذخیره شد: روشن.",
-    preferenceOffSaved: "تنظیم ذخیره شد: خاموش.",
     savePreferenceError: "تنظیم به‌روزرسانی ایمیلی شما ذخیره نشد.",
   },
   he: {
@@ -267,13 +246,11 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     empty: "אין העדפות לעדכונים בדוא״ל שתואמות לחיפוש.",
     noProject: "ללא פרויקט",
     loadMore: "טעינת עוד",
+    loadingMore: "טעינת העדפות נוספות",
+    showMore: "הצגת עוד",
     verifiedEmailRequired: "יש לאמת כתובת דוא״ל לפני שינוי העדפות העדכונים.",
     preferencesUnavailable: "העדפות העדכונים בדוא״ל אינן זמינות כרגע.",
     morePreferencesUnavailable: "לא ניתן לטעון העדפות נוספות לעדכונים בדוא״ל.",
-    pauseSaved: "העדכונים בדוא״ל הושהו.",
-    resumeSaved: "העדכונים בדוא״ל חודשו.",
-    preferenceOnSaved: "ההעדפה נשמרה: פעיל.",
-    preferenceOffSaved: "ההעדפה נשמרה: כבוי.",
     savePreferenceError: "לא ניתן לשמור את העדפת העדכונים בדוא״ל.",
   },
   ky: {
@@ -293,16 +270,14 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     empty: "Бул издөөгө туура келген электрондук почта жөндөөлөрү жок.",
     noProject: "Долбоорсуз",
     loadMore: "Дагы жүктөө",
+    loadingMore: "Дагы жөндөөлөр жүктөлүүдө",
+    showMore: "Дагы көрсөтүү",
     verifiedEmailRequired:
       "Жөндөөлөрдү өзгөртүүдөн мурун электрондук почта дарегин ырастаңыз.",
     preferencesUnavailable:
       "Электрондук почта жаңыртуу жөндөөлөрү азыр жеткиликсиз.",
     morePreferencesUnavailable:
       "Кошумча электрондук почта жаңыртуу жөндөөлөрү жүктөлгөн жок.",
-    pauseSaved: "Электрондук почта жаңыртуулары тындырылды.",
-    resumeSaved: "Электрондук почта жаңыртуулары улантылды.",
-    preferenceOnSaved: "Жөндөө сакталды: күйүк.",
-    preferenceOffSaved: "Жөндөө сакталды: өчүк.",
     savePreferenceError: "Электрондук почта жаңыртуу жөндөөңүз сакталган жок.",
   },
   ru: {
@@ -323,16 +298,14 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
       "Нет настроек обновлений по электронной почте, соответствующих поиску.",
     noProject: "Без проекта",
     loadMore: "Загрузить ещё",
+    loadingMore: "Загрузка дополнительных настроек",
+    showMore: "Показать ещё",
     verifiedEmailRequired:
       "Подтвердите адрес электронной почты перед изменением настроек обновлений.",
     preferencesUnavailable:
       "Настройки обновлений по электронной почте сейчас недоступны.",
     morePreferencesUnavailable:
       "Не удалось загрузить дополнительные настройки обновлений по электронной почте.",
-    pauseSaved: "Обновления по электронной почте приостановлены.",
-    resumeSaved: "Обновления по электронной почте возобновлены.",
-    preferenceOnSaved: "Настройка сохранена: включено.",
-    preferenceOffSaved: "Настройка сохранена: выключено.",
     savePreferenceError:
       "Не удалось сохранить настройку обновлений по электронной почте.",
   },

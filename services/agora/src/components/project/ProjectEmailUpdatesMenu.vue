@@ -25,6 +25,7 @@ import {
   createConversationUpdatePreferenceAction,
   resolveEmailUpdatePreferenceChoiceEnabled,
 } from "src/components/conversationUpdates/conversationUpdatePreferenceAction";
+import { getEmailUpdateSettingsHref } from "src/components/conversationUpdates/emailUpdateMenuLogic";
 import {
   type EmailUpdateResumeNotificationTranslations,
   emailUpdateResumeNotificationTranslations,
@@ -94,6 +95,21 @@ const actions = computed<ContentAction[]>(() => {
   }
 
   const projectActions: ContentAction[] = [];
+  if (currentSummary.authoringAction !== "none") {
+    const tab = currentSummary.authoringAction;
+    projectActions.push({
+      id: "projectEmailUpdateWorkspace",
+      label: tab === "compose" ? t("manageUpdates") : t("viewHistory"),
+      icon: tab === "compose" ? "mdi-email-edit-outline" : "mdi-history",
+      trailingIcon: $q.lang.rtl ? "mdi-chevron-left" : "mdi-chevron-right",
+      to: {
+        path: "/email-updates/",
+        query: { tab, projectSlug: props.projectSlug },
+      },
+      isVisible: () => true,
+    });
+  }
+
   const participantPreference = currentSummary.participantPreference;
   if (participantPreference !== undefined) {
     const preferenceEnabled = resolveEmailUpdatePreferenceChoiceEnabled(
@@ -110,18 +126,20 @@ const actions = computed<ContentAction[]>(() => {
         },
       })
     );
-  }
-
-  if (currentSummary.authoringAction !== "none") {
-    const tab = currentSummary.authoringAction;
     projectActions.push({
-      id: "projectEmailUpdateWorkspace",
-      label: tab === "compose" ? t("manageUpdates") : t("viewHistory"),
-      icon: tab === "compose" ? "mdi-email-edit-outline" : "mdi-history",
-      trailingIcon: $q.lang.rtl ? "mdi-chevron-left" : "mdi-chevron-right",
-      to: {
-        path: "/email-updates/",
-        query: { tab, projectSlug: props.projectSlug },
+      id: "manageMyProjectEmailUpdates",
+      label: t("manageMyUpdates"),
+      icon: "mdi-email-sync-outline",
+      trailingIcon: "mdi-open-in-new",
+      handler: () => {
+        window.open(
+          getEmailUpdateSettingsHref({
+            kind: "project",
+            projectSlug: props.projectSlug,
+          }),
+          "_blank",
+          "noopener,noreferrer"
+        );
       },
       isVisible: () => true,
     });

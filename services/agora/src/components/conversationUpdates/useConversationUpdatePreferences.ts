@@ -1,6 +1,7 @@
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   CONVERSATION_EMAIL_UPDATE_PREFERENCE_SEARCH_MAX_LENGTH,
+  type ConversationEmailUpdatePreferenceFocus,
   type ConversationEmailUpdatePreferenceGroup,
 } from "src/shared/types/dto";
 import { useBackendConversationEmailUpdatesApi } from "src/utils/api/conversationUpdates/conversationEmailUpdates";
@@ -12,6 +13,7 @@ import {
   applyPreferenceOverrides,
   CONVERSATION_UPDATE_PREFERENCE_PAGE_SIZE,
   getAutoExpandedPreferenceGroupKeys,
+  getPreferenceGroupKey,
   getPreferenceOverrideKey,
   getPreferenceOverridesFromResult,
   setPreferenceOverrides,
@@ -31,7 +33,13 @@ import {
   emailUpdateResumeNotificationTranslations,
 } from "./emailUpdateResumeNotification.i18n";
 
-export function useConversationUpdatePreferences() {
+export function useConversationUpdatePreferences({
+  initialFocus,
+  initialSearch,
+}: {
+  initialFocus: () => ConversationEmailUpdatePreferenceFocus | undefined;
+  initialSearch: () => string | undefined;
+}) {
   const emailUpdatesApi = useBackendConversationEmailUpdatesApi();
   const removeConversationEmailUpdateSummaryQueries =
     useRemoveConversationEmailUpdateSummaryQueries();
@@ -45,7 +53,13 @@ export function useConversationUpdatePreferences() {
     );
   const { showNotifyMessage } = useNotify();
 
-  const search = ref("");
+  const initialFocusValue = initialFocus();
+  const search = ref(
+    normalizeSearch(
+      initialFocusValue === undefined ? initialSearch() : undefined
+    )
+  );
+  const focus = ref(initialFocusValue);
   const serverGroups = ref<readonly ConversationEmailUpdatePreferenceGroup[]>(
     []
   );
@@ -59,13 +73,22 @@ export function useConversationUpdatePreferences() {
   const expandedGroupKeys = ref<ReadonlySet<string>>(new Set());
   const nextCursor = ref<string | undefined>(undefined);
   const isInitialLoading = ref(true);
+  const isRefreshing = ref(false);
   const isLoadingMore = ref(false);
   const loadError = ref<string | undefined>(undefined);
   const paginationError = ref<string | undefined>(undefined);
+  const conversationPaginationErrors = ref<ReadonlyMap<string, string>>(
+    new Map()
+  );
+  const loadingConversationGroupKeys = ref<ReadonlySet<string>>(new Set());
   let queryRequestId = 0;
+  let hasLoadedPreferences = false;
+  let lastLoadedQueryKey: string | undefined;
   let nextMutationRevision = 0;
   let reloadAfterMutations = false;
+  let requiresAuthoritativeReload = false;
   const latestMutationRevisionByKey = new Map<string, number>();
+  const conversationPageRequestTokenByGroup = new Map<string, object>();
 
   const effectiveOverrides = computed(() =>
     setPreferenceOverrides({
@@ -82,27 +105,15 @@ export function useConversationUpdatePreferences() {
   );
   const groups = computed(() => preferenceState.value.groups);
   const globalEnabled = computed(() => !preferenceState.value.globalPaused);
-  const isGlobalSaving = computed(() => pendingOverrides.value.has("global"));
-  const savingProjectSlugs = computed<ReadonlySet<string>>(
-    () =>
-      new Set(
-        [...pendingOverrides.value.values()].flatMap((preference) =>
-          preference.kind === "project" ? [preference.projectSlug] : []
-        )
-      )
-  );
-  const savingConversationSlugIds = computed<ReadonlySet<string>>(
-    () =>
-      new Set(
-        [...pendingOverrides.value.values()].flatMap((preference) =>
-          preference.kind === "conversation"
-            ? [preference.conversationSlugId]
-            : []
-        )
-      )
+  const isPreferenceSaving = computed(
+    () => pendingOverrides.value.size > 0
   );
 
-  watch(search, () => {
+  watch([initialSearch, initialFocus], ([searchValue, focusValue]) => {
+    focus.value = focusValue;
+    search.value = normalizeSearch(
+      focusValue === undefined ? searchValue : undefined
+    );
     void loadFirstPage();
   });
 
@@ -115,21 +126,44 @@ export function useConversationUpdatePreferences() {
     }
     isLoadingMore.value = false;
     paginationError.value = undefined;
-    isInitialLoading.value = true;
+    conversationPaginationErrors.value = new Map();
+    loadingConversationGroupKeys.value = new Set();
+    conversationPageRequestTokenByGroup.clear();
+    isInitialLoading.value = !hasLoadedPreferences;
+    isRefreshing.value = hasLoadedPreferences;
     loadError.value = undefined;
     try {
       const trimmedSearch = search.value.trim();
-      const response = await emailUpdatesApi.getPreferences({
-        search: trimmedSearch === "" ? undefined : trimmedSearch,
-        limit: CONVERSATION_UPDATE_PREFERENCE_PAGE_SIZE,
+      const requestedFocus = focus.value;
+      const queryKey = getPreferenceQueryKey({
+        focus: requestedFocus,
+        search: trimmedSearch,
       });
+      const response = await emailUpdatesApi.getPreferences(
+        requestedFocus === undefined
+          ? {
+              mode: "browse",
+              search: trimmedSearch === "" ? undefined : trimmedSearch,
+              limit: CONVERSATION_UPDATE_PREFERENCE_PAGE_SIZE,
+            }
+          : {
+              mode: "focus",
+              focus: requestedFocus,
+            }
+      );
       if (requestId !== queryRequestId) {
         return;
       }
       if (!response.success) {
-        loadError.value = getPreferencesError(response.reason);
+        handlePreferenceLoadError({
+          message: getPreferencesError(response.reason),
+          queryKey,
+        });
         return;
       }
+      hasLoadedPreferences = true;
+      lastLoadedQueryKey = queryKey;
+      requiresAuthoritativeReload = false;
       serverGlobalPaused.value = response.globalPaused;
       serverGroups.value = response.groups;
       confirmedOverrides.value = new Map(
@@ -147,18 +181,30 @@ export function useConversationUpdatePreferences() {
     } catch (error) {
       console.error("Failed to load Email Update preferences", error);
       if (requestId === queryRequestId) {
-        loadError.value = t("preferencesUnavailable");
+        handlePreferenceLoadError({
+          message: t("preferencesUnavailable"),
+          queryKey: getPreferenceQueryKey({
+            focus: focus.value,
+            search: search.value.trim(),
+          }),
+        });
       }
     } finally {
       if (requestId === queryRequestId) {
         isInitialLoading.value = false;
+        isRefreshing.value = false;
       }
     }
   }
 
   async function loadMore(): Promise<void> {
     const cursor = nextCursor.value;
-    if (cursor === undefined || isLoadingMore.value) {
+    if (
+      cursor === undefined ||
+      isLoadingMore.value ||
+      isRefreshing.value ||
+      focus.value !== undefined
+    ) {
       return;
     }
     const requestId = queryRequestId;
@@ -167,6 +213,7 @@ export function useConversationUpdatePreferences() {
     try {
       const trimmedSearch = search.value.trim();
       const response = await emailUpdatesApi.getPreferences({
+        mode: "browse",
         search: trimmedSearch === "" ? undefined : trimmedSearch,
         cursor,
         limit: CONVERSATION_UPDATE_PREFERENCE_PAGE_SIZE,
@@ -201,6 +248,91 @@ export function useConversationUpdatePreferences() {
     }
   }
 
+  async function loadMoreConversations(
+    group: ConversationEmailUpdatePreferenceGroup
+  ): Promise<void> {
+    const cursor = group.conversationNextCursor;
+    const groupKey = getPreferenceGroupKey(group);
+    if (
+      cursor === undefined ||
+      isRefreshing.value ||
+      loadingConversationGroupKeys.value.has(groupKey)
+    ) {
+      return;
+    }
+    const requestId = queryRequestId;
+    const requestToken = {};
+    conversationPageRequestTokenByGroup.set(groupKey, requestToken);
+    loadingConversationGroupKeys.value = new Set([
+      ...loadingConversationGroupKeys.value,
+      groupKey,
+    ]);
+    const nextErrors = new Map(conversationPaginationErrors.value);
+    nextErrors.delete(groupKey);
+    conversationPaginationErrors.value = nextErrors;
+    try {
+      const trimmedSearch = search.value.trim();
+      const response = await emailUpdatesApi.getPreferenceConversations({
+        scope:
+          group.kind === "project"
+            ? { kind: "project", projectSlug: group.projectSlug }
+            : { kind: "no_project" },
+        search: trimmedSearch === "" ? undefined : trimmedSearch,
+        cursor,
+      });
+      if (requestId !== queryRequestId) {
+        return;
+      }
+      if (!response.success) {
+        setConversationPaginationError({
+          groupKey,
+          message: getPreferencesError(response.reason),
+        });
+        return;
+      }
+      serverGroups.value = serverGroups.value.map((currentGroup) => {
+        if (getPreferenceGroupKey(currentGroup) !== groupKey) {
+          return currentGroup;
+        }
+        const existingConversationSlugIds = new Set(
+          currentGroup.conversations.map(
+            (conversation) => conversation.conversationSlugId
+          )
+        );
+        const conversations = [
+          ...currentGroup.conversations,
+          ...response.conversations.filter(
+            (conversation) =>
+              !existingConversationSlugIds.has(conversation.conversationSlugId)
+          ),
+        ];
+        return {
+          ...currentGroup,
+          conversations,
+          conversationNextCursor: response.nextCursor,
+        };
+      });
+    } catch (error) {
+      if (requestId !== queryRequestId) {
+        return;
+      }
+      console.error("Failed to load more Email Update conversations", error);
+      setConversationPaginationError({
+        groupKey,
+        message: t("morePreferencesUnavailable"),
+      });
+    } finally {
+      if (conversationPageRequestTokenByGroup.get(groupKey) === requestToken) {
+        conversationPageRequestTokenByGroup.delete(groupKey);
+        const nextLoadingGroupKeys = new Set(
+          loadingConversationGroupKeys.value
+        );
+        nextLoadingGroupKeys.delete(groupKey);
+        loadingConversationGroupKeys.value = nextLoadingGroupKeys;
+      }
+    }
+  }
+
   async function setGlobalEnabled(enabled: boolean): Promise<void> {
     const optimisticPreference = {
       kind: "global",
@@ -215,22 +347,23 @@ export function useConversationUpdatePreferences() {
         operation: "set_global_pause",
         paused: !enabled,
       });
-      if (
-        !response.success ||
-        response.result.operation !== "set_global_pause"
-      ) {
+      if (!response.success) {
         showNotifyMessage(t("savePreferenceError"));
+        return;
+      }
+      if (response.result.operation !== "set_global_pause") {
+        showNotifyMessage(t("savePreferenceError"));
+        reloadAfterMutations = true;
+        requiresAuthoritativeReload = true;
         return;
       }
       confirmMutation({ result: response.result, revision });
       removeConversationEmailUpdateSummaryQueries(response.result);
-      showNotifyMessage(
-        t(response.result.globalPaused ? "pauseSaved" : "resumeSaved")
-      );
     } catch (error) {
       console.error("Failed to update the Email Updates global pause", error);
       showNotifyMessage(t("savePreferenceError"));
       reloadAfterMutations = true;
+      requiresAuthoritativeReload = true;
     } finally {
       finishMutation(optimisticPreference);
     }
@@ -259,25 +392,26 @@ export function useConversationUpdatePreferences() {
         enabled,
         source: { kind: "settings" },
       });
+      if (!response.success) {
+        showNotifyMessage(t("savePreferenceError"));
+        return;
+      }
       if (
-        !response.success ||
         response.result.operation !== "set_project_preference" ||
         response.result.projectSlug !== group.projectSlug
       ) {
         showNotifyMessage(t("savePreferenceError"));
+        reloadAfterMutations = true;
+        requiresAuthoritativeReload = true;
         return;
       }
       confirmMutation({ result: response.result, revision });
       removeConversationEmailUpdateSummaryQueries(response.result);
-      showNotifyMessage(
-        response.result.globalResumed
-          ? tEmailUpdateResume("preferenceSavedAndGlobalResumed")
-          : t(
-              response.result.state === "enabled"
-                ? "preferenceOnSaved"
-                : "preferenceOffSaved"
-            )
-      );
+      if (response.result.globalResumed) {
+        showNotifyMessage(
+          tEmailUpdateResume("preferenceSavedAndGlobalResumed")
+        );
+      }
     } catch (error) {
       console.error(
         "Failed to update an Email Updates project preference",
@@ -285,6 +419,7 @@ export function useConversationUpdatePreferences() {
       );
       showNotifyMessage(t("savePreferenceError"));
       reloadAfterMutations = true;
+      requiresAuthoritativeReload = true;
     } finally {
       finishMutation(optimisticPreference);
     }
@@ -298,7 +433,6 @@ export function useConversationUpdatePreferences() {
       kind: "conversation",
       conversationSlugId,
       state: enabled ? "enabled" : "disabled",
-      resolvedEnabled: undefined,
     } satisfies ConversationEmailUpdatePreferenceOverride;
     const revision = beginMutation(optimisticPreference);
     if (revision === undefined) {
@@ -311,8 +445,11 @@ export function useConversationUpdatePreferences() {
         enabled,
         source: "settings",
       });
+      if (!response.success) {
+        showNotifyMessage(t("savePreferenceError"));
+        return;
+      }
       const savedResult =
-        response.success &&
         response.result.operation === "set_conversation_preference"
           ? response.result
           : undefined;
@@ -321,19 +458,17 @@ export function useConversationUpdatePreferences() {
       );
       if (savedResult === undefined || savedPreference === undefined) {
         showNotifyMessage(t("savePreferenceError"));
+        reloadAfterMutations = true;
+        requiresAuthoritativeReload = true;
         return;
       }
       confirmMutation({ result: savedResult, revision });
       removeConversationEmailUpdateSummaryQueries(savedResult);
-      showNotifyMessage(
-        savedResult.globalResumed
-          ? tEmailUpdateResume("preferenceSavedAndGlobalResumed")
-          : t(
-              savedPreference.state === "enabled"
-                ? "preferenceOnSaved"
-                : "preferenceOffSaved"
-            )
-      );
+      if (savedResult.globalResumed) {
+        showNotifyMessage(
+          tEmailUpdateResume("preferenceSavedAndGlobalResumed")
+        );
+      }
     } catch (error) {
       console.error(
         "Failed to update an Email Updates conversation preference",
@@ -341,6 +476,7 @@ export function useConversationUpdatePreferences() {
       );
       showNotifyMessage(t("savePreferenceError"));
       reloadAfterMutations = true;
+      requiresAuthoritativeReload = true;
     } finally {
       finishMutation(optimisticPreference);
     }
@@ -350,11 +486,8 @@ export function useConversationUpdatePreferences() {
     preference: ConversationEmailUpdatePreferenceOverride
   ): number | undefined {
     const key = getPreferenceOverrideKey(preference);
-    if (pendingOverrides.value.has(key)) {
+    if (pendingOverrides.value.size > 0 || isRefreshing.value) {
       return undefined;
-    }
-    if (pendingOverrides.value.size > 0) {
-      reloadAfterMutations = true;
     }
     const revision = ++nextMutationRevision;
     latestMutationRevisionByKey.set(key, revision);
@@ -398,13 +531,40 @@ export function useConversationUpdatePreferences() {
   }
 
   function updateSearch(value: string | number | null): void {
-    search.value =
-      value === null
-        ? ""
-        : String(value).slice(
-            0,
-            CONVERSATION_EMAIL_UPDATE_PREFERENCE_SEARCH_MAX_LENGTH
-          );
+    focus.value = undefined;
+    search.value = normalizeSearch(value === null ? undefined : String(value));
+    void loadFirstPage();
+  }
+
+  function handlePreferenceLoadError({
+    message,
+    queryKey,
+  }: {
+    message: string;
+    queryKey: string;
+  }): void {
+    if (
+      !requiresAuthoritativeReload &&
+      hasLoadedPreferences &&
+      lastLoadedQueryKey === queryKey
+    ) {
+      showNotifyMessage(message);
+    } else {
+      loadError.value = message;
+    }
+  }
+
+  function setConversationPaginationError({
+    groupKey,
+    message,
+  }: {
+    groupKey: string;
+    message: string;
+  }): void {
+    conversationPaginationErrors.value = new Map([
+      ...conversationPaginationErrors.value,
+      [groupKey, message],
+    ]);
   }
 
   function setGroupExpanded({
@@ -437,18 +597,20 @@ export function useConversationUpdatePreferences() {
 
   return {
     expandedGroupKeys,
+    conversationPaginationErrors,
     globalEnabled,
     groups,
-    isGlobalSaving,
     isInitialLoading,
     isLoadingMore,
+    isPreferenceSaving,
+    isRefreshing,
+    loadingConversationGroupKeys,
     loadError,
     loadFirstPage,
     loadMore,
+    loadMoreConversations,
     nextCursor,
     paginationError,
-    savingConversationSlugIds,
-    savingProjectSlugs,
     search,
     setConversationPreference,
     setGlobalEnabled,
@@ -456,4 +618,26 @@ export function useConversationUpdatePreferences() {
     setProjectPreference,
     updateSearch,
   };
+}
+
+function normalizeSearch(value: string | undefined): string {
+  return (value ?? "").trim().slice(
+    0,
+    CONVERSATION_EMAIL_UPDATE_PREFERENCE_SEARCH_MAX_LENGTH
+  );
+}
+
+function getPreferenceQueryKey({
+  focus,
+  search,
+}: {
+  focus: ConversationEmailUpdatePreferenceFocus | undefined;
+  search: string;
+}): string {
+  if (focus === undefined) {
+    return `browse:${search}`;
+  }
+  return focus.kind === "project"
+    ? `focus:project:${focus.projectSlug}`
+    : `focus:conversation:${focus.conversationSlugId}`;
 }

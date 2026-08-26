@@ -11,6 +11,8 @@ import {
   type ConversationEmailUpdateHistoryDetailResponse,
   type ConversationEmailUpdateHistoryListRequestInput,
   type ConversationEmailUpdateHistoryListResponse,
+  type ConversationEmailUpdatePreferenceConversationsRequest,
+  type ConversationEmailUpdatePreferenceConversationsResponse,
   type ConversationEmailUpdatePreferencesRequestInput,
   type ConversationEmailUpdatePreferencesResponse,
   type ConversationEmailUpdatePreferenceUpdateRequest,
@@ -158,6 +160,19 @@ export function useBackendConversationEmailUpdatesApi() {
     });
   }
 
+  function getPreferenceConversations(
+    request: ConversationEmailUpdatePreferenceConversationsRequest
+  ): Promise<ConversationEmailUpdatePreferenceConversationsResponse> {
+    return post({
+      url: "/api/v1/conversation/email-update/preferences/conversations/get",
+      body: Dto.conversationEmailUpdatePreferenceConversationsRequest.parse(
+        request
+      ),
+      responseSchema:
+        Dto.conversationEmailUpdatePreferenceConversationsResponse,
+    });
+  }
+
   function getConfiguration(
     request: ConversationEmailUpdateConfigurationRequest
   ): Promise<ConversationEmailUpdateConfigurationResponse> {
@@ -212,6 +227,7 @@ export function useBackendConversationEmailUpdatesApi() {
     getTestStatus,
     send,
     getPreferences,
+    getPreferenceConversations,
     updatePreference,
     getConfiguration,
     updateConfiguration,

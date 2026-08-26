@@ -3,6 +3,10 @@
 
 CREATE TYPE "public"."conversation_email_update_preference_source" AS ENUM('onboarding', 'menu', 'settings', 'unsubscribe', 'support');
 
+CREATE TYPE "public"."conversation_email_update_safety_reason" AS ENUM('legal', 'abuse');
+
+CREATE TYPE "public"."conversation_email_update_safety_target_kind" AS ENUM('organization', 'project', 'conversation', 'facilitator');
+
 CREATE TYPE "public"."conversation_language_settings_source" AS ENUM('conversation_override', 'project_inherited');
 
 CREATE TYPE "public"."conversation_type" AS ENUM('polis', 'ranking');
@@ -16,6 +20,8 @@ CREATE TYPE "public"."event_slug" AS ENUM('devconnect-2025');
 CREATE TYPE "public"."language_detection_provider" AS ENUM('lingua', 'google_translate');
 
 CREATE TYPE "public"."participation_mode" AS ENUM('account_required', 'strong_verification', 'email_verification', 'guest');
+
+CREATE TYPE "public"."premium_feature" AS ENUM('survey', 'event_ticket', 'analysis_variants', 'dynamic_translation', 'conversation_email_update');
 
 CREATE TYPE "public"."spoken_language_code" AS ENUM('af', 'ak', 'am', 'ar', 'as', 'ay', 'az', 'be', 'bg', 'bho', 'bm', 'bn', 'bs', 'ca', 'ceb', 'ckb', 'co', 'cs', 'cy', 'da', 'de', 'doi', 'dv', 'ee', 'el', 'en', 'eo', 'es', 'et', 'eu', 'fa', 'fi', 'fil', 'fr', 'fy', 'ga', 'gd', 'gl', 'gn', 'gom', 'gu', 'ha', 'haw', 'he', 'hi', 'hmn', 'hr', 'ht', 'hu', 'hy', 'id', 'ig', 'ilo', 'is', 'it', 'ja', 'jv', 'ka', 'kk', 'km', 'kn', 'ko', 'kri', 'ku', 'ky', 'la', 'lb', 'lg', 'ln', 'lo', 'lt', 'lus', 'lv', 'mai', 'mg', 'mi', 'mk', 'ml', 'mn', 'mni-Mtei', 'mr', 'ms', 'mt', 'my', 'nb', 'ne', 'nl', 'nn', 'no', 'nso', 'ny', 'om', 'or', 'pa', 'pl', 'ps', 'pt', 'qu', 'ro', 'ru', 'rw', 'sa', 'sd', 'si', 'sk', 'sl', 'sm', 'sn', 'so', 'sq', 'sr', 'st', 'su', 'sv', 'sw', 'ta', 'te', 'tg', 'th', 'ti', 'tk', 'tn', 'tr', 'ts', 'tt', 'ug', 'uk', 'ur', 'uz', 'vi', 'xh', 'yi', 'yo', 'zh-Hans', 'zh-Hant', 'zu');
 
@@ -33,6 +39,22 @@ CREATE TABLE "conversation_content" (
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	CONSTRAINT "conversation_content_public_id_unique" UNIQUE("public_id"),
 	CONSTRAINT "conversation_content_source_metadata_check" CHECK ((("conversation_content"."source_language_provider" IS NULL AND "conversation_content"."source_raw_language_code" IS NULL) OR ("conversation_content"."source_language_provider" IS NOT NULL AND "conversation_content"."source_raw_language_code" IS NOT NULL)))
+);
+
+CREATE TABLE "conversation_email_update_scope_safety_block" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "conversation_email_update_scope_safety_block_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"target_kind" "conversation_email_update_safety_target_kind" NOT NULL,
+	"organization_id" integer,
+	"project_id" integer,
+	"conversation_id" integer,
+	"facilitator_user_id" uuid,
+	"reason" "conversation_email_update_safety_reason" NOT NULL,
+	"created_by_user_id" uuid NOT NULL,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	"lifted_at" timestamp (0),
+	"lifted_by_user_id" uuid,
+	CONSTRAINT "conversation_email_update_safety_target_check" CHECK ((("conversation_email_update_scope_safety_block"."target_kind" = 'organization' AND "conversation_email_update_scope_safety_block"."organization_id" IS NOT NULL AND num_nonnulls("conversation_email_update_scope_safety_block"."project_id", "conversation_email_update_scope_safety_block"."conversation_id", "conversation_email_update_scope_safety_block"."facilitator_user_id") = 0) OR ("conversation_email_update_scope_safety_block"."target_kind" = 'project' AND "conversation_email_update_scope_safety_block"."project_id" IS NOT NULL AND num_nonnulls("conversation_email_update_scope_safety_block"."organization_id", "conversation_email_update_scope_safety_block"."conversation_id", "conversation_email_update_scope_safety_block"."facilitator_user_id") = 0) OR ("conversation_email_update_scope_safety_block"."target_kind" = 'conversation' AND "conversation_email_update_scope_safety_block"."conversation_id" IS NOT NULL AND num_nonnulls("conversation_email_update_scope_safety_block"."organization_id", "conversation_email_update_scope_safety_block"."project_id", "conversation_email_update_scope_safety_block"."facilitator_user_id") = 0) OR ("conversation_email_update_scope_safety_block"."target_kind" = 'facilitator' AND "conversation_email_update_scope_safety_block"."facilitator_user_id" IS NOT NULL AND num_nonnulls("conversation_email_update_scope_safety_block"."organization_id", "conversation_email_update_scope_safety_block"."project_id", "conversation_email_update_scope_safety_block"."conversation_id") = 0))),
+	CONSTRAINT "conversation_email_update_safety_lift_audit_check" CHECK (("conversation_email_update_scope_safety_block"."lifted_at" IS NULL) = ("conversation_email_update_scope_safety_block"."lifted_by_user_id" IS NULL))
 );
 
 CREATE TABLE "conversation_email_update_user_conversation_preference" (
@@ -86,6 +108,15 @@ CREATE TABLE "conversation" (
 	CONSTRAINT "conversation_email_update_override_audit_check" CHECK (("conversation"."conversation_email_update_override_updated_at" IS NULL) = ("conversation"."conversation_email_update_override_updated_by_user_id" IS NULL))
 );
 
+CREATE TABLE "organization_membership" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "organization_membership_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"user_id" uuid NOT NULL,
+	"organization_id" integer NOT NULL,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
+	"deleted_at" timestamp (0)
+);
+
 CREATE TABLE "organization" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "organization_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"slug" varchar(65) NOT NULL,
@@ -113,6 +144,40 @@ CREATE TABLE "polis_conversation_config" (
 	CONSTRAINT "polis_conversation_config_preferred_opinion_group_count_check" CHECK ("polis_conversation_config"."preferred_opinion_group_count" IS NULL OR "polis_conversation_config"."preferred_opinion_group_count" >= 2)
 );
 
+CREATE TABLE "premium_feature_entitlement" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "premium_feature_entitlement_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"organization_id" integer NOT NULL,
+	"feature" "premium_feature" NOT NULL,
+	"starts_at" timestamp (0) NOT NULL,
+	"expires_at" timestamp (0),
+	"revoked_at" timestamp (0),
+	"admin_note" text,
+	"created_by_user_id" uuid,
+	"updated_by_user_id" uuid,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "premium_feature_entitlement_organization_id_id_unique" UNIQUE("organization_id","id")
+);
+
+CREATE TABLE "project_contact" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "project_contact_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"project_id" integer NOT NULL,
+	"first_name" varchar(65) NOT NULL,
+	"last_name" varchar(65),
+	"role_label" varchar(140),
+	"email" text,
+	"website_url" text,
+	"image_path" text,
+	"is_full_image_path" boolean DEFAULT false NOT NULL,
+	"organization_id" integer,
+	"external_organization_id" integer,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
+	"deleted_at" timestamp (0),
+	CONSTRAINT "project_contact_affiliation_source_check" CHECK (num_nonnulls("project_contact"."organization_id", "project_contact"."external_organization_id") <= 1),
+	CONSTRAINT "project_contact_email_or_website_check" CHECK (num_nonnulls("project_contact"."email", "project_contact"."website_url") >= 1)
+);
+
 CREATE TABLE "project_content" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "project_content_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"public_id" uuid DEFAULT gen_random_uuid() NOT NULL,
@@ -131,6 +196,14 @@ CREATE TABLE "project_content" (
 	"deleted_at" timestamp (0),
 	CONSTRAINT "project_content_public_id_unique" UNIQUE("public_id"),
 	CONSTRAINT "project_content_source_metadata_check" CHECK ((("project_content"."source_language_provider" IS NULL AND "project_content"."source_raw_language_code" IS NULL) OR ("project_content"."source_language_provider" IS NOT NULL AND "project_content"."source_raw_language_code" IS NOT NULL)))
+);
+
+CREATE TABLE "project_organization_ownership" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "project_organization_ownership_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"project_id" integer NOT NULL,
+	"organization_id" integer NOT NULL,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	"deleted_at" timestamp (0)
 );
 
 CREATE TABLE "project" (
@@ -169,6 +242,14 @@ CREATE TABLE "user" (
 	CONSTRAINT "user_username_unique" UNIQUE("username")
 );
 
+CREATE UNIQUE INDEX "conversation_email_update_safety_organization_active_unique" ON "conversation_email_update_scope_safety_block" USING btree ("organization_id") WHERE "conversation_email_update_scope_safety_block"."target_kind" = 'organization' AND "conversation_email_update_scope_safety_block"."lifted_at" IS NULL;
+
+CREATE UNIQUE INDEX "conversation_email_update_safety_project_active_unique" ON "conversation_email_update_scope_safety_block" USING btree ("project_id") WHERE "conversation_email_update_scope_safety_block"."target_kind" = 'project' AND "conversation_email_update_scope_safety_block"."lifted_at" IS NULL;
+
+CREATE UNIQUE INDEX "conversation_email_update_safety_conversation_active_unique" ON "conversation_email_update_scope_safety_block" USING btree ("conversation_id") WHERE "conversation_email_update_scope_safety_block"."target_kind" = 'conversation' AND "conversation_email_update_scope_safety_block"."lifted_at" IS NULL;
+
+CREATE UNIQUE INDEX "conversation_email_update_safety_facilitator_active_unique" ON "conversation_email_update_scope_safety_block" USING btree ("facilitator_user_id") WHERE "conversation_email_update_scope_safety_block"."target_kind" = 'facilitator' AND "conversation_email_update_scope_safety_block"."lifted_at" IS NULL;
+
 CREATE INDEX "conversation_email_update_conversation_preference_scope_idx" ON "conversation_email_update_user_conversation_preference" USING btree ("conversation_id");
 
 CREATE INDEX "conversation_email_update_project_preference_project_idx" ON "conversation_email_update_user_project_preference" USING btree ("project_id");
@@ -181,6 +262,18 @@ CREATE INDEX "conversation_project_id_idx" ON "conversation" USING btree ("proje
 
 CREATE INDEX "conversation_project_timeline_idx" ON "conversation" USING btree ("project_id","is_importing","created_at" DESC,"id" DESC) WHERE "conversation"."current_content_id" is not null;
 
+CREATE UNIQUE INDEX "organization_membership_active_unique" ON "organization_membership" USING btree ("user_id","organization_id") WHERE "organization_membership"."deleted_at" is null;
+
+CREATE INDEX "organization_membership_organization_idx" ON "organization_membership" USING btree ("organization_id");
+
 CREATE UNIQUE INDEX "organization_active_slug_unique" ON "organization" USING btree ("slug") WHERE "organization"."deleted_at" IS NULL;
+
+CREATE INDEX "premium_feature_entitlement_org_idx" ON "premium_feature_entitlement" USING btree ("organization_id","feature");
+
+CREATE UNIQUE INDEX "project_contact_project_active_unique" ON "project_contact" USING btree ("project_id") WHERE "project_contact"."deleted_at" is null;
+
+CREATE UNIQUE INDEX "project_organization_ownership_active_unique" ON "project_organization_ownership" USING btree ("project_id","organization_id") WHERE "project_organization_ownership"."deleted_at" is null;
+
+CREATE INDEX "project_organization_ownership_organization_idx" ON "project_organization_ownership" USING btree ("organization_id");
 
 CREATE UNIQUE INDEX "project_active_slug_unique" ON "project" USING btree ("slug") WHERE "project"."deleted_at" IS NULL;

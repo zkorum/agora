@@ -62,7 +62,6 @@
         :updates-disabled-conversation-ids="[]"
         :test-pending="false"
         :send-pending="false"
-        :notice="notice"
         :has-successful-test="hasSuccessfulTest"
         :audience-estimate-state="{
           kind: 'ready',
@@ -71,7 +70,6 @@
         }"
         test-destination-email="facilitator@example.org"
         @test="simulateTest"
-        @send="simulateSend"
       >
         <template #preview>
           <div v-if="$q.screen.lt.md" class="conversation-updates-dev__preview">
@@ -305,7 +303,6 @@ const onboardingScopeOptions: Array<{
   { label: "Conversation preference", value: "no-project" },
 ];
 const hasSuccessfulTest = ref(false);
-const notice = ref<string>();
 const showPreferenceDialog = ref(false);
 const preferenceEnabled = ref(false);
 const selectedConversations = computed(() => {
@@ -338,11 +335,6 @@ const actionContext: ContentActionContext = {
 
 function simulateTest(): void {
   hasSuccessfulTest.value = true;
-  notice.value = "Simulated test delivered successfully. No request was sent.";
-}
-
-function simulateSend(): void {
-  notice.value = "Simulated review completed. No update was queued or sent.";
 }
 
 function simulateRecipientOptOut(item: ManageOptOutItem): void {

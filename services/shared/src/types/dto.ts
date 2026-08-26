@@ -945,15 +945,6 @@ const zodConversationEmailUpdateHistoryRecord = z.discriminatedUnion("status", [
         })
         .strict(),
 ]);
-const zodConversationEmailUpdatePreferenceConversation = z
-    .object({
-        conversationSlugId: zodSlugId,
-        conversationTitle: zodConversationTitle,
-        state: zodConversationEmailUpdatePreferenceChoice,
-        resolvedEnabled: z.boolean(),
-        availability: zodConversationEmailUpdateAvailability,
-    })
-    .strict();
 const zodConversationEmailUpdatePreferenceAvatar = z.discriminatedUnion(
     "kind",
     [
@@ -981,6 +972,38 @@ const zodConversationEmailUpdatePreferenceAvatar = z.discriminatedUnion(
             .strict(),
     ],
 );
+const zodConversationEmailUpdatePreferenceConversationBase = z
+    .object({
+        conversationSlugId: zodSlugId,
+        conversationTitle: zodConversationTitle,
+        resolvedEnabled: z.boolean(),
+        availability: zodConversationEmailUpdateAvailability,
+        owner: zodConversationEmailUpdatePreferenceAvatar.optional(),
+    })
+    .strict();
+const zodConversationEmailUpdatePreferenceConversation = z.discriminatedUnion(
+    "preferenceKind",
+    [
+        zodConversationEmailUpdatePreferenceConversationBase
+            .extend({
+                preferenceKind: z.literal("explicit"),
+                state: zodConversationEmailUpdatePreferenceChoice,
+            })
+            .strict(),
+        zodConversationEmailUpdatePreferenceConversationBase
+            .extend({
+                preferenceKind: z.literal("project_inherited"),
+                state: z.literal("undisclosed"),
+            })
+            .strict(),
+        zodConversationEmailUpdatePreferenceConversationBase
+            .extend({
+                preferenceKind: z.literal("undisclosed"),
+                state: z.literal("undisclosed"),
+            })
+            .strict(),
+    ],
+);
 const zodConversationEmailUpdatePreferenceGroup = z.discriminatedUnion("kind", [
     z
         .object({
@@ -994,6 +1017,7 @@ const zodConversationEmailUpdatePreferenceGroup = z.discriminatedUnion("kind", [
             conversations: z.array(
                 zodConversationEmailUpdatePreferenceConversation,
             ),
+            conversationNextCursor: zodConversationEmailUpdateCursor.optional(),
         })
         .strict(),
     z
@@ -1001,10 +1025,23 @@ const zodConversationEmailUpdatePreferenceGroup = z.discriminatedUnion("kind", [
             kind: z.literal("no_project"),
             availability: zodConversationEmailUpdateAvailability,
             conversations: z.array(
-                zodConversationEmailUpdatePreferenceConversation.extend({
-                    owner: zodConversationEmailUpdatePreferenceAvatar.optional(),
-                }),
+                zodConversationEmailUpdatePreferenceConversation,
             ),
+            conversationNextCursor: zodConversationEmailUpdateCursor.optional(),
+        })
+        .strict(),
+]);
+const zodConversationEmailUpdatePreferenceFocus = z.discriminatedUnion("kind", [
+    z
+        .object({
+            kind: z.literal("project"),
+            projectSlug: zodProjectSlug,
+        })
+        .strict(),
+    z
+        .object({
+            kind: z.literal("conversation"),
+            conversationSlugId: zodSlugId,
         })
         .strict(),
 ]);
@@ -1694,6 +1731,10 @@ export class Dto {
             preferredOpinionGroupCount:
                 zodPreferredOpinionGroupCount.optional(),
             surveyConfig: zodSurveyConfigInput.nullable().optional(),
+            conversationEmailUpdateEnabledOverride: z
+                .boolean()
+                .nullable()
+                .optional(),
         })
         .strict();
     static updateConversationResponse = z.discriminatedUnion("success", [
@@ -1713,6 +1754,9 @@ export class Dto {
                         "invalid_access_settings",
                         "premium_access_expired",
                         "premium_access_required",
+                        "feature_not_available",
+                        "missing_participant_contact_email",
+                        "active_delivery_conflict",
                     ]),
                     zodRichTextSizeValidationFailureReason,
                 ]),
@@ -3437,18 +3481,38 @@ export class Dto {
                 .strict(),
         ],
     );
-    static conversationEmailUpdatePreferencesRequest = z
-        .object({
-            search: z
-                .string()
-                .trim()
-                .min(1)
-                .max(CONVERSATION_EMAIL_UPDATE_PREFERENCE_SEARCH_MAX_LENGTH)
-                .optional(),
-            cursor: zodConversationEmailUpdateCursor.optional(),
-            limit: z.number().int().min(1).max(50).optional().default(20),
-        })
-        .strict();
+    static conversationEmailUpdatePreferencesRequest = z.discriminatedUnion(
+        "mode",
+        [
+            z
+                .object({
+                    mode: z.literal("browse"),
+                    search: z
+                        .string()
+                        .trim()
+                        .min(1)
+                        .max(
+                            CONVERSATION_EMAIL_UPDATE_PREFERENCE_SEARCH_MAX_LENGTH,
+                        )
+                        .optional(),
+                    cursor: zodConversationEmailUpdateCursor.optional(),
+                    limit: z
+                        .number()
+                        .int()
+                        .min(1)
+                        .max(50)
+                        .optional()
+                        .default(20),
+                })
+                .strict(),
+            z
+                .object({
+                    mode: z.literal("focus"),
+                    focus: zodConversationEmailUpdatePreferenceFocus,
+                })
+                .strict(),
+        ],
+    );
     static conversationEmailUpdatePreferencesResponse = z.discriminatedUnion(
         "success",
         [
@@ -3471,6 +3535,47 @@ export class Dto {
                 .strict(),
         ],
     );
+    static conversationEmailUpdatePreferenceConversationsRequest = z
+        .object({
+            scope: z.discriminatedUnion("kind", [
+                z
+                    .object({
+                        kind: z.literal("project"),
+                        projectSlug: zodProjectSlug,
+                    })
+                    .strict(),
+                z.object({ kind: z.literal("no_project") }).strict(),
+            ]),
+            search: z
+                .string()
+                .trim()
+                .min(1)
+                .max(CONVERSATION_EMAIL_UPDATE_PREFERENCE_SEARCH_MAX_LENGTH)
+                .optional(),
+            cursor: zodConversationEmailUpdateCursor,
+        })
+        .strict();
+    static conversationEmailUpdatePreferenceConversationsResponse =
+        z.discriminatedUnion("success", [
+            z
+                .object({
+                    success: z.literal(true),
+                    conversations: z.array(
+                        zodConversationEmailUpdatePreferenceConversation,
+                    ),
+                    nextCursor: zodConversationEmailUpdateCursor.optional(),
+                })
+                .strict(),
+            z
+                .object({
+                    success: z.literal(false),
+                    reason: z.enum([
+                        "verified_email_required",
+                        "preferences_unavailable",
+                    ]),
+                })
+                .strict(),
+        ]);
     static conversationEmailUpdatePreferenceUpdateRequest =
         z.discriminatedUnion("operation", [
             z
@@ -4368,8 +4473,17 @@ export type ConversationEmailUpdatePreferencesRequest = z.infer<
 export type ConversationEmailUpdatePreferencesRequestInput = z.input<
     typeof Dto.conversationEmailUpdatePreferencesRequest
 >;
+export type ConversationEmailUpdatePreferenceFocus = z.infer<
+    typeof zodConversationEmailUpdatePreferenceFocus
+>;
 export type ConversationEmailUpdatePreferencesResponse = z.infer<
     typeof Dto.conversationEmailUpdatePreferencesResponse
+>;
+export type ConversationEmailUpdatePreferenceConversationsRequest = z.infer<
+    typeof Dto.conversationEmailUpdatePreferenceConversationsRequest
+>;
+export type ConversationEmailUpdatePreferenceConversationsResponse = z.infer<
+    typeof Dto.conversationEmailUpdatePreferenceConversationsResponse
 >;
 export type ConversationEmailUpdatePreferenceUpdateRequest = z.infer<
     typeof Dto.conversationEmailUpdatePreferenceUpdateRequest

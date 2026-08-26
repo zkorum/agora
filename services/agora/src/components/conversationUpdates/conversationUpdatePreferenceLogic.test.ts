@@ -33,9 +33,7 @@ describe("conversationUpdatePreferenceLogic", () => {
   });
 
   it("expands every project for search results", () => {
-    const project = createProjectGroup(
-      AUTO_EXPAND_PREFERENCE_GROUP_LIMIT + 1
-    );
+    const project = createProjectGroup(AUTO_EXPAND_PREFERENCE_GROUP_LIMIT + 1);
 
     expect(
       getAutoExpandedPreferenceGroupKeys({ groups: [project], expandAll: true })
@@ -113,6 +111,76 @@ describe("conversationUpdatePreferenceLogic", () => {
       ],
     });
   });
+
+  it("keeps inherited conversations bound to the project preference", () => {
+    const project = createProjectGroup(1);
+    const inheritedProject = {
+      ...project,
+      conversations: [
+        {
+          ...project.conversations[0],
+          preferenceKind: "project_inherited",
+          state: "undisclosed",
+        },
+      ],
+    } satisfies ProjectEmailUpdatePreferenceGroup;
+    const state = applyPreferenceOverrides({
+      globalPaused: false,
+      groups: [inheritedProject],
+      overrides: new Map([
+        [
+          `project:${project.projectSlug}`,
+          {
+            kind: "project",
+            projectSlug: project.projectSlug,
+            state: "enabled",
+          },
+        ],
+      ]),
+    });
+
+    expect(state.groups[0]).toMatchObject({
+      state: "enabled",
+      conversations: [
+        {
+          preferenceKind: "project_inherited",
+          state: "undisclosed",
+          resolvedEnabled: true,
+        },
+      ],
+    });
+  });
+
+  it("derives displayed delivery state instead of trusting stale server values", () => {
+    const initialProject = createProjectGroup(1);
+    const conversation = initialProject.conversations[0];
+    if (conversation?.preferenceKind !== "explicit") {
+      throw new Error("Expected an explicit conversation fixture");
+    }
+    const project = {
+      ...initialProject,
+      state: "enabled",
+      resolvedEnabled: true,
+      conversations: [
+        {
+          ...conversation,
+          state: "enabled",
+          resolvedEnabled: true,
+        },
+      ],
+    } satisfies ProjectEmailUpdatePreferenceGroup;
+
+    const state = applyPreferenceOverrides({
+      globalPaused: true,
+      groups: [project],
+      overrides: new Map(),
+    });
+
+    expect(state.groups[0]).toMatchObject({
+      resolvedEnabled: false,
+      conversations: [{ resolvedEnabled: false }],
+    });
+  });
 });
 
 function createProjectGroup(
@@ -128,6 +196,7 @@ function createProjectGroup(
     conversations: Array.from({ length: conversationCount }, (_, index) => ({
       conversationSlugId: `conversation-${String(index + 1)}`,
       conversationTitle: `Conversation ${String(index + 1)}`,
+      preferenceKind: "explicit",
       state: "disabled",
       resolvedEnabled: false,
       availability: "available",

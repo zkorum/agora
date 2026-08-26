@@ -60,11 +60,16 @@
     "conversation-email-update-preference-pagination": [
         "user",
         "organization",
+        "organization_membership",
         "project",
         "project_content",
+        "project_contact",
+        "project_organization_ownership",
+        "premium_feature_entitlement",
         "polis_conversation_config",
         "conversation",
         "conversation_content",
+        "conversation_email_update_scope_safety_block",
         "conversation_email_update_user_project_preference",
         "conversation_email_update_user_conversation_preference"
     ]

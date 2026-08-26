@@ -3,7 +3,10 @@
     :model-value="expanded"
     switch-toggle-side
     expand-icon-toggle
-    :hide-expand-icon="group.conversations.length === 0"
+    :hide-expand-icon="
+      group.conversations.length === 0 &&
+      group.conversationNextCursor === undefined
+    "
     @update:model-value="expanded = $event"
   >
     <template #header>
@@ -32,7 +35,8 @@
           <ZKSwitch
             :model-value="group.state === 'enabled'"
             :disable="
-              group.availability === 'temporarily_unavailable' || savingProject
+              group.availability === 'temporarily_unavailable' ||
+              controlsDisabled
             "
             :aria-label="t('receiveEmailUpdatesByDefaultFor', { name: label })"
             @update:model-value="
@@ -53,7 +57,7 @@
         "
         :nested="true"
         :owner="getConversationOwner(conversation)"
-        :saving="savingConversationSlugIds.has(conversation.conversationSlugId)"
+        :saving="controlsDisabled"
         @set-enabled="
           emit('setConversationEnabled', {
             conversationSlugId: conversation.conversationSlugId,
@@ -61,12 +65,28 @@
           })
         "
       />
+      <div
+        v-if="
+          !controlsDisabled && group.conversationNextCursor !== undefined
+        "
+        class="preference-group-item__more"
+      >
+        <ZKLoadMore
+          :error-message="conversationPaginationError"
+          :is-loading="isLoadingMoreConversations"
+          :loading-label="t('loadingConversations')"
+          :load-more-label="showMoreLabel"
+          :retry-label="retryLabel"
+          @action="emit('loadMoreConversations', group)"
+        />
+      </div>
     </q-list>
   </q-expansion-item>
 </template>
 
 <script setup lang="ts">
 import SpaLink from "src/components/ui-library/SpaLink.vue";
+import ZKLoadMore from "src/components/ui-library/ZKLoadMore.vue";
 import ZKSwitch from "src/components/ui-library/ZKSwitch.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
@@ -88,9 +108,12 @@ import type {
 
 const props = defineProps<{
   group: ConversationEmailUpdatePreferenceGroup;
+  conversationPaginationError: string | undefined;
+  isLoadingMoreConversations: boolean;
+  controlsDisabled: boolean;
   label: string;
-  savingConversationSlugIds: ReadonlySet<string>;
-  savingProject: boolean;
+  retryLabel: string;
+  showMoreLabel: string;
 }>();
 
 const emit = defineEmits<{
@@ -101,6 +124,7 @@ const emit = defineEmits<{
       enabled: boolean;
     },
   ];
+  loadMoreConversations: [group: ConversationEmailUpdatePreferenceGroup];
 }>();
 const expanded = defineModel<boolean>("expanded", { required: true });
 const { t } =
@@ -156,6 +180,10 @@ function getConversationOwner(
   &__conversations {
     border-top: 1px solid $grey-4;
     background: rgba($primary, 0.025);
+  }
+
+  &__more {
+    padding: 1rem;
   }
 }
 </style>

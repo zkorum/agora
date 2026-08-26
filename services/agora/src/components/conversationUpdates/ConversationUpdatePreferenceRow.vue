@@ -9,12 +9,21 @@
           :fallback-label="conversation.conversationTitle"
           :owner="owner"
         />
-        <span>{{ conversation.conversationTitle }}</span>
+        <span class="conversation-preference-row__text">
+          <span>{{ conversation.conversationTitle }}</span>
+          <small v-if="conversation.preferenceKind === 'project_inherited'">
+            {{ t("inheritedFromProject") }}
+          </small>
+        </span>
       </SpaLink>
     </q-item-section>
     <q-item-section side>
       <ZKSwitch
-        :model-value="conversation.state === 'enabled'"
+        :model-value="
+          conversation.preferenceKind === 'explicit'
+            ? conversation.state === 'enabled'
+            : conversation.resolvedEnabled
+        "
         :disable="
           conversation.availability === 'temporarily_unavailable' || saving
         "
@@ -74,6 +83,18 @@ const { t } =
     width: fit-content;
     color: $color-text-strong;
     font-weight: var(--font-weight-medium);
+  }
+
+  &__text {
+    display: grid;
+    gap: 0.125rem;
+
+    small {
+      color: $color-text-weak;
+      font-size: 0.75rem;
+      font-weight: var(--font-weight-regular);
+      line-height: 1.25;
+    }
   }
 }
 </style>

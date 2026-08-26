@@ -120,6 +120,7 @@ const projectGroup = {
     {
       conversationSlugId: "conversation-one",
       conversationTitle: "Conversation One",
+      preferenceKind: "explicit",
       state: "enabled",
       resolvedEnabled: true,
       availability: "available",
@@ -134,6 +135,7 @@ const noProjectGroup = {
     {
       conversationSlugId: "standalone-conversation",
       conversationTitle: "Standalone Conversation",
+      preferenceKind: "explicit",
       state: "enabled",
       resolvedEnabled: true,
       availability: "available",
@@ -158,9 +160,12 @@ async function mountGroupItem({
       h(ConversationUpdatePreferenceGroupItem, {
         expanded: expanded.value,
         group,
+        conversationPaginationError: undefined,
+        controlsDisabled: false,
+        isLoadingMoreConversations: false,
         label: group.kind === "project" ? group.projectTitle : "No Project",
-        savingConversationSlugIds: new Set<string>(),
-        savingProject: false,
+        retryLabel: "Try again",
+        showMoreLabel: "Show more",
         "onUpdate:expanded": (value: boolean) => {
           expanded.value = value;
         },

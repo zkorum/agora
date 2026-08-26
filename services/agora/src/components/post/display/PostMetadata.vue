@@ -103,6 +103,10 @@ import {
   resolveEmailUpdatePreferenceChoiceEnabled,
 } from "src/components/conversationUpdates/conversationUpdatePreferenceAction";
 import {
+  arrangeConversationEmailUpdateActions,
+  getEmailUpdateSettingsDestination,
+} from "src/components/conversationUpdates/emailUpdateMenuLogic";
+import {
   type EmailUpdateResumeNotificationTranslations,
   emailUpdateResumeNotificationTranslations,
 } from "src/components/conversationUpdates/emailUpdateResumeNotification.i18n";
@@ -411,6 +415,10 @@ type ConversationEmailUpdateSummary = Extract<
   ConversationEmailUpdateConversationSummaryResponse,
   { success: true }
 >;
+type ConversationEmailUpdateDestinationTab = Exclude<
+  ConversationEmailUpdateSummary["authoringAction"],
+  "none"
+>;
 
 const conversationEmailUpdateSummary = ref<
   ConversationEmailUpdateSummary | undefined
@@ -495,20 +503,17 @@ async function loadConversationUpdateActions(): Promise<void> {
 }
 
 function addConversationUpdateActions(): void {
-  const existingActions = postActions.dialogState.value.actions.filter(
-    (action) =>
-      action.id !== "conversationEmailUpdates" &&
-      action.id !== "manageConversationEmailUpdates"
-  );
-  const additions: ContentAction[] = [];
+  const existingActions = postActions.dialogState.value.actions;
   const summary = conversationEmailUpdateSummary.value;
+  let ownerAction: ContentAction | undefined;
+  const personalActions: ContentAction[] = [];
 
   if (
     summary?.authoringAction !== undefined &&
     summary.authoringAction !== "none"
   ) {
     const destinationTab = summary.authoringAction;
-    additions.push({
+    ownerAction = {
       id: "manageConversationEmailUpdates",
       label:
         destinationTab === "compose"
@@ -519,7 +524,7 @@ function addConversationUpdateActions(): void {
         openConversationEmailUpdates(destinationTab);
       },
       isVisible: () => true,
-    });
+    };
   }
 
   const participantPreference = summary?.participantPreference;
@@ -527,31 +532,48 @@ function addConversationUpdateActions(): void {
     const enabled = resolveEmailUpdatePreferenceChoiceEnabled(
       participantPreference
     );
-    additions.push(
-      createConversationUpdatePreferenceAction({
-        id: "conversationEmailUpdates",
-        label: t("receiveEmailUpdatesLabel"),
-        enabled,
-        disabled: isSavingConversationEmailUpdatePreference.value,
-        onToggle: () => {
-          void updateConversationUpdatePreference(!enabled);
-        },
-      })
-    );
+    const preferenceAction = createConversationUpdatePreferenceAction({
+      id: "conversationEmailUpdates",
+      label: t("receiveEmailUpdatesLabel"),
+      enabled,
+      disabled: isSavingConversationEmailUpdatePreference.value,
+      onToggle: () => {
+        void updateConversationUpdatePreference(!enabled);
+      },
+    });
+    const settingsDestination = getEmailUpdateSettingsDestination({
+      kind: "conversation",
+      conversationSlugId: props.postSlugId,
+    });
+    const settingsAction: ContentAction =
+      props.projectSlug === undefined
+        ? {
+            id: "manageMyConversationEmailUpdates",
+            label: t("manageMyEmailUpdatesLabel"),
+            icon: "mdi-email-sync-outline",
+            to: settingsDestination,
+            isVisible: () => true,
+          }
+        : {
+            id: "manageMyConversationEmailUpdates",
+            label: t("manageMyEmailUpdatesLabel"),
+            icon: "mdi-email-sync-outline",
+            trailingIcon: "mdi-open-in-new",
+            handler: () => {
+              openRegularAppRouteInNewTab(settingsDestination);
+            },
+            isVisible: () => true,
+          };
+    personalActions.push(preferenceAction, settingsAction);
   }
 
-  const warningOrDestructiveIndex = existingActions.findIndex(
-    (action) => action.variant === "warning" || action.variant === "destructive"
+  postActions.dialogState.value.actions = arrangeConversationEmailUpdateActions(
+    {
+      actions: existingActions,
+      ownerAction,
+      personalActions,
+    }
   );
-  if (warningOrDestructiveIndex === -1) {
-    postActions.dialogState.value.actions = [...existingActions, ...additions];
-    return;
-  }
-  postActions.dialogState.value.actions = [
-    ...existingActions.slice(0, warningOrDestructiveIndex),
-    ...additions,
-    ...existingActions.slice(warningOrDestructiveIndex),
-  ];
 }
 
 async function updateConversationUpdatePreference(
@@ -683,7 +705,9 @@ watch(
   }
 );
 
-function openConversationEmailUpdates(tab: "compose" | "history"): void {
+function openConversationEmailUpdates(
+  tab: ConversationEmailUpdateDestinationTab
+): void {
   void router.push({
     path: "/email-updates/",
     query: {

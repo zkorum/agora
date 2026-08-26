@@ -5,6 +5,16 @@ export type ConversationEmailUpdateScopeKind = "project" | "no_project";
 export type ConversationEmailParticipantPreferenceScope =
     ConversationEmailUpdatePreferenceScope;
 
+export function isConversationEmailUpdateConfigured({
+    projectDefaultEnabled,
+    conversationOverrideEnabled,
+}: {
+    projectDefaultEnabled: boolean;
+    conversationOverrideEnabled: boolean | null | undefined;
+}): boolean {
+    return conversationOverrideEnabled ?? projectDefaultEnabled;
+}
+
 export function resolveConversationEmailParticipantPreferenceScope({
     scopeKind,
     projectDefaultEnabled,
@@ -14,9 +24,14 @@ export function resolveConversationEmailParticipantPreferenceScope({
     projectDefaultEnabled: boolean;
     conversationOverrideEnabled: boolean | null | undefined;
 }): ConversationEmailParticipantPreferenceScope | undefined {
-    const configuredEnabled =
-        conversationOverrideEnabled ?? projectDefaultEnabled;
-    if (!configuredEnabled) return undefined;
+    if (
+        !isConversationEmailUpdateConfigured({
+            projectDefaultEnabled,
+            conversationOverrideEnabled,
+        })
+    ) {
+        return undefined;
+    }
     if (scopeKind === "no_project") return "conversation";
     return projectDefaultEnabled ? "project" : "conversation";
 }

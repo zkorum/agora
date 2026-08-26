@@ -34,8 +34,7 @@ export type ConversationEmailUpdatePreferenceOverride =
   | {
       kind: "conversation";
       conversationSlugId: string;
-      resolvedEnabled: boolean | undefined;
-      state: ConversationEmailUpdatePreference["state"];
+      state: "enabled" | "disabled";
     };
 
 export interface ConversationEmailUpdatePreferenceChange {

@@ -9,11 +9,19 @@ import {
     conversationEmailUpdateUserProjectPreferenceTable,
     conversationTable,
     organizationTable,
+    organizationMembershipTable,
+    premiumFeatureEntitlementTable,
     polisConversationConfigTable,
     projectTable,
+    projectContactTable,
+    projectOrganizationOwnershipTable,
     userTable,
 } from "../src/shared-backend/schema.js";
-import { queryPreferenceGroupPage } from "../src/service/conversationEmailUpdate.js";
+import {
+    queryInitialPreferenceConversationPages,
+    queryPreferenceConversationPage,
+    queryPreferenceGroupPage,
+} from "../src/service/conversationEmailUpdate.js";
 import { readDbFixtureSql } from "./dbFixture.js";
 
 process.env.TESTCONTAINERS_RYUK_DISABLED ??= "true";
@@ -27,6 +35,8 @@ describe("conversation Email Update preference pagination", () => {
     let db: PostgresJsDatabase;
     let firstProjectId: number;
     let secondProjectId: number;
+    let noProjectContainerId: number;
+    let organizationId: number;
 
     beforeAll(async () => {
         container = await new GenericContainer("postgres:16-alpine")
@@ -68,6 +78,7 @@ describe("conversation Email Update preference pagination", () => {
         if (organization === undefined) {
             throw new Error("Failed to seed organization");
         }
+        organizationId = organization.id;
         const projects = await db
             .insert(projectTable)
             .values([
@@ -101,6 +112,34 @@ describe("conversation Email Update preference pagination", () => {
         }
         firstProjectId = firstProject.id;
         secondProjectId = secondProject.id;
+        noProjectContainerId = noProjectContainer.id;
+        await Promise.all([
+            db.insert(projectOrganizationOwnershipTable).values({
+                projectId: firstProject.id,
+                organizationId: organization.id,
+            }),
+            db.insert(premiumFeatureEntitlementTable).values({
+                organizationId: organization.id,
+                feature: "conversation_email_update",
+                startsAt: new Date("2026-08-01T00:00:00.000Z"),
+                createdByUserId: USER_ID,
+                updatedByUserId: USER_ID,
+            }),
+            db.insert(projectContactTable).values({
+                projectId: firstProject.id,
+                firstName: "Participant contact",
+                email: "updates@example.com",
+            }),
+            db.insert(projectOrganizationOwnershipTable).values({
+                projectId: noProjectContainer.id,
+                organizationId: organization.id,
+            }),
+            db.insert(projectContactTable).values({
+                projectId: noProjectContainer.id,
+                firstName: "Private participant contact",
+                email: "private-updates@example.com",
+            }),
+        ]);
         await db
             .insert(conversationEmailUpdateUserProjectPreferenceTable)
             .values({
@@ -119,6 +158,11 @@ describe("conversation Email Update preference pagination", () => {
             projectId: noProjectContainer.id,
             slugId: "direct01",
             title: "Standalone discussion",
+        });
+        await addConversation({
+            projectId: noProjectContainer.id,
+            slugId: "private1",
+            title: "Private undisclosed discussion",
         });
         const percentConversationId = await addConversation({
             projectId: firstProject.id,
@@ -150,6 +194,13 @@ describe("conversation Email Update preference pagination", () => {
                     choiceSource: "settings",
                 },
             ]);
+        for (let index = 1; index <= 12; index += 1) {
+            await addConversation({
+                projectId: firstProject.id,
+                slugId: `child${String(index).padStart(3, "0")}`,
+                title: `Child conversation ${String(index)}`,
+            });
+        }
     }, 120_000);
 
     afterAll(async () => {
@@ -201,9 +252,9 @@ describe("conversation Email Update preference pagination", () => {
         const firstPage = await queryPreferenceGroupPage({
             db,
             userId: USER_ID,
-            request: { limit: 2 },
+            request: { mode: "browse", limit: 2 },
         });
-        expect(firstPage).toEqual({
+        expect(firstPage).toMatchObject({
             success: true,
             groupKeys: [
                 {
@@ -217,29 +268,23 @@ describe("conversation Email Update preference pagination", () => {
                     projectSlug: "second-project",
                 },
             ],
-            nextCursor: "project:second-project",
+            nextCursor: expect.any(String),
         });
+        if (!firstPage.success || firstPage.nextCursor === undefined) return;
 
         await expect(
             queryPreferenceGroupPage({
                 db,
                 userId: USER_ID,
-                request: { limit: 2, cursor: "project:second-project" },
+                request: {
+                    mode: "browse",
+                    limit: 2,
+                    cursor: firstPage.nextCursor,
+                },
             }),
         ).resolves.toEqual({
             success: true,
             groupKeys: [{ kind: "no_project" }],
-            nextCursor: undefined,
-        });
-        await expect(
-            queryPreferenceGroupPage({
-                db,
-                userId: USER_ID,
-                request: { limit: 2, cursor: "no-project" },
-            }),
-        ).resolves.toEqual({
-            success: true,
-            groupKeys: [],
             nextCursor: undefined,
         });
     });
@@ -249,7 +294,7 @@ describe("conversation Email Update preference pagination", () => {
             queryPreferenceGroupPage({
                 db,
                 userId: USER_ID,
-                request: { limit: 20, search: "needle" },
+                request: { mode: "browse", limit: 20, search: "needle" },
             }),
         ).resolves.toEqual({
             success: true,
@@ -266,7 +311,7 @@ describe("conversation Email Update preference pagination", () => {
             queryPreferenceGroupPage({
                 db,
                 userId: USER_ID,
-                request: { limit: 20, search: "%" },
+                request: { mode: "browse", limit: 20, search: "%" },
             }),
         ).resolves.toEqual({
             success: true,
@@ -286,7 +331,11 @@ describe("conversation Email Update preference pagination", () => {
             queryPreferenceGroupPage({
                 db,
                 userId: USER_ID,
-                request: { limit: 20, search: "standalone" },
+                request: {
+                    mode: "browse",
+                    limit: 20,
+                    search: "standalone",
+                },
             }),
         ).resolves.toEqual({
             success: true,
@@ -297,7 +346,11 @@ describe("conversation Email Update preference pagination", () => {
             queryPreferenceGroupPage({
                 db,
                 userId: USER_ID,
-                request: { limit: 20, search: "no project" },
+                request: {
+                    mode: "browse",
+                    limit: 20,
+                    search: "no project",
+                },
             }),
         ).resolves.toEqual({
             success: true,
@@ -311,19 +364,265 @@ describe("conversation Email Update preference pagination", () => {
             queryPreferenceGroupPage({
                 db,
                 userId: USER_ID,
-                request: { limit: 20, cursor: "invalid" },
+                request: { mode: "browse", limit: 20, cursor: "invalid" },
             }),
         ).resolves.toEqual({ success: false });
+        const unfilteredPage = await queryPreferenceGroupPage({
+            db,
+            userId: USER_ID,
+            request: { mode: "browse", limit: 1 },
+        });
+        expect(unfilteredPage.success).toBe(true);
+        if (!unfilteredPage.success || unfilteredPage.nextCursor === undefined) {
+            return;
+        }
         await expect(
             queryPreferenceGroupPage({
                 db,
                 userId: USER_ID,
                 request: {
+                    mode: "browse",
                     limit: 20,
-                    cursor: "project:first-project",
+                    cursor: unfilteredPage.nextCursor,
                     search: "needle",
                 },
             }),
         ).resolves.toEqual({ success: false });
+    });
+
+    it("paginates explicit conversations before inherited conversations", async () => {
+        const group = {
+            kind: "project",
+            projectId: firstProjectId,
+            projectSlug: "first-project",
+        } satisfies Parameters<
+            typeof queryPreferenceConversationPage
+        >[0]["group"];
+        const firstPage = await queryPreferenceConversationPage({
+            db,
+            userId: USER_ID,
+            now: NOW,
+            group,
+            search: undefined,
+            focusConversationSlugId: undefined,
+            cursor: undefined,
+        });
+        expect(firstPage.success).toBe(true);
+        if (!firstPage.success) return;
+        expect(firstPage.rows).toHaveLength(10);
+        expect(firstPage.rows[0]).toMatchObject({
+            conversation_slug_id: "percent1",
+            conversation_enabled: true,
+        });
+        expect(
+            firstPage.rows
+                .slice(1)
+                .every((row) => row.conversation_enabled === undefined),
+        ).toBe(true);
+        expect(firstPage.nextCursor).toBeDefined();
+        const cursor = firstPage.nextCursor;
+        if (cursor === undefined) return;
+
+        await expect(
+            queryPreferenceConversationPage({
+                db,
+                userId: USER_ID,
+                now: NOW,
+                group: { kind: "no_project" },
+                search: undefined,
+                focusConversationSlugId: undefined,
+                cursor,
+            }),
+        ).resolves.toEqual({ success: false });
+        await expect(
+            queryPreferenceConversationPage({
+                db,
+                userId: USER_ID,
+                now: NOW,
+                group,
+                search: "needle",
+                focusConversationSlugId: undefined,
+                cursor,
+            }),
+        ).resolves.toEqual({ success: false });
+
+        const secondPage = await queryPreferenceConversationPage({
+            db,
+            userId: USER_ID,
+            now: NOW,
+            group,
+            search: undefined,
+            focusConversationSlugId: undefined,
+            cursor,
+        });
+        expect(secondPage.success).toBe(true);
+        if (!secondPage.success) return;
+        expect(secondPage.rows).toHaveLength(3);
+        expect(secondPage.rows[0]?.conversation_slug_id).toBe("child010");
+        expect(secondPage.nextCursor).toBeUndefined();
+    });
+
+    it("batches the same initial conversation page for every group", async () => {
+        const groups = [
+            {
+                kind: "project",
+                projectId: firstProjectId,
+                projectSlug: "first-project",
+            },
+            {
+                kind: "project",
+                projectId: secondProjectId,
+                projectSlug: "second-project",
+            },
+            { kind: "no_project" },
+        ] satisfies Parameters<
+            typeof queryInitialPreferenceConversationPages
+        >[0]["groupKeys"];
+        const batch = await queryInitialPreferenceConversationPages({
+            db,
+            userId: USER_ID,
+            now: NOW,
+            groupKeys: groups,
+            search: undefined,
+            focusConversationSlugId: undefined,
+        });
+
+        for (const group of groups) {
+            const page = await queryPreferenceConversationPage({
+                db,
+                userId: USER_ID,
+                now: NOW,
+                group,
+                search: undefined,
+                focusConversationSlugId: undefined,
+                cursor: undefined,
+            });
+            expect(page.success).toBe(true);
+            if (!page.success) return;
+            const scopeKind = group.kind;
+            expect(
+                batch.rows.filter((row) => row.scope_kind === scopeKind &&
+                    (group.kind === "no_project" ||
+                        row.project_id === group.projectId)),
+            ).toEqual(page.rows);
+            const groupKey =
+                group.kind === "project"
+                    ? `project:${group.projectSlug}`
+                    : "no-project";
+            expect(batch.nextCursorByGroup.get(groupKey)).toBe(page.nextCursor);
+        }
+    });
+
+    it("returns all valid children for a project-title search and exact focus", async () => {
+        const group = {
+            kind: "project",
+            projectId: firstProjectId,
+            projectSlug: "first-project",
+        } satisfies Parameters<
+            typeof queryPreferenceConversationPage
+        >[0]["group"];
+        const titleSearchPage = await queryPreferenceConversationPage({
+            db,
+            userId: USER_ID,
+            now: NOW,
+            group,
+            search: "first project",
+            focusConversationSlugId: undefined,
+            cursor: undefined,
+        });
+        expect(titleSearchPage.success).toBe(true);
+        if (!titleSearchPage.success) return;
+        expect(titleSearchPage.rows).toHaveLength(10);
+
+        const focusedPage = await queryPreferenceConversationPage({
+            db,
+            userId: USER_ID,
+            now: NOW,
+            group,
+            search: undefined,
+            focusConversationSlugId: "child012",
+            cursor: undefined,
+        });
+        expect(focusedPage).toMatchObject({
+            success: true,
+            rows: [{ conversation_slug_id: "child012" }],
+            nextCursor: undefined,
+        });
+    });
+
+    it("only searches undisclosed No Project conversations available to the user", async () => {
+        const request = {
+            mode: "browse",
+            limit: 20,
+            search: "private undisclosed",
+        } satisfies Parameters<typeof queryPreferenceGroupPage>[0]["request"];
+        await expect(
+            queryPreferenceGroupPage({
+                db,
+                userId: USER_ID,
+                request,
+                now: NOW,
+            }),
+        ).resolves.toEqual({
+            success: true,
+            groupKeys: [],
+            nextCursor: undefined,
+        });
+
+        await db.insert(organizationMembershipTable).values({
+            organizationId,
+            userId: USER_ID,
+        });
+        await db
+            .update(conversationTable)
+            .set({ isIndexed: false })
+            .where(eq(conversationTable.slugId, "private1"));
+        await expect(
+            queryPreferenceGroupPage({
+                db,
+                userId: USER_ID,
+                request,
+                now: NOW,
+            }),
+        ).resolves.toEqual({
+            success: true,
+            groupKeys: [],
+            nextCursor: undefined,
+        });
+        await db
+            .update(conversationTable)
+            .set({ isIndexed: true })
+            .where(eq(conversationTable.slugId, "private1"));
+        await expect(
+            queryPreferenceGroupPage({
+                db,
+                userId: USER_ID,
+                request,
+                now: NOW,
+            }),
+        ).resolves.toEqual({
+            success: true,
+            groupKeys: [{ kind: "no_project" }],
+            nextCursor: undefined,
+        });
+        const page = await queryPreferenceConversationPage({
+            db,
+            userId: USER_ID,
+            now: NOW,
+            group: { kind: "no_project" },
+            search: request.search,
+            focusConversationSlugId: undefined,
+            cursor: undefined,
+        });
+        expect(page).toMatchObject({
+            success: true,
+            rows: [
+                {
+                    project_id: noProjectContainerId,
+                    conversation_slug_id: "private1",
+                    conversation_enabled: undefined,
+                },
+            ],
+        });
     });
 });

@@ -3,6 +3,7 @@ import { resolveConversationEmailPreference } from "@/shared-backend/conversatio
 import {
     decideConversationEmailFinalSend,
     decideConversationEmailTestRateLimit,
+    isConversationEmailUpdateConfigured,
     resolveConversationEmailOnboardingAction,
     resolveConversationEmailParticipantPreferenceScope,
     resolveConversationEmailSendingAvailability,
@@ -137,6 +138,12 @@ describe("resolveConversationEmailParticipantPreferenceScope", () => {
                     conversationOverrideEnabled,
                 }),
             ).toBe(expected);
+            expect(
+                isConversationEmailUpdateConfigured({
+                    projectDefaultEnabled,
+                    conversationOverrideEnabled,
+                }),
+            ).toBe(expected !== undefined);
         },
     );
 });
