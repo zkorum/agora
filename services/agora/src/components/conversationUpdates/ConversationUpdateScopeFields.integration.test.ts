@@ -61,7 +61,13 @@ describe("ConversationUpdateScopeFields selection flow", () => {
     mountedApps.push(app);
     app.mount(container);
 
-    getSelectTriggers(container)[0]?.click();
+    const projectTrigger = getSelectTriggers(container)[0];
+    expect(projectTrigger?.getAttribute("role")).toBeNull();
+    expect(projectTrigger?.textContent).toContain("Project");
+    expect(projectTrigger?.textContent).toContain("*");
+    expect(projectTrigger?.textContent).toContain("Required.");
+
+    projectTrigger?.click();
     await nextTick();
     getOption(container, "No Project").click();
     await nextTick();

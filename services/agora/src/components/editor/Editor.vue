@@ -145,11 +145,17 @@ const props = withDefaults(
     maxLength?: number;
     showCharacterCount?: boolean;
     submitOnShiftEnter?: boolean;
+    ariaLabelledby?: string;
+    ariaInvalid?: boolean;
+    required?: boolean;
   }>(),
   {
     maxLength: undefined,
     showCharacterCount: true,
     submitOnShiftEnter: false,
+    ariaLabelledby: undefined,
+    ariaInvalid: false,
+    required: false,
   }
 );
 const emit = defineEmits<{
@@ -321,9 +327,7 @@ const editor = useEditor({
     ...($q.platform.is.mobile ? [ClearStoredMarksOnSelectionChange] : []),
   ],
   editorProps: {
-    attributes: {
-      style: `min-height: ${props.minHeight}`,
-    },
+    attributes: getEditorAttributes(),
     // Handle paste to preserve only TipTap-enabled formatting
     transformPastedHTML(html) {
       return processUserGeneratedHtml(html, false, "input");
@@ -402,6 +406,36 @@ watch(
   }
 );
 
+watch(
+  [
+    () => props.ariaLabelledby,
+    () => props.ariaInvalid,
+    () => props.required,
+    () => props.singleLine,
+  ],
+  () => {
+    const editorElement = editor.value?.view.dom;
+    if (editorElement === undefined) {
+      return;
+    }
+    const attributes = getEditorAttributes();
+    for (const attributeName of [
+      "aria-invalid",
+      "aria-labelledby",
+      "aria-multiline",
+      "aria-required",
+      "role",
+    ]) {
+      const value = attributes[attributeName];
+      if (value === undefined) {
+        editorElement.removeAttribute(attributeName);
+      } else {
+        editorElement.setAttribute(attributeName, value);
+      }
+    }
+  }
+);
+
 // Watch for placeholder prop changes to trigger decoration recalculation
 watch(
   () => props.placeholder,
@@ -412,6 +446,24 @@ watch(
     }
   }
 );
+
+function getEditorAttributes(): Record<string, string> {
+  const attributes: Record<string, string> = {
+    "aria-multiline": String(!props.singleLine),
+    role: "textbox",
+    style: `min-height: ${props.minHeight}`,
+  };
+  if (props.ariaLabelledby !== undefined) {
+    attributes["aria-labelledby"] = props.ariaLabelledby;
+  }
+  if (props.ariaInvalid) {
+    attributes["aria-invalid"] = "true";
+  }
+  if (props.required) {
+    attributes["aria-required"] = "true";
+  }
+  return attributes;
+}
 </script>
 
 <style lang="scss" scoped>

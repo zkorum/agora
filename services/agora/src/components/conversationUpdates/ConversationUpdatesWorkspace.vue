@@ -8,6 +8,8 @@
       <q-icon name="mdi-email-fast-outline" size="2.25rem" />
     </div>
 
+    <ZKLiveRegion :message="audienceEstimateError ?? ''" politeness="polite" />
+
     <PageLoadingSpinner v-if="isLoadingWorkspace" />
 
     <ErrorRetryBlock
@@ -73,11 +75,8 @@
               :test-pending="activeTestOperationId !== undefined"
               :send-pending="isSendingUpdate"
               :has-successful-test="hasSuccessfulTest"
-              :audience-estimate="audienceEstimate"
-              :audience-estimate-available="audienceEstimateAvailable"
-              :selection-valid="currentSelection !== undefined"
+              :audience-estimate-state="audienceEstimateState"
               :test-destination-email="testDestinationEmail"
-              :related-conversation-owner-count="relatedConversationOwnerCount"
               @test="sendTest"
               @send="showSendDialog = true"
             >
@@ -191,6 +190,7 @@ import {
 } from "src/components/conversationUpdates/conversationUpdateLogic";
 import {
   CONVERSATION_UPDATE_NO_PROJECT_SCOPE_ID,
+  type ConversationUpdateAudienceEstimateState,
   type ConversationUpdateHistoryRecord,
   type ConversationUpdateScopeSummary,
 } from "src/components/conversationUpdates/conversationUpdateTypes";
@@ -199,6 +199,7 @@ import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
 import ZKInfoBanner from "src/components/ui-library/ZKInfoBanner.vue";
+import ZKLiveRegion from "src/components/ui-library/ZKLiveRegion.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
   ConversationEmailUpdateHistoryRecord,
@@ -353,6 +354,21 @@ const hasSuccessfulTest = computed(
 );
 const formattedAudienceEstimate = computed(() =>
   new Intl.NumberFormat(locale.value).format(audienceEstimate.value)
+);
+const audienceEstimateState = computed<ConversationUpdateAudienceEstimateState>(
+  () => {
+    if (audienceEstimateError.value !== undefined) {
+      return { kind: "error" };
+    }
+    if (!audienceEstimateAvailable.value) {
+      return { kind: "loading" };
+    }
+    return {
+      kind: "ready",
+      eligibleParticipantCount: audienceEstimate.value,
+      ownerCopyCount: relatedConversationOwnerCount.value,
+    };
+  }
 );
 const contextKey = computed(() => JSON.stringify(props.context));
 
@@ -688,7 +704,8 @@ async function sendTest(): Promise<void> {
     !audienceEstimateAvailable.value ||
     audienceEstimate.value === 0 ||
     activeTestAttemptId !== undefined ||
-    activeTestOperationId.value !== undefined
+    activeTestOperationId.value !== undefined ||
+    isSendingUpdate.value
   ) {
     return;
   }

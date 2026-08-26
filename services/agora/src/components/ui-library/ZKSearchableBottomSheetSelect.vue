@@ -9,6 +9,8 @@
     ]"
     :dir="textDirectionAttribute"
     :disabled="disable"
+    aria-haspopup="dialog"
+    :aria-expanded="showDialog"
     @click="showDialog = true"
   >
     <q-icon
@@ -18,7 +20,12 @@
       class="zk-drawer-select__leading-icon"
     />
     <span class="zk-drawer-select__text">
-      <span class="zk-drawer-select__label">{{ label }}</span>
+      <ZKFieldLabel
+        class="zk-drawer-select__label"
+        :label="label"
+        :required="required"
+        :required-text="requiredText"
+      />
       <span class="zk-drawer-select__value">
         {{ selectedSummary }}
       </span>
@@ -118,6 +125,7 @@
 import { useQuasar } from "quasar";
 import ZKBottomDialogBackButton from "src/components/ui-library/ZKBottomDialogBackButton.vue";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
+import ZKFieldLabel from "src/components/ui-library/ZKFieldLabel.vue";
 import type { LanguageTextDirection } from "src/shared/languages";
 import { computed, ref, watch } from "vue";
 
@@ -151,6 +159,8 @@ const props = withDefaults(
     hideTrigger?: boolean;
     showBackButton?: boolean;
     disable?: boolean;
+    required?: boolean;
+    requiredText?: string;
     variant?: "list" | "pill";
     textDirection?: LanguageTextDirection;
   }>(),
@@ -172,6 +182,8 @@ const props = withDefaults(
     hideTrigger: false,
     showBackButton: false,
     disable: false,
+    required: false,
+    requiredText: undefined,
     variant: "list",
     textDirection: undefined,
   }

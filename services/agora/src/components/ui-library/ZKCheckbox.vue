@@ -4,15 +4,14 @@
       v-model="checked"
       color="primary"
       :disable="disabled"
+      v-bind="requiredAttributes"
       :aria-describedby="description === undefined ? undefined : descriptionId"
     >
-      <span>
-        {{ label }}
-        <span v-if="required" aria-hidden="true" class="required-marker"
-          >*</span
-        >
-        <span v-if="required" class="visually-hidden"> Required.</span>
-      </span>
+      <ZKFieldLabel
+        :label="label"
+        :required="required"
+        :required-text="undefined"
+      />
     </q-checkbox>
     <small v-if="description !== undefined" :id="descriptionId">{{
       description
@@ -21,9 +20,11 @@
 </template>
 
 <script setup lang="ts">
-import { useId } from "vue";
+import { computed, useId } from "vue";
 
-defineProps<{
+import ZKFieldLabel from "./ZKFieldLabel.vue";
+
+const props = defineProps<{
   label: string;
   description: string | undefined;
   required: boolean;
@@ -32,6 +33,9 @@ defineProps<{
 
 const checked = defineModel<boolean>({ required: true });
 const descriptionId = `zk-checkbox-description-${useId()}`;
+const requiredAttributes = computed(() =>
+  props.required ? { "aria-required": "true" } : {}
+);
 </script>
 
 <style scoped lang="scss">
@@ -47,23 +51,6 @@ const descriptionId = `zk-checkbox-description-${useId()}`;
 
   :deep(.q-checkbox__label) {
     line-height: 1.4;
-  }
-
-  .required-marker {
-    margin-inline-start: 0.15rem;
-    color: $negative;
-  }
-
-  .visually-hidden {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
   }
 }
 </style>

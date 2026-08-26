@@ -21,6 +21,7 @@ vi.mock("src/components/ui-library/ZKSearchableBottomSheetSelect.vue", () => ({
       selectAllLabel: { type: String, default: "" },
       clearAllLabel: { type: String, default: "" },
       options: { type: Array, required: true },
+      required: { type: Boolean, default: false },
       multiple: { type: Boolean, default: false },
       showBulkActions: { type: Boolean, default: false },
     },
@@ -30,12 +31,13 @@ vi.mock("src/components/ui-library/ZKSearchableBottomSheetSelect.vue", () => ({
         return h(
           "section",
           {
-            "data-label": props.label,
+            "data-label": `${props.label}${props.required ? " *" : ""}`,
+            "data-required": String(props.required),
             "data-multiple": String(props.multiple),
             "data-show-bulk-actions": String(props.showBulkActions),
           },
           [
-            props.label,
+            `${props.label}${props.required ? " *" : ""}`,
             props.placeholder,
             props.dialogTitle,
             props.dialogSubtitle,
@@ -78,6 +80,15 @@ describe("ConversationUpdateScopeFields", () => {
     });
     const text = container.textContent ?? "";
 
+    expect(container.querySelector('[data-label="Project *"]')).not.toBeNull();
+    expect(
+      container.querySelector('[data-label="Included conversations *"]')
+    ).not.toBeNull();
+    expect(
+      container
+        .querySelector('[data-label="Project *"]')
+        ?.getAttribute("data-required")
+    ).toBe("true");
     expect(text).toContain("Choose a project");
     expect(text).toContain("1 eligible conversation");
     expect(text).not.toContain("1 eligible conversations");
@@ -112,7 +123,7 @@ describe("ConversationUpdateScopeFields", () => {
       selectedScopeId: "without-project",
     });
     const conversationSelect = container.querySelector(
-      '[data-label="Included conversations"]'
+      '[data-label="Included conversations *"]'
     );
 
     expect(conversationSelect?.getAttribute("data-multiple")).toBe("false");

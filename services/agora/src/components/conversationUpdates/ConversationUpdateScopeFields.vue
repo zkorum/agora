@@ -4,6 +4,8 @@
       :model-value="selectedScopeId"
       :options="scopeOptions"
       :label="t('projectLabel')"
+      required
+      :required-text="t('required')"
       :dialog-title="t('chooseProject')"
       :dialog-subtitle="t('projectAuthorizationDescription')"
       search-mode="always"
@@ -22,6 +24,8 @@
       :model-value="conversationSelectionModel"
       :options="conversationOptions"
       :label="t('includedConversationsLabel')"
+      required
+      :required-text="t('required')"
       :placeholder="t('conversationPlaceholder')"
       :dialog-title="t('chooseConversations')"
       :dialog-subtitle="conversationDialogSubtitle"

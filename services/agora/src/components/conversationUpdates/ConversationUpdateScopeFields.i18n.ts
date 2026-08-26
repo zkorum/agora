@@ -2,6 +2,7 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 
 export interface ConversationUpdateScopeFieldsTranslations {
   projectLabel: string;
+  required: string;
   chooseProject: string;
   projectAuthorizationDescription: string;
   conversationsHeading: string;
@@ -32,6 +33,7 @@ export const conversationUpdateScopeFieldsTranslations: Record<
 > = {
   en: {
     projectLabel: "Project",
+    required: "Required.",
     chooseProject: "Choose a project",
     projectAuthorizationDescription:
       "Authorization is inferred from your eligible project memberships.",
@@ -39,7 +41,7 @@ export const conversationUpdateScopeFieldsTranslations: Record<
     recipientIntersectionDescription:
       "The email will add the recipient-specific intersection automatically.",
     includedConversationsLabel: "Included conversations",
-    conversationPlaceholder: "Select at least one conversation (required)",
+    conversationPlaceholder: "Select at least one conversation",
     chooseConversations: "Choose conversations",
     clearAll: "Clear all",
     noProjectHint:
@@ -66,6 +68,7 @@ export const conversationUpdateScopeFieldsTranslations: Record<
   },
   ar: {
     projectLabel: "المشروع",
+    required: "مطلوب.",
     chooseProject: "اختر مشروعًا",
     projectAuthorizationDescription:
       "يُستدل على صلاحيتك من عضوياتك المؤهلة في المشاريع.",
@@ -73,7 +76,7 @@ export const conversationUpdateScopeFieldsTranslations: Record<
     recipientIntersectionDescription:
       "سيضيف البريد الإلكتروني تلقائيًا التقاطع الخاص بكل مستلم.",
     includedConversationsLabel: "المحادثات المضمّنة",
-    conversationPlaceholder: "اختر محادثة واحدة على الأقل (مطلوب)",
+    conversationPlaceholder: "اختر محادثة واحدة على الأقل",
     chooseConversations: "اختر المحادثات",
     clearAll: "مسح الكل",
     noProjectHint: "اختر محادثة مؤهلة واحدة أُنشئت من دون مشروع.",
@@ -95,6 +98,7 @@ export const conversationUpdateScopeFieldsTranslations: Record<
   },
   es: {
     projectLabel: "Proyecto",
+    required: "Obligatorio.",
     chooseProject: "Elegir un proyecto",
     projectAuthorizationDescription:
       "La autorización se deduce de sus membresías de proyecto elegibles.",
@@ -102,8 +106,7 @@ export const conversationUpdateScopeFieldsTranslations: Record<
     recipientIntersectionDescription:
       "El correo añadirá automáticamente la intersección específica de cada destinatario.",
     includedConversationsLabel: "Conversaciones incluidas",
-    conversationPlaceholder:
-      "Seleccione al menos una conversación (obligatorio)",
+    conversationPlaceholder: "Seleccione al menos una conversación",
     chooseConversations: "Elegir conversaciones",
     clearAll: "Borrar todo",
     noProjectHint: "Elija una conversación elegible creada sin un proyecto.",
@@ -128,6 +131,7 @@ export const conversationUpdateScopeFieldsTranslations: Record<
   },
   fa: {
     projectLabel: "پروژه",
+    required: "الزامی.",
     chooseProject: "انتخاب پروژه",
     projectAuthorizationDescription:
       "مجوز از عضویت‌های واجد شرایط شما در پروژه‌ها تشخیص داده می‌شود.",
@@ -135,7 +139,7 @@ export const conversationUpdateScopeFieldsTranslations: Record<
     recipientIntersectionDescription:
       "ایمیل به‌طور خودکار اشتراک ویژه هر دریافت‌کننده را اضافه می‌کند.",
     includedConversationsLabel: "گفت‌وگوهای مشمول",
-    conversationPlaceholder: "دست‌کم یک گفت‌وگو انتخاب کنید (الزامی)",
+    conversationPlaceholder: "دست‌کم یک گفت‌وگو انتخاب کنید",
     chooseConversations: "انتخاب گفت‌وگوها",
     clearAll: "پاک کردن همه",
     noProjectHint: "یک گفت‌وگوی واجد شرایطِ بدون پروژه انتخاب کنید.",
@@ -158,6 +162,7 @@ export const conversationUpdateScopeFieldsTranslations: Record<
   },
   fr: {
     projectLabel: "Projet",
+    required: "Obligatoire.",
     chooseProject: "Choisir un projet",
     projectAuthorizationDescription:
       "L’autorisation est déduite de vos adhésions éligibles aux projets.",
@@ -165,8 +170,7 @@ export const conversationUpdateScopeFieldsTranslations: Record<
     recipientIntersectionDescription:
       "L’e-mail ajoutera automatiquement l’intersection propre à chaque destinataire.",
     includedConversationsLabel: "Conversations incluses",
-    conversationPlaceholder:
-      "Sélectionnez au moins une conversation (obligatoire)",
+    conversationPlaceholder: "Sélectionnez au moins une conversation",
     chooseConversations: "Choisir des conversations",
     clearAll: "Tout effacer",
     noProjectHint: "Choisissez une conversation éligible créée sans projet.",
@@ -190,12 +194,13 @@ export const conversationUpdateScopeFieldsTranslations: Record<
   },
   "zh-Hans": {
     projectLabel: "项目",
+    required: "必填。",
     chooseProject: "选择项目",
     projectAuthorizationDescription: "授权根据您符合条件的项目成员身份推断。",
     conversationsHeading: "对话",
     recipientIntersectionDescription: "邮件会自动加入每位收件人对应的交集。",
     includedConversationsLabel: "包含的对话",
-    conversationPlaceholder: "至少选择一个对话（必填）",
+    conversationPlaceholder: "至少选择一个对话",
     chooseConversations: "选择对话",
     clearAll: "全部清除",
     noProjectHint: "选择一个未归属项目的合格对话。",
@@ -215,12 +220,13 @@ export const conversationUpdateScopeFieldsTranslations: Record<
   },
   "zh-Hant": {
     projectLabel: "專案",
+    required: "必填。",
     chooseProject: "選擇專案",
     projectAuthorizationDescription: "授權依據您符合資格的專案成員身分推斷。",
     conversationsHeading: "對話",
     recipientIntersectionDescription: "郵件會自動加入每位收件人對應的交集。",
     includedConversationsLabel: "包含的對話",
-    conversationPlaceholder: "至少選擇一個對話（必填）",
+    conversationPlaceholder: "至少選擇一個對話",
     chooseConversations: "選擇對話",
     clearAll: "全部清除",
     noProjectHint: "選擇一個未歸屬專案的合資格對話。",
@@ -240,6 +246,7 @@ export const conversationUpdateScopeFieldsTranslations: Record<
   },
   he: {
     projectLabel: "פרויקט",
+    required: "חובה.",
     chooseProject: "בחירת פרויקט",
     projectAuthorizationDescription:
       "ההרשאה מוסקת מהחברויות המתאימות שלך בפרויקטים.",
@@ -247,7 +254,7 @@ export const conversationUpdateScopeFieldsTranslations: Record<
     recipientIntersectionDescription:
       "הדוא״ל יוסיף אוטומטית את החיתוך המתאים לכל נמען.",
     includedConversationsLabel: "שיחות כלולות",
-    conversationPlaceholder: "יש לבחור לפחות שיחה אחת (חובה)",
+    conversationPlaceholder: "יש לבחור לפחות שיחה אחת",
     chooseConversations: "בחירת שיחות",
     clearAll: "ניקוי הכול",
     noProjectHint: "יש לבחור שיחה מתאימה אחת שנוצרה ללא פרויקט.",
@@ -269,6 +276,7 @@ export const conversationUpdateScopeFieldsTranslations: Record<
   },
   ja: {
     projectLabel: "プロジェクト",
+    required: "必須。",
     chooseProject: "プロジェクトを選択",
     projectAuthorizationDescription:
       "権限は、対象となるプロジェクトメンバー資格から判定されます。",
@@ -276,7 +284,7 @@ export const conversationUpdateScopeFieldsTranslations: Record<
     recipientIntersectionDescription:
       "メールには受信者ごとの共通範囲が自動的に追加されます。",
     includedConversationsLabel: "含める会話",
-    conversationPlaceholder: "会話を1件以上選択（必須）",
+    conversationPlaceholder: "会話を1件以上選択",
     chooseConversations: "会話を選択",
     clearAll: "すべて解除",
     noProjectHint: "プロジェクトなしで作成された対象の会話を1件選択します。",
@@ -299,6 +307,7 @@ export const conversationUpdateScopeFieldsTranslations: Record<
   },
   ky: {
     projectLabel: "Долбоор",
+    required: "Милдеттүү.",
     chooseProject: "Долбоор тандаңыз",
     projectAuthorizationDescription:
       "Уруксат жарамдуу долбоор мүчөлүктөрүңүздөн аныкталат.",
@@ -306,7 +315,7 @@ export const conversationUpdateScopeFieldsTranslations: Record<
     recipientIntersectionDescription:
       "Кат ар бир алуучуга тиешелүү кесилишти автоматтык түрдө кошот.",
     includedConversationsLabel: "Камтылган талкуулар",
-    conversationPlaceholder: "Кеминде бир талкуу тандаңыз (милдеттүү)",
+    conversationPlaceholder: "Кеминде бир талкуу тандаңыз",
     chooseConversations: "Талкууларды тандаңыз",
     clearAll: "Баарын тазалоо",
     noProjectHint: "Долбоорсуз түзүлгөн бир жарамдуу талкууну тандаңыз.",
@@ -328,6 +337,7 @@ export const conversationUpdateScopeFieldsTranslations: Record<
   },
   ru: {
     projectLabel: "Проект",
+    required: "Обязательно.",
     chooseProject: "Выберите проект",
     projectAuthorizationDescription:
       "Права определяются по вашему участию в подходящих проектах.",
@@ -335,7 +345,7 @@ export const conversationUpdateScopeFieldsTranslations: Record<
     recipientIntersectionDescription:
       "Письмо автоматически добавит пересечение, относящееся к каждому получателю.",
     includedConversationsLabel: "Включённые обсуждения",
-    conversationPlaceholder: "Выберите хотя бы одно обсуждение (обязательно)",
+    conversationPlaceholder: "Выберите хотя бы одно обсуждение",
     chooseConversations: "Выберите обсуждения",
     clearAll: "Очистить всё",
     noProjectHint:

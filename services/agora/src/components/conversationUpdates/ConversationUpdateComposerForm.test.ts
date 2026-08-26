@@ -14,12 +14,18 @@ vi.mock("src/components/editor/Editor.vue", () => ({
     name: "Editor",
     props: {
       placeholder: { type: String, required: true },
+      ariaLabelledby: { type: String, required: true },
+      ariaInvalid: { type: Boolean, required: true },
+      required: { type: Boolean, required: true },
     },
     setup(props) {
       return () =>
         h("div", {
           class: "editor-stub",
           "data-placeholder": props.placeholder,
+          "aria-labelledby": props.ariaLabelledby,
+          "aria-invalid": String(props.ariaInvalid),
+          "aria-required": String(props.required),
         });
     },
   }),
@@ -41,9 +47,15 @@ vi.mock("src/components/ui-library/ZKCheckbox.vue", () => ({
     name: "ZKCheckbox",
     props: {
       label: { type: String, required: true },
+      required: { type: Boolean, required: true },
     },
     setup(props) {
-      return () => h("div", { class: "checkbox-stub" }, props.label);
+      return () =>
+        h(
+          "div",
+          { class: "checkbox-stub" },
+          `${props.label}${props.required ? " *" : ""}`
+        );
     },
   }),
 }));
@@ -110,6 +122,85 @@ afterEach(() => {
 });
 
 describe("ConversationUpdateComposerForm", () => {
+  it("marks required authoring fields and references the rules above", () => {
+    const container = mountComposer({
+      locale: "en",
+      audienceEstimate: 12,
+      relatedConversationOwnerCount: 1,
+    });
+
+    expect(container.textContent).toContain("Subject *");
+    expect(container.textContent).toContain("Message *");
+    expect(container.querySelector(".checkbox-stub")?.textContent).toBe(
+      "I confirm this update follows the rules written above! *"
+    );
+    const editor = container.querySelector(".editor-stub");
+    const editorLabelId = editor?.getAttribute("aria-labelledby");
+    expect(editor?.getAttribute("aria-required")).toBe("true");
+    expect(document.getElementById(editorLabelId ?? "")?.textContent).toContain(
+      "Message *"
+    );
+  });
+
+  it("explains why the test email is disabled", () => {
+    const container = mountComposer({
+      locale: "en",
+      audienceEstimate: 12,
+      relatedConversationOwnerCount: 1,
+      subject: "",
+    });
+
+    expect(getButton(container, "Send test email").disabled).toBe(true);
+    expect(container.textContent).toContain(
+      "Complete the required project, conversation, subject, and message fields (*) to enable the test email."
+    );
+  });
+
+  it("explains when the test email is waiting for recipient estimation", () => {
+    const container = mountComposer({
+      locale: "en",
+      audienceEstimate: 0,
+      audienceEstimateKind: "loading",
+      relatedConversationOwnerCount: 0,
+    });
+
+    expect(getButton(container, "Send test email").disabled).toBe(true);
+    expect(container.textContent).toContain(
+      "Checking for eligible recipients..."
+    );
+  });
+
+  it("does not describe a failed recipient estimate as still checking", () => {
+    const container = mountComposer({
+      locale: "en",
+      audienceEstimate: 0,
+      audienceEstimateKind: "error",
+      relatedConversationOwnerCount: 0,
+    });
+
+    expect(getButton(container, "Send test email").disabled).toBe(true);
+    expect(container.textContent).not.toContain(
+      "Checking for eligible recipients..."
+    );
+  });
+
+  it("distinguishes invalid content from missing required fields", () => {
+    const container = mountComposer({
+      locale: "en",
+      audienceEstimate: 12,
+      relatedConversationOwnerCount: 1,
+      subject: "x".repeat(1_000),
+    });
+
+    expect(getButton(container, "Send test email").disabled).toBe(true);
+    expect(container.textContent).toContain(
+      "Fix the subject or message content so it meets the stated limits before sending a test email."
+    );
+    expect(container.textContent).not.toContain(
+      "Complete the required project, conversation, subject, and message fields"
+    );
+  });
+
   it("keeps the zero-recipient warning prominent and places policy by confirmation", () => {
     const container = mountComposer({
       locale: "en",
@@ -151,10 +242,10 @@ describe("ConversationUpdateComposerForm", () => {
 
     expect(text).not.toContain("This test goes only to the facilitator");
     expect(text).toContain(
-      "The real update will reach eligible participants plus 2 authorized project managers."
+      "Eligible participants: 12. Authorized project managers: 2."
     );
     expect(text).toContain(
-      "Anyone who is both an eligible participant and an authorized project manager receives one owner copy."
+      "Anyone in both groups receives only one owner copy."
     );
     expect(editor?.getAttribute("data-placeholder")).toBe(
       "Possible updates:\n• Share results\n• Share recent changes\n• Highlight new statements\n• Invite participants to return and vote on newly added statements, improving the analysis as participation grows\n\nRemember: this email will be sent to all eligible participants, whether they responded to some statements or none at all.\n\nLinks to the selected conversations are added automatically at the end of the email, using their project pages when applicable. You do not need to include them here, but you may."
@@ -195,7 +286,7 @@ describe("ConversationUpdateComposerForm", () => {
       locale: "en",
       audienceEstimate: 12,
       relatedConversationOwnerCount: 1,
-      selectionValid: false,
+      selectedConversationIds: [],
     });
 
     expect(getButton(container, "Send test email").disabled).toBe(true);
@@ -212,18 +303,26 @@ describe("ConversationUpdateComposerForm", () => {
     expect(getButton(container, "Sending test email...").disabled).toBe(true);
   });
 
-  it("uses localized singular owner-copy wording", () => {
+  it("prevents another test while the real update is sending", () => {
     const container = mountComposer({
       locale: "en",
       audienceEstimate: 12,
       relatedConversationOwnerCount: 1,
+      sendPending: true,
+    });
+
+    expect(getButton(container, "Send test email").disabled).toBe(true);
+  });
+
+  it("uses a plural-safe count summary", () => {
+    const container = mountComposer({
+      locale: "en",
+      audienceEstimate: 1,
+      relatedConversationOwnerCount: 1,
     });
 
     expect(container.textContent).toContain(
-      "eligible participants plus 1 authorized project manager."
-    );
-    expect(container.textContent).not.toContain(
-      "1 authorized project managers"
+      "Eligible participants: 1. Authorized project managers: 1."
     );
   });
 
@@ -236,7 +335,7 @@ describe("ConversationUpdateComposerForm", () => {
     const text = container.textContent ?? "";
     const editor = container.querySelector(".editor-stub");
 
-    expect(text).toContain("مديري المشروع المخوّلين");
+    expect(text).toContain("مديرو المشروع المخوّلون");
     expect(text).not.toContain("Compose update");
     expect(editor?.getAttribute("data-placeholder")).toContain(
       "• شارك النتائج\n• شارك التغييرات الأخيرة"
@@ -251,16 +350,22 @@ function mountComposer({
   locale,
   audienceEstimate,
   relatedConversationOwnerCount,
-  selectionValid = true,
   testHandler = undefined,
   testPending = false,
+  audienceEstimateKind = "ready",
+  subject = "Update subject",
+  selectedConversationIds = ["conversation-one"],
+  sendPending = false,
 }: {
   locale: SupportedDisplayLanguageCodes;
   audienceEstimate: number;
   relatedConversationOwnerCount: number;
-  selectionValid?: boolean;
   testHandler?: () => void;
   testPending?: boolean;
+  audienceEstimateKind?: "error" | "loading" | "ready";
+  subject?: string;
+  selectedConversationIds?: readonly string[];
+  sendPending?: boolean;
 }): HTMLElement {
   const container = document.createElement("div");
   container.dir = locale === "ar" ? "rtl" : "ltr";
@@ -288,16 +393,20 @@ function mountComposer({
     ],
     updatesDisabledConversationIds: [],
     testPending,
-    sendPending: false,
+    sendPending,
     hasSuccessfulTest: false,
-    audienceEstimate,
-    audienceEstimateAvailable: true,
-    selectionValid,
+    audienceEstimateState:
+      audienceEstimateKind === "ready"
+        ? {
+            kind: "ready",
+            eligibleParticipantCount: audienceEstimate,
+            ownerCopyCount: relatedConversationOwnerCount,
+          }
+        : { kind: audienceEstimateKind },
     testDestinationEmail: "facilitator@example.com",
-    relatedConversationOwnerCount,
     selectedScopeId: "project-one",
-    selectedConversationIds: ["conversation-one"],
-    subject: "Update subject",
+    selectedConversationIds,
+    subject,
     bodyHtml: "<p>Update body</p>",
     bodyPlainText: "Update body",
     contentConfirmed: false,
@@ -324,12 +433,15 @@ function mountComposer({
     "QInput",
     defineComponent({
       props: {
-        label: { type: String, required: true },
+        label: { type: String, default: "" },
         hint: { type: String, default: "" },
       },
-      setup(props) {
+      setup(props, { attrs, slots }) {
         return () =>
-          h("label", { class: "input-stub" }, [props.label, props.hint]);
+          h("label", { class: "input-stub", ...attrs }, [
+            slots.label?.() ?? props.label,
+            props.hint,
+          ]);
       },
     })
   );

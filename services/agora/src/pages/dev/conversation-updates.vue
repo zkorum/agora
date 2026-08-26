@@ -64,11 +64,12 @@
         :send-pending="false"
         :notice="notice"
         :has-successful-test="hasSuccessfulTest"
-        :audience-estimate="1842"
-        :audience-estimate-available="true"
-        :selection-valid="selectedConversationIds.length > 0"
+        :audience-estimate-state="{
+          kind: 'ready',
+          eligibleParticipantCount: 1842,
+          ownerCopyCount: 1,
+        }"
         test-destination-email="facilitator@example.org"
-        :related-conversation-owner-count="1"
         @test="simulateTest"
         @send="simulateSend"
       >

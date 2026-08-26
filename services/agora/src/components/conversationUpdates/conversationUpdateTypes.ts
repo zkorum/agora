@@ -41,6 +41,15 @@ export interface ConversationUpdateScopeSummary {
   readonly conversations: readonly ConversationUpdateConversationSummary[];
 }
 
+export type ConversationUpdateAudienceEstimateState =
+  | { readonly kind: "error" }
+  | { readonly kind: "loading" }
+  | {
+      readonly kind: "ready";
+      readonly eligibleParticipantCount: number;
+      readonly ownerCopyCount: number;
+    };
+
 export interface ConversationUpdateHistoryConversation {
   readonly id: string;
   readonly title: string;
