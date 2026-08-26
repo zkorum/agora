@@ -53,7 +53,7 @@ vi.mock("src/stores/onboarding/flow", () => ({
 }));
 vi.mock("vue-router", () => ({
   useRoute: () => ({ fullPath: "/email-updates/?tab=compose" }),
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));
 vi.mock("./ConversationUpdateComposerForm.vue", () => ({
   default: defineComponent({

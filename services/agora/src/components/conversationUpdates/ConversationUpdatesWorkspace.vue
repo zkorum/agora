@@ -407,6 +407,15 @@ watch(
   }
 );
 
+watch(activeTab, (tab) => {
+  void router.replace({
+    query: {
+      ...route.query,
+      tab,
+    },
+  });
+});
+
 function resetScopeState(): void {
   workspaceGeneration += 1;
   audienceRequestId += 1;

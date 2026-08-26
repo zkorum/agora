@@ -1599,9 +1599,12 @@ export async function materializeOneDeliveryPage({
                             ),
                             gte(
                                 sql<Date>`coalesce(${conversationEmailUpdateRecipientTable.providerAcceptedAt}, ${conversationEmailUpdateRecipientTable.unknownAt})`,
-                                new Date(
-                                    delivery.audienceCutoffAt.getTime() -
-                                        DAY_IN_MS,
+                                sql.param(
+                                    new Date(
+                                        delivery.audienceCutoffAt.getTime() -
+                                            DAY_IN_MS,
+                                    ),
+                                    conversationEmailUpdateRecipientTable.providerAcceptedAt,
                                 ),
                             ),
                         ),
