@@ -264,3 +264,7 @@ docker-compose down -v
 - Optimize indexes and queries based on findings
 - Re-run tests to validate improvements
 - **Configure AWS RDS monitoring for production load testing**
+
+## License
+
+AGPL-3.0. See [COPYING](./COPYING).

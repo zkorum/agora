@@ -25,3 +25,7 @@ make sync-python-artifacts
 ```
 
 Normal schema changes must still be generated through the API's Drizzle and Flyway tooling. Do not hand-write schema migrations.
+
+## License
+
+AGPL-3.0. See [COPYING](./COPYING).

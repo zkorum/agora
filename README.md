@@ -27,6 +27,7 @@ Install:
 - [jq](https://jqlang.github.io/jq/)
 - sed
 - bash
+- [Node.js](https://nodejs.org/) 20 or later
 - [pnpm](https://pnpm.io/)
 - [watchman](https://facebook.github.io/watchman/)
 - [docker](https://www.docker.com/)
@@ -45,7 +46,7 @@ For detailed information about each service, licenses, and documentation, see [C
 
 **[API](./services/api)** - A Fastify application supported by a PostgreSQL database. Main backend API handling user requests, authentication, voting, and conversation management.
 
-**[Conversation Email Update Worker](./services/conversation-email-update-worker)** - Independent TypeScript worker for durable Conversation Email Updates delivery and SES event processing.
+**[Conversation Email Updates Worker](./services/conversation-email-update-worker)** - Independent TypeScript worker that processes PostgreSQL-backed delivery work and SES events. The API verifies and stores SNS events; the worker renders localized messages, sends them through SESv2, and durably updates delivery state.
 
 **[Math Updater](./services/math-updater)** - Python background worker that runs <a href="https://github.com/polis-community/red-dwarf"><u>red-dwarf</u></a> opinion-group analysis and generates AI-powered cluster insights using LLM models.
 
@@ -73,6 +74,8 @@ For detailed information about each service, licenses, and documentation, see [C
 
 **[LLM](./services/llm)** - LLM prompts and Python scripts for AI-related development.
 
+**[Load Testing](./services/load-testing)** - k6 scenarios and monitoring support for exercising Agora under load.
+
 **[X Analyzer](./services/x-analyzer)** - X/Twitter reply and quote-tweet analyzer for producing Polis-compatible import data.
 
 ### OpenAPI
@@ -90,7 +93,7 @@ Please read the README for the service you are working on. Start with `/services
 | Landing page | `make dev-landing` |
 | Agora frontend | `make dev-app` |
 | API | `make dev-api` |
-| Conversation email update worker | `make dev-conversation-email-update-worker` |
+| Conversation Email Updates worker | `make dev-conversation-email-update-worker` |
 | Math updater | `make dev-math-updater` |
 | AI description retry worker | `make dev-ai-description-retry-worker` |
 | Description translation retry worker | `make dev-description-translation-retry-worker` |

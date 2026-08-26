@@ -2,6 +2,7 @@
     "name": "@zkorum/agora-load-testing",
     "version": "1.0.0",
     "description": "k6 load testing suite for Agora voting system",
+    "license": "AGPL-3.0",
     "type": "module",
     "scripts": {
         "build": "vite build",

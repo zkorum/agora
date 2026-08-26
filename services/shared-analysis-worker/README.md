@@ -24,3 +24,7 @@ uv run --extra dev ruff check
 uv run --extra dev basedpyright
 uv run --extra dev pytest -v
 ```
+
+## License
+
+AGPL-3.0. See [COPYING](./COPYING).

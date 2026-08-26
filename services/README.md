@@ -17,6 +17,7 @@ This directory contains all Agora services and shared code packages.
 - **scoring-worker/** - Python worker for MaxDiff rankings
 - **x-analyzer/** - X/Twitter reply and quote-tweet analyzer
 - **llm/** - LLM service for AI-generated summaries
+- **load-testing/** - k6 load-testing scenarios and monitoring support
 
 ## Shared Code Packages
 

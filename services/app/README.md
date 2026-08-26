@@ -591,3 +591,5 @@ If this service needs more backend API access, keep the shared surface small:
 ## License
 
 [MPL-2.0](./COPYING) - See [COPYING-README.md](../../COPYING-README.md) for details.
+
+This frontend is intended to become the basis of a cross-platform app, including distribution through Apple's App Store. It remains MPL-2.0 because [Apple's distribution terms](https://www.apple.com/legal/internet-services/itunes/dev/stdeula/) have historically conflicted with GPL-family restrictions on additional terms ([FSF analysis](https://www.fsf.org/blogs/licensing/more-about-the-app-store-gpl-enforcement), [VLC precedent](https://www-test.videolan.org/news/2011-01-09-vlc-for-ios-removed-from-the-appstore/)); MPL keeps file-level copyleft while allowing compatible executable distribution ([Mozilla FAQ](https://www.mozilla.org/en-US/MPL/2.0/FAQ/)).

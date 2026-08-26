@@ -1,17 +1,31 @@
-# Conversation Email Update Worker
+# Conversation Email Updates Worker
 
 Independent TypeScript worker for durable Conversation Email Updates delivery and SES event processing.
 
 The worker claims and materializes delivery work with Drizzle, renders localized messages, sends through SESv2, applies durable SNS inbox events, and updates delivery state. Fastify owns SNS signature verification and durable inbox insertion; this service owns inbox processing.
 
+## Responsibilities
+
+- Claim leased delivery and SNS inbox work from PostgreSQL.
+- Materialize eligible recipients from conversation participation and email preferences.
+- Render localized owner, test, and participant messages.
+- Send messages through Amazon SESv2 with bounded concurrency and rate limiting.
+- Apply SES delivery, bounce, complaint, and rejection events to durable delivery state.
+- Retry transient failures and recover expired leases after worker interruption.
+
+PostgreSQL is the source of truth for work and delivery progress. The worker does not use Valkey or an in-memory queue for correctness. The [API](../api) remains responsible for authorization, update creation, SNS signature verification, and durable SNS inbox insertion.
+
 ## Shared Source
 
-`make sync-ts-backend` copies the canonical schema and required backend utilities from `services/shared-backend/src` into `src/shared-backend`. `make sync-all` copies universal language helpers into `src/shared`. Both directories contain generated warning headers and must not be edited directly.
+From the repository root, `make sync-ts-backend` copies the canonical schema and required backend utilities from [`services/shared-backend/src`](../shared-backend/src) into `src/shared-backend`. `make sync-all` copies the universal shared source tree, including language helpers, from [`services/shared/src`](../shared/src) into `src/shared`. Both destination directories contain generated warning headers and must not be edited directly.
 
 ## Development
 
+Provision and migrate the API's PostgreSQL database before starting the worker. For the first local setup:
+
 ```bash
 pnpm install
+cp env.example .env
 pnpm build
 pnpm typecheck
 pnpm lint
@@ -19,11 +33,27 @@ pnpm test
 pnpm start:dev
 ```
 
-Configuration is parsed from the environment at startup. See `env.example`; sending is disabled and the kill switch is active by default.
+Configuration is parsed from the environment at startup. See [`env.example`](./env.example); sending is disabled and the kill switch is active by default. Build, typecheck, lint, and unit tests do not require a running worker, while `pnpm start:dev` requires database connectivity.
+
+## Configuration
+
+The worker accepts either a direct `CONNECTION_STRING` or the database and AWS Secrets Manager settings supported by `src/config.ts`. The principal Email Updates settings are:
+
+| Setting                                           | Purpose                                                                                 |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `CONVERSATION_EMAIL_UPDATES_ENABLED`              | Enables processing. Defaults to `false`.                                                |
+| `CONVERSATION_EMAIL_UPDATES_KILL_SWITCH`          | Stops delivery when armed. Defaults to `true`.                                          |
+| `CONVERSATION_EMAIL_UPDATE_SES_REGION`            | AWS region used by SESv2.                                                               |
+| `CONVERSATION_EMAIL_UPDATE_EMAIL_FROM_ADDRESS`    | Verified sender address; required for enabled SES delivery.                             |
+| `CONVERSATION_EMAIL_UPDATE_SES_CONFIGURATION_SET` | SES configuration set used for event publishing; required for enabled SES delivery.     |
+| `CONVERSATION_EMAIL_UPDATE_SITE_BASE_URL`         | HTTPS Agora URL used in message links; required when enabled.                           |
+| `CONVERSATION_EMAIL_UPDATE_WORKER_*`              | Worker identity, polling, heartbeat, batch, concurrency, rate, lease, and log settings. |
+
+The simulator settings are development-only. Startup rejects a simulated provider outside `NODE_ENV=development` with `AGORA_DEV_MODE=true`, and rejects incompatible simulated and SES settings.
 
 ### SES Simulator
 
-Run a development-only provider scenario against the configured local database:
+From the repository root, run a development-only provider scenario against the configured local database:
 
 ```bash
 make dev-conversation-email-update-worker
@@ -31,7 +61,7 @@ make dev-conversation-email-update-worker
 make dev-conversation-email-update-worker-scenario SCENARIO=simulated-success
 ```
 
-The normal `make dev-conversation-email-update-worker` and service-local `make dev` commands default to `simulated-success`; they never select SES. Available explicit scenarios are `simulated-success`, `simulated-retry-then-success`, `simulated-retry-always`, `simulated-non-retryable`, and `simulated-unknown`. The simulator requires `NODE_ENV=development`, `AGORA_DEV_MODE=true`, `CONVERSATION_EMAIL_UPDATE_PROVIDER=simulated`, and `CONVERSATION_EMAIL_UPDATE_SIMULATOR_ENABLED=true`; startup rejects simulated delivery in every other environment.
+The normal `make dev-conversation-email-update-worker` command and the service-local `make dev` command default to `simulated-success`; they never select SES. Use `make dev DEV_SCENARIO=simulated-retry-then-success` for an explicit scenario from this directory. Available scenarios are `simulated-success`, `simulated-retry-then-success`, `simulated-retry-always`, `simulated-non-retryable`, and `simulated-unknown`. The simulator requires `NODE_ENV=development`, `AGORA_DEV_MODE=true`, `CONVERSATION_EMAIL_UPDATE_PROVIDER=simulated`, and `CONVERSATION_EMAIL_UPDATE_SIMULATOR_ENABLED=true`; startup rejects simulated delivery in every other environment.
 
 ### Development Exercise
 
@@ -154,7 +184,15 @@ fields @timestamp, event, outcome, attemptId, testAttemptId, deliveryId, error.c
 
 ## Image
 
+The production image runs the compiled worker as an unprivileged Node.js user. See the [production Compose configuration](../../scripts/infra/docker-compose-production.yml) for the deployment wiring. Production must provide AWS credentials with permission to call `ses:SendEmail`; the AWS SDK default credential provider chain supports environment credentials and workload roles.
+
+Enable Email Updates and disarm the kill switch deliberately in both the API and worker deployments. Keeping either service fail-closed prevents new delivery work from being processed end to end.
+
 ```bash
 pnpm image:buildx 1.0.0
 pnpm image:push 1.0.0
 ```
+
+## License
+
+AGPL-3.0. See [COPYING](./COPYING).

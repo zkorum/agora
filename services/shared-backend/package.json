@@ -15,7 +15,7 @@
         "backend"
     ],
     "author": "ZKorum SAS <hello@zkorum.com>",
-    "license": "MPL-2.0",
+    "license": "AGPL-3.0",
     "dependencies": {
         "@aws-sdk/client-secrets-manager": "^3.1024.0",
         "@aws-sdk/client-translate": "^3.1024.0",

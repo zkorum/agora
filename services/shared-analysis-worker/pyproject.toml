@@ -2,6 +2,7 @@
 name = "agora-shared-analysis-worker"
 version = "0.1.0"
 description = "Shared Python code for Agora workers"
+license = { file = "COPYING" }
 requires-python = ">=3.13"
 dependencies = [
     "botocore>=1.40",
