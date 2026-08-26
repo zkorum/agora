@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/vue";
+import { hasChunkErrorRecoveryStarted } from "src/utils/error/chunkError";
 import { isEmailUpdateRecipientActionPath } from "src/utils/privacy/emailUpdateRecipientPath";
 import {
   redactSentryBreadcrumb,
@@ -41,6 +42,7 @@ export default defineBoot(({ app, router, store }) => {
     },
     beforeSend(event, hint) {
       if (
+        hasChunkErrorRecoveryStarted(hint.originalException) ||
         shouldSuppressSentryTelemetry(event) ||
         shouldIgnoreSentryEvent(event)
       ) {

@@ -1,4 +1,5 @@
 import {
+  hasChunkErrorRecoveryStarted,
   isChunkLoadError,
   reloadForChunkError,
 } from "src/utils/error/chunkError";
@@ -23,9 +24,8 @@ describe("chunk load error detection", () => {
 });
 
 describe("chunk reload safety", () => {
-  const chunkError = new Error(
-    "Failed to fetch dynamically imported module: /assets/page.js"
-  );
+  const createChunkError = (): Error =>
+    new Error("Failed to fetch dynamically imported module: /assets/page.js");
 
   beforeEach(() => {
     vi.stubEnv("DEV", false);
@@ -40,41 +40,50 @@ describe("chunk reload safety", () => {
   it("does not reload while offline", () => {
     vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
     const getItem = vi.spyOn(Storage.prototype, "getItem");
+    const error = createChunkError();
 
-    expect(reloadForChunkError({ error: chunkError })).toBe("blocked");
+    expect(reloadForChunkError({ error })).toBe("blocked");
+    expect(hasChunkErrorRecoveryStarted(error)).toBe(false);
     expect(getItem).not.toHaveBeenCalled();
   });
 
   it("does not replace the chunk error when reading storage fails", () => {
+    const error = createChunkError();
     vi.spyOn(navigator, "onLine", "get").mockReturnValue(true);
     vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
       throw new DOMException("Storage disabled", "SecurityError");
     });
 
-    expect(reloadForChunkError({ error: chunkError })).toBe("blocked");
+    expect(reloadForChunkError({ error })).toBe("blocked");
+    expect(hasChunkErrorRecoveryStarted(error)).toBe(false);
   });
 
   it("does not reload when the cooldown marker cannot be stored", () => {
+    const error = createChunkError();
     vi.spyOn(navigator, "onLine", "get").mockReturnValue(true);
     vi.spyOn(Storage.prototype, "getItem").mockReturnValue(null);
     vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       throw new DOMException("Storage disabled", "SecurityError");
     });
 
-    expect(reloadForChunkError({ error: chunkError })).toBe("blocked");
+    expect(reloadForChunkError({ error })).toBe("blocked");
+    expect(hasChunkErrorRecoveryStarted(error)).toBe(false);
   });
 
   it("does not reload again during the cooldown", () => {
+    const error = createChunkError();
     vi.spyOn(navigator, "onLine", "get").mockReturnValue(true);
     vi.spyOn(Date, "now").mockReturnValue(10_000);
     vi.spyOn(Storage.prototype, "getItem").mockReturnValue("1");
     const setItem = vi.spyOn(Storage.prototype, "setItem");
 
-    expect(reloadForChunkError({ error: chunkError })).toBe("blocked");
+    expect(reloadForChunkError({ error })).toBe("blocked");
+    expect(hasChunkErrorRecoveryStarted(error)).toBe(false);
     expect(setItem).not.toHaveBeenCalled();
   });
 
   it("coalesces only the same error and retries it after the cooldown", () => {
+    const chunkError = createChunkError();
     vi.spyOn(navigator, "onLine", "get").mockReturnValue(true);
     const now = vi.spyOn(Date, "now").mockReturnValue(20_000);
     vi.spyOn(Storage.prototype, "getItem")
@@ -87,12 +96,14 @@ describe("chunk reload safety", () => {
         navigateTo: window.location.href,
       })
     ).toBe("started");
+    expect(hasChunkErrorRecoveryStarted(chunkError)).toBe(true);
+    expect(hasChunkErrorRecoveryStarted(createChunkError())).toBe(false);
 
     now.mockReturnValue(29_999);
     expect(reloadForChunkError({ error: chunkError })).toBe("pending");
-    expect(reloadForChunkError({ error: new Error(chunkError.message) })).toBe(
-      "blocked"
-    );
+    const distinctError = new Error(chunkError.message);
+    expect(reloadForChunkError({ error: distinctError })).toBe("blocked");
+    expect(hasChunkErrorRecoveryStarted(distinctError)).toBe(false);
 
     now.mockReturnValue(30_000);
     expect(
