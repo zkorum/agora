@@ -72,7 +72,6 @@
               "
               :test-pending="activeTestOperationId !== undefined"
               :send-pending="isSendingUpdate"
-              :notice="notice"
               :has-successful-test="hasSuccessfulTest"
               :audience-estimate="audienceEstimate"
               :audience-estimate-available="audienceEstimateAvailable"
@@ -258,7 +257,6 @@ const subject = ref("");
 const bodyHtml = ref("");
 const bodyPlainText = ref("");
 const contentConfirmed = ref(false);
-const notice = ref<string | undefined>(undefined);
 const testedDraftKey = ref<string | undefined>(undefined);
 const successfulUpdateId = ref<string | undefined>(undefined);
 const successfulTestAttemptId = ref<string | undefined>(undefined);
@@ -425,7 +423,6 @@ function resetScopeState(): void {
   bodyHtml.value = "";
   bodyPlainText.value = "";
   contentConfirmed.value = false;
-  notice.value = undefined;
   clearSuccessfulTestAuthorization();
   showSendDialog.value = false;
   showEmailVerificationDialog.value = false;
@@ -689,7 +686,6 @@ async function sendTest(): Promise<void> {
   const draftKey = currentDraftKey.value;
   const operationId = ++nextTestOperationId;
   activeTestOperationId.value = operationId;
-  notice.value = t("queueingTest");
   try {
     const response = await emailUpdatesApi.sendTest({
       selection,
@@ -704,13 +700,11 @@ async function sendTest(): Promise<void> {
       return;
     }
     if (!response.success) {
-      notice.value = undefined;
       reconcileTestSendFailure(response.error);
       notify.showNotifyMessage(getTestSendFailureMessage(response.error));
       return;
     }
     activeTestAttemptId = response.testAttemptId;
-    notice.value = t("testQueued");
     await pollTestStatus({
       updateId: response.updateId,
       testAttemptId: response.testAttemptId,
@@ -726,7 +720,6 @@ async function sendTest(): Promise<void> {
       return;
     }
     console.error("Failed to send Email Update test", error);
-    notice.value = undefined;
     notify.showNotifyMessage(t("testQueueUnavailable"));
     activeTestAttemptId = undefined;
   } finally {
@@ -771,12 +764,10 @@ async function pollTestStatus({
       }
       if (!response.success) {
         if (response.reason === "test_not_found") {
-          notice.value = undefined;
           notify.showNotifyMessage(t("queuedTestNotFound"));
           activeTestAttemptId = undefined;
           return;
         }
-        notice.value = t("testStatusUnavailable");
         continue;
       }
       if (response.status.state === "provider_accepted") {
@@ -784,11 +775,10 @@ async function pollTestStatus({
         successfulUpdateId.value = updateId;
         successfulTestAttemptId.value = testAttemptId;
         activeTestAttemptId = undefined;
-        notice.value = t("testAccepted");
+        notify.showNotifyMessage(t("testAccepted"));
         return;
       }
       if (response.status.state === "failed") {
-        notice.value = undefined;
         notify.showNotifyMessage(
           getTestDeliveryFailureMessage(response.status.reason)
         );
@@ -804,7 +794,6 @@ async function pollTestStatus({
         return;
       }
       console.error("Failed to poll Email Update test status", error);
-      notice.value = t("testStatusUnavailable");
     }
   }
 }
@@ -867,7 +856,6 @@ async function sendUpdate(): Promise<void> {
       ),
     ];
     hasLoadedHistory.value = true;
-    notice.value = undefined;
     contentConfirmed.value = false;
     clearSuccessfulTestAuthorization();
     activeTab.value = "history";

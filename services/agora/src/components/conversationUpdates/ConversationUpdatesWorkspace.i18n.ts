@@ -23,11 +23,8 @@ export interface ConversationUpdatesWorkspaceTranslations {
   audienceEstimateUnavailable: string;
   historyUnavailable: string;
   moreHistoryUnavailable: string;
-  queueingTest: string;
-  testQueued: string;
   testQueueUnavailable: string;
   queuedTestNotFound: string;
-  testStatusUnavailable: string;
   testAccepted: string;
   testDeliveryRetryable: string;
   testDeliveryAuthorization: string;
@@ -82,12 +79,8 @@ export const conversationUpdatesWorkspaceTranslations: Record<
       "The eligible recipient count could not be loaded.",
     historyUnavailable: "Email Update history is unavailable right now.",
     moreHistoryUnavailable: "More Email Update history could not be loaded.",
-    queueingTest: "Queueing your test email...",
-    testQueued: "Test queued. Waiting for the email provider to accept it...",
     testQueueUnavailable: "The test email could not be queued.",
     queuedTestNotFound: "The queued test email could not be found.",
-    testStatusUnavailable:
-      "Waiting for the email provider. Test status is temporarily unavailable...",
     testAccepted: "Test accepted for this exact email version.",
     testDeliveryRetryable:
       "Test delivery failed because the email provider temporarily rejected it.",
@@ -155,13 +148,8 @@ export const conversationUpdatesWorkspaceTranslations: Record<
       "El historial de novedades por correo no está disponible ahora.",
     moreHistoryUnavailable:
       "No se pudo cargar más historial de novedades por correo.",
-    queueingTest: "Poniendo en cola su correo de prueba...",
-    testQueued:
-      "Prueba en cola. Esperando a que el proveedor de correo la acepte...",
     testQueueUnavailable: "No se pudo poner en cola el correo de prueba.",
     queuedTestNotFound: "No se encontró el correo de prueba en cola.",
-    testStatusUnavailable:
-      "Esperando al proveedor de correo. El estado de la prueba no está disponible temporalmente...",
     testAccepted: "Prueba aceptada para esta versión exacta del correo.",
     testDeliveryRetryable:
       "La entrega de prueba falló porque el proveedor de correo la rechazó temporalmente.",
@@ -231,13 +219,8 @@ export const conversationUpdatesWorkspaceTranslations: Record<
       "L’historique des nouvelles par e-mail est indisponible pour le moment.",
     moreHistoryUnavailable:
       "Impossible de charger davantage d’historique des nouvelles par e-mail.",
-    queueingTest: "Mise en file de votre e-mail de test...",
-    testQueued:
-      "Test mis en file. En attente de l’acceptation du fournisseur d’e-mail...",
     testQueueUnavailable: "Impossible de mettre l’e-mail de test en file.",
     queuedTestNotFound: "L’e-mail de test en file est introuvable.",
-    testStatusUnavailable:
-      "En attente du fournisseur d’e-mail. Le statut du test est temporairement indisponible...",
     testAccepted: "Test accepté pour cette version exacte de l’e-mail.",
     testDeliveryRetryable:
       "L’envoi du test a échoué car le fournisseur d’e-mail l’a temporairement refusé.",
@@ -302,11 +285,8 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     audienceEstimateUnavailable: "无法加载符合条件的收件人数。",
     historyUnavailable: "电子邮件更新历史记录目前不可用。",
     moreHistoryUnavailable: "无法加载更多电子邮件更新历史记录。",
-    queueingTest: "正在将测试邮件加入队列...",
-    testQueued: "测试已加入队列，正在等待邮件服务商接受...",
     testQueueUnavailable: "无法将测试邮件加入队列。",
     queuedTestNotFound: "找不到队列中的测试邮件。",
-    testStatusUnavailable: "正在等待邮件服务商，测试状态暂时不可用...",
     testAccepted: "此邮件版本的测试已被接受。",
     testDeliveryRetryable: "测试发送失败，因为邮件服务商暂时拒绝了邮件。",
     testDeliveryAuthorization:
@@ -356,11 +336,8 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     audienceEstimateUnavailable: "無法載入符合條件的收件者人數。",
     historyUnavailable: "電子郵件更新歷史記錄目前無法使用。",
     moreHistoryUnavailable: "無法載入更多電子郵件更新歷史記錄。",
-    queueingTest: "正在將測試郵件加入佇列...",
-    testQueued: "測試已加入佇列，正在等待郵件服務商接受...",
     testQueueUnavailable: "無法將測試郵件加入佇列。",
     queuedTestNotFound: "找不到佇列中的測試郵件。",
-    testStatusUnavailable: "正在等待郵件服務商，測試狀態暫時無法使用...",
     testAccepted: "此郵件版本的測試已獲接受。",
     testDeliveryRetryable: "測試傳送失敗，因為郵件服務商暫時拒絕了郵件。",
     testDeliveryAuthorization:
@@ -411,13 +388,8 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     audienceEstimateUnavailable: "対象受信者数を読み込めませんでした。",
     historyUnavailable: "メール更新の履歴は現在利用できません。",
     moreHistoryUnavailable: "メール更新の履歴をさらに読み込めませんでした。",
-    queueingTest: "テストメールをキューに追加しています...",
-    testQueued:
-      "テストをキューに追加しました。メールプロバイダーの承認を待っています...",
     testQueueUnavailable: "テストメールをキューに追加できませんでした。",
     queuedTestNotFound: "キューに追加したテストメールが見つかりません。",
-    testStatusUnavailable:
-      "メールプロバイダーを待っています。テスト状況は一時的に利用できません...",
     testAccepted: "このメールと完全に同じ内容のテストが承認されました。",
     testDeliveryRetryable:
       "メールプロバイダーが一時的に拒否したため、テスト配信に失敗しました。",
@@ -479,13 +451,8 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     historyUnavailable: "سجل تحديثات البريد الإلكتروني غير متاح الآن.",
     moreHistoryUnavailable:
       "تعذر تحميل المزيد من سجل تحديثات البريد الإلكتروني.",
-    queueingTest: "جارٍ وضع رسالة الاختبار في قائمة الانتظار...",
-    testQueued:
-      "تم وضع الاختبار في قائمة الانتظار. في انتظار قبول مزود البريد الإلكتروني...",
     testQueueUnavailable: "تعذر وضع رسالة الاختبار في قائمة الانتظار.",
     queuedTestNotFound: "تعذر العثور على رسالة الاختبار في قائمة الانتظار.",
-    testStatusUnavailable:
-      "في انتظار مزود البريد الإلكتروني. حالة الاختبار غير متاحة مؤقتًا...",
     testAccepted: "تم قبول الاختبار لهذه النسخة المطابقة من الرسالة.",
     testDeliveryRetryable:
       "فشل تسليم الاختبار لأن مزود البريد الإلكتروني رفضه مؤقتًا.",
@@ -546,12 +513,8 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     audienceEstimateUnavailable: "تعداد گیرندگان واجد شرایط بارگیری نشد.",
     historyUnavailable: "تاریخچه به‌روزرسانی ایمیلی اکنون در دسترس نیست.",
     moreHistoryUnavailable: "تاریخچه بیشتری از به‌روزرسانی ایمیلی بارگیری نشد.",
-    queueingTest: "در حال افزودن ایمیل آزمایشی به صف...",
-    testQueued: "آزمایش در صف قرار گرفت. در انتظار پذیرش ارائه‌دهنده ایمیل...",
     testQueueUnavailable: "ایمیل آزمایشی در صف قرار نگرفت.",
     queuedTestNotFound: "ایمیل آزمایشی صف‌شده پیدا نشد.",
-    testStatusUnavailable:
-      "در انتظار ارائه‌دهنده ایمیل. وضعیت آزمایش موقتاً در دسترس نیست...",
     testAccepted: "آزمایش برای همین نسخه دقیق ایمیل پذیرفته شد.",
     testDeliveryRetryable:
       "ارسال آزمایشی ناموفق بود، زیرا ارائه‌دهنده ایمیل موقتاً آن را رد کرد.",
@@ -614,11 +577,8 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     audienceEstimateUnavailable: "לא ניתן לטעון את מספר הנמענים הזכאים.",
     historyUnavailable: "היסטוריית העדכונים בדוא״ל אינה זמינה כרגע.",
     moreHistoryUnavailable: "לא ניתן לטעון היסטוריה נוספת של עדכונים בדוא״ל.",
-    queueingTest: "הודעת הבדיקה מתווספת לתור...",
-    testQueued: "הבדיקה נוספה לתור. ממתינים לאישור ספק הדוא״ל...",
     testQueueUnavailable: "לא ניתן להוסיף את הודעת הבדיקה לתור.",
     queuedTestNotFound: "הודעת הבדיקה שבתור לא נמצאה.",
-    testStatusUnavailable: "ממתינים לספק הדוא״ל. מצב הבדיקה אינו זמין זמנית...",
     testAccepted: "הבדיקה אושרה עבור הגרסה המדויקת הזאת של ההודעה.",
     testDeliveryRetryable: "שליחת הבדיקה נכשלה כי ספק הדוא״ל דחה אותה זמנית.",
     testDeliveryAuthorization:
@@ -675,13 +635,8 @@ export const conversationUpdatesWorkspaceTranslations: Record<
       "Электрондук почта жаңыртууларынын тарыхы азыр жеткиликсиз.",
     moreHistoryUnavailable:
       "Кошумча электрондук почта жаңыртуу тарыхы жүктөлгөн жок.",
-    queueingTest: "Сыноо катыңыз кезекке кошулууда...",
-    testQueued:
-      "Сыноо кезекке кошулду. Почта провайдеринин кабыл алуусун күтүүдө...",
     testQueueUnavailable: "Сыноо каты кезекке кошулган жок.",
     queuedTestNotFound: "Кезектеги сыноо каты табылган жок.",
-    testStatusUnavailable:
-      "Почта провайдерин күтүүдө. Сыноонун абалы убактылуу жеткиликсиз...",
     testAccepted: "Дал ушул каттын нускасы үчүн сыноо кабыл алынды.",
     testDeliveryRetryable:
       "Почта провайдери аны убактылуу четке каккандыктан сыноо жеткирилген жок.",
@@ -749,13 +704,8 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     historyUnavailable: "История почтовых обновлений сейчас недоступна.",
     moreHistoryUnavailable:
       "Не удалось загрузить продолжение истории почтовых обновлений.",
-    queueingTest: "Тестовое письмо добавляется в очередь...",
-    testQueued:
-      "Тест добавлен в очередь. Ожидаем принятия почтовым провайдером...",
     testQueueUnavailable: "Не удалось добавить тестовое письмо в очередь.",
     queuedTestNotFound: "Тестовое письмо в очереди не найдено.",
-    testStatusUnavailable:
-      "Ожидаем почтового провайдера. Статус теста временно недоступен...",
     testAccepted: "Тест принят для этой точной версии письма.",
     testDeliveryRetryable:
       "Тестовая доставка не удалась: почтовый провайдер временно отклонил письмо.",

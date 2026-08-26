@@ -201,6 +201,17 @@ describe("ConversationUpdateComposerForm", () => {
     expect(getButton(container, "Send test email").disabled).toBe(true);
   });
 
+  it("describes test progress on the loading button", () => {
+    const container = mountComposer({
+      locale: "en",
+      audienceEstimate: 12,
+      relatedConversationOwnerCount: 1,
+      testPending: true,
+    });
+
+    expect(getButton(container, "Sending test email...").disabled).toBe(true);
+  });
+
   it("uses localized singular owner-copy wording", () => {
     const container = mountComposer({
       locale: "en",
@@ -242,12 +253,14 @@ function mountComposer({
   relatedConversationOwnerCount,
   selectionValid = true,
   testHandler = undefined,
+  testPending = false,
 }: {
   locale: SupportedDisplayLanguageCodes;
   audienceEstimate: number;
   relatedConversationOwnerCount: number;
   selectionValid?: boolean;
   testHandler?: () => void;
+  testPending?: boolean;
 }): HTMLElement {
   const container = document.createElement("div");
   container.dir = locale === "ar" ? "rtl" : "ltr";
@@ -274,9 +287,8 @@ function mountComposer({
       },
     ],
     updatesDisabledConversationIds: [],
-    testPending: false,
+    testPending,
     sendPending: false,
-    notice: undefined,
     hasSuccessfulTest: false,
     audienceEstimate,
     audienceEstimateAvailable: true,

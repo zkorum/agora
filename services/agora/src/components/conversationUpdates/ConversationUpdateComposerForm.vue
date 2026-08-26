@@ -75,8 +75,6 @@
         :message="testRequirementMessage"
         :variant="hasSuccessfulTest ? 'info' : 'warning'"
       />
-
-      <ZKInfoBanner v-if="notice !== undefined" :message="notice" />
     </q-card-section>
 
     <slot name="preview" />
@@ -148,7 +146,6 @@ const props = defineProps<{
   updatesDisabledConversationIds: readonly string[];
   testPending: boolean;
   sendPending: boolean;
-  notice: string | undefined;
   hasSuccessfulTest: boolean;
   audienceEstimate: number;
   audienceEstimateAvailable: boolean;
@@ -257,7 +254,11 @@ const testRequirementMessage = computed(() =>
   props.hasSuccessfulTest ? t("testPassed") : t("testRequired")
 );
 const testButtonLabel = computed(() =>
-  props.hasSuccessfulTest ? t("sendAnotherTest") : t("sendTest")
+  props.testPending
+    ? t("sendingTest")
+    : props.hasSuccessfulTest
+      ? t("sendAnotherTest")
+      : t("sendTest")
 );
 
 watch([selectedScopeId, selectedConversationIds, subject, bodyHtml], () => {

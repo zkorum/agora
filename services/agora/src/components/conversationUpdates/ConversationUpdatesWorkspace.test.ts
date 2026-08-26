@@ -476,6 +476,36 @@ describe("ConversationUpdatesWorkspace", () => {
     expect(api.sendTest).toHaveBeenCalledOnce();
   });
 
+  it("shows test acceptance only as a temporary notification", async () => {
+    api.getWorkspace.mockResolvedValue(workspaceResponse({ kind: "global" }));
+    api.sendTest.mockResolvedValue({
+      success: true,
+      updateId: "00000000-0000-4000-8000-000000000010",
+      testAttemptId: "00000000-0000-4000-8000-000000000011",
+      status: "pending",
+    });
+    api.getTestStatus.mockResolvedValue({
+      success: true,
+      status: {
+        state: "provider_accepted",
+        providerAcceptedAt: new Date("2026-08-24T12:00:00.000Z"),
+      },
+    });
+
+    const { container } = mountComponent({
+      context: ref({ kind: "global" }),
+      initialTab: "compose",
+    });
+    await flushAudienceEstimate();
+    getButton(container, "Send test").click();
+    await new Promise((resolve) => window.setTimeout(resolve, 1_600));
+    await flushPromises();
+
+    expect(showNotifyMessage).toHaveBeenCalledWith(
+      "Test accepted for this exact email version."
+    );
+  });
+
   it("submits only one final send while the request is pending", async () => {
     api.getWorkspace.mockResolvedValue(workspaceResponse({ kind: "global" }));
     api.sendTest.mockResolvedValue({

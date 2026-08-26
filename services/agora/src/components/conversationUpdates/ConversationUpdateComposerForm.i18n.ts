@@ -19,6 +19,7 @@ export interface ConversationUpdateComposerFormTranslations {
   testRequired: string;
   sendAnotherTest: string;
   sendTest: string;
+  sendingTest: string;
   reviewAndSend: string;
   replyToConversation: string;
   replyToProject: string;
@@ -58,6 +59,7 @@ export const conversationUpdateComposerFormTranslations: Record<
       "Send a successful test email for this exact version before reviewing the real send.",
     sendAnotherTest: "Send another test email",
     sendTest: "Send test email",
+    sendingTest: "Sending test email...",
     reviewAndSend: "Review and send",
     replyToConversation: "Reply to (conversation email)",
     replyToProject: "Reply to (project email)",
@@ -94,6 +96,7 @@ export const conversationUpdateComposerFormTranslations: Record<
       "أرسل بريدًا تجريبيًا ناجحًا لهذه النسخة نفسها قبل مراجعة الإرسال الفعلي.",
     sendAnotherTest: "إرسال بريد تجريبي آخر",
     sendTest: "إرسال بريد تجريبي",
+    sendingTest: "جارٍ إرسال بريد تجريبي...",
     reviewAndSend: "المراجعة والإرسال",
     replyToConversation: "الرد إلى (بريد المحادثة)",
     replyToProject: "الرد إلى (بريد المشروع)",
@@ -130,6 +133,7 @@ export const conversationUpdateComposerFormTranslations: Record<
       "Envíe correctamente un correo de prueba de esta versión exacta antes de revisar el envío real.",
     sendAnotherTest: "Enviar otro correo de prueba",
     sendTest: "Enviar correo de prueba",
+    sendingTest: "Enviando correo de prueba...",
     reviewAndSend: "Revisar y enviar",
     replyToConversation: "Responder a (correo de la conversación)",
     replyToProject: "Responder a (correo del proyecto)",
@@ -166,6 +170,7 @@ export const conversationUpdateComposerFormTranslations: Record<
       "پیش از بررسی ارسال واقعی، یک ایمیل آزمایشی موفق برای همین نسخه بفرستید.",
     sendAnotherTest: "ارسال یک ایمیل آزمایشی دیگر",
     sendTest: "ارسال ایمیل آزمایشی",
+    sendingTest: "در حال ارسال ایمیل آزمایشی...",
     reviewAndSend: "بررسی و ارسال",
     replyToConversation: "پاسخ به (ایمیل گفت‌وگو)",
     replyToProject: "پاسخ به (ایمیل پروژه)",
@@ -202,6 +207,7 @@ export const conversationUpdateComposerFormTranslations: Record<
       "Envoyez avec succès un e-mail de test pour cette version exacte avant de vérifier l'envoi réel.",
     sendAnotherTest: "Envoyer un autre e-mail de test",
     sendTest: "Envoyer un e-mail de test",
+    sendingTest: "Envoi de l’e-mail de test...",
     reviewAndSend: "Vérifier et envoyer",
     replyToConversation: "Répondre à (e-mail de la conversation)",
     replyToProject: "Répondre à (e-mail du projet)",
@@ -236,6 +242,7 @@ export const conversationUpdateComposerFormTranslations: Record<
     testRequired: "请先成功发送此版本的测试邮件，再检查正式发送。",
     sendAnotherTest: "再发送一封测试邮件",
     sendTest: "发送测试邮件",
+    sendingTest: "正在发送测试邮件...",
     reviewAndSend: "检查并发送",
     replyToConversation: "回复至（对话邮箱）",
     replyToProject: "回复至（项目邮箱）",
@@ -270,6 +277,7 @@ export const conversationUpdateComposerFormTranslations: Record<
     testRequired: "請先成功傳送此版本的測試郵件，再檢查正式傳送。",
     sendAnotherTest: "再傳送一封測試郵件",
     sendTest: "傳送測試郵件",
+    sendingTest: "正在傳送測試郵件...",
     reviewAndSend: "檢查並傳送",
     replyToConversation: "回覆至（對話信箱）",
     replyToProject: "回覆至（專案信箱）",
@@ -305,6 +313,7 @@ export const conversationUpdateComposerFormTranslations: Record<
       "יש לשלוח בהצלחה הודעת בדיקה לגרסה המדויקת הזו לפני בדיקת השליחה האמיתית.",
     sendAnotherTest: "שליחת הודעת בדיקה נוספת",
     sendTest: "שליחת הודעת בדיקה",
+    sendingTest: "שולחים הודעת בדיקה...",
     reviewAndSend: "בדיקה ושליחה",
     replyToConversation: "מענה אל (דוא״ל השיחה)",
     replyToProject: "מענה אל (דוא״ל הפרויקט)",
@@ -341,6 +350,7 @@ export const conversationUpdateComposerFormTranslations: Record<
       "実際の送信を確認する前に、このバージョンのテストメールを正常に送信してください。",
     sendAnotherTest: "別のテストメールを送信",
     sendTest: "テストメールを送信",
+    sendingTest: "テストメールを送信しています...",
     reviewAndSend: "確認して送信",
     replyToConversation: "返信先（会話のメール）",
     replyToProject: "返信先（プロジェクトのメール）",
@@ -377,6 +387,7 @@ export const conversationUpdateComposerFormTranslations: Record<
       "Чыныгы жөнөтүүнү кароодон мурун ушул версия үчүн сыноо катын ийгиликтүү жөнөтүңүз.",
     sendAnotherTest: "Дагы бир сыноо катын жөнөтүү",
     sendTest: "Сыноо катын жөнөтүү",
+    sendingTest: "Сыноо каты жөнөтүлүүдө...",
     reviewAndSend: "Карап чыгып жөнөтүү",
     replyToConversation: "Жооп берүү (талкуунун каты)",
     replyToProject: "Жооп берүү (долбоордун каты)",
@@ -413,6 +424,7 @@ export const conversationUpdateComposerFormTranslations: Record<
       "Успешно отправьте тестовое письмо именно этой версии, прежде чем проверять настоящую отправку.",
     sendAnotherTest: "Отправить ещё одно тестовое письмо",
     sendTest: "Отправить тестовое письмо",
+    sendingTest: "Тестовое письмо отправляется...",
     reviewAndSend: "Проверить и отправить",
     replyToConversation: "Ответить на (адрес обсуждения)",
     replyToProject: "Ответить на (адрес проекта)",
