@@ -368,38 +368,45 @@ export interface RequiredOwnerCopySet {
     ownerSnapshots: RequiredOwnerSnapshot[] | undefined;
 }
 
-export function resolveCompleteOwnerSnapshots({
+export function resolveDeliverableOwnerSnapshots({
     requiredOwnerUserIds,
+    facilitatorUserId,
     candidates,
 }: {
     requiredOwnerUserIds: readonly string[];
+    facilitatorUserId: string;
     candidates: readonly RequiredOwnerSnapshot[];
 }): RequiredOwnerSnapshot[] | undefined {
     const requiredIds = [...new Set(requiredOwnerUserIds)];
+    const requiredIdSet = new Set(requiredIds);
     const candidateByUserId = new Map<string, RequiredOwnerSnapshot>();
     for (const candidate of candidates) {
+        if (!requiredIdSet.has(candidate.userId)) continue;
         if (candidateByUserId.has(candidate.userId)) return undefined;
         candidateByUserId.set(candidate.userId, candidate);
     }
-    const snapshots = requiredIds.flatMap((userId) => {
+    if (!candidateByUserId.has(facilitatorUserId)) return undefined;
+    return requiredIds.flatMap((userId) => {
         const candidate = candidateByUserId.get(userId);
         return candidate === undefined ? [] : [candidate];
     });
-    return snapshots.length === requiredIds.length ? snapshots : undefined;
 }
 
 export function resolveRequiredOwnerCopySet({
     requiredOwnerUserIds,
+    facilitatorUserId,
     candidates,
 }: {
     requiredOwnerUserIds: readonly string[];
+    facilitatorUserId: string;
     candidates: readonly RequiredOwnerSnapshot[];
 }): RequiredOwnerCopySet {
     const uniqueRequiredOwnerUserIds = [...new Set(requiredOwnerUserIds)];
     return {
         requiredOwnerUserIds: uniqueRequiredOwnerUserIds,
-        ownerSnapshots: resolveCompleteOwnerSnapshots({
+        ownerSnapshots: resolveDeliverableOwnerSnapshots({
             requiredOwnerUserIds: uniqueRequiredOwnerUserIds,
+            facilitatorUserId,
             candidates,
         }),
     };
@@ -1723,6 +1730,7 @@ async function resolveRequiredOwnerCopies({
     );
     return resolveRequiredOwnerCopySet({
         requiredOwnerUserIds,
+        facilitatorUserId,
         candidates: accounts.flatMap((account) =>
             complainedUserIds.has(account.userId) ||
             suppressedEmails.has(account.email)

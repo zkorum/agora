@@ -5,7 +5,7 @@ import {
     buildConversationEmailPreferenceGroups,
     isConversationEmailUpdateWorkspaceContextRepresented,
     mapConversationEmailUpdateTestStatus,
-    resolveCompleteOwnerSnapshots,
+    resolveDeliverableOwnerSnapshots,
     resolveConversationEmailUpdateAuthoringAction,
     resolveConversationEmailUpdateWorkspaceContext,
     resolvePreferenceAvatar,
@@ -402,7 +402,7 @@ describe("resolveConversationEmailPreference", () => {
     });
 });
 
-describe("resolveCompleteOwnerSnapshots", () => {
+describe("resolveDeliverableOwnerSnapshots", () => {
     const ownerA: RequiredOwnerSnapshot = {
         userId: "owner-a",
         emailCredentialId: 1,
@@ -418,26 +418,49 @@ describe("resolveCompleteOwnerSnapshots", () => {
 
     it("deduplicates owners shared by multiple owning organizations", () => {
         expect(
-            resolveCompleteOwnerSnapshots({
+            resolveDeliverableOwnerSnapshots({
                 requiredOwnerUserIds: ["owner-a", "owner-b", "owner-a"],
+                facilitatorUserId: "owner-a",
                 candidates: [ownerA, ownerB],
             }),
         ).toEqual([ownerA, ownerB]);
     });
 
-    it("rejects acceptance when any required owner is ineligible", () => {
+    it("omits an ineligible manager when the facilitator is deliverable", () => {
         expect(
-            resolveCompleteOwnerSnapshots({
+            resolveDeliverableOwnerSnapshots({
                 requiredOwnerUserIds: ["owner-a", "owner-b"],
+                facilitatorUserId: "owner-a",
                 candidates: [ownerA],
+            }),
+        ).toEqual([ownerA]);
+    });
+
+    it("rejects acceptance when the facilitator is not deliverable", () => {
+        expect(
+            resolveDeliverableOwnerSnapshots({
+                requiredOwnerUserIds: ["owner-a", "owner-b"],
+                facilitatorUserId: "owner-a",
+                candidates: [ownerB],
+            }),
+        ).toBeUndefined();
+    });
+
+    it("rejects a deliverable facilitator without manager authorization", () => {
+        expect(
+            resolveDeliverableOwnerSnapshots({
+                requiredOwnerUserIds: ["owner-b"],
+                facilitatorUserId: "owner-a",
+                candidates: [ownerA, ownerB],
             }),
         ).toBeUndefined();
     });
 
     it("rejects ambiguous duplicate snapshots for one owner", () => {
         expect(
-            resolveCompleteOwnerSnapshots({
+            resolveDeliverableOwnerSnapshots({
                 requiredOwnerUserIds: ["owner-a"],
+                facilitatorUserId: "owner-a",
                 candidates: [ownerA, { ...ownerA, emailCredentialId: 3 }],
             }),
         ).toBeUndefined();
@@ -456,6 +479,7 @@ describe("resolveRequiredOwnerCopySet", () => {
         expect(
             resolveRequiredOwnerCopySet({
                 requiredOwnerUserIds: ["owner-a", "owner-a"],
+                facilitatorUserId: "owner-a",
                 candidates: [owner],
             }),
         ).toEqual({
@@ -464,15 +488,16 @@ describe("resolveRequiredOwnerCopySet", () => {
         });
     });
 
-    it("retains required owner IDs when the strict copy gate fails", () => {
+    it("retains unavailable manager IDs for participant exclusion", () => {
         expect(
             resolveRequiredOwnerCopySet({
                 requiredOwnerUserIds: ["owner-a", "owner-b"],
+                facilitatorUserId: "owner-a",
                 candidates: [owner],
             }),
         ).toEqual({
             requiredOwnerUserIds: ["owner-a", "owner-b"],
-            ownerSnapshots: undefined,
+            ownerSnapshots: [owner],
         });
     });
 });
