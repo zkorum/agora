@@ -29,7 +29,7 @@
         "pnpm": "^10.34.5",
         "sanitize-html": "2.17.5",
         "tweetnacl": "^1.0.3",
-        "uint8arrays": "^5.1.0",
+        "uint8arrays": "^6.1.1",
         "zod": "^4.3.6"
     },
     "devDependencies": {
