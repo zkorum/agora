@@ -17,7 +17,7 @@ typecheck:
 	uv run --extra dev basedpyright
 
 image-buildx:
-	docker buildx build --pull --platform linux/amd64 -t $(IMAGE):$(TAG_ARG) .
+	docker buildx build --network=host --pull --platform linux/amd64 -t $(IMAGE):$(TAG_ARG) .
 
 image-push:
 	docker push $(IMAGE):$(TAG_ARG)
