@@ -1,5 +1,6 @@
 import type { BaseLogger } from "pino";
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
+import { setTimeout } from "node:timers/promises";
 import type { ConversationEmailWorkerConfig } from "./config.js";
 import type { ConversationEmailProvider, ProviderFailure } from "./provider.js";
 import { renderConversationEmail } from "./renderer.js";
@@ -22,6 +23,8 @@ import {
     materializeOneDeliveryPage,
     recoverExpiredRecipientLeases,
     recoverExpiredTestAttemptLeases,
+    releaseClaimedRecipient,
+    releaseClaimedTestAttempt,
     stopActiveDeliveriesForKillSwitch,
     type ClaimedRecipient,
     type ClaimedTestWork,
@@ -34,10 +37,37 @@ import {
     type SnsInboxItemOutcome,
 } from "./sns.js";
 import { decideWorkerTickMode } from "./workerTransition.js";
+import { createWakeableLane, type WakeableLane } from "./workerLane.js";
+import {
+    createSendRateBudget,
+    type SendKind,
+    type SendRateReservation,
+} from "./sendRateBudget.js";
 
 export interface ConversationEmailUpdateWorker {
     run: () => Promise<void>;
     shutdown: () => Promise<void>;
+    wake: (work?: ConversationEmailUpdateWorkWake) => void;
+}
+
+export const CONVERSATION_EMAIL_UPDATE_WORK_CHANNEL =
+    "conversation_email_update_work";
+
+export type ConversationEmailUpdateWorkWake =
+    "delivery" | "recipient" | "sns" | "test";
+
+export function parseConversationEmailUpdateWorkWake(
+    payload: string,
+): ConversationEmailUpdateWorkWake | undefined {
+    switch (payload) {
+        case "delivery":
+        case "recipient":
+        case "sns":
+        case "test":
+            return payload;
+        default:
+            return undefined;
+    }
 }
 
 interface CreateConversationEmailUpdateWorkerParams {
@@ -73,6 +103,16 @@ interface TickCounts {
     recipientsClaimed: number;
     recipientProviderAccepted: number;
 }
+
+type WorkerLifecycleState = "starting" | "running" | "quiescing" | "stopped";
+
+type LaneName =
+    | "sns"
+    | "recovery"
+    | "materialization"
+    | "testSends"
+    | "recipientSends"
+    | "aggregation";
 
 function emptyTickCounts(): TickCounts {
     return {
@@ -118,30 +158,6 @@ function providerError(result: ProviderFailure) {
     return normalizeProviderError({ code: result.code, outcome: result.kind });
 }
 
-function sleep({
-    ms,
-    signal,
-}: {
-    ms: number;
-    signal: AbortSignal;
-}): Promise<void> {
-    return new Promise((resolve) => {
-        if (signal.aborted) {
-            resolve();
-            return;
-        }
-        const timeout = setTimeout(resolve, ms);
-        signal.addEventListener(
-            "abort",
-            () => {
-                clearTimeout(timeout);
-                resolve();
-            },
-            { once: true },
-        );
-    });
-}
-
 export async function runWithConcurrency<T>({
     items,
     concurrency,
@@ -177,26 +193,6 @@ export async function runWithConcurrency<T>({
     }
 }
 
-function createRateBudget(sendsPerSecond: number): {
-    takeAvailable: (maximum: number) => number;
-} {
-    let available = sendsPerSecond;
-    let lastRefill = Date.now();
-    return {
-        takeAvailable: (maximum) => {
-            const now = Date.now();
-            available = Math.min(
-                sendsPerSecond,
-                available + ((now - lastRefill) / 1_000) * sendsPerSecond,
-            );
-            lastRefill = now;
-            const granted = Math.min(maximum, Math.floor(available));
-            available -= granted;
-            return granted;
-        },
-    };
-}
-
 export function createConversationEmailUpdateWorker({
     db,
     provider,
@@ -205,12 +201,23 @@ export function createConversationEmailUpdateWorker({
     log,
     conversationId,
 }: CreateConversationEmailUpdateWorkerParams): ConversationEmailUpdateWorker {
-    const shutdownController = new AbortController();
-    const rateBudget = createRateBudget(config.sendsPerSecond);
-    let running = false;
+    const rateBudget = createSendRateBudget({
+        sendsPerSecond: config.sendsPerSecond,
+    });
+    const lanes = {
+        sns: createWakeableLane(),
+        recovery: createWakeableLane(),
+        materialization: createWakeableLane(),
+        testSends: createWakeableLane(),
+        recipientSends: createWakeableLane(),
+        aggregation: createWakeableLane(),
+    } satisfies Record<LaneName, WakeableLane>;
+    let lifecycle: WorkerLifecycleState = "starting";
     let runPromise: Promise<void> | undefined;
-    let stoppedLogged = false;
+    let shutdownPromise: Promise<void> | undefined;
     let lastHeartbeatAt = Date.now();
+
+    const canAdmit = (): boolean => lifecycle === "running";
 
     const emit = ({
         level,
@@ -271,10 +278,7 @@ export function createConversationEmailUpdateWorker({
                     });
                 }
                 if (attempt < 5) {
-                    await sleep({
-                        ms: attempt * 250,
-                        signal: shutdownController.signal,
-                    });
+                    await setTimeout(attempt * 250);
                 }
             }
         }
@@ -291,6 +295,10 @@ export function createConversationEmailUpdateWorker({
         onProviderAccepted: () => void;
     }): Promise<void> => {
         if (provider === undefined || config.siteBaseUrl === undefined) return;
+        if (!canAdmit()) {
+            await releaseClaimedTestAttempt({ db, work });
+            return;
+        }
         if (!(await authorizeTestAttempt({ db, work }))) return;
         const conversations = await getUpdateConversationLinks({
             db,
@@ -307,6 +315,10 @@ export function createConversationEmailUpdateWorker({
             language: work.language,
             variant: "test",
         });
+        if (!canAdmit()) {
+            await releaseClaimedTestAttempt({ db, work });
+            return;
+        }
         if (
             !(await markTestAttempting({
                 db,
@@ -363,6 +375,10 @@ export function createConversationEmailUpdateWorker({
         onProviderAccepted: () => void;
     }): Promise<void> => {
         if (provider === undefined || config.siteBaseUrl === undefined) return;
+        if (!canAdmit()) {
+            await releaseClaimedRecipient({ db, claimed });
+            return;
+        }
         const authorized = await authorizeRecipientSend({
             db,
             claimed,
@@ -467,65 +483,187 @@ export function createConversationEmailUpdateWorker({
         }
     };
 
-    const tick = async (): Promise<TickCounts> => {
-        const counts = emptyTickCounts();
-        if (conversationId === undefined) {
-            const snsItems = await claimSnsInboxItems({
-                db,
-                workerId: config.workerId,
-                batchSize: config.batchSize,
-                leaseSeconds: config.leaseSeconds,
-            });
-            counts.snsClaimed = snsItems.length;
-            await runWithConcurrency({
-                items: snsItems,
-                concurrency: config.concurrency,
-                process: async (item) => {
-                    const result = await processSns(item);
-                    if (result.processingError) counts.snsProcessingErrors += 1;
-                    switch (result.outcome) {
-                        case "applied":
-                            counts.snsApplied += 1;
-                            break;
-                        case "retry_wait":
-                            counts.snsRetryWait += 1;
-                            break;
-                        case "dead_letter":
-                            counts.snsDeadLetter += 1;
-                            break;
-                        case "lease_lost":
-                            counts.snsLeaseLost += 1;
-                            break;
-                    }
+    const wakeAll = (): void => {
+        for (const lane of Object.values(lanes)) lane.wake();
+    };
+
+    const wakeWorkLanes = (
+        work: ConversationEmailUpdateWorkWake | undefined,
+    ): void => {
+        if (work === undefined) {
+            wakeAll();
+            return;
+        }
+        switch (work) {
+            case "delivery":
+                lanes.materialization.wake();
+                lanes.recipientSends.wake();
+                lanes.aggregation.wake();
+                break;
+            case "recipient":
+                lanes.recipientSends.wake();
+                break;
+            case "sns":
+                lanes.sns.wake();
+                break;
+            case "test":
+                lanes.testSends.wake();
+                break;
+        }
+    };
+
+    const scheduleSendReservation = ({
+        kind,
+        reservation,
+    }: {
+        kind: SendKind;
+        reservation: SendRateReservation;
+    }): void => {
+        const lane = kind === "test" ? lanes.testSends : lanes.recipientSends;
+        const preferredLane =
+            reservation.preferredKind === "test"
+                ? lanes.testSends
+                : lanes.recipientSends;
+        if (reservation.count === 0 && reservation.preferredKind !== kind) {
+            preferredLane.wake();
+        }
+        if (reservation.retryAfterMs !== undefined) {
+            lane.wakeAfter(reservation.retryAfterMs);
+        }
+    };
+
+    const releaseSendCapacity = (count: number): void => {
+        if (count <= 0) return;
+        const waitingKind = rateBudget.release(count);
+        if (waitingKind === "test") lanes.testSends.wake();
+        if (waitingKind === "recipient") lanes.recipientSends.wake();
+    };
+
+    const ensureSendingConfigured = (): void => {
+        if (provider === undefined || config.siteBaseUrl === undefined) {
+            throw new Error(
+                "Enabled Conversation Email worker is not configured",
+            );
+        }
+    };
+
+    const reportIteration = ({
+        counts,
+        iterationStartedAt,
+    }: {
+        counts: TickCounts;
+        iterationStartedAt: number;
+    }): void => {
+        const now = Date.now();
+        if (tickHadWork(counts)) {
+            const failed = tickHadFailure(counts);
+            emit({
+                level: failed ? "warn" : "info",
+                event: {
+                    event: "tick_summary",
+                    outcome: failed ? "failure" : "success",
+                    durationMs: now - iterationStartedAt,
+                    counts,
                 },
             });
-            if (snsItems.length > 0) {
-                const outcome =
-                    counts.snsDeadLetter > 0
-                        ? "failure"
-                        : counts.snsLeaseLost > 0
-                          ? "lease_lost"
-                          : counts.snsRetryWait > 0
-                            ? "retry"
-                            : "success";
-                emit({
-                    level: outcome === "success" ? "info" : "warn",
-                    event: {
-                        event: "sns_batch",
-                        outcome,
-                        counts: {
-                            snsClaimed: counts.snsClaimed,
-                            snsApplied: counts.snsApplied,
-                            snsRetryWait: counts.snsRetryWait,
-                            snsDeadLetter: counts.snsDeadLetter,
-                            snsLeaseLost: counts.snsLeaseLost,
-                            snsProcessingErrors: counts.snsProcessingErrors,
-                        },
-                    },
-                });
-            }
+            lastHeartbeatAt = now;
+        } else if (now - lastHeartbeatAt >= config.heartbeatIntervalMs) {
+            emit({
+                level: "info",
+                event: {
+                    event: "worker_heartbeat",
+                    outcome: "idle",
+                    durationMs: now - iterationStartedAt,
+                    heartbeatIntervalMs: config.heartbeatIntervalMs,
+                },
+            });
+            lastHeartbeatAt = now;
         }
+    };
 
+    const superviseIteration = async (
+        iterate: () => Promise<TickCounts>,
+    ): Promise<void> => {
+        const iterationStartedAt = Date.now();
+        try {
+            const counts = await iterate();
+            reportIteration({ counts, iterationStartedAt });
+        } catch (error: unknown) {
+            emit({
+                level: "error",
+                event: {
+                    event: "iteration_failed",
+                    outcome: "failure",
+                    durationMs: Date.now() - iterationStartedAt,
+                    error: normalizeError(error),
+                },
+            });
+        }
+    };
+
+    const runSnsIteration = async (): Promise<TickCounts> => {
+        const counts = emptyTickCounts();
+        if (conversationId !== undefined || !canAdmit()) return counts;
+        const snsItems = await claimSnsInboxItems({
+            db,
+            workerId: config.workerId,
+            batchSize: config.batchSize,
+            leaseSeconds: config.leaseSeconds,
+        });
+        counts.snsClaimed = snsItems.length;
+        await runWithConcurrency({
+            items: snsItems,
+            concurrency: config.concurrency,
+            process: async (item) => {
+                const result = await processSns(item);
+                if (result.processingError) counts.snsProcessingErrors += 1;
+                switch (result.outcome) {
+                    case "applied":
+                        counts.snsApplied += 1;
+                        break;
+                    case "retry_wait":
+                        counts.snsRetryWait += 1;
+                        break;
+                    case "dead_letter":
+                        counts.snsDeadLetter += 1;
+                        break;
+                    case "lease_lost":
+                        counts.snsLeaseLost += 1;
+                        break;
+                }
+            },
+        });
+        if (snsItems.length > 0) {
+            const outcome =
+                counts.snsDeadLetter > 0
+                    ? "failure"
+                    : counts.snsLeaseLost > 0
+                      ? "lease_lost"
+                      : counts.snsRetryWait > 0
+                        ? "retry"
+                        : "success";
+            emit({
+                level: outcome === "success" ? "info" : "warn",
+                event: {
+                    event: "sns_batch",
+                    outcome,
+                    counts: {
+                        snsClaimed: counts.snsClaimed,
+                        snsApplied: counts.snsApplied,
+                        snsRetryWait: counts.snsRetryWait,
+                        snsDeadLetter: counts.snsDeadLetter,
+                        snsLeaseLost: counts.snsLeaseLost,
+                        snsProcessingErrors: counts.snsProcessingErrors,
+                    },
+                },
+            });
+        }
+        if (snsItems.length === config.batchSize) lanes.sns.wake();
+        return counts;
+    };
+
+    const runRecoveryIteration = async (): Promise<TickCounts> => {
+        const counts = emptyTickCounts();
         const tickMode = decideWorkerTickMode({
             enabled: config.enabled,
             killSwitch: config.killSwitch,
@@ -544,13 +682,12 @@ export function createConversationEmailUpdateWorker({
             recipientRecovery.claimLeaseCount;
         counts.testSendLeasesRecovered = testRecovery.sendLeaseCount;
         counts.testClaimLeasesRecovered = testRecovery.claimLeaseCount;
-        if (
+        const recoveredCount =
             recipientRecovery.sendLeaseCount +
-                recipientRecovery.claimLeaseCount +
-                testRecovery.sendLeaseCount +
-                testRecovery.claimLeaseCount >
-            0
-        ) {
+            recipientRecovery.claimLeaseCount +
+            testRecovery.sendLeaseCount +
+            testRecovery.claimLeaseCount;
+        if (recoveredCount > 0) {
             emit({
                 level: "warn",
                 event: {
@@ -566,13 +703,15 @@ export function createConversationEmailUpdateWorker({
                     },
                 },
             });
+            lanes.testSends.wake();
+            lanes.recipientSends.wake();
+            lanes.aggregation.wake();
         }
         if (tickMode === "kill_switch") {
             counts.deliveriesStopped = await stopActiveDeliveriesForKillSwitch({
                 db,
                 conversationId,
             });
-            await aggregateDeliveryStates({ db, conversationId });
             if (counts.deliveriesStopped > 0) {
                 emit({
                     level: "warn",
@@ -585,22 +724,71 @@ export function createConversationEmailUpdateWorker({
                     },
                 });
             }
-            return counts;
+            lanes.aggregation.wake();
         }
-        if (provider === undefined || config.siteBaseUrl === undefined) {
-            throw new Error(
-                "Enabled Conversation Email worker is not configured",
-            );
-        }
+        return counts;
+    };
 
+    const runMaterializationIteration = async (): Promise<TickCounts> => {
+        const counts = emptyTickCounts();
+        const tickMode = decideWorkerTickMode({
+            enabled: config.enabled,
+            killSwitch: config.killSwitch,
+        });
+        if (tickMode !== "sending" || !canAdmit()) return counts;
+        ensureSendingConfigured();
         const materialization = await materializeOneDeliveryPage({
             db,
             pageSize: config.batchSize,
             conversationId,
         });
-        if (materialization !== undefined) {
-            switch (materialization.kind) {
-                case "page":
+        if (materialization === undefined) return counts;
+        switch (materialization.kind) {
+            case "page":
+                counts.pageCandidates = materialization.pageCandidateCount;
+                counts.inserted = materialization.insertedCount;
+                counts.materializedParticipants =
+                    materialization.materializedParticipantCount;
+                counts.frequencyCapped = materialization.frequencyCappedCount;
+                counts.ineligible = materialization.ineligibleCount;
+                emit({
+                    level: "info",
+                    event: {
+                        event: "materialization_page",
+                        outcome: "success",
+                        deliveryId: materialization.deliveryId,
+                        exhausted: materialization.exhausted,
+                        counts: {
+                            pageCandidates: materialization.pageCandidateCount,
+                            inserted: materialization.insertedCount,
+                            materializedParticipants:
+                                materialization.materializedParticipantCount,
+                            frequencyCapped:
+                                materialization.frequencyCappedCount,
+                            ineligible: materialization.ineligibleCount,
+                        },
+                    },
+                });
+                if (!materialization.exhausted) lanes.materialization.wake();
+                if (materialization.insertedCount > 0) {
+                    lanes.recipientSends.wake();
+                }
+                break;
+            case "stopped":
+                counts.materializationStopped = 1;
+                emit({
+                    level: "warn",
+                    event: {
+                        event: "materialization_stopped",
+                        outcome: "stopped",
+                        deliveryId: materialization.deliveryId,
+                        materializationReason: materialization.reason,
+                    },
+                });
+                break;
+            case "failed":
+                counts.materializationFailed = 1;
+                if (materialization.reason === "no_eligible_participants") {
                     counts.pageCandidates = materialization.pageCandidateCount;
                     counts.inserted = materialization.insertedCount;
                     counts.materializedParticipants =
@@ -608,214 +796,256 @@ export function createConversationEmailUpdateWorker({
                     counts.frequencyCapped =
                         materialization.frequencyCappedCount;
                     counts.ineligible = materialization.ineligibleCount;
-                    emit({
-                        level: "info",
-                        event: {
-                            event: "materialization_page",
-                            outcome: "success",
-                            deliveryId: materialization.deliveryId,
-                            exhausted: materialization.exhausted,
-                            counts: {
-                                pageCandidates:
-                                    materialization.pageCandidateCount,
-                                inserted: materialization.insertedCount,
-                                materializedParticipants:
-                                    materialization.materializedParticipantCount,
-                                frequencyCapped:
-                                    materialization.frequencyCappedCount,
-                                ineligible: materialization.ineligibleCount,
-                            },
-                        },
-                    });
-                    break;
-                case "stopped":
-                    counts.materializationStopped = 1;
-                    emit({
-                        level: "warn",
-                        event: {
-                            event: "materialization_stopped",
-                            outcome: "stopped",
-                            deliveryId: materialization.deliveryId,
-                            materializationReason: materialization.reason,
-                        },
-                    });
-                    break;
-                case "failed":
-                    counts.materializationFailed = 1;
-                    if (materialization.reason === "no_eligible_participants") {
-                        counts.pageCandidates =
-                            materialization.pageCandidateCount;
-                        counts.inserted = materialization.insertedCount;
-                        counts.materializedParticipants =
-                            materialization.materializedParticipantCount;
-                        counts.frequencyCapped =
-                            materialization.frequencyCappedCount;
-                        counts.ineligible = materialization.ineligibleCount;
-                    }
-                    emit({
-                        level: "error",
-                        event: {
-                            event: "materialization_failed",
-                            outcome: "failure",
-                            deliveryId: materialization.deliveryId,
-                            materializationReason: materialization.reason,
-                            ...(materialization.reason ===
-                            "no_eligible_participants"
-                                ? {
-                                      counts: {
-                                          materializationFailed: 1,
-                                          pageCandidates:
-                                              materialization.pageCandidateCount,
-                                          inserted:
-                                              materialization.insertedCount,
-                                          materializedParticipants:
-                                              materialization.materializedParticipantCount,
-                                          frequencyCapped:
-                                              materialization.frequencyCappedCount,
-                                          ineligible:
-                                              materialization.ineligibleCount,
-                                      },
-                                  }
-                                : {}),
-                        },
-                    });
-                    break;
-            }
+                }
+                emit({
+                    level: "error",
+                    event: {
+                        event: "materialization_failed",
+                        outcome: "failure",
+                        deliveryId: materialization.deliveryId,
+                        materializationReason: materialization.reason,
+                        ...(materialization.reason ===
+                        "no_eligible_participants"
+                            ? {
+                                  counts: {
+                                      materializationFailed: 1,
+                                      pageCandidates:
+                                          materialization.pageCandidateCount,
+                                      inserted: materialization.insertedCount,
+                                      materializedParticipants:
+                                          materialization.materializedParticipantCount,
+                                      frequencyCapped:
+                                          materialization.frequencyCappedCount,
+                                      ineligible:
+                                          materialization.ineligibleCount,
+                                  },
+                              }
+                            : {}),
+                    },
+                });
+                break;
         }
+        return counts;
+    };
 
-        let capacity = rateBudget.takeAvailable(config.batchSize);
-        if (capacity > 0) {
-            const testAttempts = await claimTestAttempts({
+    const runTestSendIteration = async (): Promise<TickCounts> => {
+        const counts = emptyTickCounts();
+        const tickMode = decideWorkerTickMode({
+            enabled: config.enabled,
+            killSwitch: config.killSwitch,
+        });
+        if (tickMode !== "sending" || !canAdmit()) return counts;
+        ensureSendingConfigured();
+        const reservation = rateBudget.take({
+            kind: "test",
+            maximum: config.batchSize,
+        });
+        const capacity = reservation.count;
+        scheduleSendReservation({ kind: "test", reservation });
+        if (capacity === 0 || !canAdmit()) {
+            releaseSendCapacity(capacity);
+            return counts;
+        }
+        let testAttempts: ClaimedTestWork[];
+        try {
+            testAttempts = await claimTestAttempts({
                 db,
                 workerId: config.workerId,
                 batchSize: capacity,
                 leaseSeconds: config.leaseSeconds,
                 conversationId,
             });
-            counts.testAttemptsClaimed = testAttempts.length;
-            capacity -= testAttempts.length;
-            await runWithConcurrency({
-                items: testAttempts,
-                concurrency: config.concurrency,
-                process: async (work) => {
-                    await processTest({
-                        work,
-                        onProviderAccepted: () => {
-                            counts.testProviderAccepted += 1;
-                        },
-                    });
-                },
-            });
+        } catch (error: unknown) {
+            releaseSendCapacity(capacity);
+            throw error;
         }
-        if (capacity > 0) {
-            const recipients = await claimRecipients({
+        releaseSendCapacity(capacity - testAttempts.length);
+        counts.testAttemptsClaimed = testAttempts.length;
+        await runWithConcurrency({
+            items: testAttempts,
+            concurrency: config.concurrency,
+            process: async (work) => {
+                await processTest({
+                    work,
+                    onProviderAccepted: () => {
+                        counts.testProviderAccepted += 1;
+                    },
+                });
+            },
+        });
+        if (testAttempts.length === capacity) lanes.testSends.wake();
+        return counts;
+    };
+
+    const runRecipientSendIteration = async (): Promise<TickCounts> => {
+        const counts = emptyTickCounts();
+        const tickMode = decideWorkerTickMode({
+            enabled: config.enabled,
+            killSwitch: config.killSwitch,
+        });
+        if (tickMode !== "sending" || !canAdmit()) return counts;
+        ensureSendingConfigured();
+        const reservation = rateBudget.take({
+            kind: "recipient",
+            maximum: config.batchSize,
+        });
+        const capacity = reservation.count;
+        scheduleSendReservation({ kind: "recipient", reservation });
+        if (capacity === 0 || !canAdmit()) {
+            releaseSendCapacity(capacity);
+            return counts;
+        }
+        let recipients: ClaimedRecipient[];
+        try {
+            recipients = await claimRecipients({
                 db,
                 workerId: config.workerId,
                 batchSize: capacity,
                 leaseSeconds: config.leaseSeconds,
                 conversationId,
             });
-            counts.recipientsClaimed = recipients.length;
-            await runWithConcurrency({
-                items: recipients,
-                concurrency: config.concurrency,
-                process: async (claimed) => {
-                    await processRecipient({
-                        claimed,
-                        onProviderAccepted: () => {
-                            counts.recipientProviderAccepted += 1;
-                        },
-                    });
-                },
+        } catch (error: unknown) {
+            releaseSendCapacity(capacity);
+            throw error;
+        }
+        releaseSendCapacity(capacity - recipients.length);
+        counts.recipientsClaimed = recipients.length;
+        await runWithConcurrency({
+            items: recipients,
+            concurrency: config.concurrency,
+            process: async (claimed) => {
+                await processRecipient({
+                    claimed,
+                    onProviderAccepted: () => {
+                        counts.recipientProviderAccepted += 1;
+                    },
+                });
+            },
+        });
+        if (recipients.length === capacity) lanes.recipientSends.wake();
+        if (recipients.length > 0) {
+            await aggregateDeliveryStates({
+                db,
+                conversationId,
+                deliveryIds: [
+                    ...new Set(
+                        recipients.map((recipient) => recipient.deliveryId),
+                    ),
+                ],
             });
         }
+        return counts;
+    };
+
+    const runAggregationIteration = async (): Promise<TickCounts> => {
+        const counts = emptyTickCounts();
+        const tickMode = decideWorkerTickMode({
+            enabled: config.enabled,
+            killSwitch: config.killSwitch,
+        });
+        if (tickMode === "disabled") return counts;
         await aggregateDeliveryStates({ db, conversationId });
         return counts;
     };
 
-    const run = async (): Promise<void> => {
-        if (running)
-            throw new Error("Conversation Email Updates worker is running");
-        running = true;
-        runPromise = (async () => {
+    const runRuntime = async (): Promise<void> => {
+        emit({
+            level: "info",
+            event: {
+                event: "worker_started",
+                outcome:
+                    config.enabled && !config.killSwitch
+                        ? "started"
+                        : "disabled",
+                sendingEnabled: config.enabled && !config.killSwitch,
+                killSwitch: config.killSwitch,
+                provider: config.provider,
+                heartbeatIntervalMs: config.heartbeatIntervalMs,
+            },
+        });
+        await Promise.all([
+            lanes.sns.run({
+                canIterate: canAdmit,
+                intervalMs: config.pollIntervalMs,
+                iterate: async () => {
+                    await superviseIteration(runSnsIteration);
+                },
+            }),
+            lanes.recovery.run({
+                canIterate: canAdmit,
+                intervalMs: config.pollIntervalMs,
+                iterate: async () => {
+                    await superviseIteration(runRecoveryIteration);
+                },
+            }),
+            lanes.materialization.run({
+                canIterate: canAdmit,
+                intervalMs: config.pollIntervalMs,
+                iterate: async () => {
+                    await superviseIteration(runMaterializationIteration);
+                },
+            }),
+            lanes.testSends.run({
+                canIterate: canAdmit,
+                intervalMs: config.pollIntervalMs,
+                iterate: async () => {
+                    await superviseIteration(runTestSendIteration);
+                },
+            }),
+            lanes.recipientSends.run({
+                canIterate: canAdmit,
+                intervalMs: config.pollIntervalMs,
+                iterate: async () => {
+                    await superviseIteration(runRecipientSendIteration);
+                },
+            }),
+            lanes.aggregation.run({
+                canIterate: canAdmit,
+                intervalMs: config.pollIntervalMs,
+                iterate: async () => {
+                    await superviseIteration(runAggregationIteration);
+                },
+            }),
+        ]);
+    };
+
+    const run = (): Promise<void> => {
+        if (lifecycle !== "starting" || runPromise !== undefined) {
+            return Promise.reject(
+                new Error("Conversation Email Updates worker is running"),
+            );
+        }
+        lifecycle = "running";
+        runPromise = runRuntime();
+        return runPromise;
+    };
+
+    const shutdown = (): Promise<void> => {
+        if (shutdownPromise !== undefined) return shutdownPromise;
+        shutdownPromise = (async () => {
+            if (lifecycle !== "stopped") {
+                lifecycle = "quiescing";
+                wakeAll();
+                try {
+                    if (runPromise !== undefined) await runPromise;
+                } finally {
+                    lifecycle = "stopped";
+                }
+            }
             emit({
                 level: "info",
-                event: {
-                    event: "worker_started",
-                    outcome:
-                        config.enabled && !config.killSwitch
-                            ? "started"
-                            : "disabled",
-                    sendingEnabled: config.enabled && !config.killSwitch,
-                    killSwitch: config.killSwitch,
-                    provider: config.provider,
-                    heartbeatIntervalMs: config.heartbeatIntervalMs,
-                },
+                event: { event: "worker_stopped", outcome: "stopped" },
             });
-            while (!shutdownController.signal.aborted) {
-                const iterationStartedAt = Date.now();
-                try {
-                    const counts = await tick();
-                    const now = Date.now();
-                    if (tickHadWork(counts)) {
-                        const failed = tickHadFailure(counts);
-                        emit({
-                            level: failed ? "warn" : "info",
-                            event: {
-                                event: "tick_summary",
-                                outcome: failed ? "failure" : "success",
-                                durationMs: now - iterationStartedAt,
-                                counts,
-                            },
-                        });
-                        lastHeartbeatAt = now;
-                    } else if (
-                        now - lastHeartbeatAt >=
-                        config.heartbeatIntervalMs
-                    ) {
-                        emit({
-                            level: "info",
-                            event: {
-                                event: "worker_heartbeat",
-                                outcome: "idle",
-                                durationMs: now - iterationStartedAt,
-                                heartbeatIntervalMs: config.heartbeatIntervalMs,
-                            },
-                        });
-                        lastHeartbeatAt = now;
-                    }
-                } catch (error: unknown) {
-                    emit({
-                        level: "error",
-                        event: {
-                            event: "iteration_failed",
-                            outcome: "failure",
-                            durationMs: Date.now() - iterationStartedAt,
-                            error: normalizeError(error),
-                        },
-                    });
-                }
-                await sleep({
-                    ms: config.pollIntervalMs,
-                    signal: shutdownController.signal,
-                });
-            }
         })();
-        await runPromise;
-        running = false;
+        return shutdownPromise;
     };
 
     return {
         run,
-        shutdown: async () => {
-            shutdownController.abort();
-            if (runPromise !== undefined) await runPromise;
-            if (!stoppedLogged) {
-                emit({
-                    level: "info",
-                    event: { event: "worker_stopped", outcome: "stopped" },
-                });
-                stoppedLogged = true;
+        shutdown,
+        wake: (work) => {
+            if (lifecycle === "starting" || lifecycle === "running") {
+                wakeWorkLanes(work);
             }
         },
     };

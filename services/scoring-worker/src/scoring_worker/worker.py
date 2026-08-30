@@ -24,6 +24,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import TYPE_CHECKING
 
 import valkey as valkey_lib
+from pydantic import ValidationError
 from sqlalchemy import create_engine, text
 
 from scoring_worker.config import Settings
@@ -118,9 +119,8 @@ def _connect_to_valkey_with_retry(settings: Settings) -> valkey_lib.Valkey | Non
             return vk
         except Exception as error:
             log.warning(
-                "[Worker] Valkey unavailable at %s (%s); retrying in %.1fs",
-                valkey_url,
-                error,
+                "[Worker] Valkey unavailable errorType=%s; retrying in %.1fs",
+                type(error).__name__,
                 settings.valkey_retry_interval_seconds,
             )
             time.sleep(settings.valkey_retry_interval_seconds)
@@ -148,21 +148,23 @@ def _create_engine_with_retry(
     retry_interval_seconds: float,
 ) -> Engine | None:
     while _running:
-        engine = create_engine(
-            _postgres_dsn(connection_string),
-            pool_pre_ping=True,
-        )
+        engine: Engine | None = None
         try:
+            engine = create_engine(
+                _postgres_dsn(connection_string),
+                pool_pre_ping=True,
+            )
             with engine.connect() as connection:
                 connection.execute(text("select 1"))
             log.info("[Worker] PostgreSQL %s connection verified", role)
             return engine
         except Exception as error:
-            engine.dispose()
+            if engine is not None:
+                engine.dispose()
             log.warning(
-                "[Worker] PostgreSQL %s unavailable (%s); retrying in %.1fs",
+                "[Worker] PostgreSQL %s unavailable errorType=%s; retrying in %.1fs",
                 role,
-                error,
+                type(error).__name__,
                 retry_interval_seconds,
             )
             _sleep_before_retry(retry_interval_seconds)
@@ -473,6 +475,9 @@ def main() -> None:
         try:
             _run_worker_once()
             return
+        except ValidationError:
+            log.error("[Worker] Invalid configuration errorType=ValidationError")
+            raise SystemExit(1) from None
         except Exception:
             log.exception(
                 "[Worker] Worker crashed; restarting in %.1fs",

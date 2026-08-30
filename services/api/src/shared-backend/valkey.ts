@@ -1,6 +1,7 @@
 /** **** WARNING: GENERATED FROM SHARED-BACKEND DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/
 import { GlideClient, Decoder } from "@valkey/valkey-glide";
 import type { BaseLogger } from "pino";
+import { safeDependencyError } from "./logger.js";
 
 // Using valkey-glide, the official Valkey client
 export type Valkey = GlideClient;
@@ -13,7 +14,6 @@ const supportedValkeyProtocols = new Set([
 ]);
 
 export interface ParsedValkeyUrl {
-    urlString: string;
     host: string;
     port: number;
     username?: string;
@@ -66,7 +66,7 @@ export function parseValkeyUrl(urlString: string): ParsedValkeyUrl {
         ? decodeURIComponent(url.password)
         : undefined;
 
-    return { urlString, host, port, username, password, useTLS };
+    return { host, port, username, password, useTLS };
 }
 
 /**
@@ -97,11 +97,10 @@ export async function initializeValkey({
     }
 
     try {
-        log.info(
-            `[${type}Valkey] Initializing connection to ${valkeyUrl.urlString.replace(/:[^:@]+@/, ":***@")}`,
-        );
-
         const { host, port, username, password, useTLS } = valkeyUrl;
+        log.info(
+            `[${type}Valkey] Initializing connection to ${host}:${String(port)}`,
+        );
 
         // Build credentials only if password is provided (required by valkey-glide)
         const credentials =
@@ -134,9 +133,9 @@ export async function initializeValkey({
         log.info(`[${type}Valkey] Connected successfully`);
 
         return valkey;
-    } catch (error) {
+    } catch (error: unknown) {
         log.error(
-            error,
+            safeDependencyError(error),
             `[${type}Valkey] Failed to initialize - services will fall back to in-memory storage only`,
         );
         return undefined;

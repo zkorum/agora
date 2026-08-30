@@ -66,7 +66,7 @@ const environmentSchema = z
             .number()
             .int()
             .min(100)
-            .default(1_000),
+            .default(30_000),
         CONVERSATION_EMAIL_UPDATE_WORKER_HEARTBEAT_INTERVAL_MS: z.coerce
             .number()
             .int()

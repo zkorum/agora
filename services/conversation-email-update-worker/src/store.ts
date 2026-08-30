@@ -399,6 +399,33 @@ export async function claimTestAttempts({
     });
 }
 
+export async function releaseClaimedTestAttempt({
+    db,
+    work,
+}: {
+    db: PostgresDatabase;
+    work: ClaimedTestWork;
+}): Promise<void> {
+    await db
+        .update(conversationEmailUpdateTestAttemptTable)
+        .set({
+            status: "pending",
+            leaseOwner: null,
+            leaseToken: null,
+            leaseExpiresAt: null,
+        })
+        .where(
+            and(
+                eq(conversationEmailUpdateTestAttemptTable.id, work.id),
+                eq(conversationEmailUpdateTestAttemptTable.status, "claimed"),
+                eq(
+                    conversationEmailUpdateTestAttemptTable.leaseToken,
+                    work.leaseToken,
+                ),
+            ),
+        );
+}
+
 export async function recoverExpiredTestAttemptLeases({
     db,
     conversationId,
@@ -904,9 +931,7 @@ export async function getUpdateConversationLinks(
             ),
             asc(conversationEmailUpdateConversationTable.conversationId),
         );
-    return rows.map((row) =>
-        toAuthorizedConversation({ ...row, baseUrl }),
-    );
+    return rows.map((row) => toAuthorizedConversation({ ...row, baseUrl }));
 }
 
 function toAuthorizedConversation({
@@ -1329,7 +1354,10 @@ export async function materializeOneDeliveryPage({
                             }),
                         ),
                     )
-                    .orderBy(asc(conversationEmailUpdateDeliveryTable.id))
+                    .orderBy(
+                        asc(conversationEmailUpdateDeliveryTable.updatedAt),
+                        asc(conversationEmailUpdateDeliveryTable.id),
+                    )
                     .limit(1)
                     .for("update", { skipLocked: true })
             ).at(0);
@@ -1891,6 +1919,42 @@ export interface ClaimedRecipient {
     id: bigint;
     deliveryId: number;
     leaseToken: string;
+}
+
+export async function releaseClaimedRecipient({
+    db,
+    claimed,
+}: {
+    db: PostgresDatabase;
+    claimed: ClaimedRecipient;
+}): Promise<void> {
+    await db
+        .update(conversationEmailUpdateRecipientTable)
+        .set({
+            status: "pending",
+            nextAttemptAt: null,
+            failureCode: null,
+            failureDetails: null,
+            claimedAt: null,
+            leaseOwner: null,
+            leaseToken: null,
+            leaseExpiresAt: null,
+            updatedAt: currentTimestamp(),
+        })
+        .where(
+            and(
+                eq(conversationEmailUpdateRecipientTable.id, claimed.id),
+                eq(
+                    conversationEmailUpdateRecipientTable.deliveryId,
+                    claimed.deliveryId,
+                ),
+                eq(conversationEmailUpdateRecipientTable.status, "claimed"),
+                eq(
+                    conversationEmailUpdateRecipientTable.leaseToken,
+                    claimed.leaseToken,
+                ),
+            ),
+        );
 }
 
 export async function recoverExpiredRecipientLeases({
@@ -2645,12 +2709,11 @@ export async function authorizeRecipientSend({
                 return undefined;
             }
             const baseUrl = new URL(siteBaseUrl);
-            eligibleConversations = conversationPreference.map(
-                (conversation) =>
-                    toAuthorizedConversation({
-                        ...conversation,
-                        baseUrl,
-                    }),
+            eligibleConversations = conversationPreference.map((conversation) =>
+                toAuthorizedConversation({
+                    ...conversation,
+                    baseUrl,
+                }),
             );
             const frequencyCapped = await tx
                 .select({ id: conversationEmailUpdateRecipientTable.id })
@@ -3071,10 +3134,6 @@ export async function finalizeRecipientSend({
                     .where(recipientAttemptFence({ claimed }));
             }
         }
-        await aggregateDeliveryStateInTransaction({
-            tx,
-            deliveryId: claimed.deliveryId,
-        });
     });
 }
 
@@ -3123,10 +3182,13 @@ function recipientAttemptFence({ claimed }: { claimed: ClaimedRecipient }) {
 export async function aggregateDeliveryStates({
     db,
     conversationId,
+    deliveryIds,
 }: {
     db: PostgresDatabase;
     conversationId?: number;
+    deliveryIds?: readonly number[];
 }): Promise<void> {
+    if (deliveryIds?.length === 0) return;
     const deliveries = await db
         .select({ id: conversationEmailUpdateDeliveryTable.id })
         .from(conversationEmailUpdateDeliveryTable)
@@ -3141,16 +3203,17 @@ export async function aggregateDeliveryStates({
                     updateId: conversationEmailUpdateDeliveryTable.updateId,
                     conversationId,
                 }),
+                deliveryIds === undefined
+                    ? undefined
+                    : inArray(
+                          conversationEmailUpdateDeliveryTable.id,
+                          deliveryIds,
+                      ),
             ),
         )
         .orderBy(asc(conversationEmailUpdateDeliveryTable.id));
     for (const delivery of deliveries) {
         await db.transaction(async (tx) => {
-            await tx
-                .select({ id: conversationEmailUpdateDeliveryTable.id })
-                .from(conversationEmailUpdateDeliveryTable)
-                .where(eq(conversationEmailUpdateDeliveryTable.id, delivery.id))
-                .for("update");
             await aggregateDeliveryStateInTransaction({
                 tx,
                 deliveryId: delivery.id,

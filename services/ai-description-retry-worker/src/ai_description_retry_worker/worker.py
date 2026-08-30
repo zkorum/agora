@@ -29,6 +29,7 @@ from agora_analysis_worker_shared.simulation_providers import (
     build_simulation_runtime,
     log_simulation_startup,
 )
+from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 
 logging.basicConfig(
@@ -58,7 +59,11 @@ def _handle_signal(signum: int, frame: object) -> None:
 
 
 def main() -> None:
-    settings = AiDescriptionWorkerSettings()
+    try:
+        settings = AiDescriptionWorkerSettings()
+    except ValidationError:
+        log.error("%s Invalid configuration errorType=ValidationError", LOG_PREFIX)
+        raise SystemExit(1) from None
     configure_worker_logging(log_level=settings.effective_log_level)
 
     signal.signal(signal.SIGTERM, _handle_signal)
@@ -81,7 +86,7 @@ def main() -> None:
     try:
         validate_ai_description_config(settings)
     except MathUpdaterConfigError as error:
-        log.error("%s Configuration error: %s", LOG_PREFIX, error)
+        log.error("%s Configuration errorType=MathUpdaterConfigError", LOG_PREFIX)
         raise SystemExit(1) from error
     log_simulation_startup(settings)
     simulation_runtime = build_simulation_runtime(settings)

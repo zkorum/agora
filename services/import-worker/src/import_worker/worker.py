@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 from urllib.parse import unquote, urlparse
 
-from pydantic import TypeAdapter
+from pydantic import TypeAdapter, ValidationError
 from valkey import Valkey
 
 from import_worker.config import Settings
@@ -123,8 +123,8 @@ def _create_primary_engine_with_retry(*, connection_string: str) -> Engine | Non
             return create_primary_engine(connection_string)
         except Exception as error:
             LOGGER.warning(
-                "Import worker PostgreSQL unavailable (%s); retrying in %.1fs",
-                error,
+                "Import worker PostgreSQL unavailable errorType=%s; retrying in %.1fs",
+                type(error).__name__,
                 STARTUP_RETRY_INTERVAL_SECONDS,
             )
             _sleep_before_retry(STARTUP_RETRY_INTERVAL_SECONDS)
@@ -142,12 +142,14 @@ def _connect_to_valkey_with_retry(*, url: str) -> ConnectedImportQueue | None:
             if vk is not None:
                 try:
                     vk.close()
-                except Exception:
-                    LOGGER.exception("Failed to close unavailable import Valkey client")
+                except Exception as close_error:
+                    LOGGER.warning(
+                        "Failed to close unavailable import Valkey client errorType=%s",
+                        type(close_error).__name__,
+                    )
             LOGGER.warning(
-                "Import worker Valkey unavailable at %s (%s); retrying in %.1fs",
-                url,
-                error,
+                "Import worker Valkey unavailable errorType=%s; retrying in %.1fs",
+                type(error).__name__,
                 STARTUP_RETRY_INTERVAL_SECONDS,
             )
             _sleep_before_retry(STARTUP_RETRY_INTERVAL_SECONDS)
@@ -469,6 +471,9 @@ def main() -> None:
         try:
             run_worker(Settings())
             return
+        except ValidationError:
+            LOGGER.error("Import worker invalid configuration errorType=ValidationError")
+            raise SystemExit(1) from None
         except Exception:
             LOGGER.exception(
                 "Import worker crashed; restarting in %.1fs",

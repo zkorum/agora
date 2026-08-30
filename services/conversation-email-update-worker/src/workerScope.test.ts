@@ -1,4 +1,5 @@
 import { drizzle } from "drizzle-orm/postgres-js";
+import { setTimeout } from "node:timers/promises";
 import postgres from "postgres";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConversationEmailWorkerConfig } from "./config.js";
@@ -40,6 +41,8 @@ const storeMocks = vi.hoisted(() => ({
     recoverExpiredTestAttemptLeases: vi.fn(() =>
         Promise.resolve({ sendLeaseCount: 0, claimLeaseCount: 0 }),
     ),
+    releaseClaimedRecipient: vi.fn(() => Promise.resolve(undefined)),
+    releaseClaimedTestAttempt: vi.fn(() => Promise.resolve(undefined)),
     stopActiveDeliveriesForKillSwitch: vi.fn(() => Promise.resolve(0)),
 }));
 const snsMocks = vi.hoisted(() => ({
@@ -101,6 +104,41 @@ function infoEvents() {
     return log.info.mock.calls.map((call) =>
         structuredEventSchema.parse(call.at(0)),
     );
+}
+
+function deferredValue<T>(): {
+    promise: Promise<T>;
+    resolve: (value: T) => void;
+} {
+    let resolvePromise: ((value: T) => void) | undefined;
+    const promise = new Promise<T>((resolve) => {
+        resolvePromise = resolve;
+    });
+    return {
+        promise,
+        resolve: (value) => {
+            resolvePromise?.(value);
+        },
+    };
+}
+
+function claimedTestWork(): ClaimedTestWork {
+    return {
+        id: 31,
+        publicId: "d940a6f0-bf87-4f52-a22a-d07c3cb4a650",
+        updateId: 10,
+        destinationEmail: "test-private@example.com",
+        destinationEmailCredentialId: 2,
+        requestedByUserId: "private-user-id",
+        subject: "Private test subject",
+        bodyHtml: "<p>Private test body</p>",
+        bodyPlainText: "Private test body",
+        projectTitle: "Private project",
+        replyToName: "Private project contact",
+        replyToEmail: "reply-private@example.com",
+        language: "en",
+        leaseToken: "private-test-lease-token",
+    };
 }
 
 beforeEach(() => {
@@ -563,17 +601,19 @@ describe("conversation-scoped worker", () => {
                 reportHash: "c".repeat(64),
             },
         });
-        const send = vi
-            .fn()
-            .mockResolvedValueOnce({
-                kind: "provider_accepted",
-                messageId: "provider-private-message-id",
-            })
-            .mockResolvedValueOnce({
+        const send = vi.fn((message: ConversationEmailProviderMessage) => {
+            if (message.tags.message_type === "conversation_update_test") {
+                return Promise.resolve({
+                    kind: "provider_accepted",
+                    messageId: "provider-private-message-id",
+                } satisfies ProviderResult);
+            }
+            return Promise.resolve({
                 kind: "permanent_rejected",
                 code: "MessageRejected",
                 details: "participant-private@example.com was rejected",
-            });
+            } satisfies ProviderResult);
+        });
         const worker = createConversationEmailUpdateWorker({
             db: database(),
             provider: { send },
@@ -616,7 +656,11 @@ describe("conversation-scoped worker", () => {
             }),
         );
         expect(
-            infoEvents().find((event) => event.event === "tick_summary"),
+            infoEvents().find(
+                (event) =>
+                    event.event === "tick_summary" &&
+                    event.counts.testProviderAccepted === 1,
+            ),
         ).toMatchObject({
             event: "tick_summary",
             counts: {
@@ -823,6 +867,12 @@ describe("conversation-scoped worker", () => {
         expect(sentMessages.at(0)?.html).toContain(
             "/email-updates/unsubscribe/private",
         );
+        expect(storeMocks.aggregateDeliveryStates).toHaveBeenCalledWith(
+            expect.objectContaining({
+                conversationId: 42,
+                deliveryIds: [22],
+            }),
+        );
     });
 
     it("renders owner actions without exposing a provider unsubscribe header", async () => {
@@ -899,5 +949,186 @@ describe("conversation-scoped worker", () => {
         expect(sentMessages.at(0)?.unsubscribeUrl).toBeUndefined();
         expect(sentMessages.at(0)?.html).toContain("private-owner-token");
         expect(sentMessages.at(0)?.text).toContain("operational owner copy");
+    });
+
+    it("reconciles periodically when a notification wake is missed", async () => {
+        const workerConfig = config(true);
+        workerConfig.pollIntervalMs = 20;
+        const worker = createConversationEmailUpdateWorker({
+            db: database(),
+            provider: { send: vi.fn() },
+            config: workerConfig,
+            environment: "development",
+            log,
+            conversationId: 42,
+        });
+
+        const running = worker.run();
+        await vi.waitFor(() => {
+            expect(
+                storeMocks.materializeOneDeliveryPage.mock.calls.length,
+            ).toBeGreaterThan(0);
+        });
+        storeMocks.materializeOneDeliveryPage.mockResolvedValueOnce({
+            kind: "page",
+            deliveryId: 32,
+            pageCandidateCount: 1,
+            insertedCount: 0,
+            materializedParticipantCount: 0,
+            frequencyCappedCount: 1,
+            ineligibleCount: 0,
+            exhausted: true,
+        });
+
+        await vi.waitFor(() => {
+            expect(log.info).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    event: "materialization_page",
+                    deliveryId: 32,
+                }),
+            );
+        });
+        await worker.shutdown();
+        await running;
+    });
+
+    it("continues other lanes while materialization is blocked", async () => {
+        const blockedMaterialization = deferredValue<
+            MaterializationResult | undefined
+        >();
+        storeMocks.materializeOneDeliveryPage.mockReturnValueOnce(
+            blockedMaterialization.promise,
+        );
+        const worker = createConversationEmailUpdateWorker({
+            db: database(),
+            provider: { send: vi.fn() },
+            config: config(true),
+            environment: "development",
+            log,
+            conversationId: 42,
+        });
+
+        const running = worker.run();
+        await vi.waitFor(() => {
+            expect(storeMocks.materializeOneDeliveryPage).toHaveBeenCalled();
+        });
+        worker.wake();
+        await vi.waitFor(() => {
+            expect(
+                storeMocks.recoverExpiredRecipientLeases.mock.calls.length,
+            ).toBeGreaterThanOrEqual(2);
+            expect(
+                storeMocks.claimTestAttempts.mock.calls.length,
+            ).toBeGreaterThanOrEqual(2);
+        });
+        expect(storeMocks.materializeOneDeliveryPage).toHaveBeenCalledOnce();
+
+        blockedMaterialization.resolve(undefined);
+        await worker.shutdown();
+        await running;
+    });
+
+    it("quiesces claims while draining an authorized send and finalization", async () => {
+        const providerResult = {
+            kind: "provider_accepted",
+            messageId: "private-provider-message",
+        } satisfies ProviderResult;
+        const providerSend = deferredValue<ProviderResult>();
+        const finalization = deferredValue<undefined>();
+        storeMocks.claimTestAttempts.mockResolvedValueOnce([claimedTestWork()]);
+        storeMocks.authorizeTestAttempt.mockResolvedValueOnce(true);
+        storeMocks.markTestAttempting.mockResolvedValueOnce(true);
+        storeMocks.finalizeTestAttempt.mockReturnValueOnce(
+            finalization.promise,
+        );
+        const send = vi.fn(() => providerSend.promise);
+        const workerConfig = config(true);
+        workerConfig.pollIntervalMs = 20;
+        const worker = createConversationEmailUpdateWorker({
+            db: database(),
+            provider: { send },
+            config: workerConfig,
+            environment: "development",
+            log,
+            conversationId: 42,
+        });
+
+        const running = worker.run();
+        await vi.waitFor(() => {
+            expect(send).toHaveBeenCalledOnce();
+        });
+        let shutdownFinished = false;
+        const shutdown = worker.shutdown();
+        expect(worker.shutdown()).toBe(shutdown);
+        const shutdownObservation = (async () => {
+            await shutdown;
+            shutdownFinished = true;
+        })();
+        worker.wake();
+        await setTimeout(workerConfig.pollIntervalMs * 2);
+        expect(storeMocks.claimTestAttempts).toHaveBeenCalledOnce();
+        expect(shutdownFinished).toBe(false);
+
+        providerSend.resolve(providerResult);
+        await vi.waitFor(() => {
+            expect(storeMocks.finalizeTestAttempt).toHaveBeenCalledOnce();
+        });
+        expect(shutdownFinished).toBe(false);
+        finalization.resolve(undefined);
+        await shutdownObservation;
+        await running;
+        expect(shutdownFinished).toBe(true);
+        expect(storeMocks.claimTestAttempts).toHaveBeenCalledOnce();
+        expect(log.info).toHaveBeenCalledWith({
+            event: "worker_stopped",
+            outcome: "stopped",
+        });
+    });
+
+    it("releases claimed test work that was not authorized before quiescing", async () => {
+        const firstWork = claimedTestWork();
+        const secondWork = {
+            ...claimedTestWork(),
+            id: 2,
+            publicId: "fd1787e7-b7f0-42c4-b69e-3cd299c9e17f",
+        } satisfies ClaimedTestWork;
+        const providerSend = deferredValue<ProviderResult>();
+        storeMocks.claimTestAttempts.mockResolvedValueOnce([
+            firstWork,
+            secondWork,
+        ]);
+        storeMocks.authorizeTestAttempt.mockResolvedValueOnce(true);
+        storeMocks.markTestAttempting.mockResolvedValueOnce(true);
+        const workerConfig = config(true);
+        workerConfig.concurrency = 1;
+        const db = database();
+        const worker = createConversationEmailUpdateWorker({
+            db,
+            provider: { send: vi.fn(() => providerSend.promise) },
+            config: workerConfig,
+            environment: "development",
+            log,
+            conversationId: 42,
+        });
+
+        const running = worker.run();
+        await vi.waitFor(() => {
+            expect(storeMocks.markTestAttempting).toHaveBeenCalledOnce();
+        });
+        const shutdown = worker.shutdown();
+        providerSend.resolve({
+            kind: "provider_accepted",
+            messageId: "private-provider-message",
+        });
+        await shutdown;
+        await running;
+
+        expect(storeMocks.finalizeTestAttempt).toHaveBeenCalledOnce();
+        expect(storeMocks.releaseClaimedTestAttempt).toHaveBeenCalledOnce();
+        expect(storeMocks.releaseClaimedTestAttempt).toHaveBeenCalledWith({
+            db,
+            work: secondWork,
+        });
+        expect(storeMocks.authorizeTestAttempt).toHaveBeenCalledOnce();
     });
 });

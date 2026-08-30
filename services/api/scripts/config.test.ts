@@ -15,8 +15,6 @@ describe("sharedConfigSchema QUEUE_VALKEY_URL", () => {
         });
 
         expect(config.QUEUE_VALKEY_URL).toEqual({
-            urlString:
-                "valkeys://user%20name:pass%40word@cache.example.com:6380",
             host: "cache.example.com",
             port: 6380,
             username: "user name",

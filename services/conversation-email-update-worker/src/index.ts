@@ -1,13 +1,25 @@
-import { createDb, getPrimaryDatabase } from "@/shared-backend/db.js";
+import { createManagedPostgresDatabase } from "@/shared-backend/db.js";
 import { databaseConfig, runtimeConfig, workerConfig } from "./config.js";
 import { log } from "./logger.js";
 import { writeStructuredLog } from "./observability.js";
-import { createConversationEmailProvider } from "./provider.js";
+import {
+    createConversationEmailProvider,
+    type ConversationEmailProvider,
+} from "./provider.js";
 import { createSimulatedConversationEmailProvider } from "./simulatedProvider.js";
-import { createConversationEmailUpdateWorker } from "./worker.js";
+import {
+    CONVERSATION_EMAIL_UPDATE_WORK_CHANNEL,
+    createConversationEmailUpdateWorker,
+    parseConversationEmailUpdateWorkWake,
+} from "./worker.js";
 
-const database = getPrimaryDatabase(await createDb(databaseConfig, log));
-const provider = (() => {
+const FORCE_SHUTDOWN_AFTER_MS = 150_000;
+
+const database = await createManagedPostgresDatabase({
+    config: databaseConfig,
+    log,
+});
+const createProvider = (): ConversationEmailProvider | undefined => {
     if (!workerConfig.enabled) return undefined;
     if (workerConfig.provider === "simulated") {
         writeStructuredLog({
@@ -45,32 +57,65 @@ const provider = (() => {
         configurationSetName: workerConfig.configurationSetName,
         requestTimeoutMs: workerConfig.requestTimeoutMs,
     });
-})();
+};
+
+const provider = createProvider();
 const worker = createConversationEmailUpdateWorker({
-    db: database,
+    db: database.db,
     provider,
     config: workerConfig,
     environment: runtimeConfig.environment,
     log,
 });
 
-let shutdownStarted = false;
-const shutdown = async (signal: "SIGINT" | "SIGTERM"): Promise<void> => {
-    if (shutdownStarted) return;
-    shutdownStarted = true;
+let shutdownPromise: Promise<void> | undefined;
+let forceShutdownTimer: NodeJS.Timeout | undefined;
+
+const shutdown = (signal: "SIGINT" | "SIGTERM"): void => {
+    if (shutdownPromise !== undefined) {
+        log.error("Second shutdown signal received; forcing process exit");
+        process.exit(1);
+    }
     writeStructuredLog({
         log,
         level: "info",
         event: { event: "signal_received", outcome: "received", signal },
     });
-    await worker.shutdown();
+    forceShutdownTimer = setTimeout(() => {
+        log.error("Graceful shutdown deadline exceeded; forcing process exit");
+        process.exit(1);
+    }, FORCE_SHUTDOWN_AFTER_MS);
+    forceShutdownTimer.unref();
+    shutdownPromise = worker.shutdown();
 };
 
-process.once("SIGINT", () => {
-    void shutdown("SIGINT");
-});
-process.once("SIGTERM", () => {
-    void shutdown("SIGTERM");
-});
+const handleSigint = (): void => {
+    shutdown("SIGINT");
+};
+const handleSigterm = (): void => {
+    shutdown("SIGTERM");
+};
 
-await worker.run();
+process.on("SIGINT", handleSigint);
+process.on("SIGTERM", handleSigterm);
+
+try {
+    await database.listen({
+        channel: CONVERSATION_EMAIL_UPDATE_WORK_CHANNEL,
+        onNotification: (payload) => {
+            worker.wake(parseConversationEmailUpdateWorkWake(payload));
+        },
+        onListen: worker.wake,
+    });
+    await worker.run();
+    if (shutdownPromise !== undefined) await shutdownPromise;
+} finally {
+    process.removeListener("SIGINT", handleSigint);
+    process.removeListener("SIGTERM", handleSigterm);
+    if (forceShutdownTimer !== undefined) clearTimeout(forceShutdownTimer);
+    try {
+        await provider?.close?.();
+    } finally {
+        await database.close();
+    }
+}

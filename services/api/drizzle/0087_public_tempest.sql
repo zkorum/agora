@@ -1,0 +1,3 @@
+DROP INDEX "conversation_email_update_delivery_materialization_idx";--> statement-breakpoint
+CREATE INDEX "conversation_email_update_test_lease_expiry_idx" ON "conversation_email_update_test_attempt" USING btree ("lease_expires_at") WHERE "conversation_email_update_test_attempt"."status" IN ('claimed', 'attempting');--> statement-breakpoint
+CREATE INDEX "conversation_email_update_delivery_materialization_idx" ON "conversation_email_update_delivery" USING btree ("status","updated_at","id");

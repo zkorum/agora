@@ -94,6 +94,7 @@ from agora_analysis_worker_shared.valkey_client import (
 from botocore.exceptions import ConnectTimeoutError, ReadTimeoutError
 from google.api_core.exceptions import DeadlineExceeded
 from google.api_core.exceptions import RetryError as GoogleRetryError
+from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 
 if TYPE_CHECKING:
@@ -162,9 +163,8 @@ def _connect_to_valkey_with_retry(settings: Settings) -> valkey_lib.Valkey | Non
             return vk
         except Exception as error:
             log.warning(
-                "[MathUpdater] Valkey unavailable at %s (%s); retrying in %.1fs",
-                valkey_url,
-                error,
+                "[MathUpdater] Valkey unavailable errorType=%s; retrying in %.1fs",
+                type(error).__name__,
                 settings.valkey_retry_interval_seconds,
             )
             time.sleep(settings.valkey_retry_interval_seconds)
@@ -1176,7 +1176,7 @@ def _run_worker_once() -> None:
     try:
         validate_ai_description_config(settings)
     except MathUpdaterConfigError as error:
-        log.error("[MathUpdater] Configuration error: %s", error)
+        log.error("[MathUpdater] Configuration errorType=MathUpdaterConfigError")
         raise SystemExit(1) from error
     log_simulation_startup(settings)
     simulation_runtime = build_simulation_runtime(settings)
@@ -2055,6 +2055,10 @@ def main() -> None:
         try:
             _run_worker_once()
             return
+        except ValidationError:
+            _stop_lease_heartbeats()
+            log.error("[MathUpdater] Invalid configuration errorType=ValidationError")
+            raise SystemExit(1) from None
         except Exception:
             _stop_lease_heartbeats()
             log.exception(

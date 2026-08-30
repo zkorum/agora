@@ -39,15 +39,15 @@ Configuration is parsed from the environment at startup. See [`env.example`](./e
 
 The worker accepts either a direct `CONNECTION_STRING` or the database and AWS Secrets Manager settings supported by `src/config.ts`. The principal Email Updates settings are:
 
-| Setting                                           | Purpose                                                                                 |
-| ------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| `CONVERSATION_EMAIL_UPDATES_ENABLED`              | Enables processing. Defaults to `false`.                                                |
-| `CONVERSATION_EMAIL_UPDATES_KILL_SWITCH`          | Stops delivery when armed. Defaults to `true`.                                          |
-| `CONVERSATION_EMAIL_UPDATE_SES_REGION`            | AWS region used by SESv2.                                                               |
-| `CONVERSATION_EMAIL_UPDATE_EMAIL_FROM_ADDRESS`    | Verified sender address; required for enabled SES delivery.                             |
-| `CONVERSATION_EMAIL_UPDATE_SES_CONFIGURATION_SET` | SES configuration set used for event publishing; required for enabled SES delivery.     |
-| `CONVERSATION_EMAIL_UPDATE_SITE_BASE_URL`         | HTTPS Agora URL used in message links; required when enabled.                           |
-| `CONVERSATION_EMAIL_UPDATE_WORKER_*`              | Worker identity, polling, heartbeat, batch, concurrency, rate, lease, and log settings. |
+| Setting                                           | Purpose                                                                                        |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `CONVERSATION_EMAIL_UPDATES_ENABLED`              | Enables processing. Defaults to `false`.                                                       |
+| `CONVERSATION_EMAIL_UPDATES_KILL_SWITCH`          | Stops delivery when armed. Defaults to `true`.                                                 |
+| `CONVERSATION_EMAIL_UPDATE_SES_REGION`            | AWS region used by SESv2.                                                                      |
+| `CONVERSATION_EMAIL_UPDATE_EMAIL_FROM_ADDRESS`    | Verified sender address; required for enabled SES delivery.                                    |
+| `CONVERSATION_EMAIL_UPDATE_SES_CONFIGURATION_SET` | SES configuration set used for event publishing; required for enabled SES delivery.            |
+| `CONVERSATION_EMAIL_UPDATE_SITE_BASE_URL`         | HTTPS Agora URL used in message links; required when enabled.                                  |
+| `CONVERSATION_EMAIL_UPDATE_WORKER_*`              | Worker identity, reconciliation, heartbeat, batch, concurrency, rate, lease, and log settings. |
 
 The simulator settings are development-only. Startup rejects a simulated provider outside `NODE_ENV=development` with `AGORA_DEV_MODE=true`, and rejects incompatible simulated and SES settings.
 
@@ -141,7 +141,11 @@ Production writes one Pino JSON event per stdout/stderr line. Docker Compose's `
 
 Every operational event includes `service`, `event`, `environment`, `workerId`, and `outcome`. Depending on the event, records also include `durationMs`, an allowlisted `counts` object, operational `deliveryId`/`snsInboxId`, or public `attemptId`/`testAttemptId`. Errors contain only allowlisted `name`, `code`, and `category`; error messages and stacks are omitted. SQL query logs are suppressed, including development parameter values. Destination addresses, usernames, user IDs, content, links, tokens, authorization, connection strings, provider request payloads, and provider message IDs are never operational log fields.
 
-`CONVERSATION_EMAIL_UPDATE_WORKER_HEARTBEAT_INTERVAL_MS` controls idle heartbeats and defaults to 60 seconds. It is bounded from 60 seconds through 1 hour. Normal empty polling ticks do not emit summaries; `tick_summary` appears only when work occurred, while `worker_heartbeat` provides low-frequency liveness.
+PostgreSQL notifications wake independent SNS, recovery, materialization, test-send, and recipient-send lanes after relevant transactions commit. Delivery aggregation has its own lane and is woken by local state transitions rather than every database notification, avoiding a full active-delivery scan after each recipient update. The database tables remain the durable work source: every lane scans on startup and at `CONVERSATION_EMAIL_UPDATE_WORKER_POLL_INTERVAL_MS` even if a notification is lost. The reconciliation interval defaults to 30 seconds.
+
+On `SIGINT` or `SIGTERM`, the worker stops admitting claims and authorizations, releases claimed work that has not been authorized, and drains authorized provider requests and their durable finalization before closing SES and PostgreSQL resources. A second signal forces an immediate exit; the production entrypoint also forces exit after 150 seconds, leaving 30 seconds before Docker's three-minute stop deadline.
+
+`CONVERSATION_EMAIL_UPDATE_WORKER_HEARTBEAT_INTERVAL_MS` controls idle heartbeats and defaults to 60 seconds. It is bounded from 60 seconds through 1 hour. Empty reconciliations do not emit summaries; `tick_summary` appears only when work occurred, while `worker_heartbeat` provides low-frequency liveness.
 
 Example CloudWatch Logs Insights queries:
 

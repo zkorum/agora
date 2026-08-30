@@ -55,6 +55,7 @@ export type ProviderResult =
     { kind: "provider_accepted"; messageId: string } | ProviderFailure;
 
 export interface ConversationEmailProvider {
+    close?: () => Promise<void> | void;
     send: (
         message: ConversationEmailProviderMessage,
     ) => Promise<ProviderResult>;
@@ -175,6 +176,9 @@ export function createConversationEmailProvider({
         }) => await client.send(command, { abortSignal }));
 
     return {
+        close: () => {
+            client.destroy();
+        },
         send: async (message) => {
             if (!isSafeProviderSubject(message.subject)) {
                 return {

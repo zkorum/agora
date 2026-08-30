@@ -6199,6 +6199,9 @@ export const conversationEmailUpdateTestAttemptTable = pgTable(
             table.status,
             table.createdAt,
         ),
+        index("conversation_email_update_test_lease_expiry_idx")
+            .on(table.leaseExpiresAt)
+            .where(sql`${table.status} IN ('claimed', 'attempting')`),
         uniqueIndex("conversation_email_update_test_provider_message_unique")
             .on(table.providerMessageId)
             .where(isNotNull(table.providerMessageId)),
@@ -6320,6 +6323,7 @@ export const conversationEmailUpdateDeliveryTable = pgTable(
             ),
         index("conversation_email_update_delivery_materialization_idx").on(
             table.status,
+            table.updatedAt,
             table.id,
         ),
         index("conversation_email_update_delivery_dispatch_idx").on(

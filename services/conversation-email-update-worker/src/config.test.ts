@@ -66,6 +66,13 @@ describe("Conversation Email Updates simulator configuration", () => {
 });
 
 describe("Conversation Email Updates observability configuration", () => {
+    it("uses low-frequency reconciliation when notifications are quiet", () => {
+        expect(
+            parseConversationEmailWorkerEnvironment({})
+                .CONVERSATION_EMAIL_UPDATE_WORKER_POLL_INTERVAL_MS,
+        ).toBe(30_000);
+    });
+
     it("bounds the heartbeat interval", () => {
         expect(
             parseConversationEmailWorkerEnvironment({

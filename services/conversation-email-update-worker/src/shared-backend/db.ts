@@ -3,13 +3,14 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { withReplicas } from "drizzle-orm/pg-core";
+import { setTimeout as sleep } from "node:timers/promises";
 import type { SharedConfigSchema } from "./config.js";
 import {
     GetSecretValueCommand,
     SecretsManagerClient,
 } from "@aws-sdk/client-secrets-manager";
 import type pino from "pino";
-import { DrizzleFastifyLogger } from "./logger.js";
+import { DrizzleFastifyLogger, safeDependencyError } from "./logger.js";
 
 const POSTGRES_STARTUP_RETRY_MS = 5_000;
 
@@ -27,12 +28,6 @@ export function getPrimaryDatabase(
     database: PostgresJsDatabase,
 ): PostgresJsDatabase {
     return hasPrimaryDatabase(database) ? database.$primary : database;
-}
-
-function sleep({ ms }: { ms: number }): Promise<void> {
-    return new Promise((resolve) => {
-        setTimeout(resolve, ms);
-    });
 }
 
 export async function createPostgresClient(
@@ -86,10 +81,10 @@ export async function createPostgresClient(
                 }
             }
             try {
-                const credentials: object = JSON.parse(
-                    response.SecretString,
-                ) as object;
+                const credentials: unknown = JSON.parse(response.SecretString);
                 if (
+                    typeof credentials !== "object" ||
+                    credentials === null ||
                     !("username" in credentials) ||
                     typeof credentials.username !== "string"
                 ) {
@@ -118,17 +113,17 @@ export async function createPostgresClient(
                     // Using postgres-js default max: 10 (optimal for our 4 vCPU database)
                     // Connection lifecycle managed automatically (45-90 min lifetime)
                 });
-            } catch (error) {
-                log.error(error);
+            } catch {
                 log.error(
                     "Unable to parse received SecretString in JSON or connect to DB",
                 );
                 process.exit(1);
             }
-        } catch (e) {
-            log.error(e);
+        } catch {
             log.error("Unable to receive response from AWS Secrets Manager");
             process.exit(1);
+        } finally {
+            awsSecretsManagerClient.destroy();
         }
     } else if (connectionString !== undefined) {
         try {
@@ -138,11 +133,10 @@ export async function createPostgresClient(
                 // Connection lifecycle managed automatically (45-90 min lifetime)
                 ssl: config.NODE_ENV === "production" ? "require" : undefined,
             });
-        } catch (e) {
+        } catch {
             log.error(
                 `Unable to connect to the database (${useReadReplica ? "read replica" : "primary"})`,
             );
-            log.error(e);
             process.exit(1);
         }
     } else {
@@ -165,7 +159,6 @@ export async function createDb(
     const primaryDb = drizzle(primaryClient, {
         logger: new DrizzleFastifyLogger({
             fastifyLogger: log,
-            includeParams: config.NODE_ENV === "development",
         }),
     });
 
@@ -186,7 +179,6 @@ export async function createDb(
         const readDb = drizzle(readClient, {
             logger: new DrizzleFastifyLogger({
                 fastifyLogger: log,
-                includeParams: config.NODE_ENV === "development",
             }),
         });
 
@@ -206,6 +198,98 @@ export async function createDb(
 }
 
 type PostgresClient = Awaited<ReturnType<typeof createPostgresClient>>;
+type PostgresListener = Awaited<ReturnType<PostgresClient["listen"]>>;
+
+export interface ManagedPostgresDatabase {
+    db: PostgresJsDatabase;
+    listen: ({
+        channel,
+        onNotification,
+        onListen,
+    }: {
+        channel: string;
+        onNotification: (payload: string) => void;
+        onListen?: () => void;
+    }) => Promise<void>;
+    close: () => Promise<void>;
+}
+
+export async function createManagedPostgresDatabase({
+    config,
+    log,
+}: {
+    config: SharedConfigSchema;
+    log: Pick<pino.BaseLogger, "info" | "error">;
+}): Promise<ManagedPostgresDatabase> {
+    const client = await createReadyPostgresClient({
+        config,
+        log,
+        useReadReplica: false,
+    });
+    const db = drizzle(client);
+    const listeners = new Set<PostgresListener>();
+    let activeListenOperations = 0;
+    let listenOperationsIdle = Promise.resolve();
+    let resolveListenOperations: (() => void) | undefined;
+    let closing = false;
+    let closePromise: Promise<void> | undefined;
+    const isClosing = (): boolean => closing;
+
+    const listen = async ({
+        channel,
+        onNotification,
+        onListen,
+    }: {
+        channel: string;
+        onNotification: (payload: string) => void;
+        onListen?: () => void;
+    }): Promise<void> => {
+        if (isClosing()) {
+            throw new Error("Managed PostgreSQL database is closing");
+        }
+
+        activeListenOperations += 1;
+        if (activeListenOperations === 1) {
+            listenOperationsIdle = new Promise((resolve) => {
+                resolveListenOperations = resolve;
+            });
+        }
+
+        try {
+            const listener = await client.listen(
+                channel,
+                onNotification,
+                onListen,
+            );
+            if (isClosing()) {
+                await listener.unlisten();
+                throw new Error("Managed PostgreSQL database is closing");
+            }
+            listeners.add(listener);
+        } finally {
+            activeListenOperations -= 1;
+            if (activeListenOperations === 0) {
+                resolveListenOperations?.();
+                resolveListenOperations = undefined;
+            }
+        }
+    };
+
+    const close = async (): Promise<void> => {
+        if (closePromise === undefined) {
+            closing = true;
+            closePromise = closeManagedPostgresResources({
+                client,
+                listeners,
+                listenOperationsIdle,
+                log,
+            });
+        }
+        await closePromise;
+    };
+
+    return { db, listen, close };
+}
 
 async function closePostgresClient({
     client,
@@ -217,8 +301,37 @@ async function closePostgresClient({
     try {
         await client.end({ timeout: 5 });
     } catch (error: unknown) {
-        log.error(error, "Failed to close unavailable PostgreSQL client");
+        log.error(
+            safeDependencyError(error),
+            "Failed to close unavailable PostgreSQL client",
+        );
     }
+}
+
+async function closeManagedPostgresResources({
+    client,
+    listeners,
+    listenOperationsIdle,
+    log,
+}: {
+    client: PostgresClient;
+    listeners: Set<PostgresListener>;
+    listenOperationsIdle: Promise<void>;
+    log: Pick<pino.BaseLogger, "error">;
+}): Promise<void> {
+    await listenOperationsIdle;
+    for (const listener of listeners) {
+        try {
+            await listener.unlisten();
+        } catch (error: unknown) {
+            log.error(
+                safeDependencyError(error),
+                "Failed to stop PostgreSQL listener",
+            );
+        }
+    }
+    listeners.clear();
+    await closePostgresClient({ client, log });
 }
 
 async function createReadyPostgresClient({
@@ -240,11 +353,11 @@ async function createReadyPostgresClient({
             readyClient = client;
         } catch (error: unknown) {
             log.error(
-                error,
+                safeDependencyError(error),
                 `[DB] PostgreSQL ${role} unavailable; retrying in ${String(POSTGRES_STARTUP_RETRY_MS)}ms`,
             );
             await closePostgresClient({ client, log });
-            await sleep({ ms: POSTGRES_STARTUP_RETRY_MS });
+            await sleep(POSTGRES_STARTUP_RETRY_MS);
         }
     }
     return readyClient;

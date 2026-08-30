@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import TYPE_CHECKING
 
 from sqlalchemy.exc import DBAPIError, SQLAlchemyError
@@ -22,18 +23,12 @@ def configure_worker_logging(*, log_level: LogLevel) -> None:
     )
 
 
-def _first_line(value: object) -> str | None:
-    if value is None:
-        return None
-    text = str(value).strip()
-    if not text:
-        return None
-    return text.splitlines()[0]
+_SAFE_DATABASE_CODE = re.compile(r"[0-9A-Z_]{2,32}")
 
 
-def _diagnostic_value(error: object, name: str) -> str | None:
+def _safe_database_code(error: object, name: str) -> str | None:
     value = getattr(error, name, None)
-    return _first_line(value)
+    return value if isinstance(value, str) and _SAFE_DATABASE_CODE.fullmatch(value) else None
 
 
 def database_error_summary(error: BaseException) -> str:
@@ -43,37 +38,19 @@ def database_error_summary(error: BaseException) -> str:
         original = error.orig
         parts.append(f"dbapi_type={type(original).__name__}")
 
-        sqlstate = _diagnostic_value(original, "sqlstate") or _diagnostic_value(
+        sqlstate = _safe_database_code(original, "sqlstate") or _safe_database_code(
             original,
             "pgcode",
         )
         if sqlstate is not None:
             parts.append(f"sqlstate={sqlstate}")
 
-        diagnostic = getattr(original, "diag", None)
-        if diagnostic is not None:
-            for label, attr_name in (
-                ("message", "message_primary"),
-                ("constraint", "constraint_name"),
-                ("table", "table_name"),
-                ("schema", "schema_name"),
-            ):
-                value = _diagnostic_value(diagnostic, attr_name)
-                if value is not None:
-                    parts.append(f"{label}={value}")
-
-        original_message = _first_line(original)
-        if original_message is not None:
-            parts.append(f"original={original_message}")
-
     elif isinstance(error, SQLAlchemyError):
         # SQLAlchemy's string form includes generated SQL and parameters for many
         # exceptions. Keep logs actionable without dumping user data or huge rows.
         parts.append("message=SQLAlchemy error; details omitted")
     else:
-        message = _first_line(error)
-        if message is not None:
-            parts.append(f"message={message}")
+        parts.append("message=database error; details omitted")
 
     return " ".join(parts)
 

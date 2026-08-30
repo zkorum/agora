@@ -45,18 +45,20 @@ def create_ready_engine[EngineT](
     sleep_fn: SleepFn = time.sleep,
 ) -> EngineT | None:
     while should_continue():
-        engine = engine_factory(connection_string)
+        engine: EngineT | None = None
         try:
+            engine = engine_factory(connection_string)
             readiness_check(engine)
             logger.info("%s PostgreSQL %s connection verified", log_prefix, role)
             return engine
         except Exception as error:
-            dispose_engine(engine)
+            if engine is not None:
+                dispose_engine(engine)
             logger.warning(
-                "%s PostgreSQL %s unavailable (%s); retrying in %.1fs",
+                "%s PostgreSQL %s unavailable errorType=%s; retrying in %.1fs",
                 log_prefix,
                 role,
-                error,
+                type(error).__name__,
                 retry_interval_seconds,
             )
             sleep_fn(retry_interval_seconds)
