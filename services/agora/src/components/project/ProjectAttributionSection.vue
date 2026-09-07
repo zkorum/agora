@@ -14,26 +14,18 @@
         }"
         v-bind="entryLinkAttributes(entry)"
       >
+        <OrganizationImage
+          v-if="entry.imageUrl !== undefined"
+          height="48px"
+          :organization-image-url="entry.imageUrl"
+          :organization-name="entry.displayName"
+        />
         <div
+          v-else
           class="project-attribution-section__logo"
-          :class="{
-            'project-attribution-section__logo--image':
-              entry.imageUrl !== undefined,
-          }"
-          :style="
-            entry.imageUrl === undefined
-              ? logoStyle(entry.accentColor)
-              : undefined
-          "
+          :style="logoStyle(entry.accentColor)"
         >
-          <OrganizationImage
-            v-if="entry.imageUrl !== undefined"
-            class="project-attribution-section__logo-image"
-            height="100%"
-            :organization-image-url="entry.imageUrl"
-            :organization-name="entry.displayName"
-          />
-          <template v-else>{{ entry.initials }}</template>
+          {{ entry.initials }}
         </div>
 
         <div class="project-attribution-section__body">
@@ -195,21 +187,6 @@ function logoStyle(color: string): { backgroundColor: string } {
   font-size: 0.78rem;
   font-weight: var(--font-weight-bold);
   letter-spacing: 0.02em;
-}
-
-.project-attribution-section__logo--image {
-  padding: 0;
-  border: 1px solid $sky-lighter;
-  background: white;
-  color: inherit;
-}
-
-.project-attribution-section__logo-image {
-  width: 100%;
-  height: 100%;
-  max-width: 100%;
-  display: block;
-  object-fit: contain;
 }
 
 .project-attribution-section__body {
