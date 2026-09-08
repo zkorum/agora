@@ -20,13 +20,13 @@
           :organization-image-url="entry.imageUrl"
           :organization-name="entry.displayName"
         />
-        <div
+        <BrandAvatar
           v-else
-          class="project-attribution-section__logo"
-          :style="logoStyle(entry.accentColor)"
-        >
-          {{ entry.initials }}
-        </div>
+          :name="entry.displayName"
+          :image-url="entry.imageUrl"
+          :size="48"
+          :color="entry.accentColor"
+        />
 
         <div class="project-attribution-section__body">
           <div class="project-attribution-section__name">
@@ -48,6 +48,7 @@
 
 <script setup lang="ts">
 import OrganizationImage from "src/components/account/OrganizationImage.vue";
+import BrandAvatar from "src/shared/branding/BrandAvatar.vue";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import { computed } from "vue";
 
@@ -58,12 +59,7 @@ import { getSafeProjectWebHref } from "./projectUrlSafety";
 
 type ProjectAttributionSectionEntry = Pick<
   ProjectAttribution,
-  | "accentColor"
-  | "displayName"
-  | "imageUrl"
-  | "initials"
-  | "role"
-  | "websiteUrl"
+  "accentColor" | "displayName" | "imageUrl" | "role" | "websiteUrl"
 >;
 
 const props = defineProps<{
@@ -109,10 +105,6 @@ function entryLinkAttributes(
       params: { name: entry.displayName },
     }),
   };
-}
-
-function logoStyle(color: string): { backgroundColor: string } {
-  return { backgroundColor: color };
 }
 </script>
 
@@ -172,21 +164,6 @@ function logoStyle(color: string): { backgroundColor: string } {
     outline: 2px solid rgba($primary, 0.45);
     outline-offset: 2px;
   }
-}
-
-.project-attribution-section__logo {
-  width: 3rem;
-  height: 3rem;
-  box-sizing: border-box;
-  display: grid;
-  place-items: center;
-  flex: none;
-  overflow: hidden;
-  border-radius: 50%;
-  color: white;
-  font-size: 0.78rem;
-  font-weight: var(--font-weight-bold);
-  letter-spacing: 0.02em;
 }
 
 .project-attribution-section__body {

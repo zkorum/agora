@@ -46,6 +46,16 @@ for service in "${ALL_SERVICES[@]}"; do
             fi
         fi
     done
+    find "$TARGET_DIR" -name "*.vue" -print0 | while read -r -d $'\0' file; do
+        VUE_COMMENT="<!-- WARNING: GENERATED FROM SHARED DIRECTORY, DO NOT MODIFY DIRECTLY! -->"
+        if ! grep -qF "$VUE_COMMENT" "$file"; then
+            if [[ "$OSTYPE" == "darwin"* ]]; then
+                sed -i '' "1s;^;$VUE_COMMENT\n;" "$file"
+            else
+                sed -i "1i $VUE_COMMENT" "$file"
+            fi
+        fi
+    done
 done
 
 echo "✓ Universal sync complete!"

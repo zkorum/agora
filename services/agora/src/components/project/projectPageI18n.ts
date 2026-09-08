@@ -65,9 +65,6 @@ export interface ProjectPageTranslations {
   projectOwnersTitle: string;
   partnersTitle: string;
   projectContactTitle: string;
-  poweredBy: string;
-  homeAriaLabel: string;
-  contentOwnedByProjectOwners: string;
   activityStatisticsAriaLabel: string;
   conversationType: string;
   voteType: string;
@@ -128,10 +125,6 @@ export const projectPageTranslations: Readonly<
     projectOwnersTitle: "Project Owners",
     partnersTitle: "Partners",
     projectContactTitle: "Contact",
-    poweredBy: "Powered by",
-    homeAriaLabel: "Go to Agora Citizen Network home",
-    contentOwnedByProjectOwners:
-      "Project content is owned by the Project Owners",
     activityStatisticsAriaLabel: "Activity statistics",
     conversationType: "Conversation",
     voteType: "Vote",
@@ -188,10 +181,6 @@ export const projectPageTranslations: Readonly<
     projectOwnersTitle: "Responsables del proyecto",
     partnersTitle: "Socios",
     projectContactTitle: "Contacto",
-    poweredBy: "Con tecnología de",
-    homeAriaLabel: "Ir al inicio de Agora Citizen Network",
-    contentOwnedByProjectOwners:
-      "El contenido del proyecto pertenece a sus responsables",
     activityStatisticsAriaLabel: "Estadísticas de la actividad",
     conversationType: "Conversación",
     voteType: "Votación",
@@ -248,10 +237,6 @@ export const projectPageTranslations: Readonly<
     projectOwnersTitle: "Porteurs du projet",
     partnersTitle: "Partenaires",
     projectContactTitle: "Contact",
-    poweredBy: "Propulsé par",
-    homeAriaLabel: "Aller à l'accueil d'Agora Citizen Network",
-    contentOwnedByProjectOwners:
-      "Le contenu du projet appartient aux porteurs du projet",
     activityStatisticsAriaLabel: "Statistiques de l'activité",
     conversationType: "Conversation",
     voteType: "Vote",
@@ -307,9 +292,6 @@ export const projectPageTranslations: Readonly<
     projectOwnersTitle: "项目负责人",
     partnersTitle: "合作伙伴",
     projectContactTitle: "联系人",
-    poweredBy: "技术支持",
-    homeAriaLabel: "前往 Agora Citizen Network 首页",
-    contentOwnedByProjectOwners: "项目内容归项目负责人所有",
     activityStatisticsAriaLabel: "活动统计",
     conversationType: "对话",
     voteType: "投票",
@@ -365,9 +347,6 @@ export const projectPageTranslations: Readonly<
     projectOwnersTitle: "專案負責人",
     partnersTitle: "合作夥伴",
     projectContactTitle: "聯絡人",
-    poweredBy: "技術支援",
-    homeAriaLabel: "前往 Agora Citizen Network 首頁",
-    contentOwnedByProjectOwners: "專案內容歸專案負責人所有",
     activityStatisticsAriaLabel: "活動統計",
     conversationType: "對話",
     voteType: "投票",
@@ -424,10 +403,6 @@ export const projectPageTranslations: Readonly<
     projectOwnersTitle: "プロジェクトオーナー",
     partnersTitle: "パートナー",
     projectContactTitle: "連絡先",
-    poweredBy: "提供",
-    homeAriaLabel: "Agora Citizen Network ホームへ移動",
-    contentOwnedByProjectOwners:
-      "プロジェクトのコンテンツはプロジェクトオーナーに帰属します",
     activityStatisticsAriaLabel: "アクティビティ統計",
     conversationType: "会話",
     voteType: "投票",
@@ -483,9 +458,6 @@ export const projectPageTranslations: Readonly<
     projectOwnersTitle: "مالكو المشروع",
     partnersTitle: "الشركاء",
     projectContactTitle: "جهة الاتصال",
-    poweredBy: "مدعوم من",
-    homeAriaLabel: "الانتقال إلى الصفحة الرئيسية لـ Agora Citizen Network",
-    contentOwnedByProjectOwners: "محتوى المشروع مملوك لمالكي المشروع",
     activityStatisticsAriaLabel: "إحصاءات النشاط",
     conversationType: "محادثة",
     voteType: "تصويت",
@@ -541,9 +513,6 @@ export const projectPageTranslations: Readonly<
     projectOwnersTitle: "مالکان پروژه",
     partnersTitle: "شرکا",
     projectContactTitle: "تماس",
-    poweredBy: "قدرت‌گرفته از",
-    homeAriaLabel: "رفتن به صفحه اصلی Agora Citizen Network",
-    contentOwnedByProjectOwners: "محتوای پروژه متعلق به مالکان پروژه است",
     activityStatisticsAriaLabel: "آمار فعالیت",
     conversationType: "گفت‌وگو",
     voteType: "رأی‌گیری",
@@ -599,9 +568,6 @@ export const projectPageTranslations: Readonly<
     projectOwnersTitle: "בעלי הפרויקט",
     partnersTitle: "שותפים",
     projectContactTitle: "איש קשר",
-    poweredBy: "מופעל על ידי",
-    homeAriaLabel: "מעבר לדף הבית של Agora Citizen Network",
-    contentOwnedByProjectOwners: "תוכן הפרויקט שייך לבעלי הפרויקט",
     activityStatisticsAriaLabel: "סטטיסטיקות פעילות",
     conversationType: "שיחה",
     voteType: "הצבעה",
@@ -657,9 +623,6 @@ export const projectPageTranslations: Readonly<
     projectOwnersTitle: "Долбоор ээлери",
     partnersTitle: "Өнөктөштөр",
     projectContactTitle: "Байланыш",
-    poweredBy: "Түзгөн",
-    homeAriaLabel: "Agora Citizen Network башкы бетине өтүү",
-    contentOwnedByProjectOwners: "Долбоордун мазмуну Долбоор ээлерине таандык",
     activityStatisticsAriaLabel: "Иш-чара статистикасы",
     conversationType: "Талкуу",
     voteType: "Добуш берүү",
@@ -716,10 +679,6 @@ export const projectPageTranslations: Readonly<
     projectOwnersTitle: "Владельцы проекта",
     partnersTitle: "Партнеры",
     projectContactTitle: "Контакт",
-    poweredBy: "Работает на",
-    homeAriaLabel: "Перейти на главную Agora Citizen Network",
-    contentOwnedByProjectOwners:
-      "Содержание проекта принадлежит владельцам проекта",
     activityStatisticsAriaLabel: "Статистика активности",
     conversationType: "Обсуждение",
     voteType: "Голосование",
