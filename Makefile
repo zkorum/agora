@@ -53,7 +53,7 @@ dev-sync:
 	$(LOG_RUNNER) --service shared -- $(MAKE) dev-sync-raw
 
 dev-sync-raw:
-	watchman-make -p 'services/shared/src/**/*.ts' -t sync
+	watchman-make -p 'services/shared/src/**/*.ts' 'services/shared/src/**/*.vue' -t sync
 
 dev-sync-app-api:
 	$(LOG_RUNNER) --service shared-app-api -- $(MAKE) dev-sync-app-api-raw
