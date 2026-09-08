@@ -80,13 +80,14 @@ function t(key: keyof ProjectPageFooterTranslations): string {
 }
 
 .project-page-footer__legal-links {
+  align-items: center;
   column-gap: 0.5rem;
 }
 
 .project-page-footer__separator {
-  @media (max-width: 599px) {
-    display: none;
-  }
+  font-size: 1.25rem;
+  font-weight: var(--font-weight-bold);
+  line-height: 1;
 }
 
 .project-page-footer__link {
