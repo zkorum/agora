@@ -47,8 +47,8 @@ import type { ApiV1RankingBwsLoadPost200Response } from "src/api";
 import AnalysisActionButton from "src/components/post/analysis/common/AnalysisActionButton.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { MaxDiffComparison } from "src/shared/types/zod";
+import { restoreMaxDiff } from "src/shared/utils/maxdiff";
 import { formatAmount } from "src/utils/common";
-import { restoreMaxDiff } from "src/utils/maxdiff";
 import { computed } from "vue";
 
 import type { MaxDiffListItem } from "./MaxDiffItemListSection.vue";

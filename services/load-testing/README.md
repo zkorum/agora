@@ -1,6 +1,6 @@
-# Load Testing for Agora Guest Voting
+# Load Testing for Agora Guest Voting and Ranking
 
-k6 load testing infrastructure for stress testing guest voting scenarios with real-time monitoring.
+k6 load testing infrastructure for stress testing guest voting and ranking scenarios with real-time monitoring.
 
 ## Monitoring Setup
 
@@ -79,6 +79,65 @@ The script wraps k6 with the root dev log runner. Outputs are written to:
 - `.local/logs/latest/load-testing.summary.json` for the k6 summary export.
 
 Search semantic events directly with `rg`, for example `rg '"outcome":"failure"' .local/logs/latest/load-testing.events.jsonl`.
+
+#### Scenario 2: Solidago Ranking
+
+Use **disposable environments only**. Guest users and comparison history remain in the database; only load-generator keys are cleared after each participant. It requires distinct ranking fixtures, not the voting fixtures used by Scenario 1. Neither runner launches the other scenario. The former `test:all` command is now named `test:conversation-voting:build`; use `test:solidago-ranking:build` to build and run ranking load instead.
+
+Precreate each conversation in the UI with:
+
+- Conversation type `ranking`, `rankingMode: "bws"`, and `participationMode: "guest"`.
+- At least 4 active ranking items.
+- No required survey and no event-ticket requirement.
+- Open participation and no moderation restrictions (open/unmoderated).
+
+Start the API and scoring worker against the same disposable environment, for example with root `make dev-api` and `make dev-scoring-worker`. Setup validates the fixtures before participant load starts; the scenario does not create them. Keep fixture items and participation settings unchanged during the run.
+
+From the repository root, a small single-conversation run with monitoring:
+
+```bash
+RANKING_USERS_PER_CONVERSATION=10 \
+RANKING_VUS_PER_CONVERSATION=2 \
+RANKING_COMPARISONS_PER_USER=3 \
+make load-test-scenario2 CONVERSATION_SLUG_IDS=slug1
+```
+
+Three conversations with 100 users and 10 VUs **each** means 300 participants and 30 VUs total:
+
+```bash
+RANKING_USERS_PER_CONVERSATION=100 \
+RANKING_VUS_PER_CONVERSATION=10 \
+make load-test-scenario2 CONVERSATION_SLUG_IDS=slug1,slug2,slug3
+```
+
+The root target accepts the same `conversations=slug1,slug2` alias as Scenario 1; `CONVERSATION_SLUG_IDS` takes precedence. The monitoring wrapper builds first and can also be invoked from `services/load-testing` with `bash scripts/run-scenario2-with-monitoring.sh slug1,slug2`. It sends Prometheus remote-write metrics to `http://localhost:9090/api/v1/write` by default; set `K6_PROMETHEUS_RW_SERVER_URL` to override that endpoint.
+
+Without Prometheus, from `services/load-testing`:
+
+```bash
+pnpm build
+CONVERSATION_SLUG_IDS=slug1 pnpm test:solidago-ranking
+```
+
+Both Scenario 2 runners use the durable logger with service name `load-testing-solidago`. Outputs are relative to the repository root:
+
+- `.local/logs/latest/load-testing-solidago.log` for k6 console output.
+- `.local/logs/latest/load-testing-solidago.events.jsonl` for semantic events.
+- `.local/logs/latest/load-testing-solidago.summary.json` for the k6 summary export.
+
+Logs and metrics are tagged by conversation, so inspect individual conversations rather than only aggregate throughput. To follow scoring progress, inspect `.local/logs/latest/scoring-worker.log` (captured by `make dev-scoring-worker`).
+
+Inspect failures and actual completed workloads without relying on terminal scrollback:
+
+```bash
+rg '"outcome":"failure"' .local/logs/latest/load-testing-solidago.events.jsonl
+rg '"action":"user_completed"' .local/logs/latest/load-testing-solidago.events.jsonl
+rg '"action":"results_observed"' .local/logs/latest/load-testing-solidago.events.jsonl
+```
+
+The configuration event records the target API, conversation list, per-conversation budgets/deadline, and total users/VUs. `comparison_saved` records accepted history growth and request timing; `user_completed` records the actual comparison count and `ranking_complete` or `comparison_budget` stop reason. `results_observed` records scored-item and participant counts before load, after each participant, and after cooldown, always with `scoringFreshnessVerified: false`. Request failures record status/transport codes, schema issue paths, or enumerated participation rejection reasons, not raw response bodies, credentials, or UCAN tokens. Inspect the preceding request failure when a terminal `user_failed` event reports a request failure.
+
+Custom k6 metrics are `ranking_request_success`, `ranking_request_duration` (milliseconds), `ranking_users_completed`, `ranking_user_success`, `ranking_comparisons_saved` (new comparisons, not cumulative rewritten rows), and `ranking_history_length`. Request metrics include `conversation`, `operation`, and `phase` tags; other metrics include `conversation`. Thresholds require all configured users to finish in every conversation, over 95% request/user success, save p95 below 5 seconds both globally and per conversation, and HTTP failures below 5%. Interrupted or failed participant flows fail the completion threshold rather than silently reporting a smaller successful workload.
 
 ### 5. Monitor Real-Time (Local)
 
@@ -160,9 +219,21 @@ Tests voting load on one or more conversations:
 - Multiple-conversation voting throughput
 - Transaction throughput limits
 
+### Scenario 2: Solidago Ranking Load
+
+`src/scenario2-solidago-ranking.ts` builds to its own CommonJS entry, `dist/scenario2-solidago-ranking.cjs`. Each conversation gets an independent, concurrent k6 `shared-iterations` pool. Users and VUs are configured **per conversation**, not divided across the supplied slugs. Each iteration creates a fresh guest identity, even when the same VU runs multiple iterations.
+
+Participants fetch active items and use deterministic preferences across four groups to choose best/worst items from server-provided candidate sets. They reuse the frontend's shared MaxDiff engine and save the whole comparison history, including final ranking/completion state in the final comparison's save. There is no extra completion write. `RANKING_COMPARISONS_PER_USER` is a maximum per participant: users stop earlier once the engine has resolved all pairs. Four-item fixtures can finish in just two comparisons; use more items (for example, 20-50) to sustain longer sessions. Budget-limited sessions remain incomplete but still trigger scoring. Terminal events record the stop reason and actual comparison count.
+
+API success means the comparison history was accepted, **not that the scoring worker published updated results**. After the participant load ends, cooldown only waits and then reads results. It cannot prove the worker caught up, and existing results on previously used fixtures do not prove freshness for this run.
+
+After load stops, monitor `.local/logs/latest/scoring-worker.log` and compare `ranking_conversation_config.scoring_input_revision` with `processed_scoring_input_revision` for each tested conversation. A lagging processed revision means there is still unprocessed scoring input; wait for it to catch up before interpreting results as current. Ensure other writers have stopped too when making this comparison.
+
+The scoring worker consumes the Valkey dirty set lightest-first. Dirty-set entries deduplicate repeated updates for a single conversation, so a hot single-conversation run does not imply one queued scoring job per API save. Multiple conversations exercise scheduling across independent dirty entries; API throughput and worker publication throughput are different measurements.
+
 ## Configuration
 
-### Test Parameters
+### Scenario 1 Parameters
 
 Edit scenario files to adjust:
 
@@ -171,6 +242,37 @@ Edit scenario files to adjust:
 - `MAIN_PAGE_FETCH_PROBABILITY` / `CONVERSATION_PAGE_FETCH_PROBABILITY`
 - `INITIAL_CONVERSATION_PAGE_FETCH_PROBABILITY` to override the initial frontend page-load probability. If omitted, an explicit `CONVERSATION_PAGE_FETCH_PROBABILITY` value is reused; otherwise the initial page load defaults to always on.
 - `SLEEP_BETWEEN_ACTIONS` and retry constants in the scenario file
+
+### Scenario 2 Parameters
+
+Set these environment variables when invoking either Scenario 2 runner:
+
+| Variable                         | Default                    | Meaning                                                               |
+| -------------------------------- | -------------------------- | --------------------------------------------------------------------- |
+| `CONVERSATION_SLUG_IDS`          | Required                   | One ranking conversation slug or a comma-separated list.              |
+| `RANKING_USERS_PER_CONVERSATION` | `100`                      | Fresh guest participant iterations per conversation.                  |
+| `RANKING_VUS_PER_CONVERSATION`   | `10`                       | Concurrent VUs in each conversation's independent pool.               |
+| `RANKING_COMPARISONS_PER_USER`   | `20`                       | Maximum comparisons per guest; natural completion can stop earlier.   |
+| `RANKING_THINK_TIME_SECONDS`     | `0.5`                      | Think time between participant actions.                               |
+| `RANKING_COOLDOWN_SECONDS`       | `30`                       | Wait before reading final results, not a worker freshness guarantee.  |
+| `RANKING_MAX_DURATION_SECONDS`   | `1800`                     | Deadline per conversation pool; increase for larger/slower workloads. |
+| `RANKING_ALLOW_INSECURE_HTTP`    | `false`                    | Explicit opt-in to unencrypted HTTP outside loopback.                 |
+| `API_BASE_URL`                   | `http://127.0.0.1:8084`    | Existing local API default.                                           |
+| `BACKEND_DID`                    | `did:web:localhost%3A8084` | Must be explicitly set when overriding the API origin.                |
+
+`API_BASE_URL` must be an HTTP(S) origin without credentials, path, query, or fragment; one trailing slash is normalized away. HTTPS is required outside loopback unless `RANKING_ALLOW_INSECURE_HTTP=true` explicitly allows a disposable private-network target. UCAN audiences are not inferred from hostnames: set `BACKEND_DID` to the actual backend audience. API requests do not follow redirects.
+
+### Local Verification
+
+From `services/load-testing`, these commands verify the bundles, lint, and types without running a load test:
+
+```bash
+pnpm build
+pnpm lint
+pnpm exec tsc --noEmit
+```
+
+Building emits both separate scenario bundles but executes neither. Choose the runner matching your fixture type explicitly.
 
 ### Monitoring Configuration (Local Only)
 

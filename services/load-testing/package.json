@@ -6,8 +6,10 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "test:conversation-voting": "node ../../scripts/dev-log-runner.mjs --service load-testing -- bash -lc 'cd services/load-testing && k6 run --summary-export \"$AGORA_LOG_SUMMARY_FILE\" dist/scenario1-single-conversation.cjs'",
-        "test:all": "pnpm run build && pnpm run test:conversation-voting",
+        "test:conversation-voting": "node ../../scripts/dev-log-runner.mjs --service load-testing -- bash -c 'cd services/load-testing && k6 run --summary-export \"$AGORA_LOG_SUMMARY_FILE\" dist/scenario1-single-conversation.cjs'",
+        "test:solidago-ranking": "node ../../scripts/dev-log-runner.mjs --service load-testing-solidago -- bash -c 'cd services/load-testing && k6 run --summary-export \"$AGORA_LOG_SUMMARY_FILE\" dist/scenario2-solidago-ranking.cjs'",
+        "test:conversation-voting:build": "pnpm run build && pnpm run test:conversation-voting",
+        "test:solidago-ranking:build": "pnpm run build && pnpm run test:solidago-ranking",
         "lint": "eslint .",
         "format:write": "prettier --write \"**/*.{js,ts,jsx,tsx,vue,scss,html,md,json}\"",
         "format:check": "prettier . --check"
@@ -31,7 +33,8 @@
         "fast-text-encoding": "^1.0.6",
         "html-to-text": "9.0.5",
         "tweetnacl": "^1.0.3",
-        "uint8arrays": "^5.1.0"
+        "uint8arrays": "^5.1.0",
+        "zod": "^4.3.6"
     },
     "pnpm": {
         "overrides": {

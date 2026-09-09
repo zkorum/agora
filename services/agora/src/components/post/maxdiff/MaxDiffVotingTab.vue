@@ -282,17 +282,17 @@ import type {
   RankingItemDisplayedContent,
 } from "src/shared/types/zod";
 import {
+  createMaxDiff,
+  type MaxDiffInstance,
+  recordMaxDiffVote,
+  restoreMaxDiff,
+} from "src/shared/utils/maxdiff";
+import {
   type MaxDiffSaveContext,
   useMaxDiffItemsQuery,
   useMaxDiffLoadQuery,
   useMaxDiffSaveMutation,
 } from "src/utils/api/maxdiff/useMaxDiffQueries";
-import {
-  createMaxDiff,
-  type MaxDiffInstance,
-  recordMaxDiffVote,
-  restoreMaxDiff,
-} from "src/utils/maxdiff";
 import {
   createMaxDiffCandidateDisplaySnapshot,
   type MaxDiffCandidateDisplayItem,

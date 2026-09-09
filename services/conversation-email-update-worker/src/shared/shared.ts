@@ -76,7 +76,7 @@ export interface RichTextValidationFailure<
     limit: number;
 }
 
-const graphemeSegmenter = new Intl.Segmenter(undefined, {
+const graphemeSegmenter = /* @__PURE__ */ new Intl.Segmenter(undefined, {
     granularity: "grapheme",
 });
 

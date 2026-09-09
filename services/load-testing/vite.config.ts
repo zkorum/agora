@@ -9,6 +9,10 @@ export default defineConfig({
                     __dirname,
                     "src/scenario1-single-conversation.ts",
                 ),
+                "scenario2-solidago-ranking": resolve(
+                    __dirname,
+                    "src/scenario2-solidago-ranking.ts",
+                ),
             },
             formats: ["cjs"],
             fileName: (format, entryName) => `${entryName}.cjs`,

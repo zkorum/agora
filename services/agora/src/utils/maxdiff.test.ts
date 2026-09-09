@@ -6,7 +6,7 @@ import {
     type MaxDiffInstance,
     recordMaxDiffVote,
     restoreMaxDiff,
-} from "./maxdiff";
+} from "../shared/utils/maxdiff";
 
 /** Deterministic voting simulation: always picks first as best, last as worst. */
 function simulateVotingToCompletion({

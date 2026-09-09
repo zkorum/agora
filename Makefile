@@ -165,6 +165,12 @@ ifeq ($(strip $(LOAD_TEST_CONVERSATIONS)),)
 endif
 	services/load-testing/scripts/run-scenario1-with-monitoring.sh "$(LOAD_TEST_CONVERSATIONS)"
 
+load-test-scenario2:
+ifeq ($(strip $(LOAD_TEST_CONVERSATIONS)),)
+	$(error CONVERSATION_SLUG_IDS is required. Usage: make load-test-scenario2 CONVERSATION_SLUG_IDS=slug1,slug2)
+endif
+	services/load-testing/scripts/run-scenario2-with-monitoring.sh "$(LOAD_TEST_CONVERSATIONS)"
+
 dev-app:
 	$(LOG_RUNNER) --service agora -- $(MAKE) dev-app-raw
 
