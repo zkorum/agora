@@ -69,10 +69,12 @@ describe("ConversationUpdateScopeFields selection flow", () => {
 
     projectTrigger?.click();
     await nextTick();
-    getOption(container, "No Project").click();
+    getOption(container, "No Project · River Association").click();
     await nextTick();
 
-    expect(selectedScopeId.value).toBe(CONVERSATION_UPDATE_NO_PROJECT_SCOPE_ID);
+    expect(selectedScopeId.value).toBe(
+      `${CONVERSATION_UPDATE_NO_PROJECT_SCOPE_ID}:standone01`
+    );
     expect(selectedConversationIds.value).toEqual([]);
 
     getSelectTriggers(container)[1]?.click();
@@ -84,6 +86,20 @@ describe("ConversationUpdateScopeFields selection flow", () => {
     expect(getSelectTriggers(container)[1]?.textContent).toContain(
       "Standalone conversation two"
     );
+
+    getSelectTriggers(container)[0]?.click();
+    await nextTick();
+    getOption(container, "No Project · alex").click();
+    await nextTick();
+    expect(selectedScopeId.value).toBe(
+      `${CONVERSATION_UPDATE_NO_PROJECT_SCOPE_ID}:personal01`
+    );
+    expect(selectedConversationIds.value).toEqual([]);
+    getSelectTriggers(container)[1]?.click();
+    await nextTick();
+    getOption(container, "Personal conversation").click();
+    await nextTick();
+    expect(selectedConversationIds.value).toEqual(["personal01"]);
   });
 });
 
@@ -91,10 +107,9 @@ const scopes: readonly ConversationUpdateScopeSummary[] = [
   {
     id: "project-one",
     kind: "project",
+    unsubscribeScope: "project",
     label: "Project One",
-    href: "/project/project-one",
     contactEmail: "project@example.com",
-    eligibleParticipantCap: 2,
     conversations: [
       conversation({
         id: "projconv01",
@@ -107,12 +122,11 @@ const scopes: readonly ConversationUpdateScopeSummary[] = [
     ],
   },
   {
-    id: CONVERSATION_UPDATE_NO_PROJECT_SCOPE_ID,
+    id: `${CONVERSATION_UPDATE_NO_PROJECT_SCOPE_ID}:standone01`,
     kind: "no-project",
-    label: "No Project",
-    href: undefined,
+    unsubscribeScope: "conversation",
+    label: "River Association",
     contactEmail: "standalone@example.com",
-    eligibleParticipantCap: 2,
     conversations: [
       conversation({
         id: "standone01",
@@ -122,6 +136,16 @@ const scopes: readonly ConversationUpdateScopeSummary[] = [
         id: "standtwo02",
         title: "Standalone conversation two",
       }),
+    ],
+  },
+  {
+    id: `${CONVERSATION_UPDATE_NO_PROJECT_SCOPE_ID}:personal01`,
+    kind: "no-project",
+    unsubscribeScope: "conversation",
+    label: "alex",
+    contactEmail: "alex@example.com",
+    conversations: [
+      conversation({ id: "personal01", title: "Personal conversation" }),
     ],
   },
 ];
@@ -139,7 +163,6 @@ function conversation({
     href: `/conversation/${id}`,
     eligibleParticipantCount: 1,
     participationMode: "account_required" as const,
-    ownerIds: [],
   };
 }
 

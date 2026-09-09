@@ -1,44 +1,29 @@
-import {
-  type SupportedDisplayLanguageCodes,
-  ZodSupportedDisplayLanguageCodes,
-} from "src/shared/languages";
-import type {
-  ConversationEmailUpdateHistoryRecord,
-  ConversationEmailUpdateWorkspaceRequest,
-} from "src/shared/types/dto";
+import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
+import { createPinia } from "pinia";
+import { Dto } from "src/shared/types/dto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  type App,
-  createApp,
-  defineComponent,
-  h,
-  nextTick,
-  type Ref,
-  ref,
-} from "vue";
+import { type App, createApp, defineComponent, h, nextTick } from "vue";
 import { createI18n } from "vue-i18n";
 
-import { conversationUpdatesWorkspaceTranslations } from "./ConversationUpdatesWorkspace.i18n";
-import {
-  CONVERSATION_UPDATE_NO_PROJECT_SCOPE_ID,
-  type ConversationUpdateHistoryRecord,
-} from "./conversationUpdateTypes";
-
 const api = vi.hoisted(() => ({
-  estimateAudience: vi.fn(),
-  getTestStatus: vi.fn(),
   getWorkspace: vi.fn(),
+  estimateAudience: vi.fn(),
   listHistory: vi.fn(),
-  send: vi.fn(),
+  prepareDraft: vi.fn(),
+  cancelDraft: vi.fn(),
   sendTest: vi.fn(),
+  getTestStatus: vi.fn(),
+  send: vi.fn(),
+  getHistoryDetail: vi.fn(),
 }));
 const showNotifyMessage = vi.hoisted(() => vi.fn());
-const quasarScreen = vi.hoisted(() => ({ lt: { md: false } }));
-
-vi.mock("quasar", () => ({
-  useQuasar: () => ({ screen: quasarScreen }),
-}));
-
+const navigation = vi.hoisted(() => {
+  const guards: {
+    leave?: () => Promise<boolean>;
+    update?: () => Promise<boolean>;
+  } = {};
+  return { ...guards, replace: vi.fn(), push: vi.fn() };
+});
 vi.mock("src/utils/api/conversationUpdates/conversationEmailUpdates", () => ({
   useBackendConversationEmailUpdatesApi: () => api,
 }));
@@ -51,914 +36,874 @@ vi.mock("src/stores/loginIntention", () => ({
 vi.mock("src/stores/onboarding/flow", () => ({
   onboardingFlowStore: () => ({ onboardingMode: "LOGIN" }),
 }));
+vi.mock("src/stores/authentication", () => ({
+  useAuthenticationStore: () => ({ userId: "author" }),
+}));
 vi.mock("vue-router", () => ({
-  useRoute: () => ({ fullPath: "/email-updates/?tab=compose" }),
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  useRoute: () => ({ fullPath: "/email-updates/?tab=compose", query: {} }),
+  useRouter: () => ({ push: navigation.push, replace: navigation.replace }),
+  onBeforeRouteLeave: (guard: () => Promise<boolean>) => {
+    navigation.leave = guard;
+  },
+  onBeforeRouteUpdate: (guard: () => Promise<boolean>) => {
+    navigation.update = guard;
+  },
 }));
 vi.mock("./ConversationUpdateComposerForm.vue", () => ({
   default: defineComponent({
-    name: "ConversationUpdateComposerForm",
     props: {
-      selectedScopeId: { type: String, required: true },
+      subject: { type: String, required: true },
+      bodyHtml: { type: String, required: true },
+      preparePending: Boolean,
       selectedConversationIds: { type: Array, required: true },
     },
     emits: [
-      "test",
-      "send",
-      "update:contentConfirmed",
-      "update:selectedScopeId",
-      "update:selectedConversationIds",
+      "review",
+      "update:subject",
+      "update:bodyHtml",
+      "update:bodyPlainText",
     ],
-    setup(props, { emit, slots }) {
+    setup(props, { emit }) {
       return () =>
-        h("div", [
-          h("div", "Composer fields"),
+        h("section", { "data-composer": "" }, [
+          h("input", {
+            value: props.subject,
+            onInput: (event: Event) => {
+              if (event.target instanceof HTMLInputElement)
+                emit("update:subject", event.target.value);
+            },
+          }),
+          h("span", props.bodyHtml),
+          h("span", JSON.stringify(props.selectedConversationIds)),
           h(
-            "div",
-            { class: "composer-selection-stub" },
-            `${props.selectedScopeId}:${props.selectedConversationIds.join(",")}`
+            "button",
+            {
+              onClick: () => {
+                emit("update:subject", "My draft");
+                emit("update:bodyHtml", "<p>My message</p>");
+                emit("update:bodyPlainText", "My message");
+              },
+            },
+            "Write draft"
           ),
-          slots.preview?.(),
-          h("div", { class: "composer-actions-stub" }, [
-            h(
-              "button",
-              {
-                onClick: () => {
-                  emit(
-                    "update:selectedScopeId",
-                    CONVERSATION_UPDATE_NO_PROJECT_SCOPE_ID
-                  );
-                  emit("update:selectedConversationIds", []);
-                },
-              },
-              "Choose No Project"
-            ),
-            h(
-              "button",
-              {
-                onClick: () =>
-                  emit("update:selectedConversationIds", ["standconv1"]),
-              },
-              "Choose standalone conversation"
-            ),
-            h("button", { onClick: () => emit("test") }, "Send test"),
-            h("button", { onClick: () => emit("send") }, "Open send"),
-            h(
-              "button",
-              { onClick: () => emit("update:contentConfirmed", true) },
-              "Confirm content"
-            ),
-          ]),
+          h(
+            "button",
+            { disabled: props.preparePending, onClick: () => emit("review") },
+            "Review email"
+          ),
         ]);
     },
   }),
 }));
 vi.mock("./ConversationUpdateEmailPreview.vue", () => ({
-  default: defineComponent(
-    () => () => h("div", { class: "preview-stub" }, "Preview")
-  ),
-}));
-vi.mock("./ConversationUpdateHistoryList.vue", () => ({
   default: defineComponent({
-    name: "ConversationUpdateHistoryList",
-    props: {
-      records: { type: Array, required: true },
-    },
+    props: { review: { type: Object, required: true } },
     setup(props) {
       return () =>
-        h(
-          "div",
-          props.records
-            .filter(isHistoryRecord)
-            .map((record) =>
-              h("span", { key: String(record.id) }, String(record.subject))
-            )
-        );
+        h("div", { "data-preview": "" }, JSON.stringify(props.review));
     },
   }),
 }));
+vi.mock("./ConversationUpdateHistoryList.vue", () => ({
+  default: defineComponent(() => () => h("div", "History records")),
+}));
 vi.mock("src/components/ui/PageLoadingSpinner.vue", () => ({
-  default: defineComponent(() => () => h("div", "Loading")),
+  default: defineComponent(() => () => h("p", "Loading")),
 }));
 vi.mock("src/components/ui/ErrorRetryBlock.vue", () => ({
-  default: defineComponent(() => () => h("div", "Error")),
-}));
-vi.mock("src/components/ui-library/ZKButton.vue", () => ({
   default: defineComponent({
-    name: "ZKButton",
-    props: { label: { type: String, required: true } },
-    emits: ["click"],
+    props: {
+      title: { type: String, required: true },
+      retryLabel: { type: String, required: true },
+    },
+    emits: ["retry"],
     setup(props, { emit }) {
-      return () => h("button", { onClick: () => emit("click") }, props.label);
+      return () =>
+        h("div", [
+          h("p", props.title),
+          h("button", { onClick: () => emit("retry") }, props.retryLabel),
+        ]);
     },
   }),
 }));
 vi.mock("src/components/ui-library/ZKInfoBanner.vue", () => ({
-  default: defineComponent(() => () => null),
-}));
-vi.mock("src/components/ui-library/ZKConfirmDialog.vue", () => ({
   default: defineComponent({
-    name: "ZKConfirmDialog",
-    props: {
-      modelValue: { type: Boolean, required: true },
-      title: { type: String, required: true },
-    },
-    emits: ["confirm", "update:modelValue"],
-    setup(props, { emit, slots }) {
-      return () => {
-        if (!props.modelValue) return null;
-        return h("div", { "data-confirm-dialog": "" }, [
-          h("span", props.title),
-          slots.default?.(),
-          h(
-            "button",
-            {
-              onClick: () => {
-                emit("update:modelValue", false);
-                emit("confirm");
-              },
-            },
-            "Confirm send"
-          ),
-        ]);
-      };
+    props: { message: { type: String, required: true } },
+    setup(props) {
+      return () => h("p", props.message);
     },
   }),
 }));
-
+vi.mock("primevue/button", () => ({
+  default: defineComponent({
+    props: {
+      label: { type: String, required: true },
+      disabled: Boolean,
+      loading: Boolean,
+    },
+    emits: ["click"],
+    setup(props, { emit }) {
+      return () =>
+        h(
+          "button",
+          {
+            disabled: props.disabled,
+            "data-loading": props.loading,
+            onClick: () => emit("click"),
+          },
+          props.label
+        );
+    },
+  }),
+}));
+vi.mock("src/components/ui-library/ZKCheckbox.vue", () => ({
+  default: defineComponent({
+    props: { modelValue: Boolean, disabled: Boolean },
+    emits: ["update:modelValue"],
+    setup(props, { emit }) {
+      return () =>
+        h(
+          "button",
+          {
+            disabled: props.disabled,
+            onClick: () => emit("update:modelValue", !props.modelValue),
+          },
+          "Acknowledge policy"
+        );
+    },
+  }),
+}));
+vi.mock("src/components/ui-library/ZKConfirmDialog.vue", () => ({
+  default: defineComponent({
+    props: {
+      modelValue: Boolean,
+      title: { type: String, required: true },
+      persistent: Boolean,
+    },
+    emits: ["confirm", "cancel", "update:modelValue"],
+    setup(props, { emit, slots }) {
+      return () =>
+        props.modelValue
+          ? h(
+              "div",
+              {
+                "data-dialog": props.title,
+                "data-persistent": props.persistent,
+              },
+              [
+                h("h2", props.title),
+                slots.default?.(),
+                h(
+                  "button",
+                  {
+                    onClick: () => {
+                      emit("confirm");
+                      emit("update:modelValue", false);
+                    },
+                  },
+                  `Confirm: ${props.title}`
+                ),
+                h(
+                  "button",
+                  {
+                    onClick: () => {
+                      emit("cancel");
+                      emit("update:modelValue", false);
+                    },
+                  },
+                  `Stay: ${props.title}`
+                ),
+              ]
+            )
+          : null;
+    },
+  }),
+}));
 import ConversationUpdatesWorkspace from "./ConversationUpdatesWorkspace.vue";
 
-const mountedApps: App[] = [];
-
-function isHistoryRecord(
-  value: unknown
-): value is ConversationUpdateHistoryRecord {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "id" in value &&
-    "subject" in value &&
-    typeof value.id === "string" &&
-    typeof value.subject === "string"
-  );
-}
-
+const updateId = "00000000-0000-4000-8000-000000000001";
+const testAttemptId = "00000000-0000-4000-8000-000000000002";
+const prepared = Dto.conversationEmailUpdatePrepareDraftResponse.parse({
+  success: true,
+  review: {
+    updateId,
+    preview: {
+      subject: "Locked subject",
+      html: "Server HTML",
+      text: "Server text",
+    },
+    language: "ar",
+    senderName: "Server sender",
+    replyToName: "Server reply",
+    replyToEmail: "reply@example.com",
+    branding: { name: "Server brand", palette: "blue" },
+    unsubscribeScope: "project",
+    estimatedEligibleRecipientCount: 42,
+    requiredOwnerCopyCount: 2,
+    testDestinationEmail: "test@example.com",
+    expiresAt: new Date("2099-01-01"),
+  },
+});
+const delivered = Dto.conversationEmailUpdateHistoryDetailResponse.parse({
+  success: true,
+  record: {
+    updateId,
+    subject: "Locked subject",
+    bodyHtml: "<p>My message</p>",
+    unsubscribeScope: "project",
+    scope: {
+      kind: "project",
+      projectSlug: "project-one",
+      title: "Project One",
+    },
+    conversations: [
+      { conversationSlugId: "conv000001", title: "Conversation One" },
+    ],
+    audienceEstimate: 42,
+    ownerCopyCount: 2,
+    acceptedAt: new Date(),
+    status: "queued",
+  },
+});
+let app: App | undefined;
+let queryClient: QueryClient;
 beforeEach(() => {
-  quasarScreen.lt.md = false;
-  for (const mock of Object.values(api)) {
-    mock.mockReset();
-  }
-  showNotifyMessage.mockReset();
+  vi.useFakeTimers();
+  queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: Infinity } },
+  });
+  api.getWorkspace.mockResolvedValue(
+    Dto.conversationEmailUpdateWorkspaceResponse.parse({
+      success: true,
+      resolvedContext: { kind: "global" },
+      testDestinationEmail: "verified@example.com",
+      scopes: [
+        {
+          kind: "project",
+          projectSlug: "project-one",
+          title: "Project One",
+          unsubscribeScope: "project",
+          participantContactEmail: "contact@example.com",
+          conversations: [
+            {
+              conversationSlugId: "conv000001",
+              title: "Conversation One",
+              participationMode: "account_required",
+              estimatedEligibleRecipientCount: 10,
+              sendingEnabled: true,
+            },
+          ],
+        },
+      ],
+    })
+  );
   api.estimateAudience.mockResolvedValue({
     success: true,
     estimatedEligibleRecipientCount: 10,
     requiredOwnerCopyCount: 1,
   });
-  api.listHistory.mockResolvedValue({
+  api.prepareDraft.mockResolvedValue(prepared);
+  api.cancelDraft.mockResolvedValue({ success: true });
+  api.sendTest.mockResolvedValue({
     success: true,
-    items: [],
-    nextCursor: undefined,
+    updateId,
+    testAttemptId,
+    status: "pending",
   });
+  api.getTestStatus.mockResolvedValue({
+    success: true,
+    status: { state: "provider_accepted", providerAcceptedAt: new Date() },
+  });
+  api.listHistory.mockResolvedValue({ success: true, items: [] });
+  api.getHistoryDetail.mockResolvedValue(delivered);
 });
-
 afterEach(() => {
-  for (const app of mountedApps.splice(0)) {
-    app.unmount();
-  }
+  app?.unmount();
+  app = undefined;
+  queryClient.clear();
   document.body.replaceChildren();
+  vi.clearAllTimers();
+  vi.useRealTimers();
+  vi.resetAllMocks();
 });
-
-describe("ConversationUpdatesWorkspace", () => {
-  it("mounts one preview before the actions in the mobile layout", async () => {
-    quasarScreen.lt.md = true;
-    api.getWorkspace.mockResolvedValue(workspaceResponse({ kind: "global" }));
-
-    const { container } = mountComponent({
-      context: ref({ kind: "global" }),
-      initialTab: "compose",
-    });
-    await flushAudienceEstimate();
-
-    const previews = container.querySelectorAll(".preview-stub");
-    const preview = previews.item(0);
-    const actions = container.querySelector(".composer-actions-stub");
-    expect(previews).toHaveLength(1);
-    expect(
-      preview.compareDocumentPosition(actions ?? document.body) &
-        Node.DOCUMENT_POSITION_FOLLOWING
-    ).not.toBe(0);
-  });
-
-  it("renders workspace copy in the active display language", async () => {
-    api.getWorkspace.mockResolvedValue(workspaceResponse({ kind: "global" }));
-    api.listHistory.mockResolvedValue({
-      success: true,
-      items: [],
-      nextCursor: "next-page",
-    });
-    api.estimateAudience.mockResolvedValue({
-      success: true,
-      estimatedEligibleRecipientCount: 12_345,
-      requiredOwnerCopyCount: 1,
-    });
-
-    const { container } = mountComponent({
-      context: ref({ kind: "global" }),
-      initialTab: "compose",
-      locale: "es",
-    });
-    await flushAudienceEstimate();
-
-    expect(container.textContent).toContain(
-      "Mantenga conectados a los participantes con el trabajo al que se unieron"
-    );
-    expect(container.textContent).toContain("Redactar");
-    expect(container.textContent).toContain("Historial");
-    expect(container.textContent).not.toContain(
-      "Keep participants connected to the work they joined"
-    );
-  });
-
-  it("formats a test retry date using the active display locale", async () => {
-    const retryAt = new Date("2026-08-24T12:34:00.000Z");
-    api.getWorkspace.mockResolvedValue(workspaceResponse({ kind: "global" }));
-    api.sendTest.mockResolvedValue({
-      success: false,
-      error: { reason: "test_rate_limited", retryAt },
-    });
-
-    const { container } = mountComponent({
-      context: ref({ kind: "global" }),
-      initialTab: "compose",
-      locale: "es",
-    });
-    await flushAudienceEstimate();
-    getButton(container, "Send test").click();
-    await flushPromises();
-
-    expect(showNotifyMessage).toHaveBeenCalledWith(
-      `Se solicitaron demasiados correos de prueba. Inténtelo de nuevo después de ${retryAt.toLocaleString("es")}.`
-    );
-  });
-
-  it("loads subsequent history pages with the returned cursor", async () => {
-    api.getWorkspace.mockResolvedValue(workspaceResponse({ kind: "global" }));
-    api.listHistory
-      .mockResolvedValueOnce({
-        success: true,
-        items: [historyRecord(1)],
-        nextCursor: "next-page",
-      })
-      .mockResolvedValueOnce({
-        success: true,
-        items: [historyRecord(2)],
-        nextCursor: undefined,
-      });
-    const { container } = mountComponent({
-      context: ref({ kind: "global" }),
-    });
-    await flushPromises();
-
-    expect(container.textContent).toContain("Update 1");
-    getButton(container, "Load more").click();
-    await flushPromises();
-
-    expect(api.listHistory).toHaveBeenNthCalledWith(2, {
-      context: { kind: "global" },
-      cursor: "next-page",
-      limit: 20,
-    });
-    expect(container.textContent).toContain("Update 1");
-    expect(container.textContent).toContain("Update 2");
-  });
-
-  it("discards an old workspace response after the context changes", async () => {
-    const oldWorkspace = deferred<ReturnType<typeof workspaceResponse>>();
-    const context = ref<ConversationEmailUpdateWorkspaceRequest["context"]>({
-      kind: "project",
-      projectSlug: "old-project",
-    });
-    api.getWorkspace
-      .mockReturnValueOnce(oldWorkspace.promise)
-      .mockResolvedValueOnce(
-        workspaceResponse({
-          kind: "conversation",
-          conversationSlugId: "newconv001",
-        })
-      );
-
-    mountComponent({ context });
-    context.value = {
-      kind: "conversation",
-      conversationSlugId: "newconv001",
-    };
-    await flushPromises();
-    oldWorkspace.resolve(
-      workspaceResponse({ kind: "project", projectSlug: "old-project" })
-    );
-    await flushPromises();
-
-    expect(api.listHistory).toHaveBeenCalledOnce();
-    expect(api.listHistory).toHaveBeenCalledWith({
-      context: {
-        kind: "conversation",
-        conversationSlugId: "newconv001",
-      },
-      limit: 20,
-    });
-  });
-
-  it("discards a pending history page after a context refresh", async () => {
-    const stalePage = deferred<{
-      success: true;
-      items: ConversationEmailUpdateHistoryRecord[];
-      nextCursor: undefined;
-    }>();
-    const context = ref<ConversationEmailUpdateWorkspaceRequest["context"]>({
-      kind: "project",
-      projectSlug: "old-project",
-    });
-    api.getWorkspace.mockImplementation(({ context: requestContext }) =>
-      Promise.resolve(workspaceResponse(requestContext))
-    );
-    api.listHistory
-      .mockResolvedValueOnce({
-        success: true,
-        items: [historyRecord(1)],
-        nextCursor: "old-next-page",
-      })
-      .mockReturnValueOnce(stalePage.promise)
-      .mockResolvedValueOnce({
-        success: true,
-        items: [historyRecord(2)],
-        nextCursor: undefined,
-      });
-    const { container } = mountComponent({ context });
-    await flushPromises();
-    getButton(container, "Load more").click();
-
-    context.value = {
-      kind: "conversation",
-      conversationSlugId: "newconv001",
-    };
-    await flushPromises();
-    stalePage.resolve({
-      success: true,
-      items: [historyRecord(3)],
-      nextCursor: undefined,
-    });
-    await flushPromises();
-
-    expect(container.textContent).not.toContain("Update 1");
-    expect(container.textContent).toContain("Update 2");
-  });
-
-  it("cannot authorize a send from a stale-scope test response", async () => {
-    const testResponse = deferred<{
-      success: true;
-      updateId: string;
-      testAttemptId: string;
-      status: "pending";
-    }>();
-    const context = ref<ConversationEmailUpdateWorkspaceRequest["context"]>({
-      kind: "project",
-      projectSlug: "old-project",
-    });
-    api.getWorkspace.mockImplementation(({ context: requestContext }) =>
-      Promise.resolve(workspaceResponse(requestContext))
-    );
-    api.sendTest.mockReturnValue(testResponse.promise);
-
-    const { container } = mountComponent({ context });
-    await flushAudienceEstimate();
-    getButton(container, "Send test").click();
-    await flushPromises();
-
-    context.value = {
-      kind: "conversation",
-      conversationSlugId: "newconv001",
-    };
-    await flushPromises();
-    testResponse.resolve({
-      success: true,
-      updateId: "00000000-0000-4000-8000-000000000010",
-      testAttemptId: "00000000-0000-4000-8000-000000000011",
-      status: "pending",
-    });
-    await flushPromises();
-    expect(api.getTestStatus).not.toHaveBeenCalled();
-    expect(api.send).not.toHaveBeenCalled();
-  });
-
-  it("queues only one test while the request is pending", async () => {
-    const testResponse = deferred<{
-      success: true;
-      updateId: string;
-      testAttemptId: string;
-      status: "pending";
-    }>();
-    api.getWorkspace.mockResolvedValue(workspaceResponse({ kind: "global" }));
-    api.sendTest.mockReturnValue(testResponse.promise);
-
-    const { container } = mountComponent({
-      context: ref({ kind: "global" }),
-    });
-    await flushAudienceEstimate();
-    const sendTestButton = getButton(container, "Send test");
-    sendTestButton.click();
-    sendTestButton.click();
-    await flushPromises();
-
-    expect(api.sendTest).toHaveBeenCalledOnce();
-  });
-
-  it("shows test acceptance only as a temporary notification", async () => {
-    api.getWorkspace.mockResolvedValue(workspaceResponse({ kind: "global" }));
-    api.sendTest.mockResolvedValue({
-      success: true,
-      updateId: "00000000-0000-4000-8000-000000000010",
-      testAttemptId: "00000000-0000-4000-8000-000000000011",
-      status: "pending",
-    });
-    api.getTestStatus.mockResolvedValue({
-      success: true,
-      status: {
-        state: "provider_accepted",
-        providerAcceptedAt: new Date("2026-08-24T12:00:00.000Z"),
-      },
-    });
-
-    const { container } = mountComponent({
-      context: ref({ kind: "global" }),
-      initialTab: "compose",
-    });
-    await flushAudienceEstimate();
-    getButton(container, "Send test").click();
-    await new Promise((resolve) => window.setTimeout(resolve, 1_600));
-    await flushPromises();
-
-    expect(showNotifyMessage).toHaveBeenCalledWith(
-      "Test accepted for this exact email version."
-    );
-  });
-
-  it("submits only one final send while the request is pending", async () => {
-    api.getWorkspace.mockResolvedValue(workspaceResponse({ kind: "global" }));
-    api.sendTest.mockResolvedValue({
-      success: true,
-      updateId: "00000000-0000-4000-8000-000000000010",
-      testAttemptId: "00000000-0000-4000-8000-000000000011",
-      status: "pending",
-    });
-    api.getTestStatus.mockResolvedValue({
-      success: true,
-      status: {
-        state: "provider_accepted",
-        providerAcceptedAt: new Date("2026-08-24T12:00:00.000Z"),
-      },
-    });
-    api.send.mockReturnValue(new Promise(() => undefined));
-
-    const { container } = mountComponent({
-      context: ref({ kind: "global" }),
-      initialTab: "compose",
-    });
-    await flushAudienceEstimate();
-    getButton(container, "Send test").click();
-    await new Promise((resolve) => window.setTimeout(resolve, 1_600));
-    await flushPromises();
-    getButton(container, "Confirm content").click();
-    getButton(container, "Open send").click();
-    await nextTick();
-    const confirmButton = getButton(container, "Confirm send");
-    confirmButton.click();
-    confirmButton.click();
-    await flushPromises();
-
-    expect(api.send).toHaveBeenCalledOnce();
-  });
-
-  it("does not queue a test without a verified facilitator email", async () => {
-    api.getWorkspace.mockResolvedValue({
-      ...workspaceResponse({ kind: "global" }),
-      testDestinationEmail: undefined,
-    });
-
-    const { container } = mountComponent({
-      context: ref({ kind: "global" }),
-      initialTab: "compose",
-    });
-    await flushAudienceEstimate();
-    getButton(container, "Send test").click();
-    await flushPromises();
-
-    expect(api.sendTest).not.toHaveBeenCalled();
-    expect(api.estimateAudience).not.toHaveBeenCalled();
-  });
-
-  it("debounces audience estimates when the workspace context changes", async () => {
-    const context = ref<ConversationEmailUpdateWorkspaceRequest["context"]>({
-      kind: "global",
-    });
-    api.getWorkspace.mockImplementation(({ context: requestContext }) =>
-      Promise.resolve(workspaceResponse(requestContext))
-    );
-
-    mountComponent({ context, initialTab: "compose" });
-    await flushPromises();
-    context.value = {
-      kind: "conversation",
-      conversationSlugId: "newconv001",
-    };
-    await flushAudienceEstimate();
-
-    expect(api.estimateAudience).toHaveBeenCalledOnce();
-    expect(api.estimateAudience).toHaveBeenCalledWith({
-      request: {
-        selection: {
-          kind: "project",
-          projectSlug: "workspace-project",
-          conversationSlugIds: ["newconv001"],
-        },
-      },
-      signal: expect.any(AbortSignal),
-    });
-  });
-
-  it("does not queue a test for an empty eligible audience", async () => {
-    api.getWorkspace.mockResolvedValue(workspaceResponse({ kind: "global" }));
-    api.estimateAudience.mockResolvedValue({
-      success: true,
-      estimatedEligibleRecipientCount: 0,
-      requiredOwnerCopyCount: 1,
-    });
-
-    const { container } = mountComponent({
-      context: ref({ kind: "global" }),
-      initialTab: "compose",
-    });
-    await flushAudienceEstimate();
-    getButton(container, "Send test").click();
-    await flushPromises();
-
-    expect(api.sendTest).not.toHaveBeenCalled();
-  });
-
-  it("shows test failures as temporary notifications", async () => {
-    api.getWorkspace.mockResolvedValue(workspaceResponse({ kind: "global" }));
-    api.sendTest.mockResolvedValue({
-      success: false,
-      error: { reason: "no_verified_test_email" },
-    });
-
-    const { container } = mountComponent({
-      context: ref({ kind: "global" }),
-      initialTab: "compose",
-    });
-    await flushAudienceEstimate();
-    getButton(container, "Send test").click();
-    await flushPromises();
-
-    expect(showNotifyMessage).toHaveBeenCalledWith(
-      "Verify an email address before sending a test email."
-    );
-    getButton(container, "Send test").click();
-    await flushPromises();
-
-    expect(api.sendTest).toHaveBeenCalledOnce();
-  });
-
-  it("explains when a test was not sent after authorization became unavailable", async () => {
-    api.getWorkspace.mockResolvedValue(workspaceResponse({ kind: "global" }));
-    api.sendTest.mockResolvedValue({
-      success: true,
-      updateId: "00000000-0000-4000-8000-000000000010",
-      testAttemptId: "00000000-0000-4000-8000-000000000011",
-      status: "pending",
-    });
-    api.getTestStatus.mockResolvedValue({
-      success: true,
-      status: {
-        state: "failed",
-        reason: "authorization_rejected",
-      },
-    });
-
-    const { container } = mountComponent({
-      context: ref({ kind: "global" }),
-      initialTab: "compose",
-    });
-    await flushAudienceEstimate();
-    getButton(container, "Send test").click();
-    await new Promise((resolve) => window.setTimeout(resolve, 1_600));
-    await flushPromises();
-
-    expect(showNotifyMessage).toHaveBeenCalledWith(
-      "The test email was not sent because its destination or sending authorization was no longer available."
-    );
-  });
-
-  it("blocks another final send when the eligible audience becomes empty", async () => {
-    api.getWorkspace.mockResolvedValue(workspaceResponse({ kind: "global" }));
-    api.sendTest.mockResolvedValue({
-      success: true,
-      updateId: "00000000-0000-4000-8000-000000000010",
-      testAttemptId: "00000000-0000-4000-8000-000000000011",
-      status: "pending",
-    });
-    api.getTestStatus.mockResolvedValue({
-      success: true,
-      status: {
-        state: "provider_accepted",
-        providerAcceptedAt: new Date("2026-08-24T12:00:00.000Z"),
-      },
-    });
-    api.send.mockResolvedValue({
-      success: false,
-      reason: "no_eligible_participants",
-    });
-
-    const { container } = mountComponent({
-      context: ref({ kind: "global" }),
-      initialTab: "compose",
-    });
-    await flushAudienceEstimate();
-    getButton(container, "Send test").click();
-    await new Promise((resolve) => window.setTimeout(resolve, 1_600));
-    await flushPromises();
-    getButton(container, "Confirm content").click();
-    getButton(container, "Open send").click();
-    await nextTick();
-    const confirmButton = getButton(container, "Confirm send");
-    confirmButton.click();
-    confirmButton.click();
-    await flushPromises();
-
-    expect(showNotifyMessage).toHaveBeenCalledWith(
-      "No participants are currently eligible to receive this email."
-    );
-    expect(api.send).toHaveBeenCalledOnce();
-  });
-
-  it("does not load history while opening the composer", async () => {
-    api.getWorkspace.mockResolvedValue(workspaceResponse({ kind: "global" }));
-
-    mountComponent({
-      context: ref({ kind: "global" }),
-      initialTab: "compose",
-    });
-    await flushPromises();
-
-    expect(api.listHistory).not.toHaveBeenCalled();
-  });
-
-  it("keeps No Project empty until one conversation is selected", async () => {
-    api.getWorkspace.mockResolvedValue(
-      workspaceResponseWithNoProject({
-        kind: "project",
-        projectSlug: "workspace-project",
-      })
-    );
-
-    const { container } = mountComponent({
-      context: ref({
-        kind: "project",
-        projectSlug: "workspace-project",
-      }),
-      initialTab: "compose",
-    });
-    await flushAudienceEstimate();
-
-    getButton(container, "Choose No Project").click();
-    await nextTick();
-    expect(
-      container.querySelector(".composer-selection-stub")?.textContent
-    ).toBe(`${CONVERSATION_UPDATE_NO_PROJECT_SCOPE_ID}:`);
-
-    api.estimateAudience.mockClear();
-    getButton(container, "Choose standalone conversation").click();
-    await flushAudienceEstimate();
-
-    expect(api.estimateAudience).toHaveBeenLastCalledWith({
-      request: {
-        selection: {
-          kind: "no_project",
-          conversationSlugId: "standconv1",
-        },
-      },
-      signal: expect.any(AbortSignal),
-    });
-  });
-
-  it("starts a project composer without selecting a conversation", async () => {
-    api.getWorkspace.mockResolvedValue({
-      ...workspaceResponseWithNoProject({
-        kind: "project",
-        projectSlug: "workspace-project",
-      }),
-      initialSelection: undefined,
-    });
-
-    const { container } = mountComponent({
-      context: ref({
-        kind: "project",
-        projectSlug: "workspace-project",
-      }),
-      initialTab: "compose",
-    });
-    await flushPromises();
-
-    expect(
-      container.querySelector(".composer-selection-stub")?.textContent
-    ).toBe("workspace-project:");
-    expect(api.estimateAudience).not.toHaveBeenCalled();
-  });
-});
-
-describe("conversationUpdatesWorkspaceTranslations", () => {
-  it("provides the authorization failure message in every display language", () => {
-    expect(
-      Object.keys(conversationUpdatesWorkspaceTranslations).sort()
-    ).toEqual([...ZodSupportedDisplayLanguageCodes.options].sort());
-
-    for (const translations of Object.values(
-      conversationUpdatesWorkspaceTranslations
-    )) {
-      expect(translations.testDeliveryAuthorization.trim()).not.toBe("");
-      expect(translations.testDeliveryAuthorization).not.toBe(
-        translations.testDeliveryPermanent
-      );
-    }
-  });
-});
-
-function mountComponent({
-  context,
-  initialTab = "history",
-  locale = "en",
-}: {
-  context: Ref<ConversationEmailUpdateWorkspaceRequest["context"]>;
-  initialTab?: "compose" | "history";
-  locale?: SupportedDisplayLanguageCodes;
-}): { container: HTMLElement } {
+async function flush(): Promise<void> {
+  await vi.advanceTimersByTimeAsync(0);
+  await nextTick();
+}
+async function mountWorkspace(pinia = createPinia()) {
   const container = document.createElement("div");
   document.body.append(container);
-  const root = defineComponent(
-    () => () =>
-      h(ConversationUpdatesWorkspace, {
-        context: context.value,
-        initialTab,
-      })
-  );
-  const app = createApp(root);
-  app.use(
-    createI18n({
-      legacy: false,
-      locale,
-      messages: {},
+  app = createApp(ConversationUpdatesWorkspace, {
+    initialTab: "compose",
+    context: { kind: "global" },
+  });
+  app.use(pinia);
+  app.use(VueQueryPlugin, { queryClient });
+  app.use(createI18n({ legacy: false, locale: "en", messages: {} }));
+  app.component(
+    "QTabs",
+    defineComponent({
+      emits: ["update:modelValue"],
+      setup(_props, { emit, slots }) {
+        return () =>
+          h("div", [
+            slots.default?.(),
+            h(
+              "button",
+              { onClick: () => emit("update:modelValue", "history") },
+              "History tab"
+            ),
+          ]);
+      },
     })
   );
-  const slotStub = defineComponent(
-    (_props, { slots }) =>
-      () =>
-        slots.default?.()
-  );
-  app.component("QTabs", slotStub);
-  app.component("QTabPanels", slotStub);
-  app.component("QTabPanel", slotStub);
   app.component(
     "QTab",
-    defineComponent({
-      props: { label: { type: String, required: true } },
-      setup(props) {
-        return () => h("span", props.label);
-      },
-    })
-  );
-  app.component(
-    "QIcon",
     defineComponent(() => () => null)
   );
-  mountedApps.push(app);
   app.mount(container);
-  return { container };
+  await vi.advanceTimersByTimeAsync(300);
+  await nextTick();
+  return container;
 }
-
-function workspaceResponse(
-  context: ConversationEmailUpdateWorkspaceRequest["context"]
-) {
-  const projectSlug =
-    context.kind === "project" ? context.projectSlug : "workspace-project";
-  const conversationSlugId =
-    context.kind === "conversation" ? context.conversationSlugId : "workconv01";
-  return {
-    success: true as const,
-    resolvedContext: context,
-    testDestinationEmail: "facilitator@example.com",
-    initialSelection: {
-      kind: "project" as const,
-      projectSlug,
-      conversationSlugIds: [conversationSlugId],
-    },
-    scopes: [
-      {
-        kind: "project" as const,
-        projectSlug,
-        title: "Workspace project",
-        participantContactEmail: "owner@example.com",
-        conversations: [
-          {
-            conversationSlugId,
-            title: "Workspace conversation",
-            participationMode: "account_required" as const,
-            estimatedEligibleRecipientCount: 10,
-            sendingEnabled: true,
-          },
-        ],
-      },
-    ],
-  };
-}
-
-function workspaceResponseWithNoProject(
-  context: ConversationEmailUpdateWorkspaceRequest["context"]
-) {
-  const response = workspaceResponse(context);
-  return {
-    ...response,
-    scopes: [
-      ...response.scopes,
-      {
-        kind: "no_project" as const,
-        title: "No Project",
-        conversations: [
-          {
-            conversationSlugId: "standconv1",
-            title: "Standalone conversation",
-            participationMode: "account_required" as const,
-            estimatedEligibleRecipientCount: 5,
-            sendingEnabled: true,
-            participantContactEmail: "standalone@example.com",
-          },
-        ],
-      },
-    ],
-  };
-}
-
-function historyRecord(index: number): ConversationEmailUpdateHistoryRecord {
-  const id = String(index).padStart(12, "0");
-  return {
-    updateId: `00000000-0000-4000-8000-${id}`,
-    subject: `Update ${String(index)}`,
-    bodyHtml: "<p>Body</p>",
-    acceptedAt: new Date("2026-08-22T12:00:00.000Z"),
-    audienceEstimate: 10,
-    ownerCopyCount: 1,
-    scope: {
-      kind: "project",
-      title: "Project",
-      projectSlug: "project",
-    },
-    conversations: [
-      { conversationSlugId: "conversation", title: "Conversation" },
-    ],
-    status: "completed",
-  };
-}
-
-function getButton(container: HTMLElement, label: string): HTMLButtonElement {
+function click({
+  container,
+  label,
+}: {
+  container: HTMLElement;
+  label: string;
+}): void {
   const button = [...container.querySelectorAll("button")].find(
-    (candidate) => candidate.textContent === label
+    (item) => item.textContent === label
   );
-  if (button === undefined) {
-    throw new Error(`Button not found: ${label}`);
-  }
-  return button;
+  expect(button, label).toBeDefined();
+  button?.click();
 }
-
-async function flushPromises(): Promise<void> {
-  await new Promise((resolve) => window.setTimeout(resolve, 0));
+async function openReview(container: HTMLElement): Promise<void> {
+  click({ container, label: "Write draft" });
+  await nextTick();
+  click({ container, label: "Review email" });
+  await flush();
 }
-
-async function flushAudienceEstimate(): Promise<void> {
-  await flushPromises();
-  await new Promise((resolve) => window.setTimeout(resolve, 300));
-  await flushPromises();
+async function requestTest(container: HTMLElement): Promise<void> {
+  click({ container, label: "Send test email" });
+  await nextTick();
+  click({ container, label: "Confirm: Send this test email?" });
+  await flush();
 }
-
-function deferred<T>(): {
-  promise: Promise<T>;
-  resolve: (value: T) => void;
-} {
-  let resolvePromise: ((value: T) => void) | undefined;
-  const promise = new Promise<T>((resolve) => {
-    resolvePromise = resolve;
+async function requestFinalSend(container: HTMLElement): Promise<void> {
+  await requestTest(container);
+  await vi.advanceTimersByTimeAsync(1500);
+  click({ container, label: "Acknowledge policy" });
+  await nextTick();
+  click({ container, label: "Send update" });
+  await nextTick();
+  click({ container, label: "Confirm: Send this update?" });
+  await flush();
+}
+describe("locked review workspace", () => {
+  it("restores composer content but never review or test IDs after route remount", async () => {
+    const pinia = createPinia();
+    const container = await mountWorkspace(pinia);
+    await openReview(container);
+    await requestTest(container);
+    const navigationResult = navigation.leave?.();
+    await nextTick();
+    click({ container, label: "Confirm: Leave this review?" });
+    await flush();
+    expect(await navigationResult).toBe(true);
+    app?.unmount();
+    const reopened = await mountWorkspace(pinia);
+    expect(reopened.querySelector("input")?.value).toBe("My draft");
+    expect(reopened.textContent).toContain("<p>My message</p>");
+    expect(reopened.querySelector("[data-preview]")).toBeNull();
+    expect(api.prepareDraft).toHaveBeenCalledTimes(1);
+    expect(api.sendTest).toHaveBeenCalledTimes(1);
   });
-  return {
-    promise,
-    resolve(value) {
-      resolvePromise?.(value);
+  it("prepares without UI language and displays backend review metadata even when its language differs", async () => {
+    const container = await mountWorkspace();
+    expect(container.querySelector("[data-preview], iframe")).toBeNull();
+    await openReview(container);
+    expect(api.prepareDraft).toHaveBeenCalledWith({
+      selection: {
+        kind: "project",
+        projectSlug: "project-one",
+        conversationSlugIds: ["conv000001"],
+      },
+      subject: "My draft",
+      bodyHtml: "<p>My message</p>",
+    });
+    expect(container.querySelector("[data-composer], input")).toBeNull();
+    expect(container.textContent).toContain("Locked subject");
+    expect(container.textContent).toContain("Server sender");
+    expect(container.textContent).toContain("test@example.com");
+    expect(container.querySelector("[data-preview]")?.textContent).toContain(
+      '"language":"ar"'
+    );
+    expect(api.sendTest).not.toHaveBeenCalled();
+  });
+  it("Stay preserves review and Leave waits for cancel before restoring composer", async () => {
+    const container = await mountWorkspace();
+    await openReview(container);
+    await requestTest(container);
+    click({ container, label: "Back to editing" });
+    await nextTick();
+    expect(container.textContent).toContain("You must send a new test");
+    expect(
+      container
+        .querySelector('[data-dialog="Leave this review?"]')
+        ?.getAttribute("data-persistent")
+    ).toBe("true");
+    click({ container, label: "Stay: Leave this review?" });
+    await flush();
+    expect(api.cancelDraft).not.toHaveBeenCalled();
+    expect(container.querySelector("[data-preview]")).not.toBeNull();
+    const cancel = Promise.withResolvers<{ success: true }>();
+    api.cancelDraft.mockReturnValueOnce(cancel.promise);
+    click({ container, label: "Back to editing" });
+    await nextTick();
+    click({ container, label: "Confirm: Leave this review?" });
+    await flush();
+    expect(container.querySelector("[data-composer]")).toBeNull();
+    cancel.resolve({ success: true });
+    await flush();
+    expect(container.querySelector("input")?.value).toBe("My draft");
+    expect(container.textContent).toContain("<p>My message</p>");
+    click({ container, label: "Review email" });
+    await flush();
+    expect(api.prepareDraft).toHaveBeenCalledTimes(2);
+    expect(
+      [...container.querySelectorAll("button")].find(
+        (button) => button.textContent === "Send update"
+      )?.disabled
+    ).toBe(true);
+  });
+  it("keeps review on cancellation failure and allows Stay or retry", async () => {
+    const container = await mountWorkspace();
+    await openReview(container);
+    api.cancelDraft.mockRejectedValueOnce(new Error("Offline"));
+    click({ container, label: "Back to editing" });
+    await nextTick();
+    click({ container, label: "Confirm: Leave this review?" });
+    await flush();
+    expect(container.textContent).toContain("Cancellation was not confirmed");
+    expect(container.querySelector("[data-composer]")).toBeNull();
+    click({ container, label: "Confirm: Leave this review?" });
+    await flush();
+    expect(container.querySelector("[data-composer]")).not.toBeNull();
+    expect(api.cancelDraft).toHaveBeenCalledTimes(2);
+  });
+  it("routes only after cancellation succeeds and warns natively before unload", async () => {
+    const container = await mountWorkspace();
+    await openReview(container);
+    const unload = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(unload);
+    expect(unload.defaultPrevented).toBe(true);
+    const route = navigation.leave?.();
+    await nextTick();
+    click({ container, label: "Stay: Leave this review?" });
+    expect(await route).toBe(false);
+    const retry = navigation.update?.();
+    await nextTick();
+    click({ container, label: "Confirm: Leave this review?" });
+    await flush();
+    expect(await retry).toBe(true);
+    expect(api.cancelDraft).toHaveBeenCalledWith({ updateId });
+  });
+  it("cancels stale prepare after navigation without resurrecting review", async () => {
+    const container = await mountWorkspace();
+    const pending =
+      Promise.withResolvers<
+        ReturnType<typeof Dto.conversationEmailUpdatePrepareDraftResponse.parse>
+      >();
+    api.prepareDraft.mockReturnValueOnce(pending.promise);
+    await openReview(container);
+    expect(await navigation.leave?.()).toBe(true);
+    pending.resolve(prepared);
+    await flush();
+    expect(container.querySelector("[data-preview]")).toBeNull();
+    expect(api.cancelDraft).toHaveBeenCalledWith({ updateId });
+  });
+  it("uses snapshot estimate in final confirmation and blocks navigation during send", async () => {
+    const container = await mountWorkspace();
+    await openReview(container);
+    await requestTest(container);
+    await vi.advanceTimersByTimeAsync(1500);
+    click({ container, label: "Acknowledge policy" });
+    await nextTick();
+    click({ container, label: "Send update" });
+    await nextTick();
+    expect(container.textContent).toContain("Currently 42 eligible recipients");
+    const pending = Promise.withResolvers<unknown>();
+    api.send.mockReturnValueOnce(pending.promise);
+    click({ container, label: "Confirm: Send this update?" });
+    await flush();
+    expect(await navigation.leave?.()).toBe(false);
+    expect(api.cancelDraft).not.toHaveBeenCalled();
+    expect(api.send).toHaveBeenCalledWith({
+      updateId,
+      testAttemptId,
+      displayedParticipantEstimate: 42,
+      contentPolicyAcknowledged: true,
+    });
+    pending.resolve({
+      success: false,
+      reason: "required_owner_copy_unavailable",
+    });
+    await flush();
+    expect(container.querySelector("[data-preview]")).not.toBeNull();
+  });
+  it("Cancel update clears the whole operation only after confirmation", async () => {
+    const container = await mountWorkspace();
+    await openReview(container);
+    click({ container, label: "Cancel update" });
+    await nextTick();
+    expect(container.textContent).toContain(
+      "clears your subject, message, and selection"
+    );
+    click({ container, label: "Confirm: Leave this review?" });
+    await flush();
+    expect(container.querySelector("input")?.value).toBe("");
+    expect(container.textContent).not.toContain("<p>My message</p>");
+    expect(container.textContent).toContain("[]");
+  });
+  it("switching to history invalidates review but retains the message", async () => {
+    const container = await mountWorkspace();
+    await openReview(container);
+    click({ container, label: "History tab" });
+    await nextTick();
+    click({ container, label: "Confirm: Leave this review?" });
+    await flush();
+    expect(container.textContent).toContain("History records");
+    expect(api.cancelDraft).toHaveBeenCalledWith({ updateId });
+  });
+  it("clears a failed exit on Stay without leaving a dangling Retry or invalidating the test", async () => {
+    const container = await mountWorkspace();
+    await openReview(container);
+    await requestTest(container);
+    await vi.advanceTimersByTimeAsync(1500);
+    click({ container, label: "Acknowledge policy" });
+    await nextTick();
+    const snapshot = container.querySelector("[data-preview]")?.textContent;
+    api.cancelDraft.mockRejectedValueOnce(new Error("Offline"));
+    const leaving = navigation.leave?.();
+    await nextTick();
+    click({ container, label: "Confirm: Leave this review?" });
+    await flush();
+    expect(container.textContent).toContain("Cancellation was not confirmed");
+    click({ container, label: "Stay: Leave this review?" });
+    await flush();
+    expect(await leaving).toBe(false);
+    expect(container.textContent).not.toContain(
+      "Cancellation was not confirmed"
+    );
+    expect(
+      [...container.querySelectorAll("button")].some(
+        (button) => button.textContent === "Retry"
+      )
+    ).toBe(false);
+    expect(container.querySelector("[data-preview]")?.textContent).toBe(
+      snapshot
+    );
+    expect(
+      [...container.querySelectorAll("button")].find(
+        (button) => button.textContent === "Send update"
+      )?.disabled
+    ).toBe(false);
+    expect(api.sendTest).toHaveBeenCalledTimes(1);
+    click({ container, label: "Back to editing" });
+    await nextTick();
+    click({ container, label: "Confirm: Leave this review?" });
+    await flush();
+    expect(container.querySelector("[data-composer]")).not.toBeNull();
+  });
+  it("offers only same-request final retry when the acceptance response is lost", async () => {
+    const container = await mountWorkspace();
+    await openReview(container);
+    api.send.mockRejectedValueOnce(new Error("Response lost"));
+    await requestFinalSend(container);
+    expect(container.textContent).toContain("Delivery was not confirmed");
+    expect(container.textContent).not.toContain(
+      "Nobody else receives anything"
+    );
+    expect(showNotifyMessage).toHaveBeenLastCalledWith(
+      expect.stringContaining("may already have been accepted")
+    );
+    expect(
+      [...container.querySelectorAll("button")].find(
+        (button) => button.textContent === "Send another test email"
+      )?.disabled
+    ).toBe(true);
+    click({ container, label: "Send another test email" });
+    expect(api.sendTest).toHaveBeenCalledTimes(1);
+    api.send.mockResolvedValueOnce(delivered);
+    click({ container, label: "Retry same send request" });
+    await flush();
+    expect(api.send.mock.calls[1]).toEqual(api.send.mock.calls[0]);
+    expect(container.textContent).toContain("History records");
+    expect(container.querySelector("[data-dialog]")).toBeNull();
+  });
+  it("resolves a lost accepted send through cancellation and shows history rather than the exit dialog", async () => {
+    const container = await mountWorkspace();
+    await openReview(container);
+    api.send.mockRejectedValueOnce(new Error("Response lost"));
+    await requestFinalSend(container);
+    api.cancelDraft.mockResolvedValueOnce({
+      success: false,
+      reason: "delivery_already_accepted",
+    });
+    const leaving = navigation.leave?.();
+    await nextTick();
+    expect(container.textContent).toContain(
+      "Leaving cannot stop an accepted delivery"
+    );
+    click({ container, label: "Confirm: Leave this review?" });
+    await flush();
+    expect(await leaving).toBe(false);
+    expect(api.getHistoryDetail).toHaveBeenCalledWith({ updateId });
+    expect(container.textContent).toContain("History records");
+    expect(container.querySelector("[data-dialog]")).toBeNull();
+    expect(container.textContent).not.toContain(
+      "Cancellation was not confirmed"
+    );
+  });
+  it("uses history-only retry after definitive acceptance but a failed detail lookup", async () => {
+    const container = await mountWorkspace();
+    await openReview(container);
+    api.cancelDraft.mockResolvedValueOnce({
+      success: false,
+      reason: "delivery_already_accepted",
+    });
+    api.getHistoryDetail.mockRejectedValueOnce(new Error("Offline"));
+    const leaving = navigation.leave?.();
+    await nextTick();
+    click({ container, label: "Confirm: Leave this review?" });
+    await flush();
+    expect(await leaving).toBe(false);
+    expect(container.querySelector("[data-dialog]")).toBeNull();
+    expect(container.textContent).toContain(
+      "This update has already been accepted"
+    );
+    click({ container, label: "Check accepted delivery" });
+    await flush();
+    expect(api.cancelDraft).toHaveBeenCalledTimes(1);
+    expect(api.getHistoryDetail).toHaveBeenCalledTimes(2);
+    expect(api.send).not.toHaveBeenCalled();
+    expect(container.textContent).toContain("History records");
+  });
+  it("lets a missing review exit safely without a cancellation error", async () => {
+    const container = await mountWorkspace();
+    await openReview(container);
+    api.cancelDraft.mockResolvedValueOnce({
+      success: false,
+      reason: "review_not_found",
+    });
+    click({ container, label: "Back to editing" });
+    await nextTick();
+    click({ container, label: "Confirm: Leave this review?" });
+    await flush();
+    expect(container.querySelector("input")?.value).toBe("My draft");
+    expect(container.querySelector("[data-dialog]")).toBeNull();
+    expect(container.textContent).not.toContain(
+      "Cancellation was not confirmed"
+    );
+  });
+  it("labels an unknown test as same-request retry, then resumes polling without another confirmation", async () => {
+    const container = await mountWorkspace();
+    await openReview(container);
+    api.sendTest.mockRejectedValueOnce(new Error("Response lost"));
+    await requestTest(container);
+    expect(container.textContent).toContain("It may already be queued");
+    expect(container.textContent).not.toContain("Send another test email");
+    expect(showNotifyMessage).toHaveBeenLastCalledWith(
+      expect.stringContaining("Retry the same request")
+    );
+    api.getTestStatus.mockResolvedValueOnce({
+      success: true,
+      status: { state: "pending" },
+    });
+    click({ container, label: "Retry same test request" });
+    await flush();
+    expect(container.querySelector("[data-dialog]")).toBeNull();
+    expect(api.sendTest.mock.calls[1]).toEqual(api.sendTest.mock.calls[0]);
+    expect(container.textContent).toContain("Sending test email...");
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(container.textContent).toContain("Send another test email");
+  });
+  it.each(["transport", "unavailable"])(
+    "retries a %s status failure without submitting another test",
+    async (failure) => {
+      const container = await mountWorkspace();
+      await openReview(container);
+      click({ container, label: "Acknowledge policy" });
+      await nextTick();
+      if (failure === "transport")
+        api.getTestStatus.mockRejectedValueOnce(new Error("Offline"));
+      else
+        api.getTestStatus.mockResolvedValueOnce({
+          success: false,
+          reason: "test_status_unavailable",
+        });
+      await requestTest(container);
+      expect(api.getTestStatus).toHaveBeenCalledTimes(1);
+      const errorMessage =
+        "The test status is temporarily unavailable. Keep checking the existing test instead of requesting another.";
+      expect(container.textContent).toContain(errorMessage);
+      const testButton = [...container.querySelectorAll("button")].find(
+        (button) => button.textContent === "Sending test email..."
+      );
+      expect(testButton?.disabled).toBe(true);
+      expect(testButton?.getAttribute("data-loading")).toBe("false");
+      expect(container.querySelector('[data-loading="true"]')).toBeNull();
+      const sendButton = [...container.querySelectorAll("button")].find(
+        (button) => button.textContent === "Send update"
+      );
+      expect(sendButton?.disabled).toBe(true);
+      click({ container, label: "Sending test email..." });
+      click({ container, label: "Send update" });
+      expect(container.querySelector("[data-dialog]")).toBeNull();
+      await vi.advanceTimersByTimeAsync(10_000);
+      expect(api.getTestStatus).toHaveBeenCalledTimes(1);
+      const status = Promise.withResolvers<unknown>();
+      api.getTestStatus.mockReturnValueOnce(status.promise);
+      click({ container, label: "Retry" });
+      await flush();
+      expect(container.querySelector("[data-dialog]")).toBeNull();
+      expect(container.textContent).not.toContain(errorMessage);
+      expect(
+        container.querySelector('[data-loading="true"]')?.textContent
+      ).toBe("Sending test email...");
+      expect(testButton?.disabled).toBe(true);
+      expect(sendButton?.disabled).toBe(true);
+      expect(api.getTestStatus).toHaveBeenCalledTimes(2);
+      expect(api.getTestStatus).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          request: { testAttemptId },
+          signal: expect.any(AbortSignal),
+        })
+      );
+      expect(api.sendTest).toHaveBeenCalledTimes(1);
+      expect(api.prepareDraft).toHaveBeenCalledTimes(1);
+      status.resolve({
+        success: true,
+        status: { state: "provider_accepted", providerAcceptedAt: new Date() },
+      });
+      await flush();
+      expect(container.querySelector('[data-loading="true"]')).toBeNull();
+      expect(container.textContent).not.toContain(errorMessage);
+      expect(container.textContent).toContain("Send another test email");
+      expect(sendButton?.disabled).toBe(false);
+      click({ container, label: "Acknowledge policy" });
+      await nextTick();
+      expect(sendButton?.disabled).toBe(true);
+      click({ container, label: "Acknowledge policy" });
+      await nextTick();
+      expect(sendButton?.disabled).toBe(false);
+      click({ container, label: "Send update" });
+      await nextTick();
+      expect(
+        container.querySelector('[data-dialog="Send this update?"]')
+      ).not.toBeNull();
+      expect(api.send).not.toHaveBeenCalled();
+      expect(api.sendTest).toHaveBeenCalledTimes(1);
+      expect(api.prepareDraft).toHaveBeenCalledTimes(1);
+    }
+  );
+  it("continues successful pending status polling every two seconds beyond a minute", async () => {
+    const container = await mountWorkspace();
+    await openReview(container);
+    const submission = Promise.withResolvers<unknown>();
+    api.sendTest.mockReturnValueOnce(submission.promise);
+    api.getTestStatus.mockResolvedValue({
+      success: true,
+      status: { state: "pending" },
+    });
+    await requestTest(container);
+    expect(container.querySelector('[data-loading="true"]')?.textContent).toBe(
+      "Sending test email..."
+    );
+    expect(api.getTestStatus).not.toHaveBeenCalled();
+    submission.resolve({
+      success: true,
+      updateId,
+      testAttemptId,
+      status: "pending",
+    });
+    await flush();
+    expect(api.getTestStatus).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(62_000);
+    expect(api.getTestStatus).toHaveBeenCalledTimes(32);
+    expect(container.querySelector('[data-loading="true"]')?.textContent).toBe(
+      "Sending test email..."
+    );
+    expect(
+      [...container.querySelectorAll("button")].find(
+        (button) => button.textContent === "Sending test email..."
+      )?.disabled
+    ).toBe(true);
+    expect(
+      [...container.querySelectorAll("button")].find(
+        (button) => button.textContent === "Send update"
+      )?.disabled
+    ).toBe(true);
+    expect(container.textContent).not.toContain(
+      "The test status is temporarily unavailable"
+    );
+    expect(api.sendTest).toHaveBeenCalledTimes(1);
+    expect(api.prepareDraft).toHaveBeenCalledTimes(1);
+    api.getTestStatus.mockResolvedValueOnce({
+      success: true,
+      status: { state: "provider_accepted", providerAcceptedAt: new Date() },
+    });
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(api.getTestStatus).toHaveBeenCalledTimes(33);
+    expect(container.querySelector('[data-loading="true"]')).toBeNull();
+    expect(container.textContent).toContain("Send another test email");
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(api.getTestStatus).toHaveBeenCalledTimes(33);
+  });
+  it.each([
+    {
+      reason: "request_id_conflict",
+      expected: "This request ID belongs to another operation.",
     },
-  };
-}
+    { reason: "review_expired", expected: "This review is no longer active." },
+    {
+      reason: "sending_disabled",
+      expected: "Email Updates are currently disabled",
+    },
+  ])(
+    "shows explicit DTO copy for $reason, not a transport-failure fallback",
+    async ({ reason, expected }) => {
+      const container = await mountWorkspace();
+      await openReview(container);
+      api.sendTest.mockResolvedValueOnce(
+        Dto.conversationEmailUpdateSendTestResponse.parse({
+          success: false,
+          error: { reason },
+        })
+      );
+      await requestTest(container);
+      expect(showNotifyMessage).toHaveBeenLastCalledWith(
+        expect.stringContaining(expected)
+      );
+      expect(container.textContent).not.toContain("Retry same test request");
+    }
+  );
+  it("uses the parsed DTO rate-limit time rather than reporting an unknown send", async () => {
+    const container = await mountWorkspace();
+    await openReview(container);
+    const retryAt = new Date("2026-10-01T12:00:00Z");
+    api.sendTest.mockResolvedValueOnce(
+      Dto.conversationEmailUpdateSendTestResponse.parse({
+        success: false,
+        error: { reason: "test_rate_limited", retryAt },
+      })
+    );
+    await requestTest(container);
+    expect(showNotifyMessage).toHaveBeenLastCalledWith(
+      `Too many requests. Try again after ${retryAt.toLocaleString("en")}.`
+    );
+    expect(container.textContent).not.toContain("Retry same test request");
+  });
+});

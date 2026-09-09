@@ -17,6 +17,13 @@ export interface EmailUpdateReportTranslations {
   submitFailed: string;
   successTitle: string;
   successDescription: string;
+  unsubscribeProject: string;
+  unsubscribeConversation: string;
+  unsubscribeConversations: string;
+  unsubscribe: string;
+  noThanks: string;
+  unsubscribeFailed: string;
+  unsubscribed: string;
 }
 
 export const emailUpdateReportTranslations = {
@@ -39,7 +46,16 @@ export const emailUpdateReportTranslations = {
     submitting: "Submitting",
     submitFailed: "We could not submit your report. Please try again.",
     successTitle: "Report received",
-    successDescription: "Thank you. We will review this Email Update.",
+    successDescription: "Thanks, your report has been recorded.",
+    unsubscribeProject: "Stop receiving updates from the project “{title}”?",
+    unsubscribeConversation: "Stop receiving updates from this conversation?",
+    unsubscribeConversations:
+      "Stop receiving updates from these conversations?",
+    unsubscribe: "Unsubscribe",
+    noThanks: "No thanks",
+    unsubscribeFailed:
+      "We could not unsubscribe you. Try again or use the unsubscribe link in the email.",
+    unsubscribed: "You have been unsubscribed from these updates.",
   },
   es: {
     pageTitle: "Denunciar una novedad",
@@ -60,7 +76,17 @@ export const emailUpdateReportTranslations = {
     submitting: "Enviando",
     submitFailed: "No hemos podido enviar su denuncia. Inténtelo de nuevo.",
     successTitle: "Denuncia recibida",
-    successDescription: "Gracias. Revisaremos esta novedad.",
+    successDescription: "Gracias, su denuncia ha quedado registrada.",
+    unsubscribeProject: "¿Dejar de recibir novedades del proyecto «{title}»?",
+    unsubscribeConversation:
+      "¿Dejar de recibir novedades de esta conversación?",
+    unsubscribeConversations:
+      "¿Dejar de recibir novedades de estas conversaciones?",
+    unsubscribe: "Cancelar suscripción",
+    noThanks: "No, gracias",
+    unsubscribeFailed:
+      "No hemos podido cancelar su suscripción. Inténtelo de nuevo o use el enlace para cancelar la suscripción del correo.",
+    unsubscribed: "Se ha cancelado su suscripción a estas novedades.",
   },
   fr: {
     pageTitle: "Signaler une nouvelle",
@@ -82,7 +108,17 @@ export const emailUpdateReportTranslations = {
     submitFailed:
       "Nous n'avons pas pu envoyer votre signalement. Veuillez réessayer.",
     successTitle: "Signalement reçu",
-    successDescription: "Merci. Nous examinerons cette nouvelle.",
+    successDescription: "Merci, votre signalement a été enregistré.",
+    unsubscribeProject: "Ne plus recevoir de nouvelles du projet « {title} » ?",
+    unsubscribeConversation:
+      "Ne plus recevoir de nouvelles de cette conversation ?",
+    unsubscribeConversations:
+      "Ne plus recevoir de nouvelles de ces conversations ?",
+    unsubscribe: "Se désabonner",
+    noThanks: "Non merci",
+    unsubscribeFailed:
+      "Le désabonnement a échoué. Réessayez ou utilisez le lien de désabonnement dans l'e-mail.",
+    unsubscribed: "Vous ne recevrez plus ces nouvelles.",
   },
   "zh-Hant": {
     pageTitle: "檢舉電子郵件更新",
@@ -102,7 +138,14 @@ export const emailUpdateReportTranslations = {
     submitting: "正在提交",
     submitFailed: "無法提交您的檢舉，請再試一次。",
     successTitle: "已收到檢舉",
-    successDescription: "謝謝您。我們會審查此電子郵件更新。",
+    successDescription: "謝謝，您的檢舉已記錄。",
+    unsubscribeProject: "停止接收專案「{title}」的更新嗎？",
+    unsubscribeConversation: "停止接收此討論的更新嗎？",
+    unsubscribeConversations: "停止接收這些討論的更新嗎？",
+    unsubscribe: "取消訂閱",
+    noThanks: "不用，謝謝",
+    unsubscribeFailed: "無法取消訂閱。請重試，或使用電子郵件中的取消訂閱連結。",
+    unsubscribed: "您已取消訂閱這些更新。",
   },
   "zh-Hans": {
     pageTitle: "举报电子邮件更新",
@@ -122,7 +165,14 @@ export const emailUpdateReportTranslations = {
     submitting: "正在提交",
     submitFailed: "无法提交您的举报，请重试。",
     successTitle: "已收到举报",
-    successDescription: "感谢您。我们会审核此电子邮件更新。",
+    successDescription: "谢谢，您的举报已记录。",
+    unsubscribeProject: "停止接收项目“{title}”的更新吗？",
+    unsubscribeConversation: "停止接收此讨论的更新吗？",
+    unsubscribeConversations: "停止接收这些讨论的更新吗？",
+    unsubscribe: "取消订阅",
+    noThanks: "不用，谢谢",
+    unsubscribeFailed: "无法取消订阅。请重试，或使用电子邮件中的取消订阅链接。",
+    unsubscribed: "您已取消订阅这些更新。",
   },
   ja: {
     pageTitle: "メール更新を報告",
@@ -143,7 +193,16 @@ export const emailUpdateReportTranslations = {
     submitting: "送信しています",
     submitFailed: "報告を送信できませんでした。もう一度お試しください。",
     successTitle: "報告を受け付けました",
-    successDescription: "ありがとうございます。このメール更新を確認します。",
+    successDescription: "ありがとうございます。報告を記録しました。",
+    unsubscribeProject:
+      "プロジェクト「{title}」からの更新の受信を停止しますか？",
+    unsubscribeConversation: "この会話からの更新の受信を停止しますか？",
+    unsubscribeConversations: "これらの会話からの更新の受信を停止しますか？",
+    unsubscribe: "配信を停止",
+    noThanks: "いいえ、結構です",
+    unsubscribeFailed:
+      "配信を停止できませんでした。再試行するか、メール内の配信停止リンクをご利用ください。",
+    unsubscribed: "これらの更新の配信を停止しました。",
   },
   ar: {
     pageTitle: "الإبلاغ عن تحديث بريد إلكتروني",
@@ -164,7 +223,15 @@ export const emailUpdateReportTranslations = {
     submitting: "جارٍ الإرسال",
     submitFailed: "تعذر إرسال بلاغك. يُرجى المحاولة مرة أخرى.",
     successTitle: "تم استلام البلاغ",
-    successDescription: "شكرًا لك. سنراجع تحديث البريد الإلكتروني هذا.",
+    successDescription: "شكرًا، تم تسجيل بلاغك.",
+    unsubscribeProject: "هل تريد إيقاف تلقي تحديثات المشروع «{title}»؟",
+    unsubscribeConversation: "هل تريد إيقاف تلقي تحديثات هذه المحادثة؟",
+    unsubscribeConversations: "هل تريد إيقاف تلقي تحديثات هذه المحادثات؟",
+    unsubscribe: "إلغاء الاشتراك",
+    noThanks: "لا، شكرًا",
+    unsubscribeFailed:
+      "تعذر إلغاء اشتراكك. حاول مرة أخرى أو استخدم رابط إلغاء الاشتراك في البريد الإلكتروني.",
+    unsubscribed: "تم إلغاء اشتراكك في هذه التحديثات.",
   },
   fa: {
     pageTitle: "گزارش یک به‌روزرسانی ایمیلی",
@@ -185,7 +252,15 @@ export const emailUpdateReportTranslations = {
     submitting: "در حال ارسال",
     submitFailed: "نتوانستیم گزارش شما را ارسال کنیم. لطفاً دوباره تلاش کنید.",
     successTitle: "گزارش دریافت شد",
-    successDescription: "سپاسگزاریم. این به‌روزرسانی ایمیلی را بررسی می‌کنیم.",
+    successDescription: "سپاسگزاریم، گزارش شما ثبت شد.",
+    unsubscribeProject: "دریافت به‌روزرسانی‌های پروژهٔ «{title}» متوقف شود؟",
+    unsubscribeConversation: "دریافت به‌روزرسانی‌های این گفتگو متوقف شود؟",
+    unsubscribeConversations: "دریافت به‌روزرسانی‌های این گفتگوها متوقف شود؟",
+    unsubscribe: "لغو اشتراک",
+    noThanks: "نه، ممنون",
+    unsubscribeFailed:
+      "لغو اشتراک انجام نشد. دوباره تلاش کنید یا از پیوند لغو اشتراک در ایمیل استفاده کنید.",
+    unsubscribed: "اشتراک شما در این به‌روزرسانی‌ها لغو شد.",
   },
   he: {
     pageTitle: "דיווח על עדכון דוא״ל",
@@ -206,7 +281,15 @@ export const emailUpdateReportTranslations = {
     submitting: "הדיווח נשלח",
     submitFailed: "לא הצלחנו לשלוח את הדיווח. נסו שוב.",
     successTitle: "הדיווח התקבל",
-    successDescription: "תודה. נבדוק את עדכון הדוא״ל הזה.",
+    successDescription: "תודה, הדיווח שלכם נרשם.",
+    unsubscribeProject: "להפסיק לקבל עדכונים מהפרויקט ״{title}״?",
+    unsubscribeConversation: "להפסיק לקבל עדכונים מהשיחה הזאת?",
+    unsubscribeConversations: "להפסיק לקבל עדכונים מהשיחות האלה?",
+    unsubscribe: "ביטול הרשמה",
+    noThanks: "לא, תודה",
+    unsubscribeFailed:
+      "לא הצלחנו לבטל את ההרשמה. נסו שוב או השתמשו בקישור לביטול ההרשמה בדוא״ל.",
+    unsubscribed: "ההרשמה שלכם לעדכונים האלה בוטלה.",
   },
   ky: {
     pageTitle: "Электрондук жаңыртуу тууралуу билдирүү",
@@ -227,7 +310,17 @@ export const emailUpdateReportTranslations = {
     submitting: "Жөнөтүлүүдө",
     submitFailed: "Билдирүүңүздү жөнөтө алган жокпуз. Кайра аракет кылыңыз.",
     successTitle: "Билдирүү кабыл алынды",
-    successDescription: "Рахмат. Бул электрондук жаңыртууну карап чыгабыз.",
+    successDescription: "Рахмат, арызыңыз катталды.",
+    unsubscribeProject:
+      "«{title}» долбоорунан жаңыртууларды алууну токтотосузбу?",
+    unsubscribeConversation: "Бул талкуудан жаңыртууларды алууну токтотосузбу?",
+    unsubscribeConversations:
+      "Бул талкуулардан жаңыртууларды алууну токтотосузбу?",
+    unsubscribe: "Жазылууну токтотуу",
+    noThanks: "Жок, рахмат",
+    unsubscribeFailed:
+      "Жазылууну токтото алган жокпуз. Кайра аракет кылыңыз же каттагы жазылууну токтотуу шилтемесин колдонуңуз.",
+    unsubscribed: "Бул жаңыртууларга жазылууңуз токтотулду.",
   },
   ru: {
     pageTitle: "Пожаловаться на почтовое обновление",
@@ -248,6 +341,14 @@ export const emailUpdateReportTranslations = {
     submitting: "Отправка",
     submitFailed: "Не удалось отправить жалобу. Попробуйте ещё раз.",
     successTitle: "Жалоба получена",
-    successDescription: "Спасибо. Мы проверим это почтовое обновление.",
+    successDescription: "Спасибо, ваша жалоба зарегистрирована.",
+    unsubscribeProject: "Перестать получать обновления проекта «{title}»?",
+    unsubscribeConversation: "Перестать получать обновления этого обсуждения?",
+    unsubscribeConversations: "Перестать получать обновления этих обсуждений?",
+    unsubscribe: "Отписаться",
+    noThanks: "Нет, спасибо",
+    unsubscribeFailed:
+      "Не удалось отменить подписку. Попробуйте ещё раз или воспользуйтесь ссылкой для отписки в письме.",
+    unsubscribed: "Вы отписались от этих обновлений.",
   },
 } satisfies Record<string, EmailUpdateReportTranslations>;

@@ -4,13 +4,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { type App, createApp, defineComponent, h, nextTick } from "vue";
 import { createI18n } from "vue-i18n";
 
-vi.mock("src/components/ui-library/SpaLink.vue", () => ({
-  default: defineComponent(
-    (_props, { slots }) =>
-      () =>
-        h("a", slots.default?.())
-  ),
-}));
 vi.mock("src/components/ui-library/ZKChip.vue", () => ({
   default: defineComponent(
     (_props, { slots }) =>
@@ -18,22 +11,39 @@ vi.mock("src/components/ui-library/ZKChip.vue", () => ({
         h("span", { class: "chip" }, slots.default?.())
   ),
 }));
-vi.mock("src/components/ui-library/ZKHtmlContent.vue", () => ({
-  default: defineComponent(() => () => h("div", { class: "html-content" })),
-}));
 
 import ConversationUpdateHistoryList from "./ConversationUpdateHistoryList.vue";
 
+const api = vi.hoisted(() => ({ getHistoryPreview: vi.fn() }));
+vi.mock("src/utils/api/conversationUpdates/conversationEmailUpdates", () => ({
+  useBackendConversationEmailUpdatesApi: () => api,
+}));
+vi.mock("src/components/ui/PageLoadingSpinner.vue", () => ({
+  default: defineComponent(() => () => h("p", "Loading preview")),
+}));
+vi.mock("src/components/ui/ErrorRetryBlock.vue", () => ({
+  default: defineComponent({
+    props: { title: { type: String, required: true } },
+    emits: ["retry"],
+    setup(props, { emit }) {
+      return () => h("button", { onClick: () => emit("retry") }, props.title);
+    },
+  }),
+}));
+vi.mock("src/components/ui-library/ZKInfoBanner.vue", () => ({
+  default: defineComponent({
+    props: { message: { type: String, required: true } },
+    setup(props) {
+      return () => h("p", props.message);
+    },
+  }),
+}));
+
 const baseRecord = {
   subject: "Update subject",
-  bodyHtml: "<p>Update body</p>",
-  scopeId: "project-one",
-  scopeKind: "project",
   scopeLabel: "Project One",
-  scopeHref: "/project/project-one",
   conversations: [
     {
-      id: "conversation-one",
       title: "Conversation One",
       href: "/conversation/conversation-one",
     },
@@ -55,7 +65,6 @@ const allOutcomeRecords = [
     conversations: [
       ...baseRecord.conversations,
       {
-        id: "conversation-two",
         title: "Conversation Two",
         href: "/conversation/conversation-two",
       },
@@ -120,9 +129,93 @@ afterEach(() => {
     app.unmount();
   }
   document.body.replaceChildren();
+  vi.restoreAllMocks();
+  api.getHistoryPreview.mockReset();
 });
 
 describe("ConversationUpdateHistoryList", () => {
+  it("fetches only expanded previews and displays backend HTML unchanged", async () => {
+    const preview = {
+      subject: "Server subject",
+      html: "<html><body>Server preview</body></html>",
+      text: "Server plaintext",
+    };
+    api.getHistoryPreview.mockResolvedValue({
+      success: true,
+      preview,
+      reconstructed: true,
+    });
+    const { container, setLocale } = mountHistory({
+      locale: "en",
+      records: allOutcomeRecords,
+    });
+    expect(api.getHistoryPreview).not.toHaveBeenCalled();
+    expect(container.querySelector("iframe, pre")).toBeNull();
+
+    const toggle = container.querySelector("button");
+    expect(toggle).not.toBeNull();
+    toggle?.click();
+    await nextTick();
+    await nextTick();
+    expect(container.querySelectorAll("iframe")).toHaveLength(1);
+    expect(api.getHistoryPreview).toHaveBeenCalledWith({
+      updateId: "preparing",
+      language: "en",
+    });
+    expect(container.querySelector("iframe")?.srcdoc).toBe(preview.html);
+    expect(container.textContent).toContain("Reconstructed preview");
+    expect(container.querySelector(".email-preview")).toBeNull();
+    expect(container.textContent).not.toContain("Currently");
+
+    toggle?.click();
+    await nextTick();
+    expect(container.querySelector("iframe, pre")).toBeNull();
+    setLocale("fr");
+    await nextTick();
+    expect(api.getHistoryPreview).toHaveBeenCalledTimes(1);
+    toggle?.click();
+    await nextTick();
+    await nextTick();
+    expect(container.querySelectorAll("iframe")).toHaveLength(1);
+    expect(api.getHistoryPreview).toHaveBeenCalledTimes(2);
+  });
+
+  it("shows loading and retry states without mounting an iframe", async () => {
+    const pending = Promise.withResolvers<{
+      success: false;
+      reason: "update_not_found";
+    }>();
+    api.getHistoryPreview.mockReturnValueOnce(pending.promise);
+    const { container } = mountHistory({
+      locale: "en",
+      records: [allOutcomeRecords[0]],
+    });
+    container.querySelector("button")?.click();
+    await nextTick();
+    expect(container.textContent).toContain("Loading preview");
+    expect(container.querySelector("iframe")).toBeNull();
+    pending.resolve({ success: false, reason: "update_not_found" });
+    await nextTick();
+    await nextTick();
+    expect(container.textContent).toContain(
+      "The email preview could not be loaded."
+    );
+    api.getHistoryPreview.mockResolvedValue({
+      success: true,
+      preview: { subject: "Retry", html: "server retry", text: "Retry" },
+      reconstructed: false,
+    });
+    [...container.querySelectorAll("button")]
+      .find(
+        (button) =>
+          button.textContent === "The email preview could not be loaded."
+      )
+      ?.click();
+    await nextTick();
+    await nextTick();
+    expect(container.querySelector("iframe")?.srcdoc).toBe("server retry");
+    expect(container.textContent).not.toContain("Reconstructed preview");
+  });
   it("localizes every status, terminal outcome, and dynamic count branch", () => {
     const { container } = mountHistory({
       locale: "en",
@@ -217,7 +310,10 @@ function mountHistory({
   const container = document.createElement("div");
   container.dir = locale === "ar" ? "rtl" : "ltr";
   document.body.append(container);
-  const app = createApp(ConversationUpdateHistoryList, { records });
+  const app = createApp(ConversationUpdateHistoryList, {
+    records,
+    language: locale,
+  });
   const i18n = createI18n({ legacy: false, locale, messages: {} });
   app.use(i18n);
   for (const name of [
@@ -241,9 +337,26 @@ function mountHistory({
   app.component(
     "QExpansionItem",
     defineComponent({
-      props: { label: { type: String, required: true } },
-      setup(props, { slots }) {
-        return () => h("section", [props.label, slots.default?.()]);
+      props: {
+        label: { type: String, required: true },
+        modelValue: { type: Boolean, default: false },
+      },
+      emits: ["update:modelValue"],
+      setup(props, { slots, emit }) {
+        // Keep invoking the slot while hidden, like Quasar after first expansion.
+        // The caller's v-if, not this stub, must prevent preview work.
+        return () =>
+          h("section", [
+            h(
+              "button",
+              {
+                "aria-expanded": props.modelValue,
+                onClick: () => emit("update:modelValue", !props.modelValue),
+              },
+              props.label
+            ),
+            h("div", { hidden: !props.modelValue }, slots.default?.()),
+          ]);
       },
     })
   );

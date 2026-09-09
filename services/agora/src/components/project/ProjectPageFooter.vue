@@ -1,7 +1,6 @@
 <template>
   <footer class="project-page-footer">
-    <span class="project-page-footer__line">
-      <span>{{ t("poweredBy") }}</span>
+    <PoweredByAgora :language="language" class="project-page-footer__line">
       <SpaLink
         to="/"
         class="project-page-footer__link"
@@ -9,7 +8,7 @@
       >
         <ZKStyledText text="Agora Citizen Network" :add-gradient="true" />
       </SpaLink>
-    </span>
+    </PoweredByAgora>
     <span class="project-page-footer__line project-page-footer__legal-links">
       <SpaLink
         :to="{ name: '/legal/terms/' }"
@@ -19,7 +18,9 @@
       >
         <ZKStyledText :text="t('termsOfService')" :add-gradient="true" />
       </SpaLink>
-      <span class="project-page-footer__separator" aria-hidden="true">&middot;</span>
+      <span class="project-page-footer__separator" aria-hidden="true"
+        >&middot;</span
+      >
       <SpaLink
         :to="{ name: '/legal/privacy/' }"
         class="project-page-footer__link"
@@ -35,6 +36,7 @@
 <script setup lang="ts">
 import SpaLink from "src/components/ui-library/SpaLink.vue";
 import ZKStyledText from "src/components/ui-library/ZKStyledText.vue";
+import PoweredByAgora from "src/shared/branding/PoweredByAgora.vue";
 import { parseSupportedDisplayLanguageOrUndefined } from "src/shared/languages";
 import { computed } from "vue";
 
@@ -47,11 +49,11 @@ const props = defineProps<{
   languageCode: string;
 }>();
 
+const language = computed(
+  () => parseSupportedDisplayLanguageOrUndefined(props.languageCode) ?? "en"
+);
 const translations = computed(
-  () =>
-    projectPageFooterTranslations[
-      parseSupportedDisplayLanguageOrUndefined(props.languageCode) ?? "en"
-    ]
+  () => projectPageFooterTranslations[language.value]
 );
 
 function t(key: keyof ProjectPageFooterTranslations): string {

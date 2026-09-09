@@ -63,48 +63,18 @@
           </p>
 
           <q-expansion-item
+            v-model="expandedRecords[record.id]"
             dense
             switch-toggle-side
             icon="mdi-email-open-outline"
             :label="t('viewEmailContent')"
             class="history-card__content-disclosure"
           >
-            <div class="history-card__content-snapshot">
-              <div>
-                <span>{{ t("subjectLabel") }}</span>
-                <strong>{{ record.subject }}</strong>
-              </div>
-              <ZKHtmlContent
-                :html-body="record.bodyHtml"
-                :compact-mode="false"
-                :enable-links="false"
-                :collapsible="false"
-              />
-              <section>
-                <SpaLink
-                  v-if="
-                    record.scopeKind === 'project' &&
-                    record.scopeHref !== undefined
-                  "
-                  :to="record.scopeHref"
-                  class="history-card__scope-link"
-                >
-                  <strong>{{ record.scopeLabel }}</strong>
-                  <q-icon name="mdi-open-in-new" size="1rem" />
-                </SpaLink>
-                <ul>
-                  <li
-                    v-for="conversation in record.conversations"
-                    :key="conversation.href"
-                  >
-                    <SpaLink :to="conversation.href">
-                      <span>{{ conversation.title }}</span>
-                      <q-icon name="mdi-open-in-new" size="1rem" />
-                    </SpaLink>
-                  </li>
-                </ul>
-              </section>
-            </div>
+            <ConversationUpdateHistoryPreview
+              v-if="expandedRecords[record.id]"
+              :update-id="record.id"
+              :language="language"
+            />
           </q-expansion-item>
         </q-item-section>
       </q-item>
@@ -119,19 +89,22 @@ import type {
   ConversationUpdateHistoryRecord,
   ConversationUpdateStatus,
 } from "src/components/conversationUpdates/conversationUpdateTypes";
-import SpaLink from "src/components/ui-library/SpaLink.vue";
 import ZKChip from "src/components/ui-library/ZKChip.vue";
-import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+import { ref } from "vue";
 
 import {
   type ConversationUpdateHistoryListTranslations,
   conversationUpdateHistoryListTranslations,
 } from "./ConversationUpdateHistoryList.i18n";
+import ConversationUpdateHistoryPreview from "./ConversationUpdateHistoryPreview.vue";
 
 defineProps<{
   records: readonly ConversationUpdateHistoryRecord[];
+  language: SupportedDisplayLanguageCodes;
 }>();
+const expandedRecords = ref<Partial<Record<string, boolean>>>({});
 
 const { t, locale } =
   useComponentI18n<ConversationUpdateHistoryListTranslations>(
@@ -354,67 +327,6 @@ function getFailureDetail(reason: ConversationUpdateFailureReason): string {
     border: 1px solid $grey-4;
     border-radius: 0.65rem;
     overflow: hidden;
-  }
-
-  &__content-snapshot {
-    display: grid;
-    gap: 1.25rem;
-    padding: 1rem;
-    border-top: 1px solid $grey-4;
-    background: $grey-1;
-
-    > div:first-child,
-    section {
-      display: grid;
-      gap: 0.35rem;
-    }
-
-    > div:first-child > span {
-      color: $grey-7;
-      font-size: 0.7rem;
-      font-weight: var(--font-weight-semibold);
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
-
-    section > .history-card__scope-link + ul {
-      margin-inline-start: 0.4rem;
-      padding-inline-start: 1.75rem;
-      border-inline-start: 2px solid rgba($primary, 0.24);
-    }
-
-    ul {
-      display: grid;
-      gap: 0.25rem;
-      margin: 0;
-      padding-inline-start: 1.2rem;
-      color: $grey-8;
-      font-size: 0.78rem;
-
-      a {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 0.75rem;
-        color: $primary;
-      }
-    }
-  }
-
-  &__scope-link {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    color: $primary;
-    font-size: 0.9rem;
-  }
-
-  &__actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-block-start: 0.75rem;
   }
 }
 

@@ -1,10 +1,7 @@
 <template>
   <q-card flat bordered class="composer-form">
     <q-card-section class="composer-form__heading">
-      <div>
-        <p>{{ t("composeUpdate") }}</p>
-        <h2>{{ t("heading") }}</h2>
-      </div>
+      <h2>{{ t("composeUpdate") }}</h2>
       <q-icon name="mdi-email-edit-outline" size="1.75rem" />
     </q-card-section>
 
@@ -76,14 +73,6 @@
 
       <ZKInfoBanner :message="t('policyWarning')" variant="warning" />
 
-      <ZKCheckbox
-        v-model="contentConfirmed"
-        :label="t('contentConfirmation')"
-        :description="undefined"
-        :required="true"
-        :disabled="!authoringEnabled"
-      />
-
       <ZKInfoBanner
         v-if="
           readyAudienceEstimate !== undefined &&
@@ -93,58 +82,35 @@
         :message="ownerCopyMessage"
       />
 
-      <ZKInfoBanner
-        v-if="testGuidance !== undefined"
-        :message="testGuidance.message"
-        :variant="testGuidance.variant"
-      />
-      <ZKLiveRegion :message="liveStatusMessage" politeness="polite" />
+      <slot name="review-guidance">
+        <ZKInfoBanner
+          v-if="reviewGuidance !== undefined"
+          :message="reviewGuidance.message"
+          :variant="reviewGuidance.variant"
+        />
+        <ZKLiveRegion :message="liveStatusMessage" politeness="polite" />
+      </slot>
     </q-card-section>
-
-    <slot name="preview" />
 
     <q-separator />
 
     <q-card-actions align="right" class="composer-form__actions">
-      <ZKButton
-        button-type="standardButton"
-        outline
-        color="primary"
-        icon="mdi-email-fast-outline"
-        :label="testButtonLabel"
-        :loading="testPending"
-        :disable="!canTest"
-        @click="showTestSendDialog = true"
-      />
-      <ZKButton
-        button-type="standardButton"
-        color="primary"
-        icon-right="mdi-arrow-right"
-        :label="t('reviewAndSend')"
-        :loading="sendPending"
-        :disable="!canSend"
-        @click="emit('send')"
-      />
+      <slot name="actions" :can-review="canReview">
+        <PrimeButton
+          severity="primary"
+          icon="pi pi-envelope"
+          :label="tReview('review')"
+          :loading="preparePending"
+          :disabled="!canReview || preparePending"
+          @click="emit('review')"
+        />
+      </slot>
     </q-card-actions>
   </q-card>
-
-  <ZKConfirmDialog
-    v-if="testDestinationEmail !== undefined"
-    v-model="showTestSendDialog"
-    :title="t('testDialogTitle')"
-    :actions="{
-      cancel: { label: t('cancel'), appearance: 'secondary-outlined' },
-      confirm: { label: t('sendTest'), appearance: 'primary' },
-    }"
-    @confirm="emit('test')"
-  >
-    <p>
-      {{ t("testEmailNotice", { email: testDestinationEmail }) }}
-    </p>
-  </ZKConfirmDialog>
 </template>
 
 <script setup lang="ts">
+import PrimeButton from "primevue/button";
 import ConversationUpdateScopeFields from "src/components/conversationUpdates/ConversationUpdateScopeFields.vue";
 import type {
   ConversationUpdateAudienceEstimateState,
@@ -152,9 +118,6 @@ import type {
 } from "src/components/conversationUpdates/conversationUpdateTypes";
 import Editor from "src/components/editor/Editor.vue";
 import { hasConversationUpdatesPartialEmailReach } from "src/components/newConversation/conversationUpdatesParticipation";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
-import ZKCheckbox from "src/components/ui-library/ZKCheckbox.vue";
-import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
 import ZKFieldLabel from "src/components/ui-library/ZKFieldLabel.vue";
 import ZKInfoBanner from "src/components/ui-library/ZKInfoBanner.vue";
 import ZKLiveRegion from "src/components/ui-library/ZKLiveRegion.vue";
@@ -165,24 +128,24 @@ import {
   CONVERSATION_EMAIL_UPDATE_SUBJECT_MAX_LENGTH,
   zodConversationEmailUpdateSubject,
 } from "src/shared/types/dto";
-import { computed, ref, useId, watch } from "vue";
+import { computed, useId } from "vue";
 
 import {
   type ConversationUpdateComposerFormTranslations,
   conversationUpdateComposerFormTranslations,
 } from "./ConversationUpdateComposerForm.i18n";
+import { conversationUpdateReviewTranslations } from "./ConversationUpdateReview.i18n";
 
-type TestReadiness =
+type ReviewReadiness =
   | { readonly kind: "authoring-disabled" }
   | { readonly kind: "checking-recipients" }
   | { readonly kind: "estimate-error" }
   | { readonly kind: "incomplete-draft" }
   | { readonly kind: "invalid-draft" }
   | { readonly kind: "no-recipients" }
-  | { readonly kind: "pending" }
   | { readonly kind: "ready" };
 
-interface TestGuidance {
+interface ReviewGuidance {
   readonly message: string;
   readonly variant: "info" | "warning";
 }
@@ -190,16 +153,13 @@ interface TestGuidance {
 const props = defineProps<{
   scopes: readonly ConversationUpdateScopeSummary[];
   updatesDisabledConversationIds: readonly string[];
-  testPending: boolean;
-  sendPending: boolean;
-  hasSuccessfulTest: boolean;
+  preparePending: boolean;
   audienceEstimateState: ConversationUpdateAudienceEstimateState;
   testDestinationEmail: string | undefined;
 }>();
 
 const emit = defineEmits<{
-  test: [];
-  send: [];
+  review: [];
 }>();
 
 const selectedScopeId = defineModel<string>("selectedScopeId", {
@@ -212,18 +172,15 @@ const selectedConversationIds = defineModel<readonly string[]>(
 const subject = defineModel<string>("subject", { required: true });
 const bodyHtml = defineModel<string>("bodyHtml", { required: true });
 const bodyPlainText = defineModel<string>("bodyPlainText", { required: true });
-const contentConfirmed = defineModel<boolean>("contentConfirmed", {
-  required: true,
-});
 const { locale, t } =
   useComponentI18n<ConversationUpdateComposerFormTranslations>(
     conversationUpdateComposerFormTranslations
   );
-const showTestSendDialog = ref(false);
+const { t: tReview } = useComponentI18n(conversationUpdateReviewTranslations);
 const messageLabelId = `conversation-update-message-${useId()}`;
 const requiredControlAttributes = { "aria-required": "true" };
 const authoringEnabled = computed(
-  () => props.testDestinationEmail !== undefined && !props.sendPending
+  () => props.testDestinationEmail !== undefined && !props.preparePending
 );
 const selectedScope = computed(() =>
   props.scopes.find((scope) => scope.id === selectedScopeId.value)
@@ -269,12 +226,9 @@ const subjectInvalid = computed(
 const messageInvalid = computed(
   () => !messageMissing.value && !messageValid.value
 );
-const testReadiness = computed<TestReadiness>(() => {
+const reviewReadiness = computed<ReviewReadiness>(() => {
   if (!authoringEnabled.value) {
     return { kind: "authoring-disabled" };
-  }
-  if (props.testPending) {
-    return { kind: "pending" };
   }
   if (!selectionReady.value || subjectMissing.value || messageMissing.value) {
     return { kind: "incomplete-draft" };
@@ -296,14 +250,7 @@ const testReadiness = computed<TestReadiness>(() => {
   const unhandledState: never = audienceEstimateState;
   return unhandledState;
 });
-const canTest = computed(() => testReadiness.value.kind === "ready");
-const canSend = computed(
-  () =>
-    canTest.value &&
-    !props.sendPending &&
-    props.hasSuccessfulTest &&
-    contentConfirmed.value
-);
+const canReview = computed(() => reviewReadiness.value.kind === "ready");
 const selectedConversations = computed(() => {
   const selectedIds = new Set(selectedConversationIds.value);
   return (
@@ -355,23 +302,20 @@ const ownerCopyMessage = computed(() => {
     managerCount: formatNumber(estimate?.ownerCopyCount ?? 0),
   });
 });
-const testGuidance = computed<TestGuidance | undefined>(() => {
-  const readiness = testReadiness.value;
+const reviewGuidance = computed<ReviewGuidance | undefined>(() => {
+  const readiness = reviewReadiness.value;
   switch (readiness.kind) {
     case "incomplete-draft":
-      return { message: t("completeRequiredFields"), variant: "warning" };
+      return { message: tReview("completeRequiredFields"), variant: "warning" };
     case "invalid-draft":
-      return { message: t("fixInvalidFields"), variant: "warning" };
+      return { message: tReview("fixInvalidFields"), variant: "warning" };
     case "checking-recipients":
       return { message: t("checkingRecipients"), variant: "warning" };
     case "ready":
-      return props.hasSuccessfulTest
-        ? { message: t("testPassed"), variant: "info" }
-        : { message: t("testRequired"), variant: "warning" };
+      return { message: tReview("locked"), variant: "info" };
     case "authoring-disabled":
     case "estimate-error":
     case "no-recipients":
-    case "pending":
       return undefined;
   }
   const unhandledReadiness: never = readiness;
@@ -380,26 +324,7 @@ const testGuidance = computed<TestGuidance | undefined>(() => {
 const liveStatusMessage = computed(() =>
   readyAudienceEstimate.value?.eligibleParticipantCount === 0
     ? zeroAudienceWarning.value
-    : (testGuidance.value?.message ?? "")
-);
-const testButtonLabel = computed(() =>
-  props.testPending
-    ? t("sendingTest")
-    : props.hasSuccessfulTest
-      ? t("sendAnotherTest")
-      : t("sendTest")
-);
-
-watch([selectedScopeId, selectedConversationIds, subject, bodyHtml], () => {
-  contentConfirmed.value = false;
-  showTestSendDialog.value = false;
-});
-
-watch(
-  () => props.testDestinationEmail,
-  () => {
-    showTestSendDialog.value = false;
-  }
+    : (reviewGuidance.value?.message ?? "")
 );
 
 function updateSubject(value: string | number | null): void {
@@ -422,15 +347,8 @@ function formatNumber(value: number): string {
     justify-content: space-between;
     gap: 1rem;
 
-    p {
-      margin: 0;
-      color: $primary;
-      font-size: 0.78rem;
-      font-weight: var(--font-weight-semibold);
-    }
-
     h2 {
-      margin: 0.25rem 0 0;
+      margin: 0;
       color: $color-text-strong;
       font-size: 1.15rem;
       line-height: 1.35;
@@ -443,11 +361,13 @@ function formatNumber(value: number): string {
 
   &__fields {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 1.5rem;
   }
 
   &__editor {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 0.5rem;
 
     label {
@@ -469,7 +389,7 @@ function formatNumber(value: number): string {
     gap: 0.5rem;
     padding: 0.75rem;
 
-    :deep(.quasarBtn) {
+    :deep(.p-button) {
       flex: 1 1 9rem;
       min-width: 0;
     }

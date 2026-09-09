@@ -2,7 +2,6 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 
 export interface ConversationUpdateComposerFormTranslations {
   composeUpdate: string;
-  heading: string;
   testDialogTitle: string;
   testEmailNotice: string;
   cancel: string;
@@ -15,15 +14,10 @@ export interface ConversationUpdateComposerFormTranslations {
   policyWarning: string;
   contentConfirmation: string;
   ownerCopySummary: string;
-  testPassed: string;
-  testRequired: string;
-  completeRequiredFields: string;
-  fixInvalidFields: string;
   checkingRecipients: string;
   sendAnotherTest: string;
   sendTest: string;
   sendingTest: string;
-  reviewAndSend: string;
   replyToConversation: string;
   replyToProject: string;
   optionalEmailAllWarning: string;
@@ -36,7 +30,6 @@ export const conversationUpdateComposerFormTranslations: Record<
 > = {
   en: {
     composeUpdate: "Compose update",
-    heading: "Write once, deliver with each participant's context",
     testDialogTitle: "Send this test email?",
     testEmailNotice:
       "This test goes only to the facilitator at {email}. Nobody else receives anything until you send the real update.",
@@ -49,26 +42,17 @@ export const conversationUpdateComposerFormTranslations: Record<
     subjectHint: "Maximum {max} Unicode characters",
     messageLabel: "Message",
     editorPlaceholder:
-      "Possible updates:\n• Share results\n• Share recent changes\n• Highlight new statements\n• Invite participants to return and vote on newly added statements, improving the analysis as participation grows\n\nRemember: this email will be sent to all eligible participants, whether they responded to some statements or none at all.\n\nLinks to the selected conversations are added automatically at the end of the email, using their project pages when applicable. You do not need to include them here, but you may.",
+      "Possible updates:\n• Share results\n• Share recent changes\n• Highlight new statements\n• Invite participants to return and vote on newly added statements, improving the analysis as participation grows\n\nThis email goes to eligible participants who voted on at least one statement, published at least one statement, or took part in a ranking.\n\nLinks to the selected conversations are added automatically at the end of the email, using their project pages when applicable. You do not need to include them here, but you may.",
     policyWarning:
       "Keep this update strictly about the selected conversations. Advertising, fundraising, political campaigning, and unrelated promotion are not allowed.",
     contentConfirmation:
-      "I confirm this update follows the rules written above!",
+      "I confirm this update follows the rules written above.",
     ownerCopySummary:
       "Eligible participants: {participantCount}. Authorized project managers: {managerCount}. Anyone in both groups receives only one owner copy.",
-    testPassed:
-      "This exact email version passed its test. Changing the scope, Reply-To, subject, or message requires another successful test.",
-    testRequired:
-      "Send a successful test email for this exact version before reviewing the real send.",
-    completeRequiredFields:
-      "Complete the required project, conversation, subject, and message fields (*) to enable the test email.",
-    fixInvalidFields:
-      "Fix the subject or message content so it meets the stated limits before sending a test email.",
     checkingRecipients: "Checking for eligible recipients...",
     sendAnotherTest: "Send another test email",
     sendTest: "Send test email",
     sendingTest: "Sending test email...",
-    reviewAndSend: "Review and send",
     replyToConversation: "Reply to (conversation email)",
     replyToProject: "Reply to (project email)",
     optionalEmailAllWarning:
@@ -78,7 +62,6 @@ export const conversationUpdateComposerFormTranslations: Record<
   },
   ar: {
     composeUpdate: "إنشاء تحديث",
-    heading: "اكتب مرة واحدة، وأرسل وفق سياق كل مشارك",
     testDialogTitle: "هل تريد إرسال هذا البريد التجريبي؟",
     testEmailNotice:
       "يُرسل هذا الاختبار إلى المُيسّر فقط على {email}. لن يتلقى أي شخص آخر شيئًا حتى ترسل التحديث الفعلي.",
@@ -91,25 +74,16 @@ export const conversationUpdateComposerFormTranslations: Record<
     subjectHint: "الحد الأقصى {max} من محارف Unicode",
     messageLabel: "الرسالة",
     editorPlaceholder:
-      "تحديثات محتملة:\n• شارك النتائج\n• شارك التغييرات الأخيرة\n• سلّط الضوء على المقترحات الجديدة\n• ادعُ المشاركين إلى العودة والتصويت على المقترحات المضافة حديثًا لتحسين التحليل مع زيادة المشاركة\n\nتذكّر: سيُرسل هذا البريد الإلكتروني إلى جميع المشاركين المؤهلين، سواء أجابوا عن بعض المقترحات أم لم يجيبوا عن أي منها.\n\nتُضاف روابط المحادثات المحددة تلقائيًا في نهاية البريد الإلكتروني، مع استخدام صفحات مشاريعها عند الاقتضاء. لا حاجة إلى إدراجها هنا، ولكن يمكنك ذلك.",
+      "تحديثات محتملة:\n• شارك النتائج\n• شارك التغييرات الأخيرة\n• سلّط الضوء على المقترحات الجديدة\n• ادعُ المشاركين إلى العودة والتصويت على المقترحات المضافة حديثًا لتحسين التحليل مع زيادة المشاركة\n\nيُرسل هذا البريد إلى المشاركين المؤهلين الذين صوّتوا على مقترح واحد على الأقل، أو نشروا مقترحًا واحدًا على الأقل، أو شاركوا في ترتيب الخيارات.\n\nتُضاف روابط المحادثات المحددة تلقائيًا في نهاية البريد الإلكتروني، مع استخدام صفحات مشاريعها عند الاقتضاء. لا حاجة إلى إدراجها هنا، ولكن يمكنك ذلك.",
     policyWarning:
       "اجعل هذا التحديث متعلقًا فقط بالمحادثات المحددة. لا يُسمح بالإعلانات أو جمع التبرعات أو الحملات السياسية أو الترويج غير ذي الصلة.",
-    contentConfirmation: "أؤكد أن هذا التحديث يلتزم بالقواعد المذكورة أعلاه!",
+    contentConfirmation: "أؤكد أن هذا التحديث يلتزم بالقواعد المذكورة أعلاه.",
     ownerCopySummary:
       "المشاركون المؤهلون: {participantCount}. مديرو المشروع المخوّلون: {managerCount}. ومن ينتمي إلى المجموعتين سيتلقى نسخة واحدة فقط للمالك.",
-    testPassed:
-      "اجتازت نسخة البريد الإلكتروني هذه الاختبار. يتطلب تغيير النطاق أو عنوان الرد أو الموضوع أو الرسالة اختبارًا ناجحًا آخر.",
-    testRequired:
-      "أرسل بريدًا تجريبيًا ناجحًا لهذه النسخة نفسها قبل مراجعة الإرسال الفعلي.",
-    completeRequiredFields:
-      "أكمل حقول المشروع والمحادثات والموضوع والرسالة المطلوبة (*) لتفعيل البريد التجريبي.",
-    fixInvalidFields:
-      "صحّح الموضوع أو محتوى الرسالة ليتوافق مع الحدود الموضحة قبل إرسال بريد تجريبي.",
     checkingRecipients: "جارٍ التحقق من وجود مستلمين مؤهلين...",
     sendAnotherTest: "إرسال بريد تجريبي آخر",
     sendTest: "إرسال بريد تجريبي",
     sendingTest: "جارٍ إرسال بريد تجريبي...",
-    reviewAndSend: "المراجعة والإرسال",
     replyToConversation: "الرد إلى (بريد المحادثة)",
     replyToProject: "الرد إلى (بريد المشروع)",
     optionalEmailAllWarning:
@@ -119,7 +93,6 @@ export const conversationUpdateComposerFormTranslations: Record<
   },
   es: {
     composeUpdate: "Redactar una novedad",
-    heading: "Escriba una vez y envíe con el contexto de cada participante",
     testDialogTitle: "¿Enviar este correo de prueba?",
     testEmailNotice:
       "Esta prueba se envía únicamente a la persona facilitadora en {email}. Nadie más recibirá nada hasta que envíe la novedad real.",
@@ -132,26 +105,17 @@ export const conversationUpdateComposerFormTranslations: Record<
     subjectHint: "Máximo de {max} caracteres Unicode",
     messageLabel: "Mensaje",
     editorPlaceholder:
-      "Posibles novedades:\n• Comparta resultados\n• Comparta cambios recientes\n• Destaque nuevas propuestas\n• Invite a volver y votar las propuestas añadidas recientemente para mejorar el análisis a medida que aumenta la participación\n\nRecuerde: este correo se enviará a todas las personas participantes elegibles, tanto si respondieron a algunas propuestas como si no respondieron a ninguna.\n\nLos enlaces a las conversaciones seleccionadas se añaden automáticamente al final del correo, usando sus páginas de proyecto cuando corresponda. No necesita incluirlos aquí, aunque puede hacerlo.",
+      "Posibles novedades:\n• Comparta resultados\n• Comparta cambios recientes\n• Destaque nuevas propuestas\n• Invite a volver y votar las propuestas añadidas recientemente para mejorar el análisis a medida que aumenta la participación\n\nEste correo se enviará a las personas elegibles que hayan votado al menos una propuesta, publicado al menos una propuesta o participado en una clasificación.\n\nLos enlaces a las conversaciones seleccionadas se añaden automáticamente al final del correo, usando sus páginas de proyecto cuando corresponda. No necesita incluirlos aquí, aunque puede hacerlo.",
     policyWarning:
       "Limite esta novedad estrictamente a las conversaciones seleccionadas. No se permiten la publicidad, la recaudación de fondos, las campañas políticas ni la promoción no relacionada.",
     contentConfirmation:
       "Confirmo que esta novedad cumple las reglas indicadas anteriormente.",
     ownerCopySummary:
       "Participantes elegibles: {participantCount}. Responsables de proyecto autorizados: {managerCount}. Quien pertenezca a ambos grupos recibirá una sola copia para responsable.",
-    testPassed:
-      "Esta versión exacta del correo superó la prueba. Si cambia el alcance, la dirección de respuesta, el asunto o el mensaje, tendrá que realizar otra prueba correctamente.",
-    testRequired:
-      "Envíe correctamente un correo de prueba de esta versión exacta antes de revisar el envío real.",
-    completeRequiredFields:
-      "Complete los campos obligatorios de proyecto, conversaciones incluidas, asunto y mensaje (*) para habilitar el envío del correo de prueba.",
-    fixInvalidFields:
-      "Corrija el asunto o el contenido del mensaje para que respete los límites indicados antes de enviar un correo de prueba.",
     checkingRecipients: "Comprobando si hay destinatarios elegibles...",
     sendAnotherTest: "Enviar otro correo de prueba",
     sendTest: "Enviar correo de prueba",
     sendingTest: "Enviando correo de prueba...",
-    reviewAndSend: "Revisar y enviar",
     replyToConversation: "Responder a (correo de la conversación)",
     replyToProject: "Responder a (correo del proyecto)",
     optionalEmailAllWarning:
@@ -161,7 +125,6 @@ export const conversationUpdateComposerFormTranslations: Record<
   },
   fa: {
     composeUpdate: "نوشتن به‌روزرسانی",
-    heading: "یک‌بار بنویسید و متناسب با زمینه هر شرکت‌کننده ارسال کنید",
     testDialogTitle: "این ایمیل آزمایشی ارسال شود؟",
     testEmailNotice:
       "این آزمایش فقط برای تسهیل‌گر به نشانی {email} فرستاده می‌شود. تا زمانی که به‌روزرسانی واقعی را ارسال نکنید، هیچ‌کس دیگری چیزی دریافت نمی‌کند.",
@@ -174,26 +137,17 @@ export const conversationUpdateComposerFormTranslations: Record<
     subjectHint: "حداکثر {max} نویسه یونیکد",
     messageLabel: "پیام",
     editorPlaceholder:
-      "به‌روزرسانی‌های احتمالی:\n• نتایج را به اشتراک بگذارید\n• تغییرات اخیر را به اشتراک بگذارید\n• گزاره‌های جدید را برجسته کنید\n• از شرکت‌کنندگان دعوت کنید بازگردند و به گزاره‌های تازه‌افزوده رأی دهند تا با افزایش مشارکت، تحلیل بهتر شود\n\nبه یاد داشته باشید: این ایمیل برای همه شرکت‌کنندگان واجد شرایط ارسال می‌شود، چه به برخی گزاره‌ها پاسخ داده باشند و چه به هیچ‌کدام.\n\nپیوند گفت‌وگوهای انتخاب‌شده به‌طور خودکار در پایان ایمیل افزوده می‌شود و در صورت وجود، از صفحه پروژه آن‌ها استفاده می‌کند. لازم نیست آن‌ها را اینجا وارد کنید، اما می‌توانید.",
+      "به‌روزرسانی‌های احتمالی:\n• نتایج را به اشتراک بگذارید\n• تغییرات اخیر را به اشتراک بگذارید\n• گزاره‌های جدید را برجسته کنید\n• از شرکت‌کنندگان دعوت کنید بازگردند و به گزاره‌های تازه‌افزوده رأی دهند تا با افزایش مشارکت، تحلیل بهتر شود\n\nاین ایمیل برای شرکت‌کنندگان واجد شرایطی ارسال می‌شود که به دست‌کم یک گزاره رأی داده‌اند، دست‌کم یک گزاره منتشر کرده‌اند یا در رتبه‌بندی شرکت کرده‌اند.\n\nپیوند گفت‌وگوهای انتخاب‌شده به‌طور خودکار در پایان ایمیل افزوده می‌شود و در صورت وجود، از صفحه پروژه آن‌ها استفاده می‌کند. لازم نیست آن‌ها را اینجا وارد کنید، اما می‌توانید.",
     policyWarning:
       "این به‌روزرسانی را فقط به گفت‌وگوهای انتخاب‌شده محدود کنید. تبلیغات، جمع‌آوری کمک مالی، کارزار سیاسی و ترویج نامرتبط مجاز نیست.",
     contentConfirmation:
-      "تأیید می‌کنم که این به‌روزرسانی از قوانین نوشته‌شده در بالا پیروی می‌کند!",
+      "تأیید می‌کنم که این به‌روزرسانی از قوانین نوشته‌شده در بالا پیروی می‌کند.",
     ownerCopySummary:
       "شرکت‌کنندگان واجد شرایط: {participantCount}. مدیران پروژه مجاز: {managerCount}. فردی که در هر دو گروه باشد فقط یک نسخه مالک دریافت می‌کند.",
-    testPassed:
-      "همین نسخه ایمیل آزمایش را با موفقیت گذراند. تغییر دامنه، نشانی پاسخ، موضوع یا پیام نیازمند یک آزمایش موفق دیگر است.",
-    testRequired:
-      "پیش از بررسی ارسال واقعی، یک ایمیل آزمایشی موفق برای همین نسخه بفرستید.",
-    completeRequiredFields:
-      "برای فعال شدن امکان ارسال ایمیل آزمایشی، فیلدهای الزامی پروژه، گفت‌وگوهای مشمول، موضوع و پیام (*) را تکمیل کنید.",
-    fixInvalidFields:
-      "پیش از ارسال ایمیل آزمایشی، موضوع یا محتوای پیام را طوری اصلاح کنید که با محدودیت‌های اعلام‌شده مطابقت داشته باشد.",
     checkingRecipients: "در حال بررسی وجود دریافت‌کنندگان واجد شرایط...",
     sendAnotherTest: "ارسال یک ایمیل آزمایشی دیگر",
     sendTest: "ارسال ایمیل آزمایشی",
     sendingTest: "در حال ارسال ایمیل آزمایشی...",
-    reviewAndSend: "بررسی و ارسال",
     replyToConversation: "پاسخ به (ایمیل گفت‌وگو)",
     replyToProject: "پاسخ به (ایمیل پروژه)",
     optionalEmailAllWarning:
@@ -203,7 +157,6 @@ export const conversationUpdateComposerFormTranslations: Record<
   },
   fr: {
     composeUpdate: "Rédiger une nouvelle",
-    heading: "Écrivez une fois, envoyez avec le contexte de chaque participant",
     testDialogTitle: "Envoyer cet e-mail de test ?",
     testEmailNotice:
       "Ce test est envoyé uniquement à la personne facilitatrice à l'adresse {email}. Personne d'autre ne recevra quoi que ce soit avant l'envoi de la nouvelle réelle.",
@@ -216,27 +169,18 @@ export const conversationUpdateComposerFormTranslations: Record<
     subjectHint: "{max} caractères Unicode au maximum",
     messageLabel: "Message",
     editorPlaceholder:
-      "Nouvelles possibles :\n• Partagez les résultats\n• Partagez les changements récents\n• Mettez en avant les nouvelles propositions\n• Invitez les participants à revenir voter sur les propositions récemment ajoutées afin d'améliorer l'analyse à mesure que la participation augmente\n\nRappel : cet e-mail sera envoyé à tous les participants éligibles, qu'ils aient répondu à certaines propositions ou à aucune.\n\nLes liens vers les conversations sélectionnées sont ajoutés automatiquement à la fin de l'e-mail, via leur page de projet le cas échéant. Vous n'avez pas besoin de les inclure ici, mais vous pouvez le faire.",
+      "Nouvelles possibles :\n• Partagez les résultats\n• Partagez les changements récents\n• Mettez en avant les nouvelles propositions\n• Invitez les participants à revenir voter sur les propositions récemment ajoutées afin d'améliorer l'analyse à mesure que la participation augmente\n\nCet e-mail sera envoyé aux participants éligibles qui ont répondu à au moins une proposition, publié au moins une proposition ou participé à un classement.\n\nLes liens vers les conversations sélectionnées sont ajoutés automatiquement à la fin de l'e-mail, via leur page de projet le cas échéant. Vous n'avez pas besoin de les inclure ici, mais vous pouvez le faire.",
     policyWarning:
       "Limitez strictement cette nouvelle aux conversations sélectionnées. La publicité, la collecte de fonds, les campagnes politiques et les promotions sans rapport sont interdites.",
     contentConfirmation:
-      "Je confirme que cette nouvelle respecte les règles énoncées ci-dessus !",
+      "Je confirme que cette nouvelle respecte les conditions ci-dessus.",
     ownerCopySummary:
       "Participants éligibles : {participantCount}. Gestionnaires de projet autorisés : {managerCount}. Toute personne appartenant aux deux groupes ne recevra qu’une seule copie pour gestionnaire.",
-    testPassed:
-      "Cette version exacte de l'e-mail a réussi le test. Toute modification de la portée, de l'adresse de réponse, de l'objet ou du message exige un nouveau test réussi.",
-    testRequired:
-      "Envoyez avec succès un e-mail de test pour cette version exacte avant de vérifier l'envoi réel.",
-    completeRequiredFields:
-      "Remplissez les champs obligatoires du projet, des conversations incluses, de l’objet et du message (*) pour activer l’envoi de l’e-mail de test.",
-    fixInvalidFields:
-      "Corrigez l’objet ou le contenu du message afin de respecter les limites indiquées avant d’envoyer un e-mail de test.",
     checkingRecipients:
       "Vérification de la présence de destinataires éligibles...",
     sendAnotherTest: "Envoyer un autre e-mail de test",
     sendTest: "Envoyer un e-mail de test",
     sendingTest: "Envoi de l’e-mail de test...",
-    reviewAndSend: "Vérifier et envoyer",
     replyToConversation: "Répondre à (e-mail de la conversation)",
     replyToProject: "Répondre à (e-mail du projet)",
     optionalEmailAllWarning:
@@ -246,7 +190,6 @@ export const conversationUpdateComposerFormTranslations: Record<
   },
   "zh-Hans": {
     composeUpdate: "撰写动态",
-    heading: "一次撰写，结合每位参与者的情况发送",
     testDialogTitle: "发送这封测试邮件？",
     testEmailNotice:
       "此测试仅发送给 {email} 的协调员。在您发送正式动态之前，其他任何人都不会收到任何内容。",
@@ -259,24 +202,16 @@ export const conversationUpdateComposerFormTranslations: Record<
     subjectHint: "最多 {max} 个 Unicode 字符",
     messageLabel: "消息",
     editorPlaceholder:
-      "可分享的动态：\n• 分享结果\n• 分享近期变化\n• 强调新观点\n• 邀请参与者回来为新增观点投票；参与度越高，分析就越完善\n\n请注意：此邮件会发送给所有符合条件的参与者，无论他们回答了部分观点还是完全没有回答。\n\n所选对话的链接会自动添加在邮件末尾；适用时将使用其项目页面。您无需在此添加，但仍可自行添加。",
+      "可分享的动态：\n• 分享结果\n• 分享近期变化\n• 强调新观点\n• 邀请参与者回来为新增观点投票；参与度越高，分析就越完善\n\n此邮件会发送给符合条件的参与者：他们至少对一个观点投过票、发表过一个观点，或参与过排序。\n\n所选对话的链接会自动添加在邮件末尾；适用时将使用其项目页面。您无需在此添加，但仍可自行添加。",
     policyWarning:
       "此动态必须严格围绕所选对话。不得包含广告、募款、政治竞选或无关推广。",
-    contentConfirmation: "我确认此动态符合上述规则！",
+    contentConfirmation: "我确认此动态符合上述规则。",
     ownerCopySummary:
       "符合条件的参与者：{participantCount}。获授权的项目管理员：{managerCount}。同时属于两组的人只会收到一份管理员副本。",
-    testPassed:
-      "此邮件的当前版本已通过测试。更改范围、回复地址、主题或消息后，需要再次成功测试。",
-    testRequired: "请先成功发送此版本的测试邮件，再检查正式发送。",
-    completeRequiredFields:
-      "请完成项目、所含对话、主题和消息这几项必填内容（*），以启用测试邮件。",
-    fixInvalidFields:
-      "请修正主题或消息内容，使其符合所示限制，再发送测试邮件。",
     checkingRecipients: "正在检查是否有符合条件的收件人……",
     sendAnotherTest: "再发送一封测试邮件",
     sendTest: "发送测试邮件",
     sendingTest: "正在发送测试邮件...",
-    reviewAndSend: "检查并发送",
     replyToConversation: "回复至（对话邮箱）",
     replyToProject: "回复至（项目邮箱）",
     optionalEmailAllWarning:
@@ -286,7 +221,6 @@ export const conversationUpdateComposerFormTranslations: Record<
   },
   "zh-Hant": {
     composeUpdate: "撰寫動態",
-    heading: "一次撰寫，結合每位參與者的情況傳送",
     testDialogTitle: "傳送這封測試郵件？",
     testEmailNotice:
       "此測試僅傳送給 {email} 的協調員。在您傳送正式動態之前，其他任何人都不會收到任何內容。",
@@ -299,24 +233,16 @@ export const conversationUpdateComposerFormTranslations: Record<
     subjectHint: "最多 {max} 個 Unicode 字元",
     messageLabel: "訊息",
     editorPlaceholder:
-      "可分享的動態：\n• 分享結果\n• 分享近期變化\n• 強調新提議\n• 邀請參與者回來為新增提議投票；參與度越高，分析就越完善\n\n請注意：此郵件會傳送給所有符合資格的參與者，無論他們回應了部分提議還是完全沒有回應。\n\n所選對話的連結會自動新增在郵件末尾；適用時將使用其專案頁面。您無需在此新增，但仍可自行新增。",
+      "可分享的動態：\n• 分享結果\n• 分享近期變化\n• 強調新提議\n• 邀請參與者回來為新增提議投票；參與度越高，分析就越完善\n\n此郵件會傳送給符合資格的參與者：他們至少對一個提議投過票、發表過一個提議，或參與過排序。\n\n所選對話的連結會自動新增在郵件末尾；適用時將使用其專案頁面。您無需在此新增，但仍可自行新增。",
     policyWarning:
       "此動態必須嚴格圍繞所選對話。不得包含廣告、募款、政治競選或無關推廣。",
-    contentConfirmation: "我確認此動態符合上述規則！",
+    contentConfirmation: "我確認此動態符合上述規則。",
     ownerCopySummary:
       "符合資格的參與者：{participantCount}。獲授權的專案管理員：{managerCount}。同時屬於兩組的人只會收到一份管理員副本。",
-    testPassed:
-      "此郵件的目前版本已通過測試。變更範圍、回覆地址、主旨或訊息後，需要再次成功測試。",
-    testRequired: "請先成功傳送此版本的測試郵件，再檢查正式傳送。",
-    completeRequiredFields:
-      "請完成專案、所含對話、主旨和訊息這幾項必填內容（*），以啟用測試郵件。",
-    fixInvalidFields:
-      "請修正主旨或訊息內容，使其符合所示限制，再傳送測試郵件。",
     checkingRecipients: "正在檢查是否有符合資格的收件人……",
     sendAnotherTest: "再傳送一封測試郵件",
     sendTest: "傳送測試郵件",
     sendingTest: "正在傳送測試郵件...",
-    reviewAndSend: "檢查並傳送",
     replyToConversation: "回覆至（對話信箱）",
     replyToProject: "回覆至（專案信箱）",
     optionalEmailAllWarning:
@@ -326,7 +252,6 @@ export const conversationUpdateComposerFormTranslations: Record<
   },
   he: {
     composeUpdate: "כתיבת עדכון",
-    heading: "כותבים פעם אחת ושולחים בהקשר של כל משתתף",
     testDialogTitle: "לשלוח את הודעת הבדיקה הזו?",
     testEmailNotice:
       "בדיקה זו נשלחת רק למנחה בכתובת {email}. אף אדם אחר לא יקבל דבר עד לשליחת העדכון האמיתי.",
@@ -339,25 +264,16 @@ export const conversationUpdateComposerFormTranslations: Record<
     subjectHint: "עד {max} תווי Unicode",
     messageLabel: "הודעה",
     editorPlaceholder:
-      "עדכונים אפשריים:\n• שתפו תוצאות\n• שתפו שינויים אחרונים\n• הדגישו הצהרות חדשות\n• הזמינו את המשתתפים לחזור ולהצביע על הצהרות שנוספו לאחרונה, כדי לשפר את הניתוח ככל שההשתתפות גדלה\n\nחשוב לזכור: הודעת דוא״ל זו תישלח לכל המשתתפים הזכאים, בין שהגיבו לחלק מההצהרות ובין שלא הגיבו לאף אחת.\n\nקישורים לשיחות שנבחרו יתווספו אוטומטית בסוף הודעת הדוא״ל, דרך דפי הפרויקט שלהן כאשר רלוונטי. אין צורך לכלול אותם כאן, אך אפשר לעשות זאת.",
+      "עדכונים אפשריים:\n• שתפו תוצאות\n• שתפו שינויים אחרונים\n• הדגישו הצהרות חדשות\n• הזמינו את המשתתפים לחזור ולהצביע על הצהרות שנוספו לאחרונה, כדי לשפר את הניתוח ככל שההשתתפות גדלה\n\nהודעת דוא״ל זו תישלח למשתתפים הזכאים שהצביעו על הצהרה אחת לפחות, פרסמו הצהרה אחת לפחות או השתתפו בדירוג.\n\nקישורים לשיחות שנבחרו יתווספו אוטומטית בסוף הודעת הדוא״ל, דרך דפי הפרויקט שלהן כאשר רלוונטי. אין צורך לכלול אותם כאן, אך אפשר לעשות זאת.",
     policyWarning:
       "יש להגביל את העדכון אך ורק לשיחות שנבחרו. פרסום, גיוס כספים, תעמולה פוליטית וקידום שאינו קשור אסורים.",
-    contentConfirmation: "אני מאשר/ת שהעדכון עומד בכללים המפורטים לעיל!",
+    contentConfirmation: "אני מאשר/ת שהעדכון עומד בכללים המפורטים לעיל.",
     ownerCopySummary:
       "משתתפים זכאים: {participantCount}. מנהלי פרויקט מורשים: {managerCount}. מי שמשתייך לשתי הקבוצות יקבל עותק בעלים אחד בלבד.",
-    testPassed:
-      "הגרסה המדויקת הזו של הודעת הדוא״ל עברה את הבדיקה. שינוי ההיקף, כתובת המענה, הנושא או ההודעה מחייב בדיקה מוצלחת נוספת.",
-    testRequired:
-      "יש לשלוח בהצלחה הודעת בדיקה לגרסה המדויקת הזו לפני בדיקת השליחה האמיתית.",
-    completeRequiredFields:
-      "יש להשלים את שדות הפרויקט, השיחות הכלולות, הנושא וההודעה המסומנים כחובה (*) כדי לאפשר שליחת הודעת בדיקה.",
-    fixInvalidFields:
-      "יש לתקן את הנושא או את תוכן ההודעה כך שיעמדו במגבלות המצוינות לפני שליחת הודעת בדיקה.",
     checkingRecipients: "מתבצעת בדיקה אם יש נמענים זכאים...",
     sendAnotherTest: "שליחת הודעת בדיקה נוספת",
     sendTest: "שליחת הודעת בדיקה",
     sendingTest: "שולחים הודעת בדיקה...",
-    reviewAndSend: "בדיקה ושליחה",
     replyToConversation: "מענה אל (דוא״ל השיחה)",
     replyToProject: "מענה אל (דוא״ל הפרויקט)",
     optionalEmailAllWarning:
@@ -367,7 +283,6 @@ export const conversationUpdateComposerFormTranslations: Record<
   },
   ja: {
     composeUpdate: "更新を作成",
-    heading: "一度の作成で、各参加者の状況に合わせて配信",
     testDialogTitle: "このテストメールを送信しますか？",
     testEmailNotice:
       "このテストはファシリテーターの {email} にのみ送信されます。実際の更新を送信するまで、ほかの誰にも何も届きません。",
@@ -380,25 +295,16 @@ export const conversationUpdateComposerFormTranslations: Record<
     subjectHint: "Unicode文字は最大{max}文字",
     messageLabel: "メッセージ",
     editorPlaceholder:
-      "更新内容の例：\n• 結果を共有する\n• 最近の変更を共有する\n• 新しい提案を紹介する\n• 参加者に再訪して新しく追加された提案へ投票するよう促し、参加の拡大とともに分析を改善する\n\n注意：このメールは、一部の提案に回答したか、まったく回答していないかにかかわらず、対象となるすべての参加者に送信されます。\n\n選択した会話へのリンクはメール末尾に自動追加され、該当する場合はプロジェクト内のページが使用されます。ここに含める必要はありませんが、追加しても構いません。",
+      "更新内容の例：\n• 結果を共有する\n• 最近の変更を共有する\n• 新しい提案を紹介する\n• 参加者に再訪して新しく追加された提案へ投票するよう促し、参加の拡大とともに分析を改善する\n\nこのメールは、少なくとも1つの提案に投票した、少なくとも1つの提案を投稿した、またはランキングに参加した受信対象者に送信されます。\n\n選択した会話へのリンクはメール末尾に自動追加され、該当する場合はプロジェクト内のページが使用されます。ここに含める必要はありませんが、追加しても構いません。",
     policyWarning:
       "この更新は選択した会話の内容に厳密に限定してください。広告、資金調達、政治運動、無関係な宣伝は禁止されています。",
-    contentConfirmation: "この更新が上記のルールに従っていることを確認します！",
+    contentConfirmation: "この更新が上記のルールに従っていることを確認します。",
     ownerCopySummary:
       "対象の参加者：{participantCount}人。権限を持つプロジェクト管理者：{managerCount}人。両方に該当する人には、管理者向けコピーが1通だけ届きます。",
-    testPassed:
-      "このメールの現在のバージョンはテストに合格しました。範囲、返信先、件名、メッセージを変更すると、再度テストに合格する必要があります。",
-    testRequired:
-      "実際の送信を確認する前に、このバージョンのテストメールを正常に送信してください。",
-    completeRequiredFields:
-      "プロジェクト、含める会話、件名、メッセージの必須項目（*）をすべて入力または選択すると、テストメールを送信できます。",
-    fixInvalidFields:
-      "テストメールを送信する前に、件名またはメッセージを修正して、表示されている制限内に収めてください。",
     checkingRecipients: "対象となる受信者がいるか確認しています…",
     sendAnotherTest: "別のテストメールを送信",
     sendTest: "テストメールを送信",
     sendingTest: "テストメールを送信しています...",
-    reviewAndSend: "確認して送信",
     replyToConversation: "返信先（会話のメール）",
     replyToProject: "返信先（プロジェクトのメール）",
     optionalEmailAllWarning:
@@ -408,7 +314,6 @@ export const conversationUpdateComposerFormTranslations: Record<
   },
   ky: {
     composeUpdate: "Жаңыртуу жазуу",
-    heading: "Бир жолу жазып, ар бир катышуучунун контекстине жараша жөнөтүңүз",
     testDialogTitle: "Бул сыноо каты жөнөтүлсүнбү?",
     testEmailNotice:
       "Бул сыноо {email} дарегиндеги фасилитаторго гана жөнөтүлөт. Чыныгы жаңыртууну жөнөткөнгө чейин башка эч ким эч нерсе албайт.",
@@ -421,26 +326,17 @@ export const conversationUpdateComposerFormTranslations: Record<
     subjectHint: "Эң көбү {max} Unicode белгиси",
     messageLabel: "Билдирүү",
     editorPlaceholder:
-      "Мүмкүн болгон жаңыртуулар:\n• Жыйынтыктарды бөлүшүңүз\n• Акыркы өзгөрүүлөрдү бөлүшүңүз\n• Жаңы сунуштарды белгилеңиз\n• Катышуучуларды кайтып келип, жаңы кошулган сунуштарга добуш берүүгө чакырыңыз; катышуу өскөн сайын талдоо жакшырат\n\nЭске алыңыз: бул кат айрым сунуштарга жооп бергенине же эч бирине жооп бербегенине карабастан, бардык жарамдуу катышуучуларга жөнөтүлөт.\n\nТандалган талкууларга шилтемелер каттын аягына автоматтык түрдө кошулуп, тиешелүү учурда алардын долбоордогу барактары колдонулат. Аларды бул жерге кошуунун кереги жок, бирок кошсоңуз болот.",
+      "Мүмкүн болгон жаңыртуулар:\n• Жыйынтыктарды бөлүшүңүз\n• Акыркы өзгөрүүлөрдү бөлүшүңүз\n• Жаңы сунуштарды белгилеңиз\n• Катышуучуларды кайтып келип, жаңы кошулган сунуштарга добуш берүүгө чакырыңыз; катышуу өскөн сайын талдоо жакшырат\n\nБул кат кеминде бир сунушка добуш берген, кеминде бир сунуш жарыялаган же рейтинг түзүүгө катышкан жарамдуу катышуучуларга жөнөтүлөт.\n\nТандалган талкууларга шилтемелер каттын аягына автоматтык түрдө кошулуп, тиешелүү учурда алардын долбоордогу барактары колдонулат. Аларды бул жерге кошуунун кереги жок, бирок кошсоңуз болот.",
     policyWarning:
       "Бул жаңыртууну тандалган талкууларга гана тиешелүү кылыңыз. Жарнамага, каражат чогултууга, саясий үгүткө жана тиешеси жок илгерилетүүгө жол берилбейт.",
     contentConfirmation:
-      "Бул жаңыртуу жогоруда жазылган эрежелерге ылайык экенин ырастайм!",
+      "Бул жаңыртуу жогоруда жазылган эрежелерге ылайык экенин ырастайм.",
     ownerCopySummary:
       "Жарамдуу катышуучулар: {participantCount}. Ыйгарым укуктуу долбоор менеджерлери: {managerCount}. Эки топко тең кирген адам ээнин бир гана көчүрмөсүн алат.",
-    testPassed:
-      "Каттын дал ушул версиясы сыноодон өттү. Камтууну, жооп дарегин, теманы же билдирүүнү өзгөртүү дагы бир ийгиликтүү сыноону талап кылат.",
-    testRequired:
-      "Чыныгы жөнөтүүнү кароодон мурун ушул версия үчүн сыноо катын ийгиликтүү жөнөтүңүз.",
-    completeRequiredFields:
-      "Сыноо катын жөнөтүү жеткиликтүү болушу үчүн долбоор, камтылган талкуулар, тема жана билдирүү боюнча (*) менен белгиленген милдеттүү талааларды толтуруңуз.",
-    fixInvalidFields:
-      "Сыноо катын жөнөтүүдөн мурун теманы же билдирүүнүн мазмунун көрсөтүлгөн чектерге ылайык оңдоңуз.",
     checkingRecipients: "Жарамдуу алуучулардын бар-жогу текшерилүүдө...",
     sendAnotherTest: "Дагы бир сыноо катын жөнөтүү",
     sendTest: "Сыноо катын жөнөтүү",
     sendingTest: "Сыноо каты жөнөтүлүүдө...",
-    reviewAndSend: "Карап чыгып жөнөтүү",
     replyToConversation: "Жооп берүү (талкуунун каты)",
     replyToProject: "Жооп берүү (долбоордун каты)",
     optionalEmailAllWarning:
@@ -450,7 +346,6 @@ export const conversationUpdateComposerFormTranslations: Record<
   },
   ru: {
     composeUpdate: "Создать обновление",
-    heading: "Напишите один раз с учётом контекста каждого участника",
     testDialogTitle: "Отправить это тестовое письмо?",
     testEmailNotice:
       "Это тестовое письмо отправляется только фасилитатору на адрес {email}. До отправки настоящего обновления больше никто ничего не получит.",
@@ -463,26 +358,17 @@ export const conversationUpdateComposerFormTranslations: Record<
     subjectHint: "Не более {max} символов Unicode",
     messageLabel: "Сообщение",
     editorPlaceholder:
-      "Возможные обновления:\n• Расскажите о результатах\n• Расскажите о недавних изменениях\n• Выделите новые предложения\n• Пригласите участников вернуться и проголосовать по недавно добавленным предложениям: по мере роста участия анализ становится точнее\n\nПомните: это письмо будет отправлено всем подходящим участникам независимо от того, ответили они на некоторые предложения или не ответили ни на одно.\n\nСсылки на выбранные обсуждения автоматически добавляются в конце письма; при необходимости используются их страницы в проектах. Добавлять их здесь не нужно, но можно.",
+      "Возможные обновления:\n• Расскажите о результатах\n• Расскажите о недавних изменениях\n• Выделите новые предложения\n• Пригласите участников вернуться и проголосовать по недавно добавленным предложениям: по мере роста участия анализ становится точнее\n\nЭто письмо получат подходящие участники, которые проголосовали хотя бы по одному предложению, опубликовали хотя бы одно предложение или приняли участие в ранжировании.\n\nСсылки на выбранные обсуждения автоматически добавляются в конце письма; при необходимости используются их страницы в проектах. Добавлять их здесь не нужно, но можно.",
     policyWarning:
       "Обновление должно касаться только выбранных обсуждений. Реклама, сбор средств, политическая агитация и продвижение посторонних материалов запрещены.",
     contentConfirmation:
-      "Я подтверждаю, что обновление соответствует изложенным выше правилам!",
+      "Я подтверждаю, что обновление соответствует изложенным выше правилам.",
     ownerCopySummary:
       "Подходящих участников: {participantCount}. Уполномоченных менеджеров проекта: {managerCount}. Тот, кто входит в обе группы, получит только одну копию для владельца.",
-    testPassed:
-      "Эта версия письма прошла тест. После изменения охвата, адреса для ответа, темы или сообщения потребуется новый успешный тест.",
-    testRequired:
-      "Успешно отправьте тестовое письмо именно этой версии, прежде чем проверять настоящую отправку.",
-    completeRequiredFields:
-      "Чтобы стала доступна отправка тестового письма, заполните обязательные поля «Проект», «Обсуждения», «Тема» и «Сообщение» (*).",
-    fixInvalidFields:
-      "Перед отправкой тестового письма исправьте тему или текст сообщения, чтобы они соответствовали указанным ограничениям.",
     checkingRecipients: "Проверяем наличие подходящих получателей...",
     sendAnotherTest: "Отправить ещё одно тестовое письмо",
     sendTest: "Отправить тестовое письмо",
     sendingTest: "Тестовое письмо отправляется...",
-    reviewAndSend: "Проверить и отправить",
     replyToConversation: "Ответить на (адрес обсуждения)",
     replyToProject: "Ответить на (адрес проекта)",
     optionalEmailAllWarning:

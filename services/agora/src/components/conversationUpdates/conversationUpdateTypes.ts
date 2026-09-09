@@ -19,7 +19,7 @@ export type ConversationUpdateFailureReason =
   | "provider_configuration_error"
   | "required_owner_copy_not_accepted";
 
-// Project slugs cannot contain underscores, so this synthetic ID cannot collide.
+// Project slugs cannot contain underscores. Append a conversation slug for each scope.
 export const CONVERSATION_UPDATE_NO_PROJECT_SCOPE_ID = "__no-project";
 
 export interface ConversationUpdateConversationSummary {
@@ -28,16 +28,14 @@ export interface ConversationUpdateConversationSummary {
   readonly href: string;
   readonly eligibleParticipantCount: number;
   readonly participationMode: ParticipationMode;
-  readonly ownerIds: readonly string[];
 }
 
 export interface ConversationUpdateScopeSummary {
   readonly id: string;
   readonly kind: "no-project" | "project";
+  readonly unsubscribeScope: "project" | "conversation";
   readonly label: string;
-  readonly href: string | undefined;
   readonly contactEmail: string;
-  readonly eligibleParticipantCap: number;
   readonly conversations: readonly ConversationUpdateConversationSummary[];
 }
 
@@ -51,7 +49,6 @@ export type ConversationUpdateAudienceEstimateState =
     };
 
 export interface ConversationUpdateHistoryConversation {
-  readonly id: string;
   readonly title: string;
   readonly href: string;
 }
@@ -59,11 +56,7 @@ export interface ConversationUpdateHistoryConversation {
 interface ConversationUpdateHistoryRecordBase {
   readonly id: string;
   readonly subject: string;
-  readonly bodyHtml: string;
-  readonly scopeId: string;
-  readonly scopeKind: ConversationUpdateScopeSummary["kind"];
   readonly scopeLabel: string;
-  readonly scopeHref: string | undefined;
   readonly conversations: readonly ConversationUpdateHistoryConversation[];
   readonly audienceEstimate: number;
   readonly ownerCopyCount: number;

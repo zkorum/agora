@@ -3,6 +3,7 @@ import { createSimulatedConversationEmailProvider } from "./simulatedProvider.js
 
 const message = {
     to: "participant@example.com",
+    senderName: "Harbor & Streets",
     subject: "Update",
     html: "<p>Update</p>",
     text: "Update",

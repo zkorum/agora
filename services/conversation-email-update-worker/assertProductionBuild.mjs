@@ -16,6 +16,16 @@ async function listFiles(directory) {
 }
 
 const files = await listFiles(outputDirectory);
+const emailEntry = resolve(outputDirectory, "generated/email/render.js");
+if (!files.includes(emailEntry)) {
+    throw new Error("Production build is missing the compiled email renderer");
+}
+const emailSource = await readFile(emailEntry, "utf8");
+if (/from\s+["'][^"']+\.vue["']/u.test(emailSource)) {
+    throw new Error(
+        "Production email renderer contains an unresolved Vue component import",
+    );
+}
 const forbiddenOutput = files.find((file) =>
     relative(outputDirectory, file).split(/[\\/]/u).includes("devExercise"),
 );

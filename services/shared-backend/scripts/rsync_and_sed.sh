@@ -12,12 +12,22 @@ COMMENT="/** **** WARNING: GENERATED FROM SHARED-BACKEND DIRECTORY, DO NOT MODIF
 
 add_warning_headers() {
     local target_dir="$1"
-    find "$target_dir" -name "*.ts" -print0 | while read -r -d $'\0' file; do
+    find "$target_dir" \( -name "*.ts" -o -name "*.mjs" \) -print0 | while read -r -d $'\0' file; do
         if ! grep -qF "$COMMENT" "$file"; then
             if [[ "$OSTYPE" == "darwin"* ]]; then
                 sed -i '' "1s;^;$COMMENT\n;" "$file"
             else
                 sed -i "1i $COMMENT" "$file"
+            fi
+        fi
+    done
+    find "$target_dir" -name "*.vue" -print0 | while read -r -d $'\0' file; do
+        local vue_comment="<!-- WARNING: GENERATED FROM SHARED-BACKEND DIRECTORY, DO NOT MODIFY DIRECTLY! -->"
+        if ! grep -qF "$vue_comment" "$file"; then
+            if [[ "$OSTYPE" == "darwin"* ]]; then
+                sed -i '' "1s;^;$vue_comment\n;" "$file"
+            else
+                sed -i "1i $vue_comment" "$file"
             fi
         fi
     done
@@ -38,6 +48,7 @@ if [ -d "$SERVICES_DIR/conversation-email-update-worker" ]; then
         --include='/conversationEmailUpdatePreferencePolicy.ts' \
         --include='/conversationEmailUpdateSnsIngress.ts' \
         --include='/db.ts' \
+        --include='/email/***' \
         --include='/logger.ts' \
         --include='/schema.ts' \
         --include='/valkey.ts' \

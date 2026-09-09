@@ -1,5 +1,7 @@
 node_modules/
 dist/
+.email-build/
+src/generated/email/
 scripts/
 jest.config.json
 tests/

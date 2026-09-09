@@ -54,6 +54,7 @@ import ZKSearchableBottomSheetSelect from "src/components/ui-library/ZKSearchabl
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { computed } from "vue";
 
+import { conversationUpdatePreferenceSettingsTranslations } from "./ConversationUpdatePreferenceSettings.i18n";
 import {
   type ConversationUpdateScopeFieldsTranslations,
   conversationUpdateScopeFieldsTranslations,
@@ -73,6 +74,9 @@ const { t, locale } =
 const selectedScopeId = defineModel<string>("selectedScopeId", {
   required: true,
 });
+const { t: translatePreferences } = useComponentI18n(
+  conversationUpdatePreferenceSettingsTranslations
+);
 const selectedConversationIds = defineModel<readonly string[]>(
   "selectedConversationIds",
   { required: true }
@@ -90,7 +94,10 @@ const scopeOptions = computed(() =>
   props.scopes.map((scope) => {
     const selectableConversations = getSelectableConversations(scope);
     return {
-      label: scope.label,
+      label:
+        scope.kind === "no-project"
+          ? `${translatePreferences("noProject")} · ${scope.label}`
+          : scope.label,
       value: scope.id,
       caption: getEligibleConversationCountLabel({
         count: selectableConversations.length,
@@ -187,6 +194,7 @@ function updateSelectedConversations(value: string | readonly string[]): void {
 <style scoped lang="scss">
 .scope-fields {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
 
   &__conversation-heading {

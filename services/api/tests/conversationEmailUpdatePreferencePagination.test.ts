@@ -86,16 +86,19 @@ describe("conversation Email Update preference pagination", () => {
                     slug: "first-project",
                     title: "First Project",
                     directoryVisibility: "listed",
+                    conversationEmailUpdateDefaultEnabled: true,
                 },
                 {
                     slug: "second-project",
                     title: "Second Project",
                     directoryVisibility: "listed",
+                    conversationEmailUpdateDefaultEnabled: true,
                 },
                 {
                     slug: "no-project-container",
                     title: "Private Container",
                     directoryVisibility: "unlisted",
+                    conversationEmailUpdateDefaultEnabled: true,
                     autoProvisionedForOrganizationId: organization.id,
                 },
             ])

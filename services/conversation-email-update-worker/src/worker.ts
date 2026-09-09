@@ -3,7 +3,11 @@ import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgre
 import { setTimeout } from "node:timers/promises";
 import type { ConversationEmailWorkerConfig } from "./config.js";
 import type { ConversationEmailProvider, ProviderFailure } from "./provider.js";
-import { renderConversationEmail } from "./renderer.js";
+import {
+    EMAIL_TEMPLATE_VERSION,
+    renderConversationEmail,
+} from "@/generated/email/render.js";
+import type { EmailBranding } from "@/shared/branding/emailBranding.js";
 import {
     normalizeError,
     normalizeProviderError,
@@ -158,6 +162,37 @@ function providerError(result: ProviderFailure) {
     return normalizeProviderError({ code: result.code, outcome: result.kind });
 }
 
+export function resolveStoredEmailRenderer({
+    templateVersion,
+    branding,
+}: {
+    templateVersion: string | null;
+    branding: EmailBranding | undefined;
+}) {
+    if (branding === undefined) {
+        return {
+            kind: "permanent_rejected",
+            code: "InvalidBrandingSnapshot",
+            details: "Stored email branding is invalid",
+        } satisfies ProviderFailure;
+    }
+    // Keep this dispatcher explicit when adding templates; accepted deliveries retain their version.
+    switch (templateVersion) {
+        case null:
+        case EMAIL_TEMPLATE_VERSION:
+            return {
+                kind: "ready",
+                branding,
+                render: renderConversationEmail,
+            } as const;
+    }
+    return {
+        kind: "permanent_rejected",
+        code: "UnsupportedEmailTemplateVersion",
+        details: "The worker cannot render the stored email template version",
+    } satisfies ProviderFailure;
+}
+
 export async function runWithConcurrency<T>({
     items,
     concurrency,
@@ -306,11 +341,24 @@ export function createConversationEmailUpdateWorker({
             kind: "test",
             siteBaseUrl: config.siteBaseUrl,
         });
-        const rendered = renderConversationEmail({
+        const renderer = resolveStoredEmailRenderer(work);
+        if (renderer.kind !== "ready") {
+            if (
+                await markTestAttempting({
+                    db,
+                    work,
+                    leaseSeconds: config.leaseSeconds,
+                })
+            ) {
+                await finalizeTestAttempt({ db, work, result: renderer });
+            }
+            return;
+        }
+        const rendered = await renderer.render({
             subject: work.subject,
             bodyHtml: work.bodyHtml,
             bodyPlainText: work.bodyPlainText,
-            projectTitle: work.projectTitle,
+            branding: renderer.branding,
             conversations,
             language: work.language,
             variant: "test",
@@ -330,6 +378,7 @@ export function createConversationEmailUpdateWorker({
         const sendStartedAt = Date.now();
         const result = await provider.send({
             to: work.destinationEmail,
+            senderName: work.projectTitle,
             subject: rendered.subject,
             html: rendered.html,
             text: rendered.text,
@@ -386,22 +435,39 @@ export function createConversationEmailUpdateWorker({
             leaseSeconds: config.leaseSeconds,
         });
         if (authorized === undefined) return;
-        const rendered = renderConversationEmail({
+        const renderer = resolveStoredEmailRenderer(authorized);
+        if (renderer.kind !== "ready") {
+            await finalizeProviderOutcome({
+                failureEvent: "recipient_finalization_failed",
+                attemptId: authorized.attemptPublicId,
+                recipientKind:
+                    authorized.kind === "participant" ? "participant" : "owner",
+                finalize: async () => {
+                    await finalizeRecipientSend({
+                        db,
+                        claimed,
+                        authorized,
+                        result: renderer,
+                    });
+                },
+            });
+            return;
+        }
+        const rendered = await renderer.render({
             subject: authorized.subject,
             bodyHtml: authorized.bodyHtml,
             bodyPlainText: authorized.bodyPlainText,
-            projectTitle: authorized.projectTitle,
+            branding: renderer.branding,
             conversations: authorized.conversations,
             language: authorized.language,
-            variant:
-                authorized.kind === "participant"
-                    ? "participant"
-                    : "owner_copy",
-            actions: authorized.actions,
+            ...(authorized.kind === "participant"
+                ? { variant: "participant", actions: authorized.actions }
+                : { variant: "owner_copy", actions: authorized.actions }),
         });
         const sendStartedAt = Date.now();
         const result = await provider.send({
             to: authorized.to,
+            senderName: authorized.projectTitle,
             subject: rendered.subject,
             html: rendered.html,
             text: rendered.text,

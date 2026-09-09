@@ -7,13 +7,16 @@
     <main>
       <section
         class="project-conversation-view__banner"
-        :class="[
-          `project-conversation-view__banner--${project.bannerVariant}`,
-          {
-            'project-conversation-view__banner--with-image':
-              effectiveBannerImageUrl !== undefined,
-          },
-        ]"
+        :style="{
+          '--project-gradient-start':
+            projectBrandPalettes[project.bannerVariant].start,
+          '--project-gradient-end':
+            projectBrandPalettes[project.bannerVariant].end,
+        }"
+        :class="{
+          'project-conversation-view__banner--with-image':
+            effectiveBannerImageUrl !== undefined,
+        }"
       >
         <img
           v-if="effectiveBannerImageUrl !== undefined"
@@ -104,6 +107,7 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import ZKLiveStatusDot from "src/components/ui-library/ZKLiveStatusDot.vue";
+import { projectBrandPalettes } from "src/shared/branding/emailBranding";
 import {
   getLanguageTextDirection,
   type SupportedDisplayLanguageCodes,
@@ -326,7 +330,11 @@ main {
   position: relative;
   height: clamp(12.5rem, 25vw, 17rem);
   overflow: hidden;
-  background: linear-gradient(135deg, #1d4f9f, #6b4eff);
+  background: linear-gradient(
+    135deg,
+    var(--project-gradient-start),
+    var(--project-gradient-end)
+  );
 }
 
 .project-conversation-view__banner::after {
@@ -345,14 +353,6 @@ main {
   backdrop-filter: blur(3px) saturate(1.02);
   -webkit-backdrop-filter: blur(3px) saturate(1.02);
   pointer-events: none;
-}
-
-.project-conversation-view__banner--purple {
-  background: linear-gradient(135deg, #5538ee, #d8639a);
-}
-
-.project-conversation-view__banner--green {
-  background: linear-gradient(135deg, #177a41, #4f92f6);
 }
 
 .project-conversation-view__banner-image {

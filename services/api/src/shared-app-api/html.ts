@@ -5,37 +5,11 @@
 import linkifyHtml from "linkify-html";
 import type { Opts } from "linkifyjs";
 import localforage from "localforage";
-import sanitizeHtml from "sanitize-html";
 
-const EMPTY_PARAGRAPH_PATTERN = String.raw`<p>(?:[\s\u00a0]|&nbsp;|<br\s*\/?>)*<\/p>`;
-const PARAGRAPH_CONTENT_REGEX = /<p>([\s\S]*?)<\/p>/gi;
-const EMPTY_PARAGRAPH_REGEX = new RegExp(EMPTY_PARAGRAPH_PATTERN, "gi");
-const LEADING_EMPTY_ELEMENTS_REGEX =
-    /^(?:\s*(?:<p><\/p>|<br\s*\/?>))+\s*/i;
-const TRAILING_EMPTY_ELEMENTS_REGEX =
-    /(?:\s*(?:<p><\/p>|<br\s*\/?>))+\s*$/i;
-const REPEATED_EMPTY_PARAGRAPHS_REGEX = /<p><\/p>(?:\s*<p><\/p>)+/gi;
-/**
- * Normalizes TipTap-style empty lines while preserving one intentional blank
- * paragraph between content blocks.
- *
- * @param htmlString - The HTML string to normalize
- * @returns Normalized HTML string with leading/trailing empty elements removed
- */
-function normalizeEmptyLines(htmlString: string): string {
-    if (!htmlString || htmlString.trim() === "") {
-        return htmlString;
-    }
-
-    return htmlString
-        .replace(PARAGRAPH_CONTENT_REGEX, (_match, content: string) => {
-            return `<p>${content.trim()}</p>`;
-        })
-        .replace(EMPTY_PARAGRAPH_REGEX, "<p></p>")
-        .replace(LEADING_EMPTY_ELEMENTS_REGEX, "")
-        .replace(TRAILING_EMPTY_ELEMENTS_REGEX, "")
-        .replace(REPEATED_EMPTY_PARAGRAPHS_REGEX, "<p></p>");
-}
+import {
+    normalizeEmptyLines,
+    sanitizeRichTextContent,
+} from "../shared/richTextHtml.js";
 
 /**
  * Is this browser supported?
@@ -93,52 +67,6 @@ export function domainFromEmail(email: string): string | undefined {
     }
 }
 
-// Sanitize user-generated rich text content (allows basic formatting tags only)
-// mode "input": strict validation for new TipTap content (no legacy "div" tags)
-// mode "output": permissive validation for displaying existing content (includes legacy "div" tags)
-function sanitizeRichTextContent(
-    htmlString: string,
-    mode: "input" | "output",
-): string {
-    const allowedTags =
-        mode === "input"
-            ? [
-                  "b",
-                  "strong",
-                  "i",
-                  "em",
-                  "strike",
-                  "s",
-                  "u",
-                  "p",
-                  "br",
-                  "ul",
-                  "ol",
-                  "li",
-              ] // TipTap only
-            : [
-                  "b",
-                  "strong",
-                  "i",
-                  "em",
-                  "strike",
-                  "s",
-                  "u",
-                  "br",
-                  "div",
-                  "p",
-                  "ul",
-                  "ol",
-                  "li",
-              ]; // Legacy + TipTap
-
-    const options: sanitizeHtml.IOptions = {
-        allowedTags,
-        allowedAttributes: {},
-    };
-    return sanitizeHtml(htmlString, options);
-}
-
 // Convert plain URLs in HTML to clickable links with security attributes
 function linkifyHtmlContent(htmlString: string): string {
     const opts: Opts = {
@@ -159,7 +87,7 @@ export function processUserGeneratedHtml(
     mode: "input" | "output" = "output",
 ): string {
     // Step 1: Sanitize to remove disallowed tags
-    htmlString = sanitizeRichTextContent(htmlString, mode);
+    htmlString = sanitizeRichTextContent({ htmlString, mode });
 
     // Step 2: Normalize excessive empty lines (limit to one empty paragraph)
     htmlString = normalizeEmptyLines(htmlString);

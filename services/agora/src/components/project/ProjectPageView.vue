@@ -3,13 +3,16 @@
     <main>
       <section
         class="project-page-view__banner"
-        :class="[
-          `project-page-view__banner--${project.bannerVariant}`,
-          {
-            'project-page-view__banner--with-image':
-              selectedBannerImageUrl !== undefined,
-          },
-        ]"
+        :style="{
+          '--project-gradient-start':
+            projectBrandPalettes[project.bannerVariant].start,
+          '--project-gradient-end':
+            projectBrandPalettes[project.bannerVariant].end,
+        }"
+        :class="{
+          'project-page-view__banner--with-image':
+            selectedBannerImageUrl !== undefined,
+        }"
       >
         <img
           v-if="selectedBannerImageUrl !== undefined"
@@ -221,6 +224,7 @@ import ContentTranslationControl from "src/components/translation/ContentTransla
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import ZKLiveStatusDot from "src/components/ui-library/ZKLiveStatusDot.vue";
+import { projectBrandPalettes } from "src/shared/branding/emailBranding";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import { getLanguageTextDirection } from "src/shared/languages";
 import { useProjectDisplayContent } from "src/utils/translation/useProjectDisplayContent";
@@ -346,15 +350,11 @@ main {
   position: relative;
   height: clamp(12.5rem, 25vw, 17rem);
   overflow: hidden;
-  background: linear-gradient(135deg, #1d4f9f, #6b4eff);
-}
-
-.project-page-view__banner--purple {
-  background: linear-gradient(135deg, #5538ee, #d8639a);
-}
-
-.project-page-view__banner--green {
-  background: linear-gradient(135deg, #177a41, #4f92f6);
+  background: linear-gradient(
+    135deg,
+    var(--project-gradient-start),
+    var(--project-gradient-end)
+  );
 }
 
 .project-page-view__banner-image {

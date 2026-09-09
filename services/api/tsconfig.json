@@ -1,6 +1,6 @@
 {
     "include": ["src/**/*", "tests/**/*", "scripts/**/*.ts"],
-    "exclude": ["node_modules", "**/node_modules/*"],
+    "exclude": ["node_modules", "**/node_modules/*", "src/shared-backend/email/**"],
     "compilerOptions": {
         /* Visit https://aka.ms/tsconfig to read more about this file */
         /* Projects */

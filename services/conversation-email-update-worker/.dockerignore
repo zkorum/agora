@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.email-build/
+src/generated/email/
+.env*
+*.log
+.git/

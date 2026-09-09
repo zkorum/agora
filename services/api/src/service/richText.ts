@@ -1,49 +1,13 @@
-import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
+import { normalizeUserRichTextHtml } from "@/shared/richTextHtml.js";
 import { log } from "@/app.js";
 import { htmlToCountedTextResult } from "@/shared/richText.js";
 import {
-    removeNonDisplayControlCharacters,
     validateRichTextHtmlByteCount,
     validateRichTextInputWithPlainText,
     type RichTextSizeValidationFailureReason,
     type RichTextValidationFailure,
     type RichTextValidationMode,
 } from "@/shared/shared.js";
-
-const NUMERIC_CHARACTER_REFERENCE_REGEX = /&#(?:(\d+)|x([\da-f]+));?/gi;
-const BIDI_CHARACTER_REFERENCE_REGEX = /&(?:lrm|rlm);/gi;
-
-function removeEncodedControlCharacters(value: string): string {
-    return value
-        .replace(BIDI_CHARACTER_REFERENCE_REGEX, "")
-        .replace(
-            NUMERIC_CHARACTER_REFERENCE_REGEX,
-            (
-                reference,
-                decimal: string | undefined,
-                hexadecimal: string | undefined,
-            ) => {
-                const codePoint = Number.parseInt(
-                    decimal ?? hexadecimal ?? "",
-                    decimal === undefined ? 16 : 10,
-                );
-                if (
-                    codePoint <= 0x08 ||
-                    (codePoint >= 0x0b && codePoint <= 0x0c) ||
-                    (codePoint >= 0x0e && codePoint <= 0x1f) ||
-                    (codePoint >= 0x7f && codePoint <= 0x9f) ||
-                    codePoint === 0x061c ||
-                    codePoint === 0x200e ||
-                    codePoint === 0x200f ||
-                    (codePoint >= 0x202a && codePoint <= 0x202e) ||
-                    (codePoint >= 0x2066 && codePoint <= 0x2069)
-                ) {
-                    return "";
-                }
-                return reference;
-            },
-        );
-}
 
 export interface NormalizedUserRichText {
     html: string;
@@ -106,18 +70,7 @@ export function normalizeUserRichTextInput({
         return rawHtmlValidation;
     }
 
-    const htmlWithoutControlCharacters = removeEncodedControlCharacters(
-        removeNonDisplayControlCharacters(html),
-    );
-    const sanitizedHtml = removeNonDisplayControlCharacters(
-        removeEncodedControlCharacters(
-            processUserGeneratedHtml(
-                htmlWithoutControlCharacters,
-                false,
-                "input",
-            ),
-        ),
-    );
+    const sanitizedHtml = normalizeUserRichTextHtml(html);
     const plainText = htmlToCountedTextWithWarning({
         html: sanitizedHtml,
         context: validationMode,

@@ -15,8 +15,6 @@ const interpolatedKeys = [
 const reviewedKeys = [
   "contentConfirmation",
   "ownerCopySummary",
-  "completeRequiredFields",
-  "fixInvalidFields",
   "checkingRecipients",
 ] satisfies readonly (keyof ConversationUpdateComposerFormTranslations)[];
 

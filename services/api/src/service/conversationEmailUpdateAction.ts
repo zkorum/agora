@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { and, eq, exists, gt } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
@@ -62,6 +62,7 @@ const PUBLIC_ACTION_MUTATION_RATE_LIMIT = {
 const PUBLIC_ACTION_CSP =
     "default-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'";
 const PUBLIC_ACTION_MAX_CONCURRENCY = 64;
+const REPORT_UNSUBSCRIBE_TOKEN_TTL_MS = 15 * 60 * 1000;
 
 const unavailable = { success: false, reason: "unavailable" } as const;
 
@@ -161,6 +162,7 @@ async function loadAction({
             attempt_public_id:
                 conversationEmailUpdateActionTokenTable.attemptPublicId,
             action: conversationEmailUpdateActionTokenTable.action,
+            expires_at: conversationEmailUpdateActionTokenTable.expiresAt,
             recipient_id: conversationEmailUpdateRecipientTable.id,
             recipient_user_id: conversationEmailUpdateRecipientTable.userId,
             recipient_kind: conversationEmailUpdateRecipientTable.kind,
@@ -229,6 +231,9 @@ async function loadAction({
 type ActionRow = NonNullable<Awaited<ReturnType<typeof loadAction>>>;
 
 function hasValidActionBinding(action: ActionRow): boolean {
+    if (action.recipient_kind !== "participant" && action.action !== "report") {
+        return false;
+    }
     const participantPreferenceScope = action.participant_preference_scope;
     if (action.action === "unsubscribe_project") {
         return participantPreferenceScope === "project";
@@ -703,7 +708,8 @@ export function createConversationEmailUpdateActionService({
                 ) {
                     return unavailable;
                 }
-                if ((await loadBoundScope({ db: tx, action })) === undefined) {
+                const scope = await loadBoundScope({ db: tx, action });
+                if (scope === undefined) {
                     return unavailable;
                 }
                 await tx
@@ -717,6 +723,42 @@ export function createConversationEmailUpdateActionService({
                         target: conversationEmailUpdateReportTable.recipientId,
                     });
                 await markTokenUsed({ db: tx, tokenId: action.token_id, now });
+                if (action.recipient_kind === "participant") {
+                    // Raw sibling tokens are not stored. Issue only the same
+                    // delivery's unsubscribe capability, never preferences access.
+                    const token = randomBytes(32).toString("base64url");
+                    await tx
+                        .insert(conversationEmailUpdateActionTokenTable)
+                        .values({
+                            tokenHash:
+                                hashConversationEmailUpdateActionToken(token),
+                            attemptPublicId: action.attempt_public_id,
+                            action:
+                                scope.kind === "project"
+                                    ? "unsubscribe_project"
+                                    : "unsubscribe_conversation",
+                            createdAt: new Date(
+                                Math.floor(now.getTime() / 1000) * 1000,
+                            ),
+                            expiresAt: new Date(
+                                Math.floor(
+                                    Math.min(
+                                        now.getTime() +
+                                            REPORT_UNSUBSCRIBE_TOKEN_TTL_MS,
+                                        action.expires_at.getTime(),
+                                    ) / 1000,
+                                ) * 1000,
+                            ),
+                        });
+                    return {
+                        success: true,
+                        availableAction: {
+                            action: "unsubscribe",
+                            token,
+                            scope: toPublicScope(scope),
+                        },
+                    } as const;
+                }
                 return { success: true } as const;
             });
         },

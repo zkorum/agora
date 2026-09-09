@@ -5,13 +5,8 @@ export interface ConversationUpdateEmailPreviewTranslations {
   defaultSubject: string;
   eligibleRecipientSingular: string;
   eligibleRecipientPlural: string;
-  fromLabel: string;
   replyToLabel: string;
-  messagePlaceholder: string;
-  conversationPlaceholder: string;
-  managePreferences: string;
-  seeMore: string;
-  unsubscribeFrom: string;
+  emptySelection: string;
 }
 
 export const conversationUpdateEmailPreviewTranslations: Record<
@@ -23,146 +18,96 @@ export const conversationUpdateEmailPreviewTranslations: Record<
     defaultSubject: "Your update subject",
     eligibleRecipientSingular: "Currently {count} eligible recipient",
     eligibleRecipientPlural: "Currently {count} eligible recipients",
-    fromLabel: "From",
     replyToLabel: "Reply to",
-    messagePlaceholder: "Your message will appear here as you write.",
-    conversationPlaceholder: "Select a conversation to continue.",
-    managePreferences:
-      "Manage preferences or unsubscribe from specific conversations",
-    seeMore: "See more",
-    unsubscribeFrom: "Unsubscribe from {name}",
+    emptySelection:
+      "Select a scope and at least one conversation to preview the email.",
   },
   ar: {
     emailPreview: "معاينة البريد الإلكتروني",
     defaultSubject: "موضوع تحديثك",
     eligibleRecipientSingular: "يوجد حاليًا {count} مستلم مؤهل",
     eligibleRecipientPlural: "يوجد حاليًا {count} مستلمين مؤهلين",
-    fromLabel: "من",
     replyToLabel: "الرد إلى",
-    messagePlaceholder: "ستظهر رسالتك هنا أثناء الكتابة.",
-    conversationPlaceholder: "اختر محادثة للمتابعة.",
-    managePreferences: "إدارة التفضيلات أو إلغاء الاشتراك في محادثات محددة",
-    seeMore: "عرض المزيد",
-    unsubscribeFrom: "إلغاء الاشتراك في {name}",
+    emptySelection:
+      "اختر نطاقًا ومحادثة واحدة على الأقل لمعاينة البريد الإلكتروني.",
   },
   es: {
     emailPreview: "Vista previa del correo",
     defaultSubject: "Asunto de su novedad",
     eligibleRecipientSingular: "Actualmente {count} destinatario elegible",
     eligibleRecipientPlural: "Actualmente {count} destinatarios elegibles",
-    fromLabel: "De",
     replyToLabel: "Responder a",
-    messagePlaceholder: "Su mensaje aparecerá aquí mientras escribe.",
-    conversationPlaceholder: "Seleccione una conversación para continuar.",
-    managePreferences:
-      "Gestionar sus preferencias de seguimiento por correo o dejar de seguir conversaciones concretas",
-    seeMore: "Ver más",
-    unsubscribeFrom: "Dejar de seguir {name} por correo",
+    emptySelection:
+      "Seleccione un ámbito y al menos una conversación para ver el correo.",
   },
   fa: {
     emailPreview: "پیش‌نمایش ایمیل",
     defaultSubject: "موضوع به‌روزرسانی شما",
     eligibleRecipientSingular: "در حال حاضر {count} دریافت‌کننده واجد شرایط",
     eligibleRecipientPlural: "در حال حاضر {count} دریافت‌کننده واجد شرایط",
-    fromLabel: "از",
     replyToLabel: "پاسخ به",
-    messagePlaceholder: "هنگام نوشتن، پیام شما اینجا نمایش داده می‌شود.",
-    conversationPlaceholder: "برای ادامه یک گفت‌وگو انتخاب کنید.",
-    managePreferences: "مدیریت ترجیحات یا لغو اشتراک از گفت‌وگوهای خاص",
-    seeMore: "مشاهده بیشتر",
-    unsubscribeFrom: "لغو اشتراک از {name}",
+    emptySelection:
+      "برای پیش‌نمایش ایمیل، یک محدوده و حداقل یک گفت‌وگو انتخاب کنید.",
   },
   fr: {
     emailPreview: "Aperçu de l’e-mail",
     defaultSubject: "Objet de votre nouvelle",
     eligibleRecipientSingular: "Actuellement {count} destinataire éligible",
     eligibleRecipientPlural: "Actuellement {count} destinataires éligibles",
-    fromLabel: "De",
     replyToLabel: "Répondre à",
-    messagePlaceholder: "Votre message apparaîtra ici pendant la rédaction.",
-    conversationPlaceholder: "Sélectionnez une conversation pour continuer.",
-    managePreferences:
-      "Gérer vos préférences de suivi par e-mail ou ne plus suivre certaines conversations",
-    seeMore: "Voir plus",
-    unsubscribeFrom: "Ne plus suivre {name} par e-mail",
+    emptySelection:
+      "Sélectionnez un périmètre et au moins une conversation pour prévisualiser l’e-mail.",
   },
   "zh-Hans": {
     emailPreview: "邮件预览",
     defaultSubject: "您的动态主题",
     eligibleRecipientSingular: "目前有 {count} 名合格收件人",
     eligibleRecipientPlural: "目前有 {count} 名合格收件人",
-    fromLabel: "发件人",
     replyToLabel: "回复至",
-    messagePlaceholder: "您输入的消息会显示在这里。",
-    conversationPlaceholder: "选择一个对话以继续。",
-    managePreferences: "管理偏好或取消订阅特定对话",
-    seeMore: "查看更多",
-    unsubscribeFrom: "取消订阅{name}",
+    emptySelection: "请选择一个范围和至少一个对话以预览邮件。",
   },
   "zh-Hant": {
     emailPreview: "郵件預覽",
     defaultSubject: "您的動態主旨",
     eligibleRecipientSingular: "目前有 {count} 名合資格收件人",
     eligibleRecipientPlural: "目前有 {count} 名合資格收件人",
-    fromLabel: "寄件者",
     replyToLabel: "回覆至",
-    messagePlaceholder: "您輸入的訊息會顯示在這裡。",
-    conversationPlaceholder: "選擇一個對話以繼續。",
-    managePreferences: "管理偏好或取消訂閱特定對話",
-    seeMore: "查看更多",
-    unsubscribeFrom: "取消訂閱{name}",
+    emptySelection: "請選擇一個範圍和至少一個對話以預覽郵件。",
   },
   he: {
     emailPreview: "תצוגה מקדימה של הדוא״ל",
     defaultSubject: "נושא העדכון שלך",
     eligibleRecipientSingular: "כרגע נמען זכאי אחד ({count})",
     eligibleRecipientPlural: "כרגע {count} נמענים זכאים",
-    fromLabel: "מאת",
     replyToLabel: "מענה אל",
-    messagePlaceholder: "ההודעה שלך תופיע כאן במהלך הכתיבה.",
-    conversationPlaceholder: "יש לבחור שיחה כדי להמשיך.",
-    managePreferences: "ניהול העדפות או ביטול הרשמה משיחות מסוימות",
-    seeMore: "הצגת עוד",
-    unsubscribeFrom: "ביטול הרשמה מ-{name}",
+    emptySelection:
+      "בחרו תחום ולפחות שיחה אחת כדי להציג תצוגה מקדימה של הדוא״ל.",
   },
   ja: {
     emailPreview: "メールプレビュー",
     defaultSubject: "更新の件名",
     eligibleRecipientSingular: "現在の対象受信者：{count}人",
     eligibleRecipientPlural: "現在の対象受信者：{count}人",
-    fromLabel: "送信元",
     replyToLabel: "返信先",
-    messagePlaceholder: "入力したメッセージがここに表示されます。",
-    conversationPlaceholder: "続行するには会話を選択してください。",
-    managePreferences: "設定を管理するか、特定の会話の配信を停止",
-    seeMore: "さらに表示",
-    unsubscribeFrom: "{name}の配信を停止",
+    emptySelection:
+      "メールをプレビューするには、範囲と少なくとも1つの会話を選択してください。",
   },
   ky: {
     emailPreview: "Катты алдын ала көрүү",
     defaultSubject: "Жаңыртууңуздун темасы",
     eligibleRecipientSingular: "Учурда {count} жарамдуу алуучу",
     eligibleRecipientPlural: "Учурда {count} жарамдуу алуучу",
-    fromLabel: "Кимден",
     replyToLabel: "Жооп берүү",
-    messagePlaceholder: "Жазып жатканыңызда билдирүүңүз бул жерде көрүнөт.",
-    conversationPlaceholder: "Улантуу үчүн талкуу тандаңыз.",
-    managePreferences: "Жөндөөлөрдү башкаруу же айрым талкуулардан баш тартуу",
-    seeMore: "Көбүрөөк көрүү",
-    unsubscribeFrom: "{name} жаңыртууларынан баш тартуу",
+    emptySelection:
+      "Катты алдын ала көрүү үчүн чөйрөнү жана кеминде бир талкууну тандаңыз.",
   },
   ru: {
     emailPreview: "Предпросмотр письма",
     defaultSubject: "Тема вашего обновления",
     eligibleRecipientSingular: "Сейчас {count} подходящий получатель",
     eligibleRecipientPlural: "Сейчас {count} подходящих получателя",
-    fromLabel: "От",
     replyToLabel: "Ответить на",
-    messagePlaceholder: "Ваше сообщение появится здесь по мере ввода.",
-    conversationPlaceholder: "Выберите обсуждение, чтобы продолжить.",
-    managePreferences:
-      "Управлять настройками или отписаться от отдельных обсуждений",
-    seeMore: "Показать ещё",
-    unsubscribeFrom: "Отписаться от обновлений «{name}»",
+    emptySelection:
+      "Выберите область и хотя бы одно обсуждение для предпросмотра письма.",
   },
 };

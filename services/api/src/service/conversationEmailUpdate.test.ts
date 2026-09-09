@@ -91,6 +91,7 @@ describe("isConversationEmailUpdateWorkspaceContextRepresented", () => {
                 kind: "project",
                 projectSlug: "listed-project",
                 title: "Listed project",
+                unsubscribeScope: "project",
                 participantContactEmail: "project@example.com",
                 conversations: [
                     {
@@ -147,6 +148,7 @@ describe("conversationEmailUpdateWorkspaceResponse", () => {
                     {
                         kind: "no_project",
                         title: "No Project",
+                        unsubscribeScope: "conversation",
                         conversations: [],
                     },
                 ],

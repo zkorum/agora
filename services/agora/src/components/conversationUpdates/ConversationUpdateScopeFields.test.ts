@@ -140,7 +140,7 @@ describe("ConversationUpdateScopeFields", () => {
       updatesDisabledConversationIds: ["three"],
     });
     const noProjectOption = container.querySelector(
-      '[data-option="Without Project"]'
+      '[data-option="No Project · Alex"]'
     );
 
     expect(noProjectOption?.getAttribute("data-disabled")).toBe("true");
@@ -169,10 +169,9 @@ function mountScopeFields({
       {
         id: "project-one",
         kind: "project",
+        unsubscribeScope: "project",
         label: "Project One",
-        href: "/project/project-one",
         contactEmail: "project@example.com",
-        eligibleParticipantCap: participantCount,
         conversations: [
           conversation({ id: "one", participantCount }),
           conversation({ id: "two", participantCount: 2 }),
@@ -181,10 +180,9 @@ function mountScopeFields({
       {
         id: "without-project",
         kind: "no-project",
-        label: "Without Project",
-        href: undefined,
+        unsubscribeScope: "conversation",
+        label: "Alex",
         contactEmail: "conversation@example.com",
-        eligibleParticipantCap: participantCount,
         conversations: [conversation({ id: "three", participantCount })],
       },
     ],
@@ -212,6 +210,5 @@ function conversation({
     href: `/conversation/${id}`,
     eligibleParticipantCount: participantCount,
     participationMode: "account_required",
-    ownerIds: [],
   };
 }

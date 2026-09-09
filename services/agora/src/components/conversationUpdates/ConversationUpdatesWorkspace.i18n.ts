@@ -23,14 +23,11 @@ export interface ConversationUpdatesWorkspaceTranslations {
   audienceEstimateUnavailable: string;
   historyUnavailable: string;
   moreHistoryUnavailable: string;
-  testQueueUnavailable: string;
-  queuedTestNotFound: string;
   testAccepted: string;
   testDeliveryRetryable: string;
   testDeliveryAuthorization: string;
   testDeliveryPermanent: string;
   testDeliveryUnknown: string;
-  updateSendUnavailable: string;
   contextNotFound: string;
   scopeUnavailable: string;
   conversationsUnavailable: string;
@@ -39,7 +36,6 @@ export interface ConversationUpdatesWorkspaceTranslations {
   missingContactEmail: string;
   verifyBeforeTest: string;
   noEligibleParticipants: string;
-  testRateLimited: string;
   successfulTestNotFound: string;
   testNotAccepted: string;
   testUsed: string;
@@ -79,8 +75,6 @@ export const conversationUpdatesWorkspaceTranslations: Record<
       "The eligible recipient count could not be loaded.",
     historyUnavailable: "Email Update history is unavailable right now.",
     moreHistoryUnavailable: "More Email Update history could not be loaded.",
-    testQueueUnavailable: "The test email could not be queued.",
-    queuedTestNotFound: "The queued test email could not be found.",
     testAccepted: "Test accepted for this exact email version.",
     testDeliveryRetryable:
       "Test delivery failed because the email provider temporarily rejected it.",
@@ -89,7 +83,6 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     testDeliveryPermanent:
       "Test delivery failed because the email provider permanently rejected it.",
     testDeliveryUnknown: "Test delivery failed for an unknown reason.",
-    updateSendUnavailable: "The update could not be sent.",
     contextNotFound: "This Email Updates context could not be found.",
     scopeUnavailable:
       "The selected Email Updates scope is no longer available.",
@@ -103,8 +96,6 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     verifyBeforeTest: "Verify an email address before sending a test email.",
     noEligibleParticipants:
       "No participants are currently eligible to receive this email.",
-    testRateLimited:
-      "Too many test emails were requested. Try again after {retryAt}.",
     successfulTestNotFound:
       "The successful test could not be found. Send another test before retrying.",
     testNotAccepted:
@@ -148,8 +139,6 @@ export const conversationUpdatesWorkspaceTranslations: Record<
       "El historial de novedades por correo no está disponible ahora.",
     moreHistoryUnavailable:
       "No se pudo cargar más historial de novedades por correo.",
-    testQueueUnavailable: "No se pudo poner en cola el correo de prueba.",
-    queuedTestNotFound: "No se encontró el correo de prueba en cola.",
     testAccepted: "Prueba aceptada para esta versión exacta del correo.",
     testDeliveryRetryable:
       "La entrega de prueba falló porque el proveedor de correo la rechazó temporalmente.",
@@ -159,7 +148,6 @@ export const conversationUpdatesWorkspaceTranslations: Record<
       "La entrega de prueba falló porque el proveedor de correo la rechazó definitivamente.",
     testDeliveryUnknown:
       "La entrega de prueba falló por un motivo desconocido.",
-    updateSendUnavailable: "No se pudo enviar la novedad.",
     contextNotFound: "No se encontró este contexto de novedades por correo.",
     scopeUnavailable:
       "El ámbito seleccionado ya no está disponible para las novedades por correo.",
@@ -175,8 +163,6 @@ export const conversationUpdatesWorkspaceTranslations: Record<
       "Verifique una dirección de correo electrónico antes de enviar un correo de prueba.",
     noEligibleParticipants:
       "Actualmente no hay participantes aptos para recibir este correo.",
-    testRateLimited:
-      "Se solicitaron demasiados correos de prueba. Inténtelo de nuevo después de {retryAt}.",
     successfulTestNotFound:
       "No se encontró la prueba correcta. Envíe otra prueba antes de reintentarlo.",
     testNotAccepted:
@@ -189,9 +175,9 @@ export const conversationUpdatesWorkspaceTranslations: Record<
       "Las copias obligatorias para los responsables de las conversaciones no se pueden entregar ahora.",
   },
   fr: {
-    introTitle: "Gardez les participants liés au travail qu’ils ont rejoint",
+    introTitle: "Gardez le lien avec les participants",
     introDescription:
-      "Partagez une nouvelle ciblée sur les conversations sélectionnées, testez l’e-mail exact et consultez les envois acceptés au même endroit.",
+      "Envoyez des nouvelles aux participants et retrouvez vos envois précédents.",
     tryAgain: "Réessayer",
     verifyEmailBanner:
       "Vérifiez votre adresse e-mail avant de rédiger ou tester une nouvelle. L’historique reste disponible.",
@@ -219,8 +205,6 @@ export const conversationUpdatesWorkspaceTranslations: Record<
       "L’historique des nouvelles par e-mail est indisponible pour le moment.",
     moreHistoryUnavailable:
       "Impossible de charger davantage d’historique des nouvelles par e-mail.",
-    testQueueUnavailable: "Impossible de mettre l’e-mail de test en file.",
-    queuedTestNotFound: "L’e-mail de test en file est introuvable.",
     testAccepted: "Test accepté pour cette version exacte de l’e-mail.",
     testDeliveryRetryable:
       "L’envoi du test a échoué car le fournisseur d’e-mail l’a temporairement refusé.",
@@ -229,7 +213,6 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     testDeliveryPermanent:
       "L’envoi du test a échoué car le fournisseur d’e-mail l’a définitivement refusé.",
     testDeliveryUnknown: "L’envoi du test a échoué pour une raison inconnue.",
-    updateSendUnavailable: "Impossible d’envoyer la nouvelle.",
     contextNotFound: "Ce contexte de nouvelles par e-mail est introuvable.",
     scopeUnavailable:
       "Le périmètre sélectionné n’est plus disponible pour les nouvelles par e-mail.",
@@ -245,8 +228,6 @@ export const conversationUpdatesWorkspaceTranslations: Record<
       "Vérifiez une adresse e-mail avant d’envoyer un e-mail de test.",
     noEligibleParticipants:
       "Aucun participant n’est actuellement éligible pour recevoir cet e-mail.",
-    testRateLimited:
-      "Trop d’e-mails de test ont été demandés. Réessayez après {retryAt}.",
     successfulTestNotFound:
       "Le test réussi est introuvable. Envoyez un autre test avant de réessayer.",
     testNotAccepted:
@@ -285,15 +266,12 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     audienceEstimateUnavailable: "无法加载符合条件的收件人数。",
     historyUnavailable: "电子邮件更新历史记录目前不可用。",
     moreHistoryUnavailable: "无法加载更多电子邮件更新历史记录。",
-    testQueueUnavailable: "无法将测试邮件加入队列。",
-    queuedTestNotFound: "找不到队列中的测试邮件。",
     testAccepted: "此邮件版本的测试已被接受。",
     testDeliveryRetryable: "测试发送失败，因为邮件服务商暂时拒绝了邮件。",
     testDeliveryAuthorization:
       "测试邮件未发送，因为其目标地址或发送授权已不可用。",
     testDeliveryPermanent: "测试发送失败，因为邮件服务商永久拒绝了邮件。",
     testDeliveryUnknown: "测试发送因未知原因失败。",
-    updateSendUnavailable: "无法发送更新。",
     contextNotFound: "找不到此电子邮件更新上下文。",
     scopeUnavailable: "所选电子邮件更新范围已不可用。",
     conversationsUnavailable: "一个或多个所选对话在此范围内已不可用。",
@@ -302,7 +280,6 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     missingContactEmail: "发送测试前，请添加参与者联系电子邮件。",
     verifyBeforeTest: "发送测试邮件前，请先验证电子邮件地址。",
     noEligibleParticipants: "目前没有参与者符合接收此邮件的条件。",
-    testRateLimited: "请求的测试邮件过多。请在 {retryAt} 后重试。",
     successfulTestNotFound: "找不到成功的测试。请先发送另一封测试邮件再重试。",
     testNotAccepted: "邮件服务商尚未接受测试。请先发送另一封测试邮件再重试。",
     testUsed: "此测试已用于授权一次更新。请先发送另一封测试邮件再重试。",
@@ -336,15 +313,12 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     audienceEstimateUnavailable: "無法載入符合條件的收件者人數。",
     historyUnavailable: "電子郵件更新歷史記錄目前無法使用。",
     moreHistoryUnavailable: "無法載入更多電子郵件更新歷史記錄。",
-    testQueueUnavailable: "無法將測試郵件加入佇列。",
-    queuedTestNotFound: "找不到佇列中的測試郵件。",
     testAccepted: "此郵件版本的測試已獲接受。",
     testDeliveryRetryable: "測試傳送失敗，因為郵件服務商暫時拒絕了郵件。",
     testDeliveryAuthorization:
       "測試郵件未傳送，因為其收件地址或傳送授權已無法使用。",
     testDeliveryPermanent: "測試傳送失敗，因為郵件服務商永久拒絕了郵件。",
     testDeliveryUnknown: "測試傳送因未知原因失敗。",
-    updateSendUnavailable: "無法傳送更新。",
     contextNotFound: "找不到此電子郵件更新內容範圍。",
     scopeUnavailable: "所選電子郵件更新範圍已無法使用。",
     conversationsUnavailable: "一個或多個所選對話在此範圍內已無法使用。",
@@ -353,7 +327,6 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     missingContactEmail: "傳送測試前，請新增參與者聯絡電子郵件。",
     verifyBeforeTest: "傳送測試郵件前，請先驗證電子郵件地址。",
     noEligibleParticipants: "目前沒有參與者符合接收此郵件的條件。",
-    testRateLimited: "要求的測試郵件過多。請在 {retryAt} 後再試一次。",
     successfulTestNotFound:
       "找不到成功的測試。請先傳送另一封測試郵件再試一次。",
     testNotAccepted: "郵件服務商尚未接受測試。請先傳送另一封測試郵件再試一次。",
@@ -388,8 +361,6 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     audienceEstimateUnavailable: "対象受信者数を読み込めませんでした。",
     historyUnavailable: "メール更新の履歴は現在利用できません。",
     moreHistoryUnavailable: "メール更新の履歴をさらに読み込めませんでした。",
-    testQueueUnavailable: "テストメールをキューに追加できませんでした。",
-    queuedTestNotFound: "キューに追加したテストメールが見つかりません。",
     testAccepted: "このメールと完全に同じ内容のテストが承認されました。",
     testDeliveryRetryable:
       "メールプロバイダーが一時的に拒否したため、テスト配信に失敗しました。",
@@ -398,7 +369,6 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     testDeliveryPermanent:
       "メールプロバイダーが恒久的に拒否したため、テスト配信に失敗しました。",
     testDeliveryUnknown: "不明な理由でテスト配信に失敗しました。",
-    updateSendUnavailable: "更新を送信できませんでした。",
     contextNotFound: "このメール更新の対象が見つかりません。",
     scopeUnavailable: "選択したメール更新の範囲は利用できなくなりました。",
     conversationsUnavailable:
@@ -411,8 +381,6 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     verifyBeforeTest:
       "テストメールを送信する前にメールアドレスを確認してください。",
     noEligibleParticipants: "現在、このメールを受信できる参加者はいません。",
-    testRateLimited:
-      "テストメールの要求が多すぎます。{retryAt} より後に再試行してください。",
     successfulTestNotFound:
       "成功したテストが見つかりません。別のテストを送信してから再試行してください。",
     testNotAccepted:
@@ -451,8 +419,6 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     historyUnavailable: "سجل تحديثات البريد الإلكتروني غير متاح الآن.",
     moreHistoryUnavailable:
       "تعذر تحميل المزيد من سجل تحديثات البريد الإلكتروني.",
-    testQueueUnavailable: "تعذر وضع رسالة الاختبار في قائمة الانتظار.",
-    queuedTestNotFound: "تعذر العثور على رسالة الاختبار في قائمة الانتظار.",
     testAccepted: "تم قبول الاختبار لهذه النسخة المطابقة من الرسالة.",
     testDeliveryRetryable:
       "فشل تسليم الاختبار لأن مزود البريد الإلكتروني رفضه مؤقتًا.",
@@ -461,7 +427,6 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     testDeliveryPermanent:
       "فشل تسليم الاختبار لأن مزود البريد الإلكتروني رفضه نهائيًا.",
     testDeliveryUnknown: "فشل تسليم الاختبار لسبب غير معروف.",
-    updateSendUnavailable: "تعذر إرسال التحديث.",
     contextNotFound: "تعذر العثور على سياق تحديثات البريد الإلكتروني هذا.",
     scopeUnavailable: "لم يعد نطاق تحديثات البريد الإلكتروني المحدد متاحًا.",
     conversationsUnavailable:
@@ -472,8 +437,6 @@ export const conversationUpdatesWorkspaceTranslations: Record<
       "أضف بريدًا إلكترونيًا للتواصل مع المشاركين قبل إرسال اختبار.",
     verifyBeforeTest: "تحقق من عنوان بريد إلكتروني قبل إرسال رسالة اختبار.",
     noEligibleParticipants: "لا يوجد حاليًا مشاركون مؤهلون لتلقي هذه الرسالة.",
-    testRateLimited:
-      "طُلب عدد كبير جدًا من رسائل الاختبار. حاول مجددًا بعد {retryAt}.",
     successfulTestNotFound:
       "تعذر العثور على الاختبار الناجح. أرسل اختبارًا آخر قبل إعادة المحاولة.",
     testNotAccepted:
@@ -513,8 +476,6 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     audienceEstimateUnavailable: "تعداد گیرندگان واجد شرایط بارگیری نشد.",
     historyUnavailable: "تاریخچه به‌روزرسانی ایمیلی اکنون در دسترس نیست.",
     moreHistoryUnavailable: "تاریخچه بیشتری از به‌روزرسانی ایمیلی بارگیری نشد.",
-    testQueueUnavailable: "ایمیل آزمایشی در صف قرار نگرفت.",
-    queuedTestNotFound: "ایمیل آزمایشی صف‌شده پیدا نشد.",
     testAccepted: "آزمایش برای همین نسخه دقیق ایمیل پذیرفته شد.",
     testDeliveryRetryable:
       "ارسال آزمایشی ناموفق بود، زیرا ارائه‌دهنده ایمیل موقتاً آن را رد کرد.",
@@ -523,7 +484,6 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     testDeliveryPermanent:
       "ارسال آزمایشی ناموفق بود، زیرا ارائه‌دهنده ایمیل آن را برای همیشه رد کرد.",
     testDeliveryUnknown: "ارسال آزمایشی به دلیلی نامعلوم ناموفق بود.",
-    updateSendUnavailable: "به‌روزرسانی ارسال نشد.",
     contextNotFound: "این زمینه به‌روزرسانی ایمیلی پیدا نشد.",
     scopeUnavailable: "دامنه انتخاب‌شده به‌روزرسانی ایمیلی دیگر در دسترس نیست.",
     conversationsUnavailable:
@@ -537,8 +497,6 @@ export const conversationUpdatesWorkspaceTranslations: Record<
       "پیش از ارسال ایمیل آزمایشی، یک نشانی ایمیل را تأیید کنید.",
     noEligibleParticipants:
       "در حال حاضر هیچ شرکت‌کننده‌ای واجد شرایط دریافت این ایمیل نیست.",
-    testRateLimited:
-      "ایمیل‌های آزمایشی بیش از حد درخواست شدند. پس از {retryAt} دوباره تلاش کنید.",
     successfulTestNotFound:
       "آزمایش موفق پیدا نشد. پیش از تلاش دوباره، آزمایش دیگری ارسال کنید.",
     testNotAccepted:
@@ -577,15 +535,12 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     audienceEstimateUnavailable: "לא ניתן לטעון את מספר הנמענים הזכאים.",
     historyUnavailable: "היסטוריית העדכונים בדוא״ל אינה זמינה כרגע.",
     moreHistoryUnavailable: "לא ניתן לטעון היסטוריה נוספת של עדכונים בדוא״ל.",
-    testQueueUnavailable: "לא ניתן להוסיף את הודעת הבדיקה לתור.",
-    queuedTestNotFound: "הודעת הבדיקה שבתור לא נמצאה.",
     testAccepted: "הבדיקה אושרה עבור הגרסה המדויקת הזאת של ההודעה.",
     testDeliveryRetryable: "שליחת הבדיקה נכשלה כי ספק הדוא״ל דחה אותה זמנית.",
     testDeliveryAuthorization:
       "הודעת הבדיקה לא נשלחה כי כתובת היעד או הרשאת השליחה כבר לא היו זמינות.",
     testDeliveryPermanent: "שליחת הבדיקה נכשלה כי ספק הדוא״ל דחה אותה לצמיתות.",
     testDeliveryUnknown: "שליחת הבדיקה נכשלה מסיבה לא ידועה.",
-    updateSendUnavailable: "לא ניתן לשלוח את העדכון.",
     contextNotFound: "ההקשר הזה של עדכונים בדוא״ל לא נמצא.",
     scopeUnavailable: "התחום שנבחר לעדכונים בדוא״ל אינו זמין עוד.",
     conversationsUnavailable:
@@ -597,7 +552,6 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     verifyBeforeTest: "יש לאמת כתובת דוא״ל לפני שליחת הודעת בדיקה.",
     noEligibleParticipants:
       "אין כרגע משתתפים שזכאים לקבל את הודעת הדוא״ל הזאת.",
-    testRateLimited: "התבקשו יותר מדי הודעות בדיקה. נסו שוב אחרי {retryAt}.",
     successfulTestNotFound:
       "הבדיקה שהצליחה לא נמצאה. שלחו בדיקה נוספת לפני שתנסו שוב.",
     testNotAccepted:
@@ -635,8 +589,6 @@ export const conversationUpdatesWorkspaceTranslations: Record<
       "Электрондук почта жаңыртууларынын тарыхы азыр жеткиликсиз.",
     moreHistoryUnavailable:
       "Кошумча электрондук почта жаңыртуу тарыхы жүктөлгөн жок.",
-    testQueueUnavailable: "Сыноо каты кезекке кошулган жок.",
-    queuedTestNotFound: "Кезектеги сыноо каты табылган жок.",
     testAccepted: "Дал ушул каттын нускасы үчүн сыноо кабыл алынды.",
     testDeliveryRetryable:
       "Почта провайдери аны убактылуу четке каккандыктан сыноо жеткирилген жок.",
@@ -645,7 +597,6 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     testDeliveryPermanent:
       "Почта провайдери аны биротоло четке каккандыктан сыноо жеткирилген жок.",
     testDeliveryUnknown: "Сыноо белгисиз себептен жеткирилген жок.",
-    updateSendUnavailable: "Жаңыртуу жөнөтүлгөн жок.",
     contextNotFound: "Бул электрондук почта жаңыртуу контексти табылган жок.",
     scopeUnavailable:
       "Тандалган электрондук почта жаңыртуу чөйрөсү эми жеткиликсиз.",
@@ -661,8 +612,6 @@ export const conversationUpdatesWorkspaceTranslations: Record<
       "Сыноо катын жөнөтүүдөн мурун электрондук почта дарегин ырастаңыз.",
     noEligibleParticipants:
       "Учурда бул катты алууга жарамдуу катышуучулар жок.",
-    testRateLimited:
-      "Өтө көп сыноо каты суралды. {retryAt} кийин кайра аракет кылыңыз.",
     successfulTestNotFound:
       "Ийгиликтүү сыноо табылган жок. Кайра аракет кылуудан мурун башка сыноо жөнөтүңүз.",
     testNotAccepted:
@@ -704,8 +653,6 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     historyUnavailable: "История почтовых обновлений сейчас недоступна.",
     moreHistoryUnavailable:
       "Не удалось загрузить продолжение истории почтовых обновлений.",
-    testQueueUnavailable: "Не удалось добавить тестовое письмо в очередь.",
-    queuedTestNotFound: "Тестовое письмо в очереди не найдено.",
     testAccepted: "Тест принят для этой точной версии письма.",
     testDeliveryRetryable:
       "Тестовая доставка не удалась: почтовый провайдер временно отклонил письмо.",
@@ -714,7 +661,6 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     testDeliveryPermanent:
       "Тестовая доставка не удалась: почтовый провайдер окончательно отклонил письмо.",
     testDeliveryUnknown: "Тестовая доставка не удалась по неизвестной причине.",
-    updateSendUnavailable: "Не удалось отправить обновление.",
     contextNotFound: "Не удалось найти этот контекст почтовых обновлений.",
     scopeUnavailable:
       "Выбранная область почтовых обновлений больше недоступна.",
@@ -729,8 +675,6 @@ export const conversationUpdatesWorkspaceTranslations: Record<
       "Подтвердите адрес электронной почты перед отправкой тестового письма.",
     noEligibleParticipants:
       "Сейчас нет участников, которым можно отправить это письмо.",
-    testRateLimited:
-      "Запрошено слишком много тестовых писем. Повторите попытку после {retryAt}.",
     successfulTestNotFound:
       "Успешный тест не найден. Перед повторной попыткой отправьте ещё один тест.",
     testNotAccepted:

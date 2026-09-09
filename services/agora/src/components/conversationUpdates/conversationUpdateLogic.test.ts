@@ -1,8 +1,8 @@
+import type { ConversationEmailUpdateScope } from "src/shared/types/dto";
 import { describe, expect, it } from "vitest";
 
 import {
   createConversationEmailUpdateSelection,
-  getConversationUpdateUnsubscribeScopeName,
   mapConversationEmailUpdateScopes,
 } from "./conversationUpdateLogic";
 import {
@@ -17,7 +17,6 @@ const firstConversation: ConversationUpdateConversationSummary = {
   href: "/conversation/first",
   eligibleParticipantCount: 10,
   participationMode: "account_required",
-  ownerIds: ["owner-1"],
 };
 
 const conversations: readonly ConversationUpdateConversationSummary[] = [
@@ -28,50 +27,16 @@ const conversations: readonly ConversationUpdateConversationSummary[] = [
     href: "/conversation/second",
     eligibleParticipantCount: 20,
     participationMode: "account_required",
-    ownerIds: ["owner-2"],
   },
 ];
-
-describe("getConversationUpdateUnsubscribeScopeName", () => {
-  it("uses the project name instead of listing included conversations", () => {
-    expect(
-      getConversationUpdateUnsubscribeScopeName({
-        scopeKind: "project",
-        scopeLabel: "Public consultation",
-        conversations,
-      })
-    ).toBe("Public consultation");
-  });
-
-  it("uses the single included conversation for No Project", () => {
-    expect(
-      getConversationUpdateUnsubscribeScopeName({
-        scopeKind: "no-project",
-        scopeLabel: "No Project",
-        conversations: [firstConversation],
-      })
-    ).toBe("First conversation");
-  });
-
-  it("does not invent a No Project unsubscribe target before selection", () => {
-    expect(
-      getConversationUpdateUnsubscribeScopeName({
-        scopeKind: "no-project",
-        scopeLabel: "No Project",
-        conversations: [],
-      })
-    ).toBeUndefined();
-  });
-});
 
 describe("createConversationEmailUpdateSelection", () => {
   const projectScope: ConversationUpdateScopeSummary = {
     id: "public-consultation",
     kind: "project",
+    unsubscribeScope: "project",
     label: "Public consultation",
-    href: "/project/public-consultation",
     contactEmail: "updates@example.com",
-    eligibleParticipantCap: 30,
     conversations,
   };
 
@@ -136,11 +101,58 @@ describe("createConversationEmailUpdateSelection", () => {
 });
 
 describe("mapConversationEmailUpdateScopes", () => {
+  it("keeps multiple No Project identities, contacts and selections separate", () => {
+    const source = ["org", "person"].map<ConversationEmailUpdateScope>(
+      (identity) => ({
+        kind: "no_project" as const,
+        unsubscribeScope: "conversation",
+        title: identity,
+        conversations: [
+          {
+            conversationSlugId:
+              identity === "org" ? "orgconv001" : "userconv01",
+            title: `${identity} conversation`,
+            participationMode: "account_required" as const,
+            estimatedEligibleRecipientCount: 10,
+            sendingEnabled: true,
+            participantContactEmail: `${identity}@example.com`,
+          },
+        ],
+      })
+    );
+    const mapped = mapConversationEmailUpdateScopes(source);
+    expect(new Set(mapped.map((scope) => scope.id)).size).toBe(2);
+    expect(mapped.map((scope) => scope.id)).toEqual([
+      "__no-project:orgconv001",
+      "__no-project:userconv01",
+    ]);
+    expect(mapped.map((scope) => scope.label)).toEqual(["org", "person"]);
+    expect(mapped.map((scope) => scope.contactEmail)).toEqual([
+      "org@example.com",
+      "person@example.com",
+    ]);
+    expect(
+      mapConversationEmailUpdateScopes([...source].reverse()).map(
+        (scope) => scope.id
+      )
+    ).toEqual([...mapped].reverse().map((scope) => scope.id));
+    for (const scope of mapped) {
+      const conversationId = scope.conversations[0]?.id;
+      expect(
+        createConversationEmailUpdateSelection({
+          scope,
+          selectedConversationIds:
+            conversationId === undefined ? [] : [conversationId],
+        })
+      ).toEqual({ kind: "no_project", conversationSlugId: conversationId });
+    }
+  });
   it("maps authoritative API scope fields into the existing composer view", () => {
     expect(
       mapConversationEmailUpdateScopes([
         {
           kind: "project",
+          unsubscribeScope: "conversation",
           projectSlug: "public-consultation",
           title: "Public consultation",
           participantContactEmail: "updates@example.com",
@@ -159,10 +171,9 @@ describe("mapConversationEmailUpdateScopes", () => {
       {
         id: "public-consultation",
         kind: "project",
+        unsubscribeScope: "conversation",
         label: "Public consultation",
-        href: "/project/public-consultation",
         contactEmail: "updates@example.com",
-        eligibleParticipantCap: 10,
         conversations: [
           {
             id: "conversation-1",
@@ -170,7 +181,6 @@ describe("mapConversationEmailUpdateScopes", () => {
             href: "/conversation/conversation-1",
             eligibleParticipantCount: 10,
             participationMode: "account_required",
-            ownerIds: [],
           },
         ],
       },
@@ -182,6 +192,7 @@ describe("mapConversationEmailUpdateScopes", () => {
       {
         kind: "project",
         projectSlug: "no-project",
+        unsubscribeScope: "project",
         title: "No Project initiative",
         participantContactEmail: "project@example.com",
         conversations: [
@@ -197,6 +208,7 @@ describe("mapConversationEmailUpdateScopes", () => {
       {
         kind: "no_project",
         title: "No Project",
+        unsubscribeScope: "conversation",
         conversations: [
           {
             conversationSlugId: "stand001",
@@ -212,7 +224,7 @@ describe("mapConversationEmailUpdateScopes", () => {
 
     expect(mappedScopes.map((scope) => scope.id)).toEqual([
       "no-project",
-      CONVERSATION_UPDATE_NO_PROJECT_SCOPE_ID,
+      `${CONVERSATION_UPDATE_NO_PROJECT_SCOPE_ID}:stand001`,
     ]);
   });
 });

@@ -524,6 +524,16 @@ const db = await createDb(config, log);
 const conversationEmailUpdateService = createConversationEmailUpdateService({
     db,
     baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
+    siteBaseUrl: z
+        .url()
+        .parse(
+            process.env.CONVERSATION_EMAIL_UPDATE_SITE_BASE_URL ??
+                (config.NODE_ENV === "production"
+                    ? config.SERVER_URL_PROD
+                    : config.NODE_ENV === "staging"
+                      ? config.SERVER_URL_STAGING
+                      : "http://localhost:3200"),
+        ),
     sendingEnabled:
         config.CONVERSATION_EMAIL_UPDATES_ENABLED &&
         !config.CONVERSATION_EMAIL_UPDATES_KILL_SWITCH,
@@ -6796,6 +6806,89 @@ server.after(() => {
         },
     });
 
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/email-update/draft/prepare`,
+        schema: {
+            body: Dto.conversationEmailUpdatePrepareDraftOpenApiRequest,
+            response: { 200: Dto.conversationEmailUpdatePrepareDraftResponse },
+        },
+        handler: async (request, reply) => {
+            reply.header("Cache-Control", "no-store");
+            return await conversationEmailUpdateService.prepareDraft({
+                userId: await requireAuthenticatedUserId(request),
+                request: Dto.conversationEmailUpdatePrepareDraftRequest.parse(
+                    request.body,
+                ),
+            });
+        },
+    });
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/email-update/draft/cancel`,
+        schema: {
+            body: Dto.conversationEmailUpdateCancelDraftRequest,
+            response: { 200: Dto.conversationEmailUpdateCancelDraftResponse },
+        },
+        handler: async (request) =>
+            conversationEmailUpdateService.cancelDraft({
+                userId: await requireAuthenticatedUserId(request),
+                request: request.body,
+            }),
+    });
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/email-update/history/preview`,
+        schema: {
+            body: Dto.conversationEmailUpdatePreviewRequest,
+            response: { 200: Dto.conversationEmailUpdatePreviewResponse },
+        },
+        handler: async (request, reply) => {
+            reply.header("Cache-Control", "no-store");
+            return await conversationEmailUpdateService.previewHistory({
+                userId: await requireAuthenticatedUserId(request),
+                request: request.body,
+            });
+        },
+    });
+    if (config.NODE_ENV === "development" && config.MODE !== "test") {
+        server.withTypeProvider<ZodTypeProvider>().route({
+            method: "POST",
+            url: `/api/${apiVersion}/conversation/email-update/dev/compare`,
+            config: { rateLimit: { max: 30, timeWindow: 60_000 } },
+            schema: {
+                body: Dto.conversationEmailUpdateDevComparisonOpenApiRequest,
+                response: {
+                    200: Dto.conversationEmailUpdateDevComparisonResponse,
+                },
+            },
+            handler: async (request, reply) => {
+                reply.header("Cache-Control", "no-store");
+                return await conversationEmailUpdateService.compareDev({
+                    userId: await requireAuthenticatedUserId(request),
+                    request:
+                        Dto.conversationEmailUpdateDevComparisonRequest.parse(
+                            request.body,
+                        ),
+                });
+            },
+        });
+        server.withTypeProvider<ZodTypeProvider>().route({
+            method: "POST",
+            url: `/api/${apiVersion}/conversation/email-update/dev/preview`,
+            config: { rateLimit: { max: 30, timeWindow: 60_000 } },
+            schema: {
+                body: Dto.conversationEmailUpdateDevPreviewRequest,
+                response: { 200: Dto.conversationEmailUpdatePreviewResponse },
+            },
+            handler: async (request, reply) => {
+                reply.header("Cache-Control", "no-store");
+                return await conversationEmailUpdateService.previewDev(
+                    request.body,
+                );
+            },
+        });
+    }
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
         url: `/api/${apiVersion}/conversation/email-update/workspace/get`,

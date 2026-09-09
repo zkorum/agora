@@ -380,9 +380,23 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/dev/test-components/ConversationEmailExampleFields': RouteRecordInfo<
+      '/dev/test-components/ConversationEmailExampleFields',
+      '/dev/test-components/ConversationEmailExampleFields',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/dev/test-components/ConversationLanguageSettingDialogTest': RouteRecordInfo<
       '/dev/test-components/ConversationLanguageSettingDialogTest',
       '/dev/test-components/ConversationLanguageSettingDialogTest',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/dev/test-components/ConversationUpdateComposerPlayground': RouteRecordInfo<
+      '/dev/test-components/ConversationUpdateComposerPlayground',
+      '/dev/test-components/ConversationUpdateComposerPlayground',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -1091,9 +1105,21 @@ declare module 'vue-router/auto-routes' {
       views:
         | never
     }
+    'src/pages/dev/test-components/ConversationEmailExampleFields.vue': {
+      routes:
+        | '/dev/test-components/ConversationEmailExampleFields'
+      views:
+        | never
+    }
     'src/pages/dev/test-components/ConversationLanguageSettingDialogTest.vue': {
       routes:
         | '/dev/test-components/ConversationLanguageSettingDialogTest'
+      views:
+        | never
+    }
+    'src/pages/dev/test-components/ConversationUpdateComposerPlayground.vue': {
+      routes:
+        | '/dev/test-components/ConversationUpdateComposerPlayground'
       views:
         | never
     }

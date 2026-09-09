@@ -4,15 +4,19 @@
     "description": "Durable Conversation Email Updates delivery and SES event worker",
     "packageManager": "pnpm@10.34.5",
     "type": "module",
+    "engines": {
+        "node": ">=22.12"
+    },
     "scripts": {
-        "build": "rm -rf dist && tsc --sourceMap -p tsconfig.build.json && node assertProductionBuild.mjs",
+        "email:build": "node src/shared-backend/email/build.mjs",
+        "build": "rm -rf dist && pnpm email:build && tsc --sourceMap -p tsconfig.build.json && node src/shared-backend/email/build.mjs --copy-dist && node assertProductionBuild.mjs",
         "start": "node --loader esm-module-alias/loader --no-warnings dist/index.js",
-        "start:dev": "tsx watch --trace-uncaught src/index.ts",
+        "start:dev": "node src/shared-backend/email/build.mjs --dev",
         "dev:exercise": "./run-dev-exercise.sh",
-        "typecheck": "tsc -p tsconfig.json",
+        "typecheck": "pnpm email:build && tsc -p tsconfig.json",
         "lint": "eslint .",
-        "test": "vitest run",
-        "test:dev-exercise": "vitest run src/devExercise",
+        "test": "pnpm email:build && vitest run",
+        "test:dev-exercise": "pnpm email:build && vitest run src/devExercise",
         "test:dev-exercise:process": "vitest run src/devExercise/entrypoint.process.test.ts",
         "format:write": "prettier --write \"**/*.{js,ts,json,md}\"",
         "format:check": "prettier . --check",
@@ -33,9 +37,11 @@
         "drizzle-orm": "^0.45.2",
         "esm-module-alias": "^2.2.1",
         "html-to-text": "9.0.5",
+        "linkedom": "^0.18.13",
         "pino": "10.3.1",
         "postgres": "^3.4.9",
         "sanitize-html": "2.17.5",
+        "vue": "3.5.34",
         "zod": "^4.3.6"
     },
     "devDependencies": {
@@ -45,6 +51,7 @@
         "@types/node": "^25.5.2",
         "@types/sanitize-html": "^2.16.1",
         "@valkey/valkey-glide": "^2.3.1",
+        "@vitejs/plugin-vue": "^6.0.8",
         "eslint": "^10.2.0",
         "eslint-config-prettier": "^10.1.8",
         "prettier": "^3.8.1",
@@ -52,6 +59,7 @@
         "typescript": "^5.9.3",
         "typescript-eslint": "^8.58.0",
         "vite": "^8.0.5",
-        "vitest": "^4.1.2"
+        "vitest": "^4.1.2",
+        "vue-tsc": "^3.3.11"
     }
 }
