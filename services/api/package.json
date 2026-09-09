@@ -4,10 +4,11 @@
     "description": "API for Agora Citizen Network",
     "exports": "./index.js",
     "scripts": {
-        "build": "NODE_ENV=production rm -rf dist && tsc --sourceMap -p tsconfig.build.json",
+        "email:build": "node src/shared-backend/email/build.mjs",
+        "build": "NODE_ENV=production rm -rf dist && pnpm email:build && tsc --sourceMap -p tsconfig.build.json && node src/shared-backend/email/build.mjs --copy-dist",
         "start": "node --loader esm-module-alias/loader --loader ./esm-loader-lodash-fix.mjs --no-warnings dist/index.js",
-        "start:dev": "tsx watch --trace-uncaught src/index.ts",
-        "start:dev:capacitor": "MODE=capacitor tsx watch src/index.ts",
+        "start:dev": "node src/shared-backend/email/build.mjs --dev",
+        "start:dev:capacitor": "MODE=capacitor node src/shared-backend/email/build.mjs --dev",
         "db:drop": "drizzle-kit drop",
         "db:generate": "drizzle-kit generate && ./scripts/rename_sql_migration_file.sh drizzle/",
         "db:migrate": "docker run --rm --network host -v ${PWD}/database/flyway:/flyway/conf -v ${PWD}/database/flyway:/flyway/sql flyway/flyway migrate",
@@ -20,7 +21,7 @@
         "preview:csv": "node ./scripts/preview-csv.mjs",
         "backfill:rich-text-plain-text": "tsx scripts/backfill-rich-text-plain-text.ts",
         "generate-dev-keys": "NODE_OPTIONS=--experimental-vm-modules GENERATE_DEV_KEYS=true jest -t 'generate-dev-keys'",
-        "typecheck": "tsc -p tsconfig.json",
+        "typecheck": "pnpm email:build && tsc -p tsconfig.json",
         "test": "./scripts/run-tests.sh",
         "image:buildx": "sh -c 'tag=${TAG:-${1:-latest}}; tag=${tag#TAG=}; docker buildx build --platform linux/amd64 -t agora-api:$tag --load .' --",
         "image:build": "sh -c 'tag=${TAG:-${1:-latest}}; tag=${tag#TAG=}; docker build -t agora-api:$tag .' --",
@@ -29,7 +30,7 @@
     },
     "type": "module",
     "engines": {
-        "node": ">=16"
+        "node": ">=22.12"
     },
     "keywords": [
         "trust-minimized infrastructure",
@@ -105,6 +106,7 @@
         "jszip": "^3.10.1",
         "keystore-idb": "^0.15.5",
         "libphonenumber-js": "^1.12.41",
+        "linkedom": "^0.18.13",
         "linkify-html": "^4.3.2",
         "linkifyjs": "^4.3.2",
         "localforage": "^1.10.0",
@@ -122,6 +124,7 @@
         "tweetnacl": "^1.0.3",
         "twilio": "^6.1.0",
         "uint8arrays": "^5.1.0",
+        "vue": "3.5.34",
         "zod": "^4.3.6"
     },
     "devDependencies": {
@@ -135,6 +138,7 @@
         "@types/nodemailer": "^7.0.11",
         "@types/pg": "^8.20.0",
         "@types/sanitize-html": "^2.16.1",
+        "@vitejs/plugin-vue": "^6.0.8",
         "drizzle-kit": "^0.31.10",
         "eslint": "^10.2.0",
         "eslint-config-prettier": "^10.1.8",
@@ -149,6 +153,7 @@
         "typescript-eslint": "^8.58.0",
         "vite": "^8.0.5",
         "vite-tsconfig-paths": "^6.1.1",
-        "vitest": "^4.1.2"
+        "vitest": "^4.1.2",
+        "vue-tsc": "^3.3.11"
     }
 }

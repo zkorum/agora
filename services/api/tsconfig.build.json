@@ -2,6 +2,7 @@
     "extends": "./tsconfig.json",
     "include": ["src/**/*"],
     "exclude": [
+        "src/shared-backend/email/**",
         "**/*.test.ts",
         "**/*.spec.ts",
         "node_modules",

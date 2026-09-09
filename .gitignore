@@ -35,6 +35,8 @@ tmp/
 /dist
 /node_modules
 **/node_modules/
+services/*/.email-build/
+services/*/src/generated/email/
 
 # Logs
 logs

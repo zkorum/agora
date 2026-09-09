@@ -58,6 +58,7 @@ describe("conversation email SES provider", () => {
         });
         const result = await provider.send({
             to: "participant@example.com",
+            senderName: "Harbor & Streets",
             subject: "Update",
             html: "<p>Body</p>",
             text: "Body",
@@ -73,7 +74,7 @@ describe("conversation email SES provider", () => {
         const command = sendCommand.mock.calls[0][0].command;
         expect(command.input.ConfigurationSetName).toBe("conversation-updates");
         expect(command.input.FromEmailAddress).toBe(
-            '"Agora" <conversation@updates.agoracitizen.network>',
+            '"Harbor & Streets" <conversation@updates.agoracitizen.network>',
         );
         expect(command.input.Destination).toEqual({
             ToAddresses: ["participant@example.com"],
@@ -128,9 +129,10 @@ describe("conversation email SES provider", () => {
 
         await provider.send({
             to: "owner@example.com",
-            subject: "Operational owner update",
-            html: '<a href="https://www.agoracitizen.app/email-updates/unsubscribe/token">Unsubscribe participant preferences</a>',
-            text: "Unsubscribe participant preferences",
+            senderName: "Harbor & Streets",
+            subject: "[Admin Copy] Operational owner update",
+            html: '<a href="https://www.agoracitizen.app/email-updates/report/token">Report this email</a>',
+            text: "Report this email: https://www.agoracitizen.app/email-updates/report/token",
             replyToName: "Project contact",
             replyToEmail: "contact@example.com",
             tags: { message_type: "conversation_update" },
@@ -174,6 +176,7 @@ describe("conversation email SES provider", () => {
 
         await provider.send({
             to: "participant@example.com",
+            senderName: "Harbor & Streets",
             subject: "Update",
             html: "<p>Body</p>",
             text: "Body",
@@ -184,6 +187,106 @@ describe("conversation email SES provider", () => {
         });
 
         expect(replyToAddresses).toEqual([expected]);
+    });
+
+    it.each([
+        {
+            name: 'Project \\ "team" <other@example.com>',
+            expected: '"Project \\\\ \\"team\\" <other@example.com>"',
+        },
+        {
+            name: "Project\r\nBcc: attacker@example.com\u0000\u202e",
+            expected: '"Project  Bcc: attacker@example.com"',
+        },
+        {
+            name: "Équipe citoyenne",
+            expected: "=?UTF-8?B?w4lxdWlwZSBjaXRveWVubmU=?=",
+        },
+        {
+            name: "\r\n\u0000",
+            expected: undefined,
+        },
+    ])(
+        "safely encodes the From display name: $name",
+        async ({ name, expected }) => {
+            let from: string | undefined;
+            const provider = createConversationEmailProvider({
+                region: "eu-west-1",
+                fromAddress: "conversation@updates.agoracitizen.network",
+                configurationSetName: "conversation-updates",
+                requestTimeoutMs: 1_000,
+                sendCommand: ({ command }) => {
+                    from = command.input.FromEmailAddress;
+                    return Promise.resolve({
+                        MessageId: "sender-test",
+                        $metadata: {},
+                    });
+                },
+            });
+
+            await provider.send({
+                to: "participant@example.com",
+                senderName: name,
+                subject: "Update",
+                html: "<p>Body</p>",
+                text: "Body",
+                replyToName: "Project contact",
+                replyToEmail: "contact@example.com",
+                tags: {},
+                unsubscribeUrl: undefined,
+            });
+
+            expect(from).toBe(
+                expected === undefined
+                    ? "conversation@updates.agoracitizen.network"
+                    : `${expected} <conversation@updates.agoracitizen.network>`,
+            );
+            expect(from).not.toMatch(/[\r\n\u202e]/u);
+            expect(from).not.toContain("\u0000");
+        },
+    );
+
+    it("encodes long Unicode sender names without splitting UTF-8 characters", async () => {
+        const senderName = "Équipe citoyenne 日本語 ".repeat(8);
+        let from = "";
+        const provider = createConversationEmailProvider({
+            region: "eu-west-1",
+            fromAddress: "conversation@updates.agoracitizen.network",
+            configurationSetName: "conversation-updates",
+            requestTimeoutMs: 1_000,
+            sendCommand: ({ command }) => {
+                from = command.input.FromEmailAddress ?? "";
+                return Promise.resolve({
+                    MessageId: "unicode-sender-test",
+                    $metadata: {},
+                });
+            },
+        });
+
+        await provider.send({
+            to: "participant@example.com",
+            senderName,
+            subject: "Update",
+            html: "<p>Body</p>",
+            text: "Body",
+            replyToName: "Project contact",
+            replyToEmail: "contact@example.com",
+            tags: {},
+            unsubscribeUrl: undefined,
+        });
+
+        const encodedWords = Array.from(
+            from.matchAll(/=\?UTF-8\?B\?([A-Za-z0-9+/=]+)\?=/g),
+        );
+        expect(encodedWords.length).toBeGreaterThan(1);
+        const decodedWords = encodedWords.map((match) => {
+            expect(match[0].length).toBeLessThanOrEqual(75);
+            return Buffer.from(match[1], "base64").toString("utf8");
+        });
+        expect(decodedWords.join("")).toBe(senderName.trim());
+        expect(
+            from.endsWith(" <conversation@updates.agoracitizen.network>"),
+        ).toBe(true);
     });
 
     it("rejects unsafe subjects before calling SES", async () => {
@@ -201,6 +304,7 @@ describe("conversation email SES provider", () => {
         await expect(
             provider.send({
                 to: "participant@example.com",
+                senderName: "Harbor & Streets",
                 subject: "Update\r\nBcc: attacker@example.com",
                 html: "<p>Body</p>",
                 text: "Body",

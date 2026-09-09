@@ -53,7 +53,8 @@ dev-sync:
 	$(LOG_RUNNER) --service shared -- $(MAKE) dev-sync-raw
 
 dev-sync-raw:
-	watchman-make -p 'services/shared/src/**/*.ts' 'services/shared/src/**/*.vue' -t sync
+	watchman-make -p 'services/shared/src/**/*.ts' -t sync \
+		-p 'services/shared/src/**/*.vue' -t sync-all
 
 dev-sync-app-api:
 	$(LOG_RUNNER) --service shared-app-api -- $(MAKE) dev-sync-app-api-raw
@@ -65,7 +66,7 @@ dev-sync-ts-backend:
 	$(LOG_RUNNER) --service shared-backend -- $(MAKE) dev-sync-ts-backend-raw
 
 dev-sync-ts-backend-raw:
-	watchman-make -p 'services/shared-backend/src/**/*.ts' -t sync-ts-backend
+	watchman-make -p 'services/shared-backend/src/**/*.ts' 'services/shared-backend/src/**/*.vue' 'services/shared-backend/src/email/**/*.mjs' 'services/shared-backend/src/email/**/*.json' -t sync-ts-backend
 
 # Backward-compatible alias for existing scripts and documentation.
 dev-sync-backend: dev-sync-ts-backend

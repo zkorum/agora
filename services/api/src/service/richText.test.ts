@@ -60,6 +60,32 @@ describe("rich-text normalization", () => {
         });
     });
 
+    it.each([
+        {
+            name: "blank br paragraphs and leading/trailing blanks",
+            html: "<p><br></p><br><p>  First &amp; foremost  </p><p><br></p><p>&nbsp;<br /></p><p> Last </p><p><br></p><br>",
+            content: {
+                html: "<p>First &amp; foremost</p><p></p><p>Last</p>",
+                plainText: "First & foremost\n\nLast",
+            },
+        },
+        {
+            name: "literal and encoded bidi/control characters",
+            html: "<p>&lrm;&#x202e;<br></p><p>A\u0000\u0001&#1;&#x7f;&lrm;&rlm;&#x061c;&#8294;\u202eB</p><p>&#x200f;</p>",
+            content: {
+                html: "<p>AB</p>",
+                plainText: "AB",
+            },
+        },
+    ])("persists preview-parity content for $name", ({ html, content }) => {
+        expect(
+            normalizeUserRichTextInput({
+                html,
+                validationMode: "conversation_email_update",
+            }),
+        ).toEqual({ success: true, content });
+    });
+
     it("uses the Conversation Update 10,000-character limit", () => {
         const text = "a".repeat(10_000);
         expect(
@@ -102,7 +128,7 @@ describe("rich-text normalization", () => {
 
     it("rejects unsafe Conversation Update subjects", () => {
         const parseRequest = (subject: string) =>
-            Dto.conversationEmailUpdateSendTestRequest.parse({
+            Dto.conversationEmailUpdatePrepareDraftRequest.parse({
                 selection: {
                     kind: "no_project",
                     conversationSlugId: "abcdefghij",
@@ -123,16 +149,17 @@ describe("rich-text normalization", () => {
     });
 
     it("enforces the Conversation Update HTML limit in UTF-8 bytes", () => {
-        expect(() =>
-            Dto.conversationEmailUpdateSendTestRequest.parse({
+        const parseRequest = (bodyHtml: string) =>
+            Dto.conversationEmailUpdatePrepareDraftRequest.parse({
                 selection: {
                     kind: "no_project",
-                    conversationSlugId: "conversation",
+                    conversationSlugId: "abcdefghij",
                 },
                 subject: "Update",
-                bodyHtml: "é".repeat(9_000),
-            }),
-        ).toThrow();
+                bodyHtml,
+            });
+        expect(() => parseRequest("é".repeat(8_000))).not.toThrow();
+        expect(() => parseRequest("é".repeat(9_000))).toThrow();
     });
 
     it("returns best-effort text when the primary converter throws", () => {

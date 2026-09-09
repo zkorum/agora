@@ -23,6 +23,45 @@
       <section class="action-card" aria-live="polite">
         <h1>{{ t("successTitle") }}</h1>
         <p class="action-description">{{ t("successDescription") }}</p>
+        <template v-if="state.availableAction !== undefined">
+          <p class="action-description">{{ unsubscribePrompt }}</p>
+          <ul
+            v-if="state.availableAction.scope.kind === 'no_project'"
+            class="unsubscribe-conversations"
+          >
+            <li
+              v-for="conversation in state.availableAction.scope.conversations"
+              :key="conversation.conversationSlugId"
+            >
+              {{ conversation.title }}
+            </li>
+          </ul>
+          <p v-if="unsubscribeFailed" class="action-error" role="alert">
+            {{ t("unsubscribeFailed") }}
+          </p>
+          <div class="action-button-row">
+            <ZKButton
+              button-type="largeButton"
+              color="negative"
+              :disable="isSubmitting"
+              :loading="isSubmitting"
+              @click="confirmUnsubscribe"
+            >
+              {{ t("unsubscribe") }}
+            </ZKButton>
+            <ZKButton
+              button-type="largeButton"
+              color="secondary"
+              :disable="isSubmitting"
+              @click="dismissUnsubscribe"
+            >
+              {{ t("noThanks") }}
+            </ZKButton>
+          </div>
+        </template>
+        <p v-if="unsubscribed" class="action-description">
+          {{ t("unsubscribed") }}
+        </p>
         <SpaLink class="action-home-link" to="/">{{ t("returnHome") }}</SpaLink>
       </section>
     </div>
@@ -82,6 +121,7 @@ import SpaLink from "src/components/ui-library/SpaLink.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { ConversationEmailUpdateActionReportResponse } from "src/shared/types/dto";
 import { usePublicConversationEmailUpdateActionsApi } from "src/utils/api/conversationUpdates/publicConversationEmailUpdateActions";
 import { getSingleRouteParam } from "src/utils/router/params";
 import { computed, ref, shallowRef, watch } from "vue";
@@ -104,7 +144,13 @@ type PageState =
   | { kind: "loading" }
   | { kind: "unavailable" }
   | { kind: "ready"; resolution: ReportResolution }
-  | { kind: "success" };
+  | {
+      kind: "success";
+      availableAction: Extract<
+        ConversationEmailUpdateActionReportResponse,
+        { success: true }
+      >["availableAction"];
+    };
 
 const { t } = useComponentI18n<EmailUpdateReportTranslations>(
   emailUpdateReportTranslations
@@ -127,6 +173,20 @@ const selectedReason = ref<ReportReason>();
 const details = ref("");
 const isSubmitting = ref(false);
 const submitFailed = ref(false);
+const unsubscribeFailed = ref(false);
+const unsubscribed = ref(false);
+const unsubscribePrompt = computed(() => {
+  if (state.value.kind !== "success") return "";
+  const scope = state.value.availableAction?.scope;
+  if (scope === undefined) return "";
+  return scope.kind === "project"
+    ? t("unsubscribeProject", { title: scope.title })
+    : t(
+        scope.conversations.length === 1
+          ? "unsubscribeConversation"
+          : "unsubscribeConversations"
+      );
+});
 
 watch(
   token,
@@ -139,6 +199,8 @@ watch(
     selectedReason.value = undefined;
     details.value = "";
     submitFailed.value = false;
+    unsubscribeFailed.value = false;
+    unsubscribed.value = false;
 
     try {
       const response = await actionsApi.resolve({ token: nextToken });
@@ -179,18 +241,48 @@ async function submitReport(): Promise<void> {
   isSubmitting.value = true;
   submitFailed.value = false;
   const parsedDetails = optionalReportDetails(details.value);
+  const requestToken = token.value;
 
   try {
     const response = await actionsApi.report(
       parsedDetails === undefined
-        ? { token: token.value, reason }
-        : { token: token.value, reason, details: parsedDetails }
+        ? { token: requestToken, reason }
+        : { token: requestToken, reason, details: parsedDetails }
     );
+    if (token.value !== requestToken) return;
     state.value = response.success
-      ? { kind: "success" }
+      ? { kind: "success", availableAction: response.availableAction }
       : { kind: "unavailable" };
   } catch {
-    submitFailed.value = true;
+    if (token.value === requestToken) submitFailed.value = true;
+  } finally {
+    isSubmitting.value = false;
+  }
+}
+
+function dismissUnsubscribe(): void {
+  if (state.value.kind !== "success" || isSubmitting.value) return;
+  state.value = { kind: "success", availableAction: undefined };
+}
+
+async function confirmUnsubscribe(): Promise<void> {
+  if (state.value.kind !== "success" || isSubmitting.value) return;
+  const action = state.value.availableAction;
+  if (action === undefined) return;
+  const requestToken = token.value;
+  isSubmitting.value = true;
+  unsubscribeFailed.value = false;
+  try {
+    const response = await actionsApi.unsubscribe({ token: action.token });
+    if (token.value !== requestToken) return;
+    if (response.success) {
+      state.value = { kind: "success", availableAction: undefined };
+      unsubscribed.value = true;
+    } else {
+      unsubscribeFailed.value = true;
+    }
+  } catch {
+    if (token.value === requestToken) unsubscribeFailed.value = true;
   } finally {
     isSubmitting.value = false;
   }
@@ -199,6 +291,23 @@ async function submitReport(): Promise<void> {
 
 <style scoped lang="scss">
 @use "../actionPageStyles";
+
+.action-state .action-button-row {
+  display: grid;
+  gap: 0.75rem;
+  justify-self: center;
+}
+
+.action-description,
+.unsubscribe-conversations {
+  overflow-wrap: anywhere;
+}
+
+.unsubscribe-conversations {
+  margin: 0;
+  padding-inline-start: 1.25rem;
+  text-align: start;
+}
 
 .reason-list {
   display: grid;

@@ -1,105 +1,120 @@
-import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { ZodSupportedDisplayLanguageCodes } from "src/shared/languages";
+import type { Dto } from "src/shared/types/dto";
+import { afterEach, describe, expect, it } from "vitest";
 import { type App, createApp, defineComponent, h } from "vue";
 import { createI18n } from "vue-i18n";
 
-vi.mock("src/components/ui-library/SpaLink.vue", () => ({
-  default: defineComponent(
-    (_props, { slots }) =>
-      () =>
-        h("a", slots.default?.())
-  ),
-}));
-vi.mock("src/components/ui-library/ZKChip.vue", () => ({
-  default: defineComponent(
-    (_props, { slots }) =>
-      () =>
-        h("span", { class: "chip" }, slots.default?.())
-  ),
-}));
-vi.mock("src/components/ui-library/ZKHtmlContent.vue", () => ({
-  default: defineComponent(() => () => h("div", { class: "html-content" })),
-}));
-
+import ConversationEmailViewer from "./ConversationEmailViewer.vue";
 import ConversationUpdateEmailPreview from "./ConversationUpdateEmailPreview.vue";
+import { conversationUpdateReviewTranslations } from "./ConversationUpdateReview.i18n";
 
-const mountedApps: App[] = [];
-
+let app: App | undefined;
 afterEach(() => {
-  for (const app of mountedApps.splice(0)) {
-    app.unmount();
-  }
+  app?.unmount();
   document.body.replaceChildren();
 });
-
-describe("ConversationUpdateEmailPreview", () => {
-  it("localizes placeholders, metadata, footer, and singular audience copy", () => {
-    const container = mountPreview({ locale: "en", audienceEstimate: 1 });
-    const text = container.textContent ?? "";
-
-    expect(text).toContain("Email preview");
-    expect(text).toContain("Your update subject");
-    expect(text).toContain("Currently 1 eligible recipient");
-    expect(text).not.toContain("1 eligible recipients");
-    expect(text).toContain("From Agora");
-    expect(text).toContain("Reply to reply@example.com");
-    expect(text).toContain("Your message will appear here as you write.");
-    expect(text).toContain("Select a conversation to continue.");
-    expect(text).toContain("Manage preferences");
-  });
-
-  it("uses locale-aware digits and translated copy in an RTL locale", () => {
-    const audienceEstimate = 1234;
-    const container = mountPreview({ locale: "ar", audienceEstimate });
-    const text = container.textContent ?? "";
-
-    expect(container.dir).toBe("rtl");
-    expect(text).toContain("معاينة البريد الإلكتروني");
-    expect(text).toContain(
-      new Intl.NumberFormat("ar").format(audienceEstimate)
+describe("server email viewer", () => {
+  it("uses the backend review language for metadata and plaintext direction under an English UI", () => {
+    const review = {
+      updateId: "00000000-0000-4000-8000-000000000001",
+      preview: {
+        subject: "Server subject",
+        html: '<html lang="ar" dir="rtl"><body>Server preview</body></html>',
+        text: "Server plaintext",
+      },
+      language: "ar",
+      senderName: "Server sender",
+      replyToName: "Server reply",
+      replyToEmail: "reply@example.com",
+      branding: { name: "Server brand", palette: "blue" },
+      unsubscribeScope: "project",
+      estimatedEligibleRecipientCount: 42,
+      requiredOwnerCopyCount: 2,
+      testDestinationEmail: "test@example.com",
+      expiresAt: new Date("2099-01-01"),
+    } satisfies Extract<
+      ReturnType<typeof Dto.conversationEmailUpdatePrepareDraftResponse.parse>,
+      { success: true }
+    >["review"];
+    const container = document.createElement("div");
+    document.body.append(container);
+    app = createApp(ConversationUpdateEmailPreview, { review });
+    app.use(createI18n({ legacy: false, locale: "en", messages: {} }));
+    for (const name of ["QCard", "QCardSection", "QChip", "QSeparator"]) {
+      app.component(
+        name,
+        defineComponent(
+          (_props, { slots }) =>
+            () =>
+              h("div", slots.default?.())
+        )
+      );
+    }
+    app.mount(container);
+    expect(container.querySelector("iframe")?.srcdoc).toBe(review.preview.html);
+    expect(container.querySelector("pre")?.lang).toBe("ar");
+    expect(container.querySelector("pre")?.dir).toBe("rtl");
+    expect(container.querySelector("pre")?.textContent).toBe(
+      review.preview.text
     );
-    expect(text).toContain("إدارة التفضيلات");
-    expect(text).not.toContain("Email preview");
-    expect(text).not.toContain("Currently");
+    expect(
+      container.querySelector(".email-preview__metadata")?.textContent
+    ).toContain(`${conversationUpdateReviewTranslations.en.language} ar`);
+  });
+  it("displays backend HTML unchanged in an unprivileged iframe", () => {
+    const email = {
+      subject: "Server subject",
+      html: '<!doctype html><html><head><meta http-equiv="Content-Security-Policy" content="default-src none"></head><body>Server preview</body></html>',
+      text: "Server plaintext",
+    };
+    const container = document.createElement("div");
+    document.body.append(container);
+    app = createApp(ConversationEmailViewer, {
+      email,
+      language: "ar",
+      title: email.subject,
+    });
+    app.mount(container);
+    const frame = container.querySelector("iframe");
+    expect(frame?.getAttribute("sandbox")).toBe("");
+    expect(frame?.getAttribute("referrerpolicy")).toBe("no-referrer");
+    expect(frame?.srcdoc).toBe(email.html);
+    expect(container.querySelector("pre")?.textContent).toBe(email.text);
+    expect(container.querySelector("pre")?.dir).toBe("rtl");
+  });
+  it("translates review and test invalidation warnings in every supported locale", () => {
+    expect(Object.keys(conversationUpdateReviewTranslations).sort()).toEqual(
+      [...ZodSupportedDisplayLanguageCodes.options].sort()
+    );
+    for (const language of ZodSupportedDisplayLanguageCodes.options) {
+      const messages = conversationUpdateReviewTranslations[language];
+      expect(Object.keys(messages).sort()).toEqual(
+        Object.keys(conversationUpdateReviewTranslations.en).sort()
+      );
+      for (const text of Object.values(messages))
+        expect(text.trim()).not.toBe("");
+      if (language !== "en") {
+        const translatedKeys = [
+          "leaveTestWarning",
+          "testUnknown",
+          "sendUnknown",
+          "retryTestRequest",
+          "retrySendRequest",
+          "checkDelivery",
+          "reconcileError",
+          "deliveryAccepted",
+          "deliveryNotFound",
+          "requestIdConflict",
+          "testStatusUnavailable",
+          "leaveSendUnknown",
+        ] satisfies (keyof typeof messages)[];
+        for (const key of translatedKeys)
+          expect(messages[key]).not.toBe(
+            conversationUpdateReviewTranslations.en[key]
+          );
+      }
+      expect(messages.retryTestRequest).not.toBe(messages.retrySendRequest);
+      expect(messages.rateLimited).toContain("{date}");
+    }
   });
 });
-
-function mountPreview({
-  locale,
-  audienceEstimate,
-}: {
-  locale: SupportedDisplayLanguageCodes;
-  audienceEstimate: number;
-}): HTMLElement {
-  const container = document.createElement("div");
-  container.dir = locale === "ar" ? "rtl" : "ltr";
-  document.body.append(container);
-  const app = createApp(ConversationUpdateEmailPreview, {
-    subject: "",
-    bodyHtml: "",
-    replyTo: "reply@example.com",
-    scopeKind: "no-project",
-    scopeHref: undefined,
-    scopeLabel: "Conversation One",
-    conversations: [],
-    audienceEstimate,
-  });
-  app.use(createI18n({ legacy: false, locale, messages: {} }));
-  app.component("QCard", slotComponent("section"));
-  app.component("QCardSection", slotComponent("section"));
-  app.component(
-    "QSeparator",
-    defineComponent(() => () => h("hr"))
-  );
-  mountedApps.push(app);
-  app.mount(container);
-  return container;
-}
-
-function slotComponent(tag: string) {
-  return defineComponent(
-    (_props, { slots }) =>
-      () =>
-        h(tag, slots.default?.())
-  );
-}

@@ -18,7 +18,7 @@ import {
     type SQLWrapper,
 } from "drizzle-orm";
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
-import { alias } from "drizzle-orm/pg-core";
+import { alias, type PgInsertValue } from "drizzle-orm/pg-core";
 import { buildConversationEmailParticipationQuery } from "@/shared-backend/conversationEmailUpdateParticipation.js";
 import {
     buildConversationEmailGlobalPreferenceCondition,
@@ -42,6 +42,7 @@ import {
     conversationEmailUpdateUserGlobalSettingTable,
     conversationEmailUpdateUserProjectPreferenceTable,
     conversationTable,
+    conversationContentTable,
     emailTable,
     organizationMembershipAllProjectCapabilityTable,
     organizationMembershipTable,
@@ -49,10 +50,18 @@ import {
     premiumFeatureEntitlementTable,
     projectOrganizationOwnershipTable,
     projectTable,
+    projectContactTable,
     userDisplayLanguageTable,
     userTable,
 } from "@/shared-backend/schema.js";
-import type { ConversationEmailActionLinks } from "./renderer.js";
+import {
+    zodEmailBranding,
+    type EmailBranding,
+} from "@/shared/branding/emailBranding.js";
+import {
+    EMAIL_TEMPLATE_VERSION,
+    type ConversationEmailActionLinks,
+} from "@/generated/email/render.js";
 import type { ProviderResult } from "./provider.js";
 import { buildConversationEmailActionUrls } from "./actionLinks.js";
 import { decideMaterializationFailure } from "./materializationTransition.js";
@@ -87,6 +96,8 @@ export interface ClaimedTestWork {
     bodyHtml: string;
     bodyPlainText: string;
     projectTitle: string;
+    branding: EmailBranding | undefined;
+    templateVersion: string | null;
     replyToName: string;
     replyToEmail: string;
     language: SupportedDisplayLanguageCodes;
@@ -95,6 +106,23 @@ export interface ClaimedTestWork {
 export interface ConversationLink {
     title: string;
     url: string;
+}
+
+export function parseConversationEmailBranding({
+    brandingSnapshot,
+    templateVersion,
+    projectTitle,
+}: {
+    brandingSnapshot: unknown;
+    templateVersion: string | null;
+    projectTitle: string;
+}): EmailBranding | undefined {
+    const parsed = zodEmailBranding.safeParse(
+        brandingSnapshot === null && templateVersion === null
+            ? { name: projectTitle, palette: "blue" }
+            : brandingSnapshot,
+    );
+    return parsed.success ? parsed.data : undefined;
 }
 
 function leaseExpiryExpression(seconds: number) {
@@ -360,9 +388,11 @@ export async function claimTestAttempts({
                 bodyHtml: conversationEmailUpdateTable.bodyHtml,
                 bodyPlainText: conversationEmailUpdateTable.bodyPlainText,
                 projectTitle: conversationEmailUpdateTable.projectTitleSnapshot,
+                brandingSnapshot: conversationEmailUpdateTable.brandingSnapshot,
+                templateVersion: conversationEmailUpdateTable.templateVersion,
                 replyToName: conversationEmailUpdateTable.replyToNameSnapshot,
                 replyToEmail: conversationEmailUpdateTable.replyToEmailSnapshot,
-                language: sql<SupportedDisplayLanguageCodes>`coalesce(${userDisplayLanguageTable.languageCode}, ${ENGLISH_DISPLAY_LANGUAGE})`,
+                userLanguage: userDisplayLanguageTable.languageCode,
             })
             .from(conversationEmailUpdateTestAttemptTable)
             .innerJoin(
@@ -395,7 +425,12 @@ export async function claimTestAttempts({
                 asc(conversationEmailUpdateTestAttemptTable.createdAt),
                 asc(conversationEmailUpdateTestAttemptTable.id),
             );
-        return workRows.map((row) => ({ ...row, leaseToken }));
+        return workRows.map(({ userLanguage, ...row }) => ({
+            ...row,
+            language: userLanguage ?? ENGLISH_DISPLAY_LANGUAGE,
+            branding: parseConversationEmailBranding(row),
+            leaseToken,
+        }));
     });
 }
 
@@ -495,6 +530,237 @@ export async function recoverExpiredTestAttemptLeases({
             claimLeaseCount: expiredClaims.count,
         };
     });
+}
+
+function testReviewIsCurrent({ db }: { db: PostgresDatabase }) {
+    const identityOrganization = alias(
+        organizationTable,
+        "review_identity_organization",
+    );
+    const identityUser = alias(userTable, "review_identity_user");
+    const titleMatches = or(
+        and(
+            isNull(projectTable.autoProvisionedForOrganizationId),
+            eq(
+                projectTable.title,
+                conversationEmailUpdateTable.projectTitleSnapshot,
+            ),
+        ),
+        and(
+            isNotNull(projectTable.autoProvisionedForOrganizationId),
+            or(
+                eq(
+                    identityUser.username,
+                    conversationEmailUpdateTable.projectTitleSnapshot,
+                ),
+                and(
+                    isNull(identityUser.username),
+                    eq(
+                        identityOrganization.displayName,
+                        conversationEmailUpdateTable.projectTitleSnapshot,
+                    ),
+                ),
+            ),
+        ),
+    );
+    const contactName = sql<
+        string | null
+    >`nullif(btrim(coalesce(${projectContactTable.firstName}, '') || ' ' || coalesce(${projectContactTable.lastName}, '')), '')`;
+    const contactBasis = db
+        .select({ id: projectContactTable.id })
+        .from(projectContactTable)
+        .leftJoin(
+            identityOrganization,
+            eq(
+                identityOrganization.id,
+                projectTable.autoProvisionedForOrganizationId,
+            ),
+        )
+        .leftJoin(
+            identityUser,
+            and(
+                eq(
+                    identityUser.id,
+                    identityOrganization.autoProvisionedForUserId,
+                ),
+                eq(identityOrganization.directoryVisibility, "unlisted"),
+            ),
+        )
+        .where(
+            and(
+                eq(
+                    projectContactTable.projectId,
+                    conversationEmailUpdateTable.projectId,
+                ),
+                isNull(projectContactTable.deletedAt),
+                eq(
+                    sql<string>`lower(btrim(${projectContactTable.email}))`,
+                    conversationEmailUpdateTable.replyToEmailSnapshot,
+                ),
+                or(
+                    eq(
+                        contactName,
+                        conversationEmailUpdateTable.replyToNameSnapshot,
+                    ),
+                    and(
+                        isNull(contactName),
+                        eq(
+                            conversationEmailUpdateTable.projectTitleSnapshot,
+                            conversationEmailUpdateTable.replyToNameSnapshot,
+                        ),
+                    ),
+                ),
+                titleMatches,
+            ),
+        );
+    const invalidConversation = db
+        .select({ id: conversationEmailUpdateConversationTable.conversationId })
+        .from(conversationEmailUpdateConversationTable)
+        .leftJoin(
+            conversationTable,
+            eq(
+                conversationTable.id,
+                conversationEmailUpdateConversationTable.conversationId,
+            ),
+        )
+        .leftJoin(
+            conversationContentTable,
+            eq(conversationContentTable.id, conversationTable.currentContentId),
+        )
+        .where(
+            and(
+                eq(
+                    conversationEmailUpdateConversationTable.updateId,
+                    conversationEmailUpdateTable.id,
+                ),
+                or(
+                    isNull(conversationContentTable.id),
+                    ne(
+                        conversationTable.projectId,
+                        conversationEmailUpdateTable.projectId,
+                    ),
+                    ne(
+                        conversationContentTable.title,
+                        conversationEmailUpdateConversationTable.conversationTitleSnapshot,
+                    ),
+                    isNull(
+                        conversationEmailUpdateConversationTable.conversationUrlSnapshot,
+                    ),
+                    eq(
+                        conversationTable.conversationEmailUpdateEnabledOverride,
+                        false,
+                    ),
+                    and(
+                        isNull(
+                            conversationTable.conversationEmailUpdateEnabledOverride,
+                        ),
+                        eq(
+                            projectTable.conversationEmailUpdateDefaultEnabled,
+                            false,
+                        ),
+                    ),
+                    isNull(
+                        conversationEmailUpdateTable.participantPreferenceScopeSnapshot,
+                    ),
+                    and(
+                        isNull(projectTable.autoProvisionedForOrganizationId),
+                        eq(
+                            projectTable.conversationEmailUpdateDefaultEnabled,
+                            true,
+                        ),
+                        ne(
+                            conversationEmailUpdateTable.participantPreferenceScopeSnapshot,
+                            "project",
+                        ),
+                    ),
+                    and(
+                        or(
+                            isNotNull(
+                                projectTable.autoProvisionedForOrganizationId,
+                            ),
+                            eq(
+                                projectTable.conversationEmailUpdateDefaultEnabled,
+                                false,
+                            ),
+                        ),
+                        ne(
+                            conversationEmailUpdateTable.participantPreferenceScopeSnapshot,
+                            "conversation",
+                        ),
+                    ),
+                ),
+            ),
+        );
+    return or(
+        and(
+            isNull(conversationEmailUpdateTable.reviewExpiresAt),
+            isNull(conversationEmailUpdateTable.reviewTestEmailCredentialId),
+            isNull(conversationEmailUpdateTable.reviewTestEmailSnapshot),
+            isNull(conversationEmailUpdateTable.templateVersion),
+            isNull(conversationEmailUpdateTable.brandingSnapshot),
+            isNull(
+                conversationEmailUpdateTable.participantPreferenceScopeSnapshot,
+            ),
+            isNull(conversationEmailUpdateTable.cancelledAt),
+        ),
+        and(
+            isNull(conversationEmailUpdateTable.cancelledAt),
+            isNotNull(conversationEmailUpdateTable.reviewTestEmailCredentialId),
+            isNotNull(conversationEmailUpdateTable.reviewTestEmailSnapshot),
+            eq(
+                conversationEmailUpdateTestAttemptTable.destinationEmailCredentialId,
+                conversationEmailUpdateTable.reviewTestEmailCredentialId,
+            ),
+            eq(
+                conversationEmailUpdateTestAttemptTable.destinationEmailSnapshot,
+                conversationEmailUpdateTable.reviewTestEmailSnapshot,
+            ),
+            gt(
+                conversationEmailUpdateTable.reviewExpiresAt,
+                sql<Date>`clock_timestamp()`,
+            ),
+            isNotNull(conversationEmailUpdateTable.brandingSnapshot),
+            isNotNull(
+                conversationEmailUpdateTable.participantPreferenceScopeSnapshot,
+            ),
+            eq(
+                conversationEmailUpdateTable.templateVersion,
+                EMAIL_TEMPLATE_VERSION,
+            ),
+            or(
+                isNotNull(projectTable.autoProvisionedForOrganizationId),
+                eq(projectTable.directoryVisibility, "listed"),
+            ),
+            or(
+                and(
+                    isNull(projectTable.autoProvisionedForOrganizationId),
+                    eq(
+                        conversationEmailUpdateTable.scopeKind,
+                        "listed_project",
+                    ),
+                ),
+                and(
+                    isNotNull(projectTable.autoProvisionedForOrganizationId),
+                    eq(conversationEmailUpdateTable.scopeKind, "no_project"),
+                ),
+            ),
+            exists(contactBasis),
+            exists(
+                db
+                    .select({
+                        id: conversationEmailUpdateConversationTable.conversationId,
+                    })
+                    .from(conversationEmailUpdateConversationTable)
+                    .where(
+                        eq(
+                            conversationEmailUpdateConversationTable.updateId,
+                            conversationEmailUpdateTable.id,
+                        ),
+                    ),
+            ),
+            notExists(invalidConversation),
+        ),
+    );
 }
 
 export async function authorizeTestAttempt({
@@ -681,14 +947,14 @@ export async function authorizeTestAttempt({
                 ),
                 lte(
                     premiumFeatureEntitlementTable.startsAt,
-                    currentTimestamp(),
+                    sql<Date>`clock_timestamp()`,
                 ),
                 isNull(premiumFeatureEntitlementTable.revokedAt),
                 or(
                     isNull(premiumFeatureEntitlementTable.expiresAt),
                     gt(
                         premiumFeatureEntitlementTable.expiresAt,
-                        currentTimestamp(),
+                        sql<Date>`clock_timestamp()`,
                     ),
                 ),
             ),
@@ -706,6 +972,7 @@ export async function authorizeTestAttempt({
                 exists(membershipCapability),
                 notExists(activeSafetyBlock),
                 testAttemptHasNoActiveSuppressions({ db }),
+                testReviewIsCurrent({ db }),
             ),
         );
     const authorized = await db
@@ -719,6 +986,10 @@ export async function authorizeTestAttempt({
                     work.leaseToken,
                 ),
                 eq(conversationEmailUpdateTestAttemptTable.status, "claimed"),
+                gt(
+                    conversationEmailUpdateTestAttemptTable.leaseExpiresAt,
+                    sql<Date>`clock_timestamp()`,
+                ),
                 exists(authorization),
             ),
         )
@@ -729,12 +1000,12 @@ export async function authorizeTestAttempt({
         .update(conversationEmailUpdateTestAttemptTable)
         .set({
             status: "permanent_rejected",
-            authorizedAt: currentTimestamp(),
+            authorizedAt: sql<Date>`clock_timestamp()`,
             errorCategory: "permanent",
             errorCode: "authorization_failed",
             errorDetails:
                 "The requester, entitlement, scope, or frozen credential is no longer authorized",
-            finishedAt: currentTimestamp(),
+            finishedAt: sql<Date>`clock_timestamp()`,
             leaseOwner: null,
             leaseToken: null,
             leaseExpiresAt: null,
@@ -742,6 +1013,7 @@ export async function authorizeTestAttempt({
         .where(
             and(
                 eq(conversationEmailUpdateTestAttemptTable.id, work.id),
+                eq(conversationEmailUpdateTestAttemptTable.status, "claimed"),
                 eq(
                     conversationEmailUpdateTestAttemptTable.leaseToken,
                     work.leaseToken,
@@ -760,29 +1032,46 @@ export async function markTestAttempting({
     work: ClaimedTestWork;
     leaseSeconds: number;
 }): Promise<boolean> {
-    const started = await db
-        .update(conversationEmailUpdateTestAttemptTable)
-        .set({
-            status: "attempting",
-            authorizedAt: currentTimestamp(),
-            leaseExpiresAt: leaseExpiryExpression(leaseSeconds),
-        })
-        .where(
-            and(
-                eq(conversationEmailUpdateTestAttemptTable.id, work.id),
-                eq(
-                    conversationEmailUpdateTestAttemptTable.leaseToken,
-                    work.leaseToken,
-                ),
-                eq(conversationEmailUpdateTestAttemptTable.status, "claimed"),
-                gt(
-                    conversationEmailUpdateTestAttemptTable.leaseExpiresAt,
-                    currentTimestamp(),
-                ),
-            ),
+    return await db.transaction(async (tx) => {
+        // Cancellation takes this same lock. Once attempting commits, a send cannot be recalled.
+        // Post-lock checks and renewal must use the live clock, not transaction-start now().
+        const update = await tx
+            .select({ id: conversationEmailUpdateTable.id })
+            .from(conversationEmailUpdateTable)
+            .where(eq(conversationEmailUpdateTable.id, work.updateId))
+            .for("update");
+        if (
+            update.length === 0 ||
+            !(await authorizeTestAttempt({ db: tx, work }))
         )
-        .returning({ id: conversationEmailUpdateTestAttemptTable.id });
-    return started.length > 0;
+            return false;
+        const started = await tx
+            .update(conversationEmailUpdateTestAttemptTable)
+            .set({
+                status: "attempting",
+                authorizedAt: sql<Date>`clock_timestamp()`,
+                leaseExpiresAt: sql<Date>`clock_timestamp() + ${leaseSeconds} * interval '1 second'`,
+            })
+            .where(
+                and(
+                    eq(conversationEmailUpdateTestAttemptTable.id, work.id),
+                    eq(
+                        conversationEmailUpdateTestAttemptTable.leaseToken,
+                        work.leaseToken,
+                    ),
+                    eq(
+                        conversationEmailUpdateTestAttemptTable.status,
+                        "claimed",
+                    ),
+                    gt(
+                        conversationEmailUpdateTestAttemptTable.leaseExpiresAt,
+                        sql<Date>`clock_timestamp()`,
+                    ),
+                ),
+            )
+            .returning({ id: conversationEmailUpdateTestAttemptTable.id });
+        return started.length > 0;
+    });
 }
 
 export async function finalizeTestAttempt({
@@ -899,12 +1188,22 @@ export async function getUpdateConversationLinks(
             conversationId:
                 conversationEmailUpdateConversationTable.conversationId,
             title: conversationEmailUpdateConversationTable.conversationTitleSnapshot,
+            conversationUrlSnapshot:
+                conversationEmailUpdateConversationTable.conversationUrlSnapshot,
+            templateVersion: conversationEmailUpdateTable.templateVersion,
             slugId: conversationTable.slugId,
             projectSlug: projectTable.slug,
             autoProvisionedForOrganizationId:
                 projectTable.autoProvisionedForOrganizationId,
         })
         .from(conversationEmailUpdateConversationTable)
+        .innerJoin(
+            conversationEmailUpdateTable,
+            eq(
+                conversationEmailUpdateTable.id,
+                conversationEmailUpdateConversationTable.updateId,
+            ),
+        )
         .innerJoin(
             conversationTable,
             eq(
@@ -934,13 +1233,15 @@ export async function getUpdateConversationLinks(
     return rows.map((row) => toAuthorizedConversation({ ...row, baseUrl }));
 }
 
-function toAuthorizedConversation({
+export function toAuthorizedConversation({
     conversationId,
     title,
     slugId,
     projectSlug,
     autoProvisionedForOrganizationId,
     baseUrl,
+    conversationUrlSnapshot,
+    templateVersion,
 }: {
     conversationId: number;
     title: string;
@@ -948,18 +1249,25 @@ function toAuthorizedConversation({
     projectSlug: string;
     autoProvisionedForOrganizationId: number | null;
     baseUrl: URL;
+    conversationUrlSnapshot: string | null;
+    templateVersion: string | null;
 }): AuthorizedConversation {
+    if (templateVersion !== null && conversationUrlSnapshot === null) {
+        throw new Error("Reviewed conversation is missing its URL snapshot");
+    }
     return {
         conversationId,
         title,
-        url: buildConversationLinkUrl({
-            baseUrl,
-            conversationSlugId: slugId,
-            route:
-                autoProvisionedForOrganizationId === null
-                    ? { kind: "project", projectSlug }
-                    : { kind: "conversation" },
-        }),
+        url:
+            conversationUrlSnapshot ??
+            buildConversationLinkUrl({
+                baseUrl,
+                conversationSlugId: slugId,
+                route:
+                    autoProvisionedForOrganizationId === null
+                        ? { kind: "project", projectSlug }
+                        : { kind: "conversation" },
+            }),
     };
 }
 
@@ -2283,6 +2591,8 @@ interface AuthorizedRecipientCommon {
     bodyHtml: string;
     bodyPlainText: string;
     projectTitle: string;
+    branding: EmailBranding | undefined;
+    templateVersion: string | null;
     replyToName: string;
     replyToEmail: string;
     language: SupportedDisplayLanguageCodes;
@@ -2292,26 +2602,23 @@ interface AuthorizedRecipientCommon {
     conversations: [AuthorizedConversation, ...AuthorizedConversation[]];
 }
 
-interface RecipientActionDetailsCommon {
-    actions: ConversationEmailActionLinks;
-    actionTokens: {
-        unsubscribeHash: string;
-        manageHash: string;
-        reportHash: string;
-    };
-}
-
-type RecipientActionDetails = RecipientActionDetailsCommon &
-    (
-        | {
-              kind: "participant";
-              unsubscribeUrl: string;
-          }
-        | {
-              kind: "conversation_owner_copy";
-              unsubscribeUrl: undefined;
-          }
-    );
+type RecipientActionDetails =
+    | {
+          kind: "participant";
+          actions: ConversationEmailActionLinks;
+          actionTokens: {
+              unsubscribeHash: string;
+              manageHash: string;
+              reportHash: string;
+          };
+          unsubscribeUrl: string;
+      }
+    | {
+          kind: "conversation_owner_copy";
+          actions: { reportUrl: string };
+          actionTokens: { reportHash: string };
+          unsubscribeUrl: undefined;
+      };
 
 export type AuthorizedRecipient = AuthorizedRecipientCommon &
     RecipientActionDetails;
@@ -2333,21 +2640,33 @@ export function createRecipientActions({
     kind: AuthorizedRecipient["kind"];
     participantPreferenceScope: AuthorizedRecipient["participantPreferenceScope"];
 }): RecipientActionDetails {
+    const report = createActionToken();
+    if (kind === "conversation_owner_copy") {
+        return {
+            kind,
+            actions: {
+                reportUrl: new URL(
+                    `/email-updates/report/${report.raw}`,
+                    siteBaseUrl,
+                ).toString(),
+            },
+            actionTokens: { reportHash: report.hash },
+            unsubscribeUrl: undefined,
+        };
+    }
     const unsubscribe = createActionToken();
     const manage = createActionToken();
-    const report = createActionToken();
     const actionUrls = buildConversationEmailActionUrls({
         siteBaseUrl,
         unsubscribeToken: unsubscribe.raw,
         manageToken: manage.raw,
         reportToken: report.raw,
     });
-    const actionDetails: RecipientActionDetailsCommon = {
+    return {
+        kind,
+        unsubscribeUrl: actionUrls.oneClickUnsubscribeUrl,
         actions: {
-            unsubscribeScope:
-                participantPreferenceScope === "project"
-                    ? "project"
-                    : "conversation",
+            unsubscribeScope: participantPreferenceScope,
             unsubscribeUrl: actionUrls.visibleUnsubscribeUrl,
             manageUrl: actionUrls.manageUrl,
             reportUrl: actionUrls.reportUrl,
@@ -2358,13 +2677,6 @@ export function createRecipientActions({
             reportHash: report.hash,
         },
     };
-    return kind === "participant"
-        ? {
-              ...actionDetails,
-              kind,
-              unsubscribeUrl: actionUrls.oneClickUnsubscribeUrl,
-          }
-        : { ...actionDetails, kind, unsubscribeUrl: undefined };
 }
 
 export async function authorizeRecipientSend({
@@ -2416,6 +2728,10 @@ export async function authorizeRecipientSend({
                     bodyPlainText: conversationEmailUpdateTable.bodyPlainText,
                     projectTitle:
                         conversationEmailUpdateTable.projectTitleSnapshot,
+                    brandingSnapshot:
+                        conversationEmailUpdateTable.brandingSnapshot,
+                    templateVersion:
+                        conversationEmailUpdateTable.templateVersion,
                     replyToName:
                         conversationEmailUpdateTable.replyToNameSnapshot,
                     replyToEmail:
@@ -2622,6 +2938,8 @@ export async function authorizeRecipientSend({
                     conversationId:
                         conversationEmailUpdateRecipientConversationTable.conversationId,
                     title: conversationEmailUpdateConversationTable.conversationTitleSnapshot,
+                    conversationUrlSnapshot:
+                        conversationEmailUpdateConversationTable.conversationUrlSnapshot,
                     slugId: conversationTable.slugId,
                     projectSlug: projectTable.slug,
                     autoProvisionedForOrganizationId:
@@ -2713,6 +3031,7 @@ export async function authorizeRecipientSend({
                 toAuthorizedConversation({
                     ...conversation,
                     baseUrl,
+                    templateVersion: recipient.templateVersion,
                 }),
             );
             const frequencyCapped = await tx
@@ -2797,6 +3116,8 @@ export async function authorizeRecipientSend({
             bodyHtml: recipient.bodyHtml,
             bodyPlainText: recipient.bodyPlainText,
             projectTitle: recipient.projectTitle,
+            branding: parseConversationEmailBranding(recipient),
+            templateVersion: recipient.templateVersion,
             replyToName: recipient.replyToName,
             replyToEmail: recipient.replyToEmail,
             language: recipient.language,
@@ -2881,29 +3202,37 @@ async function markRecipientAttempting({
                 conversationId: conversation.conversationId,
             })),
         );
-    await tx.insert(conversationEmailUpdateActionTokenTable).values([
-        {
-            tokenHash: authorized.actionTokens.unsubscribeHash,
-            attemptPublicId: authorized.attemptPublicId,
-            action:
-                authorized.participantPreferenceScope === "project"
-                    ? "unsubscribe_project"
-                    : "unsubscribe_conversation",
-            expiresAt: sql<Date>`now() + interval '365 days'`,
-        },
-        {
-            tokenHash: authorized.actionTokens.manageHash,
-            attemptPublicId: authorized.attemptPublicId,
-            action: "manage_preferences",
-            expiresAt: sql<Date>`now() + interval '90 days'`,
-        },
-        {
-            tokenHash: authorized.actionTokens.reportHash,
-            attemptPublicId: authorized.attemptPublicId,
-            action: "report",
-            expiresAt: sql<Date>`now() + interval '90 days'`,
-        },
-    ]);
+    const actionTokens: PgInsertValue<typeof conversationEmailUpdateActionTokenTable>[] =
+        [
+            {
+                tokenHash: authorized.actionTokens.reportHash,
+                attemptPublicId: authorized.attemptPublicId,
+                action: "report",
+                expiresAt: sql<Date>`now() + interval '90 days'`,
+            },
+        ];
+    if (authorized.kind === "participant") {
+        actionTokens.push(
+            {
+                tokenHash: authorized.actionTokens.unsubscribeHash,
+                attemptPublicId: authorized.attemptPublicId,
+                action:
+                    authorized.participantPreferenceScope === "project"
+                        ? "unsubscribe_project"
+                        : "unsubscribe_conversation",
+                expiresAt: sql<Date>`now() + interval '365 days'`,
+            },
+            {
+                tokenHash: authorized.actionTokens.manageHash,
+                attemptPublicId: authorized.attemptPublicId,
+                action: "manage_preferences",
+                expiresAt: sql<Date>`now() + interval '90 days'`,
+            },
+        );
+    }
+    await tx
+        .insert(conversationEmailUpdateActionTokenTable)
+        .values(actionTokens);
     return true;
 }
 

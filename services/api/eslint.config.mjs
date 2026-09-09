@@ -56,6 +56,9 @@ export default tseslint.config(
     {
         ignores: [
             "**/dist/",
+            ".email-build/",
+            "src/generated/email/",
+            "src/shared-backend/email/",
             "eslint.config.mjs",
             "jest.config.js",
             "scripts/**/*.mjs",

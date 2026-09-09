@@ -1,0 +1,16 @@
+{
+    "extends": "../../../tsconfig.json",
+    "include": ["render.ts", "*.vue", "../../shared/branding/*.vue"],
+    "exclude": [],
+    "compilerOptions": {
+        "module": "ESNext",
+        "moduleResolution": "Bundler",
+        "rootDir": "../..",
+        "outDir": "../../../.email-build/declarations",
+        "noEmit": false,
+        "declaration": true,
+        "emitDeclarationOnly": true,
+        "types": ["node"]
+    },
+    "vueCompilerOptions": { "strictTemplates": true }
+}

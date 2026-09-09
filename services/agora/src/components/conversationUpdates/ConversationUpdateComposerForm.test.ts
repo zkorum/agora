@@ -30,15 +30,15 @@ vi.mock("src/components/editor/Editor.vue", () => ({
     },
   }),
 }));
-vi.mock("src/components/ui-library/ZKButton.vue", () => ({
+vi.mock("primevue/button", () => ({
   default: defineComponent({
-    name: "ZKButton",
+    name: "PrimeButton",
     props: {
       label: { type: String, required: true },
-      disable: { type: Boolean, default: false },
+      disabled: { type: Boolean, default: false },
     },
     setup(props) {
-      return () => h("button", { disabled: props.disable }, props.label);
+      return () => h("button", { disabled: props.disabled }, props.label);
     },
   }),
 }));
@@ -128,9 +128,7 @@ describe("ConversationUpdateComposerForm", () => {
 
     expect(container.textContent).toContain("Subject *");
     expect(container.textContent).toContain("Message *");
-    expect(container.querySelector(".checkbox-stub")?.textContent).toBe(
-      "I confirm this update follows the rules written above! *"
-    );
+    expect(container.querySelector(".checkbox-stub, iframe")).toBeNull();
     const editor = container.querySelector(".editor-stub");
     const editorLabelId = editor?.getAttribute("aria-labelledby");
     expect(editor?.getAttribute("aria-required")).toBe("true");
@@ -147,9 +145,9 @@ describe("ConversationUpdateComposerForm", () => {
       subject: "",
     });
 
-    expect(getButton(container, "Send test email").disabled).toBe(true);
+    expect(getButton(container, "Review email").disabled).toBe(true);
     expect(container.textContent).toContain(
-      "Complete the required project, conversation, subject, and message fields (*) to enable the test email."
+      "Complete the required selection, subject, and message fields (*) before reviewing."
     );
   });
 
@@ -161,7 +159,7 @@ describe("ConversationUpdateComposerForm", () => {
       relatedConversationOwnerCount: 0,
     });
 
-    expect(getButton(container, "Send test email").disabled).toBe(true);
+    expect(getButton(container, "Review email").disabled).toBe(true);
     expect(container.textContent).toContain(
       "Checking for eligible recipients..."
     );
@@ -175,7 +173,7 @@ describe("ConversationUpdateComposerForm", () => {
       relatedConversationOwnerCount: 0,
     });
 
-    expect(getButton(container, "Send test email").disabled).toBe(true);
+    expect(getButton(container, "Review email").disabled).toBe(true);
     expect(container.textContent).not.toContain(
       "Checking for eligible recipients..."
     );
@@ -189,9 +187,9 @@ describe("ConversationUpdateComposerForm", () => {
       subject: "x".repeat(1_000),
     });
 
-    expect(getButton(container, "Send test email").disabled).toBe(true);
+    expect(getButton(container, "Review email").disabled).toBe(true);
     expect(container.textContent).toContain(
-      "Fix the subject or message content so it meets the stated limits before sending a test email."
+      "Fix the subject or message to meet the stated limits before reviewing."
     );
     expect(container.textContent).not.toContain(
       "Complete the required project, conversation, subject, and message fields"
@@ -223,9 +221,7 @@ describe("ConversationUpdateComposerForm", () => {
     expect(banners.indexOf(zeroRecipientBanner ?? document.body)).toBeLessThan(
       banners.indexOf(policyBanner ?? document.body)
     );
-    expect(policyBanner?.nextElementSibling?.classList).toContain(
-      "checkbox-stub"
-    );
+    expect(container.querySelector(".checkbox-stub")).toBeNull();
   });
 
   it("explains real recipients and provides optional writing suggestions", () => {
@@ -244,12 +240,16 @@ describe("ConversationUpdateComposerForm", () => {
     expect(text).toContain(
       "Anyone in both groups receives only one owner copy."
     );
-    expect(editor?.getAttribute("data-placeholder")).toBe(
-      "Possible updates:\n• Share results\n• Share recent changes\n• Highlight new statements\n• Invite participants to return and vote on newly added statements, improving the analysis as participation grows\n\nRemember: this email will be sent to all eligible participants, whether they responded to some statements or none at all.\n\nLinks to the selected conversations are added automatically at the end of the email, using their project pages when applicable. You do not need to include them here, but you may."
+    const placeholder = editor?.getAttribute("data-placeholder");
+    expect(placeholder).toContain("voted on at least one statement");
+    expect(placeholder).toContain("published at least one statement");
+    expect(placeholder).toContain("or took part in a ranking");
+    expect(placeholder).toContain(
+      "Links to the selected conversations are added automatically"
     );
   });
 
-  it("confirms that a test goes only to the facilitator before requesting it", async () => {
+  it("requests review without sending a test from the composer", async () => {
     const testHandler = vi.fn();
     const container = mountComposer({
       locale: "en",
@@ -261,20 +261,10 @@ describe("ConversationUpdateComposerForm", () => {
     expect(container.textContent).not.toContain(
       "This test goes only to the facilitator"
     );
-    getButton(container, "Send test email").click();
+    getButton(container, "Review email").click();
     await nextTick();
 
-    expect(container.textContent).toContain("Send this test email?");
-    expect(container.textContent).toContain(
-      "This test goes only to the facilitator at facilitator@example.com."
-    );
-    expect(testHandler).not.toHaveBeenCalled();
-
-    const confirmButton = container.querySelector<HTMLButtonElement>(
-      ".confirm-button-stub"
-    );
-    expect(confirmButton).not.toBeNull();
-    confirmButton?.click();
+    expect(container.querySelector(".confirm-dialog-stub")).toBeNull();
     expect(testHandler).toHaveBeenCalledOnce();
   });
 
@@ -286,7 +276,7 @@ describe("ConversationUpdateComposerForm", () => {
       selectedConversationIds: [],
     });
 
-    expect(getButton(container, "Send test email").disabled).toBe(true);
+    expect(getButton(container, "Review email").disabled).toBe(true);
   });
 
   it("describes test progress on the loading button", () => {
@@ -297,7 +287,7 @@ describe("ConversationUpdateComposerForm", () => {
       testPending: true,
     });
 
-    expect(getButton(container, "Sending test email...").disabled).toBe(true);
+    expect(getButton(container, "Review email").disabled).toBe(true);
   });
 
   it("prevents another test while the real update is sending", () => {
@@ -308,7 +298,7 @@ describe("ConversationUpdateComposerForm", () => {
       sendPending: true,
     });
 
-    expect(getButton(container, "Send test email").disabled).toBe(true);
+    expect(getButton(container, "Review email").disabled).toBe(true);
   });
 
   it("uses a plural-safe count summary", () => {
@@ -372,10 +362,9 @@ function mountComposer({
       {
         id: "project-one",
         kind: "project",
+        unsubscribeScope: "project",
         label: "Project One",
-        href: "/project/project-one",
         contactEmail: "project@example.com",
-        eligibleParticipantCap: 12,
         conversations: [
           {
             id: "conversation-one",
@@ -383,15 +372,12 @@ function mountComposer({
             href: "/conversation/conversation-one",
             eligibleParticipantCount: 12,
             participationMode: "account_required",
-            ownerIds: ["owner-one"],
           },
         ],
       },
     ],
     updatesDisabledConversationIds: [],
-    testPending,
-    sendPending,
-    hasSuccessfulTest: false,
+    preparePending: testPending || sendPending,
     audienceEstimateState:
       audienceEstimateKind === "ready"
         ? {
@@ -406,8 +392,7 @@ function mountComposer({
     subject,
     bodyHtml: "<p>Update body</p>",
     bodyPlainText: "Update body",
-    contentConfirmed: false,
-    onTest: testHandler,
+    onReview: testHandler,
   });
   const i18n = createI18n({
     legacy: false,

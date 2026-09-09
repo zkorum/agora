@@ -25,6 +25,8 @@ export default tseslint.config(
     {
         ignores: [
             "dist/",
+            ".email-build/",
+            "src/generated/email/",
             "node_modules/",
             "src/shared/",
             "src/shared-backend/",

@@ -52,6 +52,18 @@ else
   kill_switch=false
 fi
 
+# Plan/usage checks need no renderer. Runtime commands also work from a clean checkout.
+case "${1:-}" in
+  initialize-database|prepare|attach|run|observe|verify|cleanup)
+    env -i \
+      HOME="${HOME:-}" \
+      PATH="$PATH" \
+      TMPDIR="${TMPDIR:-/tmp}" \
+      NODE_ENV=production \
+      node "$service_dir/src/shared-backend/email/build.mjs"
+    ;;
+esac
+
 exec env -i \
   HOME="${HOME:-}" \
   PATH="$PATH" \

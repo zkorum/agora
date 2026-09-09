@@ -1,5 +1,10 @@
 /** **** WARNING: GENERATED FROM SHARED DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/
 import { z } from "zod";
+import { zodEmailBranding } from "../branding/emailBranding.js";
+import {
+    conversationEmailExampleConversations,
+    zodConversationEmailExample,
+} from "../branding/emailExamples.js";
 import {
     zodExtendedConversationData,
     zodExtendedConversationDisplayData,
@@ -751,6 +756,7 @@ const zodConversationEmailUpdateNoProjectConversations = z.tuple(
 const zodConversationEmailUpdateProjectScopeBase = z
     .object({
         kind: z.literal("project"),
+        unsubscribeScope: z.enum(["project", "conversation"]),
         projectSlug: zodProjectSlug,
         title: z.string().trim().min(1).max(MAX_LENGTH_TITLE),
         participantContactEmail: zodEmail,
@@ -759,6 +765,7 @@ const zodConversationEmailUpdateProjectScopeBase = z
 const zodConversationEmailUpdateNoProjectScopeBase = z
     .object({
         kind: z.literal("no_project"),
+        unsubscribeScope: z.literal("conversation"),
         title: z.string().trim().min(1).max(MAX_LENGTH_TITLE),
     })
     .strict();
@@ -843,6 +850,7 @@ const zodConversationEmailUpdateContext = z.discriminatedUnion("kind", [
 const zodConversationEmailUpdateHistorySummaryBase = z
     .object({
         updateId: z.uuid(),
+        unsubscribeScope: z.enum(["project", "conversation"]),
         subject: zodConversationEmailUpdateSubject,
         acceptedAt: zodDateTimeFlexible,
         audienceEstimate: z.number().int().nonnegative(),
@@ -3342,20 +3350,242 @@ export class Dto {
                 })
                 .strict(),
         ]);
-    static conversationEmailUpdateSendTestRequest = z
+    static conversationEmailUpdatePrepareDraftRequest = z
         .object({
             selection: zodConversationEmailUpdateSelection,
             subject: zodConversationEmailUpdateSubject,
             bodyHtml: zodConversationEmailUpdateBodyHtml,
         })
         .strict();
-    static conversationEmailUpdateSendTestOpenApiRequest = z
+    static conversationEmailUpdatePrepareDraftOpenApiRequest = z
         .object({
             selection: zodConversationEmailUpdateTransportSelection,
             subject: zodConversationEmailUpdateSubject,
             bodyHtml: zodConversationEmailUpdateBodyHtml,
         })
         .strict();
+    static conversationEmailUpdatePreview = z
+        .object({
+            subject: z.string(),
+            html: z.string(),
+            text: z.string(),
+        })
+        .strict();
+    static conversationEmailUpdatePrepareDraftResponse = z.discriminatedUnion(
+        "success",
+        [
+            z
+                .object({
+                    success: z.literal(true),
+                    review: z
+                        .object({
+                            updateId: z.uuid(),
+                            preview: Dto.conversationEmailUpdatePreview,
+                            language: ZodSupportedDisplayLanguageCodes,
+                            senderName: z.string(),
+                            replyToName: z.string(),
+                            replyToEmail: z.email(),
+                            branding: zodEmailBranding,
+                            unsubscribeScope: z.enum([
+                                "project",
+                                "conversation",
+                            ]),
+                            estimatedEligibleRecipientCount: z
+                                .number()
+                                .int()
+                                .nonnegative(),
+                            requiredOwnerCopyCount: z
+                                .number()
+                                .int()
+                                .nonnegative(),
+                            testDestinationEmail: z.email(),
+                            expiresAt: zodDateTimeFlexible,
+                        })
+                        .strict(),
+                })
+                .strict(),
+            z
+                .object({
+                    success: z.literal(false),
+                    error: z.discriminatedUnion("reason", [
+                        z
+                            .object({
+                                reason: z.enum([
+                                    "scope_not_found",
+                                    "conversation_not_in_scope",
+                                    "content_invalid",
+                                    "missing_participant_contact_email",
+                                    "no_verified_test_email",
+                                    "no_eligible_participants",
+                                    "sending_disabled",
+                                ]),
+                            })
+                            .strict(),
+                        z
+                            .object({
+                                reason: z.literal("review_rate_limited"),
+                                retryAt: zodDateTimeFlexible,
+                            })
+                            .strict(),
+                    ]),
+                })
+                .strict(),
+        ],
+    );
+    static conversationEmailUpdateCancelDraftRequest = z
+        .object({ updateId: z.uuid() })
+        .strict();
+    static conversationEmailUpdateCancelDraftResponse = z.discriminatedUnion(
+        "success",
+        [
+            z.object({ success: z.literal(true) }).strict(),
+            z
+                .object({
+                    success: z.literal(false),
+                    reason: z.enum([
+                        "review_not_found",
+                        "delivery_already_accepted",
+                    ]),
+                })
+                .strict(),
+        ],
+    );
+    static conversationEmailUpdatePreviewRequest = z
+        .object({
+            updateId: z.uuid(),
+            language: ZodSupportedDisplayLanguageCodes,
+        })
+        .strict();
+    static conversationEmailUpdatePreviewResponse = z.discriminatedUnion(
+        "success",
+        [
+            z
+                .object({
+                    success: z.literal(true),
+                    preview: Dto.conversationEmailUpdatePreview,
+                    reconstructed: z.boolean(),
+                })
+                .strict(),
+            z
+                .object({
+                    success: z.literal(false),
+                    reason: z.literal("update_not_found"),
+                })
+                .strict(),
+        ],
+    );
+    static conversationEmailUpdateDevPreviewContent = z
+        .object({
+            subject: zodConversationEmailUpdateSubject,
+            bodyHtml: zodConversationEmailUpdateBodyHtml,
+            conversationSlugIds: z
+                .array(
+                    z.enum(
+                        conversationEmailExampleConversations.map(
+                            (conversation) => conversation.id,
+                        ),
+                    ),
+                )
+                .min(1)
+                .max(conversationEmailExampleConversations.length)
+                .refine((ids) => new Set(ids).size === ids.length)
+                .optional(),
+        })
+        .strict();
+    static conversationEmailUpdateDevPreviewFields = {
+        language: ZodSupportedDisplayLanguageCodes,
+        variant: z.enum(["participant", "owner_copy", "test"]),
+        content: Dto.conversationEmailUpdateDevPreviewContent.optional(),
+    };
+    static conversationEmailUpdateDevPreviewRequest = z.discriminatedUnion(
+        "fixture",
+        [
+            zodConversationEmailExample.options[0].extend(
+                Dto.conversationEmailUpdateDevPreviewFields,
+            ),
+            zodConversationEmailExample.options[1].extend(
+                Dto.conversationEmailUpdateDevPreviewFields,
+            ),
+            zodConversationEmailExample.options[2].extend(
+                Dto.conversationEmailUpdateDevPreviewFields,
+            ),
+        ],
+    );
+    static conversationEmailUpdateDevComparisonRequest =
+        Dto.conversationEmailUpdatePrepareDraftRequest
+            .extend({
+                language: ZodSupportedDisplayLanguageCodes,
+                // Reject raw header controls before the shared subject parser trims.
+                subject: z
+                    .string()
+                    .refine(
+                        isSafeEmailSubject,
+                        "Email subject contains unsafe control characters",
+                    )
+                    .pipe(zodConversationEmailUpdateSubject),
+                participantConversationSlugIds: z
+                    .array(zodSlugId)
+                    .min(1)
+                    .max(1_000)
+                    .refine(
+                        (values) => new Set(values).size === values.length,
+                        "Participant simulation contains duplicate conversations",
+                    )
+                    .optional(),
+            })
+            .strict();
+    static conversationEmailUpdateDevComparisonOpenApiRequest =
+        Dto.conversationEmailUpdateDevComparisonRequest.extend({
+            selection: zodConversationEmailUpdateTransportSelection,
+        });
+    static conversationEmailUpdateDevComparisonResponse = z.discriminatedUnion(
+        "success",
+        [
+            z
+                .object({
+                    success: z.literal(true),
+                    metadata: z
+                        .object({
+                            senderName: z.string(),
+                            replyToName: z.string(),
+                            replyToEmail: z.email(),
+                            branding: zodEmailBranding,
+                            language: ZodSupportedDisplayLanguageCodes,
+                            unsubscribeScope: z.enum([
+                                "project",
+                                "conversation",
+                            ]),
+                            sendingEnabled: z.boolean(),
+                        })
+                        .strict(),
+                    previews: z
+                        .object({
+                            participant: Dto.conversationEmailUpdatePreview,
+                            ownerCopy: Dto.conversationEmailUpdatePreview,
+                            test: Dto.conversationEmailUpdatePreview,
+                        })
+                        .strict(),
+                })
+                .strict(),
+            z
+                .object({
+                    success: z.literal(false),
+                    reason: z.enum([
+                        "scope_not_found",
+                        "conversation_not_in_scope",
+                        "content_invalid",
+                        "missing_participant_contact_email",
+                        "configuration_disabled",
+                    ]),
+                })
+                .strict(),
+        ],
+    );
+    static conversationEmailUpdateSendTestRequest = z
+        .object({ updateId: z.uuid(), requestId: z.uuid() })
+        .strict();
+    static conversationEmailUpdateSendTestOpenApiRequest =
+        Dto.conversationEmailUpdateSendTestRequest;
     static conversationEmailUpdateSendTestResponse = z.discriminatedUnion(
         "success",
         [
@@ -3381,6 +3611,12 @@ export class Dto {
                                     "no_verified_test_email",
                                     "no_eligible_participants",
                                     "sending_disabled",
+                                    "review_not_found",
+                                    "review_required",
+                                    "review_expired",
+                                    "review_cancelled",
+                                    "request_id_conflict",
+                                    "delivery_already_accepted",
                                 ]),
                             })
                             .strict(),
@@ -3440,6 +3676,7 @@ export class Dto {
                     reason: z.enum([
                         "test_not_found",
                         "test_status_unavailable",
+                        "review_cancelled",
                     ]),
                 })
                 .strict(),
@@ -3477,6 +3714,10 @@ export class Dto {
                         "no_eligible_participants",
                         "delivery_already_active",
                         "required_owner_copy_unavailable",
+                        "review_not_found",
+                        "review_required",
+                        "review_expired",
+                        "review_cancelled",
                     ]),
                 })
                 .strict(),
@@ -3919,8 +4160,25 @@ export class Dto {
             details: z.string().trim().min(1).max(2_000).optional(),
         })
         .strict();
-    static conversationEmailUpdateActionReportResponse =
-        zodConversationEmailUpdateActionMutationResponse;
+    static conversationEmailUpdateActionReportResponse = z.discriminatedUnion(
+        "success",
+        [
+            z
+                .object({
+                    success: z.literal(true),
+                    availableAction: z
+                        .object({
+                            action: z.literal("unsubscribe"),
+                            token: zodConversationEmailUpdateActionToken,
+                            scope: zodConversationEmailUpdateActionScope,
+                        })
+                        .strict()
+                        .optional(),
+                })
+                .strict(),
+            zodConversationEmailUpdateActionUnavailable,
+        ],
+    );
     static conversationEmailUpdateActionOneClickParams = z
         .object({ token: zodConversationEmailUpdateActionToken })
         .strict();
@@ -4425,6 +4683,33 @@ export type MaxDiffItemsFetchResponse = z.infer<
 export type MaxDiffSyncResponse = z.infer<typeof Dto.maxdiffSyncResponse>;
 export type ConversationEmailUpdateWorkspaceRequest = z.infer<
     typeof Dto.conversationEmailUpdateWorkspaceRequest
+>;
+export type ConversationEmailUpdatePrepareDraftRequest = z.infer<
+    typeof Dto.conversationEmailUpdatePrepareDraftRequest
+>;
+export type ConversationEmailUpdatePrepareDraftResponse = z.infer<
+    typeof Dto.conversationEmailUpdatePrepareDraftResponse
+>;
+export type ConversationEmailUpdateCancelDraftRequest = z.infer<
+    typeof Dto.conversationEmailUpdateCancelDraftRequest
+>;
+export type ConversationEmailUpdateCancelDraftResponse = z.infer<
+    typeof Dto.conversationEmailUpdateCancelDraftResponse
+>;
+export type ConversationEmailUpdatePreviewRequest = z.infer<
+    typeof Dto.conversationEmailUpdatePreviewRequest
+>;
+export type ConversationEmailUpdatePreviewResponse = z.infer<
+    typeof Dto.conversationEmailUpdatePreviewResponse
+>;
+export type ConversationEmailUpdateDevPreviewRequest = z.infer<
+    typeof Dto.conversationEmailUpdateDevPreviewRequest
+>;
+export type ConversationEmailUpdateDevComparisonRequest = z.infer<
+    typeof Dto.conversationEmailUpdateDevComparisonRequest
+>;
+export type ConversationEmailUpdateDevComparisonResponse = z.infer<
+    typeof Dto.conversationEmailUpdateDevComparisonResponse
 >;
 export type ConversationEmailUpdateWorkspaceResponse = z.infer<
     typeof Dto.conversationEmailUpdateWorkspaceResponse

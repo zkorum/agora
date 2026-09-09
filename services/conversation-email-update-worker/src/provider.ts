@@ -6,8 +6,6 @@ import {
 import { z } from "zod";
 import { removeNonDisplayControlCharacters } from "@/shared/shared.js";
 
-const FIXED_SENDER_NAME = "Agora";
-
 const providerErrorSchema = z
     .object({
         name: z.string(),
@@ -63,6 +61,7 @@ export interface ConversationEmailProvider {
 
 export interface ConversationEmailProviderMessage {
     to: string;
+    senderName: string;
     subject: string;
     html: string;
     text: string;
@@ -202,7 +201,7 @@ export function createConversationEmailProvider({
                       ];
             const command = new SendEmailCommand({
                 FromEmailAddress: toHeaderAddress({
-                    name: FIXED_SENDER_NAME,
+                    name: message.senderName,
                     email: fromAddress,
                 }),
                 Destination: { ToAddresses: [message.to] },

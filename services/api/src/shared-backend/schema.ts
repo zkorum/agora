@@ -30,6 +30,7 @@ import {
 } from "@/shared/languages.js";
 import { projectOrganizationAttributionRoleValues } from "@/shared/types/project.js";
 import { PROJECT_DOCUMENT_CONTENT_TYPES } from "@/shared/projectDocument.js";
+import type { EmailBranding } from "@/shared/branding/emailBranding.js";
 // import { MAX_LENGTH_TITLE, MAX_LENGTH_OPINION, MAX_LENGTH_BODY } from "./shared/shared.js"; // unfortunately it breaks drizzle generate... :o TODO: find a way
 // WARNING: when you modify these limits, change this in shared.ts as well
 const MAX_LENGTH_TITLE = 140;
@@ -6057,6 +6058,21 @@ export const conversationEmailUpdateTable = pgTable(
         }).notNull(),
         bodyHtml: text("body_html").notNull(),
         bodyPlainText: text("body_plain_text").notNull(),
+        cancelledAt: timestamp("cancelled_at", { mode: "date", precision: 0 }),
+        reviewExpiresAt: timestamp("review_expires_at", {
+            mode: "date",
+            precision: 0,
+        }),
+        templateVersion: varchar("template_version", { length: 100 }),
+        participantPreferenceScopeSnapshot:
+            conversationEmailUpdateParticipantPreferenceScopeEnum(
+                "participant_preference_scope_snapshot",
+            ),
+        brandingSnapshot: jsonb("branding_snapshot").$type<EmailBranding>(),
+        reviewTestEmailCredentialId: integer("review_test_email_credential_id"),
+        reviewTestEmailSnapshot: varchar("review_test_email_snapshot", {
+            length: 254,
+        }),
         createdAt: timestamp("created_at", { mode: "date", precision: 0 })
             .defaultNow()
             .notNull(),
@@ -6065,6 +6081,26 @@ export const conversationEmailUpdateTable = pgTable(
         unique("conversation_email_update_project_id_id_unique").on(
             table.projectId,
             table.id,
+        ),
+        index("conversation_email_update_creator_created_idx").on(
+            table.createdByUserId,
+            table.createdAt,
+        ),
+        check(
+            "conversation_email_update_review_fields_check",
+            sql`num_nonnulls(${table.reviewExpiresAt}, ${table.templateVersion}, ${table.participantPreferenceScopeSnapshot}, ${table.brandingSnapshot}, ${table.reviewTestEmailCredentialId}, ${table.reviewTestEmailSnapshot}) IN (0, 6) AND (${table.cancelledAt} IS NULL OR ${table.reviewExpiresAt} IS NOT NULL)`,
+        ),
+        check(
+            "conversation_email_update_review_expiry_check",
+            sql`${table.reviewExpiresAt} IS NULL OR (${table.reviewExpiresAt} = ${table.createdAt} + interval '24 hours' AND length(btrim(${table.templateVersion})) > 0)`,
+        ),
+        check(
+            "conversation_email_update_review_scope_check",
+            sql`${table.scopeKind} <> 'no_project' OR ${table.participantPreferenceScopeSnapshot} IS NULL OR ${table.participantPreferenceScopeSnapshot} = 'conversation'`,
+        ),
+        check(
+            "conversation_email_update_branding_check",
+            sql`${table.brandingSnapshot} IS NULL OR (jsonb_typeof(${table.brandingSnapshot}) = 'object' AND ${table.brandingSnapshot} ?& array['name', 'palette'] AND jsonb_typeof(${table.brandingSnapshot}->'name') = 'string' AND length(btrim(${table.brandingSnapshot}->>'name')) BETWEEN 1 AND 500 AND jsonb_typeof(${table.brandingSnapshot}->'palette') = 'string' AND ${table.brandingSnapshot}->>'palette' IN ('blue', 'purple', 'green') AND (NOT ${table.brandingSnapshot} ? 'imageUrl' OR jsonb_typeof(${table.brandingSnapshot}->'imageUrl') = 'string') AND (NOT ${table.brandingSnapshot} ? 'bannerImageUrl' OR jsonb_typeof(${table.brandingSnapshot}->'bannerImageUrl') = 'string'))`,
         ),
         foreignKey({
             columns: [
@@ -6076,6 +6112,11 @@ export const conversationEmailUpdateTable = pgTable(
                 premiumFeatureEntitlementTable.id,
             ],
             name: "email_update_authorizing_entitlement_fk",
+        }),
+        foreignKey({
+            columns: [table.createdByUserId, table.reviewTestEmailCredentialId],
+            foreignColumns: [emailTable.userId, emailTable.id],
+            name: "email_update_review_test_destination_owner_fk",
         }),
         foreignKey({
             columns: [table.projectId],
@@ -6098,6 +6139,10 @@ export const conversationEmailUpdateTable = pgTable(
             "conversation_email_update_reply_to_email_canonical_check",
             sql`${table.replyToEmailSnapshot} = lower(btrim(${table.replyToEmailSnapshot}))`,
         ),
+        check(
+            "conversation_email_update_review_test_email_canonical_check",
+            sql`${table.reviewTestEmailSnapshot} IS NULL OR (length(btrim(${table.reviewTestEmailSnapshot})) > 0 AND ${table.reviewTestEmailSnapshot} = lower(btrim(${table.reviewTestEmailSnapshot})))`,
+        ),
     ],
 );
 
@@ -6111,6 +6156,7 @@ export const conversationEmailUpdateConversationTable = pgTable(
         conversationTitleSnapshot: varchar("conversation_title_snapshot", {
             length: MAX_LENGTH_TITLE,
         }).notNull(),
+        conversationUrlSnapshot: text("conversation_url_snapshot"),
         createdAt: timestamp("created_at", { mode: "date", precision: 0 })
             .defaultNow()
             .notNull(),

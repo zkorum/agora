@@ -1,10 +1,49 @@
 import { describe, expect, it } from "vitest";
 import {
     parseConversationEmailUpdateWorkWake,
+    resolveStoredEmailRenderer,
     runWithConcurrency,
     type ConversationEmailUpdateWorkWake,
 } from "./worker.js";
 import { createWakeableLane } from "./workerLane.js";
+
+describe("stored email template dispatch", () => {
+    it.each([null, "vue-email-v1"])(
+        "supports legacy and v1 templates: %s",
+        (templateVersion) => {
+            expect(
+                resolveStoredEmailRenderer({
+                    templateVersion,
+                    branding: { name: "Snapshot", palette: "blue" },
+                }).kind,
+            ).toBe("ready");
+        },
+    );
+
+    it("permanently rejects unsupported accepted templates instead of sending the latest", () => {
+        expect(
+            resolveStoredEmailRenderer({
+                templateVersion: "vue-email-v2",
+                branding: { name: "Snapshot", palette: "blue" },
+            }),
+        ).toMatchObject({
+            kind: "permanent_rejected",
+            code: "UnsupportedEmailTemplateVersion",
+        });
+    });
+
+    it("permanently rejects invalid stored branding", () => {
+        expect(
+            resolveStoredEmailRenderer({
+                templateVersion: "vue-email-v1",
+                branding: undefined,
+            }),
+        ).toMatchObject({
+            kind: "permanent_rejected",
+            code: "InvalidBrandingSnapshot",
+        });
+    });
+});
 
 function deferredVoid(): {
     promise: Promise<void>;

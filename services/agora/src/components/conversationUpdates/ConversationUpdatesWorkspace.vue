@@ -1,24 +1,16 @@
 <template>
   <section class="updates-workspace">
     <div class="updates-workspace__intro">
-      <div>
-        <h1>{{ t("introTitle") }}</h1>
-        <p>{{ t("introDescription") }}</p>
-      </div>
-      <q-icon name="mdi-email-fast-outline" size="2.25rem" />
+      <h1>{{ t("introTitle") }}</h1>
+      <p>{{ t("introDescription") }}</p>
     </div>
-
-    <ZKLiveRegion :message="audienceEstimateError ?? ''" politeness="polite" />
-
     <PageLoadingSpinner v-if="isLoadingWorkspace" />
-
     <ErrorRetryBlock
-      v-else-if="workspaceError !== undefined"
+      v-else-if="workspaceError"
       :title="workspaceError"
       :retry-label="t('tryAgain')"
       @retry="loadWorkspace"
     />
-
     <template v-else>
       <ZKInfoBanner
         v-if="testDestinationEmail === undefined"
@@ -27,14 +19,6 @@
         variant="warning"
         @action="showEmailVerificationDialog = true"
       />
-      <ZKInfoBanner
-        v-if="activeTab === 'compose' && audienceEstimateError !== undefined"
-        :message="audienceEstimateError"
-        :action-label="t('retry')"
-        variant="warning"
-        @action="loadAudienceEstimate"
-      />
-
       <q-tabs
         :model-value="activeTab"
         dense
@@ -42,115 +26,265 @@
         align="left"
         active-color="primary"
         indicator-color="primary"
-        class="updates-workspace__tabs"
         @update:model-value="updateActiveTab"
       >
         <q-tab
           name="compose"
           icon="mdi-email-edit-outline"
           :label="t('compose')"
+          :disable="reviewFlow.busy.value"
         />
-        <q-tab name="history" icon="mdi-history" :label="t('history')" />
+        <q-tab
+          name="history"
+          icon="mdi-history"
+          :label="t('history')"
+          :disable="reviewFlow.busy.value"
+        />
       </q-tabs>
-
-      <q-tab-panels
-        :model-value="activeTab"
-        animated
-        class="updates-workspace__panels"
-        @update:model-value="updateActiveTab"
-      >
-        <q-tab-panel name="compose" class="updates-workspace__panel">
-          <div class="updates-workspace__compose-grid">
-            <ConversationUpdateComposerForm
-              v-model:selected-scope-id="selectedScopeId"
-              v-model:selected-conversation-ids="selectedConversationIds"
-              v-model:subject="subject"
-              v-model:body-html="bodyHtml"
-              v-model:body-plain-text="bodyPlainText"
-              v-model:content-confirmed="contentConfirmed"
-              :scopes="scopes"
-              :updates-disabled-conversation-ids="
-                updatesDisabledConversationIds
-              "
-              :test-pending="activeTestOperationId !== undefined"
-              :send-pending="isSendingUpdate"
-              :has-successful-test="hasSuccessfulTest"
-              :audience-estimate-state="audienceEstimateState"
-              :test-destination-email="testDestinationEmail"
-              @test="sendTest"
-              @send="showSendDialog = true"
-            >
-              <template #preview>
-                <div
-                  v-if="$q.screen.lt.md"
-                  class="updates-workspace__preview updates-workspace__preview--mobile"
-                >
-                  <ConversationUpdateEmailPreview
-                    :subject="subject"
-                    :body-html="bodyHtml"
-                    :reply-to="currentContactEmail"
-                    :scope-kind="currentScope?.kind ?? 'project'"
-                    :scope-href="currentScope?.href"
-                    :scope-label="currentScope?.label ?? ''"
-                    :conversations="selectedConversations"
-                    :audience-estimate="audienceEstimate"
-                  />
-                </div>
-              </template>
-            </ConversationUpdateComposerForm>
-
-            <div v-if="!$q.screen.lt.md" class="updates-workspace__preview">
-              <ConversationUpdateEmailPreview
-                :subject="subject"
-                :body-html="bodyHtml"
-                :reply-to="currentContactEmail"
-                :scope-kind="currentScope?.kind ?? 'project'"
-                :scope-href="currentScope?.href"
-                :scope-label="currentScope?.label ?? ''"
-                :conversations="selectedConversations"
-                :audience-estimate="audienceEstimate"
-              />
-            </div>
-          </div>
-        </q-tab-panel>
-
-        <q-tab-panel name="history" class="updates-workspace__panel">
-          <PageLoadingSpinner v-if="isLoadingHistory && history.length === 0" />
-          <ErrorRetryBlock
-            v-else-if="historyError !== undefined && history.length === 0"
-            :title="historyError"
-            :retry-label="t('tryAgain')"
-            @retry="loadHistory"
+      <template v-if="activeTab === 'compose'">
+        <template v-if="review !== undefined">
+          <ConversationUpdateEmailPreview :review="review.snapshot" />
+          <ZKInfoBanner
+            v-if="review.test.kind === 'invalid'"
+            :message="tReview('reviewInvalid')"
+            variant="warning"
           />
-          <template v-else>
-            <ZKInfoBanner
-              v-if="historyError !== undefined"
-              :message="historyError"
-              variant="warning"
+          <ZKInfoBanner
+            v-if="review.test.kind === 'send-unknown'"
+            :message="tReview('sendUnknown')"
+            variant="warning"
+          />
+          <ZKInfoBanner
+            v-if="review.test.kind === 'retry'"
+            :message="tReview('testUnknown')"
+            variant="warning"
+          />
+          <ZKInfoBanner
+            v-if="review.test.kind === 'delivery-accepted'"
+            :message="tReview('deliveryAccepted')"
+          />
+          <ZKInfoBanner
+            v-if="
+              review.test.kind !== 'send-unknown' &&
+              review.test.kind !== 'delivery-accepted'
+            "
+            :message="
+              tComposer('testEmailNotice', {
+                email: review.snapshot.testDestinationEmail,
+              })
+            "
+          />
+          <ZKInfoBanner
+            :message="
+              tComposer('ownerCopySummary', {
+                participantCount:
+                  review.snapshot.estimatedEligibleRecipientCount,
+                managerCount: review.snapshot.requiredOwnerCopyCount,
+              })
+            "
+          />
+          <ZKInfoBanner
+            :message="tComposer('policyWarning')"
+            variant="warning"
+          />
+          <ZKCheckbox
+            v-model="contentConfirmed"
+            :label="tComposer('contentConfirmation')"
+            :description="undefined"
+            required
+            :disabled="
+              reviewFlow.busy.value ||
+              review.test.kind === 'send-unknown' ||
+              review.test.kind === 'delivery-accepted'
+            "
+          />
+          <ErrorRetryBlock
+            v-if="reviewFlow.testStatusFailed.value"
+            :title="tReview('testStatusUnavailable')"
+            :retry-label="t('retry')"
+            @retry="reviewFlow.retryTestStatus"
+          />
+          <ErrorRetryBlock
+            v-if="reviewFlow.error.value === 'cancelError'"
+            :title="tReview('cancelError')"
+            :retry-label="t('retry')"
+            @retry="confirmLeave"
+          />
+          <ErrorRetryBlock
+            v-if="reviewFlow.error.value === 'reconcileError'"
+            :title="tReview('reconcileError')"
+            :retry-label="tReview('checkDelivery')"
+            @retry="reviewFlow.reconcile"
+          />
+          <div class="updates-workspace__actions">
+            <PrimeButton
+              severity="secondary"
+              outlined
+              :label="tReview('backToEdit')"
+              :disabled="
+                reviewFlow.busy.value ||
+                review.test.kind === 'delivery-accepted'
+              "
+              @click="requestExit({ kind: 'edit' })"
             />
-            <ConversationUpdateHistoryList :records="history" />
-            <div
-              v-if="historyNextCursor !== undefined"
-              class="updates-workspace__history-more"
-            >
-              <ZKButton
-                button-type="standardButton"
-                outline
-                color="primary"
-                :label="t('loadMore')"
-                :loading="isLoadingMoreHistory"
-                :disable="isLoadingMoreHistory"
-                @click="loadMoreHistory"
-              />
-            </div>
-          </template>
-        </q-tab-panel>
-      </q-tab-panels>
+            <PrimeButton
+              outlined
+              severity="danger"
+              :label="tReview('cancelUpdate')"
+              :disabled="
+                reviewFlow.busy.value ||
+                review.test.kind === 'delivery-accepted'
+              "
+              @click="requestExit({ kind: 'clear' })"
+            />
+            <PrimeButton
+              outlined
+              severity="primary"
+              icon="pi pi-envelope"
+              :label="testButtonLabel"
+              :loading="testPending && !reviewFlow.testStatusFailed.value"
+              :disabled="
+                testPending ||
+                reviewFlow.busy.value ||
+                review.test.kind === 'invalid' ||
+                review.test.kind === 'send-unknown' ||
+                review.test.kind === 'delivery-accepted'
+              "
+              @click="requestTest"
+            />
+            <PrimeButton
+              severity="primary"
+              icon="pi pi-send"
+              :label="
+                review.test.kind === 'send-unknown'
+                  ? tReview('retrySendRequest')
+                  : t('sendUpdate')
+              "
+              :loading="review.test.kind === 'sending'"
+              :disabled="
+                (review.test.kind !== 'send-unknown' &&
+                  (review.test.kind !== 'accepted' || !contentConfirmed)) ||
+                reviewFlow.busy.value
+              "
+              @click="requestSend"
+            />
+          </div>
+          <PageLoadingSpinner
+            v-if="review.kind === 'cancelling' || review.kind === 'reconciling'"
+          />
+        </template>
+        <template v-else>
+          <ZKInfoBanner
+            v-if="audienceEstimateError"
+            :message="audienceEstimateError"
+            :action-label="t('retry')"
+            variant="warning"
+            @action="loadAudienceEstimate"
+          />
+          <ErrorRetryBlock
+            v-if="reviewFlow.error.value === 'prepareError'"
+            :title="tReview('prepareError')"
+            :retry-label="t('retry')"
+            @retry="prepareReview"
+          />
+          <ConversationUpdateComposerForm
+            v-model:selected-scope-id="selectedScopeId"
+            v-model:selected-conversation-ids="selectedConversationIds"
+            v-model:subject="subject"
+            v-model:body-html="bodyHtml"
+            v-model:body-plain-text="bodyPlainText"
+            :scopes="scopes"
+            :updates-disabled-conversation-ids="updatesDisabledConversationIds"
+            :prepare-pending="reviewFlow.state.value.kind === 'preparing'"
+            :audience-estimate-state="audienceEstimateState"
+            :test-destination-email="testDestinationEmail"
+            @review="prepareReview"
+          />
+        </template>
+      </template>
+      <template v-else>
+        <PageLoadingSpinner v-if="isLoadingHistory && history.length === 0" />
+        <ErrorRetryBlock
+          v-else-if="historyError && history.length === 0"
+          :title="historyError"
+          :retry-label="t('tryAgain')"
+          @retry="loadHistory"
+        />
+        <template v-else>
+          <ZKInfoBanner
+            v-if="historyError"
+            :message="historyError"
+            variant="warning"
+          />
+          <ConversationUpdateHistoryList
+            :records="history"
+            :language="historyLanguage"
+          />
+          <PrimeButton
+            v-if="historyNextCursor !== undefined"
+            outlined
+            severity="primary"
+            :label="t('loadMore')"
+            :loading="isLoadingMoreHistory"
+            :disabled="isLoadingMoreHistory"
+            @click="loadMoreHistory"
+          />
+        </template>
+      </template>
     </template>
   </section>
 
   <ZKConfirmDialog
+    v-model="showLeaveDialog"
+    persistent
+    :title="tReview('leaveTitle')"
+    :actions="{
+      cancel: { label: tReview('stay'), appearance: 'secondary-outlined' },
+      confirm: { label: tReview('leave'), appearance: 'primary' },
+    }"
+    @cancel="stayInReview"
+    @confirm="confirmLeave"
+  >
+    <p>
+      {{
+        tReview(
+          review?.test.kind === "send-unknown"
+            ? "leaveSendUnknown"
+            : review?.testRequested
+              ? "leaveTestWarning"
+              : "leaveWarning"
+        )
+      }}
+    </p>
+    <p v-if="pendingExit?.kind === 'clear'">{{ tReview("cancelWarning") }}</p>
+    <ErrorRetryBlock
+      v-if="reviewFlow.error.value === 'cancelError'"
+      :title="tReview('cancelError')"
+      :retry-label="t('retry')"
+      @retry="confirmLeave"
+    />
+  </ZKConfirmDialog>
+  <ZKConfirmDialog
+    v-model="showTestDialog"
+    persistent
+    :title="tComposer('testDialogTitle')"
+    :actions="{
+      cancel: { label: t('cancel'), appearance: 'secondary-outlined' },
+      confirm: { label: tComposer('sendTest'), appearance: 'primary' },
+    }"
+    @confirm="reviewFlow.sendTest"
+  >
+    <p>
+      {{
+        tComposer("testEmailNotice", {
+          email: review?.snapshot.testDestinationEmail ?? "",
+        })
+      }}
+    </p>
+  </ZKConfirmDialog>
+  <ZKConfirmDialog
     v-model="showSendDialog"
+    persistent
     :title="t('sendDialogTitle')"
     :actions="{
       cancel: { label: t('cancel'), appearance: 'secondary-outlined' },
@@ -158,14 +292,11 @@
     }"
     @confirm="sendUpdate"
   >
-    <div class="updates-workspace__send-summary">
-      <strong>{{
-        t("audienceSummary", { count: formattedAudienceEstimate })
-      }}</strong>
-      <p>{{ t("sendWarning") }}</p>
-    </div>
+    <strong>{{
+      t("audienceSummary", { count: formattedAudienceEstimate })
+    }}</strong>
+    <p>{{ t("sendWarning") }}</p>
   </ZKConfirmDialog>
-
   <ZKConfirmDialog
     v-model="showEmailVerificationDialog"
     :title="t('verifyDialogTitle')"
@@ -180,79 +311,88 @@
 </template>
 
 <script setup lang="ts">
-import { useQuasar } from "quasar";
-import ConversationUpdateComposerForm from "src/components/conversationUpdates/ConversationUpdateComposerForm.vue";
-import ConversationUpdateEmailPreview from "src/components/conversationUpdates/ConversationUpdateEmailPreview.vue";
-import ConversationUpdateHistoryList from "src/components/conversationUpdates/ConversationUpdateHistoryList.vue";
-import {
-  createConversationEmailUpdateSelection,
-  createTestedDraftKey,
-  getInitialConversationIds,
-  getSelectedConversations,
-  mapConversationEmailUpdateHistoryRecord,
-  mapConversationEmailUpdateScopes,
-} from "src/components/conversationUpdates/conversationUpdateLogic";
-import {
-  CONVERSATION_UPDATE_NO_PROJECT_SCOPE_ID,
-  type ConversationUpdateAudienceEstimateState,
-  type ConversationUpdateHistoryRecord,
-  type ConversationUpdateScopeSummary,
-} from "src/components/conversationUpdates/conversationUpdateTypes";
+import PrimeButton from "primevue/button";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
+import ZKCheckbox from "src/components/ui-library/ZKCheckbox.vue";
 import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
 import ZKInfoBanner from "src/components/ui-library/ZKInfoBanner.vue";
-import ZKLiveRegion from "src/components/ui-library/ZKLiveRegion.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type {
-  ConversationEmailUpdateHistoryRecord,
-  ConversationEmailUpdateScope,
-  ConversationEmailUpdateSendResponse,
-  ConversationEmailUpdateSendTestResponse,
-  ConversationEmailUpdateWorkspaceRequest,
+import { parseSupportedDisplayLanguageOrUndefined } from "src/shared/languages";
+import {
+  type ConversationEmailUpdateScope,
+  type ConversationEmailUpdateWorkspaceRequest,
+  Dto,
 } from "src/shared/types/dto";
+import { useConversationUpdateComposerStore } from "src/stores/conversationUpdateComposer";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
 import { useBackendConversationEmailUpdatesApi } from "src/utils/api/conversationUpdates/conversationEmailUpdates";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, onBeforeUnmount, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import {
+  onBeforeRouteLeave,
+  onBeforeRouteUpdate,
+  useRoute,
+  useRouter,
+} from "vue-router";
 
+import { conversationUpdateComposerFormTranslations } from "./ConversationUpdateComposerForm.i18n";
+import ConversationUpdateComposerForm from "./ConversationUpdateComposerForm.vue";
+import ConversationUpdateEmailPreview from "./ConversationUpdateEmailPreview.vue";
+import ConversationUpdateHistoryList from "./ConversationUpdateHistoryList.vue";
+import {
+  createConversationEmailUpdateSelection,
+  getInitialConversationIds,
+  mapConversationEmailUpdateHistoryRecord,
+  mapConversationEmailUpdateScopes,
+} from "./conversationUpdateLogic";
+import { conversationUpdateReviewTranslations } from "./ConversationUpdateReview.i18n";
 import {
   type ConversationUpdatesWorkspaceTranslations,
   conversationUpdatesWorkspaceTranslations,
 } from "./ConversationUpdatesWorkspace.i18n";
+import type {
+  ConversationUpdateAudienceEstimateState,
+  ConversationUpdateHistoryRecord,
+} from "./conversationUpdateTypes";
+import {
+  type ReviewEvent,
+  type ReviewFailure,
+  useConversationUpdateReview,
+} from "./useConversationUpdateReview";
 
 type WorkspaceTab = "compose" | "history";
-type TestSendFailure = Extract<
-  ConversationEmailUpdateSendTestResponse,
-  { success: false }
->["error"];
-type SendFailure = Extract<
-  ConversationEmailUpdateSendResponse,
-  { success: false }
->;
-
+type ExitIntent =
+  | { kind: "edit" | "clear" }
+  | { kind: "tab"; tab: WorkspaceTab }
+  | { kind: "route"; resolve: (allowed: boolean) => void };
 const props = defineProps<{
   initialTab: WorkspaceTab;
   context: ConversationEmailUpdateWorkspaceRequest["context"];
 }>();
-
-const AUDIENCE_ESTIMATE_DEBOUNCE_MS = 250;
-const $q = useQuasar();
-const { t, locale } =
-  useComponentI18n<ConversationUpdatesWorkspaceTranslations>(
-    conversationUpdatesWorkspaceTranslations
-  );
+const { t, locale } = useComponentI18n(
+  conversationUpdatesWorkspaceTranslations
+);
+const { t: tReview } = useComponentI18n(conversationUpdateReviewTranslations);
+const { t: tComposer } = useComponentI18n(
+  conversationUpdateComposerFormTranslations
+);
 const emailUpdatesApi = useBackendConversationEmailUpdatesApi();
 const notify = useNotify();
 const route = useRoute();
 const router = useRouter();
 const loginIntentionStore = useLoginIntentionStore();
 const flowStore = onboardingFlowStore();
+const composerStore = useConversationUpdateComposerStore().forCurrentAccount();
+let composerContext:
+  | ConversationEmailUpdateWorkspaceRequest["context"]
+  | undefined;
+const historyLanguage = computed(
+  () => parseSupportedDisplayLanguageOrUndefined(locale.value) ?? "en"
+);
 const apiScopes = ref<readonly ConversationEmailUpdateScope[]>([]);
-const displayScopes = computed(() =>
+const scopes = computed(() =>
   mapConversationEmailUpdateScopes(apiScopes.value)
 );
 const selectedScopeId = ref("");
@@ -262,80 +402,80 @@ const subject = ref("");
 const bodyHtml = ref("");
 const bodyPlainText = ref("");
 const contentConfirmed = ref(false);
-const testedDraftKey = ref<string | undefined>(undefined);
-const successfulUpdateId = ref<string | undefined>(undefined);
-const successfulTestAttemptId = ref<string | undefined>(undefined);
 const showSendDialog = ref(false);
+const showTestDialog = ref(false);
+const showLeaveDialog = ref(false);
+const pendingExit = ref<ExitIntent>();
 const showEmailVerificationDialog = ref(false);
 const isLoadingWorkspace = ref(true);
-const workspaceError = ref<string | undefined>(undefined);
+const workspaceError = ref<string>();
 const isLoadingHistory = ref(false);
 const isLoadingMoreHistory = ref(false);
-const historyError = ref<string | undefined>(undefined);
+const historyError = ref<string>();
 const history = ref<readonly ConversationUpdateHistoryRecord[]>([]);
-const historyNextCursor = ref<string | undefined>(undefined);
+const historyNextCursor = ref<string>();
 const hasLoadedHistory = ref(false);
-const resolvedContext = ref<
-  ConversationEmailUpdateWorkspaceRequest["context"] | undefined
->(undefined);
-const audienceEstimate = ref(0);
-const audienceEstimateAvailable = ref(false);
-const audienceEstimateError = ref<string | undefined>(undefined);
-const testDestinationEmail = ref<string | undefined>(undefined);
-const relatedConversationOwnerCount = ref(0);
+const resolvedContext =
+  ref<ConversationEmailUpdateWorkspaceRequest["context"]>();
+const audienceEstimateState = ref<ConversationUpdateAudienceEstimateState>({
+  kind: "loading",
+});
+const audienceEstimateError = ref<string>();
+const testDestinationEmail = ref<string>();
+let generation = 0;
 let audienceRequestId = 0;
-let audienceEstimateTimer: number | undefined;
-let audienceAbortController: AbortController | undefined;
+let audienceTimer: number | undefined;
+let audienceAbort: AbortController | undefined;
 let historyRequestId = 0;
-let workspaceGeneration = 0;
-let activeTestAttemptId: string | undefined;
-const activeTestOperationId = ref<number | undefined>(undefined);
-const isSendingUpdate = ref(false);
-let nextTestOperationId = 0;
-let isUnmounted = false;
-
-const scopes = computed<readonly ConversationUpdateScopeSummary[]>(() =>
-  displayScopes.value.map((scope) =>
-    scope.kind === "no-project"
-      ? { ...scope, contactEmail: currentNoProjectContactEmail.value }
-      : scope
+const reviewFlow = useConversationUpdateReview({
+  notify: notifyReviewEvent,
+  onSent(record) {
+    stayInReview();
+    showLeaveDialog.value = false;
+    showSendDialog.value = false;
+    showTestDialog.value = false;
+    history.value = [
+      mapConversationEmailUpdateHistoryRecord(record),
+      ...history.value.filter((item) => item.id !== record.updateId),
+    ];
+    hasLoadedHistory.value = true;
+    clearComposer();
+    saveComposer();
+    setActiveTab("history");
+  },
+});
+const review = reviewFlow.review;
+const testPending = computed(
+  () =>
+    review.value?.test.kind === "requesting" ||
+    review.value?.test.kind === "polling"
+);
+const testButtonLabel = computed(() =>
+  review.value?.test.kind === "retry"
+    ? tReview("retryTestRequest")
+    : tComposer(
+        testPending.value
+          ? "sendingTest"
+          : review.value?.testRequested
+            ? "sendAnotherTest"
+            : "sendTest"
+      )
+);
+const formattedAudienceEstimate = computed(() =>
+  new Intl.NumberFormat(locale.value).format(
+    review.value?.snapshot.estimatedEligibleRecipientCount ?? 0
   )
 );
-
 const currentScope = computed(() =>
   scopes.value.find((scope) => scope.id === selectedScopeId.value)
 );
-const selectedConversations = computed(() =>
-  getSelectedConversations({
-    scope: currentScope.value,
-    selectedConversationIds: selectedConversationIds.value,
-  })
-);
-const currentSelection = computed(() => {
-  const scope = currentScope.value;
-  return scope === undefined
+const currentSelection = computed(() =>
+  currentScope.value === undefined
     ? undefined
     : createConversationEmailUpdateSelection({
-        scope,
+        scope: currentScope.value,
         selectedConversationIds: selectedConversationIds.value,
-      });
-});
-const currentNoProjectContactEmail = computed(() => {
-  const selectedConversationId = selectedConversationIds.value.at(0);
-  const noProjectScope = apiScopes.value.find(
-    (scope) => scope.kind === "no_project"
-  );
-  return (
-    noProjectScope?.conversations.find(
-      (conversation) =>
-        conversation.conversationSlugId === selectedConversationId
-    )?.participantContactEmail ?? ""
-  );
-});
-const currentContactEmail = computed(() =>
-  currentScope.value?.kind === "no-project"
-    ? currentNoProjectContactEmail.value
-    : (currentScope.value?.contactEmail ?? "")
+      })
 );
 const updatesDisabledConversationIds = computed(() =>
   apiScopes.value.flatMap((scope) =>
@@ -344,308 +484,311 @@ const updatesDisabledConversationIds = computed(() =>
       .map((conversation) => conversation.conversationSlugId)
   )
 );
-const currentDraftKey = computed(() =>
-  createTestedDraftKey({
-    scopeId: selectedScopeId.value,
-    contactEmail: currentContactEmail.value,
-    selectedConversationIds: selectedConversationIds.value,
-    subject: subject.value,
-    bodyHtml: bodyHtml.value,
-  })
-);
-const hasSuccessfulTest = computed(
-  () => testedDraftKey.value === currentDraftKey.value
-);
-const formattedAudienceEstimate = computed(() =>
-  new Intl.NumberFormat(locale.value).format(audienceEstimate.value)
-);
-const audienceEstimateState = computed<ConversationUpdateAudienceEstimateState>(
-  () => {
-    if (audienceEstimateError.value !== undefined) {
-      return { kind: "error" };
-    }
-    if (!audienceEstimateAvailable.value) {
-      return { kind: "loading" };
-    }
-    return {
-      kind: "ready",
-      eligibleParticipantCount: audienceEstimate.value,
-      ownerCopyCount: relatedConversationOwnerCount.value,
-    };
-  }
-);
-const contextKey = computed(() => JSON.stringify(props.context));
 
 watch(selectedScopeId, () => {
-  const conversationIds = new Set(
-    currentScope.value?.conversations.map((conversation) => conversation.id) ??
-      []
+  const ids = new Set(
+    currentScope.value?.conversations.map((conversation) => conversation.id)
   );
-  if (selectedConversationIds.value.every((id) => conversationIds.has(id))) {
-    return;
-  }
-  selectedConversationIds.value = [];
+  if (!selectedConversationIds.value.every((id) => ids.has(id)))
+    selectedConversationIds.value = [];
 });
-
+watch([selectedScopeId, selectedConversationIds], () => {
+  cancelAudienceEstimate();
+  audienceRequestId += 1;
+  audienceEstimateState.value = { kind: "loading" };
+  audienceEstimateError.value = undefined;
+  audienceTimer = window.setTimeout(() => {
+    void loadAudienceEstimate();
+  }, 250);
+});
 watch(
-  currentDraftKey,
-  () => {
-    clearSuccessfulTestAuthorization();
-    activeTestAttemptId = undefined;
-    activeTestOperationId.value = undefined;
-  },
-  { flush: "sync" }
-);
-
-watch(
-  () => JSON.stringify([selectedScopeId.value, selectedConversationIds.value]),
-  scheduleAudienceEstimate
-);
-
-watch(
-  contextKey,
-  () => {
-    resetScopeState();
+  () => JSON.stringify(props.context),
+  async () => {
+    saveComposer();
+    const token = ++generation;
+    historyRequestId += 1;
+    audienceRequestId += 1;
+    cancelAudienceEstimate();
+    if (!(await reviewFlow.leave()) || token !== generation) return;
+    clearComposer();
+    composerContext = undefined;
+    apiScopes.value = [];
+    resolvedContext.value = undefined;
+    history.value = [];
+    historyNextCursor.value = undefined;
+    hasLoadedHistory.value = false;
+    isLoadingHistory.value = false;
+    isLoadingMoreHistory.value = false;
+    activeTab.value = props.initialTab;
     void loadWorkspace();
   },
   { immediate: true, flush: "sync" }
 );
-
 watch(
   () => props.initialTab,
-  (nextTab, previousTab) => {
-    activeTab.value = nextTab;
-    if (
-      nextTab === "history" &&
-      previousTab !== undefined &&
-      resolvedContext.value !== undefined &&
-      !hasLoadedHistory.value &&
-      !isLoadingHistory.value
-    ) {
-      void loadHistory();
-    }
+  (tab) => {
+    if (tab !== activeTab.value) updateActiveTab(tab);
   }
 );
 
-watch(activeTab, (tab) => {
-  void router.replace({
-    query: {
-      ...route.query,
-      tab,
-    },
+async function prepareReview(): Promise<void> {
+  if (
+    audienceEstimateState.value.kind !== "ready" ||
+    audienceEstimateState.value.eligibleParticipantCount === 0
+  )
+    return;
+  const request = Dto.conversationEmailUpdatePrepareDraftRequest.safeParse({
+    selection: currentSelection.value,
+    subject: subject.value,
+    bodyHtml: bodyHtml.value,
   });
-});
+  if (!request.success) {
+    notify.showNotifyMessage(t("contentInvalid"));
+    return;
+  }
+  contentConfirmed.value = false;
+  await reviewFlow.prepare(request.data);
+}
 
-function resetScopeState(): void {
-  workspaceGeneration += 1;
-  audienceRequestId += 1;
-  cancelAudienceEstimate();
-  historyRequestId += 1;
-  activeTestAttemptId = undefined;
-  activeTestOperationId.value = undefined;
-  isSendingUpdate.value = false;
-  apiScopes.value = [];
+function requestExit(intent: ExitIntent): void {
+  if (reviewFlow.busy.value) {
+    if (intent.kind === "route") intent.resolve(false);
+    return;
+  }
+  if (review.value?.test.kind === "delivery-accepted") {
+    if (intent.kind === "route") intent.resolve(false);
+    void reviewFlow.reconcile();
+    return;
+  }
+  if (pendingExit.value !== undefined) {
+    if (intent.kind === "route") intent.resolve(false);
+    return;
+  }
+  pendingExit.value = intent;
+  showLeaveDialog.value = true;
+}
+
+function stayInReview(): void {
+  if (pendingExit.value?.kind === "route") pendingExit.value.resolve(false);
+  pendingExit.value = undefined;
+  reviewFlow.dismissExitError();
+}
+
+async function confirmLeave(): Promise<void> {
+  const intent = pendingExit.value;
+  if (intent === undefined || reviewFlow.busy.value) return;
+  showLeaveDialog.value = false;
+  const left = await reviewFlow.leave();
+  if (pendingExit.value !== intent) return;
+  if (!left) {
+    if (reviewFlow.error.value === "reconcileError") stayInReview();
+    else showLeaveDialog.value = true;
+    return;
+  }
+  showLeaveDialog.value = false;
+  pendingExit.value = undefined;
+  contentConfirmed.value = false;
+  showTestDialog.value = false;
+  showSendDialog.value = false;
+  if (intent.kind === "clear") {
+    clearComposer();
+    saveComposer();
+  }
+  if (intent.kind === "tab") setActiveTab(intent.tab);
+  if (intent.kind === "route") intent.resolve(true);
+}
+
+async function guardNavigation(): Promise<boolean> {
+  const allowed =
+    reviewFlow.state.value.kind === "preparing"
+      ? await reviewFlow.leave()
+      : review.value === undefined
+        ? true
+        : await new Promise<boolean>((resolve) =>
+            requestExit({ kind: "route", resolve })
+          );
+  if (allowed) saveComposer();
+  return allowed;
+}
+onBeforeRouteLeave(guardNavigation);
+onBeforeRouteUpdate(guardNavigation);
+
+function beforeUnload(event: BeforeUnloadEvent): void {
+  if (reviewFlow.state.value.kind !== "composing") {
+    event.preventDefault();
+    event.returnValue = "";
+  }
+}
+window.addEventListener("beforeunload", beforeUnload);
+
+function updateActiveTab(value: string | number): void {
+  if ((value !== "compose" && value !== "history") || value === activeTab.value)
+    return;
+  if (review.value !== undefined) requestExit({ kind: "tab", tab: value });
+  else if (!reviewFlow.busy.value) setActiveTab(value);
+}
+function setActiveTab(tab: WorkspaceTab): void {
+  activeTab.value = tab;
+  void router.replace({ query: { ...route.query, tab } });
+  if (tab === "history" && !hasLoadedHistory.value && !isLoadingHistory.value)
+    void loadHistory();
+}
+async function sendUpdate(): Promise<void> {
+  if (
+    (contentConfirmed.value || review.value?.test.kind === "send-unknown") &&
+    pendingExit.value === undefined
+  )
+    await reviewFlow.send();
+}
+function requestTest(): void {
+  if (review.value?.test.kind === "retry") void reviewFlow.sendTest();
+  else showTestDialog.value = true;
+}
+function requestSend(): void {
+  if (review.value?.test.kind === "send-unknown") void sendUpdate();
+  else showSendDialog.value = true;
+}
+function clearComposer(): void {
   selectedScopeId.value = "";
   selectedConversationIds.value = [];
-  activeTab.value = props.initialTab;
   subject.value = "";
   bodyHtml.value = "";
   bodyPlainText.value = "";
   contentConfirmed.value = false;
-  clearSuccessfulTestAuthorization();
-  showSendDialog.value = false;
-  showEmailVerificationDialog.value = false;
-  isLoadingWorkspace.value = true;
-  workspaceError.value = undefined;
-  isLoadingHistory.value = false;
-  isLoadingMoreHistory.value = false;
-  historyError.value = undefined;
-  history.value = [];
-  historyNextCursor.value = undefined;
-  hasLoadedHistory.value = false;
-  resolvedContext.value = undefined;
-  audienceEstimate.value = 0;
-  audienceEstimateAvailable.value = false;
-  audienceEstimateError.value = undefined;
-  testDestinationEmail.value = undefined;
-  relatedConversationOwnerCount.value = 0;
+}
+function saveComposer(): void {
+  if (composerContext === undefined) return;
+  composerStore.save({
+    context: composerContext,
+    draft: {
+      selectedScopeId: selectedScopeId.value,
+      selectedConversationIds: [...selectedConversationIds.value],
+      subject: subject.value,
+      bodyHtml: bodyHtml.value,
+      bodyPlainText: bodyPlainText.value,
+    },
+  });
 }
 
 async function loadWorkspace(): Promise<void> {
-  const generation = workspaceGeneration;
-  const context = copyContext(props.context);
+  const token = generation;
   isLoadingWorkspace.value = true;
   workspaceError.value = undefined;
   try {
-    const response = await emailUpdatesApi.getWorkspace({ context });
-    if (generation !== workspaceGeneration) {
-      return;
-    }
+    const response = await emailUpdatesApi.getWorkspace({
+      context: props.context,
+    });
+    if (token !== generation) return;
     if (!response.success) {
-      workspaceError.value = getWorkspaceError(response.reason);
+      workspaceError.value = t(
+        response.reason === "context_not_found"
+          ? "contextNotFound"
+          : "workspaceUnavailable"
+      );
       return;
     }
     apiScopes.value = response.scopes;
     resolvedContext.value = response.resolvedContext;
     testDestinationEmail.value = response.testDestinationEmail;
-    const initialSelection = response.initialSelection;
-    if (initialSelection?.kind === "project") {
-      selectedScopeId.value = initialSelection.projectSlug;
-      selectedConversationIds.value = initialSelection.conversationSlugIds;
-    } else if (initialSelection?.kind === "no_project") {
-      selectedScopeId.value = CONVERSATION_UPDATE_NO_PROJECT_SCOPE_ID;
-      selectedConversationIds.value = [initialSelection.conversationSlugId];
+    composerContext = props.context;
+    const saved = composerStore.get(composerContext);
+    const initial = response.initialSelection;
+    if (saved !== undefined) {
+      selectedScopeId.value = saved.selectedScopeId;
+      selectedConversationIds.value = saved.selectedConversationIds;
+      subject.value = saved.subject;
+      bodyHtml.value = saved.bodyHtml;
+      bodyPlainText.value = saved.bodyPlainText;
+    } else if (initial?.kind === "project") {
+      selectedScopeId.value = initial.projectSlug;
+      selectedConversationIds.value = initial.conversationSlugIds;
+    } else if (initial?.kind === "no_project") {
+      selectedScopeId.value =
+        scopes.value.find((scope) =>
+          scope.conversations.some(
+            (conversation) => conversation.id === initial.conversationSlugId
+          )
+        )?.id ?? "";
+      selectedConversationIds.value = [initial.conversationSlugId];
     } else if (response.resolvedContext.kind === "project") {
       selectedScopeId.value = response.resolvedContext.projectSlug;
       selectedConversationIds.value = [];
     } else {
-      const firstScope = displayScopes.value.at(0);
-      selectedScopeId.value = firstScope?.id ?? "";
-      selectedConversationIds.value = getInitialConversationIds(firstScope);
+      const first = scopes.value.at(0);
+      selectedScopeId.value = first?.id ?? "";
+      selectedConversationIds.value = getInitialConversationIds(first);
     }
-    if (activeTab.value === "history") {
-      void loadHistory();
-    }
-  } catch (error) {
-    if (generation !== workspaceGeneration) {
-      return;
-    }
-    console.error("Failed to load Email Updates workspace", error);
+    if (activeTab.value === "history") void loadHistory();
+  } catch (cause) {
+    if (token !== generation) return;
+    console.error("Failed to load Email Updates workspace", cause);
     workspaceError.value = t("workspaceUnavailable");
   } finally {
-    if (generation === workspaceGeneration) {
-      isLoadingWorkspace.value = false;
-    }
+    if (token === generation) isLoadingWorkspace.value = false;
   }
-}
-
-async function loadAudienceEstimate(): Promise<void> {
-  cancelAudienceEstimate();
-  audienceEstimateAvailable.value = false;
-  audienceEstimateError.value = undefined;
-  if (testDestinationEmail.value === undefined) {
-    audienceEstimate.value = 0;
-    relatedConversationOwnerCount.value = 0;
-    return;
-  }
-  const selection = currentSelection.value;
-  if (selection === undefined) {
-    audienceEstimate.value = 0;
-    relatedConversationOwnerCount.value = 0;
-    return;
-  }
-
-  const requestId = ++audienceRequestId;
-  const generation = workspaceGeneration;
-  const abortController = new AbortController();
-  audienceAbortController = abortController;
-  try {
-    const response = await emailUpdatesApi.estimateAudience({
-      request: { selection },
-      signal: abortController.signal,
-    });
-    if (requestId !== audienceRequestId || generation !== workspaceGeneration) {
-      return;
-    }
-    if (!response.success) {
-      audienceEstimate.value = 0;
-      relatedConversationOwnerCount.value = 0;
-      audienceEstimateError.value = getAudienceEstimateError(response.reason);
-      return;
-    }
-    audienceEstimate.value = response.estimatedEligibleRecipientCount;
-    relatedConversationOwnerCount.value = response.requiredOwnerCopyCount;
-    audienceEstimateAvailable.value = true;
-  } catch (error) {
-    if (abortController.signal.aborted) {
-      return;
-    }
-    console.error("Failed to estimate Email Update audience", error);
-    if (requestId === audienceRequestId && generation === workspaceGeneration) {
-      audienceEstimate.value = 0;
-      relatedConversationOwnerCount.value = 0;
-      audienceEstimateError.value = t("audienceEstimateUnavailable");
-    }
-  } finally {
-    if (audienceAbortController === abortController) {
-      audienceAbortController = undefined;
-    }
-  }
-}
-
-function scheduleAudienceEstimate(): void {
-  cancelAudienceEstimate();
-  audienceRequestId += 1;
-  audienceEstimateAvailable.value = false;
-  audienceEstimateError.value = undefined;
-  audienceEstimateTimer = window.setTimeout(() => {
-    audienceEstimateTimer = undefined;
-    void loadAudienceEstimate();
-  }, AUDIENCE_ESTIMATE_DEBOUNCE_MS);
 }
 
 function cancelAudienceEstimate(): void {
-  if (audienceEstimateTimer !== undefined) {
-    window.clearTimeout(audienceEstimateTimer);
-    audienceEstimateTimer = undefined;
+  window.clearTimeout(audienceTimer);
+  audienceTimer = undefined;
+  audienceAbort?.abort();
+  audienceAbort = undefined;
+}
+async function loadAudienceEstimate(): Promise<void> {
+  cancelAudienceEstimate();
+  audienceEstimateState.value = { kind: "loading" };
+  audienceEstimateError.value = undefined;
+  const selection = currentSelection.value;
+  if (selection === undefined || testDestinationEmail.value === undefined)
+    return;
+  const requestId = ++audienceRequestId;
+  const token = generation;
+  const controller = new AbortController();
+  audienceAbort = controller;
+  try {
+    const response = await emailUpdatesApi.estimateAudience({
+      request: { selection },
+      signal: controller.signal,
+    });
+    if (requestId !== audienceRequestId || token !== generation) return;
+    if (!response.success) {
+      audienceEstimateState.value = { kind: "error" };
+      audienceEstimateError.value = t("audienceEstimateUnavailable");
+      notifyReviewEvent({ kind: "dto", error: response });
+      return;
+    }
+    audienceEstimateState.value = {
+      kind: "ready",
+      eligibleParticipantCount: response.estimatedEligibleRecipientCount,
+      ownerCopyCount: response.requiredOwnerCopyCount,
+    };
+  } catch (cause) {
+    if (
+      controller.signal.aborted ||
+      requestId !== audienceRequestId ||
+      token !== generation
+    )
+      return;
+    console.error("Failed to estimate Email Update audience", cause);
+    audienceEstimateState.value = { kind: "error" };
+    audienceEstimateError.value = t("audienceEstimateUnavailable");
   }
-  audienceAbortController?.abort();
-  audienceAbortController = undefined;
 }
 
 async function loadHistory(): Promise<void> {
-  const context = resolvedContext.value;
-  if (context === undefined) {
-    return;
-  }
-  const requestId = ++historyRequestId;
-  const generation = workspaceGeneration;
-  isLoadingHistory.value = true;
-  isLoadingMoreHistory.value = false;
-  historyError.value = undefined;
-  try {
-    const response = await emailUpdatesApi.listHistory({ context, limit: 20 });
-    if (!isCurrentHistoryRequest({ requestId, generation })) {
-      return;
-    }
-    if (!response.success) {
-      historyError.value = t("historyUnavailable");
-      return;
-    }
-    const records = loadHistoryRecords(response.items);
-    if (!isCurrentHistoryRequest({ requestId, generation })) {
-      return;
-    }
-    history.value = records;
-    historyNextCursor.value = response.nextCursor;
-    hasLoadedHistory.value = true;
-  } catch (error) {
-    if (!isCurrentHistoryRequest({ requestId, generation })) {
-      return;
-    }
-    console.error("Failed to load Email Update history", error);
-    historyError.value = t("historyUnavailable");
-  } finally {
-    if (isCurrentHistoryRequest({ requestId, generation })) {
-      isLoadingHistory.value = false;
-    }
-  }
+  await fetchHistory(undefined);
 }
-
 async function loadMoreHistory(): Promise<void> {
+  if (historyNextCursor.value !== undefined && !isLoadingMoreHistory.value)
+    await fetchHistory(historyNextCursor.value);
+}
+async function fetchHistory(cursor: string | undefined): Promise<void> {
   const context = resolvedContext.value;
-  const cursor = historyNextCursor.value;
-  if (
-    context === undefined ||
-    cursor === undefined ||
-    isLoadingMoreHistory.value
-  ) {
-    return;
-  }
-
-  const requestId = historyRequestId;
-  const generation = workspaceGeneration;
-  isLoadingMoreHistory.value = true;
+  if (context === undefined) return;
+  const token = generation;
+  const requestId = ++historyRequestId;
+  isLoadingHistory.value = cursor === undefined;
+  isLoadingMoreHistory.value = cursor !== undefined;
   historyError.value = undefined;
   try {
     const response = await emailUpdatesApi.listHistory({
@@ -653,251 +796,32 @@ async function loadMoreHistory(): Promise<void> {
       cursor,
       limit: 20,
     });
-    if (!isCurrentHistoryRequest({ requestId, generation })) {
-      return;
-    }
+    if (token !== generation || requestId !== historyRequestId) return;
     if (!response.success) {
-      historyError.value = t("moreHistoryUnavailable");
+      historyError.value = t("historyUnavailable");
       return;
     }
-    const records = loadHistoryRecords(response.items);
-    if (!isCurrentHistoryRequest({ requestId, generation })) {
-      return;
-    }
+    const records = response.items.map(mapConversationEmailUpdateHistoryRecord);
     const existingIds = new Set(history.value.map((record) => record.id));
-    history.value = [
-      ...history.value,
-      ...records.filter((record) => !existingIds.has(record.id)),
-    ];
+    history.value =
+      cursor === undefined
+        ? records
+        : [
+            ...history.value,
+            ...records.filter((record) => !existingIds.has(record.id)),
+          ];
     historyNextCursor.value = response.nextCursor;
-  } catch (error) {
-    if (!isCurrentHistoryRequest({ requestId, generation })) {
-      return;
-    }
-    console.error("Failed to load more Email Update history", error);
-    historyError.value = t("moreHistoryUnavailable");
-  } finally {
-    if (isCurrentHistoryRequest({ requestId, generation })) {
-      isLoadingMoreHistory.value = false;
-    }
-  }
-}
-
-function loadHistoryRecords(
-  items: readonly ConversationEmailUpdateHistoryRecord[]
-): readonly ConversationUpdateHistoryRecord[] {
-  return items.map((record) => mapConversationEmailUpdateHistoryRecord(record));
-}
-
-function isCurrentHistoryRequest({
-  requestId,
-  generation,
-}: {
-  requestId: number;
-  generation: number;
-}): boolean {
-  return requestId === historyRequestId && generation === workspaceGeneration;
-}
-
-async function sendTest(): Promise<void> {
-  const generation = workspaceGeneration;
-  const selection = currentSelection.value;
-  if (
-    selection === undefined ||
-    testDestinationEmail.value === undefined ||
-    !audienceEstimateAvailable.value ||
-    audienceEstimate.value === 0 ||
-    activeTestAttemptId !== undefined ||
-    activeTestOperationId.value !== undefined ||
-    isSendingUpdate.value
-  ) {
-    return;
-  }
-  const draftKey = currentDraftKey.value;
-  const operationId = ++nextTestOperationId;
-  activeTestOperationId.value = operationId;
-  try {
-    const response = await emailUpdatesApi.sendTest({
-      selection,
-      subject: subject.value,
-      bodyHtml: bodyHtml.value,
-    });
-    if (
-      generation !== workspaceGeneration ||
-      currentDraftKey.value !== draftKey ||
-      activeTestOperationId.value !== operationId
-    ) {
-      return;
-    }
-    if (!response.success) {
-      reconcileTestSendFailure(response.error);
-      notify.showNotifyMessage(getTestSendFailureMessage(response.error));
-      return;
-    }
-    activeTestAttemptId = response.testAttemptId;
-    await pollTestStatus({
-      updateId: response.updateId,
-      testAttemptId: response.testAttemptId,
-      draftKey,
-      generation,
-    });
-  } catch (error) {
-    if (
-      generation !== workspaceGeneration ||
-      currentDraftKey.value !== draftKey ||
-      activeTestOperationId.value !== operationId
-    ) {
-      return;
-    }
-    console.error("Failed to send Email Update test", error);
-    notify.showNotifyMessage(t("testQueueUnavailable"));
-    activeTestAttemptId = undefined;
-  } finally {
-    if (activeTestOperationId.value === operationId) {
-      activeTestOperationId.value = undefined;
-    }
-  }
-}
-
-async function pollTestStatus({
-  updateId,
-  testAttemptId,
-  draftKey,
-  generation,
-}: {
-  updateId: string;
-  testAttemptId: string;
-  draftKey: string;
-  generation: number;
-}): Promise<void> {
-  while (
-    !isUnmounted &&
-    generation === workspaceGeneration &&
-    activeTestAttemptId === testAttemptId
-  ) {
-    await waitForTestPoll();
-    if (
-      isUnmounted ||
-      generation !== workspaceGeneration ||
-      activeTestAttemptId !== testAttemptId
-    ) {
-      return;
-    }
-    try {
-      const response = await emailUpdatesApi.getTestStatus({ testAttemptId });
-      if (
-        activeTestAttemptId !== testAttemptId ||
-        generation !== workspaceGeneration ||
-        currentDraftKey.value !== draftKey
-      ) {
-        return;
-      }
-      if (!response.success) {
-        if (response.reason === "test_not_found") {
-          notify.showNotifyMessage(t("queuedTestNotFound"));
-          activeTestAttemptId = undefined;
-          return;
-        }
-        continue;
-      }
-      if (response.status.state === "provider_accepted") {
-        testedDraftKey.value = draftKey;
-        successfulUpdateId.value = updateId;
-        successfulTestAttemptId.value = testAttemptId;
-        activeTestAttemptId = undefined;
-        notify.showNotifyMessage(t("testAccepted"));
-        return;
-      }
-      if (response.status.state === "failed") {
-        notify.showNotifyMessage(
-          getTestDeliveryFailureMessage(response.status.reason)
-        );
-        activeTestAttemptId = undefined;
-        return;
-      }
-    } catch (error) {
-      if (
-        generation !== workspaceGeneration ||
-        currentDraftKey.value !== draftKey ||
-        activeTestAttemptId !== testAttemptId
-      ) {
-        return;
-      }
-      console.error("Failed to poll Email Update test status", error);
-    }
-  }
-}
-
-async function waitForTestPoll(): Promise<void> {
-  await new Promise<void>((resolve) => {
-    window.setTimeout(resolve, 1_500);
-  });
-}
-
-function updateActiveTab(value: string | number): void {
-  if (value === "compose" || value === "history") {
-    activeTab.value = value;
-    if (
-      value === "history" &&
-      resolvedContext.value !== undefined &&
-      !hasLoadedHistory.value &&
-      !isLoadingHistory.value
-    ) {
-      void loadHistory();
-    }
-  }
-}
-
-async function sendUpdate(): Promise<void> {
-  const generation = workspaceGeneration;
-  const updateId = successfulUpdateId.value;
-  const testAttemptId = successfulTestAttemptId.value;
-  if (
-    updateId === undefined ||
-    testAttemptId === undefined ||
-    !hasSuccessfulTest.value ||
-    !audienceEstimateAvailable.value ||
-    audienceEstimate.value === 0 ||
-    !contentConfirmed.value ||
-    isSendingUpdate.value
-  ) {
-    return;
-  }
-  isSendingUpdate.value = true;
-  try {
-    const response = await emailUpdatesApi.send({
-      updateId,
-      testAttemptId,
-      displayedParticipantEstimate: audienceEstimate.value,
-      contentPolicyAcknowledged: true,
-    });
-    if (generation !== workspaceGeneration) {
-      return;
-    }
-    if (!response.success) {
-      reconcileSendFailure(response);
-      notify.showNotifyMessage(getSendFailureMessage(response));
-      return;
-    }
-    history.value = [
-      mapConversationEmailUpdateHistoryRecord(response.record),
-      ...history.value.filter(
-        (record) => record.id !== response.record.updateId
-      ),
-    ];
     hasLoadedHistory.value = true;
-    contentConfirmed.value = false;
-    clearSuccessfulTestAuthorization();
-    activeTab.value = "history";
-  } catch (error) {
-    if (generation !== workspaceGeneration) {
-      return;
-    }
-    console.error("Failed to send Email Update", error);
-    notify.showNotifyMessage(t("updateSendUnavailable"));
+  } catch (cause) {
+    if (token !== generation || requestId !== historyRequestId) return;
+    console.error("Failed to load Email Update history", cause);
+    historyError.value = t(
+      cursor === undefined ? "historyUnavailable" : "moreHistoryUnavailable"
+    );
   } finally {
-    if (generation === workspaceGeneration) {
-      isSendingUpdate.value = false;
+    if (token === generation && requestId === historyRequestId) {
+      isLoadingHistory.value = false;
+      isLoadingMoreHistory.value = false;
     }
   }
 }
@@ -907,159 +831,119 @@ async function startEmailVerification(): Promise<void> {
   flowStore.onboardingMode = "LOGIN";
   await router.push({ name: "/verify/email/" });
 }
-
-function copyContext(
-  context: ConversationEmailUpdateWorkspaceRequest["context"]
-): ConversationEmailUpdateWorkspaceRequest["context"] {
-  if (context.kind === "project") {
-    return { kind: "project", projectSlug: context.projectSlug };
+function notifyReviewEvent(event: ReviewEvent): void {
+  if (event.kind === "test-accepted") {
+    notify.showNotifyMessage(t("testAccepted"));
+    return;
   }
-  if (context.kind === "conversation") {
-    return {
-      kind: "conversation",
-      conversationSlugId: context.conversationSlugId,
-    };
+  if (event.kind === "transport") {
+    const messages = {
+      prepare: "prepareError",
+      test: "testUnknown",
+      send: "sendUnknown",
+      cancel: "cancelError",
+      reconcile: "reconcileError",
+    } satisfies Record<
+      typeof event.operation,
+      keyof typeof conversationUpdateReviewTranslations.en
+    >;
+    notify.showNotifyMessage(tReview(messages[event.operation]));
+    return;
   }
-  return { kind: "global" };
-}
-
-function getWorkspaceError(
-  reason: "context_not_found" | "feature_not_available"
-): string {
-  return reason === "context_not_found"
-    ? t("contextNotFound")
-    : t("workspaceUnavailable");
-}
-
-function getAudienceEstimateError(
-  reason: "scope_not_found" | "conversation_not_in_scope" | "sending_disabled"
-): string {
-  switch (reason) {
-    case "scope_not_found":
-      return t("scopeUnavailable");
-    case "conversation_not_in_scope":
-      return t("conversationsUnavailable");
-    case "sending_disabled":
-      return t("sendingDisabled");
+  const failure = event.error;
+  const { reason } = failure;
+  if (reason === "no_verified_test_email")
+    testDestinationEmail.value = undefined;
+  if (
+    failure.reason === "review_rate_limited" ||
+    failure.reason === "test_rate_limited"
+  ) {
+    notify.showNotifyMessage(
+      tReview("rateLimited", {
+        date: failure.retryAt.toLocaleString(locale.value),
+      })
+    );
+    return;
   }
-}
-
-function clearSuccessfulTestAuthorization(): void {
-  testedDraftKey.value = undefined;
-  successfulUpdateId.value = undefined;
-  successfulTestAttemptId.value = undefined;
-}
-
-function reconcileTestSendFailure(error: TestSendFailure): void {
-  switch (error.reason) {
-    case "no_verified_test_email":
-      testDestinationEmail.value = undefined;
+  const messages = {
+    scope_not_found: "scopeUnavailable",
+    conversation_not_in_scope: "conversationsUnavailable",
+    content_invalid: "contentInvalid",
+    missing_participant_contact_email: "missingContactEmail",
+    no_verified_test_email: "verifyBeforeTest",
+    no_eligible_participants: "noEligibleParticipants",
+    sending_disabled: "sendingDisabled",
+    test_not_found: "successfulTestNotFound",
+    test_not_accepted: "testNotAccepted",
+    test_used: "testUsed",
+    delivery_already_active: "deliveryAlreadyActive",
+    required_owner_copy_unavailable: "ownerCopyUnavailable",
+    retryable_rejected: "testDeliveryRetryable",
+    permanent_rejected: "testDeliveryPermanent",
+    authorization_rejected: "testDeliveryAuthorization",
+    unknown: "testDeliveryUnknown",
+  } satisfies Record<
+    Exclude<
+      ReviewFailure["reason"],
+      | "review_rate_limited"
+      | "test_rate_limited"
+      | "review_required"
+      | "review_not_found"
+      | "review_expired"
+      | "review_cancelled"
+      | "request_id_conflict"
+      | "delivery_already_accepted"
+      | "update_not_found"
+      | "test_status_unavailable"
+    >,
+    keyof ConversationUpdatesWorkspaceTranslations
+  >;
+  switch (failure.reason) {
+    case "review_required":
+    case "review_not_found":
+    case "review_expired":
+    case "review_cancelled":
+      notify.showNotifyMessage(tReview("reviewInvalid"));
       return;
-    case "no_eligible_participants":
-      audienceEstimate.value = 0;
-      audienceEstimateAvailable.value = true;
+    case "request_id_conflict":
+      notify.showNotifyMessage(tReview("requestIdConflict"));
       return;
-    case "scope_not_found":
-    case "conversation_not_in_scope":
-    case "missing_participant_contact_email":
-    case "sending_disabled":
-      void loadWorkspace();
+    case "delivery_already_accepted":
+      notify.showNotifyMessage(tReview("deliveryAccepted"));
       return;
-    case "content_invalid":
-    case "test_rate_limited":
+    case "update_not_found":
+      notify.showNotifyMessage(tReview("deliveryNotFound"));
       return;
-  }
-}
-
-function reconcileSendFailure(response: SendFailure): void {
-  switch (response.reason) {
-    case "test_not_found":
-    case "test_not_accepted":
-    case "test_used":
-      clearSuccessfulTestAuthorization();
+    case "test_status_unavailable":
+      notify.showNotifyMessage(tReview("testStatusUnavailable"));
       return;
-    case "sending_disabled":
-      void loadWorkspace();
-      return;
-    case "no_eligible_participants":
-      audienceEstimate.value = 0;
-      audienceEstimateAvailable.value = true;
-      return;
-    case "delivery_already_active":
-    case "required_owner_copy_unavailable":
-      return;
-  }
-}
-
-function getTestSendFailureMessage(error: TestSendFailure): string {
-  switch (error.reason) {
-    case "scope_not_found":
-      return t("scopeUnavailable");
-    case "conversation_not_in_scope":
-      return t("conversationsUnavailable");
-    case "content_invalid":
-      return t("contentInvalid");
-    case "missing_participant_contact_email":
-      return t("missingContactEmail");
-    case "no_verified_test_email":
-      return t("verifyBeforeTest");
-    case "no_eligible_participants":
-      return t("noEligibleParticipants");
-    case "sending_disabled":
-      return t("sendingDisabled");
-    case "test_rate_limited":
-      return t("testRateLimited", {
-        retryAt: error.retryAt.toLocaleString(locale.value),
-      });
-  }
-}
-
-function getSendFailureMessage(response: SendFailure): string {
-  switch (response.reason) {
-    case "test_not_found":
-      return t("successfulTestNotFound");
-    case "test_not_accepted":
-      return t("testNotAccepted");
-    case "test_used":
-      return t("testUsed");
-    case "sending_disabled":
-      return t("sendingDisabled");
-    case "no_eligible_participants":
-      return t("noEligibleParticipants");
-    case "delivery_already_active":
-      return t("deliveryAlreadyActive");
-    case "required_owner_copy_unavailable":
-      return t("ownerCopyUnavailable");
-  }
-}
-
-function getTestDeliveryFailureMessage(
-  reason:
-    | "retryable_rejected"
-    | "permanent_rejected"
-    | "authorization_rejected"
-    | "unknown"
-): string {
-  switch (reason) {
-    case "retryable_rejected":
-      return t("testDeliveryRetryable");
-    case "authorization_rejected":
-      return t("testDeliveryAuthorization");
-    case "permanent_rejected":
-      return t("testDeliveryPermanent");
     case "unknown":
-      return t("testDeliveryUnknown");
+    case "no_eligible_participants":
+    case "scope_not_found":
+    case "conversation_not_in_scope":
+    case "content_invalid":
+    case "missing_participant_contact_email":
+    case "no_verified_test_email":
+    case "sending_disabled":
+    case "test_not_found":
+    case "test_not_accepted":
+    case "test_used":
+    case "delivery_already_active":
+    case "required_owner_copy_unavailable":
+    case "retryable_rejected":
+    case "permanent_rejected":
+    case "authorization_rejected":
+      notify.showNotifyMessage(t(messages[failure.reason]));
   }
 }
-
 onBeforeUnmount(() => {
-  isUnmounted = true;
-  workspaceGeneration += 1;
+  saveComposer();
+  generation += 1;
   historyRequestId += 1;
   audienceRequestId += 1;
   cancelAudienceEstimate();
-  activeTestAttemptId = undefined;
-  activeTestOperationId.value = undefined;
+  stayInReview();
+  window.removeEventListener("beforeunload", beforeUnload);
 });
 </script>
 
@@ -1067,15 +951,10 @@ onBeforeUnmount(() => {
 .updates-workspace {
   display: grid;
   gap: 1rem;
-  width: min(100%, 78rem);
+  width: min(100%, 62rem);
   margin-inline: auto;
   padding: 1rem;
-
   &__intro {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 2rem;
     padding: clamp(1.25rem, 4vw, 2.5rem);
     border: 1px solid rgba($primary, 0.2);
     border-radius: 1.25rem;
@@ -1086,85 +965,23 @@ onBeforeUnmount(() => {
         transparent 45%
       ),
       $color-background-default;
-
     h1 {
-      max-width: 38rem;
-      margin: 0.35rem 0 0.65rem;
-      color: $color-text-strong;
+      margin: 0 0 0.65rem;
       font-size: clamp(1.5rem, 4vw, 2.35rem);
       line-height: 1.12;
+      color: $color-text-strong;
     }
-
     p {
-      max-width: 42rem;
       margin: 0;
       color: $color-text-weak;
       line-height: 1.55;
     }
-
-    > .q-icon {
-      flex: 0 0 auto;
-      color: $primary;
-    }
   }
-
-  &__tabs {
-    border-bottom: 1px solid $grey-4;
-  }
-
-  &__panels,
-  &__panel {
-    padding: 0;
-    background: transparent;
-  }
-
-  &__compose-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1.08fr) minmax(20rem, 0.92fr);
-    align-items: start;
-    gap: 1rem;
-  }
-
-  &__preview {
-    position: sticky;
-    top: 1rem;
-  }
-
-  &__send-summary {
-    display: grid;
-    gap: 0.75rem;
-
-    p {
-      margin: 0;
-      color: $color-text-weak;
-      line-height: 1.5;
-    }
-  }
-
-  &__history-more {
+  &__actions {
     display: flex;
-    justify-content: center;
-    margin-block-start: 1rem;
-  }
-}
-
-@media (max-width: $breakpoint-sm-max) {
-  .updates-workspace {
-    &__intro > .q-icon {
-      display: none;
-    }
-
-    &__compose-grid {
-      grid-template-columns: 1fr;
-    }
-
-    &__preview {
-      position: static;
-
-      &--mobile {
-        margin: 0 1rem 1rem;
-      }
-    }
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: flex-end;
   }
 }
 </style>

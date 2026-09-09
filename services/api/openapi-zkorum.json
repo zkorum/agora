@@ -688,6 +688,123 @@
                                                     "enum": [
                                                         true
                                                     ]
+                                                },
+                                                "availableAction": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "action": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "unsubscribe"
+                                                            ]
+                                                        },
+                                                        "token": {
+                                                            "type": "string",
+                                                            "minLength": 22,
+                                                            "maxLength": 128,
+                                                            "pattern": "^[A-Za-z0-9_-]+$"
+                                                        },
+                                                        "scope": {
+                                                            "oneOf": [
+                                                                {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "kind": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "project"
+                                                                            ]
+                                                                        },
+                                                                        "projectSlug": {
+                                                                            "type": "string",
+                                                                            "maxLength": 65,
+                                                                            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                                        },
+                                                                        "title": {
+                                                                            "type": "string",
+                                                                            "minLength": 1,
+                                                                            "maxLength": 140
+                                                                        },
+                                                                        "conversations": {
+                                                                            "minItems": 1,
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "conversationSlugId": {
+                                                                                        "type": "string",
+                                                                                        "maxLength": 10
+                                                                                    },
+                                                                                    "title": {
+                                                                                        "type": "string",
+                                                                                        "minLength": 1,
+                                                                                        "maxLength": 140
+                                                                                    }
+                                                                                },
+                                                                                "required": [
+                                                                                    "conversationSlugId",
+                                                                                    "title"
+                                                                                ],
+                                                                                "additionalProperties": false
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "kind",
+                                                                        "projectSlug",
+                                                                        "title",
+                                                                        "conversations"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "kind": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "no_project"
+                                                                            ]
+                                                                        },
+                                                                        "conversations": {
+                                                                            "minItems": 1,
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "conversationSlugId": {
+                                                                                        "type": "string",
+                                                                                        "maxLength": 10
+                                                                                    },
+                                                                                    "title": {
+                                                                                        "type": "string",
+                                                                                        "minLength": 1,
+                                                                                        "maxLength": 140
+                                                                                    }
+                                                                                },
+                                                                                "required": [
+                                                                                    "conversationSlugId",
+                                                                                    "title"
+                                                                                ],
+                                                                                "additionalProperties": false
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "kind",
+                                                                        "conversations"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                }
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "action",
+                                                        "token",
+                                                        "scope"
+                                                    ],
+                                                    "additionalProperties": false
                                                 }
                                             },
                                             "required": [
@@ -35987,6 +36104,1304 @@
                 }
             }
         },
+        "/api/v1/conversation/email-update/draft/prepare": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "selection": {
+                                        "oneOf": [
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "kind": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "project"
+                                                        ]
+                                                    },
+                                                    "projectSlug": {
+                                                        "type": "string",
+                                                        "maxLength": 65,
+                                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                    },
+                                                    "conversationSlugIds": {
+                                                        "minItems": 1,
+                                                        "maxItems": 1000,
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string",
+                                                            "maxLength": 10
+                                                        }
+                                                    }
+                                                },
+                                                "required": [
+                                                    "kind",
+                                                    "projectSlug",
+                                                    "conversationSlugIds"
+                                                ],
+                                                "additionalProperties": false
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "kind": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "no_project"
+                                                        ]
+                                                    },
+                                                    "conversationSlugId": {
+                                                        "type": "string",
+                                                        "maxLength": 10
+                                                    }
+                                                },
+                                                "required": [
+                                                    "kind",
+                                                    "conversationSlugId"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        ]
+                                    },
+                                    "subject": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 140
+                                    },
+                                    "bodyHtml": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 16384
+                                    }
+                                },
+                                "required": [
+                                    "selection",
+                                    "subject",
+                                    "bodyHtml"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
+                                                "review": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "updateId": {
+                                                            "type": "string",
+                                                            "format": "uuid",
+                                                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                        },
+                                                        "preview": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "subject": {
+                                                                    "type": "string"
+                                                                },
+                                                                "html": {
+                                                                    "type": "string"
+                                                                },
+                                                                "text": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "subject",
+                                                                "html",
+                                                                "text"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        },
+                                                        "language": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "en",
+                                                                "es",
+                                                                "fr",
+                                                                "zh-Hant",
+                                                                "zh-Hans",
+                                                                "ja",
+                                                                "ar",
+                                                                "fa",
+                                                                "he",
+                                                                "ky",
+                                                                "ru"
+                                                            ]
+                                                        },
+                                                        "senderName": {
+                                                            "type": "string"
+                                                        },
+                                                        "replyToName": {
+                                                            "type": "string"
+                                                        },
+                                                        "replyToEmail": {
+                                                            "type": "string",
+                                                            "format": "email",
+                                                            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                                        },
+                                                        "branding": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "name": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 500
+                                                                },
+                                                                "scopeKind": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "project",
+                                                                        "no-project"
+                                                                    ]
+                                                                },
+                                                                "projectUrl": {
+                                                                    "type": "string",
+                                                                    "format": "uri"
+                                                                },
+                                                                "imageUrl": {
+                                                                    "type": "string",
+                                                                    "format": "uri"
+                                                                },
+                                                                "bannerImageUrl": {
+                                                                    "type": "string",
+                                                                    "format": "uri"
+                                                                },
+                                                                "palette": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "blue",
+                                                                        "purple",
+                                                                        "green"
+                                                                    ]
+                                                                },
+                                                                "attributions": {
+                                                                    "readOnly": true,
+                                                                    "type": "array",
+                                                                    "items": {
+                                                                        "readOnly": true,
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "role": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "project_owner",
+                                                                                    "sponsor",
+                                                                                    "partner"
+                                                                                ]
+                                                                            },
+                                                                            "displayName": {
+                                                                                "type": "string",
+                                                                                "minLength": 1,
+                                                                                "maxLength": 500
+                                                                            },
+                                                                            "imageUrl": {
+                                                                                "type": "string",
+                                                                                "format": "uri"
+                                                                            },
+                                                                            "websiteUrl": {
+                                                                                "type": "string",
+                                                                                "format": "uri"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "role",
+                                                                            "displayName"
+                                                                        ],
+                                                                        "additionalProperties": false
+                                                                    }
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "name",
+                                                                "palette"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        },
+                                                        "unsubscribeScope": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "project",
+                                                                "conversation"
+                                                            ]
+                                                        },
+                                                        "estimatedEligibleRecipientCount": {
+                                                            "type": "integer",
+                                                            "minimum": 0,
+                                                            "maximum": 9007199254740991
+                                                        },
+                                                        "requiredOwnerCopyCount": {
+                                                            "type": "integer",
+                                                            "minimum": 0,
+                                                            "maximum": 9007199254740991
+                                                        },
+                                                        "testDestinationEmail": {
+                                                            "type": "string",
+                                                            "format": "email",
+                                                            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                                        },
+                                                        "expiresAt": {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "updateId",
+                                                        "preview",
+                                                        "language",
+                                                        "senderName",
+                                                        "replyToName",
+                                                        "replyToEmail",
+                                                        "branding",
+                                                        "unsubscribeScope",
+                                                        "estimatedEligibleRecipientCount",
+                                                        "requiredOwnerCopyCount",
+                                                        "testDestinationEmail",
+                                                        "expiresAt"
+                                                    ],
+                                                    "additionalProperties": false
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "review"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "error": {
+                                                    "oneOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "reason": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "scope_not_found",
+                                                                        "conversation_not_in_scope",
+                                                                        "content_invalid",
+                                                                        "missing_participant_contact_email",
+                                                                        "no_verified_test_email",
+                                                                        "no_eligible_participants",
+                                                                        "sending_disabled"
+                                                                    ]
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "reason"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "reason": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "review_rate_limited"
+                                                                    ]
+                                                                },
+                                                                "retryAt": {
+                                                                    "type": "string",
+                                                                    "format": "date-time"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "reason",
+                                                                "retryAt"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        }
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "error"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/conversation/email-update/draft/cancel": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "updateId": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                    }
+                                },
+                                "required": [
+                                    "updateId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "review_not_found",
+                                                        "delivery_already_accepted"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/conversation/email-update/history/preview": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "updateId": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                    },
+                                    "language": {
+                                        "type": "string",
+                                        "enum": [
+                                            "en",
+                                            "es",
+                                            "fr",
+                                            "zh-Hant",
+                                            "zh-Hans",
+                                            "ja",
+                                            "ar",
+                                            "fa",
+                                            "he",
+                                            "ky",
+                                            "ru"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "updateId",
+                                    "language"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
+                                                "preview": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "subject": {
+                                                            "type": "string"
+                                                        },
+                                                        "html": {
+                                                            "type": "string"
+                                                        },
+                                                        "text": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "subject",
+                                                        "html",
+                                                        "text"
+                                                    ],
+                                                    "additionalProperties": false
+                                                },
+                                                "reconstructed": {
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "preview",
+                                                "reconstructed"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "update_not_found"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/conversation/email-update/dev/compare": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "selection": {
+                                        "oneOf": [
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "kind": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "project"
+                                                        ]
+                                                    },
+                                                    "projectSlug": {
+                                                        "type": "string",
+                                                        "maxLength": 65,
+                                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                    },
+                                                    "conversationSlugIds": {
+                                                        "minItems": 1,
+                                                        "maxItems": 1000,
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string",
+                                                            "maxLength": 10
+                                                        }
+                                                    }
+                                                },
+                                                "required": [
+                                                    "kind",
+                                                    "projectSlug",
+                                                    "conversationSlugIds"
+                                                ],
+                                                "additionalProperties": false
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "kind": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "no_project"
+                                                        ]
+                                                    },
+                                                    "conversationSlugId": {
+                                                        "type": "string",
+                                                        "maxLength": 10
+                                                    }
+                                                },
+                                                "required": [
+                                                    "kind",
+                                                    "conversationSlugId"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        ]
+                                    },
+                                    "subject": {
+                                        "type": "string"
+                                    },
+                                    "bodyHtml": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 16384
+                                    },
+                                    "language": {
+                                        "type": "string",
+                                        "enum": [
+                                            "en",
+                                            "es",
+                                            "fr",
+                                            "zh-Hant",
+                                            "zh-Hans",
+                                            "ja",
+                                            "ar",
+                                            "fa",
+                                            "he",
+                                            "ky",
+                                            "ru"
+                                        ]
+                                    },
+                                    "participantConversationSlugIds": {
+                                        "minItems": 1,
+                                        "maxItems": 1000,
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "maxLength": 10
+                                        }
+                                    }
+                                },
+                                "required": [
+                                    "selection",
+                                    "subject",
+                                    "bodyHtml",
+                                    "language"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
+                                                "metadata": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "senderName": {
+                                                            "type": "string"
+                                                        },
+                                                        "replyToName": {
+                                                            "type": "string"
+                                                        },
+                                                        "replyToEmail": {
+                                                            "type": "string",
+                                                            "format": "email",
+                                                            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                                        },
+                                                        "branding": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "name": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 500
+                                                                },
+                                                                "scopeKind": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "project",
+                                                                        "no-project"
+                                                                    ]
+                                                                },
+                                                                "projectUrl": {
+                                                                    "type": "string",
+                                                                    "format": "uri"
+                                                                },
+                                                                "imageUrl": {
+                                                                    "type": "string",
+                                                                    "format": "uri"
+                                                                },
+                                                                "bannerImageUrl": {
+                                                                    "type": "string",
+                                                                    "format": "uri"
+                                                                },
+                                                                "palette": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "blue",
+                                                                        "purple",
+                                                                        "green"
+                                                                    ]
+                                                                },
+                                                                "attributions": {
+                                                                    "readOnly": true,
+                                                                    "type": "array",
+                                                                    "items": {
+                                                                        "readOnly": true,
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "role": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "project_owner",
+                                                                                    "sponsor",
+                                                                                    "partner"
+                                                                                ]
+                                                                            },
+                                                                            "displayName": {
+                                                                                "type": "string",
+                                                                                "minLength": 1,
+                                                                                "maxLength": 500
+                                                                            },
+                                                                            "imageUrl": {
+                                                                                "type": "string",
+                                                                                "format": "uri"
+                                                                            },
+                                                                            "websiteUrl": {
+                                                                                "type": "string",
+                                                                                "format": "uri"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "role",
+                                                                            "displayName"
+                                                                        ],
+                                                                        "additionalProperties": false
+                                                                    }
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "name",
+                                                                "palette"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        },
+                                                        "language": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "en",
+                                                                "es",
+                                                                "fr",
+                                                                "zh-Hant",
+                                                                "zh-Hans",
+                                                                "ja",
+                                                                "ar",
+                                                                "fa",
+                                                                "he",
+                                                                "ky",
+                                                                "ru"
+                                                            ]
+                                                        },
+                                                        "unsubscribeScope": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "project",
+                                                                "conversation"
+                                                            ]
+                                                        },
+                                                        "sendingEnabled": {
+                                                            "type": "boolean"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "senderName",
+                                                        "replyToName",
+                                                        "replyToEmail",
+                                                        "branding",
+                                                        "language",
+                                                        "unsubscribeScope",
+                                                        "sendingEnabled"
+                                                    ],
+                                                    "additionalProperties": false
+                                                },
+                                                "previews": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "participant": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "subject": {
+                                                                    "type": "string"
+                                                                },
+                                                                "html": {
+                                                                    "type": "string"
+                                                                },
+                                                                "text": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "subject",
+                                                                "html",
+                                                                "text"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        },
+                                                        "ownerCopy": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "subject": {
+                                                                    "type": "string"
+                                                                },
+                                                                "html": {
+                                                                    "type": "string"
+                                                                },
+                                                                "text": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "subject",
+                                                                "html",
+                                                                "text"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        },
+                                                        "test": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "subject": {
+                                                                    "type": "string"
+                                                                },
+                                                                "html": {
+                                                                    "type": "string"
+                                                                },
+                                                                "text": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "subject",
+                                                                "html",
+                                                                "text"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "participant",
+                                                        "ownerCopy",
+                                                        "test"
+                                                    ],
+                                                    "additionalProperties": false
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "metadata",
+                                                "previews"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "scope_not_found",
+                                                        "conversation_not_in_scope",
+                                                        "content_invalid",
+                                                        "missing_participant_contact_email",
+                                                        "configuration_disabled"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/conversation/email-update/dev/preview": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "oneOf": [
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "fixture": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "project"
+                                                ]
+                                            },
+                                            "backgroundPicture": {
+                                                "type": "boolean"
+                                            },
+                                            "attributions": {
+                                                "maxItems": 3,
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "project_owner",
+                                                        "sponsor",
+                                                        "partner"
+                                                    ]
+                                                }
+                                            },
+                                            "attributionLogos": {
+                                                "type": "boolean"
+                                            },
+                                            "language": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "en",
+                                                    "es",
+                                                    "fr",
+                                                    "zh-Hant",
+                                                    "zh-Hans",
+                                                    "ja",
+                                                    "ar",
+                                                    "fa",
+                                                    "he",
+                                                    "ky",
+                                                    "ru"
+                                                ]
+                                            },
+                                            "variant": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "participant",
+                                                    "owner_copy",
+                                                    "test"
+                                                ]
+                                            },
+                                            "content": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "subject": {
+                                                        "type": "string",
+                                                        "minLength": 1,
+                                                        "maxLength": 140
+                                                    },
+                                                    "bodyHtml": {
+                                                        "type": "string",
+                                                        "minLength": 1,
+                                                        "maxLength": 16384
+                                                    },
+                                                    "conversationSlugIds": {
+                                                        "minItems": 1,
+                                                        "maxItems": 20,
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "demo0001",
+                                                                "demo0002",
+                                                                "demo0003",
+                                                                "demo0004",
+                                                                "demo0005",
+                                                                "demo0006",
+                                                                "demo0007",
+                                                                "demo0008",
+                                                                "demo0009",
+                                                                "demo0010",
+                                                                "demo0011",
+                                                                "demo0012",
+                                                                "demo0013",
+                                                                "demo0014",
+                                                                "demo0015",
+                                                                "demo0016",
+                                                                "demo0017",
+                                                                "demo0018",
+                                                                "demo0019",
+                                                                "demo0020"
+                                                            ]
+                                                        }
+                                                    }
+                                                },
+                                                "required": [
+                                                    "subject",
+                                                    "bodyHtml"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        },
+                                        "required": [
+                                            "fixture",
+                                            "language",
+                                            "variant"
+                                        ],
+                                        "additionalProperties": false
+                                    },
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "fixture": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "organization"
+                                                ]
+                                            },
+                                            "organizationLogo": {
+                                                "type": "boolean"
+                                            },
+                                            "language": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "en",
+                                                    "es",
+                                                    "fr",
+                                                    "zh-Hant",
+                                                    "zh-Hans",
+                                                    "ja",
+                                                    "ar",
+                                                    "fa",
+                                                    "he",
+                                                    "ky",
+                                                    "ru"
+                                                ]
+                                            },
+                                            "variant": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "participant",
+                                                    "owner_copy",
+                                                    "test"
+                                                ]
+                                            },
+                                            "content": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "subject": {
+                                                        "type": "string",
+                                                        "minLength": 1,
+                                                        "maxLength": 140
+                                                    },
+                                                    "bodyHtml": {
+                                                        "type": "string",
+                                                        "minLength": 1,
+                                                        "maxLength": 16384
+                                                    },
+                                                    "conversationSlugIds": {
+                                                        "minItems": 1,
+                                                        "maxItems": 20,
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "demo0001",
+                                                                "demo0002",
+                                                                "demo0003",
+                                                                "demo0004",
+                                                                "demo0005",
+                                                                "demo0006",
+                                                                "demo0007",
+                                                                "demo0008",
+                                                                "demo0009",
+                                                                "demo0010",
+                                                                "demo0011",
+                                                                "demo0012",
+                                                                "demo0013",
+                                                                "demo0014",
+                                                                "demo0015",
+                                                                "demo0016",
+                                                                "demo0017",
+                                                                "demo0018",
+                                                                "demo0019",
+                                                                "demo0020"
+                                                            ]
+                                                        }
+                                                    }
+                                                },
+                                                "required": [
+                                                    "subject",
+                                                    "bodyHtml"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        },
+                                        "required": [
+                                            "fixture",
+                                            "language",
+                                            "variant"
+                                        ],
+                                        "additionalProperties": false
+                                    },
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "fixture": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "personal"
+                                                ]
+                                            },
+                                            "language": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "en",
+                                                    "es",
+                                                    "fr",
+                                                    "zh-Hant",
+                                                    "zh-Hans",
+                                                    "ja",
+                                                    "ar",
+                                                    "fa",
+                                                    "he",
+                                                    "ky",
+                                                    "ru"
+                                                ]
+                                            },
+                                            "variant": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "participant",
+                                                    "owner_copy",
+                                                    "test"
+                                                ]
+                                            },
+                                            "content": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "subject": {
+                                                        "type": "string",
+                                                        "minLength": 1,
+                                                        "maxLength": 140
+                                                    },
+                                                    "bodyHtml": {
+                                                        "type": "string",
+                                                        "minLength": 1,
+                                                        "maxLength": 16384
+                                                    },
+                                                    "conversationSlugIds": {
+                                                        "minItems": 1,
+                                                        "maxItems": 20,
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "demo0001",
+                                                                "demo0002",
+                                                                "demo0003",
+                                                                "demo0004",
+                                                                "demo0005",
+                                                                "demo0006",
+                                                                "demo0007",
+                                                                "demo0008",
+                                                                "demo0009",
+                                                                "demo0010",
+                                                                "demo0011",
+                                                                "demo0012",
+                                                                "demo0013",
+                                                                "demo0014",
+                                                                "demo0015",
+                                                                "demo0016",
+                                                                "demo0017",
+                                                                "demo0018",
+                                                                "demo0019",
+                                                                "demo0020"
+                                                            ]
+                                                        }
+                                                    }
+                                                },
+                                                "required": [
+                                                    "subject",
+                                                    "bodyHtml"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        },
+                                        "required": [
+                                            "fixture",
+                                            "language",
+                                            "variant"
+                                        ],
+                                        "additionalProperties": false
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
+                                                "preview": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "subject": {
+                                                            "type": "string"
+                                                        },
+                                                        "html": {
+                                                            "type": "string"
+                                                        },
+                                                        "text": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "subject",
+                                                        "html",
+                                                        "text"
+                                                    ],
+                                                    "additionalProperties": false
+                                                },
+                                                "reconstructed": {
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "preview",
+                                                "reconstructed"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "update_not_found"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/conversation/email-update/workspace/get": {
             "post": {
                 "requestBody": {
@@ -36215,6 +37630,13 @@
                                                                             "project"
                                                                         ]
                                                                     },
+                                                                    "unsubscribeScope": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "project",
+                                                                            "conversation"
+                                                                        ]
+                                                                    },
                                                                     "projectSlug": {
                                                                         "type": "string",
                                                                         "maxLength": 65,
@@ -36277,6 +37699,7 @@
                                                                 },
                                                                 "required": [
                                                                     "kind",
+                                                                    "unsubscribeScope",
                                                                     "projectSlug",
                                                                     "title",
                                                                     "participantContactEmail",
@@ -36291,6 +37714,12 @@
                                                                         "type": "string",
                                                                         "enum": [
                                                                             "no_project"
+                                                                        ]
+                                                                    },
+                                                                    "unsubscribeScope": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "conversation"
                                                                         ]
                                                                     },
                                                                     "title": {
@@ -36351,6 +37780,7 @@
                                                                 },
                                                                 "required": [
                                                                     "kind",
+                                                                    "unsubscribeScope",
                                                                     "title",
                                                                     "conversations"
                                                                 ],
@@ -36515,6 +37945,13 @@
                                                                         "format": "uuid",
                                                                         "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                                                                     },
+                                                                    "unsubscribeScope": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "project",
+                                                                            "conversation"
+                                                                        ]
+                                                                    },
                                                                     "subject": {
                                                                         "type": "string",
                                                                         "minLength": 1,
@@ -36627,6 +38064,7 @@
                                                                 },
                                                                 "required": [
                                                                     "updateId",
+                                                                    "unsubscribeScope",
                                                                     "subject",
                                                                     "acceptedAt",
                                                                     "audienceEstimate",
@@ -36645,6 +38083,13 @@
                                                                         "type": "string",
                                                                         "format": "uuid",
                                                                         "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                                    },
+                                                                    "unsubscribeScope": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "project",
+                                                                            "conversation"
+                                                                        ]
                                                                     },
                                                                     "subject": {
                                                                         "type": "string",
@@ -36762,6 +38207,7 @@
                                                                 },
                                                                 "required": [
                                                                     "updateId",
+                                                                    "unsubscribeScope",
                                                                     "subject",
                                                                     "acceptedAt",
                                                                     "audienceEstimate",
@@ -36781,6 +38227,13 @@
                                                                         "type": "string",
                                                                         "format": "uuid",
                                                                         "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                                    },
+                                                                    "unsubscribeScope": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "project",
+                                                                            "conversation"
+                                                                        ]
                                                                     },
                                                                     "subject": {
                                                                         "type": "string",
@@ -36899,6 +38352,7 @@
                                                                 },
                                                                 "required": [
                                                                     "updateId",
+                                                                    "unsubscribeScope",
                                                                     "subject",
                                                                     "acceptedAt",
                                                                     "audienceEstimate",
@@ -37005,6 +38459,13 @@
                                                                     "type": "string",
                                                                     "format": "uuid",
                                                                     "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                                },
+                                                                "unsubscribeScope": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "project",
+                                                                        "conversation"
+                                                                    ]
                                                                 },
                                                                 "subject": {
                                                                     "type": "string",
@@ -37118,6 +38579,7 @@
                                                             },
                                                             "required": [
                                                                 "updateId",
+                                                                "unsubscribeScope",
                                                                 "subject",
                                                                 "acceptedAt",
                                                                 "audienceEstimate",
@@ -37136,6 +38598,13 @@
                                                                     "type": "string",
                                                                     "format": "uuid",
                                                                     "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                                },
+                                                                "unsubscribeScope": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "project",
+                                                                        "conversation"
+                                                                    ]
                                                                 },
                                                                 "subject": {
                                                                     "type": "string",
@@ -37253,6 +38722,7 @@
                                                             },
                                                             "required": [
                                                                 "updateId",
+                                                                "unsubscribeScope",
                                                                 "subject",
                                                                 "acceptedAt",
                                                                 "audienceEstimate",
@@ -37272,6 +38742,13 @@
                                                                     "type": "string",
                                                                     "format": "uuid",
                                                                     "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                                },
+                                                                "unsubscribeScope": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "project",
+                                                                        "conversation"
+                                                                    ]
                                                                 },
                                                                 "subject": {
                                                                     "type": "string",
@@ -37390,6 +38867,7 @@
                                                             },
                                                             "required": [
                                                                 "updateId",
+                                                                "unsubscribeScope",
                                                                 "subject",
                                                                 "acceptedAt",
                                                                 "audienceEstimate",
@@ -37589,76 +39067,20 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
-                                    "selection": {
-                                        "oneOf": [
-                                            {
-                                                "type": "object",
-                                                "properties": {
-                                                    "kind": {
-                                                        "type": "string",
-                                                        "enum": [
-                                                            "project"
-                                                        ]
-                                                    },
-                                                    "projectSlug": {
-                                                        "type": "string",
-                                                        "maxLength": 65,
-                                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
-                                                    },
-                                                    "conversationSlugIds": {
-                                                        "minItems": 1,
-                                                        "maxItems": 1000,
-                                                        "type": "array",
-                                                        "items": {
-                                                            "type": "string",
-                                                            "maxLength": 10
-                                                        }
-                                                    }
-                                                },
-                                                "required": [
-                                                    "kind",
-                                                    "projectSlug",
-                                                    "conversationSlugIds"
-                                                ],
-                                                "additionalProperties": false
-                                            },
-                                            {
-                                                "type": "object",
-                                                "properties": {
-                                                    "kind": {
-                                                        "type": "string",
-                                                        "enum": [
-                                                            "no_project"
-                                                        ]
-                                                    },
-                                                    "conversationSlugId": {
-                                                        "type": "string",
-                                                        "maxLength": 10
-                                                    }
-                                                },
-                                                "required": [
-                                                    "kind",
-                                                    "conversationSlugId"
-                                                ],
-                                                "additionalProperties": false
-                                            }
-                                        ]
-                                    },
-                                    "subject": {
+                                    "updateId": {
                                         "type": "string",
-                                        "minLength": 1,
-                                        "maxLength": 140
+                                        "format": "uuid",
+                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                                     },
-                                    "bodyHtml": {
+                                    "requestId": {
                                         "type": "string",
-                                        "minLength": 1,
-                                        "maxLength": 16384
+                                        "format": "uuid",
+                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                                     }
                                 },
                                 "required": [
-                                    "selection",
-                                    "subject",
-                                    "bodyHtml"
+                                    "updateId",
+                                    "requestId"
                                 ],
                                 "additionalProperties": false
                             }
@@ -37729,7 +39151,13 @@
                                                                         "missing_participant_contact_email",
                                                                         "no_verified_test_email",
                                                                         "no_eligible_participants",
-                                                                        "sending_disabled"
+                                                                        "sending_disabled",
+                                                                        "review_not_found",
+                                                                        "review_required",
+                                                                        "review_expired",
+                                                                        "review_cancelled",
+                                                                        "request_id_conflict",
+                                                                        "delivery_already_accepted"
                                                                     ]
                                                                 }
                                                             },
@@ -37900,7 +39328,8 @@
                                                     "type": "string",
                                                     "enum": [
                                                         "test_not_found",
-                                                        "test_status_unavailable"
+                                                        "test_status_unavailable",
+                                                        "review_cancelled"
                                                     ]
                                                 }
                                             },
@@ -37985,6 +39414,13 @@
                                                                     "type": "string",
                                                                     "format": "uuid",
                                                                     "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                                },
+                                                                "unsubscribeScope": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "project",
+                                                                        "conversation"
+                                                                    ]
                                                                 },
                                                                 "subject": {
                                                                     "type": "string",
@@ -38098,6 +39534,7 @@
                                                             },
                                                             "required": [
                                                                 "updateId",
+                                                                "unsubscribeScope",
                                                                 "subject",
                                                                 "acceptedAt",
                                                                 "audienceEstimate",
@@ -38116,6 +39553,13 @@
                                                                     "type": "string",
                                                                     "format": "uuid",
                                                                     "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                                },
+                                                                "unsubscribeScope": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "project",
+                                                                        "conversation"
+                                                                    ]
                                                                 },
                                                                 "subject": {
                                                                     "type": "string",
@@ -38233,6 +39677,7 @@
                                                             },
                                                             "required": [
                                                                 "updateId",
+                                                                "unsubscribeScope",
                                                                 "subject",
                                                                 "acceptedAt",
                                                                 "audienceEstimate",
@@ -38252,6 +39697,13 @@
                                                                     "type": "string",
                                                                     "format": "uuid",
                                                                     "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                                },
+                                                                "unsubscribeScope": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "project",
+                                                                        "conversation"
+                                                                    ]
                                                                 },
                                                                 "subject": {
                                                                     "type": "string",
@@ -38370,6 +39822,7 @@
                                                             },
                                                             "required": [
                                                                 "updateId",
+                                                                "unsubscribeScope",
                                                                 "subject",
                                                                 "acceptedAt",
                                                                 "audienceEstimate",
@@ -38409,7 +39862,11 @@
                                                         "sending_disabled",
                                                         "no_eligible_participants",
                                                         "delivery_already_active",
-                                                        "required_owner_copy_unavailable"
+                                                        "required_owner_copy_unavailable",
+                                                        "review_not_found",
+                                                        "review_required",
+                                                        "review_expired",
+                                                        "review_cancelled"
                                                     ]
                                                 }
                                             },

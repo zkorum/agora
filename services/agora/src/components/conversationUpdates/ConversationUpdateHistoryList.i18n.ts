@@ -12,7 +12,6 @@ export interface ConversationUpdateHistoryListTranslations {
   ownerCopySingular: string;
   ownerCopyPlural: string;
   viewEmailContent: string;
-  subjectLabel: string;
   statusPreparing: string;
   statusSending: string;
   statusQueued: string;
@@ -48,7 +47,6 @@ export const conversationUpdateHistoryListTranslations: Record<
     ownerCopySingular: "{count} owner copy",
     ownerCopyPlural: "{count} owner copies",
     viewEmailContent: "View email content",
-    subjectLabel: "Subject",
     statusPreparing: "Preparing",
     statusSending: "Sending",
     statusQueued: "Queued",
@@ -86,7 +84,6 @@ export const conversationUpdateHistoryListTranslations: Record<
     ownerCopySingular: "{count} نسخة للمالك",
     ownerCopyPlural: "{count} نسخ للمالكين",
     viewEmailContent: "عرض محتوى البريد الإلكتروني",
-    subjectLabel: "الموضوع",
     statusPreparing: "قيد التحضير",
     statusSending: "قيد الإرسال",
     statusQueued: "في قائمة الانتظار",
@@ -125,7 +122,6 @@ export const conversationUpdateHistoryListTranslations: Record<
     ownerCopySingular: "{count} copia para responsable",
     ownerCopyPlural: "{count} copias para responsables",
     viewEmailContent: "Ver contenido del correo",
-    subjectLabel: "Asunto",
     statusPreparing: "Preparando",
     statusSending: "Enviando",
     statusQueued: "En cola",
@@ -164,7 +160,6 @@ export const conversationUpdateHistoryListTranslations: Record<
     ownerCopySingular: "{count} نسخه مالک",
     ownerCopyPlural: "{count} نسخه مالک",
     viewEmailContent: "مشاهده محتوای ایمیل",
-    subjectLabel: "موضوع",
     statusPreparing: "در حال آماده‌سازی",
     statusSending: "در حال ارسال",
     statusQueued: "در صف",
@@ -203,7 +198,6 @@ export const conversationUpdateHistoryListTranslations: Record<
     ownerCopySingular: "{count} copie pour gestionnaire",
     ownerCopyPlural: "{count} copies pour gestionnaires",
     viewEmailContent: "Voir le contenu de l’e-mail",
-    subjectLabel: "Objet",
     statusPreparing: "Préparation",
     statusSending: "Envoi en cours",
     statusQueued: "En attente",
@@ -241,7 +235,6 @@ export const conversationUpdateHistoryListTranslations: Record<
     ownerCopySingular: "{count} 份管理员副本",
     ownerCopyPlural: "{count} 份管理员副本",
     viewEmailContent: "查看邮件内容",
-    subjectLabel: "主题",
     statusPreparing: "准备中",
     statusSending: "发送中",
     statusQueued: "已排队",
@@ -279,7 +272,6 @@ export const conversationUpdateHistoryListTranslations: Record<
     ownerCopySingular: "{count} 份管理員副本",
     ownerCopyPlural: "{count} 份管理員副本",
     viewEmailContent: "查看郵件內容",
-    subjectLabel: "主旨",
     statusPreparing: "準備中",
     statusSending: "傳送中",
     statusQueued: "已排入佇列",
@@ -317,7 +309,6 @@ export const conversationUpdateHistoryListTranslations: Record<
     ownerCopySingular: "עותק בעלים אחד ({count})",
     ownerCopyPlural: "{count} עותקי בעלים",
     viewEmailContent: "הצגת תוכן הדוא״ל",
-    subjectLabel: "נושא",
     statusPreparing: "בהכנה",
     statusSending: "בשליחה",
     statusQueued: "בתור",
@@ -355,7 +346,6 @@ export const conversationUpdateHistoryListTranslations: Record<
     ownerCopySingular: "管理者向けコピー{count}通",
     ownerCopyPlural: "管理者向けコピー{count}通",
     viewEmailContent: "メール内容を表示",
-    subjectLabel: "件名",
     statusPreparing: "準備中",
     statusSending: "送信中",
     statusQueued: "待機中",
@@ -394,7 +384,6 @@ export const conversationUpdateHistoryListTranslations: Record<
     ownerCopySingular: "{count} ээнин көчүрмөсү",
     ownerCopyPlural: "{count} ээнин көчүрмөсү",
     viewEmailContent: "Каттын мазмунун көрүү",
-    subjectLabel: "Тема",
     statusPreparing: "Даярдалууда",
     statusSending: "Жөнөтүлүүдө",
     statusQueued: "Кезекте",
@@ -433,7 +422,6 @@ export const conversationUpdateHistoryListTranslations: Record<
     ownerCopySingular: "{count} копия для владельца",
     ownerCopyPlural: "{count} копии для владельцев",
     viewEmailContent: "Показать содержимое письма",
-    subjectLabel: "Тема",
     statusPreparing: "Подготовка",
     statusSending: "Отправка",
     statusQueued: "В очереди",

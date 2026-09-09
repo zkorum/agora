@@ -74,6 +74,64 @@ export function useBackendConversationEmailUpdatesApi() {
     });
   }
 
+  function prepareDraft(
+    request: ReturnType<
+      typeof Dto.conversationEmailUpdatePrepareDraftRequest.parse
+    >
+  ) {
+    return post({
+      url: "/api/v1/conversation/email-update/draft/prepare",
+      body: Dto.conversationEmailUpdatePrepareDraftRequest.parse(request),
+      responseSchema: Dto.conversationEmailUpdatePrepareDraftResponse,
+    });
+  }
+
+  function cancelDraft(
+    request: ReturnType<
+      typeof Dto.conversationEmailUpdateCancelDraftRequest.parse
+    >
+  ) {
+    return post({
+      url: "/api/v1/conversation/email-update/draft/cancel",
+      body: Dto.conversationEmailUpdateCancelDraftRequest.parse(request),
+      responseSchema: Dto.conversationEmailUpdateCancelDraftResponse,
+    });
+  }
+
+  function getHistoryPreview(
+    request: ReturnType<typeof Dto.conversationEmailUpdatePreviewRequest.parse>
+  ) {
+    return post({
+      url: "/api/v1/conversation/email-update/history/preview",
+      body: Dto.conversationEmailUpdatePreviewRequest.parse(request),
+      responseSchema: Dto.conversationEmailUpdatePreviewResponse,
+    });
+  }
+
+  function getDevPreview(
+    request: ReturnType<
+      typeof Dto.conversationEmailUpdateDevPreviewRequest.parse
+    >
+  ) {
+    return post({
+      url: "/api/v1/conversation/email-update/dev/preview",
+      body: Dto.conversationEmailUpdateDevPreviewRequest.parse(request),
+      responseSchema: Dto.conversationEmailUpdatePreviewResponse,
+    });
+  }
+
+  function getDevComparison(
+    request: ReturnType<
+      typeof Dto.conversationEmailUpdateDevComparisonRequest.parse
+    >
+  ) {
+    return post({
+      url: "/api/v1/conversation/email-update/dev/compare",
+      body: Dto.conversationEmailUpdateDevComparisonRequest.parse(request),
+      responseSchema: Dto.conversationEmailUpdateDevComparisonResponse,
+    });
+  }
+
   function listHistory(
     request: ConversationEmailUpdateHistoryListRequestInput
   ): Promise<ConversationEmailUpdateHistoryListResponse> {
@@ -119,13 +177,18 @@ export function useBackendConversationEmailUpdatesApi() {
     });
   }
 
-  function getTestStatus(
-    request: ConversationEmailUpdateTestStatusRequest
-  ): Promise<ConversationEmailUpdateTestStatusResponse> {
+  function getTestStatus({
+    request,
+    signal,
+  }: {
+    request: ConversationEmailUpdateTestStatusRequest;
+    signal: AbortSignal;
+  }): Promise<ConversationEmailUpdateTestStatusResponse> {
     return post({
       url: "/api/v1/conversation/email-update/test/status",
       body: Dto.conversationEmailUpdateTestStatusRequest.parse(request),
       responseSchema: Dto.conversationEmailUpdateTestStatusResponse,
+      signal,
     });
   }
 
@@ -219,6 +282,11 @@ export function useBackendConversationEmailUpdatesApi() {
   }
 
   return {
+    prepareDraft,
+    cancelDraft,
+    getHistoryPreview,
+    getDevPreview,
+    getDevComparison,
     getWorkspace,
     listHistory,
     getHistoryDetail,

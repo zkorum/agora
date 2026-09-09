@@ -1,6 +1,7 @@
 {
     "extends": "./tsconfig.json",
     "exclude": [
+        "src/shared-backend/email/**",
         "**/*.test.ts",
         "**/*.spec.ts",
         "src/devExercise/**",

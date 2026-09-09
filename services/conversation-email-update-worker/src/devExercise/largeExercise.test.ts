@@ -43,6 +43,7 @@ describe("large development exercise", () => {
             artifacts: createExerciseArtifactStore(),
         });
         const commonMessage = {
+            senderName: "Local project",
             subject: "Subject",
             html: "<p>Message</p>",
             text: "Message",

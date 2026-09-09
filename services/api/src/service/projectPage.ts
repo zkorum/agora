@@ -1531,7 +1531,7 @@ function resolveLocalizationRow({
     });
 }
 
-async function fetchProjectAttributions({
+export async function fetchProjectAttributions({
     db,
     projectId,
     effectiveLanguageCode,

@@ -19,6 +19,34 @@ PostgreSQL is the source of truth for work and delivery progress. The worker doe
 
 From the repository root, `make sync-ts-backend` copies the canonical schema and required backend utilities from [`services/shared-backend/src`](../shared-backend/src) into `src/shared-backend`. `make sync-all` copies the universal shared source tree, including language helpers, from [`services/shared/src`](../shared/src) into `src/shared`. Both destination directories contain generated warning headers and must not be edited directly.
 
+Email rendering lives in [`services/shared-backend/src/email`](../shared-backend/src/email): a typed Vue template compiled to a Node ESM renderer. The API renders review/history/dev previews and the worker renders delivery through the same implementation. The frontend displays backend-produced HTML; it does not render email templates. Shared branding primitives and palettes live in [`services/shared/src/branding`](../shared/src/branding) and are also used by the project UI.
+
+`pnpm email:build` checks templates with `vue-tsc`, generates declarations, and compiles the renderer into disposable `src/generated/email/` output. Normal build, typecheck, test, and development startup commands run this first. Production builds include the compiled renderer under `dist/generated/email/`; no runtime Vue-file loader is needed. Development watches email/branding source and publishes only successful builds. Never edit generated renderer files.
+
+The dev build also watches the renderer's shared TypeScript dependencies. It keeps the last successful output after a template error and stops its owned compiler/service processes on shutdown. Restart the command after changing build tooling or configuration. Builds do not load service `.env` files. Direct exercise runtime commands compile the renderer in a credential-free subprocess; `plan` and usage checks do not require it.
+
+Project titles lead the message and sender display name; No Project updates use the snapshotted public organization name or personal username. Agora appears as a platform credit in the footer. The configured verified From address and Reply-To routing remain unchanged.
+
+### Email Preview
+
+Run the API and frontend development services and open `/dev/conversation-updates`. In **Real workspace data**, sign in, load authorized conversations, and enter a subject and message. The API resolves real branding, Reply-To, conversation titles/URLs, and unsubscribe scope through the production content resolver, then renders admin, participant, and test copies without creating a review or sending anything. Admin and participant copies appear side by side, with an optional test-copy disclosure, language selection, narrow viewport, and plaintext.
+
+The optional participant subset is a manual simulation of selected conversations, never a recipient lookup. No recipient identity, address, or participation history is exposed. Actual deliveries can contain a different eligible subset and private action URLs; previews keep links inactive. Global sending can remain disabled during comparison. Selection authorization and scope configuration are still enforced, and real-data comparison runs in a read-only transaction.
+
+**Examples** remains a clearly labeled, unauthenticated fallback using bounded fictional project, organization, and personal fixtures. Both dev endpoints are absent outside development mode. Neither mode creates reviews, deliveries, or recipient action tokens.
+
+The API prepares preview documents with a restrictive content security policy, controlled image origins, and link destinations removed. The iframe has no sandbox privileges. Authored content is normalized/sanitized before rendering, and preview responses use `Cache-Control: no-store`. Recipient-specific action URLs, conversation subsets, and fixed-copy language vary in real sends. History previews retain an explicit language request; changing only that language does not mark a preview reconstructed. Legacy or incomplete snapshots and template-version changes can still require reconstruction. History previews are not archived email-client captures.
+
+### Locked Review Sessions
+
+Preparing a review persists immutable authored content, branding, unsubscribe scope, template version, conversation URLs, and the verified test destination/credential without queueing a test or delivery. The production prepare request has no language field: the API reads the authenticated sender's current saved display language, falling back to English, and returns `review.language` only as rendered preview metadata. Language is not part of the locked snapshot.
+
+A test references that review and uses its frozen destination, but the worker reads the sender's current saved display language when claiming the test, falling back to English. Changing display language does not invalidate the review; preparing another review uses the newly saved language. Final owner and participant copies retain their existing per-recipient language behavior. Both dev preview endpoints keep explicit language selection.
+
+Changing the primary email requires a new review. Final sending requires an accepted test from the same active review. Leaving review cancels its authorization even if the author later submits identical content; another review requires another test.
+
+Reviews expire after 24 hours. API cancellation and final acceptance serialize on the update row; worker final test authorization takes the same lock before transitioning to `attempting`. A test already authorized with the provider cannot be recalled. Review expiry never interrupts an already accepted delivery. Unknown provider/network outcomes are reconciled or retried idempotently rather than treated as proof that nothing was sent. Browser tab closure cannot guarantee cancellation delivery; abandoned reviews are bounded by server expiry.
+
 ## Development
 
 Provision and migrate the API's PostgreSQL database before starting the worker. For the first local setup:

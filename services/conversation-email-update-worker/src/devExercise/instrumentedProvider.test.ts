@@ -49,6 +49,7 @@ function message({
 }): ConversationEmailProviderMessage {
     return {
         to,
+        senderName: "Local project",
         subject: "Local update",
         html: "<p>Local body</p>",
         text: "Local body",

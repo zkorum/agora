@@ -1,5 +1,6 @@
 import { drizzle } from "drizzle-orm/postgres-js";
-import { describe, expect, it } from "vitest";
+import { createHash } from "node:crypto";
+import { assert, describe, expect, it } from "vitest";
 import {
     conversationEmailUpdateRecipientTable,
     conversationEmailUpdateTable,
@@ -138,27 +139,32 @@ describe("scoped store predicates", () => {
         ]);
     });
 
-    it("creates scoped owner actions and tokens without a one-click provider URL", () => {
-        const result = createRecipientActions({
-            siteBaseUrl: "https://www.agoracitizen.app",
-            kind: "conversation_owner_copy",
-            participantPreferenceScope: "conversation",
-        });
+    it.each(["project", "conversation"] as const)(
+        "creates only a report action and token for owners in %s scope",
+        (participantPreferenceScope) => {
+            const result = createRecipientActions({
+                siteBaseUrl: "https://www.agoracitizen.app",
+                kind: "conversation_owner_copy",
+                participantPreferenceScope,
+            });
 
-        expect(result.kind).toBe("conversation_owner_copy");
-        expect(result.actions.unsubscribeScope).toBe("conversation");
-        expect(result.actions.unsubscribeUrl).toContain(
-            "/email-updates/unsubscribe/",
-        );
-        expect(result.actions.manageUrl).toContain(
-            "/email-updates/preferences/",
-        );
-        expect(result.actions.reportUrl).toContain("/email-updates/report/");
-        expect(result.actionTokens.unsubscribeHash).toMatch(/^[a-f0-9]{64}$/);
-        expect(result.actionTokens.manageHash).toMatch(/^[a-f0-9]{64}$/);
-        expect(result.actionTokens.reportHash).toMatch(/^[a-f0-9]{64}$/);
-        expect(result.unsubscribeUrl).toBeUndefined();
-    });
+            expect(result.kind).toBe("conversation_owner_copy");
+            expect(result.actions.reportUrl).toContain(
+                "/email-updates/report/",
+            );
+            expect(Object.keys(result.actions)).toEqual(["reportUrl"]);
+            const reportToken =
+                new URL(result.actions.reportUrl).pathname.split("/").at(-1) ??
+                "";
+            expect(reportToken).toMatch(/^[A-Za-z0-9_-]{43}$/);
+            expect(result.actionTokens).toEqual({
+                reportHash: createHash("sha256")
+                    .update(reportToken)
+                    .digest("hex"),
+            });
+            expect(result.unsubscribeUrl).toBeUndefined();
+        },
+    );
 
     it("retains one-click provider unsubscribe for participants", () => {
         const result = createRecipientActions({
@@ -167,8 +173,24 @@ describe("scoped store predicates", () => {
             participantPreferenceScope: "project",
         });
 
-        expect(result.kind).toBe("participant");
+        assert(result.kind === "participant");
         expect(result.actions.unsubscribeScope).toBe("project");
+        expect(result.actions.unsubscribeUrl).toContain(
+            "/email-updates/unsubscribe/",
+        );
+        expect(result.actions.manageUrl).toContain(
+            "/email-updates/preferences/",
+        );
+        expect(result.actions.reportUrl).toContain("/email-updates/report/");
+        expect(Object.keys(result.actionTokens)).toEqual([
+            "unsubscribeHash",
+            "manageHash",
+            "reportHash",
+        ]);
+        for (const hash of Object.values(result.actionTokens)) {
+            expect(hash).toMatch(/^[a-f0-9]{64}$/);
+        }
+        expect(new Set(Object.values(result.actionTokens)).size).toBe(3);
         expect(result.unsubscribeUrl).toContain(
             "/api/v1/conversation/email-update/action/one-click/",
         );
@@ -181,6 +203,8 @@ describe("scoped store predicates", () => {
             participantPreferenceScope: "conversation",
         });
 
-        expect(result.actions.unsubscribeScope).toBe("conversation");
+        expect(result.actions).toMatchObject({
+            unsubscribeScope: "conversation",
+        });
     });
 });

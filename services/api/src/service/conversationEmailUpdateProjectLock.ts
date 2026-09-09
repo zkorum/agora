@@ -5,9 +5,11 @@ import { projectTable } from "@/shared-backend/schema.js";
 export async function lockConversationEmailUpdateProject({
     db,
     projectId,
+    lockMode = "update",
 }: {
     db: PostgresJsDatabase;
     projectId: number;
+    lockMode?: "update" | "no key update";
 }): Promise<boolean> {
     const rows = await db
         .select({ id: projectTable.id })
@@ -15,6 +17,7 @@ export async function lockConversationEmailUpdateProject({
         .where(
             and(eq(projectTable.id, projectId), isNull(projectTable.deletedAt)),
         )
-        .for("update");
+        // NO KEY UPDATE still serializes writers without blocking preference FK checks.
+        .for(lockMode);
     return rows.length === 1;
 }
