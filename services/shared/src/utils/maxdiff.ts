@@ -10,7 +10,7 @@
  * each round of best/worst voting.
  */
 
-import type { MaxDiffComparison } from "src/shared/types/zod";
+import type { MaxDiffComparison } from "../types/zod.js";
 
 // --- Bron-Kerbosch algorithm (inline, from SeregPie/BronKerbosch) ---
 
@@ -161,7 +161,10 @@ export function createMaxDiff(items: Iterable<string>): MaxDiffInstance {
 
     const indexOf = (item: string): number => uniqueItems.indexOf(item);
 
-    const getComparison = (item: string, otherItem: string): number | undefined => {
+    const getComparison = (
+        item: string,
+        otherItem: string,
+    ): number | undefined => {
         return comparisons[indexOf(item)][indexOf(otherItem)];
     };
 
@@ -187,7 +190,10 @@ export function createMaxDiff(items: Iterable<string>): MaxDiffInstance {
         return a.length - b.length;
     };
 
-    const compareGroupsByLengthAndIndex = (a: string[], b: string[]): number => {
+    const compareGroupsByLengthAndIndex = (
+        a: string[],
+        b: string[],
+    ): number => {
         const c = b.length - a.length;
         if (c) return c;
         return compareGroupsByIndex(a, b);
@@ -243,7 +249,9 @@ export function createMaxDiff(items: Iterable<string>): MaxDiffInstance {
     };
 
     const order = (...orderItems: string[]): void => {
-        const validItems = orderItems.filter((item) => uniqueItems.includes(item));
+        const validItems = orderItems.filter((item) =>
+            uniqueItems.includes(item),
+        );
         for (const [itemBefore, itemAfter] of allPairs(validItems)) {
             if (getComparison(itemBefore, itemAfter) === undefined) {
                 setComparison(itemBefore, itemAfter);
@@ -351,7 +359,9 @@ export function estimateRemainingVotes({
     if (unorderedPairs === 0) return 0;
 
     // Heuristic: ~N*log2(N)/5 votes for N items with 4-item sets + transitive closure
-    const heuristic = Math.ceil((itemCount * Math.log2(Math.max(itemCount, 2))) / 5);
+    const heuristic = Math.ceil(
+        (itemCount * Math.log2(Math.max(itemCount, 2))) / 5,
+    );
 
     const avgPairsPerVote = votesDone > 0 ? orderedPairs / votesDone : 0;
 
@@ -381,9 +391,15 @@ export function restoreMaxDiff(state: MaxDiffState): MaxDiffInstance {
         const otherItems = comparison.set.filter(
             (id) => id !== comparison.best && id !== comparison.worst,
         );
-        instance.orderBefore(comparison.best, [...otherItems, comparison.worst]);
+        instance.orderBefore(comparison.best, [
+            ...otherItems,
+            comparison.worst,
+        ]);
         if (comparison.worst) {
-            instance.orderAfter(comparison.worst, [...otherItems, comparison.best]);
+            instance.orderAfter(comparison.worst, [
+                ...otherItems,
+                comparison.best,
+            ]);
         }
     }
     return instance;

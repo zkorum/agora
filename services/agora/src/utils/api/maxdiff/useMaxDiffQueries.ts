@@ -11,9 +11,9 @@ import type {
   ExtendedConversation,
   MaxDiffComparison,
 } from "src/shared/types/zod";
+import type { MaxDiffState } from "src/shared/utils/maxdiff";
 import { useLanguageStore } from "src/stores/language";
 import { getRetainedConversationRankingStatsUpdate } from "src/utils/api/post/rankingStatsUpdate";
-import type { MaxDiffState } from "src/utils/maxdiff";
 import { hasPendingMaxDiffItemTranslations } from "src/utils/maxdiffTranslation";
 import {
   isContentTranslationEventForIdentity,

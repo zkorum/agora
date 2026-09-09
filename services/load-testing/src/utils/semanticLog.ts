@@ -7,6 +7,7 @@ export type LoadTestEventOutcome =
     | "complete";
 
 export interface LoadTestEvent {
+    scenario?: "conversation-voting" | "solidago-ranking";
     phase: string;
     action: string;
     outcome: LoadTestEventOutcome;
