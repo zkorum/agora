@@ -3,8 +3,6 @@
 # Sync shared-app-api code to frontend (agora) and API only
 #
 
-set -euo pipefail
-
 # Step 1: Use rsync to copy from source to api
 rsync -av --delete ./src/ ../api/src/shared-app-api/
 
@@ -15,7 +13,7 @@ rsync -av --delete ./src/ ../agora/src/shared-app-api/
 # See https://github.com/validatorjs/validator.js
 # Step 4: add "generated" comment if it does not already exist
 comment="/** **** WARNING: GENERATED FROM SHARED-APP-API DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/"
-find ../agora/src/shared-app-api/ -name "*.ts" -print0 | while read -r -d $'\0' file
+find ../agora/src/shared-app-api/ -name "*.ts" -print0 | while read -d $'\0' file
 do
   # cross-platform sed (macOS and Linux)
   if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -35,7 +33,7 @@ do
   fi
 done
 
-find ../api/src/shared-app-api/ -name "*.ts" -print0 | while read -r -d $'\0' file
+find ../api/src/shared-app-api/ -name "*.ts" -print0 | while read -d $'\0' file
 do
   # Check if the comment already exists in the file
   if ! grep -qF "$comment" "$file"; then

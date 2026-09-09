@@ -74,42 +74,32 @@ dev-sync-backend: dev-sync-ts-backend
 sync-python-artifacts: sync-python-models sync-python-shared-types sync-import-worker-contracts
 
 sync-python-models: sync-ts-backend
-	set -eu; \
-	cd services/api; \
-	schema_sql=$$(mktemp "$${TMPDIR:-/tmp}/agora-schema.XXXXXX"); \
-	trap 'rm -f "$$schema_sql"' 0; \
-	trap 'exit 1' HUP INT TERM; \
-	npx drizzle-kit export > "$$schema_sql"; \
-	npx tsx scripts/sync-schema-cli.ts \
+	cd services/api && npx drizzle-kit export > /tmp/agora-schema.sql
+	cd services/api && npx tsx scripts/sync-schema-cli.ts \
 		--service scoring-worker \
 		--schema-ts ../shared-backend/src/schema.ts \
-		--sql "$$schema_sql" \
-		--output ../scoring-worker/src/scoring_worker/generated_models.py; \
-	npx tsx scripts/sync-schema-cli.ts \
+		--sql /tmp/agora-schema.sql \
+		--output ../scoring-worker/src/scoring_worker/generated_models.py
+	cd services/api && npx tsx scripts/sync-schema-cli.ts \
 		--service shared-analysis-worker \
 		--schema-ts ../shared-backend/src/schema.ts \
-		--sql "$$schema_sql" \
-		--output ../shared-analysis-worker/src/agora_analysis_worker_shared/generated_models.py; \
-	npx tsx scripts/sync-schema-cli.ts \
+		--sql /tmp/agora-schema.sql \
+		--output ../shared-analysis-worker/src/agora_analysis_worker_shared/generated_models.py
+	cd services/api && npx tsx scripts/sync-schema-cli.ts \
 		--service import-worker \
 		--schema-ts ../shared-backend/src/schema.ts \
-		--sql "$$schema_sql" \
-		--output ../import-worker/src/import_worker/generated_models.py; \
-	npx tsx scripts/sync-schema-cli.ts \
+		--sql /tmp/agora-schema.sql \
+		--output ../import-worker/src/import_worker/generated_models.py
+	cd services/api && npx tsx scripts/sync-schema-cli.ts \
 		--service content-translation-worker \
 		--schema-ts ../shared-backend/src/schema.ts \
-		--sql "$$schema_sql" \
+		--sql /tmp/agora-schema.sql \
 		--output ../content-translation-worker/src/content_translation_worker/generated_models.py
 
-sync-api-test-db-fixtures: sync-ts-backend
-	set -eu; \
-	cd services/api; \
-	schema_sql=$$(mktemp "$${TMPDIR:-/tmp}/agora-schema.XXXXXX"); \
-	trap 'rm -f "$$schema_sql"' 0; \
-	trap 'exit 1' HUP INT TERM; \
-	npx drizzle-kit export > "$$schema_sql"; \
-	npx tsx scripts/sync-api-test-schema-fixtures-cli.ts \
-		--sql "$$schema_sql" \
+sync-api-test-db-fixtures:
+	cd services/api && npx drizzle-kit export > /tmp/agora-schema.sql
+	cd services/api && npx tsx scripts/sync-api-test-schema-fixtures-cli.ts \
+		--sql /tmp/agora-schema.sql \
 		--config tests/fixtures/db/schema-fixtures.json \
 		--output-dir tests/fixtures/db
 
