@@ -163,22 +163,24 @@ test("source sync is repeatable, warns correctly, deletes stale copies and keeps
   );
 });
 
-test("shared-backend stops on an rsync failure instead of reporting success", async (t) => {
-  const root = await syncFixture(t);
-  const bin = resolve(root, "bin");
-  await put({
-    path: resolve(bin, "rsync"),
-    content: "#!/bin/sh\nexit 23\n",
-    executable: true,
+for (const service of ["shared", "shared-backend", "shared-app-api"]) {
+  test(`${service} stops on an rsync failure instead of reporting success`, async (t) => {
+    const root = await syncFixture(t);
+    const bin = resolve(root, "bin");
+    await put({
+      path: resolve(bin, "rsync"),
+      content: "#!/bin/sh\nexit 23\n",
+      executable: true,
+    });
+    const result = runSync({
+      root,
+      service,
+      env: { PATH: `${bin}:${process.env.PATH}` },
+    });
+    assert.equal(result.status, 23, result.stderr);
+    assert.doesNotMatch(result.stdout, /sync complete|Universal sync complete/);
   });
-  const result = runSync({
-    root,
-    service: "shared-backend",
-    env: { PATH: `${bin}:${process.env.PATH}` },
-  });
-  assert.equal(result.status, 23, result.stderr);
-  assert.doesNotMatch(result.stdout, /sync complete|Universal sync complete/);
-});
+}
 
 function shellQuote(value) {
   return `'${value.replaceAll("'", "'\\''")}'`;
