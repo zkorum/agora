@@ -1,65 +1,91 @@
 #!/bin/bash
 
-# Provide the directory path as an argument to the script
-directory="$1"
+set -euo pipefail
+export LC_ALL=C
+shopt -s nullglob
 
-# Check if the directory exists
+directory="${1:-}"
 if [ ! -d "$directory" ]; then
-    echo "Directory does not exist."
+    echo "Directory does not exist: $directory" >&2
     exit 1
 fi
 
-rsync -av --include "*.sql" --exclude="*" "$directory" ./database/flyway/
+directory=$(cd -- "$directory" && pwd -P)
+service_directory=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
+FLYWAY_DIRECTORY=$(cd -- "$service_directory/database/flyway" && pwd -P)
+if [ "$directory" = "$FLYWAY_DIRECTORY" ]; then
+    echo "Source and Flyway directories must differ." >&2
+    exit 1
+fi
 
+# Never copy versioned SQL over existing Flyway migrations.
+rsync -av --include "[0-9][0-9][0-9][0-9]_*.sql" --exclude="*" "$directory/" "$FLYWAY_DIRECTORY/"
+
+# Bash globs give stable bytewise order, without a pipeline subshell losing state.
+existing_files=("$FLYWAY_DIRECTORY"/*.sql)
+flyway_pattern='^V([0-9]{4})(\.[0-9]+)?__(.+)\.sql$'
+drizzle_pattern='^([0-9]{4})_(.+)\.sql$'
 max_version=0
-
-# Find the largest migrate script number (e.g: 5 from V0001, V0002 V0003... V0005)
-max_version=$(find "./database/flyway" -type f -name "*.sql" -print0 | while IFS= read -r -d '' filename; do
-    basename=$(basename "$filename" .sql)
-
-    # Check if the basename matches the desired format (4 digits followed by an underscore)
-    if [[ $basename =~ ^V[0-9]{4}__ ]]; then
-        # Extract the first 4 digits and the rest of the basename
-        first_four_digits=${basename:1:4}
-        rest_of_basename=${basename:5}
-        version_number=$(expr "$first_four_digits" + 0)
-        
+# Bash 3 treats empty arrays as unset under nounset.
+for filename in "${existing_files[@]:-}"; do
+    basename=${filename##*/}
+    if [ -f "$filename" ] && [[ $basename =~ $flyway_pattern ]]; then
+        version_number=$((10#${BASH_REMATCH[1]}))
         if [ "$version_number" -gt "$max_version" ]; then
-          max_version="$version_number"
-          echo "$max_version"
+            max_version=$version_number
         fi
     fi
-  done)
+done
 
-# https://stackoverflow.com/a/39615292/11046178
-max_version=$(echo "${max_version##*$'\n'}")
+for filename in "$FLYWAY_DIRECTORY"/*.sql; do
+    basename=${filename##*/}
+    if [ -f "$filename" ] && [[ $basename =~ $drizzle_pattern ]]; then
+        version_number=$((10#${BASH_REMATCH[1]}))
+        rest_of_basename=${BASH_REMATCH[2]}
+        already_migrated=false
+        existing_index=0
+        for existing_filename in "${existing_files[@]:-}"; do
+            existing_basename=${existing_filename##*/}
+            if [ -f "$existing_filename" ] && [[ $existing_basename =~ $flyway_pattern ]]; then
+                # Historical renumbering only increases the Drizzle index. A newer
+                # index reusing an older random description is a new migration.
+                if [ "${BASH_REMATCH[3]}" = "$rest_of_basename" ] &&
+                    [ "$((10#${BASH_REMATCH[1]}))" -ge "$version_number" ]; then
+                    already_migrated=true
+                    # Consume each historical copy once, in ascending source order.
+                    existing_files[existing_index]=""
+                    break
+                fi
+            fi
+            existing_index=$((existing_index + 1))
+        done
 
-FLYWAY_DIRECTORY="./database/flyway"
-# Use find to search for files with ".sql" extension in the given directory
-# Then, use a for loop to go through each filename and extract only the filenames without extensions
-find $FLYWAY_DIRECTORY -type f -name "*.sql" -print0 | while IFS= read -r -d '' filename; do
-    basename=$(basename "$filename" .sql)
-
-    # Check if the basename matches the desired format (4 digits followed by an underscore)
-    if [[ $basename =~ ^[0-9]{4}_ ]]; then
-        # Extract the first 4 digits and the rest of the basename
-        first_four_digits=${basename:0:4}
-        rest_of_basename=${basename:5}
-        number_of_existing_files_with_that_name=$(ls database/flyway | grep "$rest_of_basename" | wc -l)
-        # Special case - when upgrading the tool
-        if ([ "$rest_of_basename" = "sturdy_serpent_society" ] || [ "$number_of_existing_files_with_that_name" -gt 1 ]); then
-          rm "$filename"
-        else
-          # Rename the file using the desired format (V<4_digits>__<some_name>.sql)
-          version_number=$(expr "$first_four_digits" + 0)
-          if [ $version_number -le $max_version ]; then
-            version_number=$(expr "$max_version" + 1)
-            first_four_digits=$(printf '%04d' $version_number) # pad 4 zeros at the beginning
-          fi
-          new_basename="V${first_four_digits}__${rest_of_basename}"
-          new_filename="$FLYWAY_DIRECTORY/$new_basename.sql"
-          mv "$filename" "$new_filename"
-          echo "Renamed $filename to $new_basename.sql"
+        # Special case retained from the Drizzle tool upgrade.
+        if [ "$rest_of_basename" = "sturdy_serpent_society" ] || [ "$already_migrated" = true ]; then
+            rm -- "$filename"
+            continue
         fi
+
+        if [ "$version_number" -le "$max_version" ]; then
+            version_number=$((max_version + 1))
+        fi
+        if [ "$version_number" -gt 9999 ]; then
+            echo "No four-digit Flyway version available for $filename" >&2
+            exit 1
+        fi
+        new_basename=$(printf 'V%04d__%s.sql' "$version_number" "$rest_of_basename")
+        new_filename="$FLYWAY_DIRECTORY/$new_basename"
+        if [ -e "$new_filename" ] || [ -L "$new_filename" ]; then
+            echo "Refusing to overwrite $new_filename" >&2
+            exit 1
+        fi
+        mv -n -- "$filename" "$new_filename"
+        # mv -n can report success without moving when the destination exists.
+        if [ -e "$filename" ] || [ -L "$filename" ]; then
+            echo "Refusing to overwrite $new_filename" >&2
+            exit 1
+        fi
+        max_version=$version_number
+        echo "Renamed $filename to $new_basename"
     fi
 done

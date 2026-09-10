@@ -3,6 +3,8 @@
 # Sync universal shared code to ALL services (frontend + backend)
 #
 
+set -euo pipefail
+
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SHARED_DIR="$(dirname "$SCRIPT_DIR")"
@@ -33,7 +35,7 @@ for service in "${ALL_SERVICES[@]}"; do
     rsync -av --delete "$SHARED_DIR/src/" "$TARGET_DIR/"
 
     # Add warning comment to all TypeScript files
-    find "$TARGET_DIR" -name "*.ts" -print0 | while read -d $'\0' file; do
+    find "$TARGET_DIR" -name "*.ts" -print0 | while read -r -d $'\0' file; do
         # Check if the comment already exists in the file
         if ! grep -qF "$COMMENT" "$file"; then
             # Add comment at the beginning of the file
