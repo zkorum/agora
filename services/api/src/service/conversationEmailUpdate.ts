@@ -2567,6 +2567,15 @@ function buildPreferenceConversationConfiguredCondition() {
     ) = true`;
 }
 
+function buildPreferenceConversationDiscoveryCondition(
+    focusConversationSlugId: string | undefined,
+) {
+    // A direct link can target a private conversation without making it searchable.
+    return focusConversationSlugId === undefined
+        ? eq(conversationTable.isIndexed, true)
+        : eq(conversationTable.slugId, focusConversationSlugId);
+}
+
 export async function queryPreferenceGroupPage({
     db,
     userId,
@@ -2586,6 +2595,12 @@ export async function queryPreferenceGroupPage({
     | { success: false }
 > {
     const focus = request.mode === "focus" ? request.focus : undefined;
+    const conversationDiscoveryCondition =
+        buildPreferenceConversationDiscoveryCondition(
+            focus?.kind === "conversation"
+                ? focus.conversationSlugId
+                : undefined,
+        );
     const groupLimit = request.mode === "browse" ? request.limit : 1;
     const search =
         request.mode === "browse"
@@ -2710,7 +2725,7 @@ export async function queryPreferenceGroupPage({
                         ),
                         and(
                             projectConversationAvailable,
-                            eq(conversationTable.isIndexed, true),
+                            conversationDiscoveryCondition,
                         ),
                     ),
                     conversationMatchesRequest,
@@ -2776,7 +2791,7 @@ export async function queryPreferenceGroupPage({
             ),
             and(
                 noProjectConversationAvailable,
-                eq(conversationTable.isIndexed, true),
+                conversationDiscoveryCondition,
             ),
         ),
         focus?.kind === "project"
@@ -3171,7 +3186,12 @@ function buildPreferenceConversationScopeConditions({
             buildPreferenceConversationConfiguredCondition(),
             or(
                 explicitPreference,
-                and(availableCondition, eq(conversationTable.isIndexed, true)),
+                and(
+                    availableCondition,
+                    buildPreferenceConversationDiscoveryCondition(
+                        focusConversationSlugId,
+                    ),
+                ),
             ),
             focusConversationSlugId === undefined
                 ? undefined
