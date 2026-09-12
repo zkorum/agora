@@ -24,7 +24,7 @@ exclude-newer = "5 days"
 
 [project.optional-dependencies]
 analysis = [
-    "red-dwarf @ git+https://github.com/nicobao/red-dwarf.git@6563d9c91ddc4a284adc65620ce033020733d28b",
+    "red-dwarf @ git+https://github.com/nicobao/red-dwarf.git@55dd641b9b486eaefb4daedaf92b354716ae8ca8",
     "scikit-learn>=1.7,<2",
 ]
 dev = [
@@ -32,7 +32,7 @@ dev = [
     "boto3-stubs[bedrock-runtime]>=1.40",
     "pandas-stubs>=2.3",
     "pytest>=8.0",
-    "red-dwarf @ git+https://github.com/nicobao/red-dwarf.git@6563d9c91ddc4a284adc65620ce033020733d28b",
+    "red-dwarf @ git+https://github.com/nicobao/red-dwarf.git@55dd641b9b486eaefb4daedaf92b354716ae8ca8",
     "ruff>=0.9",
     "scikit-learn>=1.7,<2",
 ]

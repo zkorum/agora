@@ -25,7 +25,7 @@ export const emailUpdateUnsubscribeTranslations = {
     returnHome: "Return to Agora",
     title: "Unsubscribe from Email Updates?",
     projectDescription:
-      "Stop Email Updates for every listed conversation in the project “{title}”.",
+      "Stop all Email Updates from the project “{title}”, including conversations you subscribed to individually.",
     conversationDescription:
       "Stop Email Updates for the conversation “{title}”.",
     conversationsDescription:
@@ -45,7 +45,7 @@ export const emailUpdateUnsubscribeTranslations = {
     returnHome: "Volver a Agora",
     title: "¿Dejar de recibir novedades por correo?",
     projectDescription:
-      "Deje de recibir las novedades del proyecto «{title}» en todas las conversaciones indicadas.",
+      "Deje de recibir todas las novedades del proyecto «{title}», incluidas las conversaciones a las que se suscribió individualmente.",
     conversationDescription:
       "Deje de recibir las novedades de la conversación «{title}».",
     conversationsDescription:
@@ -65,7 +65,7 @@ export const emailUpdateUnsubscribeTranslations = {
     returnHome: "Retourner sur Agora",
     title: "Se désabonner des nouvelles par e-mail ?",
     projectDescription:
-      "Ne recevez plus les nouvelles du projet « {title} » dans toutes les conversations répertoriées.",
+      "Ne recevez plus aucune nouvelle du projet « {title} », y compris celles des conversations auxquelles vous vous êtes abonné individuellement.",
     conversationDescription:
       "Ne recevez plus les nouvelles de la conversation « {title} ».",
     conversationsDescription:
@@ -83,7 +83,8 @@ export const emailUpdateUnsubscribeTranslations = {
     unavailableDescription: "此連結可能無效、已過期，或是用於其他操作。",
     returnHome: "返回 Agora",
     title: "要取消訂閱電子郵件更新嗎？",
-    projectDescription: "停止接收「{title}」專案中所有列出對話的電子郵件更新。",
+    projectDescription:
+      "停止接收「{title}」專案的所有電子郵件更新，包括您個別訂閱的對話。",
     conversationDescription: "停止接收「{title}」對話的電子郵件更新。",
     conversationsDescription: "停止接收此電子郵件中列出的所有對話更新。",
     confirm: "確認取消訂閱",
@@ -99,7 +100,8 @@ export const emailUpdateUnsubscribeTranslations = {
     unavailableDescription: "此链接可能无效、已过期，或用于其他操作。",
     returnHome: "返回 Agora",
     title: "要取消订阅电子邮件更新吗？",
-    projectDescription: "停止接收“{title}”项目中所有已列出对话的电子邮件更新。",
+    projectDescription:
+      "停止接收“{title}”项目的所有电子邮件更新，包括您单独订阅的对话。",
     conversationDescription: "停止接收“{title}”对话的电子邮件更新。",
     conversationsDescription: "停止接收此电子邮件中列出的所有对话更新。",
     confirm: "确认取消订阅",
@@ -117,7 +119,7 @@ export const emailUpdateUnsubscribeTranslations = {
     returnHome: "Agoraに戻る",
     title: "メール更新の配信を停止しますか？",
     projectDescription:
-      "プロジェクト「{title}」に掲載されているすべての会話のメール更新を停止します。",
+      "個別に購読した会話を含め、プロジェクト「{title}」のすべてのメール更新を停止します。",
     conversationDescription: "会話「{title}」のメール更新を停止します。",
     conversationsDescription:
       "このメールに記載されているすべての会話のメール更新を停止します。",
@@ -136,7 +138,7 @@ export const emailUpdateUnsubscribeTranslations = {
     returnHome: "العودة إلى Agora",
     title: "هل تريد إلغاء الاشتراك في تحديثات البريد الإلكتروني؟",
     projectDescription:
-      "أوقف تحديثات البريد الإلكتروني لجميع المحادثات المدرجة في مشروع «{title}».",
+      "أوقف جميع تحديثات البريد الإلكتروني من مشروع «{title}»، بما فيها المحادثات التي اشتركت فيها بشكل فردي.",
     conversationDescription:
       "أوقف تحديثات البريد الإلكتروني للمحادثة «{title}».",
     conversationsDescription:
@@ -156,7 +158,7 @@ export const emailUpdateUnsubscribeTranslations = {
     returnHome: "بازگشت به Agora",
     title: "دریافت به‌روزرسانی‌های ایمیلی لغو شود؟",
     projectDescription:
-      "دریافت به‌روزرسانی‌های ایمیلی همه گفتگوهای فهرست‌شده در پروژه «{title}» را متوقف کنید.",
+      "دریافت همه به‌روزرسانی‌های ایمیلی پروژه «{title}»، از جمله گفتگوهایی که جداگانه در آن‌ها مشترک شده‌اید، را متوقف کنید.",
     conversationDescription:
       "دریافت به‌روزرسانی‌های ایمیلی گفتگوی «{title}» را متوقف کنید.",
     conversationsDescription:
@@ -177,7 +179,7 @@ export const emailUpdateUnsubscribeTranslations = {
     returnHome: "חזרה ל-Agora",
     title: "לבטל את ההרשמה לעדכוני דוא״ל?",
     projectDescription:
-      "הפסקת עדכוני הדוא״ל לכל השיחות הרשומות בפרויקט ״{title}״.",
+      "הפסקת כל עדכוני הדוא״ל מהפרויקט ״{title}״, כולל שיחות שנרשמתם אליהן בנפרד.",
     conversationDescription: "הפסקת עדכוני הדוא״ל לשיחה ״{title}״.",
     conversationsDescription:
       "הפסקת עדכוני הדוא״ל לכל השיחות המופיעות בהודעה הזו.",
@@ -196,7 +198,7 @@ export const emailUpdateUnsubscribeTranslations = {
     returnHome: "Agora'га кайтуу",
     title: "Электрондук жаңыртууларга жазылуудан баш тартасызбы?",
     projectDescription:
-      "«{title}» долбоорундагы тизмеленген бардык талкуулар үчүн электрондук жаңыртууларды токтотуңуз.",
+      "«{title}» долбоорунун бардык электрондук жаңыртууларын, анын ичинде өзүнчө жазылган талкууларыңыздын жаңыртууларын токтотуңуз.",
     conversationDescription:
       "«{title}» талкуусу үчүн электрондук жаңыртууларды токтотуңуз.",
     conversationsDescription:
@@ -216,7 +218,7 @@ export const emailUpdateUnsubscribeTranslations = {
     returnHome: "Вернуться в Agora",
     title: "Отписаться от почтовых обновлений?",
     projectDescription:
-      "Отключите почтовые обновления для всех указанных обсуждений проекта «{title}».",
+      "Отключите все почтовые обновления проекта «{title}», включая обсуждения, на которые вы подписались отдельно.",
     conversationDescription:
       "Отключите почтовые обновления для обсуждения «{title}».",
     conversationsDescription:

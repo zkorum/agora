@@ -2,6 +2,10 @@ import { createHash } from "node:crypto";
 import { httpErrors } from "@fastify/sensible";
 import { parseSupportedDisplayLanguageOrUndefined } from "@/shared/languages.js";
 import { fetchProjectAttributions } from "./projectPage.js";
+import {
+    conversationEmailImageOrigins,
+    resolveConversationEmailImage,
+} from "./conversationEmailUpdateImages.js";
 import { createConversationEmailExampleBranding } from "./conversationEmailUpdateDevFixtures.js";
 import { conversationEmailExampleConversations } from "@/shared/branding/emailExamples.js";
 import {
@@ -2563,6 +2567,15 @@ function buildPreferenceConversationConfiguredCondition() {
     ) = true`;
 }
 
+function buildPreferenceConversationDiscoveryCondition(
+    focusConversationSlugId: string | undefined,
+) {
+    // A direct link can target a private conversation without making it searchable.
+    return focusConversationSlugId === undefined
+        ? eq(conversationTable.isIndexed, true)
+        : eq(conversationTable.slugId, focusConversationSlugId);
+}
+
 export async function queryPreferenceGroupPage({
     db,
     userId,
@@ -2582,6 +2595,12 @@ export async function queryPreferenceGroupPage({
     | { success: false }
 > {
     const focus = request.mode === "focus" ? request.focus : undefined;
+    const conversationDiscoveryCondition =
+        buildPreferenceConversationDiscoveryCondition(
+            focus?.kind === "conversation"
+                ? focus.conversationSlugId
+                : undefined,
+        );
     const groupLimit = request.mode === "browse" ? request.limit : 1;
     const search =
         request.mode === "browse"
@@ -2706,7 +2725,7 @@ export async function queryPreferenceGroupPage({
                         ),
                         and(
                             projectConversationAvailable,
-                            eq(conversationTable.isIndexed, true),
+                            conversationDiscoveryCondition,
                         ),
                     ),
                     conversationMatchesRequest,
@@ -2772,7 +2791,7 @@ export async function queryPreferenceGroupPage({
             ),
             and(
                 noProjectConversationAvailable,
-                eq(conversationTable.isIndexed, true),
+                conversationDiscoveryCondition,
             ),
         ),
         focus?.kind === "project"
@@ -3167,7 +3186,12 @@ function buildPreferenceConversationScopeConditions({
             buildPreferenceConversationConfiguredCondition(),
             or(
                 explicitPreference,
-                and(availableCondition, eq(conversationTable.isIndexed, true)),
+                and(
+                    availableCondition,
+                    buildPreferenceConversationDiscoveryCondition(
+                        focusConversationSlugId,
+                    ),
+                ),
             ),
             focusConversationSlugId === undefined
                 ? undefined
@@ -4750,7 +4774,6 @@ export function createConversationEmailUpdateService({
     baseImageServiceUrl: string;
     siteBaseUrl: string;
 }): ConversationEmailUpdateService {
-    const imageOrigin = new URL(baseImageServiceUrl).origin;
     const conversationUrl = (row: {
         scope_kind: "project" | "no_project";
         project_slug: string;
@@ -4794,28 +4817,6 @@ export function createConversationEmailUpdateService({
             .where(eq(projectTable.id, project.project_id))
             .limit(1);
         const row = rows.at(0);
-        const controlledImage = ({
-            path,
-            full,
-        }: {
-            path: string | null;
-            full: boolean;
-        }): string | undefined => {
-            const value = imagePathToUrl({
-                imagePath: path,
-                isFullImagePath: full,
-                baseImageServiceUrl,
-            });
-            if (value === undefined) return undefined;
-            const url = URL.parse(value);
-            return url !== null &&
-                url.origin === imageOrigin &&
-                ["https:", "http:"].includes(url.protocol) &&
-                url.username === "" &&
-                url.password === ""
-                ? url.href
-                : undefined;
-        };
         const personal =
             row?.personalUserId != null && row.visibility === "unlisted";
         const brandingLanguage =
@@ -4850,24 +4851,27 @@ export function createConversationEmailUpdateService({
                     : attributions.map((entry) => ({
                           role: entry.role,
                           displayName: entry.displayName,
-                          imageUrl: controlledImage({
-                              path: entry.imageUrl ?? null,
-                              full: true,
+                          imageUrl: resolveConversationEmailImage({
+                              imagePath: entry.imageUrl ?? null,
+                              isFullImagePath: true,
+                              baseImageServiceUrl,
                           }),
                           websiteUrl: entry.websiteUrl,
                       })),
             imageUrl:
                 personal || project.scope_kind === "project"
                     ? undefined
-                    : controlledImage({
-                          path: row?.imagePath ?? null,
-                          full: row?.isFullImagePath ?? false,
+                    : resolveConversationEmailImage({
+                          imagePath: row?.imagePath ?? null,
+                          isFullImagePath: row?.isFullImagePath ?? false,
+                          baseImageServiceUrl,
                       }),
             bannerImageUrl:
                 project.scope_kind === "project"
-                    ? controlledImage({
-                          path: row?.bannerPath ?? null,
-                          full: row?.bannerIsFullPath ?? false,
+                    ? resolveConversationEmailImage({
+                          imagePath: row?.bannerPath ?? null,
+                          isFullImagePath: row?.bannerIsFullPath ?? false,
+                          baseImageServiceUrl,
                       })
                     : undefined,
         });
@@ -4881,7 +4885,6 @@ export function createConversationEmailUpdateService({
         language,
         unsubscribeScope,
         variant = "participant",
-        imageOrigins = [imageOrigin],
     }: {
         subject: string;
         bodyHtml: string;
@@ -4891,7 +4894,6 @@ export function createConversationEmailUpdateService({
         language: DisplayLanguage;
         unsubscribeScope: "project" | "conversation";
         variant?: "participant" | "owner_copy" | "test";
-        imageOrigins?: readonly string[];
     }) => {
         const common = {
             subject,
@@ -4910,8 +4912,11 @@ export function createConversationEmailUpdateService({
                         ...common,
                         variant,
                         actions: {
-                            unsubscribeScope,
-                            unsubscribeUrl: "#",
+                            conversationUnsubscribeUrl: "#",
+                            projectUnsubscribeUrl:
+                                unsubscribeScope === "project"
+                                    ? "#"
+                                    : undefined,
                             manageUrl: "#",
                             reportUrl: "#",
                         },
@@ -4919,7 +4924,7 @@ export function createConversationEmailUpdateService({
         );
         return createConversationEmailPreviewDocument({
             email,
-            imageOrigins,
+            imageOrigins: conversationEmailImageOrigins(branding),
         });
     };
     const resolveRenderContent = async ({
@@ -5487,7 +5492,6 @@ export function createConversationEmailUpdateService({
                         language: request.language,
                         siteBaseUrl,
                     }),
-                    imageOrigins: [imageOrigin, new URL(siteBaseUrl).origin],
                     language: request.language,
                     variant: request.variant,
                     unsubscribeScope:

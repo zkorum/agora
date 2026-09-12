@@ -13,6 +13,9 @@ lint:
 typecheck:
 	uv run --extra dev basedpyright
 
+test:
+	uv run --extra dev pytest
+
 image-buildx:
 	docker buildx build --pull --platform linux/amd64 -f Dockerfile -t $(IMAGE):$(TAG_ARG) ../..
 

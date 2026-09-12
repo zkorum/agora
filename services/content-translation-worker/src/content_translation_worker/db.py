@@ -4,12 +4,12 @@ import html
 import logging
 import re
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Literal, TypedDict
 
 import bleach
-from sqlalchemy import and_, func, or_, select, text, update
+from sqlalchemy import and_, func, or_, select, true, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from content_translation_worker.events import (
@@ -26,7 +26,6 @@ from content_translation_worker.generated_models import (
     ConversationContent,
     ConversationContentTranslation,
     ConversationViewSnapshot,
-    DisplayLanguageCode,
     LanguageDetectionProvider,
     Opinion,
     OpinionContent,
@@ -51,11 +50,27 @@ from content_translation_worker.generated_models import (
     SurveyQuestionOptionContentTranslation,
     User,
 )
-from content_translation_worker.translation import (
-    ContentTranslationProviderError,
-    ContentTranslationResult,
-    ContentTranslationService,
-    translate_chinese_script_with_opencc,
+from content_translation_worker.models import (
+    ClaimedContentTranslationWork,
+    ContentRevision,
+    ConversationSource,
+    ConversationTranslationBundle,
+    OpinionSource,
+    OpinionTranslationBundle,
+    PreparedContentTranslation,
+    ProcessWorkResult,
+    ProjectSource,
+    ProjectTranslationBundle,
+    RankingItemSource,
+    RankingItemTranslationBundle,
+    SurveyQuestionOptionSource,
+    SurveyQuestionSource,
+    SurveyRevision,
+    SurveyTranslationBundle,
+)
+from content_translation_worker.work_policy import (
+    retry_delays_seconds,
+    translation_target_languages,
 )
 
 EAGER_VISIBLE_PRIORITY_RANK = 1
@@ -63,6 +78,16 @@ log = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
+    from sqlalchemy.sql.elements import ColumnElement
+
+    from content_translation_worker.models import (
+        SourceRevision,
+        TranslationBundle,
+        TranslationSource,
+    )
+    from content_translation_worker.translation import (
+        ContentTranslationResult,
+    )
 
 SUPPORTED_SOURCE_KINDS = {
     ContentTranslationSourceKind.conversation,
@@ -240,26 +265,6 @@ class TranslationSourceMetadata:
     source_language_confidence: float | None = None
 
 
-EMPTY_TRANSLATION_SOURCE_METADATA = TranslationSourceMetadata(
-    source_language_code=None,
-    source_raw_language_code=None,
-    source_language_provider=None,
-)
-
-
-@dataclass(frozen=True)
-class TranslationSourceDecision:
-    source_language_code_for_translation: str | None
-    use_google_detected_source: bool
-
-
-CHINESE_SCRIPT_LANGUAGE_CODES = frozenset({"zh-Hans", "zh-CN", "zh-Hant", "zh-TW"})
-CHINESE_DISPLAY_LANGUAGE_CODES = frozenset({"zh-Hans", "zh-Hant"})
-CANONICAL_CHINESE_PROVIDER_TARGET = "zh-Hant"
-SIMPLIFIED_CHINESE_TARGET = "zh-Hans"
-HIGH_CONFIDENCE_LINGUA_SOURCE_THRESHOLD = 0.8
-
-
 GOOGLE_TRANSLATE_LANGUAGE_ALIASES = {
     "iw": "he",
     "tl": "fil",
@@ -298,40 +303,6 @@ def _normalize_google_translate_source_language_code(
         return SpokenLanguageCode(primary_code)
     except ValueError:
         return None
-
-
-def choose_user_content_translation_source(
-    *,
-    source_language_code: str | None,
-    source_language_provider: LanguageDetectionProvider | None,
-    source_language_confidence: float | None,
-) -> TranslationSourceDecision:
-    if source_language_code is None:
-        return TranslationSourceDecision(
-            source_language_code_for_translation=None,
-            use_google_detected_source=True,
-        )
-
-    if source_language_provider == LanguageDetectionProvider.google_translate:
-        return TranslationSourceDecision(
-            source_language_code_for_translation=source_language_code,
-            use_google_detected_source=False,
-        )
-
-    if (
-        source_language_provider == LanguageDetectionProvider.lingua
-        and source_language_confidence is not None
-        and source_language_confidence >= HIGH_CONFIDENCE_LINGUA_SOURCE_THRESHOLD
-    ):
-        return TranslationSourceDecision(
-            source_language_code_for_translation=source_language_code,
-            use_google_detected_source=False,
-        )
-
-    return TranslationSourceDecision(
-        source_language_code_for_translation=None,
-        use_google_detected_source=True,
-    )
 
 
 def build_translation_source_metadata_from_results(
@@ -457,63 +428,17 @@ def _promote_ranking_item_source_metadata(
     )
 
 
-@dataclass(frozen=True)
-class ClaimedContentTranslationWork:
-    id: int
-    conversation_id: int | None
-    conversation_slug_id: str | None
-    source_kind: ContentTranslationSourceKind
-    source_key: str
-    project_content_id: int | None
-    conversation_content_id: int | None
-    opinion_content_id: int | None
-    survey_question_content_id: int | None
-    survey_question_option_content_ids: list[int] | None
-    ranking_item_content_id: int | None
-    display_language_code: DisplayLanguageCode
-    lease_token: uuid.UUID
-
-
-@dataclass(frozen=True)
-class ProcessWorkResult:
-    work_id: int
-    status: Literal[
-        "completed",
-        "failed",
-        "ineligible_source",
-        "missing_source",
-        "lost_lease",
-    ]
-
-
 class LostContentTranslationWorkLeaseError(RuntimeError):
     pass
 
 
-@dataclass(frozen=True)
-class LocalizedTranslationResult:
-    display_language_code: DisplayLanguageCode
-    result: ContentTranslationResult
-
-
 def recover_expired_leases(session: Session) -> int:
-    expired_ids = list(
-        session.scalars(
-            select(ContentTranslationWork.id).where(
-                and_(
-                    ContentTranslationWork.status == ContentTranslationWorkStatus.running,
-                    ContentTranslationWork.lease_expires_at.is_not(None),
-                    ContentTranslationWork.lease_expires_at < func.now(),
-                )
-            )
-        )
-    )
-    if not expired_ids:
-        return 0
-
-    session.execute(
+    recovered_ids = session.scalars(
         update(ContentTranslationWork)
-        .where(ContentTranslationWork.id.in_(expired_ids))
+        .where(
+            ContentTranslationWork.status == ContentTranslationWorkStatus.running,
+            ContentTranslationWork.lease_expires_at < func.clock_timestamp(),
+        )
         .values(
             status=ContentTranslationWorkStatus.pending,
             lease_owner=None,
@@ -521,16 +446,36 @@ def recover_expired_leases(session: Session) -> int:
             lease_expires_at=None,
             updated_at=func.now(),
         )
+        .returning(ContentTranslationWork.id)
     )
-    return len(expired_ids)
+    return len(list(recovered_ids))
 
 
 def retry_failed_eager_work(
     session: Session,
     *,
-    retry_after: datetime,
     limit: int,
+    initial_seconds: float,
+    maximum_seconds: float,
 ) -> int:
+    delays = retry_delays_seconds(initial_seconds=initial_seconds, maximum_seconds=maximum_seconds)
+    due_attempts: list[ColumnElement[bool]] = []
+    for index, delay in enumerate(delays):
+        if len(delays) == 1:
+            attempt_condition = true()
+        elif index == len(delays) - 1:
+            attempt_condition = ContentTranslationWork.attempt_count >= index + 1
+        elif index == 0:
+            attempt_condition = ContentTranslationWork.attempt_count <= 1
+        else:
+            attempt_condition = ContentTranslationWork.attempt_count == index + 1
+        due_attempts.append(
+            and_(
+                attempt_condition,
+                ContentTranslationWork.failed_at
+                <= func.statement_timestamp() - timedelta(seconds=delay),
+            )
+        )
     retryable_ids = list(
         session.scalars(
             select(ContentTranslationWork.id)
@@ -545,19 +490,23 @@ def retry_failed_eager_work(
                         ),
                     ),
                     ContentTranslationWork.failed_at.is_not(None),
-                    ContentTranslationWork.failed_at <= retry_after,
+                    or_(*due_attempts),
                 )
             )
             .order_by(ContentTranslationWork.failed_at.asc(), ContentTranslationWork.id.asc())
             .limit(limit)
+            .with_for_update(skip_locked=True)
         )
     )
     if not retryable_ids:
         return 0
 
-    session.execute(
+    updated_ids = session.scalars(
         update(ContentTranslationWork)
-        .where(ContentTranslationWork.id.in_(retryable_ids))
+        .where(
+            ContentTranslationWork.id.in_(retryable_ids),
+            ContentTranslationWork.status == ContentTranslationWorkStatus.failed,
+        )
         .values(
             status=ContentTranslationWorkStatus.pending,
             lease_owner=None,
@@ -567,42 +516,52 @@ def retry_failed_eager_work(
             last_error_message=None,
             updated_at=func.now(),
         )
+        .returning(ContentTranslationWork.id)
     )
-    return len(retryable_ids)
+    return len(list(updated_ids))
 
 
-def _source_key_for_work_row(row: ContentTranslationWork) -> str | None:
+def _source_revision_for_work_row(row: ContentTranslationWork) -> SourceRevision | None:
     if row.source_kind == ContentTranslationSourceKind.project:
         if row.project_content_id is None:
             return None
-        return f"project_content:{row.project_content_id}"
+        return ContentRevision(
+            kind=ContentTranslationSourceKind.project, content_id=row.project_content_id
+        )
     if row.source_kind == ContentTranslationSourceKind.conversation:
         if row.conversation_content_id is None:
             return None
-        return f"conversation_content:{row.conversation_content_id}"
+        return ContentRevision(
+            kind=ContentTranslationSourceKind.conversation, content_id=row.conversation_content_id
+        )
     if row.source_kind == ContentTranslationSourceKind.opinion:
         if row.opinion_content_id is None:
             return None
-        return f"opinion_content:{row.opinion_content_id}"
+        return ContentRevision(
+            kind=ContentTranslationSourceKind.opinion, content_id=row.opinion_content_id
+        )
     if row.source_kind == ContentTranslationSourceKind.ranking_item:
         if row.ranking_item_content_id is None:
             return None
-        return f"ranking_item_content:{row.ranking_item_content_id}"
+        return ContentRevision(
+            kind=ContentTranslationSourceKind.ranking_item, content_id=row.ranking_item_content_id
+        )
     if row.survey_question_content_id is None or row.survey_question_option_content_ids is None:
         return None
-    option_content_ids = ",".join(str(item) for item in row.survey_question_option_content_ids)
-    return f"survey_question:{row.survey_question_content_id}:options:{option_content_ids}"
+    return SurveyRevision(
+        content_id=row.survey_question_content_id,
+        option_content_ids=tuple(row.survey_question_option_content_ids),
+    )
 
 
-def claim_content_translation_work_batch(
+def claim_content_translation_work(
     session: Session,
     *,
     worker_id: str,
     work_ids: list[int] | None,
-    batch_size: int,
+    candidate_limit: int,
     lease_ttl_seconds: int,
-) -> list[ClaimedContentTranslationWork]:
-    lease_expires_at = datetime.now(UTC) + timedelta(seconds=lease_ttl_seconds)
+) -> ClaimedContentTranslationWork | None:
     conditions = [
         ContentTranslationWork.status == ContentTranslationWorkStatus.pending,
         ContentTranslationWork.source_kind.in_(SUPPORTED_SOURCE_KINDS),
@@ -625,7 +584,7 @@ def claim_content_translation_work_batch(
     ]
     if work_ids is not None:
         if not work_ids:
-            return []
+            return None
         conditions.append(ContentTranslationWork.id.in_(work_ids))
 
     rows = session.execute(
@@ -641,527 +600,280 @@ def claim_content_translation_work_batch(
             ContentTranslationWork.updated_at.asc(),
             ContentTranslationWork.id.asc(),
         )
-        .limit(batch_size)
-        .with_for_update(of=ContentTranslationWork, skip_locked=True)
+        .limit(candidate_limit)
     )
 
-    claims: list[ClaimedContentTranslationWork] = []
     for row, conversation_slug_id in rows:
-        source_key = _source_key_for_work_row(row)
-        if source_key is None:
-            row.status = ContentTranslationWorkStatus.failed
-            row.last_error_code = "invalid_source"
-            row.last_error_message = "translation work row does not match source_kind"
-            row.failed_at = datetime.now(UTC)
-            row.updated_at = datetime.now(UTC)
+        source_revision = _source_revision_for_work_row(row)
+        if source_revision is None:
             continue
-
-        lease_token = create_lease_token()
-        row.status = ContentTranslationWorkStatus.running
-        row.attempt_count += 1
-        row.lease_owner = worker_id
-        row.lease_token = lease_token
-        row.lease_expires_at = lease_expires_at
-        row.updated_at = datetime.now(UTC)
-        claims.append(
-            ClaimedContentTranslationWork(
-                id=row.id,
-                conversation_id=row.conversation_id,
-                conversation_slug_id=conversation_slug_id,
-                source_kind=row.source_kind,
-                source_key=source_key,
-                project_content_id=row.project_content_id,
-                conversation_content_id=row.conversation_content_id,
-                opinion_content_id=row.opinion_content_id,
-                survey_question_content_id=row.survey_question_content_id,
-                survey_question_option_content_ids=row.survey_question_option_content_ids,
-                ranking_item_content_id=row.ranking_item_content_id,
-                display_language_code=row.display_language_code,
-                lease_token=lease_token,
+        targets = translation_target_languages(row.display_language_code)
+        # This lock covers only the short claim transaction. Durable row leases
+        # coordinate execution after commit, including requests for either script.
+        if len(targets) > 1:
+            source_key = f"{source_revision.kind.value}:{source_revision.content_id}"
+            if isinstance(source_revision, SurveyRevision):
+                source_key += ":" + ",".join(
+                    str(content_id) for content_id in source_revision.option_content_ids
+                )
+            locked = session.scalar(
+                select(
+                    func.pg_try_advisory_xact_lock(
+                        func.hashtextextended(
+                            f"content_translation:{source_key}:{targets[0].value}", 0
+                        )
+                    )
+                )
+            )
+            if locked is not True:
+                continue
+        for target in targets:
+            if target == row.display_language_code:
+                continue
+            session.execute(
+                pg_insert(ContentTranslationWork)
+                .values(
+                    conversation_id=row.conversation_id,
+                    source_kind=row.source_kind,
+                    project_content_id=row.project_content_id,
+                    conversation_content_id=row.conversation_content_id,
+                    opinion_content_id=row.opinion_content_id,
+                    survey_question_content_id=row.survey_question_content_id,
+                    survey_question_option_content_ids=row.survey_question_option_content_ids,
+                    ranking_item_content_id=row.ranking_item_content_id,
+                    display_language_code=target,
+                    priority_rank=row.priority_rank,
+                    status=ContentTranslationWorkStatus.pending,
+                    created_at=func.now(),
+                    updated_at=func.now(),
+                )
+                .on_conflict_do_nothing()
+            )
+        group = list(
+            session.scalars(
+                select(ContentTranslationWork)
+                .where(
+                    ContentTranslationWork.source_kind == row.source_kind,
+                    _work_source_condition(source_revision),
+                    ContentTranslationWork.display_language_code.in_(targets),
+                )
+                .order_by(ContentTranslationWork.id)
+                .with_for_update(skip_locked=True)
+                .execution_options(populate_existing=True)
             )
         )
-    return claims
+        if len(group) != len(targets) or any(
+            member.status == ContentTranslationWorkStatus.running for member in group
+        ):
+            continue
+        if not any(member.status == ContentTranslationWorkStatus.pending for member in group):
+            continue
+        lease_token = create_lease_token()
+        next_attempt_count = max(member.attempt_count for member in group) + 1
+        session.execute(
+            update(ContentTranslationWork)
+            .where(ContentTranslationWork.id.in_([member.id for member in group]))
+            .values(
+                status=ContentTranslationWorkStatus.running,
+                attempt_count=next_attempt_count,
+                lease_owner=worker_id,
+                lease_token=lease_token,
+                lease_expires_at=func.clock_timestamp() + timedelta(seconds=lease_ttl_seconds),
+                updated_at=func.now(),
+            )
+        )
+        return ClaimedContentTranslationWork(
+            conversation_slug_id=conversation_slug_id,
+            source_revision=source_revision,
+            display_language_code=row.display_language_code,
+            lease_token=lease_token,
+            work_ids=(row.id, *(member.id for member in group if member.id != row.id)),
+        )
+    return None
 
 
-def process_claimed_work(
+def _work_source_condition(revision: SourceRevision) -> ColumnElement[bool]:
+    if isinstance(revision, SurveyRevision):
+        return and_(
+            ContentTranslationWork.survey_question_content_id == revision.content_id,
+            ContentTranslationWork.survey_question_option_content_ids
+            == list(revision.option_content_ids),
+        )
+    columns = {
+        ContentTranslationSourceKind.project: ContentTranslationWork.project_content_id,
+        ContentTranslationSourceKind.conversation: ContentTranslationWork.conversation_content_id,
+        ContentTranslationSourceKind.opinion: ContentTranslationWork.opinion_content_id,
+        ContentTranslationSourceKind.ranking_item: ContentTranslationWork.ranking_item_content_id,
+    }
+    return columns[revision.kind] == revision.content_id
+
+
+def prepare_claimed_work(
     session: Session,
     *,
     claim: ClaimedContentTranslationWork,
-    translation_service: ContentTranslationService,
-) -> ProcessWorkResult:
-    try:
-        if claim.source_kind == ContentTranslationSourceKind.project:
-            if claim.project_content_id is None:
-                _mark_failed(
-                    session,
-                    claim=claim,
-                    error_code="invalid_source",
-                    error_message="project work is missing project_content_id",
-                )
-                return ProcessWorkResult(work_id=claim.id, status="failed")
-            source = _fetch_project_source(
-                session,
-                project_content_id=claim.project_content_id,
-            )
-            if source is None:
-                log.warning(
-                    "[Worker] Missing translation source work_id=%d source_kind=project "
-                    "project_content_id=%d reason=source_not_current_or_deleted",
-                    claim.id,
-                    claim.project_content_id,
-                )
-                _mark_missing_source(session, claim=claim)
-                return ProcessWorkResult(work_id=claim.id, status="missing_source")
-            log.info(
-                "[Worker] Translation source work_id=%d source_kind=project "
-                "target_language=%s projectId=%d projectContentId=%d",
-                claim.id,
-                claim.display_language_code.value,
-                source.project_id,
-                source.content_id,
-            )
-            _lock_translation_work_group(
-                session,
-                claim=claim,
-                source_language_code=source.source_language_code,
-            )
-            if _has_fresh_project_translation(session, claim=claim, source=source):
-                _mark_completed(session, claim=claim)
-                return ProcessWorkResult(work_id=claim.id, status="completed")
-            try:
-                with session.begin_nested():
-                    _translate_project_source(
-                        session,
-                        claim=claim,
-                        source=source,
-                        translation_service=translation_service,
-                    )
-            except ContentTranslationProviderError as error:
-                _mark_failed(
-                    session,
-                    claim=claim,
-                    error_code=error.__class__.__name__,
-                    error_message=str(error),
-                )
-                _insert_project_translation_event(
-                    session,
-                    source=source,
-                    target_language_code=claim.display_language_code.value,
-                    status="failed",
-                )
-                return ProcessWorkResult(work_id=claim.id, status="failed")
-            _mark_completed(session, claim=claim)
-            return ProcessWorkResult(work_id=claim.id, status="completed")
-
-        if claim.source_kind == ContentTranslationSourceKind.conversation:
-            if claim.conversation_content_id is None:
-                _mark_failed(
-                    session,
-                    claim=claim,
-                    error_code="invalid_source",
-                    error_message="conversation work is missing conversation_content_id",
-                )
-                return ProcessWorkResult(work_id=claim.id, status="failed")
-            source = _fetch_conversation_source(
-                session,
-                conversation_content_id=claim.conversation_content_id,
-            )
-            if source is None:
-                log.warning(
-                    "[Worker] Missing translation source work_id=%d source_kind=conversation "
-                    "conversationSlugId=%s conversation_id=%d conversation_content_id=%d "
-                    "reason=source_not_current_or_deleted",
-                    claim.id,
-                    claim.conversation_slug_id,
-                    claim.conversation_id,
-                    claim.conversation_content_id,
-                )
-                _mark_missing_source(session, claim=claim)
-                return ProcessWorkResult(work_id=claim.id, status="missing_source")
-            log.info(
-                "[Worker] Translation source work_id=%d source_kind=conversation "
-                "target_language=%s conversationSlugId=%s conversationContentId=%d",
-                claim.id,
-                claim.display_language_code.value,
-                source.conversation_slug_id,
-                source.content_id,
-            )
-            _lock_translation_work_group(
-                session,
-                claim=claim,
-                source_language_code=source.source_language_code,
-            )
-            if _has_fresh_conversation_translation(session, claim=claim, source=source):
-                _mark_completed(session, claim=claim)
-                return ProcessWorkResult(work_id=claim.id, status="completed")
-            try:
-                with session.begin_nested():
-                    _translate_conversation_source(
-                        session,
-                        claim=claim,
-                        source=source,
-                        translation_service=translation_service,
-                    )
-            except ContentTranslationProviderError as error:
-                _mark_failed(
-                    session,
-                    claim=claim,
-                    error_code=error.__class__.__name__,
-                    error_message=str(error),
-                )
-                _insert_conversation_translation_event(
-                    session,
-                    source=source,
-                    target_language_code=claim.display_language_code.value,
-                    status="failed",
-                )
-                return ProcessWorkResult(work_id=claim.id, status="failed")
-            _mark_completed(session, claim=claim)
-            return ProcessWorkResult(work_id=claim.id, status="completed")
-
-        if claim.source_kind == ContentTranslationSourceKind.survey_question:
-            if (
-                claim.survey_question_content_id is None
-                or claim.survey_question_option_content_ids is None
-            ):
-                _mark_failed(
-                    session,
-                    claim=claim,
-                    error_code="invalid_source",
-                    error_message=("survey question work is missing survey source content ids"),
-                )
-                return ProcessWorkResult(work_id=claim.id, status="failed")
-            source = _fetch_survey_question_source(
-                session,
-                survey_question_content_id=claim.survey_question_content_id,
-                survey_question_option_content_ids=claim.survey_question_option_content_ids,
-            )
-            if source is None:
-                log.warning(
-                    "[Worker] Missing translation source work_id=%d source_kind=survey_question "
-                    "conversationSlugId=%s conversation_id=%d survey_question_content_id=%d "
-                    "survey_option_content_ids=%s reason=source_not_current_or_deleted",
-                    claim.id,
-                    claim.conversation_slug_id,
-                    claim.conversation_id,
-                    claim.survey_question_content_id,
-                    claim.survey_question_option_content_ids,
-                )
-                _mark_missing_source(session, claim=claim)
-                return ProcessWorkResult(work_id=claim.id, status="missing_source")
-            log.info(
-                "[Worker] Translation source work_id=%d source_kind=survey_question "
-                "target_language=%s conversationSlugId=%s questionSlugId=%s "
-                "surveyQuestionContentId=%d optionSlugIds=%s",
-                claim.id,
-                claim.display_language_code.value,
-                source.conversation_slug_id,
-                source.question_slug_id,
-                source.content_id,
-                [option.option_slug_id for option in source.options],
-            )
-            _lock_translation_work_group(
-                session,
-                claim=claim,
-                source_language_code=source.source_language_code,
-            )
-            if _has_fresh_survey_question_translation(session, claim=claim, source=source):
-                _mark_completed(session, claim=claim)
-                return ProcessWorkResult(work_id=claim.id, status="completed")
-            try:
-                with session.begin_nested():
-                    _translate_survey_question_source(
-                        session,
-                        claim=claim,
-                        source=source,
-                        translation_service=translation_service,
-                    )
-            except ContentTranslationProviderError as error:
-                _mark_failed(
-                    session,
-                    claim=claim,
-                    error_code=error.__class__.__name__,
-                    error_message=str(error),
-                )
-                _insert_survey_question_translation_event(
-                    session,
-                    source=source,
-                    target_language_code=claim.display_language_code.value,
-                    status="failed",
-                )
-                return ProcessWorkResult(work_id=claim.id, status="failed")
-            _mark_completed(session, claim=claim)
-            return ProcessWorkResult(work_id=claim.id, status="completed")
-
-        if claim.source_kind == ContentTranslationSourceKind.ranking_item:
-            if claim.ranking_item_content_id is None:
-                _mark_failed(
-                    session,
-                    claim=claim,
-                    error_code="invalid_source",
-                    error_message="ranking item work is missing ranking_item_content_id",
-                )
-                return ProcessWorkResult(work_id=claim.id, status="failed")
-            source = _fetch_ranking_item_source(
-                session,
-                ranking_item_content_id=claim.ranking_item_content_id,
-            )
-            if source is None:
-                log.warning(
-                    "[Worker] Missing translation source work_id=%d source_kind=ranking_item "
-                    "conversationSlugId=%s conversation_id=%d ranking_item_content_id=%d "
-                    "reason=source_not_current_or_deleted",
-                    claim.id,
-                    claim.conversation_slug_id,
-                    claim.conversation_id,
-                    claim.ranking_item_content_id,
-                )
-                _mark_missing_source(session, claim=claim)
-                return ProcessWorkResult(work_id=claim.id, status="missing_source")
-            log.info(
-                "[Worker] Translation source work_id=%d source_kind=ranking_item "
-                "target_language=%s conversationSlugId=%s itemSlugId=%s "
-                "rankingItemContentId=%d",
-                claim.id,
-                claim.display_language_code.value,
-                source.conversation_slug_id,
-                source.item_slug_id,
-                source.content_id,
-            )
-            _lock_translation_work_group(
-                session,
-                claim=claim,
-                source_language_code=source.source_language_code,
-            )
-            if _has_fresh_ranking_item_translation(session, claim=claim, source=source):
-                _mark_completed(session, claim=claim)
-                return ProcessWorkResult(work_id=claim.id, status="completed")
-            try:
-                with session.begin_nested():
-                    _translate_ranking_item_source(
-                        session,
-                        claim=claim,
-                        source=source,
-                        translation_service=translation_service,
-                    )
-            except ContentTranslationProviderError as error:
-                _mark_failed(
-                    session,
-                    claim=claim,
-                    error_code=error.__class__.__name__,
-                    error_message=str(error),
-                )
-                _insert_ranking_item_translation_event(
-                    session,
-                    source=source,
-                    target_language_code=claim.display_language_code.value,
-                    status="failed",
-                )
-                return ProcessWorkResult(work_id=claim.id, status="failed")
-            _mark_completed(session, claim=claim)
-            return ProcessWorkResult(work_id=claim.id, status="completed")
-
-        if claim.opinion_content_id is None:
-            _mark_failed(
-                session,
-                claim=claim,
-                error_code="invalid_source",
-                error_message="opinion work is missing opinion_content_id",
-            )
-            return ProcessWorkResult(work_id=claim.id, status="failed")
+) -> PreparedContentTranslation | ProcessWorkResult:
+    lock_active_claim(session, claim=claim)
+    if claim.source_kind == ContentTranslationSourceKind.opinion:
         eligibility = _get_opinion_source_eligibility(
             session,
-            opinion_content_id=claim.opinion_content_id,
+            opinion_content_id=claim.source_revision.content_id,
         )
-        if eligibility != "eligible":
-            log.warning(
-                "[Worker] Ineligible translation source work_id=%d source_kind=opinion "
-                "conversationSlugId=%s conversation_id=%d opinion_content_id=%d reason=%s",
-                claim.id,
-                claim.conversation_slug_id,
-                claim.conversation_id,
-                claim.opinion_content_id,
-                eligibility,
-            )
-            if eligibility == "missing":
-                _mark_missing_source(session, claim=claim)
-                return ProcessWorkResult(work_id=claim.id, status="missing_source")
+        if eligibility == "hidden" or eligibility == "deleted_author":
             _mark_ineligible_source(session, claim=claim, reason=eligibility)
             return ProcessWorkResult(work_id=claim.id, status="ineligible_source")
-        source = _fetch_opinion_source(session, opinion_content_id=claim.opinion_content_id)
-        if source is None:
-            log.warning(
-                "[Worker] Missing translation source work_id=%d source_kind=opinion "
-                "conversationSlugId=%s conversation_id=%d opinion_content_id=%d "
-                "reason=source_not_current_or_deleted",
-                claim.id,
-                claim.conversation_slug_id,
-                claim.conversation_id,
-                claim.opinion_content_id,
-            )
-            _mark_missing_source(session, claim=claim)
-            return ProcessWorkResult(work_id=claim.id, status="missing_source")
-        log.info(
-            "[Worker] Translation source work_id=%d source_kind=opinion "
-            "target_language=%s conversationSlugId=%s opinionSlugId=%s "
-            "opinionContentId=%d",
-            claim.id,
-            claim.display_language_code.value,
-            source.conversation_slug_id,
-            source.opinion_slug_id,
-            source.content_id,
+    source = _fetch_claim_source(session, claim=claim)
+    if source is None:
+        _mark_missing_source(session, claim=claim)
+        return ProcessWorkResult(work_id=claim.id, status="missing_source")
+    if all(
+        _has_fresh_translation(
+            session, claim=replace(claim, display_language_code=target), source=source
         )
-        _lock_translation_work_group(
-            session,
-            claim=claim,
-            source_language_code=source.source_language_code,
-        )
-        eligibility = _get_opinion_source_eligibility(
-            session,
-            opinion_content_id=claim.opinion_content_id,
-        )
-        if eligibility != "eligible":
-            if eligibility == "missing":
-                _mark_missing_source(session, claim=claim)
-                return ProcessWorkResult(work_id=claim.id, status="missing_source")
-            _mark_ineligible_source(session, claim=claim, reason=eligibility)
-            return ProcessWorkResult(work_id=claim.id, status="ineligible_source")
-        if _has_fresh_opinion_translation(session, claim=claim, source=source):
-            _mark_completed(session, claim=claim)
-            return ProcessWorkResult(work_id=claim.id, status="completed")
-        try:
-            with session.begin_nested():
-                eligibility = _get_opinion_source_eligibility(
-                    session,
-                    opinion_content_id=claim.opinion_content_id,
-                )
-                if eligibility != "eligible":
-                    if eligibility == "missing":
-                        _mark_missing_source(session, claim=claim)
-                        return ProcessWorkResult(work_id=claim.id, status="missing_source")
-                    _mark_ineligible_source(session, claim=claim, reason=eligibility)
-                    return ProcessWorkResult(work_id=claim.id, status="ineligible_source")
-                _translate_opinion_source(
-                    session,
-                    claim=claim,
-                    source=source,
-                    translation_service=translation_service,
-                )
-        except ContentTranslationProviderError as error:
-            _mark_failed(
-                session,
-                claim=claim,
-                error_code=error.__class__.__name__,
-                error_message=str(error),
-            )
-            _insert_opinion_translation_event(
-                session,
-                source=source,
-                target_language_code=claim.display_language_code.value,
-                status="failed",
-            )
-            return ProcessWorkResult(work_id=claim.id, status="failed")
+        for target in translation_target_languages(claim.display_language_code)
+    ):
         _mark_completed(session, claim=claim)
         return ProcessWorkResult(work_id=claim.id, status="completed")
-    except LostContentTranslationWorkLeaseError as error:
-        log.warning("[Worker] %s", error)
-        return ProcessWorkResult(work_id=claim.id, status="lost_lease")
-    except Exception as error:
-        try:
-            _mark_failed(
-                session,
-                claim=claim,
-                error_code=error.__class__.__name__,
-                error_message=str(error),
+    return PreparedContentTranslation(claim=claim, source=source)
+
+
+def _fetch_claim_source(
+    session: Session, *, claim: ClaimedContentTranslationWork
+) -> TranslationSource | None:
+    revision = claim.source_revision
+    if isinstance(revision, SurveyRevision):
+        return _fetch_survey_question_source(
+            session,
+            survey_question_content_id=revision.content_id,
+            survey_question_option_content_ids=revision.option_content_ids,
+        )
+    match revision.kind:
+        case ContentTranslationSourceKind.project:
+            return _fetch_project_source(session, project_content_id=revision.content_id)
+        case ContentTranslationSourceKind.conversation:
+            return _fetch_conversation_source(session, conversation_content_id=revision.content_id)
+        case ContentTranslationSourceKind.opinion:
+            return _fetch_opinion_source(session, opinion_content_id=revision.content_id)
+        case ContentTranslationSourceKind.ranking_item:
+            return _fetch_ranking_item_source(session, ranking_item_content_id=revision.content_id)
+
+
+def _has_fresh_translation(
+    session: Session, *, claim: ClaimedContentTranslationWork, source: TranslationSource
+) -> bool:
+    if isinstance(source, ProjectSource):
+        return _has_fresh_project_translation(session, claim=claim, source=source)
+    if isinstance(source, ConversationSource):
+        return _has_fresh_conversation_translation(session, claim=claim, source=source)
+    if isinstance(source, OpinionSource):
+        return _has_fresh_opinion_translation(session, claim=claim, source=source)
+    if isinstance(source, RankingItemSource):
+        return _has_fresh_ranking_item_translation(session, claim=claim, source=source)
+    return _has_fresh_survey_question_translation(session, claim=claim, source=source)
+
+
+def publish_translation_bundle(
+    session: Session, *, claim: ClaimedContentTranslationWork, bundle: TranslationBundle
+) -> ProcessWorkResult:
+    prepared = prepare_claimed_work(session, claim=claim)
+    if isinstance(prepared, ProcessWorkResult):
+        return prepared
+    if prepared.source != bundle.source:
+        _update_claimed_work(
+            session,
+            claim=claim,
+            values={
+                "status": ContentTranslationWorkStatus.pending,
+                "lease_owner": None,
+                "lease_token": None,
+                "lease_expires_at": None,
+                "updated_at": func.now(),
+            },
+        )
+        return ProcessWorkResult(work_id=claim.id, status="source_changed")
+    if isinstance(bundle, ConversationTranslationBundle):
+        _persist_conversation_translation(session, bundle=bundle)
+    elif isinstance(bundle, ProjectTranslationBundle):
+        _persist_project_translation(session, bundle=bundle)
+    elif isinstance(bundle, OpinionTranslationBundle):
+        _persist_opinion_translation(session, bundle=bundle)
+    elif isinstance(bundle, RankingItemTranslationBundle):
+        _persist_ranking_item_translation(session, bundle=bundle)
+    else:
+        _persist_survey_translation(session, bundle=bundle)
+    _mark_completed(session, claim=claim)
+    return ProcessWorkResult(work_id=claim.id, status="completed")
+
+
+def fail_claimed_work(
+    session: Session, *, claim: ClaimedContentTranslationWork, error_type: str
+) -> ProcessWorkResult:
+    lock_active_claim(session, claim=claim)
+    source = _fetch_claim_source(session, claim=claim)
+    _mark_failed(
+        session,
+        claim=claim,
+        error_code=error_type,
+        error_message="Translation attempt failed; see worker phase and error type in logs",
+    )
+    if source is not None:
+        for target in translation_target_languages(claim.display_language_code):
+            if isinstance(source, ProjectSource):
+                _insert_project_translation_event(
+                    session, source=source, target_language_code=target.value, status="failed"
+                )
+            elif isinstance(source, ConversationSource):
+                _insert_conversation_translation_event(
+                    session, source=source, target_language_code=target.value, status="failed"
+                )
+            elif isinstance(source, OpinionSource):
+                _insert_opinion_translation_event(
+                    session, source=source, target_language_code=target.value, status="failed"
+                )
+            elif isinstance(source, RankingItemSource):
+                _insert_ranking_item_translation_event(
+                    session, source=source, target_language_code=target.value, status="failed"
+                )
+            else:
+                _insert_survey_question_translation_event(
+                    session, source=source, target_language_code=target.value, status="failed"
+                )
+    return ProcessWorkResult(work_id=claim.id, status="failed")
+
+
+def lock_active_claim(session: Session, *, claim: ClaimedContentTranslationWork) -> None:
+    ids = list(
+        session.scalars(
+            select(ContentTranslationWork.id)
+            .where(
+                ContentTranslationWork.id.in_(claim.work_ids),
+                ContentTranslationWork.status == ContentTranslationWorkStatus.running,
+                ContentTranslationWork.lease_token == claim.lease_token,
+                ContentTranslationWork.lease_expires_at > func.clock_timestamp(),
             )
-        except LostContentTranslationWorkLeaseError as lease_error:
-            log.warning("[Worker] %s", lease_error)
-            return ProcessWorkResult(work_id=claim.id, status="lost_lease")
-        return ProcessWorkResult(work_id=claim.id, status="failed")
+            .order_by(ContentTranslationWork.id)
+            .with_for_update()
+        )
+    )
+    if len(ids) != len(claim.work_ids):
+        raise LostContentTranslationWorkLeaseError(f"Lost translation lease work_id={claim.id}")
 
 
-@dataclass(frozen=True)
-class ConversationSource:
-    conversation_slug_id: str
-    content_id: int
-    public_id: uuid.UUID
-    title: str
-    body: str | None
-    source_language_code: str | None
-    source_raw_language_code: str | None
-    source_language_provider: LanguageDetectionProvider | None
-    source_language_confidence: float | None
-
-
-@dataclass(frozen=True)
-class OpinionSource:
-    conversation_slug_id: str
-    opinion_slug_id: str
-    content_id: int
-    public_id: uuid.UUID
-    content: str
-    source_language_code: str | None
-    source_raw_language_code: str | None
-    source_language_provider: LanguageDetectionProvider | None
-    source_language_confidence: float | None
+def heartbeat_claim(
+    session: Session, *, claim: ClaimedContentTranslationWork, lease_ttl_seconds: int
+) -> None:
+    lock_active_claim(session, claim=claim)
+    _update_claimed_work(
+        session,
+        claim=claim,
+        values={
+            "lease_expires_at": func.clock_timestamp() + timedelta(seconds=lease_ttl_seconds),
+            "updated_at": func.now(),
+        },
+    )
 
 
 OpinionSourceEligibility = Literal["eligible", "hidden", "deleted_author", "missing"]
-
-
-@dataclass(frozen=True)
-class SurveyQuestionOptionSource:
-    option_slug_id: str
-    content_id: int
-    option_text: str
-    source_language_code: str | None
-    source_raw_language_code: str | None
-    source_language_provider: LanguageDetectionProvider | None
-    source_language_confidence: float | None
-
-
-@dataclass(frozen=True)
-class SurveyQuestionSource:
-    conversation_slug_id: str
-    question_slug_id: str
-    content_id: int
-    public_id: uuid.UUID
-    question_text: str
-    source_language_code: str | None
-    source_raw_language_code: str | None
-    source_language_provider: LanguageDetectionProvider | None
-    source_language_confidence: float | None
-    options: list[SurveyQuestionOptionSource]
-
-
-@dataclass(frozen=True)
-class RankingItemSource:
-    conversation_slug_id: str
-    item_slug_id: str
-    content_id: int
-    public_id: uuid.UUID
-    title: str
-    body_html: str | None
-    body_plain_text: str | None
-    source_language_code: str | None
-    source_raw_language_code: str | None
-    source_language_provider: LanguageDetectionProvider | None
-    source_language_confidence: float | None
-
-
-@dataclass(frozen=True)
-class ProjectSource:
-    project_id: int
-    project_slug: str
-    content_id: int
-    public_id: uuid.UUID
-    title: str
-    subtitle: str | None
-    body: str | None
-    source_language_code: str | None
-    source_raw_language_code: str | None
-    source_language_provider: LanguageDetectionProvider | None
-    source_language_confidence: float | None
 
 
 def _fetch_project_source(
@@ -1362,7 +1074,7 @@ def _fetch_survey_question_source(
     session: Session,
     *,
     survey_question_content_id: int,
-    survey_question_option_content_ids: list[int],
+    survey_question_option_content_ids: tuple[int, ...],
 ) -> SurveyQuestionSource | None:
     row = session.execute(
         select(
@@ -1407,8 +1119,8 @@ def _fetch_survey_question_source(
         .where(SurveyQuestionOption.survey_question_id == row.question_id)
         .order_by(SurveyQuestionOption.display_order.asc())
     ).all()
-    current_option_content_ids = [option.id for option in option_rows]
-    if current_option_content_ids != survey_question_option_content_ids:
+    current_option_content_ids = sorted(option.id for option in option_rows)
+    if current_option_content_ids != sorted(survey_question_option_content_ids):
         return None
 
     return SurveyQuestionSource(
@@ -1421,7 +1133,7 @@ def _fetch_survey_question_source(
         source_raw_language_code=row.source_raw_language_code,
         source_language_provider=row.source_language_provider,
         source_language_confidence=row.source_language_confidence,
-        options=[
+        options=tuple(
             SurveyQuestionOptionSource(
                 option_slug_id=option.slug_id,
                 content_id=option.id,
@@ -1432,7 +1144,7 @@ def _fetch_survey_question_source(
                 source_language_confidence=option.source_language_confidence,
             )
             for option in option_rows
-        ],
+        ),
     )
 
 
@@ -1479,62 +1191,6 @@ def _fetch_ranking_item_source(
         source_raw_language_code=row.source_raw_language_code,
         source_language_provider=row.source_language_provider,
         source_language_confidence=row.source_language_confidence,
-    )
-
-
-def _lock_translation_work_group(
-    session: Session,
-    *,
-    claim: ClaimedContentTranslationWork,
-    source_language_code: str | None,
-) -> None:
-    if session.get_bind().dialect.name != "postgresql":
-        return
-
-    lock_key = ":".join(
-        [
-            "content_translation",
-            claim.source_kind.value,
-            claim.source_key,
-            str(claim.survey_question_content_id or ""),
-            ",".join(str(item) for item in claim.survey_question_option_content_ids or []),
-            _translation_work_target_group(
-                source_language_code=source_language_code,
-                target_language_code=claim.display_language_code.value,
-            ),
-        ]
-    )
-    session.execute(
-        text("select pg_advisory_xact_lock(hashtextextended(:lock_key, 0))"),
-        {"lock_key": lock_key},
-    )
-
-
-def _translation_work_target_group(
-    *,
-    source_language_code: str | None,
-    target_language_code: str,
-) -> str:
-    if (
-        target_language_code in CHINESE_DISPLAY_LANGUAGE_CODES
-        and not _is_chinese_script_language_code(source_language_code)
-    ):
-        return "zh"
-    return target_language_code
-
-
-def _is_chinese_script_language_code(language_code: str | None) -> bool:
-    return language_code in CHINESE_SCRIPT_LANGUAGE_CODES
-
-
-def _should_store_chinese_script_pair(
-    *,
-    source_language_code: str | None,
-    target_language_code: str,
-) -> bool:
-    return (
-        target_language_code in CHINESE_DISPLAY_LANGUAGE_CODES
-        and not _is_chinese_script_language_code(source_language_code)
     )
 
 
@@ -1688,97 +1344,16 @@ def _has_fresh_ranking_item_translation(
     )
 
 
-def translate_text_for_claim_target(
-    *,
-    translation_service: ContentTranslationService,
-    text_value: str,
-    source_language_code: str | None,
-    target_language_code: str,
-    mime_type: str,
-) -> list[LocalizedTranslationResult]:
-    if _should_store_chinese_script_pair(
-        source_language_code=source_language_code,
-        target_language_code=target_language_code,
-    ):
-        traditional_result = translation_service.translate_texts(
-            texts=[text_value],
-            source_language_code=source_language_code,
-            target_language_code=CANONICAL_CHINESE_PROVIDER_TARGET,
-            mime_type=mime_type,
-        )[0]
-        simplified_result = ContentTranslationResult(
-            translated_text=translate_chinese_script_with_opencc(
-                text=traditional_result.translated_text,
-                source_language_code=CANONICAL_CHINESE_PROVIDER_TARGET,
-                target_language_code=SIMPLIFIED_CHINESE_TARGET,
-            ),
-            source_raw_language_code=traditional_result.source_raw_language_code,
-            source_language_provider=traditional_result.source_language_provider,
-        )
-        return [
-            LocalizedTranslationResult(
-                display_language_code=DisplayLanguageCode.zh_hant,
-                result=traditional_result,
-            ),
-            LocalizedTranslationResult(
-                display_language_code=DisplayLanguageCode.zh_hans,
-                result=simplified_result,
-            ),
-        ]
-
-    result = translation_service.translate_texts(
-        texts=[text_value],
-        source_language_code=source_language_code,
-        target_language_code=target_language_code,
-        mime_type=mime_type,
-    )[0]
-    return [
-        LocalizedTranslationResult(
-            display_language_code=DisplayLanguageCode(target_language_code),
-            result=result,
-        )
-    ]
-
-
-def _results_by_display_language_code(
-    results: list[LocalizedTranslationResult],
-) -> dict[DisplayLanguageCode, ContentTranslationResult]:
-    return {result.display_language_code: result.result for result in results}
-
-
-def _translate_conversation_source(
+def _persist_conversation_translation(
     session: Session,
     *,
-    claim: ClaimedContentTranslationWork,
-    source: ConversationSource,
-    translation_service: ContentTranslationService,
+    bundle: ConversationTranslationBundle,
 ) -> None:
-    title_results = translate_text_for_claim_target(
-        translation_service=translation_service,
-        text_value=source.title,
-        source_language_code=source.source_language_code,
-        target_language_code=claim.display_language_code.value,
-        mime_type="text/plain",
-    )
-    title_result_by_language = _results_by_display_language_code(title_results)
-    body_result_by_language: dict[DisplayLanguageCode, ContentTranslationResult | None] = {
-        language_code: None for language_code in title_result_by_language
-    }
-    if source.body is not None:
-        body_results = translate_text_for_claim_target(
-            translation_service=translation_service,
-            text_value=source.body,
-            source_language_code=source.source_language_code,
-            target_language_code=claim.display_language_code.value,
-            mime_type="text/html",
-        )
-        body_result_by_language = {
-            language_code: result
-            for language_code, result in _results_by_display_language_code(body_results).items()
-        }
-
-    for display_language_code, title_result in title_result_by_language.items():
-        body_result = body_result_by_language.get(display_language_code)
+    source = bundle.source
+    for translated in bundle.translations:
+        display_language_code = translated.language
+        title_result = translated.title
+        body_result = translated.body
         translated_body = (
             sanitize_translated_html(body_result.translated_text)
             if body_result is not None
@@ -1834,58 +1409,17 @@ def _translate_conversation_source(
         )
 
 
-def _translate_project_source(
+def _persist_project_translation(
     session: Session,
     *,
-    claim: ClaimedContentTranslationWork,
-    source: ProjectSource,
-    translation_service: ContentTranslationService,
+    bundle: ProjectTranslationBundle,
 ) -> None:
-    title_results = translate_text_for_claim_target(
-        translation_service=translation_service,
-        text_value=source.title,
-        source_language_code=source.source_language_code,
-        target_language_code=claim.display_language_code.value,
-        mime_type="text/plain",
-    )
-    title_result_by_language = _results_by_display_language_code(title_results)
-    subtitle_result_by_language: dict[
-        DisplayLanguageCode,
-        ContentTranslationResult | None,
-    ] = {language_code: None for language_code in title_result_by_language}
-    body_result_by_language: dict[DisplayLanguageCode, ContentTranslationResult | None] = {
-        language_code: None for language_code in title_result_by_language
-    }
-    if source.subtitle is not None:
-        subtitle_result_by_language = {
-            language_code: result
-            for language_code, result in _results_by_display_language_code(
-                translate_text_for_claim_target(
-                    translation_service=translation_service,
-                    text_value=source.subtitle,
-                    source_language_code=source.source_language_code,
-                    target_language_code=claim.display_language_code.value,
-                    mime_type="text/plain",
-                )
-            ).items()
-        }
-    if source.body is not None:
-        body_result_by_language = {
-            language_code: result
-            for language_code, result in _results_by_display_language_code(
-                translate_text_for_claim_target(
-                    translation_service=translation_service,
-                    text_value=source.body,
-                    source_language_code=source.source_language_code,
-                    target_language_code=claim.display_language_code.value,
-                    mime_type="text/html",
-                )
-            ).items()
-        }
-
-    for display_language_code, title_result in title_result_by_language.items():
-        subtitle_result = subtitle_result_by_language.get(display_language_code)
-        body_result = body_result_by_language.get(display_language_code)
+    source = bundle.source
+    for translated in bundle.translations:
+        display_language_code = translated.language
+        title_result = translated.title
+        subtitle_result = translated.subtitle
+        body_result = translated.body
         translated_body = (
             sanitize_translated_html(body_result.translated_text)
             if body_result is not None
@@ -1958,26 +1492,14 @@ def _translate_project_source(
         )
 
 
-def _translate_opinion_source(
+def _persist_opinion_translation(
     session: Session,
     *,
-    claim: ClaimedContentTranslationWork,
-    source: OpinionSource,
-    translation_service: ContentTranslationService,
+    bundle: OpinionTranslationBundle,
 ) -> None:
-    source_decision = choose_user_content_translation_source(
-        source_language_code=source.source_language_code,
-        source_language_provider=source.source_language_provider,
-        source_language_confidence=source.source_language_confidence,
-    )
-    translation_results = translate_text_for_claim_target(
-        translation_service=translation_service,
-        text_value=source.content,
-        source_language_code=source_decision.source_language_code_for_translation,
-        target_language_code=claim.display_language_code.value,
-        mime_type="text/html",
-    )
-    for localized_result in translation_results:
+    source = bundle.source
+    source_decision = bundle.source_decision
+    for localized_result in bundle.translations:
         translated_content = sanitize_translated_html(localized_result.result.translated_text)
         translated_content_plain_text = html_to_counted_text(translated_content)
         source_metadata = build_translation_source_metadata_from_results(
@@ -2030,46 +1552,18 @@ def _translate_opinion_source(
         )
 
 
-def _translate_ranking_item_source(
+def _persist_ranking_item_translation(
     session: Session,
     *,
-    claim: ClaimedContentTranslationWork,
-    source: RankingItemSource,
-    translation_service: ContentTranslationService,
+    bundle: RankingItemTranslationBundle,
 ) -> None:
-    source_decision = choose_user_content_translation_source(
-        source_language_code=source.source_language_code,
-        source_language_provider=source.source_language_provider,
-        source_language_confidence=source.source_language_confidence,
-    )
-    title_results = translate_text_for_claim_target(
-        translation_service=translation_service,
-        text_value=source.title,
-        source_language_code=source_decision.source_language_code_for_translation,
-        target_language_code=claim.display_language_code.value,
-        mime_type="text/html",
-    )
-    title_result_by_language = _results_by_display_language_code(title_results)
-    body_result_by_language: dict[DisplayLanguageCode, ContentTranslationResult | None] = {
-        language_code: None for language_code in title_result_by_language
-    }
-    if source.body_html is not None:
-        body_result_by_language = {
-            language_code: result
-            for language_code, result in _results_by_display_language_code(
-                translate_text_for_claim_target(
-                    translation_service=translation_service,
-                    text_value=source.body_html,
-                    source_language_code=source_decision.source_language_code_for_translation,
-                    target_language_code=claim.display_language_code.value,
-                    mime_type="text/html",
-                )
-            ).items()
-        }
-
-    for display_language_code, title_result in title_result_by_language.items():
+    source = bundle.source
+    source_decision = bundle.source_decision
+    for translated in bundle.translations:
+        display_language_code = translated.language
+        title_result = translated.title
         translated_title = sanitize_translated_html(title_result.translated_text)
-        body_result = body_result_by_language.get(display_language_code)
+        body_result = translated.body
         translated_body_html = (
             sanitize_translated_html(body_result.translated_text)
             if body_result is not None
@@ -2130,41 +1624,15 @@ def _translate_ranking_item_source(
         )
 
 
-def _translate_survey_question_source(
+def _persist_survey_translation(
     session: Session,
     *,
-    claim: ClaimedContentTranslationWork,
-    source: SurveyQuestionSource,
-    translation_service: ContentTranslationService,
+    bundle: SurveyTranslationBundle,
 ) -> None:
-    question_results = translate_text_for_claim_target(
-        translation_service=translation_service,
-        text_value=source.question_text,
-        source_language_code=source.source_language_code,
-        target_language_code=claim.display_language_code.value,
-        mime_type="text/plain",
-    )
-    question_result_by_language = _results_by_display_language_code(question_results)
-    option_results_by_id: dict[
-        int,
-        dict[DisplayLanguageCode, ContentTranslationResult],
-    ] = {}
-    for option in source.options:
-        option_results = translate_text_for_claim_target(
-            translation_service=translation_service,
-            text_value=option.option_text,
-            source_language_code=option.source_language_code,
-            target_language_code=claim.display_language_code.value,
-            mime_type="text/plain",
-        )
-        option_results_by_id[option.content_id] = _results_by_display_language_code(option_results)
-
-    for display_language_code, question_result in question_result_by_language.items():
-        if any(
-            display_language_code not in option_results_by_id[option.content_id]
-            for option in source.options
-        ):
-            continue
+    source = bundle.source
+    for translated in bundle.translations:
+        display_language_code = translated.language
+        question_result = translated.question
         question_source_metadata = build_translation_source_metadata_from_results(
             [question_result],
             use_google_detected_source=False,
@@ -2203,8 +1671,9 @@ def _translate_survey_question_source(
             )
         )
 
-        for option in source.options:
-            option_result = option_results_by_id[option.content_id][display_language_code]
+        for translated_option in translated.options:
+            option = translated_option.source
+            option_result = translated_option.result
             option_source_metadata = build_translation_source_metadata_from_results(
                 [option_result],
                 use_google_detected_source=False,
@@ -2389,9 +1858,7 @@ def _mark_ineligible_source(
     reason: Literal["hidden", "deleted_author"],
 ) -> None:
     error_message = (
-        "Opinion is hidden"
-        if reason == "hidden"
-        else "Opinion author account is deleted"
+        "Opinion is hidden" if reason == "hidden" else "Opinion author account is deleted"
     )
     _mark_failed(
         session,
@@ -2424,24 +1891,38 @@ def _mark_failed(
     )
 
 
+class ClaimedWorkUpdate(TypedDict, total=False):
+    status: ContentTranslationWorkStatus
+    lease_owner: str | None
+    lease_token: uuid.UUID | None
+    lease_expires_at: datetime | ColumnElement[datetime] | None
+    completed_at: datetime | ColumnElement[datetime] | None
+    failed_at: datetime | ColumnElement[datetime] | None
+    last_error_code: str | None
+    last_error_message: str | None
+    updated_at: datetime | ColumnElement[datetime]
+
+
 def _update_claimed_work(
     session: Session,
     *,
     claim: ClaimedContentTranslationWork,
-    values: dict[str, Any],
+    values: ClaimedWorkUpdate,
 ) -> None:
-    updated_id = session.scalar(
-        update(ContentTranslationWork)
-        .where(
-            and_(
-                ContentTranslationWork.id == claim.id,
-                ContentTranslationWork.lease_token == claim.lease_token,
+    updated_ids = list(
+        session.scalars(
+            update(ContentTranslationWork)
+            .where(
+                and_(
+                    ContentTranslationWork.id.in_(claim.work_ids),
+                    ContentTranslationWork.lease_token == claim.lease_token,
+                )
             )
+            .values(**values)
+            .returning(ContentTranslationWork.id)
         )
-        .values(**values)
-        .returning(ContentTranslationWork.id)
     )
-    if updated_id is None:
+    if len(updated_ids) != len(claim.work_ids):
         msg = f"Lost lease while updating content translation work {claim.id}"
         raise LostContentTranslationWorkLeaseError(msg)
 

@@ -8,6 +8,7 @@ voting-rights, and aggregation stages aligned with Solidago.
 from __future__ import annotations
 
 import logging
+import time
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -323,17 +324,26 @@ def _run_pipeline(
     log.info(
         "[Scoring] Pipeline input: %d users, %d entities, %s",
         len(user_ids),
-        len(mapper.all_int_ids()),
+        mapper.size,
         preference_learning_name,
     )
 
     privacy = PrivacySettings()
+    pipeline_started = time.perf_counter()
     _, _, user_models, global_model = pipeline(
         users=users_df,
         vouches=vouches_df,
         entities=entities_df,
         privacy=privacy,
         judgments=judgments,
+    )
+    # Solidago 0.5.0 truncates its total-duration log to whole seconds.
+    log.info(
+        "[Scoring] Pipeline completed in %.3fs (%d users, %d entities, %s)",
+        time.perf_counter() - pipeline_started,
+        len(user_ids),
+        mapper.size,
+        preference_learning_name,
     )
 
     global_scores = map_scores_from_solidago(

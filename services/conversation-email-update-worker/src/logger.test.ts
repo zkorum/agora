@@ -1,10 +1,135 @@
 import type { DestinationStream } from "pino";
+import { DrizzleQueryError } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { createStructuredLogger } from "./logger.js";
-import { normalizeError } from "./observability.js";
+import { normalizeError, structuredEventSchema } from "./observability.js";
 
 describe("privacy-safe structured logging", () => {
+    it("logs a Drizzle cause and lane without query, connection or recipient data", () => {
+        const lines: string[] = [];
+        const log = createStructuredLogger({
+            environment: "production",
+            workerId: "worker-01",
+            level: "info",
+            destination: {
+                write: (chunk) => {
+                    lines.push(chunk);
+                },
+            },
+        });
+        const privateData = {
+            query: "select * from private_recipient_table where email = $1",
+            email: "private-recipient@example.com",
+            address: "private-database.internal",
+            connectionString: "postgresql://admin:secret@private-db/agora",
+            token: "private-unsubscribe-token",
+            body: "Private email body",
+        };
+        const driverError = Object.assign(
+            new Error(Object.values(privateData).join(" | ")),
+            privateData,
+            { code: "CONNECT_TIMEOUT" },
+        );
+        const error = new DrizzleQueryError(
+            privateData.query,
+            [privateData.email, privateData.token],
+            driverError,
+        );
+        log.error({
+            event: "iteration_failed",
+            outcome: "failure",
+            lane: "recipientSends",
+            durationMs: 10_002,
+            error: normalizeError(error),
+        });
+        const records = lines.map((line) => {
+            const parsed: unknown = JSON.parse(line);
+            return z.record(z.string(), z.unknown()).parse(parsed);
+        });
+        expect(records).toEqual([
+            expect.objectContaining({
+                event: "iteration_failed",
+                lane: "recipientSends",
+                error: {
+                    name: "ApplicationError",
+                    code: "UnknownError",
+                    category: "application",
+                    causes: [
+                        {
+                            name: "DatabaseError",
+                            code: "CONNECT_TIMEOUT",
+                            category: "retryable",
+                        },
+                    ],
+                },
+            }),
+        ]);
+        for (const value of Object.values(privateData)) {
+            expect(lines.join("")).not.toContain(value);
+        }
+        expect(lines.join("")).not.toContain("stack");
+    });
+
+    it("filters nested error metadata and rejects non-allowlisted lanes and causes", () => {
+        const lines: string[] = [];
+        const log = createStructuredLogger({
+            environment: "production",
+            workerId: "worker-01",
+            level: "info",
+            destination: {
+                write: (chunk) => {
+                    lines.push(chunk);
+                },
+            },
+        });
+        const event = {
+            event: "iteration_failed",
+            outcome: "failure",
+            lane: "sns",
+            durationMs: 10,
+            error: {
+                ...normalizeError(undefined),
+                message: "private outer message",
+                causes: [
+                    {
+                        name: "DatabaseError",
+                        code: "CONNECT_TIMEOUT",
+                        category: "retryable",
+                        message: "private nested message",
+                        stack: "private nested stack",
+                        cause: { token: "private nested token" },
+                    },
+                ],
+            },
+        };
+        log.error(event);
+        log.error({ ...event, lane: "private-recipient@example.com" });
+        log.error({
+            ...event,
+            error: {
+                ...event.error,
+                causes: [
+                    {
+                        name: "private name",
+                        code: "private code",
+                        category: "private category",
+                    },
+                ],
+            },
+        });
+        const records = lines.map((line) => {
+            const parsed: unknown = JSON.parse(line);
+            return z.record(z.string(), z.unknown()).parse(parsed);
+        });
+        expect(records).toEqual([
+            expect.objectContaining(structuredEventSchema.parse(event)),
+            expect.objectContaining({ event: "unclassified_log" }),
+            expect.objectContaining({ event: "unclassified_log" }),
+        ]);
+        expect(lines.join("")).not.toContain("private");
+    });
+
     it("serializes allowlisted fields without PII or secrets", () => {
         const lines: string[] = [];
         const destination: DestinationStream = {
@@ -46,6 +171,7 @@ describe("privacy-safe structured logging", () => {
         log.info({
             event: "iteration_failed",
             outcome: "failure",
+            lane: "recovery",
             durationMs: 12,
             error: normalizeError(unsafeError),
         });

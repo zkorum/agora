@@ -359,6 +359,9 @@ class _LayeredPythonWorkerSettings(Settings):
 
 class AiDescriptionWorkerSettings(_LayeredPythonWorkerSettings):
     worker_env_prefix: ClassVar[str] = "AI_DESCRIPTION_RETRY_WORKER_"
+    db_statement_timeout_seconds: int = Field(default=30, ge=1)
+    db_idle_transaction_timeout_seconds: int = Field(default=60, ge=1)
+    db_materialization_interval_seconds: float = Field(default=5.0, gt=0, allow_inf_nan=False)
     aws_ai_label_summary_read_timeout_seconds: float = Field(
         default=DEFAULT_AWS_RETRY_WORKER_READ_TIMEOUT_SECONDS,
         gt=0,

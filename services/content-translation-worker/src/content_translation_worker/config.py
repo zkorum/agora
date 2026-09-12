@@ -42,6 +42,10 @@ class Settings(BaseSettings):
     poll_interval_seconds: float = Field(default=1.0, gt=0)
     batch_size: int = Field(default=10, ge=1, le=100)
     lease_ttl_seconds: int = Field(default=120, ge=10)
+    heartbeat_interval_seconds: float = Field(default=15.0, gt=0)
+    operation_timeout_seconds: float = Field(default=180.0, gt=0, allow_inf_nan=False)
+    retry_initial_seconds: float = Field(default=30.0, gt=0, allow_inf_nan=False)
+    retry_maximum_seconds: float = Field(default=900.0, gt=0, allow_inf_nan=False)
     reconcile_interval_seconds: int = Field(default=60, ge=1)
     valkey_retry_interval_seconds: float = Field(default=5.0, gt=0)
     db_retry_interval_seconds: float = Field(default=5.0, gt=0)
@@ -123,6 +127,10 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_provider_config(self) -> Self:
+        if self.heartbeat_interval_seconds >= self.lease_ttl_seconds:
+            raise ValueError("heartbeat interval must be shorter than the lease TTL")
+        if self.retry_initial_seconds > self.retry_maximum_seconds:
+            raise ValueError("initial retry delay must not exceed the maximum retry delay")
         if (
             self.translation_provider is ContentTranslationProvider.GOOGLE
             and self.google_application_credentials_path is None

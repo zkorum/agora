@@ -37,6 +37,7 @@ def database_error_summary(error: BaseException) -> str:
     if isinstance(error, DBAPIError):
         original = error.orig
         parts.append(f"dbapi_type={type(original).__name__}")
+        parts.append(f"connection_invalidated={str(error.connection_invalidated).lower()}")
 
         sqlstate = _safe_database_code(original, "sqlstate") or _safe_database_code(
             original,

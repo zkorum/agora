@@ -1,16 +1,16 @@
 from __future__ import annotations
 
 from content_translation_worker.db import (
-    TranslationSourceDecision,
     TranslationSourceMetadata,
     build_translation_source_metadata_from_results,
-    choose_user_content_translation_source,
     should_promote_google_source_metadata,
 )
 from content_translation_worker.generated_models import (
     LanguageDetectionProvider,
     SpokenLanguageCode,
 )
+from content_translation_worker.models import TranslationSourceDecision
+from content_translation_worker.source_language import choose_user_content_translation_source
 from content_translation_worker.translation import ContentTranslationResult
 
 

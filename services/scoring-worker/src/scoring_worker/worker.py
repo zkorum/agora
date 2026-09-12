@@ -297,10 +297,12 @@ def _run_worker_once() -> None:
                 continue
 
             conv_ids = [item.conversation_id for item in to_process]
+            batch_started = time.perf_counter()
+            batch_slugs = ", ".join(item.slug_id for item in to_process)
             log.info(
                 "[Worker] Processing %d conversation(s): %s",
                 len(to_process),
-                ", ".join(item.slug_id for item in to_process),
+                batch_slugs,
             )
         except Exception:
             release_conversation_locks()
@@ -308,13 +310,25 @@ def _run_worker_once() -> None:
 
         try:
             # Step 2: Batch SELECT
+            fetch_started = time.perf_counter()
             scoring_input_revisions = fetch_scoring_input_revisions(
                 processing_connection,
                 conversation_ids=conv_ids,
             )
+            log.info(
+                "[Worker] %s: fetched input revisions in %.3fs",
+                batch_slugs,
+                time.perf_counter() - fetch_started,
+            )
+            fetch_started = time.perf_counter()
             ranking_items = fetch_ranking_items_batch(
                 processing_connection,
                 conversation_ids=conv_ids,
+            )
+            log.info(
+                "[Worker] %s: fetched ranking items in %.3fs",
+                batch_slugs,
+                time.perf_counter() - fetch_started,
             )
             active_items = {
                 conversation_id: [
@@ -324,9 +338,15 @@ def _run_worker_once() -> None:
                 ]
                 for conversation_id, items in ranking_items.items()
             }
+            fetch_started = time.perf_counter()
             comparisons_result = fetch_comparisons_batch(
                 processing_connection,
                 conversation_ids=conv_ids,
+            )
+            log.info(
+                "[Worker] %s: fetched comparisons in %.3fs",
+                batch_slugs,
+                time.perf_counter() - fetch_started,
             )
             comparisons = comparisons_result.comparisons
             user_idx_to_result_id = comparisons_result.user_idx_to_result_id
@@ -354,6 +374,7 @@ def _run_worker_once() -> None:
             all_user_score_entries: list[UserScoreEntry] = []
             failed_items: list[DirtyConversation] = []
 
+            scoring_started = time.perf_counter()
             if to_score:
                 with ThreadPoolExecutor(max_workers=settings.max_workers) as pool:
                     future_to_item = {
@@ -417,6 +438,16 @@ def _run_worker_once() -> None:
                             )
                             failed_items.append(item)
 
+            log.info(
+                "[Worker] %s: scoring and result preparation finished in %.3fs "
+                "(%d scored, %d failed, %d to clear)",
+                batch_slugs,
+                time.perf_counter() - scoring_started,
+                len(scoring_results),
+                len(failed_items),
+                len(to_clear),
+            )
+
             # Step 4: Final revision locking and atomic publication
             snapshot_scored_entities = {
                 conversation_id: result[0] for conversation_id, result in scoring_results.items()
@@ -425,6 +456,7 @@ def _run_worker_once() -> None:
                 *scoring_results.keys(),
                 *to_clear,
             ]
+            publication_started = time.perf_counter()
             published = persist_scoring_batch(
                 processing_connection,
                 scoring_results=scoring_results,
@@ -441,6 +473,15 @@ def _run_worker_once() -> None:
                 ),
                 scored_entities_by_conv=snapshot_scored_entities,
                 scoring_input_revisions=scoring_input_revisions,
+            )
+            publication_finished = time.perf_counter()
+            log.info(
+                "[Worker] %s: publication attempt completed in %.3fs "
+                "(published=%s, processing elapsed through publication=%.3fs)",
+                batch_slugs,
+                publication_finished - publication_started,
+                published,
+                publication_finished - batch_started,
             )
             if not published:
                 for item in to_process:

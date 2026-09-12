@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sqlite3
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Literal
@@ -10,10 +11,8 @@ from sqlalchemy.orm import Session
 
 import content_translation_worker.db as translation_db
 from content_translation_worker.db import (
-    ClaimedContentTranslationWork,
-    OpinionSource,
-    ProcessWorkResult,
-    process_claimed_work,
+    prepare_claimed_work,
+    publish_translation_bundle,
 )
 from content_translation_worker.generated_models import (
     AnalysisSnapshotOpinion,
@@ -36,13 +35,19 @@ from content_translation_worker.generated_models import (
     SpokenLanguageCode,
     User,
 )
+from content_translation_worker.generation import generate_translation_bundle
+from content_translation_worker.models import (
+    ClaimedContentTranslationWork,
+    ContentRevision,
+    OpinionTranslationBundle,
+    PreparedContentTranslation,
+    ProcessWorkResult,
+)
 from content_translation_worker.simulated_translation import SimulatedTranslationService
 from content_translation_worker.translation_model import SimulatedTranslationMode
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-
-    from content_translation_worker.translation import ContentTranslationService
 
 HISTORICAL_CONTENT_ID = 10
 CURRENT_CONTENT_ID = 11
@@ -54,6 +59,12 @@ AUTHOR_ID = uuid.UUID("00000000-0000-4000-8000-000000000001")
 @pytest.fixture
 def opinion_revision_session() -> Iterator[Session]:
     engine = create_engine("sqlite+pysqlite:///:memory:")
+    with engine.connect() as connection:
+        driver = connection.connection.driver_connection
+        if isinstance(driver, sqlite3.Connection):
+            driver.create_function(
+                "clock_timestamp", 0, lambda: datetime.now(UTC).replace(tzinfo=None).isoformat(" ")
+            )
     Conversation.metadata.create_all(
         engine,
         tables=[
@@ -213,44 +224,24 @@ def opinion_revision_session() -> Iterator[Session]:
 
 def test_processes_non_current_historical_opinion_revision(
     opinion_revision_session: Session,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    translated_texts: list[str] = []
-
-    def translate_opinion_source(
-        session: Session,
-        *,
-        claim: ClaimedContentTranslationWork,
-        source: OpinionSource,
-        translation_service: ContentTranslationService,
-    ) -> None:
-        del session
-        results = translation_service.translate_texts(
-            texts=[source.content],
-            source_language_code=source.source_language_code,
-            target_language_code=claim.display_language_code.value,
-            mime_type="text/html",
-        )
-        translated_texts.extend(result.translated_text for result in results)
-
-    def mark_completed(
-        session: Session,
-        *,
-        claim: ClaimedContentTranslationWork,
-    ) -> None:
-        del session, claim
-
-    monkeypatch.setattr(translation_db, "_translate_opinion_source", translate_opinion_source)
-    monkeypatch.setattr(translation_db, "_mark_completed", mark_completed)
-
-    result = process_claimed_work(
+    claim = _opinion_claim(opinion_content_id=HISTORICAL_CONTENT_ID)
+    _add_claimed_work(opinion_revision_session, claim=claim)
+    prepared = prepare_claimed_work(
         opinion_revision_session,
-        claim=_opinion_claim(opinion_content_id=HISTORICAL_CONTENT_ID),
-        translation_service=_translation_service(),
+        claim=claim,
     )
-
-    assert result == ProcessWorkResult(work_id=1, status="completed")
-    assert translated_texts == ["[simulated es->en text/html] Historical statement"]
+    assert isinstance(prepared, PreparedContentTranslation)
+    opinion_revision_session.commit()
+    bundle = generate_translation_bundle(
+        prepared=prepared,
+        translation_service=_translation_service(),
+        check_active=lambda: None,
+    )
+    assert isinstance(bundle, OpinionTranslationBundle)
+    assert [item.result.translated_text for item in bundle.translations] == [
+        "[simulated es->en text/html] Historical statement"
+    ]
 
 
 @pytest.mark.parametrize(
@@ -310,10 +301,11 @@ def test_ineligible_opinion_revision_remains_missing_source(
 
     monkeypatch.setattr(translation_db, "_mark_missing_source", mark_missing_source)
 
-    result = process_claimed_work(
+    claim = _opinion_claim(opinion_content_id=opinion_content_id)
+    _add_claimed_work(opinion_revision_session, claim=claim)
+    result = prepare_claimed_work(
         opinion_revision_session,
-        claim=_opinion_claim(opinion_content_id=opinion_content_id),
-        translation_service=_translation_service(),
+        claim=claim,
     )
 
     assert result == ProcessWorkResult(work_id=1, status="missing_source")
@@ -346,10 +338,9 @@ def test_rejects_ineligible_opinion_source(
     claim = _opinion_claim(opinion_content_id=HISTORICAL_CONTENT_ID)
     _add_claimed_work(opinion_revision_session, claim=claim)
 
-    result = process_claimed_work(
+    result = prepare_claimed_work(
         opinion_revision_session,
         claim=claim,
-        translation_service=_translation_service(),
     )
 
     assert result == ProcessWorkResult(work_id=1, status="ineligible_source")
@@ -368,62 +359,38 @@ def test_rejects_ineligible_opinion_source(
     assert work.lease_expires_at is None
 
 
-def test_rechecks_hide_moderation_immediately_before_translation(
+def test_rechecks_hide_moderation_before_publication(
     opinion_revision_session: Session,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    provider_called = False
-
-    def hide_before_translation(
-        session: Session,
-        *,
-        claim: ClaimedContentTranslationWork,
-        source: OpinionSource,
-    ) -> bool:
-        del claim, source
-        session.add(
-            OpinionModeration(
-                opinion_id=OPINION_ID,
-                author_id=None,
-                moderation_action=OpinionModerationAction.hide,
-                moderation_reason=ModerationReasonEnum.spam,
-                moderation_explanation=None,
-                created_at=datetime.now(UTC),
-                updated_at=datetime.now(UTC),
-                deleted_at=None,
-            )
-        )
-        session.flush()
-        return False
-
-    def translate_opinion_source(
-        session: Session,
-        *,
-        claim: ClaimedContentTranslationWork,
-        source: OpinionSource,
-        translation_service: ContentTranslationService,
-    ) -> None:
-        nonlocal provider_called
-        del session, claim, source, translation_service
-        provider_called = True
-
-    monkeypatch.setattr(
-        translation_db,
-        "_has_fresh_opinion_translation",
-        hide_before_translation,
-    )
-    monkeypatch.setattr(translation_db, "_translate_opinion_source", translate_opinion_source)
     claim = _opinion_claim(opinion_content_id=HISTORICAL_CONTENT_ID)
     _add_claimed_work(opinion_revision_session, claim=claim)
-
-    result = process_claimed_work(
+    prepared = prepare_claimed_work(opinion_revision_session, claim=claim)
+    assert isinstance(prepared, PreparedContentTranslation)
+    opinion_revision_session.commit()
+    bundle = generate_translation_bundle(
+        prepared=prepared,
+        translation_service=_translation_service(),
+        check_active=lambda: None,
+    )
+    opinion_revision_session.add(
+        OpinionModeration(
+            opinion_id=OPINION_ID,
+            author_id=None,
+            moderation_action=OpinionModerationAction.hide,
+            moderation_reason=ModerationReasonEnum.spam,
+            moderation_explanation=None,
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+            deleted_at=None,
+        )
+    )
+    result = publish_translation_bundle(
         opinion_revision_session,
         claim=claim,
-        translation_service=_translation_service(),
+        bundle=bundle,
     )
 
     assert result == ProcessWorkResult(work_id=1, status="ineligible_source")
-    assert provider_called is False
     work = opinion_revision_session.get(ContentTranslationWork, claim.id)
     assert work is not None
     assert work.status == ContentTranslationWorkStatus.failed
@@ -440,14 +407,9 @@ def _add_claimed_work(
     session.add(
         ContentTranslationWork(
             id=claim.id,
-            conversation_id=claim.conversation_id,
+            conversation_id=CONVERSATION_ID,
             source_kind=claim.source_kind,
-            project_content_id=claim.project_content_id,
-            conversation_content_id=claim.conversation_content_id,
-            opinion_content_id=claim.opinion_content_id,
-            survey_question_content_id=claim.survey_question_content_id,
-            survey_question_option_content_ids=claim.survey_question_option_content_ids,
-            ranking_item_content_id=claim.ranking_item_content_id,
+            opinion_content_id=claim.source_revision.content_id,
             display_language_code=claim.display_language_code,
             status=ContentTranslationWorkStatus.running,
             priority_rank=0,
@@ -465,19 +427,13 @@ def _add_claimed_work(
 
 def _opinion_claim(*, opinion_content_id: int) -> ClaimedContentTranslationWork:
     return ClaimedContentTranslationWork(
-        id=1,
-        conversation_id=CONVERSATION_ID,
         conversation_slug_id="conv1234",
-        source_kind=ContentTranslationSourceKind.opinion,
-        source_key=f"opinion_content:{opinion_content_id}",
-        project_content_id=None,
-        conversation_content_id=None,
-        opinion_content_id=opinion_content_id,
-        survey_question_content_id=None,
-        survey_question_option_content_ids=None,
-        ranking_item_content_id=None,
+        source_revision=ContentRevision(
+            kind=ContentTranslationSourceKind.opinion, content_id=opinion_content_id
+        ),
         display_language_code=DisplayLanguageCode.en,
         lease_token=uuid.uuid4(),
+        work_ids=(1,),
     )
 
 

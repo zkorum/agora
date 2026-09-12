@@ -1,6 +1,5 @@
 import { drizzle } from "drizzle-orm/postgres-js";
-import { createHash } from "node:crypto";
-import { assert, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
     conversationEmailUpdateRecipientTable,
     conversationEmailUpdateTable,
@@ -9,7 +8,6 @@ import {
 import {
     activeOwnerAuthorizationQuery,
     buildConversationLinkUrl,
-    createRecipientActions,
     deliveryUpdateIsExclusiveToConversation,
     testAttemptHasNoActiveSuppressions,
     updateIsExclusiveToConversation,
@@ -137,74 +135,5 @@ describe("scoped store predicates", () => {
             "f97f8461-8c04-4604-ae09-29e417b9b1e9",
             1,
         ]);
-    });
-
-    it.each(["project", "conversation"] as const)(
-        "creates only a report action and token for owners in %s scope",
-        (participantPreferenceScope) => {
-            const result = createRecipientActions({
-                siteBaseUrl: "https://www.agoracitizen.app",
-                kind: "conversation_owner_copy",
-                participantPreferenceScope,
-            });
-
-            expect(result.kind).toBe("conversation_owner_copy");
-            expect(result.actions.reportUrl).toContain(
-                "/email-updates/report/",
-            );
-            expect(Object.keys(result.actions)).toEqual(["reportUrl"]);
-            const reportToken =
-                new URL(result.actions.reportUrl).pathname.split("/").at(-1) ??
-                "";
-            expect(reportToken).toMatch(/^[A-Za-z0-9_-]{43}$/);
-            expect(result.actionTokens).toEqual({
-                reportHash: createHash("sha256")
-                    .update(reportToken)
-                    .digest("hex"),
-            });
-            expect(result.unsubscribeUrl).toBeUndefined();
-        },
-    );
-
-    it("retains one-click provider unsubscribe for participants", () => {
-        const result = createRecipientActions({
-            siteBaseUrl: "https://www.agoracitizen.app",
-            kind: "participant",
-            participantPreferenceScope: "project",
-        });
-
-        assert(result.kind === "participant");
-        expect(result.actions.unsubscribeScope).toBe("project");
-        expect(result.actions.unsubscribeUrl).toContain(
-            "/email-updates/unsubscribe/",
-        );
-        expect(result.actions.manageUrl).toContain(
-            "/email-updates/preferences/",
-        );
-        expect(result.actions.reportUrl).toContain("/email-updates/report/");
-        expect(Object.keys(result.actionTokens)).toEqual([
-            "unsubscribeHash",
-            "manageHash",
-            "reportHash",
-        ]);
-        for (const hash of Object.values(result.actionTokens)) {
-            expect(hash).toMatch(/^[a-f0-9]{64}$/);
-        }
-        expect(new Set(Object.values(result.actionTokens)).size).toBe(3);
-        expect(result.unsubscribeUrl).toContain(
-            "/api/v1/conversation/email-update/action/one-click/",
-        );
-    });
-
-    it("uses conversation actions for a listed conversation-scoped delivery", () => {
-        const result = createRecipientActions({
-            siteBaseUrl: "https://www.agoracitizen.app",
-            kind: "participant",
-            participantPreferenceScope: "conversation",
-        });
-
-        expect(result.actions).toMatchObject({
-            unsubscribeScope: "conversation",
-        });
     });
 });

@@ -23,7 +23,8 @@ interface FixedCopy {
     adminCopy: string;
     why: string;
     conversations: string;
-    unsubscribe: string;
+    unsubscribeConversations: string;
+    unsubscribeProject: string;
     manage: string;
     report: string;
     reply: string;
@@ -34,7 +35,8 @@ const englishCopy: FixedCopy = {
     adminCopy: "Admin Copy",
     why: "You opted in to conversation updates.",
     conversations: "Included conversations",
-    unsubscribe: "Unsubscribe",
+    unsubscribeConversations: "Unsubscribe from these conversations",
+    unsubscribeProject: "Unsubscribe from all project updates",
     manage: "Manage preferences",
     report: "Report this update",
     reply: "Reply to this email to contact the facilitator.",
@@ -47,7 +49,8 @@ const fixedCopy: Record<SupportedDisplayLanguageCodes, FixedCopy> = {
         adminCopy: "Copia de administración",
         why: "Elegiste recibir novedades de las conversaciones.",
         conversations: "Conversaciones incluidas",
-        unsubscribe: "Darse de baja",
+        unsubscribeConversations: "Darse de baja de estas conversaciones",
+        unsubscribeProject: "Darse de baja de todas las novedades del proyecto",
         manage: "Gestionar preferencias",
         report: "Denunciar esta novedad",
         reply: "Responde a este correo para contactar con la persona facilitadora.",
@@ -57,7 +60,8 @@ const fixedCopy: Record<SupportedDisplayLanguageCodes, FixedCopy> = {
         adminCopy: "Copie admin",
         why: "Vous avez choisi de suivre les conversations par e-mail.",
         conversations: "Conversations incluses",
-        unsubscribe: "Se désabonner",
+        unsubscribeConversations: "Se désabonner de ces conversations",
+        unsubscribeProject: "Se désabonner de toutes les nouvelles du projet",
         manage: "Gérer les préférences",
         report: "Signaler cette nouvelle",
         reply: "Répondez à cet e-mail pour contacter votre facilitateur.",
@@ -67,7 +71,8 @@ const fixedCopy: Record<SupportedDisplayLanguageCodes, FixedCopy> = {
         adminCopy: "管理员副本",
         why: "您选择了接收对话更新。",
         conversations: "包含的对话",
-        unsubscribe: "退订",
+        unsubscribeConversations: "退订这些对话的更新",
+        unsubscribeProject: "退订此项目的所有更新",
         manage: "管理偏好",
         report: "举报此更新",
         reply: "回复此邮件即可联系协调员。",
@@ -77,7 +82,8 @@ const fixedCopy: Record<SupportedDisplayLanguageCodes, FixedCopy> = {
         adminCopy: "管理員副本",
         why: "您選擇了接收對話更新。",
         conversations: "包含的對話",
-        unsubscribe: "取消訂閱",
+        unsubscribeConversations: "取消訂閱這些對話的更新",
+        unsubscribeProject: "取消訂閱此專案的所有更新",
         manage: "管理偏好",
         report: "檢舉此更新",
         reply: "回覆此郵件即可聯絡協調員。",
@@ -87,7 +93,8 @@ const fixedCopy: Record<SupportedDisplayLanguageCodes, FixedCopy> = {
         adminCopy: "管理者用コピー",
         why: "会話の更新メールの受信を希望したため、お送りしています。",
         conversations: "対象の会話",
-        unsubscribe: "配信停止",
+        unsubscribeConversations: "これらの会話の更新の配信を停止",
+        unsubscribeProject: "プロジェクトのすべての更新の配信を停止",
         manage: "設定の管理",
         report: "この更新を報告",
         reply: "ファシリテーターへの連絡は、このメールに返信してください。",
@@ -97,7 +104,8 @@ const fixedCopy: Record<SupportedDisplayLanguageCodes, FixedCopy> = {
         adminCopy: "نسخة إدارية",
         why: "اخترت تلقي تحديثات المحادثات.",
         conversations: "المحادثات المشمولة",
-        unsubscribe: "إلغاء الاشتراك",
+        unsubscribeConversations: "إلغاء الاشتراك في تحديثات هذه المحادثات",
+        unsubscribeProject: "إلغاء الاشتراك في جميع تحديثات المشروع",
         manage: "إدارة التفضيلات",
         report: "الإبلاغ عن هذا التحديث",
         reply: "رد على هذه الرسالة للتواصل مع المُيسّر.",
@@ -107,7 +115,8 @@ const fixedCopy: Record<SupportedDisplayLanguageCodes, FixedCopy> = {
         adminCopy: "עותק למנהל",
         why: "בחרת לקבל עדכונים על שיחות.",
         conversations: "שיחות כלולות",
-        unsubscribe: "ביטול הרשמה",
+        unsubscribeConversations: "ביטול הרשמה לעדכונים על השיחות האלה",
+        unsubscribeProject: "ביטול הרשמה לכל עדכוני הפרויקט",
         manage: "ניהול העדפות",
         report: "דיווח על עדכון זה",
         reply: "אפשר להשיב להודעה זו כדי ליצור קשר עם המנחה.",
@@ -117,7 +126,8 @@ const fixedCopy: Record<SupportedDisplayLanguageCodes, FixedCopy> = {
         adminCopy: "نسخه مدیر",
         why: "شما دریافت به‌روزرسانی‌های گفت‌وگوها را انتخاب کرده‌اید.",
         conversations: "گفت‌وگوهای موجود",
-        unsubscribe: "لغو اشتراک",
+        unsubscribeConversations: "لغو اشتراک به‌روزرسانی‌های این گفت‌وگوها",
+        unsubscribeProject: "لغو اشتراک همهٔ به‌روزرسانی‌های پروژه",
         manage: "مدیریت ترجیحات",
         report: "گزارش این به‌روزرسانی",
         reply: "برای تماس با تسهیل‌گر به این ایمیل پاسخ دهید.",
@@ -127,7 +137,9 @@ const fixedCopy: Record<SupportedDisplayLanguageCodes, FixedCopy> = {
         adminCopy: "Администратор көчүрмөсү",
         why: "Сиз талкуулардын жаңыртууларын алууну тандагансыз.",
         conversations: "Камтылган талкуулар",
-        unsubscribe: "Жазылуудан чыгуу",
+        unsubscribeConversations:
+            "Бул талкуулардын жаңыртууларына жазылуудан чыгуу",
+        unsubscribeProject: "Долбоордун бардык жаңыртууларына жазылуудан чыгуу",
         manage: "Жөндөөлөрдү башкаруу",
         report: "Бул жаңыртууну билдирүү",
         reply: "Фасилитатор менен байланышуу үчүн бул катка жооп бериңиз.",
@@ -137,7 +149,8 @@ const fixedCopy: Record<SupportedDisplayLanguageCodes, FixedCopy> = {
         adminCopy: "Копия для администратора",
         why: "Вы подписались на обновления обсуждений.",
         conversations: "Включенные обсуждения",
-        unsubscribe: "Отписаться",
+        unsubscribeConversations: "Отписаться от обновлений этих обсуждений",
+        unsubscribeProject: "Отписаться от всех обновлений проекта",
         manage: "Управлять настройками",
         report: "Пожаловаться на это обновление",
         reply: "Ответьте на это письмо, чтобы связаться с фасилитатором.",
@@ -151,8 +164,8 @@ export interface RenderedConversationEmail {
 }
 
 export interface ConversationEmailActionLinks {
-    unsubscribeScope: "project" | "conversation";
-    unsubscribeUrl: string;
+    conversationUnsubscribeUrl: string;
+    projectUnsubscribeUrl: string | undefined;
     manageUrl: string;
     reportUrl: string;
 }
@@ -237,13 +250,20 @@ export async function renderConversationEmail(
     );
     const actions: { label: string; url: string }[] = [];
     if (params.variant === "participant") {
-        actions.push(
-            {
-                label: copy.unsubscribe,
-                url: textUrl(params.actions.unsubscribeUrl),
-            },
-            { label: copy.manage, url: textUrl(params.actions.manageUrl) },
-        );
+        actions.push({
+            label: copy.unsubscribeConversations,
+            url: textUrl(params.actions.conversationUnsubscribeUrl),
+        });
+        if (params.actions.projectUnsubscribeUrl !== undefined) {
+            actions.push({
+                label: copy.unsubscribeProject,
+                url: textUrl(params.actions.projectUnsubscribeUrl),
+            });
+        }
+        actions.push({
+            label: copy.manage,
+            url: textUrl(params.actions.manageUrl),
+        });
     }
     if (params.variant !== "test") {
         actions.push({

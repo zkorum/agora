@@ -572,14 +572,51 @@ describe("conversation Email Update preference pagination", () => {
             nextCursor: undefined,
         });
 
-        await db.insert(organizationMembershipTable).values({
-            organizationId,
-            userId: USER_ID,
-        });
         await db
             .update(conversationTable)
             .set({ isIndexed: false })
             .where(eq(conversationTable.slugId, "private1"));
+        const focusedQuery = {
+            db,
+            userId: USER_ID,
+            now: NOW,
+            group: { kind: "no_project" },
+            search: undefined,
+            focusConversationSlugId: "private1",
+            cursor: undefined,
+        } satisfies Parameters<typeof queryPreferenceConversationPage>[0];
+        const focusedBatchQuery = {
+            db,
+            userId: USER_ID,
+            now: NOW,
+            groupKeys: [focusedQuery.group],
+            search: undefined,
+            focusConversationSlugId: focusedQuery.focusConversationSlugId,
+        } satisfies Parameters<typeof queryInitialPreferenceConversationPages>[0];
+        const focusRequest = {
+            mode: "focus",
+            focus: { kind: "conversation", conversationSlugId: "private1" },
+        } satisfies Parameters<typeof queryPreferenceGroupPage>[0]["request"];
+        await expect(
+            queryPreferenceGroupPage({
+                db,
+                userId: USER_ID,
+                request: focusRequest,
+                now: NOW,
+            }),
+        ).resolves.toMatchObject({ success: true, groupKeys: [] });
+        await expect(
+            queryPreferenceConversationPage(focusedQuery),
+        ).resolves.toEqual({ success: true, rows: [], nextCursor: undefined });
+        const inaccessibleBatch =
+            await queryInitialPreferenceConversationPages(focusedBatchQuery);
+        expect(inaccessibleBatch.rows).toEqual([]);
+        expect(inaccessibleBatch.nextCursorByGroup.size).toBe(0);
+
+        await db.insert(organizationMembershipTable).values({
+            organizationId,
+            userId: USER_ID,
+        });
         await expect(
             queryPreferenceGroupPage({
                 db,
@@ -592,6 +629,35 @@ describe("conversation Email Update preference pagination", () => {
             groupKeys: [],
             nextCursor: undefined,
         });
+        await expect(
+            queryPreferenceGroupPage({
+                db,
+                userId: USER_ID,
+                request: focusRequest,
+                now: NOW,
+            }),
+        ).resolves.toMatchObject({
+            success: true,
+            groupKeys: [{ kind: "no_project" }],
+        });
+        const expectedFocusedRows = [
+            {
+                conversation_slug_id: "private1",
+                conversation_enabled: undefined,
+                available: true,
+            },
+        ];
+        await expect(
+            queryPreferenceConversationPage(focusedQuery),
+        ).resolves.toMatchObject({
+            success: true,
+            rows: expectedFocusedRows,
+            nextCursor: undefined,
+        });
+        const focusedBatch =
+            await queryInitialPreferenceConversationPages(focusedBatchQuery);
+        expect(focusedBatch.rows).toMatchObject(expectedFocusedRows);
+        expect(focusedBatch.nextCursorByGroup.size).toBe(0);
         await db
             .update(conversationTable)
             .set({ isIndexed: true })
@@ -628,4 +694,136 @@ describe("conversation Email Update preference pagination", () => {
             ],
         });
     });
+
+    it.each([
+        { participationMode: "account_required", slugId: "focusacc" },
+        { participationMode: "email_verification", slugId: "focuseml" },
+    ] satisfies {
+        participationMode: typeof conversationTable.$inferSelect.participationMode;
+        slugId: string;
+    }[])(
+        "focuses a private $participationMode conversation with only an inherited preference",
+        async ({ participationMode, slugId }) => {
+            const conversationId = await addConversation({
+                projectId: firstProjectId,
+                slugId,
+                title: `Private ${slugId}`,
+            });
+            await db
+                .update(conversationTable)
+                .set({ isIndexed: false, participationMode })
+                .where(eq(conversationTable.id, conversationId));
+            const group = {
+                kind: "project",
+                projectId: firstProjectId,
+                projectSlug: "first-project",
+            } satisfies Parameters<
+                typeof queryPreferenceConversationPage
+            >[0]["group"];
+            const request = {
+                mode: "focus",
+                focus: { kind: "conversation", conversationSlugId: slugId },
+            } satisfies Parameters<
+                typeof queryPreferenceGroupPage
+            >[0]["request"];
+
+            await expect(
+                queryPreferenceGroupPage({
+                    db,
+                    userId: USER_ID,
+                    request,
+                    now: NOW,
+                }),
+            ).resolves.toMatchObject({
+                success: true,
+                groupKeys: [group],
+                nextCursor: undefined,
+            });
+            const focusedPage = await queryPreferenceConversationPage({
+                db,
+                userId: USER_ID,
+                now: NOW,
+                group,
+                search: undefined,
+                focusConversationSlugId: slugId,
+                cursor: undefined,
+            });
+            expect(focusedPage).toMatchObject({
+                success: true,
+                rows: [
+                    {
+                        conversation_slug_id: slugId,
+                        conversation_enabled: undefined,
+                        project_enabled: true,
+                        available: true,
+                    },
+                ],
+                nextCursor: undefined,
+            });
+            if (!focusedPage.success) return;
+            const focusedBatch = await queryInitialPreferenceConversationPages({
+                db,
+                userId: USER_ID,
+                now: NOW,
+                groupKeys: [group],
+                search: undefined,
+                focusConversationSlugId: slugId,
+            });
+            expect(focusedBatch.rows).toEqual(focusedPage.rows);
+            expect(focusedBatch.nextCursorByGroup.size).toBe(0);
+
+            await expect(
+                queryPreferenceGroupPage({
+                    db,
+                    userId: USER_ID,
+                    now: NOW,
+                    request: { mode: "browse", search: slugId, limit: 20 },
+                }),
+            ).resolves.toMatchObject({ success: true, groupKeys: [] });
+            await expect(
+                queryPreferenceConversationPage({
+                    db,
+                    userId: USER_ID,
+                    now: NOW,
+                    group,
+                    search: slugId,
+                    focusConversationSlugId: undefined,
+                    cursor: undefined,
+                }),
+            ).resolves.toMatchObject({ success: true, rows: [] });
+            const unfocusedBatch =
+                await queryInitialPreferenceConversationPages({
+                    db,
+                    userId: USER_ID,
+                    now: NOW,
+                    groupKeys: [group],
+                    search: slugId,
+                    focusConversationSlugId: undefined,
+                });
+            expect(unfocusedBatch.rows).toEqual([]);
+
+            await db
+                .update(conversationTable)
+                .set({ isImporting: true })
+                .where(eq(conversationTable.id, conversationId));
+            await expect(
+                queryPreferenceGroupPage({
+                    db,
+                    userId: USER_ID,
+                    request,
+                    now: NOW,
+                }),
+            ).resolves.toMatchObject({ success: true, groupKeys: [] });
+            const unavailableBatch =
+                await queryInitialPreferenceConversationPages({
+                    db,
+                    userId: USER_ID,
+                    now: NOW,
+                    groupKeys: [group],
+                    search: undefined,
+                    focusConversationSlugId: slugId,
+                });
+            expect(unavailableBatch.rows).toEqual([]);
+        },
+    );
 });
