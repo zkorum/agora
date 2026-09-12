@@ -12,6 +12,7 @@ import {
     normalizeError,
     normalizeProviderError,
     writeStructuredLog,
+    type LaneName,
     type StructuredEvent,
 } from "./observability.js";
 import {
@@ -109,14 +110,6 @@ interface TickCounts {
 }
 
 type WorkerLifecycleState = "starting" | "running" | "quiescing" | "stopped";
-
-type LaneName =
-    | "sns"
-    | "recovery"
-    | "materialization"
-    | "testSends"
-    | "recipientSends"
-    | "aggregation";
 
 function emptyTickCounts(): TickCounts {
     return {
@@ -647,9 +640,13 @@ export function createConversationEmailUpdateWorker({
         }
     };
 
-    const superviseIteration = async (
-        iterate: () => Promise<TickCounts>,
-    ): Promise<void> => {
+    const superviseIteration = async ({
+        lane,
+        iterate,
+    }: {
+        lane: LaneName;
+        iterate: () => Promise<TickCounts>;
+    }): Promise<void> => {
         const iterationStartedAt = Date.now();
         try {
             const counts = await iterate();
@@ -660,6 +657,7 @@ export function createConversationEmailUpdateWorker({
                 event: {
                     event: "iteration_failed",
                     outcome: "failure",
+                    lane,
                     durationMs: Date.now() - iterationStartedAt,
                     error: normalizeError(error),
                 },
@@ -1034,42 +1032,60 @@ export function createConversationEmailUpdateWorker({
                 canIterate: canAdmit,
                 intervalMs: config.pollIntervalMs,
                 iterate: async () => {
-                    await superviseIteration(runSnsIteration);
+                    await superviseIteration({
+                        lane: "sns",
+                        iterate: runSnsIteration,
+                    });
                 },
             }),
             lanes.recovery.run({
                 canIterate: canAdmit,
                 intervalMs: config.pollIntervalMs,
                 iterate: async () => {
-                    await superviseIteration(runRecoveryIteration);
+                    await superviseIteration({
+                        lane: "recovery",
+                        iterate: runRecoveryIteration,
+                    });
                 },
             }),
             lanes.materialization.run({
                 canIterate: canAdmit,
                 intervalMs: config.pollIntervalMs,
                 iterate: async () => {
-                    await superviseIteration(runMaterializationIteration);
+                    await superviseIteration({
+                        lane: "materialization",
+                        iterate: runMaterializationIteration,
+                    });
                 },
             }),
             lanes.testSends.run({
                 canIterate: canAdmit,
                 intervalMs: config.pollIntervalMs,
                 iterate: async () => {
-                    await superviseIteration(runTestSendIteration);
+                    await superviseIteration({
+                        lane: "testSends",
+                        iterate: runTestSendIteration,
+                    });
                 },
             }),
             lanes.recipientSends.run({
                 canIterate: canAdmit,
                 intervalMs: config.pollIntervalMs,
                 iterate: async () => {
-                    await superviseIteration(runRecipientSendIteration);
+                    await superviseIteration({
+                        lane: "recipientSends",
+                        iterate: runRecipientSendIteration,
+                    });
                 },
             }),
             lanes.aggregation.run({
                 canIterate: canAdmit,
                 intervalMs: config.pollIntervalMs,
                 iterate: async () => {
-                    await superviseIteration(runAggregationIteration);
+                    await superviseIteration({
+                        lane: "aggregation",
+                        iterate: runAggregationIteration,
+                    });
                 },
             }),
         ]);

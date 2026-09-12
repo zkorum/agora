@@ -19,8 +19,14 @@ const safeErrorCodeSchema = z.enum([
     "AbortError",
     "AccountSuspendedException",
     "BadRequestException",
+    "CONNECT_TIMEOUT",
+    "CONNECTION_CLOSED",
+    "CONNECTION_DESTROYED",
+    "CONNECTION_ENDED",
+    "EAI_AGAIN",
     "ECONNREFUSED",
     "ECONNRESET",
+    "ENOTFOUND",
     "EPIPE",
     "ETIMEDOUT",
     "InvalidSubject",
@@ -50,15 +56,22 @@ const errorCategorySchema = z.enum([
     "validation",
 ]);
 
-export const safeErrorSchema = z.object({
+const errorSummarySchema = z.object({
     name: safeErrorNameSchema,
     code: safeErrorCodeSchema,
     category: errorCategorySchema,
 });
 
+const MAX_ERROR_CAUSES = 4;
+
+export const safeErrorSchema = errorSummarySchema.extend({
+    causes: z.array(errorSummarySchema).max(MAX_ERROR_CAUSES).optional(),
+});
+
 export type SafeError = z.infer<typeof safeErrorSchema>;
 
-const errorCodeSourceSchema = z.object({ code: z.string() }).loose();
+const errorCodeSourceSchema = z.object({ code: z.string() });
+const errorCauseSourceSchema = z.object({ cause: z.unknown().optional() });
 
 function safeErrorCode(error: unknown): z.infer<typeof safeErrorCodeSchema> {
     const parsed = errorCodeSourceSchema.safeParse(error);
@@ -72,7 +85,7 @@ function isPostgresSqlState(error: unknown): boolean {
     return parsed.success && /^[0-9A-Z]{5}$/.test(parsed.data.code);
 }
 
-export function normalizeError(error: unknown): SafeError {
+function summarizeError(error: unknown): z.infer<typeof errorSummarySchema> {
     const code = safeErrorCode(error);
     if (error instanceof TypeError) {
         return { name: "TypeError", code, category: "application" };
@@ -105,25 +118,54 @@ export function normalizeError(error: unknown): SafeError {
                 category: "validation",
             };
         }
-        if (isPostgresSqlState(error)) {
-            return {
-                name: "DatabaseError",
-                code: "PostgresSqlState",
-                category: "database",
-            };
-        }
-        if (
-            code === "ECONNREFUSED" ||
-            code === "ECONNRESET" ||
-            code === "EPIPE"
-        ) {
-            return { name: "DatabaseError", code, category: "retryable" };
-        }
-        if (code === "ETIMEDOUT") {
-            return { name: "DatabaseError", code, category: "ambiguous" };
-        }
+    }
+    if (
+        code === "CONNECT_TIMEOUT" ||
+        code === "EAI_AGAIN" ||
+        code === "ENOTFOUND" ||
+        code === "ECONNREFUSED" ||
+        code === "ECONNRESET" ||
+        code === "EPIPE"
+    ) {
+        return { name: "DatabaseError", code, category: "retryable" };
+    }
+    if (
+        code === "CONNECTION_CLOSED" ||
+        code === "CONNECTION_DESTROYED" ||
+        code === "CONNECTION_ENDED" ||
+        code === "ETIMEDOUT"
+    ) {
+        return { name: "DatabaseError", code, category: "ambiguous" };
+    }
+    if (isPostgresSqlState(error)) {
+        return {
+            name: "DatabaseError",
+            code: "PostgresSqlState",
+            category: "database",
+        };
     }
     return { name: "ApplicationError", code, category: "application" };
+}
+
+export function normalizeError(error: unknown): SafeError {
+    const summary = summarizeError(error);
+    const causes: z.infer<typeof errorSummarySchema>[] = [];
+    const visited = new Set<unknown>([error]);
+    let current = error;
+
+    // Drizzle wraps driver errors with SQL and parameters in its message.
+    // Follow only bounded cause links and rebuild each summary from enums.
+    while (causes.length < MAX_ERROR_CAUSES) {
+        const source = errorCauseSourceSchema.safeParse(current);
+        if (!source.success) break;
+        const cause = source.data.cause;
+        if (cause === undefined || cause === null || visited.has(cause)) break;
+        visited.add(cause);
+        causes.push(summarizeError(cause));
+        current = cause;
+    }
+
+    return causes.length === 0 ? summary : { ...summary, causes };
 }
 
 export function normalizeProviderError({
@@ -188,6 +230,16 @@ const dependencyOperationSchema = z.enum([
 ]);
 const providerSchema = z.enum(["ses", "simulated"]);
 const recipientKindSchema = z.enum(["owner", "participant"]);
+const laneNameSchema = z.enum([
+    "sns",
+    "recovery",
+    "materialization",
+    "testSends",
+    "recipientSends",
+    "aggregation",
+]);
+export type LaneName = z.infer<typeof laneNameSchema>;
+
 const durationSchema = z.number().int().nonnegative();
 const finalizationAttemptSchema = z.number().int().min(1).max(5);
 const heartbeatIntervalSchema = z.number().int().min(60_000).max(3_600_000);
@@ -227,6 +279,7 @@ export const structuredEventSchema = z.discriminatedUnion("event", [
         .object({
             event: z.literal("iteration_failed"),
             outcome: z.literal("failure"),
+            lane: laneNameSchema,
             durationMs: durationSchema,
             error: safeErrorSchema,
         })

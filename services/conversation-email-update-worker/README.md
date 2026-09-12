@@ -167,7 +167,9 @@ pnpm test:dev-exercise:process
 
 Production writes one Pino JSON event per stdout/stderr line. Docker Compose's `awslogs` driver automatically sends those lines to CloudWatch Logs group `agora-prod-docker`, stream `conversation-email-update-worker`; the application does not need or use an AWS logging SDK.
 
-Every operational event includes `service`, `event`, `environment`, `workerId`, and `outcome`. Depending on the event, records also include `durationMs`, an allowlisted `counts` object, operational `deliveryId`/`snsInboxId`, or public `attemptId`/`testAttemptId`. Errors contain only allowlisted `name`, `code`, and `category`; error messages and stacks are omitted. SQL query logs are suppressed, including development parameter values. Destination addresses, usernames, user IDs, content, links, tokens, authorization, connection strings, provider request payloads, and provider message IDs are never operational log fields.
+Every operational event includes `service`, `event`, `environment`, `workerId`, and `outcome`. Depending on the event, records also include `durationMs`, an allowlisted `counts` object, operational `deliveryId`/`snsInboxId`, or public `attemptId`/`testAttemptId`. Errors contain only allowlisted `name`, `code`, and `category`, plus an optional `causes` array with the same three fields per cause; error messages and stacks are omitted. Cause traversal follows at most four links, nearest cause first, and stops at cycles. PostgreSQL connection codes such as `CONNECT_TIMEOUT` survive normalization even inside Drizzle query errors; SQLSTATEs remain the generic `PostgresSqlState` code. SQL query logs are suppressed, including development parameter values. Destination addresses, usernames, user IDs, content, links, tokens, authorization, connection strings, provider request payloads, and provider message IDs are never operational log fields.
+
+`iteration_failed` includes an allowlisted `lane`: `sns`, `recovery`, `materialization`, `testSends`, `recipientSends`, or `aggregation`. Inspect both `error.code` and `error.causes` when investigating failures: an outer `ApplicationError` / `UnknownError` can wrap a classified driver error. Idle heartbeats indicate liveness of an idle iteration, not health of every lane.
 
 PostgreSQL notifications wake independent SNS, recovery, materialization, test-send, and recipient-send lanes after relevant transactions commit. Delivery aggregation has its own lane and is woken by local state transitions rather than every database notification, avoiding a full active-delivery scan after each recipient update. The database tables remain the durable work source: every lane scans on startup and at `CONVERSATION_EMAIL_UPDATE_WORKER_POLL_INTERVAL_MS` even if a notification is lost. The reconciliation interval defaults to 30 seconds.
 
@@ -179,7 +181,7 @@ Example CloudWatch Logs Insights queries:
 
 ```text
 # Errors by normalized category and code
-fields @timestamp, event, workerId, error.name, error.category, error.code, durationMs
+fields @timestamp, event, workerId, lane, error.name, error.category, error.code, error.causes, durationMs
 | filter outcome = "failure" or level >= 50
 | sort @timestamp desc
 | limit 200
