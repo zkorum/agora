@@ -5,12 +5,13 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from content_translation_worker.db import translate_text_for_claim_target
+from content_translation_worker.generated_models import DisplayLanguageCode
 from content_translation_worker.translation import (
     ContentTranslationProviderError,
     ContentTranslationResult,
     GoogleTranslationConfig,
     GoogleTranslationService,
+    translate_text_for_claim_target,
     translate_texts,
 )
 from content_translation_worker.translation_model import GoogleTranslationModel
@@ -125,10 +126,7 @@ def test_translate_texts_preserves_empty_texts_and_normalizes_target_language() 
             contents=["Hello", "World"],
             source_language_code=None,
             target_language_code="zh-CN",
-            model=(
-                "projects/test-project/locations/global/models/"
-                "general/translation-llm"
-            ),
+            model=("projects/test-project/locations/global/models/general/translation-llm"),
         )
     ]
 
@@ -157,10 +155,7 @@ def test_translate_texts_passes_known_source_language_to_google() -> None:
             contents=["Guten Tag"],
             source_language_code="de",
             target_language_code="fr",
-            model=(
-                "projects/test-project/locations/global/models/"
-                "general/translation-llm"
-            ),
+            model=("projects/test-project/locations/global/models/general/translation-llm"),
         )
     ]
 
@@ -195,7 +190,7 @@ def test_translate_text_for_claim_target_stores_both_chinese_scripts() -> None:
         translation_service=service,
         text_value="Hello",
         source_language_code="en",
-        target_language_code="zh-Hans",
+        target_language_code=DisplayLanguageCode.zh_hans,
         mime_type="text/plain",
     )
 
@@ -212,10 +207,7 @@ def test_translate_text_for_claim_target_stores_both_chinese_scripts() -> None:
             contents=["Hello"],
             source_language_code="en",
             target_language_code="zh-TW",
-            model=(
-                "projects/test-project/locations/global/models/"
-                "general/translation-llm"
-            ),
+            model=("projects/test-project/locations/global/models/general/translation-llm"),
         )
     ]
 

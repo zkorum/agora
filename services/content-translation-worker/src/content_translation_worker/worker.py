@@ -4,21 +4,23 @@ import logging
 import signal
 import sys
 import time
-from datetime import UTC, datetime, timedelta
+import uuid
 from typing import TYPE_CHECKING, Protocol, TypeGuard
 
 import valkey as valkey_lib
 from pydantic import ValidationError
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, select
+from sqlalchemy.engine import make_url
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from content_translation_worker.config import Settings
 from content_translation_worker.db import (
-    claim_content_translation_work_batch,
-    process_claimed_work,
+    claim_content_translation_work,
     recover_expired_leases,
     retry_failed_eager_work,
 )
+from content_translation_worker.processing import process_claimed_work
 from content_translation_worker.translation import (
     ContentTranslationProviderError,
 )
@@ -29,7 +31,11 @@ from content_translation_worker.valkey_client import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from sqlalchemy.engine import Engine
+
+    from content_translation_worker.models import ClaimedContentTranslationWork
 
 
 class ValkeyFromUrl(Protocol):
@@ -56,14 +62,6 @@ def _handle_signal(signum: int, frame: object) -> None:
     _running = False
 
 
-def _postgres_dsn(connection_string: str) -> str:
-    if connection_string.startswith("postgresql://"):
-        return connection_string.replace("postgresql://", "postgresql+psycopg://", 1)
-    if connection_string.startswith("postgres://"):
-        return connection_string.replace("postgres://", "postgresql+psycopg://", 1)
-    return connection_string
-
-
 def _sleep_before_retry(seconds: float) -> None:
     deadline = time.monotonic() + seconds
     while _running:
@@ -82,9 +80,41 @@ def _create_engine_with_retry(
     while _running:
         engine: Engine | None = None
         try:
-            engine = create_engine(_postgres_dsn(connection_string), pool_pre_ping=True)
+            url = make_url(connection_string)
+            if url.drivername in {"postgres", "postgresql"}:
+                url = url.set(drivername="postgresql+psycopg")
+            defaults = {
+                "application_name": WORKER_ID,
+                "connect_timeout": "10",
+                "keepalives": "1",
+                "keepalives_idle": "15",
+                "keepalives_interval": "5",
+                "keepalives_count": "3",
+                "tcp_user_timeout": "30000",
+            }
+            url = url.update_query_dict(
+                {key: value for key, value in defaults.items() if key not in url.query}
+            )
+            existing_options = url.query.get("options", "")
+            if not isinstance(existing_options, str):
+                raise ValueError("PostgreSQL options must be specified once")
+            url = url.update_query_dict(
+                {
+                    "options": (
+                        "-c statement_timeout=30000 -c lock_timeout=5000 "
+                        "-c idle_in_transaction_session_timeout=60000 "
+                        f"{existing_options}"
+                    )
+                }
+            )
+            engine = create_engine(
+                url,
+                pool_pre_ping=True,
+                pool_timeout=10,
+                hide_parameters=True,
+            )
             with engine.connect() as connection:
-                connection.execute(text("select 1"))
+                connection.execute(select(1))
             log.info("[Worker] PostgreSQL %s connection verified", role)
             return engine
         except Exception as error:
@@ -135,6 +165,60 @@ def _load_settings() -> Settings | None:
         return None
 
 
+def create_work_poller(
+    *,
+    engine: Engine,
+    vk: ContentTranslationValkey,
+    settings: Settings,
+    worker_id: str,
+) -> Callable[[], ClaimedContentTranslationWork | None]:
+    last_reconcile = time.monotonic() - settings.reconcile_interval_seconds
+    last_retry = time.monotonic() - settings.retry_initial_seconds
+
+    def poll() -> ClaimedContentTranslationWork | None:
+        nonlocal last_reconcile, last_retry
+        now = time.monotonic()
+        if now - last_reconcile >= settings.reconcile_interval_seconds:
+            with Session(engine) as session, session.begin():
+                recovered = recover_expired_leases(session)
+            if recovered:
+                log.info("[Worker] Recovered %d expired lease(s)", recovered)
+            last_reconcile = now
+        if now - last_retry >= settings.retry_initial_seconds:
+            with Session(engine) as session, session.begin():
+                retried = retry_failed_eager_work(
+                    session,
+                    limit=settings.batch_size,
+                    initial_seconds=settings.retry_initial_seconds,
+                    maximum_seconds=settings.retry_maximum_seconds,
+                )
+            if retried:
+                log.info("[Worker] Retrying %d failed eager work item(s)", retried)
+            last_retry = now
+
+        work_ids = [item.work_id for item in zpopmin_batch(vk, count=1)]
+        with Session(engine) as session, session.begin():
+            claim = claim_content_translation_work(
+                session,
+                worker_id=worker_id,
+                work_ids=work_ids if work_ids else None,
+                candidate_limit=settings.batch_size,
+                lease_ttl_seconds=settings.lease_ttl_seconds,
+            )
+            if claim is None and work_ids:
+                # A stale wakeup must not delay other durable database work.
+                claim = claim_content_translation_work(
+                    session,
+                    worker_id=worker_id,
+                    work_ids=None,
+                    candidate_limit=settings.batch_size,
+                    lease_ttl_seconds=settings.lease_ttl_seconds,
+                )
+            return claim
+
+    return poll
+
+
 def main() -> int:
     settings = _load_settings()
     if settings is None:
@@ -143,7 +227,7 @@ def main() -> int:
     signal.signal(signal.SIGTERM, _handle_signal)
     signal.signal(signal.SIGINT, _handle_signal)
 
-    worker_id = WORKER_ID
+    worker_id = f"{WORKER_ID}:{uuid.uuid4()}"
     log.info(
         "[Worker] Starting content-translation-worker id=%s provider=%s translation_model=%s",
         worker_id,
@@ -170,68 +254,33 @@ def main() -> int:
         vk.close()
         return 0
 
-    last_reconcile = time.monotonic()
+    poll_work = create_work_poller(
+        engine=primary_engine, vk=vk, settings=settings, worker_id=worker_id
+    )
     log.info("[Worker] Ready")
 
     try:
         while _running:
-            now = time.monotonic()
-            if now - last_reconcile >= settings.reconcile_interval_seconds:
-                with Session(primary_engine) as session, session.begin():
-                    recovered = recover_expired_leases(session)
-                    if recovered > 0:
-                        log.info("[Worker] Recovered %d expired lease(s)", recovered)
-                last_reconcile = now
+            try:
+                claim = poll_work()
+                if claim is None:
+                    _sleep_before_retry(settings.poll_interval_seconds)
+                    continue
 
-            retry_after = datetime.now(UTC) - timedelta(
-                seconds=settings.poll_interval_seconds,
-            )
-            with Session(primary_engine) as session, session.begin():
-                retried = retry_failed_eager_work(
-                    session,
-                    retry_after=retry_after,
-                    limit=settings.batch_size,
-                )
-                if retried > 0:
-                    log.info("[Worker] Retrying %d failed eager work item(s)", retried)
-
-            dirty_batch = zpopmin_batch(vk, count=settings.batch_size)
-            work_ids = [item.work_id for item in dirty_batch]
-            with Session(primary_engine) as session, session.begin():
-                claims = claim_content_translation_work_batch(
-                    session,
-                    worker_id=worker_id,
-                    work_ids=work_ids if work_ids else None,
-                    batch_size=settings.batch_size,
-                    lease_ttl_seconds=settings.lease_ttl_seconds,
-                )
-
-            if not claims:
-                time.sleep(settings.poll_interval_seconds)
-                continue
-
-            log.info("[Worker] Processing %d translation work item(s)", len(claims))
-            for claim in claims:
                 log.info(
                     "[Worker] Processing translation work_id=%d source_kind=%s "
-                    "target_language=%s conversationSlugId=%s conversation_content_id=%s "
-                    "opinion_content_id=%s survey_question_content_id=%s "
-                    "survey_option_content_ids=%s",
+                    "target_language=%s conversationSlugId=%s",
                     claim.id,
                     claim.source_kind.value,
                     claim.display_language_code.value,
                     claim.conversation_slug_id,
-                    claim.conversation_content_id,
-                    claim.opinion_content_id,
-                    claim.survey_question_content_id,
-                    claim.survey_question_option_content_ids,
                 )
-                with Session(primary_engine) as session, session.begin():
-                    result = process_claimed_work(
-                        session,
-                        claim=claim,
-                        translation_service=translation_service,
-                    )
+                result = process_claimed_work(
+                    engine=primary_engine,
+                    claim=claim,
+                    translation_service=translation_service,
+                    settings=settings,
+                )
                 log.info(
                     "[Worker] Processed translation work_id=%d source_kind=%s "
                     "target_language=%s status=%s",
@@ -240,6 +289,13 @@ def main() -> int:
                     claim.display_language_code.value,
                     result.status,
                 )
+            except SQLAlchemyError as error:
+                log.error(
+                    "[Worker] Database operation failed errorType=%s; retrying in %.1fs",
+                    type(error).__name__,
+                    settings.db_retry_interval_seconds,
+                )
+                _sleep_before_retry(settings.db_retry_interval_seconds)
     finally:
         primary_engine.dispose()
         vk.close()

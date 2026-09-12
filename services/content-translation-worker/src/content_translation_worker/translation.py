@@ -11,6 +11,7 @@ from google.cloud import translate_v3
 from google.oauth2.service_account import Credentials as ServiceAccountCredentials
 from pydantic import BaseModel, ConfigDict
 
+from content_translation_worker.generated_models import DisplayLanguageCode
 from content_translation_worker.translation_model import (
     GoogleTranslationModel,
     build_google_translation_model_path,
@@ -49,6 +50,12 @@ class ContentTranslationResult:
     translated_text: str
     source_raw_language_code: str | None
     source_language_provider: Literal["google_translate"] | None
+
+
+@dataclass(frozen=True)
+class LocalizedTranslationResult:
+    display_language_code: DisplayLanguageCode
+    result: ContentTranslationResult
 
 
 class ServiceAccountJson(BaseModel):
@@ -136,6 +143,65 @@ class ContentTranslationService(Protocol):
         target_language_code: str,
         mime_type: str,
     ) -> list[ContentTranslationResult]: ...
+
+
+def translate_text_for_claim_target(
+    *,
+    translation_service: ContentTranslationService,
+    text_value: str,
+    source_language_code: str | None,
+    target_language_code: DisplayLanguageCode,
+    mime_type: str,
+) -> list[LocalizedTranslationResult]:
+    chinese_target = target_language_code in {
+        DisplayLanguageCode.zh_hans,
+        DisplayLanguageCode.zh_hant,
+    }
+    if chinese_target and _is_chinese_script_language_code(source_language_code):
+        source_is_simplified = source_language_code in {"zh-Hans", "zh-CN"}
+        other_script = translate_chinese_script_with_opencc(
+            text=text_value,
+            source_language_code="zh-Hans" if source_is_simplified else "zh-Hant",
+            target_language_code="zh-Hant" if source_is_simplified else "zh-Hans",
+        )
+        return [
+            LocalizedTranslationResult(
+                display_language_code=language,
+                result=ContentTranslationResult(
+                    translated_text=translated_text,
+                    source_raw_language_code=source_language_code,
+                    source_language_provider=None,
+                ),
+            )
+            for language, translated_text in (
+                (DisplayLanguageCode.zh_hant, other_script if source_is_simplified else text_value),
+                (DisplayLanguageCode.zh_hans, text_value if source_is_simplified else other_script),
+            )
+        ]
+    provider_target = DisplayLanguageCode.zh_hant if chinese_target else target_language_code
+    result = translation_service.translate_texts(
+        texts=[text_value],
+        source_language_code=source_language_code,
+        target_language_code=provider_target.value,
+        mime_type=mime_type,
+    )[0]
+    localized = [LocalizedTranslationResult(display_language_code=provider_target, result=result)]
+    if chinese_target:
+        localized.append(
+            LocalizedTranslationResult(
+                display_language_code=DisplayLanguageCode.zh_hans,
+                result=ContentTranslationResult(
+                    translated_text=translate_chinese_script_with_opencc(
+                        text=result.translated_text,
+                        source_language_code="zh-Hant",
+                        target_language_code="zh-Hans",
+                    ),
+                    source_raw_language_code=result.source_raw_language_code,
+                    source_language_provider=result.source_language_provider,
+                ),
+            )
+        )
+    return localized
 
 
 _simplified_to_traditional_converter: OpenCcConverter | None = None
