@@ -17,6 +17,7 @@ agora-shared-analysis-worker = { path = "../shared-analysis-worker", editable = 
 [project.optional-dependencies]
 dev = [
     "basedpyright>=1.29",
+    "pytest>=8.0",
     "ruff>=0.9",
 ]
 
@@ -49,3 +50,6 @@ select = [
 [tool.basedpyright]
 typeCheckingMode = "strict"
 pythonVersion = "3.13"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

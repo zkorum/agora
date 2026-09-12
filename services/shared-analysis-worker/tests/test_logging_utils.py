@@ -18,5 +18,7 @@ def test_database_error_summary_omits_messages_and_parameters() -> None:
 
     summary = database_error_summary(error)
 
-    assert summary == "type=DBAPIError dbapi_type=DriverError sqlstate=08006"
+    assert summary == (
+        "type=DBAPIError dbapi_type=DriverError connection_invalidated=true sqlstate=08006"
+    )
     assert secret not in summary

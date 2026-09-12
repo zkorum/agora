@@ -1,12 +1,18 @@
 from __future__ import annotations
 
+import os
 import uuid
+from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
+from typing import TYPE_CHECKING
 
 import pytest
-from sqlalchemy import Engine, create_engine, delete, select
+from sqlalchemy import Engine, create_engine, delete, event, select, text
+from sqlalchemy.engine import make_url
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
+from sqlalchemy.schema import CreateSchema, DropSchema
 
 from agora_analysis_worker_shared.ai_description_work import (
     AI_DESCRIPTION_NON_RETRYABLE_ERROR_CODE,
@@ -17,7 +23,6 @@ from agora_analysis_worker_shared.ai_description_work import (
     ClaimedLineageDescriptionWorkItem,
     EagerAiDescriptionTargetLocaleRow,
     EagerDescriptionCandidateRow,
-    LineageDescriptionWorkDemand,
     RequiredLineageDescriptionRow,
     TranslationWorkDemand,
     claim_ai_description_locale_work_items_batch,
@@ -29,7 +34,6 @@ from agora_analysis_worker_shared.ai_description_work import (
     fetch_claimable_ai_description_work_conversation_ids,
     finalize_first_pass_ai_description_work_batch,
     generate_label_summaries_with_partial_retry,
-    lineage_description_work_demands_for_candidate_requests,
     materialize_requested_description_translation_work,
     materialize_requested_lineage_description_work,
     process_ai_description_locale_work_item,
@@ -82,6 +86,7 @@ from agora_analysis_worker_shared.generated_models import (
     OpinionGroupCandidate,
     OpinionGroupCandidateAssessment,
     OpinionGroupCandidateDescriptionLocaleRequest,
+    OpinionGroupCandidateHiddenReasonEnum,
     OpinionGroupDescription,
     OpinionGroupDescriptionTranslation,
     OpinionGroupDescriptionTranslationWork,
@@ -97,6 +102,12 @@ from agora_analysis_worker_shared.generated_models import (
 from agora_analysis_worker_shared.generated_shared_types import (
     SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES,
 )
+from agora_analysis_worker_shared.postgres_engine import create_postgres_engine
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from sqlalchemy import Connection, ExecutionContext
 
 NOW = datetime(2026, 5, 21, 12, 0, 0, tzinfo=UTC)
 
@@ -109,6 +120,264 @@ def _create_engine() -> Engine:
     )
     Base.metadata.create_all(engine)
     return engine
+
+
+@pytest.fixture
+def lineage_scan_engine() -> Generator[Engine]:
+    dsn = os.getenv("AGORA_TEST_POSTGRES_DSN")
+    if dsn is None:
+        engine = _create_engine()
+        try:
+            yield engine
+        finally:
+            engine.dispose()
+        return
+
+    schema = f"lineage_scan_test_{uuid.uuid4().hex}"
+    admin = create_postgres_engine(dsn)
+    with admin.begin() as connection:
+        connection.execute(CreateSchema(schema))
+    url = make_url(dsn).update_query_dict({"options": f"-c search_path={schema}"})
+    engine = create_engine(url.set(drivername="postgresql+psycopg"))
+    try:
+        Base.metadata.create_all(engine)
+        # Generated Python models omit these production defaults and constraints.
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    "ALTER TABLE opinion_group_lineage_description_work "
+                    "ALTER COLUMN created_at SET DEFAULT now(), "
+                    "ALTER COLUMN updated_at SET DEFAULT now(), "
+                    "ADD UNIQUE (lineage_id)"
+                )
+            )
+        yield engine
+    finally:
+        engine.dispose()
+        with admin.begin() as connection:
+            connection.execute(DropSchema(schema, cascade=True))
+        admin.dispose()
+
+
+@contextmanager
+def _capture_statements(engine: Engine) -> Generator[list[str]]:
+    statements: list[str] = []
+
+    def capture(
+        connection: Connection,
+        cursor: object,
+        statement: str,
+        parameters: object,
+        context: ExecutionContext,
+        executemany: bool,
+    ) -> None:
+        statements.append(statement)
+
+    event.listen(engine, "before_cursor_execute", capture)
+    try:
+        yield statements
+    finally:
+        event.remove(engine, "before_cursor_execute", capture)
+
+
+def _seed_lineage_scan(session: Session) -> None:
+    _insert_non_processable_ai_work_state(session)
+    view = session.execute(select(ConversationViewSnapshot)).scalar_one()
+    view.activated_at = NOW
+    view.view_reason = ConversationViewSnapshotReasonEnum.conversation_content_updated
+    for lineage_id in (302, 303):
+        session.add(
+            OpinionGroupLineage(
+                id=lineage_id,
+                scope_id=701,
+                system_description_id=None,
+                created_at=NOW,
+            )
+        )
+        session.add(
+            OpinionGroup(
+                id=10_000 + lineage_id,
+                candidate_id=401,
+                scope_id=701,
+                lineage_id=lineage_id,
+                key=str(lineage_id),
+                external_id=lineage_id,
+                num_users=1,
+                created_at=NOW,
+            )
+        )
+    for index, locale in enumerate(DisplayLanguageCode):
+        if locale == DisplayLanguageCode.fr:
+            continue
+        session.add(
+            OpinionGroupCandidateDescriptionLocaleRequest(
+                id=10_000 + index,
+                candidate_id=401,
+                locale=locale,
+                created_at=NOW,
+                updated_at=NOW,
+            )
+        )
+    session.commit()
+
+
+def test_lineage_scan_batches_unique_missing_work_without_starvation(
+    lineage_scan_engine: Engine,
+) -> None:
+    with Session(lineage_scan_engine) as session:
+        _seed_lineage_scan(session)
+
+    with _capture_statements(lineage_scan_engine) as statements:
+        first = materialize_requested_lineage_description_work(
+            lineage_scan_engine, limit=1, require_activated_view_snapshot=True
+        )
+    assert first == [10]
+    # Adding every locale must not cause one query per request.
+    assert len(statements) <= 6
+    with Session(lineage_scan_engine) as session:
+        assert set(session.scalars(select(OpinionGroupLineageDescriptionWork.lineage_id))) == {
+            301,
+            302,
+        }
+    assert materialize_requested_lineage_description_work(
+        lineage_scan_engine, limit=1, require_activated_view_snapshot=True
+    ) == [10]
+    assert (
+        materialize_requested_lineage_description_work(
+            lineage_scan_engine, limit=1, require_activated_view_snapshot=True
+        )
+        == []
+    )
+    with Session(lineage_scan_engine) as session:
+        assert set(session.scalars(select(OpinionGroupLineageDescriptionWork.lineage_id))) == {
+            301,
+            302,
+            303,
+        }
+
+
+def test_lineage_scan_preserves_leases_and_reactivates_stale_source(
+    lineage_scan_engine: Engine,
+) -> None:
+    with Session(lineage_scan_engine) as session:
+        _seed_lineage_scan(session)
+        lineage = session.execute(select(OpinionGroupLineage).where(OpinionGroupLineage.id == 301))
+        lineage.scalar_one().system_description_id = None
+        work = session.execute(select(OpinionGroupLineageDescriptionWork)).scalar_one()
+        work.source_candidate_id = 999
+        work.lease_owner = "another-worker"
+        work.lease_token = "active-lease"
+        work.lease_expires_at = datetime.now(UTC) + timedelta(minutes=10)
+        work.non_retryable_ai_description_epoch = 1
+        session.commit()
+
+    assert materialize_requested_lineage_description_work(
+        lineage_scan_engine, limit=2, require_activated_view_snapshot=True
+    ) == [10]
+    with Session(lineage_scan_engine) as session:
+        work = session.execute(
+            select(OpinionGroupLineageDescriptionWork).where(
+                OpinionGroupLineageDescriptionWork.lineage_id == 301
+            )
+        ).scalar_one()
+        assert work.source_candidate_id == 999
+        assert work.lease_token == "active-lease"
+        work.lease_expires_at = datetime.now(UTC) - timedelta(minutes=1)
+        session.commit()
+
+    assert materialize_requested_lineage_description_work(
+        lineage_scan_engine, limit=1, require_activated_view_snapshot=True
+    ) == [10]
+    with Session(lineage_scan_engine) as session:
+        work = session.execute(
+            select(OpinionGroupLineageDescriptionWork).where(
+                OpinionGroupLineageDescriptionWork.lineage_id == 301
+            )
+        ).scalar_one()
+        assert work.source_candidate_id == 401
+        assert work.attempt_count == 1
+        assert work.non_retryable_ai_description_epoch == 1
+        assert work.lease_owner is None
+        assert work.lease_token is None
+        assert work.lease_expires_at is None
+
+
+def test_eager_lineage_scan_does_not_rewrite_unchanged_work(lineage_scan_engine: Engine) -> None:
+    with Session(lineage_scan_engine) as session:
+        _insert_non_processable_ai_work_state(session)
+        session.execute(select(ConversationViewSnapshot)).scalar_one().activated_at = NOW
+        session.execute(select(OpinionGroupLineage)).scalar_one().system_description_id = None
+        before = session.execute(select(OpinionGroupLineageDescriptionWork.updated_at)).scalar_one()
+        session.commit()
+
+    with _capture_statements(lineage_scan_engine) as statements:
+        assert (
+            materialize_requested_lineage_description_work(
+                lineage_scan_engine, limit=1, require_activated_view_snapshot=True
+            )
+            == []
+        )
+    assert not any(statement.startswith("UPDATE") for statement in statements)
+    with Session(lineage_scan_engine) as session:
+        after = session.execute(select(OpinionGroupLineageDescriptionWork.updated_at)).scalar_one()
+        assert after == before
+
+
+@pytest.mark.parametrize("excluded", ["deleted", "hidden", "unactivated"])
+def test_lineage_scan_respects_visibility_and_activation(
+    lineage_scan_engine: Engine, excluded: str
+) -> None:
+    with Session(lineage_scan_engine) as session:
+        _seed_lineage_scan(session)
+        if excluded == "deleted":
+            session.execute(select(Conversation)).scalar_one().current_content_id = None
+        elif excluded == "hidden":
+            assessment = session.execute(select(OpinionGroupCandidateAssessment)).scalar_one()
+            assessment.hidden_reason = (
+                OpinionGroupCandidateHiddenReasonEnum.invalid_candidate_output
+            )
+        else:
+            session.execute(select(ConversationViewSnapshot)).scalar_one().activated_at = None
+        session.commit()
+
+    assert (
+        materialize_requested_lineage_description_work(
+            lineage_scan_engine, limit=8, require_activated_view_snapshot=True
+        )
+        == []
+    )
+
+
+def test_lineage_scan_failure_rolls_back_eager_inserts(lineage_scan_engine: Engine) -> None:
+    with Session(lineage_scan_engine) as session:
+        _seed_lineage_scan(session)
+        view = session.execute(select(ConversationViewSnapshot)).scalar_one()
+        view.view_reason = ConversationViewSnapshotReasonEnum.analysis_completed
+        session.commit()
+
+    def fail_requested_scan(
+        connection: Connection,
+        cursor: object,
+        statement: str,
+        parameters: object,
+        context: ExecutionContext,
+        executemany: bool,
+    ) -> None:
+        if "row_number()" in statement:
+            raise OperationalError(None, None, RuntimeError("simulated connection loss"))
+
+    event.listen(lineage_scan_engine, "before_cursor_execute", fail_requested_scan)
+    try:
+        with pytest.raises(OperationalError):
+            materialize_requested_lineage_description_work(
+                lineage_scan_engine, limit=8, require_activated_view_snapshot=True
+            )
+    finally:
+        event.remove(lineage_scan_engine, "before_cursor_execute", fail_requested_scan)
+
+    with Session(lineage_scan_engine) as session:
+        assert list(session.scalars(select(OpinionGroupLineageDescriptionWork.lineage_id))) == [301]
+        assert session.execute(select(OpinionGroupCandidateDescriptionLocaleRequest.id)).first()
 
 
 def _insert_non_processable_ai_work_state(
@@ -471,56 +740,6 @@ def _insert_all_eager_translations(session: Session) -> None:
             )
         )
         next_id += 1
-
-
-def test_lineage_description_work_demands_are_unique_and_skip_ready_lineages() -> None:
-    requests = [
-        _candidate_locale_request(request_id=1, candidate_id=1000),
-        _candidate_locale_request(request_id=2, candidate_id=2000),
-    ]
-
-    demands = lineage_description_work_demands_for_candidate_requests(
-        requests=requests,
-        lineage_rows_by_request_id={
-            1: [
-                RequiredLineageDescriptionRow(
-                    lineage_id=10,
-                    candidate_id=1000,
-                    system_description_id=None,
-                ),
-                RequiredLineageDescriptionRow(
-                    lineage_id=11,
-                    candidate_id=1001,
-                    system_description_id=9001,
-                ),
-            ],
-            2: [
-                RequiredLineageDescriptionRow(
-                    lineage_id=10,
-                    candidate_id=2000,
-                    system_description_id=None,
-                ),
-                RequiredLineageDescriptionRow(
-                    lineage_id=12,
-                    candidate_id=2001,
-                    system_description_id=None,
-                ),
-            ],
-        },
-    )
-
-    assert demands == [
-        LineageDescriptionWorkDemand(
-            lineage_id=10,
-            conversation_id=10,
-            source_candidate_id=1000,
-        ),
-        LineageDescriptionWorkDemand(
-            lineage_id=12,
-            conversation_id=10,
-            source_candidate_id=2001,
-        ),
-    ]
 
 
 def test_translation_work_demands_are_unique_per_description_locale() -> None:
@@ -1816,6 +2035,7 @@ def test_materialize_requested_lineage_work_includes_checkpoints_when_enabled() 
     engine = _create_engine()
     with Session(engine) as session:
         _insert_non_processable_ai_work_state(session)
+        session.execute(delete(OpinionGroupLineageDescriptionWork))
         conversation = session.execute(select(Conversation)).scalar_one()
         conversation.current_content_id = 40
         view_snapshot = session.execute(select(ConversationViewSnapshot)).scalar_one()

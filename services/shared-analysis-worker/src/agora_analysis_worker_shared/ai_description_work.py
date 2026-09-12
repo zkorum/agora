@@ -8,7 +8,7 @@ from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import and_, false, func, or_, select, true, tuple_, update
+from sqlalchemy import Integer, and_, false, func, or_, select, true, tuple_, type_coerce, update
 from sqlalchemy import insert as sqlalchemy_insert
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
@@ -97,7 +97,7 @@ def _iter_chunks[T](values: list[T], *, chunk_size: int) -> Iterator[list[T]]:
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Mapping, Sequence
 
-    from sqlalchemy import Engine
+    from sqlalchemy import Engine, Select
     from sqlalchemy.orm.attributes import InstrumentedAttribute
     from sqlalchemy.sql.elements import ColumnElement, UnaryExpression
 
@@ -999,33 +999,20 @@ def fetch_ai_description_view_snapshot_ids_for_analysis_snapshots(
     return [row.id for row in rows]
 
 
-def _fetch_candidate_locale_request_rows(
-    session: Session,
+def _candidate_locale_requests_query(
     *,
     conversation_ids: list[int] | None,
     conversation_view_snapshot_ids: list[int] | None = None,
-    locale: str | None = None,
     non_english_only: bool = False,
-    limit: int | None = None,
     require_activated_view_snapshot: bool = False,
     require_processable_conversation: bool = True,
     include_checkpoints: bool = True,
-) -> list[CandidateLocaleRequestRow]:
-    if conversation_ids is not None and not conversation_ids:
-        return []
-    if conversation_view_snapshot_ids is not None and not conversation_view_snapshot_ids:
-        return []
-
-    locale_filter: ColumnElement[bool]
-    if locale is not None:
-        locale_filter = OpinionGroupCandidateDescriptionLocaleRequest.locale == locale
-    elif non_english_only:
-        locale_filter = (
-            OpinionGroupCandidateDescriptionLocaleRequest.locale != DisplayLanguageCode.en
-        )
-    else:
-        locale_filter = true()
-
+) -> Select[tuple[int, int, int, DisplayLanguageCode, datetime]]:
+    locale_filter = (
+        OpinionGroupCandidateDescriptionLocaleRequest.locale != DisplayLanguageCode.en
+        if non_english_only
+        else true()
+    )
     conversation_filter: ColumnElement[bool] = (
         AnalysisSnapshotResult.conversation_id.in_(sorted(set(conversation_ids)))
         if conversation_ids is not None
@@ -1036,7 +1023,7 @@ def _fetch_candidate_locale_request_rows(
     )
     scope = "latest_or_checkpoint" if include_checkpoints else "latest"
 
-    query = (
+    return (
         select(
             OpinionGroupCandidateDescriptionLocaleRequest.id,
             AnalysisSnapshotResult.conversation_id,
@@ -1090,19 +1077,6 @@ def _fetch_candidate_locale_request_rows(
             OpinionGroupCandidateDescriptionLocaleRequest.id,
         )
     )
-    if limit is not None:
-        query = query.limit(limit)
-
-    rows = session.execute(query).all()
-    return [
-        CandidateLocaleRequestRow(
-            id=row.id,
-            conversation_id=row.conversation_id,
-            candidate_id=row.candidate_id,
-            locale=row.locale,
-        )
-        for row in rows
-    ]
 
 
 def _first_pass_pending_work_counts(
@@ -1663,27 +1637,6 @@ def _required_system_description_ids_for_candidate(
     return description_ids, all_lineages_have_descriptions
 
 
-def lineage_description_work_demands_for_candidate_requests(
-    *,
-    requests: Sequence[CandidateLocaleRequestRow],
-    lineage_rows_by_request_id: Mapping[int, Sequence[RequiredLineageDescriptionRow]],
-) -> list[LineageDescriptionWorkDemand]:
-    demands_by_lineage_id: dict[int, LineageDescriptionWorkDemand] = {}
-    for request in requests:
-        for row in lineage_rows_by_request_id.get(request.id, ()):
-            if row.system_description_id is not None:
-                continue
-            if row.lineage_id in demands_by_lineage_id:
-                continue
-            demands_by_lineage_id[row.lineage_id] = LineageDescriptionWorkDemand(
-                lineage_id=row.lineage_id,
-                conversation_id=request.conversation_id,
-                source_candidate_id=row.candidate_id,
-            )
-
-    return list(demands_by_lineage_id.values())
-
-
 def translation_work_demands_for_candidate_requests(
     *,
     requests: Sequence[CandidateLocaleRequestRow],
@@ -1799,30 +1752,39 @@ def translation_work_demands_for_eager_candidates(
     return list(demands_by_description_locale.values())
 
 
+def _lineage_work_lease_available() -> ColumnElement[bool]:
+    return or_(
+        OpinionGroupLineageDescriptionWork.lease_token.is_(None),
+        OpinionGroupLineageDescriptionWork.lease_expires_at < func.now(),
+    )
+
+
 def _insert_or_reactivate_lineage_description_work(
     session: Session,
     *,
     demands: Sequence[LineageDescriptionWorkDemand],
-) -> None:
+) -> list[int]:
     if not demands:
-        return
+        return []
 
-    values: list[_LineageDescriptionWorkInsert] = []
-    value_by_lineage_id: dict[int, _LineageDescriptionWorkInsert] = {}
-    for demand in demands:
-        value = _LineageDescriptionWorkInsert(
+    changed_conversation_ids: set[int] = set()
+    value_by_lineage_id = {
+        demand.lineage_id: _LineageDescriptionWorkInsert(
             lineage_id=demand.lineage_id,
             conversation_id=demand.conversation_id,
             source_candidate_id=demand.source_candidate_id,
         )
-        values.append(value)
-        value_by_lineage_id[demand.lineage_id] = value
+        for demand in demands
+    }
+    values = list(value_by_lineage_id.values())
     if session.get_bind().dialect.name == "sqlite":
         for value in values:
             existing_row = session.execute(
-                select(OpinionGroupLineageDescriptionWork.id).where(
-                    OpinionGroupLineageDescriptionWork.lineage_id == value.lineage_id
-                )
+                select(
+                    OpinionGroupLineageDescriptionWork.id,
+                    OpinionGroupLineageDescriptionWork.conversation_id,
+                    OpinionGroupLineageDescriptionWork.source_candidate_id,
+                ).where(OpinionGroupLineageDescriptionWork.lineage_id == value.lineage_id)
             ).first()
             if existing_row is None:
                 session.execute(
@@ -1830,61 +1792,89 @@ def _insert_or_reactivate_lineage_description_work(
                         value.to_insert_value(include_timestamps=True)
                     )
                 )
+                changed_conversation_ids.add(value.conversation_id)
                 continue
 
-            session.execute(
+            if (
+                existing_row.conversation_id == value.conversation_id
+                and existing_row.source_candidate_id == value.source_candidate_id
+            ):
+                continue
+            changed_rows = session.execute(
                 update(OpinionGroupLineageDescriptionWork)
                 .where(
                     and_(
                         OpinionGroupLineageDescriptionWork.id == existing_row.id,
-                        OpinionGroupLineageDescriptionWork.lease_token.is_(None),
+                        _lineage_work_lease_available(),
                     )
                 )
                 .values(
                     conversation_id=value.conversation_id,
                     source_candidate_id=value.source_candidate_id,
+                    lease_owner=None,
+                    lease_token=None,
+                    lease_expires_at=None,
+                    updated_at=func.now(),
+                )
+                .returning(OpinionGroupLineageDescriptionWork.conversation_id)
+            )
+            changed_conversation_ids.update(changed_rows.scalars())
+        return sorted(changed_conversation_ids)
+
+    # The reactivation lookup binds a lineage ID and a three-column tuple per row.
+    for chunk in _iter_chunks(values, chunk_size=_max_rows_per_insert(column_count=4)):
+        insert_query = pg_insert(OpinionGroupLineageDescriptionWork).values(
+            [value.to_insert_value() for value in chunk]
+        )
+        inserted_rows = session.execute(
+            insert_query.on_conflict_do_nothing().returning(
+                OpinionGroupLineageDescriptionWork.conversation_id
+            )
+        )
+        changed_conversation_ids.update(inserted_rows.scalars())
+
+        existing_rows = session.execute(
+            select(
+                OpinionGroupLineageDescriptionWork.id,
+                OpinionGroupLineageDescriptionWork.lineage_id,
+            )
+            .where(
+                and_(
+                    OpinionGroupLineageDescriptionWork.lineage_id.in_(
+                        [value.lineage_id for value in chunk]
+                    ),
+                    _lineage_work_lease_available(),
+                    tuple_(
+                        OpinionGroupLineageDescriptionWork.lineage_id,
+                        OpinionGroupLineageDescriptionWork.conversation_id,
+                        OpinionGroupLineageDescriptionWork.source_candidate_id,
+                    ).not_in(
+                        [
+                            (value.lineage_id, value.conversation_id, value.source_candidate_id)
+                            for value in chunk
+                        ]
+                    ),
+                )
+            )
+            .order_by(OpinionGroupLineageDescriptionWork.lineage_id)
+            .with_for_update(skip_locked=True, of=OpinionGroupLineageDescriptionWork)
+        ).all()
+        for row in existing_rows:
+            value = value_by_lineage_id[row.lineage_id]
+            session.execute(
+                update(OpinionGroupLineageDescriptionWork)
+                .where(OpinionGroupLineageDescriptionWork.id == row.id)
+                .values(
+                    conversation_id=value.conversation_id,
+                    source_candidate_id=value.source_candidate_id,
+                    lease_owner=None,
+                    lease_token=None,
+                    lease_expires_at=None,
                     updated_at=func.now(),
                 )
             )
-        return
-
-    insert_values = [value.to_insert_value() for value in values]
-    for chunk in _iter_chunks(insert_values, chunk_size=_max_rows_per_insert(column_count=3)):
-        insert_query = pg_insert(OpinionGroupLineageDescriptionWork).values(chunk)
-        session.execute(insert_query.on_conflict_do_nothing())
-
-    lineage_ids = sorted(value_by_lineage_id)
-    if not lineage_ids:
-        return
-
-    existing_rows = session.execute(
-        select(
-            OpinionGroupLineageDescriptionWork.id,
-            OpinionGroupLineageDescriptionWork.lineage_id,
-        )
-        .where(
-            and_(
-                OpinionGroupLineageDescriptionWork.lineage_id.in_(lineage_ids),
-                OpinionGroupLineageDescriptionWork.lease_token.is_(None),
-            )
-        )
-        .order_by(OpinionGroupLineageDescriptionWork.lineage_id)
-        .with_for_update(
-            skip_locked=True,
-            of=OpinionGroupLineageDescriptionWork,
-        )
-    ).all()
-    for row in existing_rows:
-        value = value_by_lineage_id[row.lineage_id]
-        session.execute(
-            update(OpinionGroupLineageDescriptionWork)
-            .where(OpinionGroupLineageDescriptionWork.id == row.id)
-            .values(
-                conversation_id=value.conversation_id,
-                source_candidate_id=value.source_candidate_id,
-                updated_at=func.now(),
-            )
-        )
+            changed_conversation_ids.add(value.conversation_id)
+    return sorted(changed_conversation_ids)
 
 
 def _insert_or_reactivate_translation_work(
@@ -2005,29 +1995,80 @@ def _materialize_lineage_description_work_for_candidate_locale_requests(
     require_processable_conversation: bool = True,
     include_checkpoints: bool = True,
 ) -> list[int]:
-    requests = _fetch_candidate_locale_request_rows(
-        session,
-        conversation_ids=conversation_ids,
-        conversation_view_snapshot_ids=conversation_view_snapshot_ids,
-        require_activated_view_snapshot=require_activated_view_snapshot,
-        require_processable_conversation=require_processable_conversation,
-        include_checkpoints=include_checkpoints,
-    )
-    lineage_rows_by_request_id = {
-        request.id: _fetch_required_lineage_description_rows_for_candidate(
-            session,
-            candidate_id=request.candidate_id,
+    requests = (
+        _candidate_locale_requests_query(
+            conversation_ids=conversation_ids,
+            conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+            require_activated_view_snapshot=require_activated_view_snapshot,
+            require_processable_conversation=require_processable_conversation,
+            include_checkpoints=include_checkpoints,
         )
-        for request in requests
-    }
-    demands = lineage_description_work_demands_for_candidate_requests(
-        requests=requests,
-        lineage_rows_by_request_id=lineage_rows_by_request_id,
+        .order_by(None)
+        .subquery()
+    )
+    # Select one source per lineage before limiting. Limiting locale requests
+    # first lets completed/duplicate requests starve later unmaterialized work.
+    ranked_demands = (
+        select(
+            OpinionGroupLineage.id.label("lineage_id"),
+            requests.c.conversation_id,
+            requests.c.candidate_id,
+            requests.c.updated_at,
+            requests.c.id.label("request_id"),
+            func.row_number()
+            .over(
+                partition_by=OpinionGroupLineage.id,
+                order_by=(requests.c.updated_at, requests.c.id, OpinionGroup.id),
+            )
+            .label("source_rank"),
+        )
+        .select_from(requests)
+        .join(OpinionGroup, OpinionGroup.candidate_id == requests.c.candidate_id)
+        .join(OpinionGroupLineage, OpinionGroupLineage.id == OpinionGroup.lineage_id)
+        .outerjoin(
+            OpinionGroupLineageDescriptionWork,
+            OpinionGroupLineageDescriptionWork.lineage_id == OpinionGroupLineage.id,
+        )
+        .where(
+            OpinionGroupLineage.system_description_id.is_(None),
+            or_(
+                OpinionGroupLineageDescriptionWork.id.is_(None),
+                and_(
+                    _lineage_work_lease_available(),
+                    ~_lineage_work_relevant_candidate_filter(
+                        conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+                        require_activated_view_snapshot=require_activated_view_snapshot,
+                        snapshot_scope="latest_or_checkpoint" if include_checkpoints else "latest",
+                    ),
+                ),
+            ),
+        )
+        .subquery()
+    )
+    query = (
+        select(
+            type_coerce(ranked_demands.c.lineage_id, Integer),
+            type_coerce(ranked_demands.c.conversation_id, Integer),
+            type_coerce(ranked_demands.c.candidate_id, Integer),
+        )
+        .where(ranked_demands.c.source_rank == 1)
+        .order_by(
+            ranked_demands.c.updated_at,
+            ranked_demands.c.request_id,
+            ranked_demands.c.lineage_id,
+        )
     )
     if limit is not None:
-        demands = demands[:limit]
-    _insert_or_reactivate_lineage_description_work(session, demands=demands)
-    return sorted({demand.conversation_id for demand in demands})
+        query = query.limit(limit)
+    demands = [
+        LineageDescriptionWorkDemand(
+            lineage_id=lineage_id,
+            conversation_id=conversation_id,
+            source_candidate_id=candidate_id,
+        )
+        for lineage_id, conversation_id, candidate_id in session.execute(query)
+    ]
+    return _insert_or_reactivate_lineage_description_work(session, demands=demands)
 
 
 def _select_eager_candidates(
@@ -2221,8 +2262,7 @@ def _materialize_eager_lineage_description_work(
         candidates=candidates,
         lineage_rows_by_candidate_id=lineage_rows_by_candidate_id,
     )
-    _insert_or_reactivate_lineage_description_work(session, demands=demands)
-    return sorted({demand.conversation_id for demand in demands})
+    return _insert_or_reactivate_lineage_description_work(session, demands=demands)
 
 
 def _materialize_eager_translation_work(
@@ -2301,8 +2341,7 @@ def _materialize_translation_work_for_candidate_locale_requests(
     require_processable_conversation: bool = True,
     include_checkpoints: bool = True,
 ) -> list[int]:
-    requests = _fetch_candidate_locale_request_rows(
-        session,
+    request_query = _candidate_locale_requests_query(
         conversation_ids=conversation_ids,
         conversation_view_snapshot_ids=conversation_view_snapshot_ids,
         non_english_only=True,
@@ -2310,6 +2349,15 @@ def _materialize_translation_work_for_candidate_locale_requests(
         require_processable_conversation=require_processable_conversation,
         include_checkpoints=include_checkpoints,
     )
+    requests = [
+        CandidateLocaleRequestRow(
+            id=request_id,
+            conversation_id=conversation_id,
+            candidate_id=candidate_id,
+            locale=locale,
+        )
+        for request_id, conversation_id, candidate_id, locale, _ in session.execute(request_query)
+    ]
     description_ids_by_request_id: dict[int, set[int]] = {}
     translated_description_ids_by_request_id: dict[int, set[int]] = {}
     for request in requests:
@@ -2389,6 +2437,7 @@ def _lineage_work_relevant_candidate_filter(
                 ),
             )
         )
+        .correlate(OpinionGroupLineageDescriptionWork)
         .exists()
     )
 

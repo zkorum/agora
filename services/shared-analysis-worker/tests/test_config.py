@@ -32,7 +32,11 @@ def isolate_settings_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Non
     monkeypatch.chdir(tmp_path)
     monkeypatch.delenv("AGORA_DEV_MODE", raising=False)
     for prefix in WORKER_ENV_PREFIXES:
-        for field_name in Settings.model_fields:
+        for field_name in {
+            *Settings.model_fields,
+            *AiDescriptionWorkerSettings.model_fields,
+            *DescriptionTranslationWorkerSettings.model_fields,
+        }:
             monkeypatch.delenv(f"{prefix}{field_name.upper()}", raising=False)
 
 
@@ -46,6 +50,27 @@ def test_settings_requires_primary_connection_string(
         Settings()
 
     assert exc_info.value.errors()[0]["type"] == "string_too_short"
+
+
+@pytest.mark.parametrize(
+    "setting",
+    [
+        "DB_STATEMENT_TIMEOUT_SECONDS",
+        "DB_IDLE_TRANSACTION_TIMEOUT_SECONDS",
+        "DB_MATERIALIZATION_INTERVAL_SECONDS",
+    ],
+)
+@pytest.mark.parametrize("value", ["0", "inf", "nan"])
+def test_ai_retry_database_bounds_cannot_be_disabled(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    setting: str,
+    value: str,
+) -> None:
+    isolate_settings_env(monkeypatch, tmp_path)
+    monkeypatch.setenv(f"AI_DESCRIPTION_RETRY_WORKER_{setting}", value)
+    with pytest.raises(ValidationError):
+        AiDescriptionWorkerSettings(connection_string=VALID_DSN)
 
 
 def test_settings_rejects_unknown_config_keys(
