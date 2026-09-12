@@ -231,17 +231,19 @@ async function loadAction({
 type ActionRow = NonNullable<Awaited<ReturnType<typeof loadAction>>>;
 
 function hasValidActionBinding(action: ActionRow): boolean {
-    if (action.recipient_kind !== "participant" && action.action !== "report") {
-        return false;
+    switch (action.action) {
+        case "report":
+            return true;
+        case "manage_preferences":
+        case "unsubscribe_conversation":
+            return action.recipient_kind === "participant";
+        case "unsubscribe_project":
+            return (
+                action.recipient_kind === "participant" &&
+                action.participant_preference_scope === "project" &&
+                action.update_scope_kind === "listed_project"
+            );
     }
-    const participantPreferenceScope = action.participant_preference_scope;
-    if (action.action === "unsubscribe_project") {
-        return participantPreferenceScope === "project";
-    }
-    if (action.action === "unsubscribe_conversation") {
-        return participantPreferenceScope === "conversation";
-    }
-    return true;
 }
 
 async function loadRecipientConversations({
@@ -554,7 +556,6 @@ export function createConversationEmailUpdateActionService({
             });
             if (scope === undefined) return unavailable;
             if (action.action === "unsubscribe_conversation") {
-                if (scope.kind !== "no_project") return unavailable;
                 return {
                     success: true,
                     action: "unsubscribe_conversation",
@@ -620,7 +621,7 @@ export function createConversationEmailUpdateActionService({
                         db: tx,
                         action,
                     });
-                    if (scope?.kind !== "no_project") return unavailable;
+                    if (scope === undefined) return unavailable;
                     await disableConversations({
                         db: tx,
                         userId: action.recipient_user_id,

@@ -27,8 +27,8 @@ const content = {
     language: "en",
 } satisfies RenderConversationEmailParamsCommon;
 const actions = {
-    unsubscribeScope: "project",
-    unsubscribeUrl: "https://example.org/unsubscribe/one",
+    projectUnsubscribeUrl: "https://example.org/unsubscribe/one",
+    conversationUnsubscribeUrl: "https://example.org/unsubscribe/conversations",
     manageUrl: "https://example.org/preferences/two",
     reportUrl: "https://example.org/report/three",
 } satisfies Extract<
@@ -98,7 +98,7 @@ describe("compiled Vue email renderer", () => {
                           : content.subject,
                 );
                 expect(document.querySelectorAll("a")).toHaveLength(
-                    variant === "test" ? 2 : variant === "owner_copy" ? 3 : 5,
+                    variant === "test" ? 2 : variant === "owner_copy" ? 3 : 6,
                 );
                 if (variant === "owner_copy") {
                     expect(
@@ -106,7 +106,9 @@ describe("compiled Vue email renderer", () => {
                             'a[href*="/unsubscribe/"], a[href*="/preferences/"]',
                         ),
                     ).toHaveLength(0);
-                    expect(email.text).not.toContain(actions.unsubscribeUrl);
+                    expect(email.text).not.toContain(
+                        actions.projectUnsubscribeUrl,
+                    );
                     expect(email.text).not.toContain(actions.manageUrl);
                     expect(email.text).not.toContain(
                         `[${adminLabels[language]}]`,
@@ -117,6 +119,48 @@ describe("compiled Vue email renderer", () => {
             },
         );
     }
+
+    it.each(["project", "conversation"] as const)(
+        "renders explicit unsubscribe links for %s scope in HTML and plaintext",
+        async (unsubscribeScope) => {
+            const email = await renderConversationEmail({
+                ...content,
+                variant: "participant",
+                actions: {
+                    ...actions,
+                    projectUnsubscribeUrl:
+                        unsubscribeScope === "project"
+                            ? actions.projectUnsubscribeUrl
+                            : undefined,
+                },
+            });
+            const { document } = parseHTML(email.html);
+            expect(
+                document.querySelector(
+                    `a[href="${actions.conversationUnsubscribeUrl}"]`,
+                )?.textContent,
+            ).toBe("Unsubscribe from these conversations");
+            expect(email.text).toContain(
+                `Unsubscribe from these conversations: ${actions.conversationUnsubscribeUrl}`,
+            );
+            const projectLink = document.querySelector(
+                `a[href="${actions.projectUnsubscribeUrl}"]`,
+            );
+            if (unsubscribeScope === "project") {
+                expect(projectLink?.textContent).toBe(
+                    "Unsubscribe from all project updates",
+                );
+                expect(email.text).toContain(
+                    `Unsubscribe from all project updates: ${actions.projectUnsubscribeUrl}`,
+                );
+            } else {
+                expect(projectLink).toBeNull();
+                expect(email.text).not.toContain(
+                    "Unsubscribe from all project updates",
+                );
+            }
+        },
+    );
 
     it("escapes branding and strips authored active markup and attributes", async () => {
         const name = 'Harbor <img src=x onerror="alert(1)"> & team';
@@ -156,15 +200,15 @@ describe("compiled Vue email renderer", () => {
             conversations: [{ title: "Unsafe", url }],
             variant: "participant",
             actions: {
-                unsubscribeScope: "project",
-                unsubscribeUrl: url,
+                projectUnsubscribeUrl: url,
+                conversationUnsubscribeUrl: url,
                 manageUrl: url,
                 reportUrl: url,
             },
         });
         const { document } = parseHTML(email.html);
-        expect(document.querySelectorAll('a[href="#"]')).toHaveLength(4);
-        expect(email.text.match(/: #/g)).toHaveLength(4);
+        expect(document.querySelectorAll('a[href="#"]')).toHaveLength(5);
+        expect(email.text.match(/: #/g)).toHaveLength(5);
     });
 
     it("preserves the stored plaintext alternative and ordering", async () => {
@@ -220,7 +264,8 @@ describe("compiled Vue email renderer", () => {
                 (link) => link.textContent,
             ),
         ).toEqual([
-            "Unsubscribe",
+            "Unsubscribe from these conversations",
+            "Unsubscribe from all project updates",
             "Manage preferences",
             "Report this update",
             "Agora",

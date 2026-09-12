@@ -88,11 +88,12 @@ describe("stored branding images in the actual email template", () => {
                 language: "en",
             } as const;
             const actions = {
-                unsubscribeScope: "project",
-                unsubscribeUrl: "https://app.example.org/unsubscribe",
+                conversationUnsubscribeUrl:
+                    "https://app.example.org/unsubscribe",
+                projectUnsubscribeUrl: undefined,
                 manageUrl: "https://app.example.org/manage",
                 reportUrl: "https://app.example.org/report",
-            } as const;
+            };
             const email = await renderConversationEmail(
                 variant === "test"
                     ? { ...common, variant }

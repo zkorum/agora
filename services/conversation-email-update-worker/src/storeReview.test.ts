@@ -344,8 +344,11 @@ describe("immutable review store", () => {
                 kind === "participant"
                     ? [
                           "report",
-                          `unsubscribe_${participantPreferenceScope}`,
+                          "unsubscribe_conversation",
                           "manage_preferences",
+                          ...(participantPreferenceScope === "project"
+                              ? ["unsubscribe_project"]
+                              : []),
                       ]
                     : ["report"];
             expect(
@@ -358,7 +361,8 @@ describe("immutable review store", () => {
                     ].includes(String(param)),
                 ),
             ).toEqual(expectedActions);
-            const hashes = Object.values(authorized?.actionTokens ?? {});
+            const hashes =
+                authorized?.actionTokens.map((token) => token.tokenHash) ?? [];
             expect(hashes).toHaveLength(expectedActions.length);
             const persistedHashes = tokenParams.filter(
                 (param) =>

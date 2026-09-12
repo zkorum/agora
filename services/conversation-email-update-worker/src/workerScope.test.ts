@@ -794,9 +794,10 @@ describe("conversation-scoped worker", () => {
                 },
             ],
             actions: {
-                unsubscribeScope: "project",
-                unsubscribeUrl:
+                projectUnsubscribeUrl:
                     "https://example.com/email-updates/unsubscribe/private-token",
+                conversationUnsubscribeUrl:
+                    "https://example.com/email-updates/unsubscribe/private-conversations-token",
                 manageUrl:
                     "https://example.com/email-updates/preferences/private-token",
                 reportUrl:
@@ -804,11 +805,28 @@ describe("conversation-scoped worker", () => {
             },
             unsubscribeUrl:
                 "https://example.com/unsubscribe?token=private-token",
-            actionTokens: {
-                unsubscribeHash: "a".repeat(64),
-                manageHash: "b".repeat(64),
-                reportHash: "c".repeat(64),
-            },
+            actionTokens: [
+                {
+                    action: "unsubscribe_project",
+                    tokenHash: "a".repeat(64),
+                    expiresInDays: 365,
+                },
+                {
+                    action: "unsubscribe_conversation",
+                    tokenHash: "d".repeat(64),
+                    expiresInDays: 365,
+                },
+                {
+                    action: "manage_preferences",
+                    tokenHash: "b".repeat(64),
+                    expiresInDays: 90,
+                },
+                {
+                    action: "report",
+                    tokenHash: "c".repeat(64),
+                    expiresInDays: 90,
+                },
+            ],
         });
         const send = vi.fn((message: ConversationEmailProviderMessage) => {
             if (message.tags.message_type === "conversation_update_test") {
@@ -1021,19 +1039,37 @@ describe("conversation-scoped worker", () => {
                 },
             ],
             actions: {
-                unsubscribeScope: "project",
-                unsubscribeUrl:
+                projectUnsubscribeUrl:
                     "https://example.com/email-updates/unsubscribe/private",
+                conversationUnsubscribeUrl:
+                    "https://example.com/email-updates/unsubscribe/private-conversations",
                 manageUrl:
                     "https://example.com/email-updates/preferences/private",
                 reportUrl: "https://example.com/email-updates/report/private",
             },
             unsubscribeUrl: "https://example.com/unsubscribe?token=private",
-            actionTokens: {
-                unsubscribeHash: "d".repeat(64),
-                manageHash: "e".repeat(64),
-                reportHash: "f".repeat(64),
-            },
+            actionTokens: [
+                {
+                    action: "unsubscribe_project",
+                    tokenHash: "d".repeat(64),
+                    expiresInDays: 365,
+                },
+                {
+                    action: "unsubscribe_conversation",
+                    tokenHash: "a".repeat(64),
+                    expiresInDays: 365,
+                },
+                {
+                    action: "manage_preferences",
+                    tokenHash: "e".repeat(64),
+                    expiresInDays: 90,
+                },
+                {
+                    action: "report",
+                    tokenHash: "f".repeat(64),
+                    expiresInDays: 90,
+                },
+            ],
         });
         const acceptedResult = {
             kind: "provider_accepted",
@@ -1086,6 +1122,11 @@ describe("conversation-scoped worker", () => {
             sentMessages.at(0)?.text,
         ]) {
             expect(body).toContain("/email-updates/unsubscribe/private");
+            expect(body).toContain(
+                "/email-updates/unsubscribe/private-conversations",
+            );
+            expect(body).toContain("Unsubscribe from these conversations");
+            expect(body).toContain("Unsubscribe from all project updates");
             expect(body).toContain("/email-updates/preferences/private");
             expect(body).toContain("/email-updates/report/private");
         }
@@ -1134,9 +1175,13 @@ describe("conversation-scoped worker", () => {
                     "https://example.com/email-updates/report/private-owner-token",
             },
             unsubscribeUrl: undefined,
-            actionTokens: {
-                reportHash: "c".repeat(64),
-            },
+            actionTokens: [
+                {
+                    action: "report",
+                    tokenHash: "c".repeat(64),
+                    expiresInDays: 90,
+                },
+            ],
         });
         const acceptedResult = {
             kind: "provider_accepted",

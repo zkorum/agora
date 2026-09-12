@@ -681,123 +681,156 @@ describe("conversation email update action service", () => {
         ).toEqual({ success: false, reason: "unavailable" });
     });
 
-    it("disables a project and its positive conversation overrides", async () => {
-        await seedAction({
-            token: TOKEN,
-            action: "unsubscribe_project",
-            scopeKind: "listed_project",
-            representedConversationIds: [10],
-        });
-        await db
-            .insert(conversationEmailUpdateUserProjectPreferenceTable)
-            .values({
-                userId: USER_ID,
-                projectId: 1,
-                enabled: true,
-                choiceAt: new Date("2025-01-01"),
-                choiceSource: "settings",
+    it.each(["unsubscribe", "manage_preferences"] as const)(
+        "%s disables the project default and positive overrides beyond the email",
+        async (entryPoint) => {
+            await seedAction({
+                token: TOKEN,
+                action:
+                    entryPoint === "unsubscribe"
+                        ? "unsubscribe_project"
+                        : "manage_preferences",
+                scopeKind: "listed_project",
+                representedConversationIds: [10],
             });
-        await db
-            .insert(conversationEmailUpdateUserConversationPreferenceTable)
-            .values([
-                {
+            await db
+                .insert(conversationEmailUpdateUserProjectPreferenceTable)
+                .values({
                     userId: USER_ID,
-                    conversationId: 10,
+                    projectId: 1,
                     enabled: true,
                     choiceAt: new Date("2025-01-01"),
                     choiceSource: "settings",
-                },
-                {
-                    userId: USER_ID,
-                    conversationId: 11,
-                    enabled: false,
-                    choiceAt: new Date("2025-01-02"),
-                    choiceSource: "settings",
-                },
-            ]);
-        await sqlClient`
+                });
+            await db
+                .insert(conversationEmailUpdateUserConversationPreferenceTable)
+                .values([
+                    {
+                        userId: USER_ID,
+                        conversationId: 10,
+                        enabled: true,
+                        choiceAt: new Date("2025-01-01"),
+                        choiceSource: "settings",
+                    },
+                    {
+                        userId: USER_ID,
+                        conversationId: 11,
+                        enabled: false,
+                        choiceAt: new Date("2025-01-02"),
+                        choiceSource: "settings",
+                    },
+                ]);
+            await sqlClient`
             INSERT INTO "project" ("id", "slug")
             VALUES (2, 'other-project')
         `;
-        await sqlClient`
+            await sqlClient`
             INSERT INTO "conversation" ("id", "project_id", "slug_id")
-            VALUES (12, 2, 'conv0003')
+            VALUES (12, 2, 'conv0003'), (13, 1, 'conv0004'), (14, 1, 'conv0005')
         `;
-        await db
-            .insert(conversationEmailUpdateUserConversationPreferenceTable)
-            .values({
-                userId: USER_ID,
-                conversationId: 12,
-                enabled: true,
-                choiceAt: new Date("2025-01-03"),
-                choiceSource: "settings",
+            await db
+                .insert(conversationEmailUpdateUserConversationPreferenceTable)
+                .values([
+                    {
+                        userId: USER_ID,
+                        conversationId: 12,
+                        enabled: true,
+                        choiceAt: new Date("2025-01-03"),
+                        choiceSource: "settings",
+                    },
+                    {
+                        userId: USER_ID,
+                        conversationId: 13,
+                        enabled: true,
+                        choiceAt: new Date("2025-01-03"),
+                        choiceSource: "settings",
+                    },
+                ]);
+
+            const unsubscribeProject = async () =>
+                entryPoint === "unsubscribe"
+                    ? await service.unsubscribe({ token: TOKEN })
+                    : await service.manageOptOut({
+                          token: TOKEN,
+                          target: {
+                              kind: "project",
+                              projectSlug: "listed-project",
+                          },
+                      });
+            expect(await unsubscribeProject()).toEqual({
+                success: true,
             });
-
-        expect(await service.unsubscribe({ token: TOKEN })).toEqual({
-            success: true,
-        });
-        expect(await service.unsubscribe({ token: TOKEN })).toEqual({
-            success: true,
-        });
-        const preferences = await db
-            .select()
-            .from(conversationEmailUpdateUserProjectPreferenceTable);
-        const conversationPreferences = await db
-            .select({
-                conversationId:
+            expect(await unsubscribeProject()).toEqual({
+                success: true,
+            });
+            const preferences = await db
+                .select()
+                .from(conversationEmailUpdateUserProjectPreferenceTable);
+            const conversationPreferences = await db
+                .select({
+                    conversationId:
+                        conversationEmailUpdateUserConversationPreferenceTable.conversationId,
+                    enabled:
+                        conversationEmailUpdateUserConversationPreferenceTable.enabled,
+                    choiceAt:
+                        conversationEmailUpdateUserConversationPreferenceTable.choiceAt,
+                    choiceSource:
+                        conversationEmailUpdateUserConversationPreferenceTable.choiceSource,
+                })
+                .from(conversationEmailUpdateUserConversationPreferenceTable)
+                .orderBy(
                     conversationEmailUpdateUserConversationPreferenceTable.conversationId,
-                enabled:
-                    conversationEmailUpdateUserConversationPreferenceTable.enabled,
-                choiceAt:
-                    conversationEmailUpdateUserConversationPreferenceTable.choiceAt,
-                choiceSource:
-                    conversationEmailUpdateUserConversationPreferenceTable.choiceSource,
-            })
-            .from(conversationEmailUpdateUserConversationPreferenceTable)
-            .orderBy(
-                conversationEmailUpdateUserConversationPreferenceTable.conversationId,
-            );
-        const tokens = await db
-            .select({
-                lastUsedAt: conversationEmailUpdateActionTokenTable.lastUsedAt,
-            })
-            .from(conversationEmailUpdateActionTokenTable)
-            .where(eq(conversationEmailUpdateActionTokenTable.id, 50n));
+                );
+            const tokens = await db
+                .select({
+                    lastUsedAt:
+                        conversationEmailUpdateActionTokenTable.lastUsedAt,
+                })
+                .from(conversationEmailUpdateActionTokenTable)
+                .where(eq(conversationEmailUpdateActionTokenTable.id, 50n));
 
-        expect(preferences).toMatchObject([
-            {
-                userId: USER_ID,
-                projectId: 1,
-                enabled: false,
-                choiceSource: "unsubscribe",
-            },
-        ]);
-        expect(conversationPreferences).toMatchObject([
-            {
-                conversationId: 10,
-                enabled: false,
-                choiceSource: "unsubscribe",
-            },
-            {
-                conversationId: 11,
-                enabled: false,
-                choiceSource: "settings",
-            },
-            {
-                conversationId: 12,
-                enabled: true,
-                choiceSource: "settings",
-            },
-        ]);
-        expect(conversationPreferences.at(0)?.choiceAt).toBeInstanceOf(Date);
-        expect(conversationPreferences.at(1)?.choiceAt).toEqual(
-            new Date("2025-01-02"),
-        );
-        expect(conversationPreferences.at(2)?.choiceAt).toEqual(
-            new Date("2025-01-03"),
-        );
-        expect(tokens.at(0)?.lastUsedAt).toBeInstanceOf(Date);
-    });
+            expect(preferences).toMatchObject([
+                {
+                    userId: USER_ID,
+                    projectId: 1,
+                    enabled: false,
+                    choiceSource: "unsubscribe",
+                },
+            ]);
+            expect(conversationPreferences).toMatchObject([
+                {
+                    conversationId: 10,
+                    enabled: false,
+                    choiceSource: "unsubscribe",
+                },
+                {
+                    conversationId: 11,
+                    enabled: false,
+                    choiceSource: "settings",
+                },
+                {
+                    conversationId: 12,
+                    enabled: true,
+                    choiceSource: "settings",
+                },
+                {
+                    conversationId: 13,
+                    enabled: false,
+                    choiceSource: "unsubscribe",
+                },
+            ]);
+            expect(conversationPreferences.at(0)?.choiceAt).toBeInstanceOf(
+                Date,
+            );
+            expect(conversationPreferences.at(1)?.choiceAt).toEqual(
+                new Date("2025-01-02"),
+            );
+            expect(conversationPreferences.at(2)?.choiceAt).toEqual(
+                new Date("2025-01-03"),
+            );
+            expect(tokens.at(0)?.lastUsedAt).toBeInstanceOf(Date);
+        },
+    );
 
     it("directly unsubscribes the sole No Project conversation", async () => {
         await seedAction({
@@ -846,14 +879,82 @@ describe("conversation email update action service", () => {
         ]);
     });
 
-    it("unsubscribes every represented conversation for a listed conversation-scoped delivery", async () => {
+    it.each(["project", "conversation"] as const)(
+        "unsubscribes every included conversation for a %s-scoped delivery",
+        async (participantPreferenceScope) => {
+            await seedAction({
+                token: TOKEN,
+                action: "unsubscribe_conversation",
+                scopeKind: "listed_project",
+                participantPreferenceScope,
+                representedConversationIds: [10, 11],
+            });
+
+            expect(await service.resolve({ token: TOKEN })).toEqual({
+                success: true,
+                action: "unsubscribe_conversation",
+                scope: {
+                    kind: "no_project",
+                    conversations: [
+                        {
+                            conversationSlugId: "conv0001",
+                            title: "Frozen first",
+                        },
+                        {
+                            conversationSlugId: "conv0002",
+                            title: "Frozen second",
+                        },
+                    ],
+                },
+            });
+            expect(await service.unsubscribe({ token: TOKEN })).toEqual({
+                success: true,
+            });
+            const preferences = await db
+                .select({
+                    conversationId:
+                        conversationEmailUpdateUserConversationPreferenceTable.conversationId,
+                    enabled:
+                        conversationEmailUpdateUserConversationPreferenceTable.enabled,
+                })
+                .from(conversationEmailUpdateUserConversationPreferenceTable)
+                .orderBy(
+                    conversationEmailUpdateUserConversationPreferenceTable.conversationId,
+                );
+
+            expect(preferences).toEqual([
+                { conversationId: 10, enabled: false },
+                { conversationId: 11, enabled: false },
+            ]);
+        },
+    );
+
+    it("conversation unsubscribe preserves the project default and conversations omitted from the send", async () => {
         await seedAction({
             token: TOKEN,
             action: "unsubscribe_conversation",
             scopeKind: "listed_project",
-            participantPreferenceScope: "conversation",
             representedConversationIds: [10, 11],
+            authorizedConversationIds: [10],
         });
+        await db
+            .insert(conversationEmailUpdateUserProjectPreferenceTable)
+            .values({
+                userId: USER_ID,
+                projectId: 1,
+                enabled: true,
+                choiceAt: new Date("2025-01-01"),
+                choiceSource: "settings",
+            });
+        await db
+            .insert(conversationEmailUpdateUserConversationPreferenceTable)
+            .values({
+                userId: USER_ID,
+                conversationId: 11,
+                enabled: true,
+                choiceAt: new Date("2025-01-01"),
+                choiceSource: "settings",
+            });
 
         expect(await service.resolve({ token: TOKEN })).toEqual({
             success: true,
@@ -861,35 +962,32 @@ describe("conversation email update action service", () => {
             scope: {
                 kind: "no_project",
                 conversations: [
-                    {
-                        conversationSlugId: "conv0001",
-                        title: "Frozen first",
-                    },
-                    {
-                        conversationSlugId: "conv0002",
-                        title: "Frozen second",
-                    },
+                    { conversationSlugId: "conv0001", title: "Frozen first" },
                 ],
             },
         });
-        expect(await service.unsubscribe({ token: TOKEN })).toEqual({
-            success: true,
-        });
-        const preferences = await db
-            .select({
-                conversationId:
+        for (let attempt = 0; attempt < 2; attempt++) {
+            expect(await service.unsubscribe({ token: TOKEN })).toEqual({
+                success: true,
+            });
+        }
+        expect(
+            await db
+                .select()
+                .from(conversationEmailUpdateUserProjectPreferenceTable),
+        ).toMatchObject([
+            { projectId: 1, enabled: true, choiceSource: "settings" },
+        ]);
+        expect(
+            await db
+                .select()
+                .from(conversationEmailUpdateUserConversationPreferenceTable)
+                .orderBy(
                     conversationEmailUpdateUserConversationPreferenceTable.conversationId,
-                enabled:
-                    conversationEmailUpdateUserConversationPreferenceTable.enabled,
-            })
-            .from(conversationEmailUpdateUserConversationPreferenceTable)
-            .orderBy(
-                conversationEmailUpdateUserConversationPreferenceTable.conversationId,
-            );
-
-        expect(preferences).toEqual([
-            { conversationId: 10, enabled: false },
-            { conversationId: 11, enabled: false },
+                ),
+        ).toMatchObject([
+            { conversationId: 10, enabled: false, choiceSource: "unsubscribe" },
+            { conversationId: 11, enabled: true, choiceSource: "settings" },
         ]);
     });
 
@@ -911,26 +1009,119 @@ describe("conversation email update action service", () => {
         });
     });
 
-    it("uses the same unavailable response for invalid and expired tokens", async () => {
-        await seedAction({
-            token: TOKEN,
-            action: "unsubscribe_project",
-            scopeKind: "listed_project",
-            representedConversationIds: [10],
-        });
-        const expected = { success: false, reason: "unavailable" };
+    it.each(["unsubscribe_project", "unsubscribe_conversation"] as const)(
+        "rejects invalid and expired %s tokens without changing preferences",
+        async (action) => {
+            await seedAction({
+                token: TOKEN,
+                action,
+                scopeKind: "listed_project",
+                representedConversationIds: [10],
+            });
+            const expected = { success: false, reason: "unavailable" };
 
-        expect(
-            await service.resolve({
-                token: "abcdefghijabcdefghijabcdefghijabcdefghijabc",
-            }),
-        ).toEqual(expected);
-        await sqlClient`
+            expect(
+                await service.resolve({
+                    token: "abcdefghijabcdefghijabcdefghijabcdefghijabc",
+                }),
+            ).toEqual(expected);
+            await sqlClient`
             UPDATE "conversation_email_update_action_token"
             SET "created_at" = '1999-01-01', "expires_at" = '2000-01-01'
         `;
-        expect(await service.resolve({ token: TOKEN })).toEqual(expected);
-    });
+            expect(await service.resolve({ token: TOKEN })).toEqual(expected);
+            expect(await service.unsubscribe({ token: TOKEN })).toEqual(
+                expected,
+            );
+            expect(
+                await db
+                    .select()
+                    .from(conversationEmailUpdateUserProjectPreferenceTable),
+            ).toEqual([]);
+            expect(
+                await db
+                    .select()
+                    .from(
+                        conversationEmailUpdateUserConversationPreferenceTable,
+                    ),
+            ).toEqual([]);
+        },
+    );
+
+    it.each(["unsubscribe_project", "unsubscribe_conversation"] as const)(
+        "cannot use a %s token to manage preferences or report",
+        async (action) => {
+            await seedAction({
+                token: TOKEN,
+                action,
+                scopeKind: "listed_project",
+                representedConversationIds: [10],
+            });
+            const expected = { success: false, reason: "unavailable" };
+            expect(
+                await service.manageOptOut({
+                    token: TOKEN,
+                    target: { kind: "project", projectSlug: "listed-project" },
+                }),
+            ).toEqual(expected);
+            expect(
+                await service.manageOptOut({
+                    token: TOKEN,
+                    target: {
+                        kind: "conversation",
+                        conversationSlugId: "conv0002",
+                    },
+                }),
+            ).toEqual(expected);
+            expect(
+                await service.submitReport({ token: TOKEN, reason: "spam" }),
+            ).toEqual(expected);
+            expect(
+                await db.select().from(conversationEmailUpdateReportTable),
+            ).toEqual([]);
+            expect(
+                await db
+                    .select()
+                    .from(conversationEmailUpdateUserProjectPreferenceTable),
+            ).toEqual([]);
+            expect(
+                await db
+                    .select()
+                    .from(
+                        conversationEmailUpdateUserConversationPreferenceTable,
+                    ),
+            ).toEqual([]);
+        },
+    );
+
+    it.each([
+        {
+            scopeKind: "listed_project",
+            participantPreferenceScope: "conversation",
+        },
+        { scopeKind: "no_project", participantPreferenceScope: "project" },
+    ] as const)(
+        "rejects a project token without a valid project binding: $scopeKind/$participantPreferenceScope",
+        async ({ scopeKind, participantPreferenceScope }) => {
+            await seedAction({
+                token: TOKEN,
+                action: "unsubscribe_project",
+                scopeKind,
+                participantPreferenceScope,
+                representedConversationIds: [10],
+            });
+            const expected = { success: false, reason: "unavailable" };
+            expect(await service.resolve({ token: TOKEN })).toEqual(expected);
+            expect(await service.unsubscribe({ token: TOKEN })).toEqual(
+                expected,
+            );
+            expect(
+                await db
+                    .select()
+                    .from(conversationEmailUpdateUserProjectPreferenceTable),
+            ).toEqual([]);
+        },
+    );
 
     it("records at most one confidential report per recipient", async () => {
         await seedAction({
@@ -1271,25 +1462,30 @@ describe("conversation email update action service", () => {
         ).resolves.toEqual([]);
     });
 
-    it("rejects a legacy owner No Project conversation-unsubscribe token", async () => {
-        await seedAction({
-            token: TOKEN,
-            action: "unsubscribe_conversation",
-            scopeKind: "no_project",
-            representedConversationIds: [10],
-            recipientKind: "conversation_owner_copy",
-        });
+    it.each(["listed_project", "no_project"] as const)(
+        "rejects owner conversation-unsubscribe tokens in %s scope",
+        async (scopeKind) => {
+            await seedAction({
+                token: TOKEN,
+                action: "unsubscribe_conversation",
+                scopeKind,
+                representedConversationIds: [10],
+                recipientKind: "conversation_owner_copy",
+            });
 
-        expect(await service.unsubscribe({ token: TOKEN })).toEqual({
-            success: false,
-            reason: "unavailable",
-        });
-        await expect(
-            db
-                .select()
-                .from(conversationEmailUpdateUserConversationPreferenceTable),
-        ).resolves.toEqual([]);
-    });
+            expect(await service.unsubscribe({ token: TOKEN })).toEqual({
+                success: false,
+                reason: "unavailable",
+            });
+            await expect(
+                db
+                    .select()
+                    .from(
+                        conversationEmailUpdateUserConversationPreferenceTable,
+                    ),
+            ).resolves.toEqual([]);
+        },
+    );
 
     it("accepts a scope-bound owner report token", async () => {
         await seedAction({

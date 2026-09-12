@@ -4892,8 +4892,11 @@ export function createConversationEmailUpdateService({
                         ...common,
                         variant,
                         actions: {
-                            unsubscribeScope,
-                            unsubscribeUrl: "#",
+                            conversationUnsubscribeUrl: "#",
+                            projectUnsubscribeUrl:
+                                unsubscribeScope === "project"
+                                    ? "#"
+                                    : undefined,
                             manageUrl: "#",
                             reportUrl: "#",
                         },

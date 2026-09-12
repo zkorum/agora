@@ -1,4 +1,4 @@
-import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import {
     and,
     asc,
@@ -18,7 +18,7 @@ import {
     type SQLWrapper,
 } from "drizzle-orm";
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
-import { alias, type PgInsertValue } from "drizzle-orm/pg-core";
+import { alias } from "drizzle-orm/pg-core";
 import { buildConversationEmailParticipationQuery } from "@/shared-backend/conversationEmailUpdateParticipation.js";
 import {
     buildConversationEmailGlobalPreferenceCondition,
@@ -58,12 +58,12 @@ import {
     zodEmailBranding,
     type EmailBranding,
 } from "@/shared/branding/emailBranding.js";
-import {
-    EMAIL_TEMPLATE_VERSION,
-    type ConversationEmailActionLinks,
-} from "@/generated/email/render.js";
+import { EMAIL_TEMPLATE_VERSION } from "@/generated/email/render.js";
 import type { ProviderResult } from "./provider.js";
-import { buildConversationEmailActionUrls } from "./actionLinks.js";
+import {
+    createRecipientActions,
+    type RecipientActionDetails,
+} from "./actionLinks.js";
 import { decideMaterializationFailure } from "./materializationTransition.js";
 import {
     decideOwnerGate,
@@ -2602,82 +2602,8 @@ interface AuthorizedRecipientCommon {
     conversations: [AuthorizedConversation, ...AuthorizedConversation[]];
 }
 
-type RecipientActionDetails =
-    | {
-          kind: "participant";
-          actions: ConversationEmailActionLinks;
-          actionTokens: {
-              unsubscribeHash: string;
-              manageHash: string;
-              reportHash: string;
-          };
-          unsubscribeUrl: string;
-      }
-    | {
-          kind: "conversation_owner_copy";
-          actions: { reportUrl: string };
-          actionTokens: { reportHash: string };
-          unsubscribeUrl: undefined;
-      };
-
 export type AuthorizedRecipient = AuthorizedRecipientCommon &
     RecipientActionDetails;
-
-function createActionToken(): { raw: string; hash: string } {
-    const raw = randomBytes(32).toString("base64url");
-    return {
-        raw,
-        hash: createHash("sha256").update(raw).digest("hex"),
-    };
-}
-
-export function createRecipientActions({
-    siteBaseUrl,
-    kind,
-    participantPreferenceScope,
-}: {
-    siteBaseUrl: string;
-    kind: AuthorizedRecipient["kind"];
-    participantPreferenceScope: AuthorizedRecipient["participantPreferenceScope"];
-}): RecipientActionDetails {
-    const report = createActionToken();
-    if (kind === "conversation_owner_copy") {
-        return {
-            kind,
-            actions: {
-                reportUrl: new URL(
-                    `/email-updates/report/${report.raw}`,
-                    siteBaseUrl,
-                ).toString(),
-            },
-            actionTokens: { reportHash: report.hash },
-            unsubscribeUrl: undefined,
-        };
-    }
-    const unsubscribe = createActionToken();
-    const manage = createActionToken();
-    const actionUrls = buildConversationEmailActionUrls({
-        siteBaseUrl,
-        unsubscribeToken: unsubscribe.raw,
-        manageToken: manage.raw,
-        reportToken: report.raw,
-    });
-    return {
-        kind,
-        unsubscribeUrl: actionUrls.oneClickUnsubscribeUrl,
-        actions: {
-            unsubscribeScope: participantPreferenceScope,
-            unsubscribeUrl: actionUrls.visibleUnsubscribeUrl,
-            manageUrl: actionUrls.manageUrl,
-            reportUrl: actionUrls.reportUrl,
-        },
-        actionTokens: {
-            unsubscribeHash: unsubscribe.hash,
-            manageHash: manage.hash,
-            reportHash: report.hash,
-        },
-    };
-}
 
 export async function authorizeRecipientSend({
     db,
@@ -3202,37 +3128,14 @@ async function markRecipientAttempting({
                 conversationId: conversation.conversationId,
             })),
         );
-    const actionTokens: PgInsertValue<typeof conversationEmailUpdateActionTokenTable>[] =
-        [
-            {
-                tokenHash: authorized.actionTokens.reportHash,
-                attemptPublicId: authorized.attemptPublicId,
-                action: "report",
-                expiresAt: sql<Date>`now() + interval '90 days'`,
-            },
-        ];
-    if (authorized.kind === "participant") {
-        actionTokens.push(
-            {
-                tokenHash: authorized.actionTokens.unsubscribeHash,
-                attemptPublicId: authorized.attemptPublicId,
-                action:
-                    authorized.participantPreferenceScope === "project"
-                        ? "unsubscribe_project"
-                        : "unsubscribe_conversation",
-                expiresAt: sql<Date>`now() + interval '365 days'`,
-            },
-            {
-                tokenHash: authorized.actionTokens.manageHash,
-                attemptPublicId: authorized.attemptPublicId,
-                action: "manage_preferences",
-                expiresAt: sql<Date>`now() + interval '90 days'`,
-            },
-        );
-    }
-    await tx
-        .insert(conversationEmailUpdateActionTokenTable)
-        .values(actionTokens);
+    await tx.insert(conversationEmailUpdateActionTokenTable).values(
+        authorized.actionTokens.map((token) => ({
+            tokenHash: token.tokenHash,
+            action: token.action,
+            attemptPublicId: authorized.attemptPublicId,
+            expiresAt: sql<Date>`now() + ${token.expiresInDays} * interval '1 day'`,
+        })),
+    );
     return true;
 }
 
