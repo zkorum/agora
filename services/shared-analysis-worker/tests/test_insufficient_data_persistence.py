@@ -3,14 +3,23 @@ from __future__ import annotations
 import sqlite3
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
+from uuid import UUID
 
+import pytest
 from sqlalchemy import Engine, create_engine, literal, select
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
+from agora_analysis_worker_shared.analysis_compute import compute_analysis_bundle
 from agora_analysis_worker_shared.db import (
     ClaimedWorkItem,
+    OpinionGroupConfigRecord,
+    OpinionGroupSpecRecord,
+    OpinionGroupVariantRecord,
     StoredInputSnapshot,
+    claim_work_items_batch,
+    complete_computed_analysis_work_items_batch,
+    persist_computed_analysis_results_batch,
     persist_empty_vote_matrix_results_batch,
 )
 from agora_analysis_worker_shared.generated_models import (
@@ -25,15 +34,15 @@ from agora_analysis_worker_shared.generated_models import (
     ConversationType,
     ConversationViewSnapshot,
     ConversationViewSnapshotReasonEnum,
+    OpinionGroupCandidate,
     OpinionGroupVariant,
     ParticipationMode,
     PolisConversationConfig,
     RealtimeEventOutbox,
 )
-from agora_analysis_worker_shared.input_snapshot import prepare_input_snapshot
+from agora_analysis_worker_shared.input_snapshot import VoteInputRow, prepare_input_snapshot
 
 if TYPE_CHECKING:
-    import pytest
     from sqlalchemy.sql.elements import ColumnElement
 
 NOW = datetime(2026, 8, 21, 10, 0, 0, tzinfo=UTC)
@@ -222,3 +231,167 @@ def test_empty_vote_matrix_publishes_activated_zero_count_snapshot(
     assert work_state.last_completed_data_generation == 2
     assert work_state.running_data_generation is None
     assert work_state.lease_token is None
+
+
+@pytest.mark.parametrize("new_votes_before_completion", [False, True])
+def test_collapsed_projection_is_persisted_and_waits_for_new_generation(
+    new_votes_before_completion: bool,
+) -> None:
+    engine = _create_engine()
+    with Session(engine) as session:
+        session.add(
+            PolisConversationConfig(
+                id=10,
+                ai_labeling_enabled=True,
+                analysis_data_generation=2,
+                created_at=NOW,
+                updated_at=NOW,
+            )
+        )
+        session.add(
+            Conversation(
+                id=10,
+                slug_id="abc12345",
+                project_id=1,
+                current_content_id=40,
+                polis_config_id=10,
+                dynamic_translation_enabled=False,
+                language_settings_source=ConversationLanguageSettingsSource.conversation_override,
+                is_indexed=True,
+                participation_mode=ParticipationMode.account_required,
+                conversation_type=ConversationType.polis,
+                is_importing=False,
+                is_closed=False,
+                is_edited=False,
+                created_at=NOW,
+                updated_at=NOW,
+                last_reacted_at=NOW,
+            )
+        )
+        session.add_all(
+            OpinionGroupVariant(
+                id=group_count * 10,
+                opinion_group_spec_id=1,
+                group_count=group_count,
+                created_at=NOW,
+            )
+            for group_count in [2, 3]
+        )
+        session.add(
+            AnalysisWorkState(
+                id=40,
+                conversation_id=10,
+                opinion_group_spec_id=1,
+                last_completed_data_generation=1,
+                dirty_since=NOW,
+                attempt_generation=1,
+                attempt_count=0,
+                created_at=NOW,
+                updated_at=NOW,
+            )
+        )
+        session.commit()
+
+    def claim_work() -> list[ClaimedWorkItem]:
+        return claim_work_items_batch(
+            engine,
+            worker_id="math-updater",
+            conversation_ids=[10],
+            lease_ttl_seconds=60,
+            limit=1,
+            analysis_engine_epoch=1,
+        )
+
+    def add_new_votes_generation() -> None:
+        with Session(engine) as session:
+            config = session.execute(select(PolisConversationConfig)).scalar_one()
+            config.analysis_data_generation = 3
+            session.commit()
+
+    claims = claim_work()
+    assert len(claims) == 1
+    assert claims[0].data_generation == 2
+    snapshot = prepare_input_snapshot(
+        conversation_id=10,
+        data_generation=2,
+        rows=[
+            VoteInputRow(
+                conversation_id=10,
+                data_generation=2,
+                user_id=UUID(int=participant + 1),
+                opinion_id=opinion_id,
+                opinion_content_id=opinion_id + 1000,
+                vote="agree",
+            )
+            for participant in range(6)
+            for opinion_id in [100, 101 + participant % 3]
+        ],
+    )
+    bundle = compute_analysis_bundle(
+        snapshot=snapshot,
+        config=OpinionGroupConfigRecord(
+            spec=OpinionGroupSpecRecord(
+                id=1,
+                min_clusterable_participants=2,
+                min_votes_per_participant=2,
+                max_group_count=3,
+            ),
+            variants=[
+                OpinionGroupVariantRecord(
+                    id=group_count * 10, opinion_group_spec_id=1, group_count=group_count
+                )
+                for group_count in [2, 3]
+            ],
+        ),
+    )
+    persisted = persist_computed_analysis_results_batch(
+        engine,
+        claims=claims,
+        stored_input_snapshots_by_conversation_id={
+            10: StoredInputSnapshot(
+                id=50, conversation_id=10, data_generation=2, input_hash=snapshot.input_hash
+            )
+        },
+        prepared_input_snapshots_by_conversation_id={10: snapshot},
+        bundles_by_conversation_id={10: bundle},
+        ai_generation_expected=True,
+    )
+    assert persisted.ai_description_work_conversation_ids == []
+    assert persisted.ai_description_work_view_snapshot_ids == []
+
+    with Session(engine) as session:
+        result = session.execute(select(AnalysisSnapshotResult)).scalar_one()
+        candidates = session.scalars(select(OpinionGroupCandidate)).all()
+        view = session.execute(select(ConversationViewSnapshot)).scalar_one()
+        assert result.outcome == AnalysisResultOutcomeEnum.insufficient_data
+        assert result.outcome_reason == AnalysisInsufficientDataReasonEnum.not_enough_unique_points
+        assert len(candidates) == 2
+        for candidate in candidates:
+            assert candidate.outcome == AnalysisResultOutcomeEnum.insufficient_data
+            assert candidate.outcome_reason == (
+                AnalysisInsufficientDataReasonEnum.not_enough_unique_points
+            )
+            assert candidate.raw_output is not None
+            assert candidate.raw_output["reason"] == "not_enough_unique_points"
+        assert view.activated_at is not None
+
+    if new_votes_before_completion:
+        add_new_votes_generation()
+    newer_generation_ids = complete_computed_analysis_work_items_batch(
+        engine, claims=claims, require_display_safe_activation=True
+    )
+    assert newer_generation_ids == ([10] if new_votes_before_completion else [])
+    with Session(engine) as session:
+        work_state = session.execute(select(AnalysisWorkState)).scalar_one()
+        assert work_state.last_completed_data_generation == 2
+        assert work_state.running_data_generation is None
+        assert work_state.lease_token is None
+        assert work_state.last_error_code is None
+
+    if not new_votes_before_completion:
+        assert claim_work() == []
+        add_new_votes_generation()
+    next_claims = claim_work()
+    assert len(next_claims) == 1
+    assert next_claims[0].data_generation == 3
+    engine.dispose()

@@ -17,6 +17,25 @@ The math-updater consumes queued conversation IDs from Valkey, claims work in Po
 - Recover expired running work leases.
 - Optionally generate AWS Bedrock labels/summaries and Google Cloud translations.
 
+## Insufficient-data traceability
+
+Insufficient data is a completed analysis outcome, not a retryable error. For
+example, `not_enough_unique_points` means there are too few distinct participant
+positions to form a requested grouping. The worker completes that data generation
+and becomes eligible again when a newer generation is available.
+
+The INFO-level `Persisting computed results` log includes the conversation ID and
+slug, spec ID, data generation, overall outcome/reason, and the variant ID, group
+count, and reason for each insufficient-data candidate. This also exposes skipped
+group counts when smaller groupings succeed.
+
+After persistence commits, the reasons remain in
+`analysis_snapshot_result.outcome_reason` and
+`opinion_group_candidate.outcome_reason` (also in the candidate's `raw_output`).
+Join through `analysis_snapshot` for the conversation and data generation, and
+`opinion_group_variant` for the group count. These normal analysis outcomes do not
+populate `analysis_work_state.last_error_code`.
+
 ## Configuration
 
 Environment variables use the `MATH_UPDATER_` prefix.

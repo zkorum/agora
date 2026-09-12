@@ -275,6 +275,106 @@ def test_compute_analysis_bundle_is_testable_with_injected_runner() -> None:
     assert representative_opinion.agreement_type == "agree"
 
 
+@pytest.mark.parametrize("config", [_single_variant_config(), _config()])
+def test_sparse_agreement_with_collapsed_projection_is_insufficient_data(
+    config: OpinionGroupConfigRecord,
+) -> None:
+    # Different missing-vote patterns pass the raw uniqueness check, but mean
+    # imputation makes all participants identical before PCA.
+    rows = [
+        VoteInputRow(
+            conversation_id=10,
+            data_generation=3,
+            user_id=user_id,
+            opinion_id=opinion_id,
+            opinion_content_id=opinion_id + 1000,
+            vote="agree",
+        )
+        for user_id, opinion_ids in [
+            (USER_A, [100, 101]),
+            (USER_B, [101, 102]),
+            (USER_C, [102, 103]),
+            (USER_D, [103, 100]),
+        ]
+        for opinion_id in opinion_ids
+    ]
+    snapshot = prepare_input_snapshot(conversation_id=10, data_generation=3, rows=rows)
+
+    bundle = compute_analysis_bundle(snapshot=snapshot, config=config)
+
+    assert bundle.data_generation == 3
+    assert bundle.outcome == AnalysisResultOutcomeEnum.insufficient_data
+    assert bundle.outcome_reason == AnalysisInsufficientDataReasonEnum.not_enough_unique_points
+    assert len(bundle.candidates) == len(config.variants)
+    assert all(
+        candidate.outcome == AnalysisResultOutcomeEnum.insufficient_data
+        and candidate.outcome_reason == AnalysisInsufficientDataReasonEnum.not_enough_unique_points
+        for candidate in bundle.candidates
+    )
+    assert [opinion.num_agrees for opinion in bundle.snapshot_opinions] == [2, 2, 2, 2]
+
+
+def test_projection_failure_preserves_valid_smaller_group_count() -> None:
+    rows = [
+        VoteInputRow(
+            conversation_id=10,
+            data_generation=3,
+            user_id=UUID(int=participant + 1),
+            opinion_id=opinion_id,
+            opinion_content_id=opinion_id + 1000,
+            vote=vote,
+        )
+        for participant in range(6)
+        for opinion_id, vote in [
+            (100, "agree" if participant < 3 else "disagree"),
+            (101 + participant % 3, "agree"),
+        ]
+    ]
+    config = OpinionGroupConfigRecord(
+        spec=OpinionGroupSpecRecord(
+            id=1,
+            min_clusterable_participants=2,
+            min_votes_per_participant=2,
+            max_group_count=4,
+        ),
+        variants=[
+            OpinionGroupVariantRecord(id=20, opinion_group_spec_id=1, group_count=2),
+            OpinionGroupVariantRecord(id=40, opinion_group_spec_id=1, group_count=4),
+        ],
+    )
+    bundle = compute_analysis_bundle(
+        snapshot=prepare_input_snapshot(conversation_id=10, data_generation=3, rows=rows),
+        config=config,
+    )
+
+    assert bundle.outcome == AnalysisResultOutcomeEnum.success
+    assert bundle.candidates[0].outcome == AnalysisResultOutcomeEnum.success
+    assert len(bundle.candidates[0].groups) == 2
+    assert bundle.candidates[1].outcome == AnalysisResultOutcomeEnum.insufficient_data
+    assert bundle.candidates[1].outcome_reason == (
+        AnalysisInsufficientDataReasonEnum.not_enough_unique_points
+    )
+
+
+def test_unrelated_compute_errors_are_not_reported_as_insufficient_data() -> None:
+    snapshot = prepare_input_snapshot(conversation_id=10, data_generation=3, rows=_snapshot_rows())
+
+    def fake_runner(
+        *,
+        votes: list[dict[str, int]],
+        min_user_vote_threshold: int,
+        max_group_count: int,
+        force_group_count: int | None = None,
+        candidate_group_counts: list[int] | None = None,
+    ) -> FakeRedDwarfSuccess:
+        raise ValueError("unrelated compute error")
+
+    with pytest.raises(ValueError, match="unrelated compute error"):
+        compute_analysis_bundle(
+            snapshot=snapshot, config=_config(), run_red_dwarf_pipeline=fake_runner
+        )
+
+
 def test_duplicate_representative_sets_hide_only_the_affected_candidate() -> None:
     snapshot = prepare_input_snapshot(
         conversation_id=10,

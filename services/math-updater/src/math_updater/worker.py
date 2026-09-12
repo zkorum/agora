@@ -66,6 +66,7 @@ from agora_analysis_worker_shared.description_services import (
     build_description_generator,
     build_description_translator,
 )
+from agora_analysis_worker_shared.generated_models import AnalysisResultOutcomeEnum
 from agora_analysis_worker_shared.input_snapshot import (
     PreparedInputSnapshot,
     prepare_input_snapshots_batch,
@@ -217,17 +218,31 @@ def _snapshot_summary(snapshot: PreparedInputSnapshot) -> str:
     )
 
 
-def _bundle_summary(bundle: ComputedAnalysisBundle) -> str:
+def _bundle_summary(*, claim: ClaimedWorkItem, bundle: ComputedAnalysisBundle) -> str:
     success_candidates = [
-        candidate for candidate in bundle.candidates if candidate.outcome.value == "success"
+        candidate
+        for candidate in bundle.candidates
+        if candidate.outcome == AnalysisResultOutcomeEnum.success
     ]
+    insufficient_candidates = ",".join(
+        f"variant={candidate.opinion_group_variant_id}/k={candidate.group_count}:"
+        f"{candidate.outcome_reason.value if candidate.outcome_reason is not None else 'none'}"
+        for candidate in bundle.candidates
+        if candidate.outcome == AnalysisResultOutcomeEnum.insufficient_data
+    )
     group_count = sum(len(candidate.groups) for candidate in success_candidates)
     group_opinion_stats_count = sum(
         len(group.opinion_stats) for candidate in success_candidates for group in candidate.groups
     )
+    outcome_reason = bundle.outcome_reason.value if bundle.outcome_reason is not None else "none"
     return (
         f"conversation_id={bundle.conversation_id} "
+        f"conversation_slug_id={claim.conversation_slug_id} "
+        f"spec_id={claim.opinion_group_spec_id} "
+        f"generation={bundle.data_generation} "
         f"outcome={bundle.outcome.value} "
+        f"outcome_reason={outcome_reason} "
+        f"insufficient_candidates=[{insufficient_candidates}] "
         f"candidates={len(bundle.candidates)} "
         f"success_candidates={len(success_candidates)} "
         f"groups={group_count} "
@@ -1735,7 +1750,10 @@ def _run_worker_once() -> None:
                 log.info(
                     "[MathUpdater] Persisting computed results: %s",
                     "; ".join(
-                        _bundle_summary(bundles_by_conversation_id[claim.conversation_id])
+                        _bundle_summary(
+                            claim=claim,
+                            bundle=bundles_by_conversation_id[claim.conversation_id],
+                        )
                         for claim in completed_claims
                     ),
                 )
