@@ -1,5 +1,5 @@
 import { storeToRefs } from "pinia";
-import type { OpinionItem } from "src/shared/types/zod";
+import type { DisplayedOpinionItem } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useBackendAuthApi } from "src/utils/api/auth";
@@ -40,9 +40,7 @@ export interface ConversationParentConfig {
 }
 
 export interface SubmittedCommentData {
-  opinionSlugId: string;
-  opinionItem: OpinionItem;
-  authStateChanged: boolean;
+  displayedOpinionItem: DisplayedOpinionItem;
   needsCacheRefresh: boolean;
 }
 
@@ -355,7 +353,7 @@ export function useConversationParentState({
         getConversationCommentRoute({
           conversationSlugId: slugId,
           routeContext: routeContextValue.value,
-          query: { opinion: data.opinionSlugId },
+          query: { opinion: data.displayedOpinionItem.opinionSlugId },
         })
       );
     }

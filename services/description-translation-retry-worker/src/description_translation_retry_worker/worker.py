@@ -182,9 +182,10 @@ def main() -> None:
             )
             if materialized_ids:
                 log.info(
-                    "%s Materialized requested translation work for %d conversation(s)",
+                    "%s Created or reassigned translation work for %d conversation(s) ids=%s",
                     LOG_PREFIX,
                     len(materialized_ids),
+                    ",".join(str(conversation_id) for conversation_id in materialized_ids),
                 )
         except Exception:
             log.exception("%s Translation request materialization failed", LOG_PREFIX)

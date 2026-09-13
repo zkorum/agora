@@ -16,17 +16,14 @@ export interface UseTargetOpinionReturn {
   setupHighlightFromRoute: () => Promise<void>;
   fetchTargetOpinion: (opinionSlugId: string) => Promise<void>;
   highlightOpinion: (opinion: DisplayedOpinionItem) => void;
-  refreshAndHighlightOpinion: (opinionSlugId: string) => Promise<void>;
   clearRouteQueryParameters: () => Promise<void>;
 }
 
 interface UseTargetOpinionParams {
-  refreshDataCallback?: () => Promise<void>;
   onModeratedOpinionDetected?: (opinion: OpinionItem) => void;
 }
 
 export function useTargetOpinion({
-  refreshDataCallback,
   onModeratedOpinionDetected,
 }: UseTargetOpinionParams = {}): UseTargetOpinionReturn {
   const router = useRouter();
@@ -98,24 +95,11 @@ export function useTargetOpinion({
     scrollToOpinion(opinion.opinionSlugId);
   }
 
-  async function refreshAndHighlightOpinion(
-    opinionSlugId: string
-  ): Promise<void> {
-    if (refreshDataCallback) {
-      await refreshDataCallback();
-    }
-
-    await fetchTargetOpinion(opinionSlugId);
-
-    scrollToOpinion(opinionSlugId);
-  }
-
   return {
     targetOpinion,
     setupHighlightFromRoute,
     fetchTargetOpinion,
     highlightOpinion,
-    refreshAndHighlightOpinion,
     clearRouteQueryParameters,
   };
 }

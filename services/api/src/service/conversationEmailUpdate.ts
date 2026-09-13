@@ -34,6 +34,7 @@ import {
     notInArray,
     or,
     sql,
+    type SQL,
 } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { buildConversationEmailParticipationQuery } from "@/shared-backend/conversationEmailUpdateParticipation.js";
@@ -2359,16 +2360,40 @@ async function resolvePreferenceProjectGroupKey({
 
 const PREFERENCE_CONVERSATION_PAGE_SIZE = 10;
 
+function buildPreferenceParticipationCondition({
+    db,
+    userId,
+    now,
+}: {
+    db: PostgresJsDatabase;
+    userId: string;
+    now: Date;
+}): SQL {
+    const participation = buildConversationEmailParticipationQuery({
+        db,
+        cutoffAt: now,
+        scope: { kind: "user", userId },
+    }).as("preference_participation");
+    return exists(
+        db
+            .select({ conversationId: participation.conversationId })
+            .from(participation)
+            .where(eq(participation.conversationId, conversationTable.id)),
+    );
+}
+
 function buildPreferenceScopeAvailabilityCondition({
     db,
     now,
     scopeKind,
     userId,
+    participationCondition,
 }: {
     db: PostgresJsDatabase;
     now: Date;
     scopeKind: "project" | "no_project";
     userId: string;
+    participationCondition: SQL | undefined;
 }) {
     const hasContactEmail = exists(
         db
@@ -2513,7 +2538,9 @@ function buildPreferenceScopeAvailabilityCondition({
         hasContactEmail,
         hasFeatureEntitlement,
         projectNotBlocked,
-        availableToUser,
+        scopeKind === "no_project"
+            ? or(availableToUser, participationCondition)
+            : undefined,
     );
 }
 
@@ -2534,6 +2561,11 @@ function buildPreferenceConversationAvailabilityCondition({
             now,
             scopeKind,
             userId,
+            participationCondition: buildPreferenceParticipationCondition({
+                db,
+                userId,
+                now,
+            }),
         }),
         isNotNull(conversationTable.currentContentId),
         eq(conversationTable.isImporting, false),
@@ -2567,12 +2599,16 @@ function buildPreferenceConversationConfiguredCondition() {
     ) = true`;
 }
 
-function buildPreferenceConversationDiscoveryCondition(
-    focusConversationSlugId: string | undefined,
-) {
-    // A direct link can target a private conversation without making it searchable.
+function buildPreferenceConversationDiscoveryCondition({
+    focusConversationSlugId,
+    participationCondition,
+}: {
+    focusConversationSlugId: string | undefined;
+    participationCondition: SQL;
+}) {
+    // Participation makes private conversations discoverable only to that user.
     return focusConversationSlugId === undefined
-        ? eq(conversationTable.isIndexed, true)
+        ? or(eq(conversationTable.isIndexed, true), participationCondition)
         : eq(conversationTable.slugId, focusConversationSlugId);
 }
 
@@ -2595,12 +2631,19 @@ export async function queryPreferenceGroupPage({
     | { success: false }
 > {
     const focus = request.mode === "focus" ? request.focus : undefined;
+    const participationCondition = buildPreferenceParticipationCondition({
+        db,
+        userId,
+        now,
+    });
     const conversationDiscoveryCondition =
-        buildPreferenceConversationDiscoveryCondition(
-            focus?.kind === "conversation"
-                ? focus.conversationSlugId
-                : undefined,
-        );
+        buildPreferenceConversationDiscoveryCondition({
+            focusConversationSlugId:
+                focus?.kind === "conversation"
+                    ? focus.conversationSlugId
+                    : undefined,
+            participationCondition,
+        });
     const groupLimit = request.mode === "browse" ? request.limit : 1;
     const search =
         request.mode === "browse"
@@ -2655,6 +2698,7 @@ export async function queryPreferenceGroupPage({
         now,
         scopeKind: "project",
         userId,
+        participationCondition: undefined,
     });
     const projectConversationAvailable =
         buildPreferenceConversationAvailabilityCondition({
@@ -2739,6 +2783,19 @@ export async function queryPreferenceGroupPage({
             explicitConversationPreference,
         ),
     );
+    const participatedProject = exists(
+        db
+            .select({ id: conversationTable.id })
+            .from(conversationTable)
+            .where(
+                and(
+                    eq(conversationTable.projectId, projectTable.id),
+                    buildPreferenceConversationConfiguredCondition(),
+                    projectConversationAvailable,
+                    participationCondition,
+                ),
+            ),
+    );
     const projectMatchesSearch =
         search === undefined
             ? undefined
@@ -2764,7 +2821,7 @@ export async function queryPreferenceGroupPage({
                     matchingConversation,
                 )
               : search === undefined
-                ? persistedProjectIntent
+                ? or(persistedProjectIntent, participatedProject)
                 : or(
                       and(
                           projectMatchesSearch,
@@ -2789,18 +2846,18 @@ export async function queryPreferenceGroupPage({
             isNotNull(
                 conversationEmailUpdateUserConversationPreferenceTable.enabled,
             ),
-            and(
-                noProjectConversationAvailable,
-                conversationDiscoveryCondition,
-            ),
+            and(noProjectConversationAvailable, conversationDiscoveryCondition),
         ),
         focus?.kind === "project"
             ? sql<boolean>`false`
             : focus?.kind === "conversation"
               ? eq(conversationTable.slugId, focus.conversationSlugId)
               : search === undefined
-                ? isNotNull(
-                      conversationEmailUpdateUserConversationPreferenceTable.enabled,
+                ? or(
+                      isNotNull(
+                          conversationEmailUpdateUserConversationPreferenceTable.enabled,
+                      ),
+                      participationCondition,
                   )
                 : or(
                       gt(
@@ -3188,9 +3245,15 @@ function buildPreferenceConversationScopeConditions({
                 explicitPreference,
                 and(
                     availableCondition,
-                    buildPreferenceConversationDiscoveryCondition(
+                    buildPreferenceConversationDiscoveryCondition({
                         focusConversationSlugId,
-                    ),
+                        participationCondition:
+                            buildPreferenceParticipationCondition({
+                                db,
+                                userId,
+                                now,
+                            }),
+                    }),
                 ),
             ),
             focusConversationSlugId === undefined

@@ -19,11 +19,17 @@ CREATE TYPE "public"."event_slug" AS ENUM('devconnect-2025');
 
 CREATE TYPE "public"."language_detection_provider" AS ENUM('lingua', 'google_translate');
 
+CREATE TYPE "public"."moderation_reason_enum" AS ENUM('misleading', 'antisocial', 'illegal', 'doxing', 'sexual', 'spam');
+
+CREATE TYPE "public"."opinion_moderation_action" AS ENUM('move', 'hide');
+
 CREATE TYPE "public"."participation_mode" AS ENUM('account_required', 'strong_verification', 'email_verification', 'guest');
 
 CREATE TYPE "public"."premium_feature" AS ENUM('survey', 'event_ticket', 'analysis_variants', 'dynamic_translation', 'conversation_email_update');
 
 CREATE TYPE "public"."spoken_language_code" AS ENUM('af', 'ak', 'am', 'ar', 'as', 'ay', 'az', 'be', 'bg', 'bho', 'bm', 'bn', 'bs', 'ca', 'ceb', 'ckb', 'co', 'cs', 'cy', 'da', 'de', 'doi', 'dv', 'ee', 'el', 'en', 'eo', 'es', 'et', 'eu', 'fa', 'fi', 'fil', 'fr', 'fy', 'ga', 'gd', 'gl', 'gn', 'gom', 'gu', 'ha', 'haw', 'he', 'hi', 'hmn', 'hr', 'ht', 'hu', 'hy', 'id', 'ig', 'ilo', 'is', 'it', 'ja', 'jv', 'ka', 'kk', 'km', 'kn', 'ko', 'kri', 'ku', 'ky', 'la', 'lb', 'lg', 'ln', 'lo', 'lt', 'lus', 'lv', 'mai', 'mg', 'mi', 'mk', 'ml', 'mn', 'mni-Mtei', 'mr', 'ms', 'mt', 'my', 'nb', 'ne', 'nl', 'nn', 'no', 'nso', 'ny', 'om', 'or', 'pa', 'pl', 'ps', 'pt', 'qu', 'ro', 'ru', 'rw', 'sa', 'sd', 'si', 'sk', 'sl', 'sm', 'sn', 'so', 'sq', 'sr', 'st', 'su', 'sv', 'sw', 'ta', 'te', 'tg', 'th', 'ti', 'tk', 'tn', 'tr', 'ts', 'tt', 'ug', 'uk', 'ur', 'uz', 'vi', 'xh', 'yi', 'yo', 'zh-Hans', 'zh-Hant', 'zu');
+
+CREATE TYPE "public"."vote_enum_all" AS ENUM('agree', 'disagree', 'pass');
 
 CREATE TABLE "conversation_content" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "conversation_content_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
@@ -106,6 +112,74 @@ CREATE TABLE "conversation" (
 	CONSTRAINT "conversation_project_id_id_unique" UNIQUE("project_id","id"),
 	CONSTRAINT "conversation_subtype_config_check" CHECK ((("conversation"."conversation_type" = 'polis' AND "conversation"."polis_config_id" IS NOT NULL AND "conversation"."ranking_config_id" IS NULL) OR ("conversation"."conversation_type" = 'ranking' AND "conversation"."ranking_config_id" IS NOT NULL AND "conversation"."polis_config_id" IS NULL))),
 	CONSTRAINT "conversation_email_update_override_audit_check" CHECK (("conversation"."conversation_email_update_override_updated_at" IS NULL) = ("conversation"."conversation_email_update_override_updated_by_user_id" IS NULL))
+);
+
+CREATE TABLE "maxdiff_comparison" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "maxdiff_comparison_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"maxdiff_result_id" integer NOT NULL,
+	"position" integer NOT NULL,
+	"best_slug_id" varchar(8) NOT NULL,
+	"worst_slug_id" varchar(8) NOT NULL,
+	"candidate_set" text[] NOT NULL,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	"deleted_at" timestamp (0)
+);
+
+CREATE TABLE "maxdiff_result" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "maxdiff_result_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"participant_id" uuid NOT NULL,
+	"conversation_id" integer NOT NULL,
+	"ranking" jsonb,
+	"comparisons" jsonb NOT NULL,
+	"is_complete" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "maxdiff_result_participant_id_conversation_id_unique" UNIQUE("participant_id","conversation_id")
+);
+
+CREATE TABLE "opinion_content" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "opinion_content_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"public_id" uuid DEFAULT gen_random_uuid() NOT NULL,
+	"opinion_id" integer NOT NULL,
+	"conversation_content_id" integer NOT NULL,
+	"content" text NOT NULL,
+	"content_plain_text" text,
+	"source_language_code" "spoken_language_code",
+	"source_raw_language_code" varchar(35),
+	"source_language_provider" "language_detection_provider",
+	"source_language_confidence" real,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "opinion_content_public_id_unique" UNIQUE("public_id"),
+	CONSTRAINT "opinion_content_content_byte_length_check" CHECK (octet_length("opinion_content"."content") <= 16384),
+	CONSTRAINT "opinion_content_source_metadata_check" CHECK ((("opinion_content"."source_language_provider" IS NULL AND "opinion_content"."source_raw_language_code" IS NULL) OR ("opinion_content"."source_language_provider" IS NOT NULL AND "opinion_content"."source_raw_language_code" IS NOT NULL)))
+);
+
+CREATE TABLE "opinion_moderation" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "opinion_moderation_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"opinion_id" integer NOT NULL,
+	"author_id" uuid,
+	"moderation_action" "opinion_moderation_action" NOT NULL,
+	"moderation_reason" "moderation_reason_enum" NOT NULL,
+	"moderation_explanation" varchar(1000),
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
+	"deleted_at" timestamp (0)
+);
+
+CREATE TABLE "opinion" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "opinion_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"slug_id" varchar(8) NOT NULL,
+	"author_id" uuid NOT NULL,
+	"conversation_id" integer NOT NULL,
+	"current_content_id" integer,
+	"is_seed" boolean DEFAULT false NOT NULL,
+	"num_agrees" integer DEFAULT 0 NOT NULL,
+	"num_disagrees" integer DEFAULT 0 NOT NULL,
+	"num_passes" integer DEFAULT 0 NOT NULL,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
+	"last_reacted_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "opinion_slug_id_unique" UNIQUE("slug_id")
 );
 
 CREATE TABLE "organization_membership" (
@@ -242,6 +316,25 @@ CREATE TABLE "user" (
 	CONSTRAINT "user_username_unique" UNIQUE("username")
 );
 
+CREATE TABLE "vote_content" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "vote_content_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"vote_id" integer NOT NULL,
+	"opinion_content_id" integer NOT NULL,
+	"vote" "vote_enum_all" NOT NULL,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL
+);
+
+CREATE TABLE "vote" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "vote_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"author_id" uuid NOT NULL,
+	"opinion_id" integer NOT NULL,
+	"polis_vote_id" integer,
+	"current_content_id" integer,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "vote_author_id_opinion_id_unique" UNIQUE("author_id","opinion_id")
+);
+
 CREATE UNIQUE INDEX "conversation_email_update_safety_organization_active_unique" ON "conversation_email_update_scope_safety_block" USING btree ("organization_id") WHERE "conversation_email_update_scope_safety_block"."target_kind" = 'organization' AND "conversation_email_update_scope_safety_block"."lifted_at" IS NULL;
 
 CREATE UNIQUE INDEX "conversation_email_update_safety_project_active_unique" ON "conversation_email_update_scope_safety_block" USING btree ("project_id") WHERE "conversation_email_update_scope_safety_block"."target_kind" = 'project' AND "conversation_email_update_scope_safety_block"."lifted_at" IS NULL;
@@ -262,6 +355,24 @@ CREATE INDEX "conversation_project_id_idx" ON "conversation" USING btree ("proje
 
 CREATE INDEX "conversation_project_timeline_idx" ON "conversation" USING btree ("project_id","is_importing","created_at" DESC,"id" DESC) WHERE "conversation"."current_content_id" is not null;
 
+CREATE INDEX "maxdiff_comparison_result_idx" ON "maxdiff_comparison" USING btree ("maxdiff_result_id");
+
+CREATE UNIQUE INDEX "maxdiff_comparison_active_result_position_unique" ON "maxdiff_comparison" USING btree ("maxdiff_result_id","position") WHERE "maxdiff_comparison"."deleted_at" IS NULL;
+
+CREATE INDEX "maxdiff_result_complete_idx" ON "maxdiff_result" USING btree ("conversation_id","is_complete");
+
+CREATE INDEX "maxdiff_result_conversation_idx" ON "maxdiff_result" USING btree ("conversation_id");
+
+CREATE UNIQUE INDEX "opinion_moderation_active_opinion_unique" ON "opinion_moderation" USING btree ("opinion_id") WHERE "opinion_moderation"."deleted_at" is null;
+
+CREATE INDEX "opinion_authorId_idx" ON "opinion" USING btree ("author_id");
+
+CREATE INDEX "opinion_author_active_created_id_idx" ON "opinion" USING btree ("author_id","created_at" DESC,"id" DESC) WHERE "opinion"."current_content_id" is not null;
+
+CREATE INDEX "opinion_conversation_active_idx" ON "opinion" USING btree ("conversation_id","current_content_id");
+
+CREATE INDEX "opinion_conversation_active_created_id_idx" ON "opinion" USING btree ("conversation_id","created_at" DESC,"id" DESC) WHERE "opinion"."current_content_id" is not null;
+
 CREATE UNIQUE INDEX "organization_membership_active_unique" ON "organization_membership" USING btree ("user_id","organization_id") WHERE "organization_membership"."deleted_at" is null;
 
 CREATE INDEX "organization_membership_organization_idx" ON "organization_membership" USING btree ("organization_id");
@@ -277,3 +388,9 @@ CREATE UNIQUE INDEX "project_organization_ownership_active_unique" ON "project_o
 CREATE INDEX "project_organization_ownership_organization_idx" ON "project_organization_ownership" USING btree ("organization_id");
 
 CREATE UNIQUE INDEX "project_active_slug_unique" ON "project" USING btree ("slug") WHERE "project"."deleted_at" IS NULL;
+
+CREATE INDEX "vote_authorId_idx" ON "vote" USING btree ("author_id");
+
+CREATE INDEX "vote_author_active_updated_id_idx" ON "vote" USING btree ("author_id","updated_at" DESC,"id" DESC) WHERE "vote"."current_content_id" is not null;
+
+CREATE INDEX "vote_opinion_active_idx" ON "vote" USING btree ("opinion_id","current_content_id");

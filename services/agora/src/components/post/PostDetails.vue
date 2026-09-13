@@ -113,9 +113,12 @@ import {
   type ConversationActionBarStats,
   useConversationActionBarStats,
 } from "src/composables/conversation/useConversationActionBarStats";
-import type { ConversationScrollContext } from "src/composables/conversation/useConversationParentState";
+import type {
+  ConversationScrollContext,
+  SubmittedCommentData,
+} from "src/composables/conversation/useConversationParentState";
 import type { ConversationContentFetchResponse } from "src/shared/types/dto";
-import type { ExtendedConversation, OpinionItem } from "src/shared/types/zod";
+import type { ExtendedConversation } from "src/shared/types/zod";
 import { useUserStore } from "src/stores/user";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import {
@@ -358,17 +361,12 @@ function openModerationHistory(): void {
   }
 }
 
-async function submittedComment(data: {
-  opinionSlugId: string;
-  opinionItem: OpinionItem;
-  authStateChanged: boolean;
-  needsCacheRefresh: boolean;
-}): Promise<void> {
+async function submittedComment(data: SubmittedCommentData): Promise<void> {
   await markCommentsAsStale(props.conversationData.metadata.conversationSlugId);
   markAnalysisAsStale(props.conversationData.metadata.conversationSlugId);
 
   if (opinionSectionRef.value) {
-    await opinionSectionRef.value.refreshAndHighlightOpinion(data.opinionSlugId);
+    opinionSectionRef.value.highlightOpinion(data.displayedOpinionItem);
   }
 
   // Handle deferred cache refresh if auth state changed (new guest user)
@@ -376,21 +374,8 @@ async function submittedComment(data: {
     // Load authenticated modules (including user profile with username)
     await loadAuthenticatedModules();
 
-    // Fetch the opinion again to get updated author info with username
-    // Using refreshAndHighlightOpinion instead of refreshData to force immediate refetch
-    if (opinionSectionRef.value) {
-      await opinionSectionRef.value.refreshAndHighlightOpinion(data.opinionSlugId);
-
-      // Update user store with username from the fetched opinion
-      // This is necessary because loadUserProfile() may hit a read replica that doesn't yet
-      // have the newly created username committed, resulting in stale/empty username data.
-      // The opinion data, however, always has the correct username since it's fetched directly.
-      // This ensures the header/sidebar shows the correct username immediately.
-      const targetOpinion = opinionSectionRef.value.targetOpinion;
-      if (targetOpinion && targetOpinion.username) {
-        profileData.value.userName = targetOpinion.username;
-      }
-    }
+    // The create response has the committed username even if the profile read lags.
+    profileData.value.userName = data.displayedOpinionItem.username;
   }
 }
 
