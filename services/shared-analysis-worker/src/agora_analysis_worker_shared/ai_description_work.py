@@ -287,16 +287,6 @@ class EagerAiDescriptionTargetLocaleRow:
 
 
 @dataclass(frozen=True)
-class EagerCandidateOptionRow:
-    conversation_id: int
-    conversation_view_snapshot_id: int
-    candidate_id: int
-    group_count: int
-    preferred_group_count: int | None
-    selection_score: float
-
-
-@dataclass(frozen=True)
 class RequiredLineageDescriptionRow:
     lineage_id: int
     candidate_id: int
@@ -1881,11 +1871,11 @@ def _insert_or_reactivate_translation_work(
     session: Session,
     *,
     demands: Sequence[TranslationWorkDemand],
-) -> None:
+    limit: int | None = None,
+) -> list[int]:
     if not demands:
-        return
+        return []
 
-    values: list[_TranslationWorkInsert] = []
     value_by_description_locale: dict[tuple[int, str], _TranslationWorkInsert] = {}
     for demand in demands:
         value = _TranslationWorkInsert(
@@ -1893,8 +1883,35 @@ def _insert_or_reactivate_translation_work(
             conversation_id=demand.conversation_id,
             locale=demand.locale,
         )
-        values.append(value)
         value_by_description_locale[(demand.description_id, demand.locale)] = value
+    # Existing, unchanged work must not consume the materialization budget or
+    # have its scheduling timestamp refreshed on every poll.
+    for chunk in _iter_chunks(
+        list(value_by_description_locale),
+        chunk_size=_max_rows_per_insert(column_count=2),
+    ):
+        existing_rows = session.execute(
+            select(
+                OpinionGroupDescriptionTranslationWork.description_id,
+                OpinionGroupDescriptionTranslationWork.locale,
+                OpinionGroupDescriptionTranslationWork.conversation_id,
+                OpinionGroupDescriptionTranslationWork.lease_token,
+            ).where(
+                tuple_(
+                    OpinionGroupDescriptionTranslationWork.description_id,
+                    OpinionGroupDescriptionTranslationWork.locale,
+                ).in_(chunk)
+            )
+        )
+        for row in existing_rows:
+            key = (row.description_id, row.locale)
+            value = value_by_description_locale[key]
+            if row.conversation_id == value.conversation_id or row.lease_token is not None:
+                del value_by_description_locale[key]
+    values = list(value_by_description_locale.values())
+    if limit is not None:
+        values = values[:limit]
+    changed_conversation_ids: set[int] = set()
     if session.get_bind().dialect.name == "sqlite":
         for value in values:
             existing_row = session.execute(
@@ -1912,42 +1929,48 @@ def _insert_or_reactivate_translation_work(
                         value.to_insert_value(include_timestamps=True)
                     )
                 )
+                changed_conversation_ids.add(value.conversation_id)
                 continue
 
-            session.execute(
+            changed_rows = session.execute(
                 update(OpinionGroupDescriptionTranslationWork)
                 .where(
                     and_(
                         OpinionGroupDescriptionTranslationWork.id == existing_row.id,
                         OpinionGroupDescriptionTranslationWork.lease_token.is_(None),
+                        OpinionGroupDescriptionTranslationWork.conversation_id
+                        != value.conversation_id,
                     )
                 )
                 .values(
                     conversation_id=value.conversation_id,
                     updated_at=func.now(),
                 )
+                .returning(OpinionGroupDescriptionTranslationWork.conversation_id)
             )
-        return
+            changed_conversation_ids.update(changed_rows.scalars())
+        return sorted(changed_conversation_ids)
 
     insert_values = [value.to_insert_value() for value in values]
     for chunk in _iter_chunks(insert_values, chunk_size=_max_rows_per_insert(column_count=3)):
         insert_query = pg_insert(OpinionGroupDescriptionTranslationWork).values(chunk)
-        session.execute(
+        inserted_rows = session.execute(
             insert_query.on_conflict_do_nothing(
                 index_elements=[
                     OpinionGroupDescriptionTranslationWork.description_id,
                     OpinionGroupDescriptionTranslationWork.locale,
                 ]
-            )
+            ).returning(OpinionGroupDescriptionTranslationWork.conversation_id)
         )
+        changed_conversation_ids.update(inserted_rows.scalars())
 
-    description_locale_keys = sorted(value_by_description_locale)
+    description_locale_keys = sorted((value.description_id, value.locale) for value in values)
     if not description_locale_keys:
-        return
+        return []
 
     for chunk in _iter_chunks(
         description_locale_keys,
-        chunk_size=_max_rows_per_insert(column_count=2),
+        chunk_size=_max_rows_per_insert(column_count=5),
     ):
         existing_rows = session.execute(
             select(
@@ -1962,6 +1985,22 @@ def _insert_or_reactivate_translation_work(
                         OpinionGroupDescriptionTranslationWork.locale,
                     ).in_(chunk),
                     OpinionGroupDescriptionTranslationWork.lease_token.is_(None),
+                    tuple_(
+                        OpinionGroupDescriptionTranslationWork.description_id,
+                        OpinionGroupDescriptionTranslationWork.locale,
+                        OpinionGroupDescriptionTranslationWork.conversation_id,
+                    ).not_in(
+                        [
+                            (
+                                description_id,
+                                locale,
+                                value_by_description_locale[
+                                    (description_id, locale)
+                                ].conversation_id,
+                            )
+                            for description_id, locale in chunk
+                        ]
+                    ),
                 )
             )
             .order_by(
@@ -1983,6 +2022,8 @@ def _insert_or_reactivate_translation_work(
                     updated_at=func.now(),
                 )
             )
+            changed_conversation_ids.add(value.conversation_id)
+    return sorted(changed_conversation_ids)
 
 
 def _materialize_lineage_description_work_for_candidate_locale_requests(
@@ -2071,37 +2112,67 @@ def _materialize_lineage_description_work_for_candidate_locale_requests(
     return _insert_or_reactivate_lineage_description_work(session, demands=demands)
 
 
-def _select_eager_candidates(
-    rows: Sequence[EagerCandidateOptionRow],
-) -> list[EagerDescriptionCandidateRow]:
-    rows_by_view_snapshot_id: dict[int, list[EagerCandidateOptionRow]] = {}
-    for row in rows:
-        rows_by_view_snapshot_id.setdefault(row.conversation_view_snapshot_id, []).append(row)
-
-    candidates_by_id: dict[int, EagerDescriptionCandidateRow] = {}
-    for view_snapshot_rows in rows_by_view_snapshot_id.values():
-        auto_row = sorted(
-            view_snapshot_rows,
-            key=lambda row: (row.selection_score, row.group_count),
-            reverse=True,
-        )[0]
-        preferred_group_count = view_snapshot_rows[0].preferred_group_count
-        selected_row = (
-            next(
-                (row for row in view_snapshot_rows if row.group_count == preferred_group_count),
-                None,
+def _eager_candidate_missing_translation_work_filter() -> ColumnElement[bool]:
+    undescribed_group = aliased(OpinionGroup)
+    undescribed_lineage = aliased(OpinionGroupLineage)
+    missing_description_exists = (
+        select(undescribed_group.id)
+        .join(undescribed_lineage, undescribed_lineage.id == undescribed_group.lineage_id)
+        .where(
+            and_(
+                undescribed_group.candidate_id == OpinionGroupCandidate.id,
+                undescribed_lineage.system_description_id.is_(None),
             )
-            if preferred_group_count is not None
-            else auto_row
         )
-        if selected_row is None:
-            continue
-        candidates_by_id[selected_row.candidate_id] = EagerDescriptionCandidateRow(
-            conversation_id=selected_row.conversation_id,
-            candidate_id=selected_row.candidate_id,
+        .exists()
+    )
+    return and_(
+        ~missing_description_exists,
+        select(OpinionGroup.id)
+        .join(OpinionGroupLineage, OpinionGroupLineage.id == OpinionGroup.lineage_id)
+        .join(
+            ConversationTranslationTargetLanguage,
+            ConversationTranslationTargetLanguage.conversation_id == Conversation.id,
         )
-
-    return list(candidates_by_id.values())
+        .where(
+            and_(
+                OpinionGroup.candidate_id == OpinionGroupCandidate.id,
+                OpinionGroupLineage.system_description_id.is_not(None),
+                ConversationTranslationTargetLanguage.deleted_at.is_(None),
+                ConversationTranslationTargetLanguage.language_code.in_(
+                    sorted(SUPPORTED_EAGER_AI_DESCRIPTION_TARGET_LANGUAGE_CODES)
+                ),
+                ~select(OpinionGroupDescriptionTranslation.id)
+                .where(
+                    and_(
+                        OpinionGroupDescriptionTranslation.description_id
+                        == OpinionGroupLineage.system_description_id,
+                        OpinionGroupDescriptionTranslation.locale
+                        == ConversationTranslationTargetLanguage.language_code,
+                    )
+                )
+                .exists(),
+                ~select(OpinionGroupDescriptionTranslationWork.id)
+                .where(
+                    and_(
+                        OpinionGroupDescriptionTranslationWork.description_id
+                        == OpinionGroupLineage.system_description_id,
+                        OpinionGroupDescriptionTranslationWork.locale
+                        == ConversationTranslationTargetLanguage.language_code,
+                        or_(
+                            OpinionGroupDescriptionTranslationWork.conversation_id
+                            == Conversation.id,
+                            OpinionGroupDescriptionTranslationWork.lease_token.is_not(None),
+                        ),
+                    )
+                )
+                .correlate(OpinionGroupLineage, ConversationTranslationTargetLanguage, Conversation)
+                .exists(),
+            )
+        )
+        .correlate(OpinionGroupCandidate, Conversation)
+        .exists(),
+    )
 
 
 def _fetch_eager_description_candidates(
@@ -2111,6 +2182,7 @@ def _fetch_eager_description_candidates(
     conversation_view_snapshot_ids: list[int] | None = None,
     require_activated_view_snapshot: bool = False,
     require_unactivated_view_snapshot: bool = False,
+    require_missing_translation_work: bool = False,
     limit: int | None = None,
 ) -> list[EagerDescriptionCandidateRow]:
     if conversation_ids is not None and not conversation_ids:
@@ -2126,11 +2198,7 @@ def _fetch_eager_description_candidates(
     query = (
         select(
             AnalysisSnapshotResult.conversation_id,
-            ConversationViewSnapshot.id.label("conversation_view_snapshot_id"),
             OpinionGroupCandidate.id.label("candidate_id"),
-            OpinionGroupVariant.group_count,
-            PolisConversationConfig.preferred_opinion_group_count,
-            OpinionGroupCandidateAssessment.selection_score,
         )
         .join(
             OpinionGroupCandidate,
@@ -2162,9 +2230,12 @@ def _fetch_eager_description_candidates(
                 PolisConversationConfig.ai_labeling_enabled.is_(True),
                 _processable_conversation_condition(),
                 AnalysisSnapshotResult.outcome == AnalysisResultOutcomeEnum.success,
-                OpinionGroupCandidate.outcome == AnalysisResultOutcomeEnum.success,
-                OpinionGroupCandidateAssessment.hidden_reason.is_(None),
-                OpinionGroupCandidateAssessment.selection_score.is_not(None),
+                _effective_preferred_candidate_filter(),
+                (
+                    _eager_candidate_missing_translation_work_filter()
+                    if require_missing_translation_work
+                    else true()
+                ),
                 ConversationViewSnapshot.view_reason
                 == ConversationViewSnapshotReasonEnum.analysis_completed,
                 _latest_or_checkpoint_view_snapshot_filter(
@@ -2185,20 +2256,13 @@ def _fetch_eager_description_candidates(
         query = query.limit(limit)
 
     rows = session.execute(query).all()
-    return _select_eager_candidates(
-        [
-            EagerCandidateOptionRow(
-                conversation_id=row.conversation_id,
-                conversation_view_snapshot_id=row.conversation_view_snapshot_id,
-                candidate_id=row.candidate_id,
-                group_count=row.group_count,
-                preferred_group_count=row.preferred_opinion_group_count,
-                selection_score=row.selection_score,
-            )
-            for row in rows
-            if row.selection_score is not None
-        ]
-    )
+    return [
+        EagerDescriptionCandidateRow(
+            conversation_id=row.conversation_id,
+            candidate_id=row.candidate_id,
+        )
+        for row in rows
+    ]
 
 
 def _fetch_eager_ai_description_target_locale_rows(
@@ -2280,6 +2344,7 @@ def _materialize_eager_translation_work(
         conversation_view_snapshot_ids=conversation_view_snapshot_ids,
         require_activated_view_snapshot=require_activated_view_snapshot,
         require_unactivated_view_snapshot=require_unactivated_view_snapshot,
+        require_missing_translation_work=True,
         limit=limit,
     )
     lineage_rows_by_candidate_id = _fetch_required_lineage_description_rows_by_candidate(
@@ -2327,8 +2392,7 @@ def _materialize_eager_translation_work(
         target_locales_by_candidate_id=target_locales_by_candidate_id,
         translated_description_ids_by_locale=translated_description_ids_by_locale,
     )
-    _insert_or_reactivate_translation_work(session, demands=demands)
-    return sorted({demand.conversation_id for demand in demands})
+    return _insert_or_reactivate_translation_work(session, demands=demands, limit=limit)
 
 
 def _materialize_translation_work_for_candidate_locale_requests(
@@ -2386,10 +2450,7 @@ def _materialize_translation_work_for_candidate_locale_requests(
         description_ids_by_request_id=description_ids_by_request_id,
         translated_description_ids_by_request_id=translated_description_ids_by_request_id,
     )
-    if limit is not None:
-        demands = demands[:limit]
-    _insert_or_reactivate_translation_work(session, demands=demands)
-    return sorted({demand.conversation_id for demand in demands})
+    return _insert_or_reactivate_translation_work(session, demands=demands, limit=limit)
 
 
 def _lineage_work_relevant_candidate_filter(
@@ -2464,9 +2525,6 @@ def _translation_work_candidate_relevance_conditions(
     require_unactivated_view_snapshot: bool = False,
     snapshot_scope: str = "latest_or_checkpoint",
 ) -> _TranslationWorkCandidateRelevance:
-    auto_candidate = aliased(OpinionGroupCandidate)
-    auto_variant = aliased(OpinionGroupVariant)
-    auto_assessment = aliased(OpinionGroupCandidateAssessment)
     explicit_locale_request_exists = (
         select(OpinionGroupCandidateDescriptionLocaleRequest.id)
         .where(
@@ -2479,43 +2537,8 @@ def _translation_work_candidate_relevance_conditions(
         )
         .exists()
     )
-    higher_priority_auto_candidate_exists = (
-        select(auto_candidate.id)
-        .join(auto_variant, auto_variant.id == auto_candidate.opinion_group_variant_id)
-        .join(auto_assessment, auto_assessment.candidate_id == auto_candidate.id)
-        .where(
-            and_(
-                auto_candidate.snapshot_result_id == OpinionGroupCandidate.snapshot_result_id,
-                auto_candidate.outcome == AnalysisResultOutcomeEnum.success,
-                auto_assessment.hidden_reason.is_(None),
-                auto_assessment.selection_score.is_not(None),
-                or_(
-                    auto_assessment.selection_score
-                    > OpinionGroupCandidateAssessment.selection_score,
-                    and_(
-                        auto_assessment.selection_score
-                        == OpinionGroupCandidateAssessment.selection_score,
-                        auto_variant.group_count > OpinionGroupVariant.group_count,
-                    ),
-                ),
-            )
-        )
-        .exists()
-    )
-    effective_preferred_candidate = or_(
-        and_(
-            PolisConversationConfig.preferred_opinion_group_count.is_not(None),
-            OpinionGroupVariant.group_count
-            == PolisConversationConfig.preferred_opinion_group_count,
-        ),
-        and_(
-            PolisConversationConfig.preferred_opinion_group_count.is_(None),
-            ~higher_priority_auto_candidate_exists,
-        ),
-    )
-
     eager_target_language_candidate = and_(
-        effective_preferred_candidate,
+        _effective_preferred_candidate_filter(),
         OpinionGroupDescriptionTranslationWork.locale.in_(
             sorted(SUPPORTED_EAGER_AI_DESCRIPTION_TARGET_LANGUAGE_CODES)
         ),
@@ -2550,6 +2573,52 @@ def _translation_work_candidate_relevance_conditions(
         explicit_locale_request_condition=and_(
             explicit_locale_request_exists,
             explicit_request_snapshot_filter,
+        ),
+    )
+
+
+def _effective_preferred_candidate_filter() -> ColumnElement[bool]:
+    # Select against the full result before any caller applies a batch limit.
+    auto_candidate = aliased(OpinionGroupCandidate)
+    auto_variant = aliased(OpinionGroupVariant)
+    auto_assessment = aliased(OpinionGroupCandidateAssessment)
+    higher_priority_auto_candidate_exists = (
+        select(auto_candidate.id)
+        .join(auto_variant, auto_variant.id == auto_candidate.opinion_group_variant_id)
+        .join(auto_assessment, auto_assessment.candidate_id == auto_candidate.id)
+        .where(
+            and_(
+                auto_candidate.snapshot_result_id == OpinionGroupCandidate.snapshot_result_id,
+                auto_candidate.outcome == AnalysisResultOutcomeEnum.success,
+                auto_assessment.hidden_reason.is_(None),
+                auto_assessment.selection_score.is_not(None),
+                or_(
+                    auto_assessment.selection_score
+                    > OpinionGroupCandidateAssessment.selection_score,
+                    and_(
+                        auto_assessment.selection_score
+                        == OpinionGroupCandidateAssessment.selection_score,
+                        auto_variant.group_count > OpinionGroupVariant.group_count,
+                    ),
+                ),
+            )
+        )
+        .exists()
+    )
+    return and_(
+        OpinionGroupCandidate.outcome == AnalysisResultOutcomeEnum.success,
+        OpinionGroupCandidateAssessment.hidden_reason.is_(None),
+        OpinionGroupCandidateAssessment.selection_score.is_not(None),
+        or_(
+            and_(
+                PolisConversationConfig.preferred_opinion_group_count.is_not(None),
+                OpinionGroupVariant.group_count
+                == PolisConversationConfig.preferred_opinion_group_count,
+            ),
+            and_(
+                PolisConversationConfig.preferred_opinion_group_count.is_(None),
+                ~higher_priority_auto_candidate_exists,
+            ),
         ),
     )
 
