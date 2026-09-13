@@ -23,18 +23,22 @@ import {
 } from "./schema.js";
 
 export type ConversationEmailParticipationScope =
+    | { kind: "user"; userId: string }
     | { kind: "conversation_ids"; conversationIds: readonly number[] }
     | { kind: "update"; updateId: number };
 
 function participationScopeCondition({
     db,
     conversationId,
+    participantId,
     scope,
 }: {
     db: PostgresDatabase;
     conversationId: AnyPgColumn;
+    participantId: AnyPgColumn;
     scope: ConversationEmailParticipationScope;
 }) {
+    if (scope.kind === "user") return eq(participantId, scope.userId);
     return scope.kind === "conversation_ids"
         ? inArray(conversationId, scope.conversationIds)
         : exists(
@@ -103,6 +107,7 @@ export function buildConversationEmailParticipationQuery({
                 participationScopeCondition({
                     db,
                     conversationId: opinionTable.conversationId,
+                    participantId: voteTable.authorId,
                     scope,
                 }),
                 isNotNull(opinionTable.currentContentId),
@@ -128,6 +133,7 @@ export function buildConversationEmailParticipationQuery({
                 participationScopeCondition({
                     db,
                     conversationId: opinionTable.conversationId,
+                    participantId: opinionTable.authorId,
                     scope,
                 }),
                 isNotNull(opinionTable.currentContentId),
@@ -146,6 +152,7 @@ export function buildConversationEmailParticipationQuery({
                 participationScopeCondition({
                     db,
                     conversationId: maxdiffResultTable.conversationId,
+                    participantId: maxdiffResultTable.participantId,
                     scope,
                 }),
                 exists(

@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
@@ -8,6 +9,10 @@ import {
     conversationEmailUpdateUserConversationPreferenceTable,
     conversationEmailUpdateUserProjectPreferenceTable,
     conversationTable,
+    maxdiffComparisonTable,
+    maxdiffResultTable,
+    opinionContentTable,
+    opinionTable,
     organizationTable,
     organizationMembershipTable,
     premiumFeatureEntitlementTable,
@@ -16,6 +21,8 @@ import {
     projectContactTable,
     projectOrganizationOwnershipTable,
     userTable,
+    voteContentTable,
+    voteTable,
 } from "../src/shared-backend/schema.js";
 import {
     queryInitialPreferenceConversationPages,
@@ -251,6 +258,113 @@ describe("conversation Email Update preference pagination", () => {
         return conversation.id;
     }
 
+    async function addParticipation({
+        userId,
+        conversationId,
+        kind,
+    }: {
+        userId: string;
+        conversationId: number;
+        kind: "vote" | "opinion" | "maxdiff";
+    }): Promise<() => Promise<void>> {
+        if (kind === "maxdiff") {
+            const [result] = await db
+                .insert(maxdiffResultTable)
+                .values({
+                    participantId: userId,
+                    conversationId,
+                    comparisons: [],
+                })
+                .returning({ id: maxdiffResultTable.id });
+            if (result === undefined) throw new Error("Failed to seed ranking");
+            await db.insert(maxdiffComparisonTable).values({
+                maxdiffResultId: result.id,
+                position: 0,
+                bestSlugId: "best0001",
+                worstSlugId: "worst001",
+                candidateSet: ["best0001", "worst001"],
+                createdAt: NOW,
+            });
+            return async () => {
+                await db
+                    .update(maxdiffComparisonTable)
+                    .set({ deletedAt: NOW })
+                    .where(
+                        eq(maxdiffComparisonTable.maxdiffResultId, result.id),
+                    );
+            };
+        }
+        const [conversation] = await db
+            .select({
+                contentId: conversationTable.currentContentId,
+            })
+            .from(conversationTable)
+            .where(eq(conversationTable.id, conversationId));
+        if (conversation?.contentId == null)
+            throw new Error("Missing conversation content");
+        const [opinion] = await db
+            .insert(opinionTable)
+            .values({
+                slugId: randomUUID().slice(0, 8),
+                authorId: kind === "opinion" ? userId : USER_ID,
+                conversationId,
+                createdAt: NOW,
+            })
+            .returning({ id: opinionTable.id });
+        if (opinion === undefined) throw new Error("Failed to seed statement");
+        const [content] = await db
+            .insert(opinionContentTable)
+            .values({
+                opinionId: opinion.id,
+                conversationContentId: conversation.contentId,
+                content: "A statement",
+            })
+            .returning({ id: opinionContentTable.id });
+        if (content === undefined)
+            throw new Error("Failed to seed statement content");
+        await db
+            .update(opinionTable)
+            .set({ currentContentId: content.id })
+            .where(eq(opinionTable.id, opinion.id));
+        if (kind === "opinion") {
+            return async () => {
+                await db
+                    .update(opinionTable)
+                    .set({ currentContentId: null })
+                    .where(eq(opinionTable.id, opinion.id));
+            };
+        }
+        const [vote] = await db
+            .insert(voteTable)
+            .values({
+                authorId: userId,
+                opinionId: opinion.id,
+            })
+            .returning({ id: voteTable.id });
+        if (vote === undefined) throw new Error("Failed to seed vote");
+        const [voteContent] = await db
+            .insert(voteContentTable)
+            .values({
+                voteId: vote.id,
+                opinionContentId: content.id,
+                vote: "agree",
+                createdAt: NOW,
+            })
+            .returning({ id: voteContentTable.id });
+        if (voteContent === undefined)
+            throw new Error("Failed to seed vote content");
+        await db
+            .update(voteTable)
+            .set({ currentContentId: voteContent.id })
+            .where(eq(voteTable.id, vote.id));
+        return async () => {
+            await db
+                .update(voteTable)
+                .set({ currentContentId: null })
+                .where(eq(voteTable.id, vote.id));
+        };
+    }
+
     it("paginates project groups before the No Project group", async () => {
         const firstPage = await queryPreferenceGroupPage({
             db,
@@ -376,7 +490,10 @@ describe("conversation Email Update preference pagination", () => {
             request: { mode: "browse", limit: 1 },
         });
         expect(unfilteredPage.success).toBe(true);
-        if (!unfilteredPage.success || unfilteredPage.nextCursor === undefined) {
+        if (
+            !unfilteredPage.success ||
+            unfilteredPage.nextCursor === undefined
+        ) {
             return;
         }
         await expect(
@@ -504,9 +621,12 @@ describe("conversation Email Update preference pagination", () => {
             if (!page.success) return;
             const scopeKind = group.kind;
             expect(
-                batch.rows.filter((row) => row.scope_kind === scopeKind &&
-                    (group.kind === "no_project" ||
-                        row.project_id === group.projectId)),
+                batch.rows.filter(
+                    (row) =>
+                        row.scope_kind === scopeKind &&
+                        (group.kind === "no_project" ||
+                            row.project_id === group.projectId),
+                ),
             ).toEqual(page.rows);
             const groupKey =
                 group.kind === "project"
@@ -592,7 +712,9 @@ describe("conversation Email Update preference pagination", () => {
             groupKeys: [focusedQuery.group],
             search: undefined,
             focusConversationSlugId: focusedQuery.focusConversationSlugId,
-        } satisfies Parameters<typeof queryInitialPreferenceConversationPages>[0];
+        } satisfies Parameters<
+            typeof queryInitialPreferenceConversationPages
+        >[0];
         const focusRequest = {
             mode: "focus",
             focus: { kind: "conversation", conversationSlugId: "private1" },
@@ -694,6 +816,150 @@ describe("conversation Email Update preference pagination", () => {
             ],
         });
     });
+
+    it.each([
+        { kind: "vote", scope: "project" },
+        { kind: "opinion", scope: "project" },
+        { kind: "maxdiff", scope: "project" },
+        { kind: "vote", scope: "no_project" },
+        { kind: "opinion", scope: "no_project" },
+        { kind: "maxdiff", scope: "no_project" },
+    ] satisfies {
+        kind: "vote" | "opinion" | "maxdiff";
+        scope: "project" | "no_project";
+    }[])(
+        "lists private $scope conversations after $kind participation without a saved preference",
+        async ({ kind, scope }) => {
+            const userId = randomUUID();
+            await db
+                .insert(userTable)
+                .values({ id: userId, username: userId.slice(0, 20) });
+            const slugId = randomUUID().slice(0, 8);
+            const conversationId = await addConversation({
+                projectId:
+                    scope === "project" ? firstProjectId : noProjectContainerId,
+                slugId,
+                title: `Participated ${slugId}`,
+            });
+            await db
+                .update(conversationTable)
+                .set({ isIndexed: false })
+                .where(eq(conversationTable.id, conversationId));
+            const group =
+                scope === "project"
+                    ? ({
+                          kind: "project",
+                          projectId: firstProjectId,
+                          projectSlug: "first-project",
+                      } satisfies Parameters<
+                          typeof queryPreferenceConversationPage
+                      >[0]["group"])
+                    : ({ kind: "no_project" } satisfies Parameters<
+                          typeof queryPreferenceConversationPage
+                      >[0]["group"]);
+            const request = {
+                mode: "browse",
+                limit: 20,
+                search: slugId,
+            } satisfies Parameters<
+                typeof queryPreferenceGroupPage
+            >[0]["request"];
+            await expect(
+                queryPreferenceGroupPage({ db, userId, now: NOW, request }),
+            ).resolves.toMatchObject({ success: true, groupKeys: [] });
+
+            const removeParticipation = await addParticipation({
+                userId,
+                conversationId,
+                kind,
+            });
+            for (const search of [undefined, slugId]) {
+                await expect(
+                    queryPreferenceGroupPage({
+                        db,
+                        userId,
+                        now: NOW,
+                        request: { mode: "browse", limit: 20, search },
+                    }),
+                ).resolves.toMatchObject({ success: true, groupKeys: [group] });
+            }
+            const pageQuery = {
+                db,
+                userId,
+                now: NOW,
+                group,
+                search: slugId,
+                focusConversationSlugId: undefined,
+                cursor: undefined,
+            };
+            const page = await queryPreferenceConversationPage(pageQuery);
+            expect(page).toMatchObject({
+                success: true,
+                rows: [
+                    {
+                        conversation_slug_id: slugId,
+                        conversation_enabled: undefined,
+                        available: true,
+                    },
+                ],
+                nextCursor: undefined,
+            });
+            if (!page.success) return;
+            const batchQuery = {
+                db,
+                userId,
+                now: NOW,
+                groupKeys: [group],
+                search: slugId,
+                focusConversationSlugId: undefined,
+            };
+            const batch =
+                await queryInitialPreferenceConversationPages(batchQuery);
+            expect(batch.rows).toEqual(page.rows);
+
+            const strangerId = randomUUID();
+            await db
+                .insert(userTable)
+                .values({ id: strangerId, username: strangerId.slice(0, 20) });
+            await expect(
+                queryPreferenceGroupPage({
+                    db,
+                    userId: strangerId,
+                    now: NOW,
+                    request,
+                }),
+            ).resolves.toMatchObject({ success: true, groupKeys: [] });
+            await expect(
+                queryPreferenceConversationPage({
+                    ...pageQuery,
+                    userId: strangerId,
+                }),
+            ).resolves.toMatchObject({ success: true, rows: [] });
+
+            await db
+                .update(conversationTable)
+                .set({ isImporting: true })
+                .where(eq(conversationTable.id, conversationId));
+            await expect(
+                queryPreferenceGroupPage({ db, userId, now: NOW, request }),
+            ).resolves.toMatchObject({ success: true, groupKeys: [] });
+            expect(
+                (await queryInitialPreferenceConversationPages(batchQuery))
+                    .rows,
+            ).toEqual([]);
+            await db
+                .update(conversationTable)
+                .set({ isImporting: false })
+                .where(eq(conversationTable.id, conversationId));
+            await removeParticipation();
+            await expect(
+                queryPreferenceGroupPage({ db, userId, now: NOW, request }),
+            ).resolves.toMatchObject({ success: true, groupKeys: [] });
+            await expect(
+                queryPreferenceConversationPage(pageQuery),
+            ).resolves.toMatchObject({ success: true, rows: [] });
+        },
+    );
 
     it.each([
         { participationMode: "account_required", slugId: "focusacc" },

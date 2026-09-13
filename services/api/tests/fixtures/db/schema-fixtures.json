@@ -108,6 +108,13 @@
         "polis_conversation_config",
         "conversation",
         "conversation_content",
+        "opinion",
+        "opinion_content",
+        "opinion_moderation",
+        "vote",
+        "vote_content",
+        "maxdiff_result",
+        "maxdiff_comparison",
         "conversation_email_update_scope_safety_block",
         "conversation_email_update_user_project_preference",
         "conversation_email_update_user_conversation_preference"
