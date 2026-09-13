@@ -158,9 +158,7 @@ const {
   setupHighlightFromRoute,
   clearRouteQueryParameters,
   highlightOpinion,
-  refreshAndHighlightOpinion,
 } = useTargetOpinion({
-  refreshDataCallback: refreshData,
   onModeratedOpinionDetected: (opinion) => {
     if (opinion.moderation.status !== "moderated") {
       return;
@@ -324,7 +322,6 @@ function handleOpinionDeleted(opinionSlugId: string): void {
 defineExpose({
   openModerationHistory,
   highlightOpinion,
-  refreshAndHighlightOpinion,
   triggerLoadMore,
   handleRetryLoadComments,
   refreshData,

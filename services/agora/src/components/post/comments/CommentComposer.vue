@@ -83,13 +83,13 @@ import PreParticipationIntentionDialog from "src/components/authentication/inten
 import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
+import type { SubmittedCommentData } from "src/composables/conversation/useConversationParentState";
 import { useParticipationGate } from "src/composables/conversation/useParticipationGate";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useIdleMount } from "src/composables/ui/useIdleMount";
 import { hasVisiblePlainText, MAX_LENGTH_OPINION } from "src/shared/shared";
 import type {
   EventSlug,
-  OpinionItem,
   ParticipationMode,
   SurveyGateSummary,
 } from "src/shared/types/zod";
@@ -97,6 +97,7 @@ import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
 import { useUserStore } from "src/stores/user";
 import { useBackendCommentApi } from "src/utils/api/comment/comment";
+import { cacheCreatedOpinion } from "src/utils/api/comment/createdOpinionCache";
 import { useInvalidateConversationQuery } from "src/utils/api/post/useConversationQuery";
 import {
   type RouteGuardDestination,
@@ -143,14 +144,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  submittedComment: [
-    data: {
-      opinionSlugId: string;
-      opinionItem: OpinionItem;
-      authStateChanged: boolean;
-      needsCacheRefresh: boolean;
-    },
-  ];
+  submittedComment: [data: SubmittedCommentData];
   ticketVerified: [
     payload: { userIdChanged: boolean; needsCacheRefresh: boolean },
   ];
@@ -232,25 +226,6 @@ const { needsAuth: isAuthBlocked, shouldOpenParticipationModal } =
   });
 
 const { invalidateConversation } = useInvalidateConversationQuery();
-
-type UserVoteCacheItem = {
-  opinionSlugId: string;
-  votingAction: string;
-};
-
-function addCreatedOpinionVoteToCache({
-  opinionSlugId,
-}: {
-  opinionSlugId: string;
-}): void {
-  const userVotesKey = ["userVotes", props.postSlugId];
-
-  queryClient.setQueryData<UserVoteCacheItem[]>(userVotesKey, (oldData) => {
-    const filteredVotes =
-      oldData?.filter((vote) => vote.opinionSlugId !== opinionSlugId) ?? [];
-    return [...filteredVotes, { opinionSlugId, votingAction: "agree" }];
-  });
-}
 
 // Check if user needs login/verification based on participation mode
 const needsLogin = computed(() => {
@@ -521,16 +496,15 @@ async function submitPostClicked() {
     });
 
     if (response.success) {
-      addCreatedOpinionVoteToCache({
-        opinionSlugId: response.opinionSlugId,
+      await cacheCreatedOpinion({
+        queryClient,
+        conversationSlugId: props.postSlugId,
+        displayedOpinionItem: response.displayedOpinionItem,
       });
 
-      // Emit to parent to refresh and highlight the opinion
       emit("submittedComment", {
-        opinionSlugId: response.opinionSlugId,
-        opinionItem: response.opinionItem,
-        authStateChanged: response.authStateChanged ?? false,
-        needsCacheRefresh: response.needsCacheRefresh ?? false,
+        displayedOpinionItem: response.displayedOpinionItem,
+        needsCacheRefresh: response.needsCacheRefresh,
       });
 
       isSubmissionLoading.value = false;

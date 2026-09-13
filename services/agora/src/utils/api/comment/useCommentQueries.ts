@@ -45,6 +45,7 @@ import {
   mergeLiveAnalysisSnapshotMetadata,
   useBackendCommentApi,
 } from "./comment";
+import { cacheCreatedOpinion } from "./createdOpinionCache";
 import {
   type UseCommentQueriesTranslations,
   useCommentQueriesTranslations,
@@ -189,7 +190,6 @@ export function getAnalysisStaleTime(voteCount?: number): number {
 
 type BackendCommentApi = ReturnType<typeof useBackendCommentApi>;
 type AnalysisQueryKey = readonly unknown[];
-type CommentQueryFilter = "new" | "my_votes";
 
 const LABEL_CATCH_UP_MAX_ATTEMPTS = 5;
 const labelCatchUpStateByKey = new Map<
@@ -263,38 +263,6 @@ function isGroupLabelDisplayFresh({
     return false;
   }
   return displayLanguage === "en" || displayedLocale === displayLanguage;
-}
-
-function prependDisplayedOpinionToCommentCache({
-  queryClient,
-  conversationSlugId,
-  displayedOpinionItem,
-  filters,
-}: {
-  queryClient: QueryClient;
-  conversationSlugId: string;
-  displayedOpinionItem: DisplayedOpinionItem;
-  filters: readonly CommentQueryFilter[];
-}): void {
-  queryClient.setQueriesData<DisplayedOpinionItem[]>(
-    {
-      queryKey: ["comments", conversationSlugId],
-      predicate: ({ queryKey }) =>
-        filters.some((filter) => queryKey[2] === filter),
-    },
-    (oldData) => {
-      if (oldData === undefined) {
-        return oldData;
-      }
-      return [
-        displayedOpinionItem,
-        ...oldData.filter(
-          (opinion) =>
-            opinion.opinionSlugId !== displayedOpinionItem.opinionSlugId
-        ),
-      ];
-    }
-  );
 }
 
 function expectedLabelLocales(
@@ -937,14 +905,13 @@ export function useCreateCommentMutation() {
         commentBody,
         postSlugId: conversationSlugId,
       }),
-    onSuccess: (data, variables) => {
+    onSuccess: async (data, variables) => {
       // Only proceed if the comment creation was successful
       if (data.success) {
-        prependDisplayedOpinionToCommentCache({
+        await cacheCreatedOpinion({
           queryClient,
           conversationSlugId: variables.conversationSlugId,
           displayedOpinionItem: data.displayedOpinionItem,
-          filters: ["new", "my_votes"],
         });
         void markCommentsAsStale(variables.conversationSlugId);
         // Mark analysis as stale without immediate refetch

@@ -190,23 +190,14 @@ async function submittedComment(data: SubmittedCommentData): Promise<void> {
   markAnalysisAsStale(currentConversation.metadata.conversationSlugId);
 
   if (opinionSectionRef.value) {
-    await opinionSectionRef.value.refreshAndHighlightOpinion(data.opinionSlugId);
+    opinionSectionRef.value.highlightOpinion(data.displayedOpinionItem);
   }
 
   // Handle deferred cache refresh if auth state changed (new guest user)
   if (data.needsCacheRefresh) {
     await loadAuthenticatedModules();
 
-    if (opinionSectionRef.value) {
-      await opinionSectionRef.value.refreshAndHighlightOpinion(
-        data.opinionSlugId
-      );
-
-      const targetOpinion = opinionSectionRef.value.targetOpinion;
-      if (targetOpinion && targetOpinion.username) {
-        profileData.value.userName = targetOpinion.username;
-      }
-    }
+    profileData.value.userName = data.displayedOpinionItem.username;
   }
 }
 
