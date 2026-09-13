@@ -57,6 +57,7 @@ export function useMaxDiffItemsQuery({
   });
 
   useContentTranslationRecovery({
+    canRefresh: computed(() => !query.isFetching.value),
     identity: computed(() =>
       JSON.stringify([
         "maxdiff-items",

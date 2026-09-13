@@ -73,6 +73,7 @@ export function useContentTranslationRecovery({
   identity,
   enabled,
   isPending,
+  canRefresh = true,
   classifyEvent,
   refresh,
   onFailure,
@@ -81,6 +82,7 @@ export function useContentTranslationRecovery({
   identity: MaybeRefOrGetter<string>;
   enabled: MaybeRefOrGetter<boolean>;
   isPending: MaybeRefOrGetter<boolean>;
+  canRefresh?: MaybeRefOrGetter<boolean>;
   classifyEvent: (
     data: SSEContentTranslationUpdatedData
   ) => ContentTranslationEventAction;
@@ -96,7 +98,7 @@ export function useContentTranslationRecovery({
   );
   let contextGeneration = 0;
   let delayIndex = 0;
-  let latestEventTimestamp = Number.NEGATIVE_INFINITY;
+  const latestEventTimestamps = new Map<string, number>();
   let refreshInFlightGeneration: number | undefined;
   let trailingRefreshGeneration: number | undefined;
   let recoveryTimer: ReturnType<typeof setTimeout> | undefined;
@@ -147,13 +149,18 @@ export function useContentTranslationRecovery({
     if (!isActive.value || !toValue(enabled) || !toValue(isPending)) {
       return;
     }
+    clearRecoveryTimer();
     const activeGeneration = contextGeneration;
-    if (refreshInFlightGeneration === activeGeneration) {
+    if (
+      refreshInFlightGeneration === activeGeneration ||
+      !toValue(canRefresh) ||
+      !isDocumentVisible.value
+    ) {
       trailingRefreshGeneration = activeGeneration;
       return;
     }
 
-    clearRecoveryTimer();
+    trailingRefreshGeneration = undefined;
     refreshInFlightGeneration = activeGeneration;
     let outcome: ContentTranslationRefreshOutcome;
     try {
@@ -190,16 +197,30 @@ export function useContentTranslationRecovery({
       return;
     }
     const action = classifyEvent(data);
-    if (action === "ignore" || data.timestamp <= latestEventTimestamp) {
+    if (action === "ignore") {
       return;
     }
-    latestEventTimestamp = data.timestamp;
+    // A list can watch many translations whose workers finish out of order.
+    const eventIdentity = getContentTranslationEventIdentity({
+      subject: data.subject,
+      targetLanguageCode: data.targetLanguageCode,
+    });
+    const latestEventTimestamp = latestEventTimestamps.get(eventIdentity);
+    if (
+      latestEventTimestamp !== undefined &&
+      data.timestamp <= latestEventTimestamp
+    ) {
+      return;
+    }
+    latestEventTimestamps.set(eventIdentity, data.timestamp);
     if (action === "fail") {
       stop();
       onFailure();
       return;
     }
     start();
+    // Completion is new evidence: a stale read must not inherit a long backoff.
+    delayIndex = 0;
     void refreshNow();
   });
 
@@ -223,7 +244,7 @@ export function useContentTranslationRecovery({
     ([nextIdentity, nextEnabled, nextIsPending], previous) => {
       if (nextIdentity !== previous[0]) {
         stop();
-        latestEventTimestamp = Number.NEGATIVE_INFINITY;
+        latestEventTimestamps.clear();
       }
       if (nextEnabled && nextIsPending) {
         start();
@@ -232,6 +253,15 @@ export function useContentTranslationRecovery({
       }
     },
     { immediate: true }
+  );
+
+  watch(
+    () => toValue(canRefresh),
+    (nextCanRefresh) => {
+      if (nextCanRefresh && trailingRefreshGeneration === contextGeneration) {
+        void refreshNow();
+      }
+    }
   );
 
   onScopeDispose(() => {

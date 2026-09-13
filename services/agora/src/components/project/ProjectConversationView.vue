@@ -239,11 +239,13 @@ watch(
   }
 );
 useContentTranslationRecovery({
+  canRefresh: computed(() => !translatedProjectContentQuery.isFetching.value),
   identity: projectTranslationIdentity,
   enabled: translateProjectToSelectedLanguage,
   isPending: computed(() => {
     const status = translatedProjectContentQuery.data.value?.status;
     return (
+      translatedProjectContentQuery.isPending.value ||
       translatedProjectContentQuery.isError.value ||
       status === "pending" ||
       status === "running"
