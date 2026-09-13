@@ -305,7 +305,17 @@ function useContentTranslationController({
       })
     ),
     enabled: computed(() => toValue(enabled)),
-    isPending: computed(() => requestState.value === "waiting"),
+    isPending: computed(
+      () =>
+        requestState.value === "waiting" ||
+        (requestState.value === "submitting" &&
+          modePreference.value === "translated")
+    ),
+    // Let the queue request finish before reading again; refetching it can
+    // cancel the submission or reuse an initial read that predates completion.
+    canRefresh: computed(
+      () => requestState.value !== "submitting" && !query.isFetching.value
+    ),
     classifyEvent: (data) => {
       if (
         !isContentTranslationEventForIdentity({

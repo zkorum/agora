@@ -276,6 +276,7 @@ watch(
   }
 );
 useContentTranslationRecovery({
+  canRefresh: computed(() => !requestedActivityContentQuery.isFetching.value),
   identity: requestedActivityTranslationIdentity,
   enabled: computed(
     () =>
@@ -286,6 +287,7 @@ useContentTranslationRecovery({
   isPending: computed(() => {
     const status = requestedActivityContentQuery.data.value?.status;
     return (
+      requestedActivityContentQuery.isPending.value ||
       requestedActivityContentQuery.isError.value ||
       status === "pending" ||
       status === "running"

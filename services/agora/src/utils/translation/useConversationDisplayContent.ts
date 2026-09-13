@@ -260,6 +260,7 @@ export function useConversationDisplayContent({
   });
 
   const recovery = useContentTranslationRecovery({
+    canRefresh: computed(() => !requestedContentQuery.isFetching.value),
     identity: computed(() =>
       getContentTranslationEventIdentity({
         subject: eventSubject.value,
@@ -288,6 +289,8 @@ export function useConversationDisplayContent({
       return data.status === "failed" ? "fail" : "refresh";
     },
     refresh: async () => {
+      // A deferred SSE refresh can run before the isFetching watcher resets it.
+      shouldQueueNextTranslatedRequest.value = false;
       const result = await requestedContentQuery.refetch();
       if (result.isError || result.data === undefined) {
         return "pending";
