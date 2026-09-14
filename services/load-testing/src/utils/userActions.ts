@@ -12,6 +12,10 @@ import {
     type VoteResponse,
 } from "./api.js";
 import { logLoadEvent } from "./semanticLog.js";
+import {
+    chooseVotingAction,
+    type VotingPatternConfig,
+} from "./votingPattern.js";
 
 export interface UserActionConfig {
     did: string;
@@ -22,7 +26,6 @@ export interface UserActionConfig {
     numVotesToCast: number;
     conversationSlugIds: string[]; // Can be single or multiple conversations
     opinionTexts: string[];
-    votingOptions: ("agree" | "disagree" | "pass")[];
     sleepBetweenActions: number;
     allAvailableOpinions: string[];
     alreadyVotedOpinionSlugs?: string[];
@@ -33,17 +36,6 @@ export interface UserActionConfig {
     fetchConversationPageProbability?: number; // Probability (0-1) of fetching conversation page during actions
     votingPatternConfig: VotingPatternConfig;
 }
-
-export type VotingPattern = "random" | "clustered";
-
-export interface VotingPatternConfig {
-    pattern: VotingPattern;
-    clusterCount: number;
-    noiseRate: number;
-    outlierRate: number;
-}
-
-type VotingAction = "agree" | "disagree" | "pass";
 
 export interface UserActionResult {
     opinionsCreated: {
@@ -79,108 +71,6 @@ interface PerformUserActionsParams {
     ) => void;
 }
 
-function stableHash(value: string): number {
-    let hash = 2166136261;
-    for (let index = 0; index < value.length; index++) {
-        hash ^= value.charCodeAt(index);
-        hash = Math.imul(hash, 16777619);
-    }
-    return hash >>> 0;
-}
-
-function stableFraction(value: string): number {
-    return stableHash(value) / 0x100000000;
-}
-
-function randomAllowedVotingAction(votingOptions: VotingAction[]): VotingAction {
-    return votingOptions[Math.floor(Math.random() * votingOptions.length)];
-}
-
-function allowedVotingAction({
-    preferredAction,
-    votingOptions,
-}: {
-    preferredAction: VotingAction;
-    votingOptions: VotingAction[];
-}): VotingAction {
-    if (votingOptions.includes(preferredAction)) {
-        return preferredAction;
-    }
-    return randomAllowedVotingAction(votingOptions);
-}
-
-function invertVotingAction(action: VotingAction): VotingAction {
-    if (action === "agree") {
-        return "disagree";
-    }
-    if (action === "disagree") {
-        return "agree";
-    }
-    return "pass";
-}
-
-function clusteredVotingAction({
-    userId,
-    opinionSlugId,
-    votingOptions,
-    votingPatternConfig,
-}: {
-    userId: string;
-    opinionSlugId: string;
-    votingOptions: VotingAction[];
-    votingPatternConfig: VotingPatternConfig;
-}): VotingAction {
-    const clusterCount = Math.max(
-        1,
-        Math.floor(votingPatternConfig.clusterCount),
-    );
-    const userCluster = stableHash(`user:${userId}`) % clusterCount;
-    const noiseRoll = stableFraction(`noise:${userId}:${opinionSlugId}`);
-    if (noiseRoll < votingPatternConfig.noiseRate) {
-        return randomAllowedVotingAction(votingOptions);
-    }
-
-    const opinionRoll = stableFraction(
-        `opinion:${opinionSlugId}:cluster:${String(userCluster)}`,
-    );
-    const baseAction: VotingAction =
-        opinionRoll < 0.45
-            ? "agree"
-            : opinionRoll < 0.55
-              ? "pass"
-              : "disagree";
-    const outlierRoll = stableFraction(`outlier:${userId}`);
-    const action =
-        outlierRoll < votingPatternConfig.outlierRate
-            ? invertVotingAction(baseAction)
-            : baseAction;
-
-    return allowedVotingAction({ preferredAction: action, votingOptions });
-}
-
-function chooseVotingAction({
-    userId,
-    opinionSlugId,
-    votingOptions,
-    votingPatternConfig,
-}: {
-    userId: string;
-    opinionSlugId: string;
-    votingOptions: VotingAction[];
-    votingPatternConfig: VotingPatternConfig;
-}): VotingAction {
-    if (votingPatternConfig.pattern === "random") {
-        return randomAllowedVotingAction(votingOptions);
-    }
-
-    return clusteredVotingAction({
-        userId,
-        opinionSlugId,
-        votingOptions,
-        votingPatternConfig,
-    });
-}
-
 /**
  * Perform user actions: optionally create opinions, then cast votes while occasionally
  * creating more opinions to simulate active conversations.
@@ -199,7 +89,6 @@ export async function performUserActions({
         numVotesToCast,
         conversationSlugIds,
         opinionTexts,
-        votingOptions,
         sleepBetweenActions,
         allAvailableOpinions,
         alreadyVotedOpinionSlugs,
@@ -454,7 +343,6 @@ export async function performUserActions({
         const votingAction = chooseVotingAction({
             userId,
             opinionSlugId: targetOpinionSlugId,
-            votingOptions,
             votingPatternConfig,
         });
 

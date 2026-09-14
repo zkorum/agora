@@ -6,6 +6,7 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
+        "test:unit": "node --experimental-strip-types --test tests/*.test.ts",
         "test:conversation-voting": "node ../../scripts/dev-log-runner.mjs --service load-testing -- bash -c 'cd services/load-testing && k6 run --summary-export \"$AGORA_LOG_SUMMARY_FILE\" dist/scenario1-single-conversation.cjs'",
         "test:solidago-ranking": "node ../../scripts/dev-log-runner.mjs --service load-testing-solidago -- bash -c 'cd services/load-testing && k6 run --summary-export \"$AGORA_LOG_SUMMARY_FILE\" dist/scenario2-solidago-ranking.cjs'",
         "test:conversation-voting:build": "pnpm run build && pnpm run test:conversation-voting",
