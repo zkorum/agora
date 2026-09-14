@@ -3,19 +3,19 @@ import { DrizzleFastifyLogger, safeDependencyError } from "./logger.js";
 
 describe("DrizzleFastifyLogger", () => {
     it("never logs parameter values", () => {
-        const info = vi.fn();
+        const debug = vi.fn();
         const logger = new DrizzleFastifyLogger({
-            fastifyLogger: { info },
+            fastifyLogger: { debug },
         });
 
         logger.logQuery("insert into auth_attempt_email values ($1)", [123456]);
 
-        expect(info).toHaveBeenCalledWith(
+        expect(debug).toHaveBeenCalledWith(
             "%s -- parameterCount=%d",
             "insert into auth_attempt_email values ($1)",
             1,
         );
-        expect(JSON.stringify(info.mock.calls)).not.toContain("123456");
+        expect(JSON.stringify(debug.mock.calls)).not.toContain("123456");
     });
 });
 

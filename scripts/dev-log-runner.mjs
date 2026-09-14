@@ -4,6 +4,7 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { extractMarkerPayload } from "./log-markers.mjs";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
@@ -226,39 +227,6 @@ class RotatingLogWriter {
       this.stream.end();
     }
   }
-}
-
-function extractQuotedMsg(line) {
-  const match = line.match(/\bmsg="((?:\\.|[^"])*)"/);
-  if (!match) {
-    return undefined;
-  }
-  try {
-    return JSON.parse(`"${match[1]}"`);
-  } catch {
-    return match[1];
-  }
-}
-
-function extractMarkerPayload({ line, prefix }) {
-  const quotedMsg = extractQuotedMsg(line);
-  const candidates = quotedMsg ? [quotedMsg, line] : [line];
-
-  for (const candidate of candidates) {
-    const index = candidate.indexOf(prefix);
-    if (index === -1) {
-      continue;
-    }
-    const payload = candidate.slice(index + prefix.length).trim();
-    if (payload.startsWith("{")) {
-      try {
-        return JSON.stringify(JSON.parse(payload));
-      } catch {
-        return undefined;
-      }
-    }
-  }
-  return undefined;
 }
 
 function writeMarkerPayloads({ chunk, buffers, writers }) {

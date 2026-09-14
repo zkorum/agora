@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import AnyUrl, Field, TypeAdapter, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -8,6 +10,9 @@ ALLOWED_VALKEY_SCHEMES = {"valkey", "valkeys", "redis", "rediss"}
 
 
 class Settings(BaseSettings):
+    agora_dev_mode: bool = Field(default=False, validation_alias="AGORA_DEV_MODE")
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] | None = None
+    performance_enabled: bool = False
     # Database
     connection_string: str = Field(default="", min_length=1)
     connection_string_read: str | None = Field(default=None, min_length=1)
@@ -40,6 +45,10 @@ class Settings(BaseSettings):
             msg = "SCORING_WORKER_VALKEY_URL must use valkey://, valkeys://, redis://, or rediss://"
             raise ValueError(msg)
         return value
+
+    @property
+    def resolved_log_level(self) -> str:
+        return self.log_level or ("DEBUG" if self.agora_dev_mode else "INFO")
 
     @property
     def read_dsn(self) -> str:

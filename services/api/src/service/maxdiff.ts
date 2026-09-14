@@ -48,6 +48,7 @@ import {
     type RankingItemDisplayPreferences,
 } from "./rankingItemDisplay.js";
 import { getPrimaryDatabase, hasPrimaryDatabase } from "@/shared-backend/db.js";
+import type { RankingPerformance } from "@/utils/rankingPerformance.js";
 
 // --- Types ---
 
@@ -157,6 +158,7 @@ interface SaveMaxdiffResultProps {
     comparisons: MaxDiffComparison[];
     isComplete: boolean;
     valkey?: Valkey;
+    performance?: RankingPerformance;
 }
 
 export async function saveMaxdiffResult({
@@ -167,6 +169,7 @@ export async function saveMaxdiffResult({
     comparisons,
     isComplete,
     valkey,
+    performance,
 }: SaveMaxdiffResultProps): Promise<{
     conversationId: number;
     items: string[];
@@ -211,59 +214,71 @@ export async function saveMaxdiffResult({
     now.setMilliseconds(0);
 
     // Transaction: upsert JSONB + soft-delete/insert normalized comparisons atomically.
-    const { items, uncertainty } = await db.transaction(async (tx) => {
-        const [result] = await tx
-            .insert(maxdiffResultTable)
-            .values({
-                participantId: userId,
-                conversationId,
-                ranking,
-                comparisons,
-                isComplete,
-                createdAt: now,
-                updatedAt: now,
-            })
-            .onConflictDoUpdate({
-                target: [
-                    maxdiffResultTable.participantId,
-                    maxdiffResultTable.conversationId,
-                ],
-                set: {
+    const save = async () =>
+        await db.transaction(async (tx) => {
+            const [result] = await tx
+                .insert(maxdiffResultTable)
+                .values({
+                    participantId: userId,
+                    conversationId,
                     ranking,
                     comparisons,
                     isComplete,
+                    createdAt: now,
                     updatedAt: now,
-                },
-            })
-            .returning({ id: maxdiffResultTable.id });
+                })
+                .onConflictDoUpdate({
+                    target: [
+                        maxdiffResultTable.participantId,
+                        maxdiffResultTable.conversationId,
+                    ],
+                    set: {
+                        ranking,
+                        comparisons,
+                        isComplete,
+                        updatedAt: now,
+                    },
+                })
+                .returning({ id: maxdiffResultTable.id });
 
-        // Dual-write: soft-delete old normalized comparisons, insert new ones
-        await tx
-            .update(maxdiffComparisonTable)
-            .set({ deletedAt: now })
-            .where(
-                and(
-                    eq(maxdiffComparisonTable.maxdiffResultId, result.id),
-                    isNull(maxdiffComparisonTable.deletedAt),
-                ),
-            );
-        if (comparisons.length > 0) {
-            await tx.insert(maxdiffComparisonTable).values(
-                comparisons.map((comp, idx) => ({
-                    maxdiffResultId: result.id,
-                    position: idx,
-                    bestSlugId: comp.best,
-                    worstSlugId: comp.worst,
-                    candidateSet: comp.set,
-                })),
-            );
-        }
+            // Dual-write: soft-delete old normalized comparisons, insert new ones
+            await tx
+                .update(maxdiffComparisonTable)
+                .set({ deletedAt: now })
+                .where(
+                    and(
+                        eq(maxdiffComparisonTable.maxdiffResultId, result.id),
+                        isNull(maxdiffComparisonTable.deletedAt),
+                    ),
+                );
+            if (comparisons.length > 0) {
+                await tx.insert(maxdiffComparisonTable).values(
+                    comparisons.map((comp, idx) => ({
+                        maxdiffResultId: result.id,
+                        position: idx,
+                        bestSlugId: comp.best,
+                        worstSlugId: comp.worst,
+                        candidateSet: comp.set,
+                    })),
+                );
+            }
 
-        return await computeGlobalUncertainty({
-            db: tx,
-            conversationId,
+            const fetchUncertainty = () =>
+                computeGlobalUncertainty({
+                    db: tx,
+                    conversationId,
+                });
+            return performance === undefined
+                ? await fetchUncertainty()
+                : await performance.measure({
+                      phase: "uncertainty",
+                      run: fetchUncertainty,
+                  });
         });
-    });
+    const { items, uncertainty } =
+        performance === undefined
+            ? await save()
+            : await performance.measure({ phase: "transaction", run: save });
 
     // Mark conversation as dirty for the scoring worker to pick up.
     // Member = "convId:slugId" (slugId for worker logging without extra DB query).
@@ -394,10 +409,7 @@ async function resolveRankingReadDatabase({
             desc(rankingConversationStatsSnapshotTable.id),
         )
         .limit(1);
-    if (
-        (latestReplicaRows.at(0)?.id ?? 0) >=
-        requestedRankingStatsSnapshotId
-    ) {
+    if ((latestReplicaRows.at(0)?.id ?? 0) >= requestedRankingStatsSnapshotId) {
         return db;
     }
 
@@ -416,9 +428,7 @@ async function resolveRankingReadDatabase({
             desc(rankingConversationStatsSnapshotTable.id),
         )
         .limit(1);
-    if (
-        (latestPrimaryRows.at(0)?.id ?? 0) < requestedRankingStatsSnapshotId
-    ) {
+    if ((latestPrimaryRows.at(0)?.id ?? 0) < requestedRankingStatsSnapshotId) {
         throw httpErrors.notFound("Ranking snapshot not found");
     }
     return primaryDb;
@@ -467,7 +477,9 @@ async function getHistoricalMaxdiffResults({
                 id: rankingConversationStatsSnapshotTable.id,
                 hasCheckpoint: exists(
                     queryDb
-                        .select({ id: rankingConversationStatsCheckpointTable.id })
+                        .select({
+                            id: rankingConversationStatsCheckpointTable.id,
+                        })
                         .from(rankingConversationStatsCheckpointTable)
                         .where(
                             eq(

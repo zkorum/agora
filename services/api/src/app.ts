@@ -18,6 +18,11 @@ const environmentBoolean = (defaultValue: boolean) =>
         .transform((value) => value === "true");
 
 const baseConfigSchema = sharedConfigSchema.extend({
+    API_LOG_LEVEL: z
+        .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
+        .default("info"),
+    API_LOG_SQL_QUERIES: environmentBoolean(false),
+    API_RANKING_PERFORMANCE_ENABLED: environmentBoolean(false),
     CORS_ORIGIN_LIST: z
         .string()
         .transform((value) =>
@@ -349,6 +354,7 @@ function envToLogger(env: Environment) {
         case "development":
         case "test":
             return {
+                level: config.API_LOG_LEVEL,
                 transport: {
                     target: "pino-pretty",
                     options: {
@@ -359,7 +365,7 @@ function envToLogger(env: Environment) {
             };
         case "production":
         case "staging":
-            return true;
+            return { level: config.API_LOG_LEVEL };
     }
 }
 

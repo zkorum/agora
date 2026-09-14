@@ -12,14 +12,23 @@ import {
     createDidIfDoesNotExist,
     deleteDid,
 } from "./crypto/ucan/operation.js";
-import { Dto, type MaxDiffSaveRequest } from "./shared/types/dto.js";
+import {
+    Dto,
+    type MaxDiffSaveRequest,
+    type MaxDiffResultItem,
+} from "./shared/types/dto.js";
 import { recordMaxDiffVote, restoreMaxDiff } from "./shared/utils/maxdiff.js";
 import { logLoadEvent } from "./utils/semanticLog.js";
 import {
     buildSolidagoScenarios,
-    chooseComparison,
     parseSolidagoConfig,
 } from "./utils/solidagoWorkload.js";
+import {
+    createRankingVoter,
+    comparisonBudget,
+    preferenceGroup,
+    evaluateRanking,
+} from "./utils/rankingStrategies.js";
 
 const config = parseSolidagoConfig(__ENV);
 const requestSuccess = new Rate("ranking_request_success");
@@ -28,18 +37,34 @@ const usersCompleted = new Counter("ranking_users_completed");
 const userSuccess = new Rate("ranking_user_success");
 const comparisonsSaved = new Counter("ranking_comparisons_saved");
 const historyLength = new Trend("ranking_history_length");
+const signingDuration = new Trend("ranking_signing_duration", true);
+const clientComputeDuration = new Trend(
+    "ranking_client_compute_duration",
+    true,
+);
+const requestTotalDuration = new Trend("ranking_request_total_duration", true);
+const payloadBytes = new Trend("ranking_request_payload_bytes");
+const usersStarted = new Counter("ranking_users_started");
 
 export const options: Options = {
+    summaryTrendStats: ["avg", "min", "med", "max", "p(90)", "p(95)", "p(99)"],
     scenarios: buildSolidagoScenarios(config),
     thresholds: {
         http_req_failed: ["rate<0.05"],
         ranking_request_success: ["rate>0.95"],
         "ranking_request_duration{operation:save}": ["p(95)<5000"],
+        ...(config.workloadMode === "arrival-rate"
+            ? { dropped_iterations: ["count==0"] }
+            : {}),
         ...Object.fromEntries(
             config.conversations.flatMap((slug) => [
                 [
                     `ranking_users_completed{conversation:${slug}}`,
-                    [`count==${String(config.usersPerConversation)}`],
+                    [
+                        config.workloadMode === "iterations"
+                            ? `count==${String(config.usersPerConversation)}`
+                            : "count>0",
+                    ],
                 ],
                 [`ranking_user_success{conversation:${slug}}`, ["rate>0.95"]],
                 [
@@ -95,6 +120,7 @@ async function request<T>({
     let responseTimeMs = 0;
     let status = 0;
     let errorMessage = "Unable to sign request";
+    const totalStarted = Date.now();
     try {
         const authorization =
             context.credentials === undefined
@@ -107,20 +133,21 @@ async function request<T>({
                           backendDid: config.backendDid,
                       }),
                   );
+        const signMs = Date.now() - totalStarted;
+        signingDuration.add(signMs, tags);
+        const payload = JSON.stringify(body);
+        const bytes = new TextEncoder().encode(payload).length;
+        payloadBytes.add(bytes, tags);
         errorMessage = "HTTP request failed";
-        const response = http.post(
-            `${config.apiBaseUrl}${pathname}`,
-            JSON.stringify(body),
-            {
-                headers: {
-                    "Content-Type": "application/json",
-                    ...authorization,
-                },
-                tags,
-                timeout: "30s",
-                redirects: 0,
+        const response = http.post(`${config.apiBaseUrl}${pathname}`, payload, {
+            headers: {
+                "Content-Type": "application/json",
+                ...authorization,
             },
-        );
+            tags,
+            timeout: "30s",
+            redirects: 0,
+        });
         responseTimeMs = response.timings.duration;
         status = response.status;
         requestDuration.add(responseTimeMs, tags);
@@ -141,6 +168,22 @@ async function request<T>({
             throw new Error(errorMessage);
         }
         requestSuccess.add(true, tags);
+        logLoadEvent({
+            scenario: "solidago-ranking",
+            phase: context.phase,
+            action: "request_completed",
+            outcome: "success",
+            conversationSlugId: context.conversationSlugId,
+            responseTimeMs,
+            metadata: {
+                operation,
+                signingMs: signMs,
+                payloadBytes: bytes,
+                blockedMs: response.timings.blocked,
+                waitingMs: response.timings.waiting,
+                totalMs: Date.now() - totalStarted,
+            },
+        });
         return { data: parsed.data, responseTimeMs };
     } catch {
         requestSuccess.add(false, tags);
@@ -156,10 +199,17 @@ async function request<T>({
             metadata: { status },
         });
         throw new Error(errorMessage);
+    } finally {
+        requestTotalDuration.add(Date.now() - totalStarted, tags);
     }
 }
 
-export async function setup(): Promise<void> {
+interface SetupData {
+    fixtures: { conversationSlugId: string; itemOrder: string[] }[];
+}
+
+export async function setup(): Promise<SetupData> {
+    const fixtures: SetupData["fixtures"] = [];
     logLoadEvent({
         scenario: "solidago-ranking",
         phase: "setup",
@@ -168,13 +218,32 @@ export async function setup(): Promise<void> {
         count: config.conversations.length,
         metadata: {
             apiBaseUrl: config.apiBaseUrl,
+            workloadMode: config.workloadMode,
+            durationSeconds: config.durationSeconds,
+            arrivalRatePerConversation: config.arrivalRate,
+            strategy: config.strategy,
+            seed: config.seed,
+            noiseRate: config.noiseRate,
+            majorityShare: config.majorityShare,
+            dropoutRate: config.dropoutRate,
             backendDid: config.backendDid,
             conversations: config.conversations.join(","),
             usersPerConversation: config.usersPerConversation,
             vusPerConversation: config.vusPerConversation,
+            maxVusPerConversation:
+                config.workloadMode === "arrival-rate"
+                    ? config.maxVusPerConversation
+                    : config.vusPerConversation,
+            totalMaxVus:
+                config.conversations.length *
+                (config.workloadMode === "arrival-rate"
+                    ? config.maxVusPerConversation
+                    : config.vusPerConversation),
             comparisonsPerUser: config.comparisonsPerUser,
             totalUsers:
-                config.conversations.length * config.usersPerConversation,
+                config.workloadMode === "iterations"
+                    ? config.conversations.length * config.usersPerConversation
+                    : null,
             totalVus: config.conversations.length * config.vusPerConversation,
             thinkTimeSeconds: config.thinkTimeSeconds,
             cooldownSeconds: config.cooldownSeconds,
@@ -227,6 +296,32 @@ export async function setup(): Promise<void> {
                     "Each ranking fixture needs at least four active items",
                 );
             }
+            const order =
+                config.itemOrders.get(conversationSlugId) ??
+                items.map((item) => item.slugId);
+            const active = new Set(items.map((item) => item.slugId));
+            if (
+                order.length !== active.size ||
+                new Set(order).size !== active.size ||
+                order.some((id) => !active.has(id))
+            ) {
+                throw new Error(
+                    "Configured item order must contain every active item exactly once",
+                );
+            }
+            fixtures.push({ conversationSlugId, itemOrder: order });
+            logLoadEvent({
+                scenario: "solidago-ranking",
+                phase: "setup",
+                action: "item_manifest",
+                outcome: "info",
+                conversationSlugId,
+                metadata: {
+                    itemOrder: JSON.stringify(order),
+                    strategy: config.strategy,
+                    seed: config.seed,
+                },
+            });
             // Also establish the pre-run result state, without treating old scores as fresh computation.
             await observeResults(context);
             logLoadEvent({
@@ -249,27 +344,25 @@ export async function setup(): Promise<void> {
             throw error;
         }
     }
+    return { fixtures };
 }
 
-export default async function rankingParticipant(): Promise<void> {
+export default async function rankingParticipant(
+    data: SetupData,
+): Promise<void> {
     const conversationSlugId = z
         .string()
         .parse(__ENV.RANKING_CONVERSATION_SLUG_ID);
     const iterationIndex = execution.scenario.iterationInTest;
     const userId = `${execution.scenario.name}:${String(iterationIndex)}`;
     const tags = { conversation: conversationSlugId };
+    usersStarted.add(1, tags);
     // Seed the counter even when no participant finishes, so its threshold still fails.
     usersCompleted.add(0, tags);
     let savedCount = 0;
     let failureMessage = "Unable to initialize participant credentials";
+    const participantStarted = Date.now();
     try {
-        const credentials = await createDidIfDoesNotExist(userId);
-        const context: RequestContext = {
-            conversationSlugId,
-            credentials,
-            userId,
-            phase: "participation",
-        };
         logLoadEvent({
             scenario: "solidago-ranking",
             phase: "participation",
@@ -279,6 +372,18 @@ export default async function rankingParticipant(): Promise<void> {
             userId,
             iterationIndex,
         });
+        const credentialsStarted = Date.now();
+        const credentials = await createDidIfDoesNotExist(userId);
+        clientComputeDuration.add(Date.now() - credentialsStarted, {
+            ...tags,
+            operation: "credentials",
+        });
+        const context: RequestContext = {
+            conversationSlugId,
+            credentials,
+            userId,
+            phase: "participation",
+        };
         failureMessage =
             "Participant flow failed; inspect the preceding request failure event";
         const {
@@ -292,6 +397,28 @@ export default async function rankingParticipant(): Promise<void> {
         });
         const itemSlugIds = items.map((item) => item.slugId);
         const activeItems = new Set(itemSlugIds);
+        const itemOrder = data.fixtures.find(
+            (fixture) => fixture.conversationSlugId === conversationSlugId,
+        )?.itemOrder;
+        if (
+            itemOrder?.length !== activeItems.size ||
+            itemOrder.some((id) => !activeItems.has(id))
+        ) {
+            throw new Error("Active items differ from the setup manifest");
+        }
+        const preferenceStarted = Date.now();
+        const chooseComparison = createRankingVoter({
+            itemOrder,
+            strategy: config.strategy,
+            seed: config.seed,
+            userIndex: iterationIndex,
+            majorityShare: config.majorityShare,
+            noiseRate: config.noiseRate,
+        });
+        clientComputeDuration.add(Date.now() - preferenceStarted, {
+            ...tags,
+            operation: "preference_setup",
+        });
         const { data: loaded } = await request({
             context,
             operation: "load",
@@ -300,20 +427,28 @@ export default async function rankingParticipant(): Promise<void> {
             schema: Dto.maxdiffLoadResponse,
         });
         let candidateSets = loaded.candidateSets;
+        const restoreStarted = Date.now();
         const instance = restoreMaxDiff({
             items: itemSlugIds,
             comparisons: loaded.comparisons ?? [],
+        });
+        clientComputeDuration.add(Date.now() - restoreStarted, {
+            ...tags,
+            operation: "restore",
+        });
+        const budget = comparisonBudget({
+            strategy: config.strategy,
+            seed: config.seed,
+            userIndex: iterationIndex,
+            maximum: config.comparisonsPerUser,
+            dropoutRate: config.dropoutRate,
         });
         if (candidateSets.length === 0) {
             failureMessage =
                 "Fresh participant received no candidate sets; check that fixture items remain active";
             throw new Error(failureMessage);
         }
-        for (
-            let index = 0;
-            index < config.comparisonsPerUser && !instance.complete;
-            index++
-        ) {
+        for (let index = 0; index < budget && !instance.complete; index++) {
             const candidateSet = candidateSets.at(0);
             if (
                 candidateSet === undefined ||
@@ -324,9 +459,10 @@ export default async function rankingParticipant(): Promise<void> {
                 throw new Error(failureMessage);
             }
             failureMessage = "Invalid server candidate set";
+            const computeStarted = Date.now();
             const comparison = chooseComparison({
                 candidateSet,
-                preferenceGroup: iterationIndex % 4,
+                comparisonIndex: index,
             });
             recordMaxDiffVote({
                 instance,
@@ -335,6 +471,10 @@ export default async function rankingParticipant(): Promise<void> {
                 worst: comparison.worst,
             });
             const comparisons = instance.exportState().comparisons;
+            clientComputeDuration.add(Date.now() - computeStarted, {
+                ...tags,
+                operation: "vote",
+            });
             if (config.thinkTimeSeconds > 0) sleep(config.thinkTimeSeconds);
             failureMessage =
                 "Participant flow failed; inspect the preceding request failure event";
@@ -366,7 +506,15 @@ export default async function rankingParticipant(): Promise<void> {
                 responseTimeMs,
                 metadata: {
                     historyLength: comparisons.length,
-                    preferenceGroup: iterationIndex % 4,
+                    preferenceGroup: preferenceGroup({
+                        strategy: config.strategy,
+                        seed: config.seed,
+                        userIndex: iterationIndex,
+                        majorityShare: config.majorityShare,
+                    }),
+                    best: comparison.best,
+                    worst: comparison.worst,
+                    candidateSet: JSON.stringify(comparison.set),
                     rankingComplete: instance.complete,
                 },
             });
@@ -392,8 +540,11 @@ export default async function rankingParticipant(): Promise<void> {
             metadata: {
                 stopReason: rankingComplete
                     ? "ranking_complete"
-                    : "comparison_budget",
+                    : budget < config.comparisonsPerUser
+                      ? "dropout_budget"
+                      : "comparison_budget",
                 rankingComplete,
+                durationMs: Date.now() - participantStarted,
             },
         });
     } catch {
@@ -415,7 +566,9 @@ export default async function rankingParticipant(): Promise<void> {
     }
 }
 
-async function observeResults(context: RequestContext): Promise<void> {
+async function observeResults(
+    context: RequestContext,
+): Promise<MaxDiffResultItem[]> {
     const {
         data: { rankings },
         responseTimeMs,
@@ -453,9 +606,10 @@ async function observeResults(context: RequestContext): Promise<void> {
             scoringFreshnessVerified: false,
         },
     });
+    return rankings;
 }
 
-export async function teardown(): Promise<void> {
+export async function teardown(data: SetupData): Promise<void> {
     logLoadEvent({
         scenario: "solidago-ranking",
         phase: "teardown",
@@ -466,11 +620,36 @@ export async function teardown(): Promise<void> {
     if (config.cooldownSeconds > 0) sleep(config.cooldownSeconds);
     for (const conversationSlugId of config.conversations) {
         try {
-            await observeResults({
+            const rankings = await observeResults({
                 conversationSlugId,
                 credentials: undefined,
                 userId: undefined,
                 phase: "teardown",
+            });
+            logLoadEvent({
+                scenario: "solidago-ranking",
+                phase: "teardown",
+                action: "ranking_evaluated",
+                outcome: "info",
+                conversationSlugId,
+                metadata: {
+                    ...evaluateRanking({
+                        itemOrder:
+                            data.fixtures.find(
+                                (fixture) =>
+                                    fixture.conversationSlugId ===
+                                    conversationSlugId,
+                            )?.itemOrder ?? [],
+                        rankings,
+                    }),
+                    strategy: config.strategy,
+                    referenceIsCommonPreference: [
+                        "unanimous",
+                        "noisy",
+                        "sparse",
+                    ].includes(config.strategy),
+                    scoringFreshnessVerified: false,
+                },
             });
         } catch {
             // request() records the failure; still observe the remaining conversations.

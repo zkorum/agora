@@ -147,19 +147,24 @@ export async function createPostgresClient(
     }
 }
 
-export async function createDb(
-    config: SharedConfigSchema,
-    log: Pick<pino.BaseLogger, "info" | "error">,
-) {
+export async function createDb({
+    config,
+    log,
+    logQueries = false,
+}: {
+    config: SharedConfigSchema;
+    log: Pick<pino.BaseLogger, "info" | "error" | "debug">;
+    logQueries?: boolean;
+}) {
     const primaryClient = await createReadyPostgresClient({
         config,
         log,
         useReadReplica: false,
     });
     const primaryDb = drizzle(primaryClient, {
-        logger: new DrizzleFastifyLogger({
-            fastifyLogger: log,
-        }),
+        logger: logQueries
+            ? new DrizzleFastifyLogger({ fastifyLogger: log })
+            : false,
     });
 
     // Check if read replica config exists
@@ -177,9 +182,9 @@ export async function createDb(
             useReadReplica: true,
         });
         const readDb = drizzle(readClient, {
-            logger: new DrizzleFastifyLogger({
-                fastifyLogger: log,
-            }),
+            logger: logQueries
+                ? new DrizzleFastifyLogger({ fastifyLogger: log })
+                : false,
         });
 
         log.info(

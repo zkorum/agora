@@ -6,6 +6,7 @@ Canonical TypeScript backend source and database schema for Agora services.
 
 - `services/api` receives the complete source tree in `src/shared-backend`.
 - `services/conversation-email-update-worker` receives the schema and the shared database, logging, configuration, Valkey, and SNS ingress dependencies it compiles against.
+- `services/load-testing` receives only the diagnostics command protocol. The optional performance observer delegates Agora-table reads to the API's source-only Drizzle diagnostics helper, which uses the existing shared-backend schema.
 - Python workers receive generated SQLAlchemy models derived directly from `services/shared-backend/src/schema.ts`.
 
 Consumer copies are generated and contain warning headers. Do not edit them directly.

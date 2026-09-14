@@ -243,9 +243,7 @@ def _html_to_counted_text(html_string: str) -> str:
 
 
 def _has_visible_plain_text(value: str) -> bool:
-    return bool(
-        regex.sub(r"[\p{Cc}\p{Default_Ignorable_Code_Point}]", "", value).strip()
-    )
+    return bool(regex.sub(r"[\p{Cc}\p{Default_Ignorable_Code_Point}]", "", value).strip())
 
 
 def _count_graphemes(value: str) -> int:
@@ -277,9 +275,7 @@ def _validate_survey_answer_for_analysis(
             min_value = int(question.constraints["minValue"])
             max_value_raw = question.constraints.get("maxValue")
             max_value = int(max_value_raw) if max_value_raw is not None else None
-            return parsed_value >= min_value and (
-                max_value is None or parsed_value <= max_value
-            )
+            return parsed_value >= min_value and (max_value is None or parsed_value <= max_value)
 
         if _utf16_length(text_value_html) > int(question.constraints["maxHtmlLength"]):
             return False
@@ -1161,6 +1157,7 @@ def persist_scoring_batch(
     total_participant_count_by_conversation: dict[int, int],
     scored_entities_by_conv: dict[int, list[ScoredEntity]],
     scoring_input_revisions: dict[int, int],
+    on_revision_rejected: Callable[[dict[int, int]], None] | None = None,
 ) -> bool:
     """Atomically publish scores, immutable snapshots, checkpoints, and SSE."""
     with connection.begin():
@@ -1185,6 +1182,10 @@ def persist_scoring_batch(
                 scoring_input_revisions.get(row.id) != row.scoring_input_revision
                 for row in revision_rows
             ):
+                if on_revision_rejected is not None:
+                    on_revision_rejected(
+                        {row.id: row.scoring_input_revision for row in revision_rows}
+                    )
                 return False
             session.commit()
         _write_scores_batch(
