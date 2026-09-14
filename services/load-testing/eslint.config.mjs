@@ -37,7 +37,6 @@ export default tseslint.config(
             "**/dist/",
             "eslint.config.mjs",
             "vite.config.ts",
-            "tests/**/*",
             "src/api/**",
             "src/crypto/**",
             "src/crypto-polyfill.js",

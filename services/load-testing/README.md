@@ -211,6 +211,10 @@ Tests voting load on one or more conversations:
 - Page fetches are mixed in to simulate realistic browsing behavior
 - Requires conversations with `participationMode: "guest"` and no event-ticket requirement. The scenario generates fresh guest identities and does not perform account registration, email verification, or strong verification.
 
+Setup captures survey presence from conversation metadata. Guests skip form requests for conversations without surveys, avoiding expected "Survey not found" 404s in `http_req_failed`; existing surveys are still completed separately by each guest. Skips without requests do not contribute latency samples. Keep survey configuration unchanged during the run. Unexpected HTTP errors, including a form disappearing after setup, remain failures.
+
+Page requests fetch HTML only; k6/http does not execute the frontend SPA or its JavaScript API requests. The scenario generates API traffic separately.
+
 **What it tests:**
 
 - Row-level locking on hot conversations
@@ -235,13 +239,21 @@ The scoring worker consumes the Valkey dirty set lightest-first. Dirty-set entri
 
 ### Scenario 1 Parameters
 
-Edit scenario files to adjust:
+Set environment variables when invoking the runner:
 
+- `API_BASE_URL` (default: `http://127.0.0.1:8084`)
+- `FRONTEND_BASE_URL` (default: `http://127.0.0.1:3200`); conversation pages use `/conversation/:slug`.
 - `OPINION_CREATOR_COUNT` / `ADDITIONAL_VOTERS` (default: 50/50)
+- `LOAD_TEST_VUS` (default: the smaller of total users and 100)
+- `VOTING_PATTERN` (`random` by default; use `clustered` for Opinion Group testing)
+- `VOTING_CLUSTER_COUNT` / `VOTING_NOISE_RATE` / `VOTING_OUTLIER_RATE` (default: 4/0.08/0.05). Clustered users share deterministic preferences within each synthetic group. Different groups have independently mixed preferences; the analysis still selects its own displayed group count.
+- `CLUSTERABLE_VOTE_TARGET_PER_CONVERSATION` (default: 7); prioritizes this many votes in each participant's assigned conversation, subject to available statements.
+- `AUTO_FILL_SURVEY` (default: `true`)
 - `INTERMITTENT_OPINION_CREATION_PROBABILITY` (default: 0.1)
 - `MAIN_PAGE_FETCH_PROBABILITY` / `CONVERSATION_PAGE_FETCH_PROBABILITY`
 - `INITIAL_CONVERSATION_PAGE_FETCH_PROBABILITY` to override the initial frontend page-load probability. If omitted, an explicit `CONVERSATION_PAGE_FETCH_PROBABILITY` value is reused; otherwise the initial page load defaults to always on.
-- `SLEEP_BETWEEN_ACTIONS` and retry constants in the scenario file
+
+Adjust `SLEEP_BETWEEN_ACTIONS` and retry constants in the scenario file.
 
 ### Scenario 2 Parameters
 
@@ -264,10 +276,11 @@ Set these environment variables when invoking either Scenario 2 runner:
 
 ### Local Verification
 
-From `services/load-testing`, these commands verify the bundles, lint, and types without running a load test:
+From `services/load-testing`, these commands verify the bundles, voting-pattern regression tests, lint, and types without running a load test. Unit tests use Node.js 22.6+ with built-in TypeScript stripping:
 
 ```bash
 pnpm build
+pnpm test:unit
 pnpm lint
 pnpm exec tsc --noEmit
 ```

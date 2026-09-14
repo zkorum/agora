@@ -14,7 +14,9 @@ import {
 const API_BASE_URL = __ENV.API_BASE_URL || "http://127.0.0.1:8084";
 
 // Frontend base URL for simulating full page loads
-const FRONTEND_BASE_URL = __ENV.FRONTEND_BASE_URL || "http://127.0.0.1:9000";
+const FRONTEND_BASE_URL = (
+    __ENV.FRONTEND_BASE_URL || "http://127.0.0.1:3200"
+).replace(/\/$/, "");
 
 export interface CreateOpinionParams {
     conversationSlugId: string;
@@ -89,6 +91,7 @@ export type FetchConversationMetadataResponse =
           success: true;
           participationMode: ParticipationMode;
           requiresEventTicket: string | undefined;
+          hasSurvey: boolean;
           responseTime: number;
       }
     | {
@@ -125,6 +128,7 @@ function parseConversationMetadataResponse(body: unknown):
     | {
           participationMode: ParticipationMode;
           requiresEventTicket?: string;
+          hasSurvey: boolean;
       }
     | undefined {
     if (!isObjectRecord(body)) {
@@ -148,9 +152,22 @@ function parseConversationMetadataResponse(body: unknown):
         return undefined;
     }
 
+    const interaction = conversationData.interaction;
+    if (!isObjectRecord(interaction)) {
+        return undefined;
+    }
+    const surveyGate = interaction.surveyGate;
+    if (
+        !isObjectRecord(surveyGate) ||
+        typeof surveyGate.hasSurvey !== "boolean"
+    ) {
+        return undefined;
+    }
+
     const requiresEventTicket = metadataRecord.requiresEventTicket;
     return {
         participationMode,
+        hasSurvey: surveyGate.hasSurvey,
         requiresEventTicket:
             typeof requiresEventTicket === "string"
                 ? requiresEventTicket
@@ -297,23 +314,6 @@ export async function fetchSurveyForm(
 
         const responseBody =
             typeof response.body === "string" ? response.body : "Unknown body";
-
-        if (
-            response.status === 404 &&
-            responseBody.includes("Survey not found")
-        ) {
-            return {
-                success: true,
-                responseTime,
-                surveyGate: {
-                    hasSurvey: false,
-                    isOptional: false,
-                    canParticipate: true,
-                    status: "no_survey",
-                },
-                questions: [],
-            };
-        }
 
         if (response.status !== 200) {
             return {
@@ -526,6 +526,7 @@ export function fetchConversationMetadata({
             success: true,
             participationMode: parsedMetadata.participationMode,
             requiresEventTicket: parsedMetadata.requiresEventTicket,
+            hasSurvey: parsedMetadata.hasSurvey,
             responseTime,
         };
     } catch (error) {
@@ -776,20 +777,15 @@ export async function deleteUser(
 }
 
 /**
- * Fetch conversation page (simulates loading the entire frontend conversation page)
- * This triggers the frontend to make multiple API calls:
- * - Fetch conversation metadata
- * - Fetch all opinions
- * - Fetch clusters/analysis
- * - Fetch user interactions (if authenticated)
- * All of these hit the read replica and cause CPU load
+ * Fetch the conversation HTML shell. k6/http does not execute the SPA's
+ * JavaScript; API traffic is generated separately by the scenario.
  */
 export function fetchConversationPage(
     params: FetchConversationPageParams,
 ): FetchConversationPageResponse {
     const { conversationSlugId } = params;
 
-    const url = `${FRONTEND_BASE_URL}/c/${conversationSlugId}`;
+    const url = `${FRONTEND_BASE_URL}/conversation/${conversationSlugId}`;
 
     try {
         const startTime = Date.now();
@@ -818,12 +814,7 @@ export function fetchConversationPage(
 }
 
 /**
- * Fetch main page feed (simulates loading the entire frontend home page)
- * This triggers the frontend to make multiple API calls:
- * - Fetch recent conversations
- * - Fetch trending/top conversations
- * - Fetch user data (if authenticated)
- * All of these hit the read replica
+ * Fetch the home page HTML shell without executing the SPA's JavaScript.
  */
 export function fetchMainPage(): FetchMainPageResponse {
     const url = FRONTEND_BASE_URL;
