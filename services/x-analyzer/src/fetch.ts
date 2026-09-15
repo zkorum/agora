@@ -1125,7 +1125,7 @@ export async function fetchTweet(tweetId: string): Promise<FetchTweetResult> {
             ...TWEET_API_FIELDS["tweet.fields"],
             "referenced_tweets",
         ],
-    };
+    } satisfies Partial<Tweetv2FieldsParams>;
 
     console.log(
         `  [API] singleTweet(${tweetId}) with fields: ${JSON.stringify(fetchFields)}`,

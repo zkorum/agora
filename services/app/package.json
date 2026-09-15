@@ -2,6 +2,7 @@
   "name": "app",
   "private": true,
   "version": "0.0.1",
+  "packageManager": "pnpm@12.4.1",
   "license": "MPL-2.0",
   "type": "module",
   "scripts": {
@@ -62,18 +63,5 @@
     "remark-parse": "^11.0.0",
     "remark-rehype": "^11.1.2",
     "unified": "^11.0.5"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@sentry/cli",
-      "esbuild",
-      "sharp",
-      "unrs-resolver"
-    ],
-    "overrides": {
-      "eslint>ajv": "^6.14.0",
-      "@eslint/eslintrc>ajv": "^6.14.0",
-      "cookie": ">=0.7.0"
-    }
   }
 }

@@ -2,5 +2,13 @@ minimumReleaseAge: 7200
 minimumReleaseAgeExclude:
     - launder@1.7.1
 
-ignoredBuiltDependencies:
-    - unrs-resolver
+allowBuilds:
+    unrs-resolver: false
+
+overrides:
+    "eslint>ajv": "^6.14.0"
+    "@eslint/eslintrc>ajv": "^6.14.0"
+    brace-expansion: ">=2.0.2"
+    "@eslint/plugin-kit": ">=0.3.4"
+    cross-spawn: ">=7.0.5"
+    js-yaml: ">=4.1.1"

@@ -1,6 +1,7 @@
 {
     "name": "@zkorum/agora-load-testing",
     "version": "1.0.0",
+    "packageManager": "pnpm@12.4.1",
     "description": "k6 load testing suite for Agora voting system",
     "license": "AGPL-3.0",
     "type": "module",
@@ -36,13 +37,5 @@
         "tweetnacl": "^1.0.3",
         "uint8arrays": "^5.1.0",
         "zod": "^4.3.6"
-    },
-    "pnpm": {
-        "overrides": {
-            "eslint>ajv": "^6.14.0",
-            "@eslint/eslintrc>ajv": "^6.14.0",
-            "@stablelib/ed25519": "2.1.0",
-            "js-yaml": ">=4.1.1"
-        }
     }
 }

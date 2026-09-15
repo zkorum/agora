@@ -13,4 +13,3 @@ src-cordova/
 LICENSE
 .env.dev
 .env.sentry-build-plugin
-pnpm-workspace.yaml

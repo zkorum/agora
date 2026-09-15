@@ -2,7 +2,7 @@
     "name": "@zkorum/agora-conversation-email-update-worker",
     "version": "1.0.0",
     "description": "Durable Conversation Email Updates delivery and SES event worker",
-    "packageManager": "pnpm@10.34.5",
+    "packageManager": "pnpm@12.4.1",
     "type": "module",
     "engines": {
         "node": ">=22.12"

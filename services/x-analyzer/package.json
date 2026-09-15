@@ -1,6 +1,7 @@
 {
     "name": "@zkorum/agora-x-analyzer",
     "version": "1.0.0",
+    "packageManager": "pnpm@12.4.1",
     "description": "Fetch X thread data and generate Polis CSV files for Agora import",
     "type": "module",
     "scripts": {

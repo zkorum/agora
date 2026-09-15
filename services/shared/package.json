@@ -1,6 +1,7 @@
 {
     "name": "@zkorum/agora-shared",
     "version": "1.0.0",
+    "packageManager": "pnpm@12.4.1",
     "type": "module",
     "description": "Universal shared code for all Agora services",
     "main": "index.js",
