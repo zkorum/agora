@@ -4,9 +4,9 @@ WORKDIR /app
 RUN apt-get update && \
     apt-get install -y --no-install-recommends python3 make g++ && \
     rm -rf /var/lib/apt/lists/*
-RUN corepack enable && corepack prepare pnpm@10 --activate
+RUN corepack enable && corepack prepare pnpm@12.4.1 --activate
 COPY package.json pnpm-lock.yaml ./
-COPY pnpm-workspace-docker.yaml ./pnpm-workspace.yaml
+COPY pnpm-workspace.yaml ./pnpm-workspace.yaml
 COPY patches ./patches
 RUN pnpm install --frozen-lockfile --prod
 
@@ -16,9 +16,9 @@ WORKDIR /app
 RUN apt-get update && \
     apt-get install -y --no-install-recommends python3 make g++ && \
     rm -rf /var/lib/apt/lists/*
-RUN corepack enable && corepack prepare pnpm@10 --activate
+RUN corepack enable && corepack prepare pnpm@12.4.1 --activate
 COPY package.json pnpm-lock.yaml ./
-COPY pnpm-workspace-docker.yaml ./pnpm-workspace.yaml
+COPY pnpm-workspace.yaml ./pnpm-workspace.yaml
 COPY patches ./patches
 RUN pnpm install --frozen-lockfile
 COPY tsconfig.json tsconfig.build.json ./

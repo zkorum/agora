@@ -1,15 +1,16 @@
-# ---- Build ----
-FROM node:24.14.1-alpine AS build
+# ---- Dependencies ----
+FROM node:24.14.1-alpine AS deps
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@10 --activate
+RUN corepack enable && corepack prepare pnpm@12.4.1 --activate
 ENV PATH=/app/node_modules/.bin:$PATH
-# Copy docker-specific workspace config (packages field required by pnpm v9+)
-COPY pnpm-workspace-docker.yaml ./pnpm-workspace.yaml
 # Copy manifest files then full source before install:
 # quasar's prepare lifecycle script (run during pnpm install) needs the full source
-COPY package.json pnpm-lock.yaml .npmrc ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY . ./
 RUN pnpm install --frozen-lockfile
+
+# ---- Build ----
+FROM deps AS build
 RUN pnpm run build:staging
 
 # ---- Production ----

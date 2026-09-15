@@ -2,7 +2,7 @@
 FROM node:24.14.1-alpine AS deps
 WORKDIR /app
 RUN apk add --no-cache python3 make g++
-RUN corepack enable && corepack prepare pnpm@10.34.5 --activate
+RUN corepack enable && corepack prepare pnpm@12.4.1 --activate
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile --prod
 
@@ -10,7 +10,7 @@ RUN pnpm install --frozen-lockfile --prod
 FROM node:24.14.1-alpine AS build
 WORKDIR /app
 RUN apk add --no-cache python3 make g++
-RUN corepack enable && corepack prepare pnpm@10.34.5 --activate
+RUN corepack enable && corepack prepare pnpm@12.4.1 --activate
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY tsconfig.json tsconfig.build.json ./

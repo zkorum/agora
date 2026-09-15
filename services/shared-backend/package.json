@@ -1,6 +1,7 @@
 {
     "name": "@zkorum/agora-shared-backend",
     "version": "1.0.0",
+    "packageManager": "pnpm@12.4.1",
     "type": "module",
     "description": "Shared backend code for API and TypeScript worker services",
     "main": "index.js",
@@ -34,17 +35,5 @@
         "typescript": "^5.9.3",
         "vite": "^8.0.5",
         "vitest": "^4.1.2"
-    },
-    "pnpm": {
-        "overrides": {
-            "@protobufjs/utf8": "1.1.1",
-            "fast-xml-builder": "1.1.7",
-            "fast-xml-parser": ">=5.7.0",
-            "brace-expansion": "2.1.4",
-            "minimatch": "9.0.7",
-            "postcss": "8.5.10",
-            "protobufjs": "7.6.5",
-            "@tootallnate/once": "3.0.1"
-        }
     }
 }

@@ -1,6 +1,7 @@
 {
   "name": "@zkorum/agora-app",
   "version": "0.0.8",
+  "packageManager": "pnpm@12.4.1",
   "description": "Where citizens converge to exchange and debate ideas.",
   "productName": "Agora Citizen Network",
   "author": "ZKorum SAS <hello@zkorum.com>",

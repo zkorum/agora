@@ -3,3 +3,14 @@ minimumReleaseAgeExclude:
   - "@sveltejs/kit@2.60.1"
   - devalue@5.8.1
   - svelte@5.55.7
+
+allowBuilds:
+  "@sentry/cli": true
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
+
+overrides:
+  "eslint>ajv": "^6.14.0"
+  "@eslint/eslintrc>ajv": "^6.14.0"
+  cookie: ">=0.7.0"

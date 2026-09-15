@@ -27,10 +27,37 @@ Install:
 - [jq](https://jqlang.github.io/jq/)
 - sed
 - bash
-- [Node.js](https://nodejs.org/) 20 or later
-- [pnpm](https://pnpm.io/)
+- [Node.js](https://nodejs.org/) 24 (matches the Docker builds)
+- [pnpm](https://pnpm.io/) 12.4.1
 - [watchman](https://facebook.github.io/watchman/)
 - [docker](https://www.docker.com/)
+
+### Package-manager configuration
+
+All nine JavaScript services pin `pnpm@12.4.1` in `package.json`, and the API,
+Agora, and conversation-email-update-worker Docker build stages use that same
+version. Each service's `pnpm-workspace.yaml` is used for both local and Docker
+installs. Run `pnpm install --frozen-lockfile` from the service directory after
+pulling dependency changes.
+
+pnpm 12 reads overrides, patches, and dependency build permissions from
+`pnpm-workspace.yaml`, not a `pnpm` block in `package.json`. Use explicit
+`allowBuilds` booleans: `true` for required installation scripts, `false` for
+scripts intentionally skipped. Keep the five-day `minimumReleaseAge` policy
+and existing narrowly scoped exceptions. Commit the workspace configuration
+and regenerated lockfile together; do not commit pnpm's unresolved
+`set this to true or false` placeholders.
+
+The API enables OpenCC and esbuild installation scripts. Testcontainers' optional
+SSH native accelerators use their JavaScript fallback, so local installs do not
+require a separate node-gyp installation for those accelerators. Shared-backend
+explicitly skips protobufjs's optional postinstall script.
+
+Check package-manager configuration consistency with:
+
+```bash
+node --test scripts/pnpm-configuration.test.mjs
+```
 
 ## Services
 

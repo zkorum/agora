@@ -1,1 +1,13 @@
+allowBuilds:
+    protobufjs: false
 minimumReleaseAge: 7200
+
+overrides:
+    "@protobufjs/utf8": "1.1.1"
+    "fast-xml-builder": "1.1.7"
+    "fast-xml-parser": ">=5.7.0"
+    brace-expansion: "2.1.4"
+    minimatch: "9.0.7"
+    postcss: "8.5.10"
+    protobufjs: "7.6.5"
+    "@tootallnate/once": "3.0.1"
