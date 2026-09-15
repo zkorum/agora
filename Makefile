@@ -181,6 +181,19 @@ ifeq ($(strip $(LOAD_TEST_CONVERSATIONS)),)
 endif
 	services/load-testing/scripts/run-scenario2-with-monitoring.sh "$(LOAD_TEST_CONVERSATIONS)"
 
+prepare-ranking-monitoring:
+	node --experimental-strip-types scripts/ranking-performance.mjs prepare
+
+load-test-scenario2-performance:
+ifeq ($(strip $(LOAD_TEST_CONVERSATIONS)),)
+	$(error CONVERSATION_SLUG_IDS is required)
+endif
+	CONVERSATION_SLUG_IDS="$(LOAD_TEST_CONVERSATIONS)" K6_OUT=experimental-prometheus-rw \
+		RANKING_COOLDOWN_SECONDS="$${RANKING_COOLDOWN_SECONDS:-0}" \
+		K6_PROMETHEUS_RW_SERVER_URL="$${K6_PROMETHEUS_RW_SERVER_URL:-http://localhost:9090/api/v1/write}" \
+		K6_PROMETHEUS_RW_TREND_AS_NATIVE_HISTOGRAM=true \
+		$(LOG_RUNNER) --service load-testing-solidago -- node --experimental-strip-types scripts/ranking-performance.mjs run
+
 dev-app:
 	$(LOG_RUNNER) --service agora -- $(MAKE) dev-app-raw
 

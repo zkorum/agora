@@ -1,3 +1,5 @@
+import { stableHash, stableFraction } from "./deterministicRandom.ts";
+
 export type VotingPattern = "random" | "clustered";
 
 export interface VotingPatternConfig {
@@ -8,26 +10,6 @@ export interface VotingPatternConfig {
 }
 
 export type VotingAction = "agree" | "disagree" | "pass";
-
-function stableHash(value: string): number {
-    let hash = 2166136261;
-    for (let index = 0; index < value.length; index++) {
-        hash ^= value.charCodeAt(index);
-        hash = Math.imul(hash, 16777619);
-    }
-    // MurmurHash3's avalanche finalizer mixes suffix changes into every bit.
-    // Raw FNV-1a gives adjacent cluster IDs nearly identical vote probabilities.
-    hash ^= hash >>> 16;
-    hash = Math.imul(hash, 0x85ebca6b);
-    hash ^= hash >>> 13;
-    hash = Math.imul(hash, 0xc2b2ae35);
-    hash ^= hash >>> 16;
-    return hash >>> 0;
-}
-
-function stableFraction(value: string): number {
-    return stableHash(value) / 0x100000000;
-}
 
 function randomVotingAction(): VotingAction {
     const roll = Math.random();

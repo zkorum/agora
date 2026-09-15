@@ -124,6 +124,13 @@ Use `rg` directly for searches, for example `rg "error|failed" .local/logs/lates
 
 `run_all_in_kitty_tabs.sh` exports one shared `AGORA_LOG_RUN_ID`, so all tabs from the same launch land in the same run directory.
 
+API logging supports `API_LOG_LEVEL` (default `info`) and opt-in
+`API_LOG_SQL_QUERIES=true` (SQL templates at DEBUG, never parameter values).
+`API_RANKING_PERFORMANCE_ENABLED=true` and
+`SCORING_WORKER_PERFORMANCE_ENABLED=true` emit ranking timings through the same
+`AGORA_LOAD_EVENT` capture path. See the [ranking performance workflow](services/load-testing/PERFORMANCE.md)
+for database preparation, reproducible workload strategies, and run reports.
+
 ### Shared
 
 Some typescript source files are shared directly without using npm packages - by copy-pasting using rsync.

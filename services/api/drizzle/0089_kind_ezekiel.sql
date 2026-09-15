@@ -1,0 +1,2 @@
+ALTER TABLE "ranking_conversation_config" ADD COLUMN "scoring_invalidation_revision" bigint DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE "ranking_conversation_config" ADD CONSTRAINT "ranking_conversation_config_invalidation_revision_check" CHECK ("ranking_conversation_config"."scoring_invalidation_revision" >= 0 AND "ranking_conversation_config"."scoring_invalidation_revision" <= "ranking_conversation_config"."scoring_input_revision");

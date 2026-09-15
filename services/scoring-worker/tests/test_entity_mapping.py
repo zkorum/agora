@@ -1,19 +1,10 @@
-"""TDD tests for entity ID mapping (string slugId ↔ int).
+"""Tests for slug/integer ID mapping at the scoring boundary."""
 
-Solidago expects integer entity IDs internally. The scoring worker maps
-string slugIds to sequential ints at the boundary, and maps back
-in the response. These tests verify correctness of the mapping,
-round-trip fidelity, and integration with bws_to_pairwise output.
-
-Tests written FIRST (before implementation) per TDD methodology.
-"""
-
-from scoring_worker.bws_conversion import PairwiseWin
 from scoring_worker.entity_mapping import (
     EntityIdMapper,
-    map_pairwise_wins_to_solidago,
     map_scores_from_solidago,
 )
+from scoring_worker.observations import PairwiseObservation, pairwise_observations_to_solidago_rows
 
 # ===========================================================================
 # EntityIdMapper unit tests
@@ -117,71 +108,6 @@ class TestEntityIdMapper:
 
 
 # ===========================================================================
-# map_pairwise_wins_to_solidago tests
-# ===========================================================================
-
-
-class TestMapPairwiseWinsToSolidago:
-    def test_maps_winner_loser_to_ints(self) -> None:
-        mapper = EntityIdMapper(entity_ids=["A", "B", "C"])
-        wins = [
-            PairwiseWin(user_id=0, winner="A", loser="B"),
-            PairwiseWin(user_id=0, winner="B", loser="C"),
-        ]
-        result = map_pairwise_wins_to_solidago(wins=wins, mapper=mapper)
-        assert len(result) == 2
-        # First win: A(0) beats B(1)
-        assert result[0]["user_id"] == 0
-        assert result[0]["entity_a"] == mapper.to_int("A")
-        assert result[0]["entity_b"] == mapper.to_int("B")
-        # Solidago convention: comparison < 0 means entity_a (winner) is preferred
-        assert result[0]["comparison"] == -1.0
-        assert result[0]["comparison_max"] == 1.0
-        # Second win: B(1) beats C(2)
-        assert result[1]["entity_a"] == mapper.to_int("B")
-        assert result[1]["entity_b"] == mapper.to_int("C")
-
-    def test_preserves_user_ids(self) -> None:
-        mapper = EntityIdMapper(entity_ids=["A", "B"])
-        wins = [
-            PairwiseWin(user_id=7, winner="A", loser="B"),
-            PairwiseWin(user_id=42, winner="B", loser="A"),
-        ]
-        result = map_pairwise_wins_to_solidago(wins=wins, mapper=mapper)
-        assert result[0]["user_id"] == 7
-        assert result[1]["user_id"] == 42
-
-    def test_empty_wins(self) -> None:
-        mapper = EntityIdMapper(entity_ids=["A", "B"])
-        result = map_pairwise_wins_to_solidago(wins=[], mapper=mapper)
-        assert result == []
-
-    def test_multiple_users_same_entities(self) -> None:
-        mapper = EntityIdMapper(entity_ids=["X", "Y"])
-        wins = [
-            PairwiseWin(user_id=0, winner="X", loser="Y"),
-            PairwiseWin(user_id=1, winner="Y", loser="X"),
-        ]
-        result = map_pairwise_wins_to_solidago(wins=wins, mapper=mapper)
-        # User 0: X(0) > Y(1)
-        assert result[0]["entity_a"] == 0
-        assert result[0]["entity_b"] == 1
-        # User 1: Y(1) > X(0) -- reversed
-        assert result[1]["entity_a"] == 1
-        assert result[1]["entity_b"] == 0
-
-    def test_unmapped_entity_raises(self) -> None:
-        """PairwiseWin referencing an entity not in the mapper should raise."""
-        mapper = EntityIdMapper(entity_ids=["A", "B"])
-        wins = [PairwiseWin(user_id=0, winner="A", loser="UNKNOWN")]
-        try:
-            map_pairwise_wins_to_solidago(wins=wins, mapper=mapper)
-            raise AssertionError("Should have raised KeyError for unmapped entity")
-        except KeyError:
-            pass
-
-
-# ===========================================================================
 # map_scores_from_solidago tests
 # ===========================================================================
 
@@ -251,14 +177,25 @@ class TestRoundTrip:
         entity_ids = ["y4c2yrE", "bdw35_M", "INN4aJg", "5rLND68"]
         mapper = EntityIdMapper(entity_ids=entity_ids)
 
-        # Simulate BWS pairwise output (strings)
-        wins = [
-            PairwiseWin(user_id=0, winner="INN4aJg", loser="5rLND68"),
-            PairwiseWin(user_id=0, winner="y4c2yrE", loser="bdw35_M"),
-        ]
-
-        # Map to Solidago format (ints)
-        solidago_input = map_pairwise_wins_to_solidago(wins=wins, mapper=mapper)
+        solidago_input = pairwise_observations_to_solidago_rows(
+            observations=[
+                PairwiseObservation(
+                    user_id=0,
+                    option_a_slug_id="INN4aJg",
+                    option_b_slug_id="5rLND68",
+                    comparison=-1.0,
+                    comparison_max=1.0,
+                ),
+                PairwiseObservation(
+                    user_id=0,
+                    option_a_slug_id="y4c2yrE",
+                    option_b_slug_id="bdw35_M",
+                    comparison=-1.0,
+                    comparison_max=1.0,
+                ),
+            ],
+            mapper=mapper,
+        )
         assert all(isinstance(row["entity_a"], int) for row in solidago_input)
         assert all(isinstance(row["entity_b"], int) for row in solidago_input)
 

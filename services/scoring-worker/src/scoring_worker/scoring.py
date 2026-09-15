@@ -24,6 +24,7 @@ from solidago.voting_rights import AffineOvertrust
 from solidago.voting_rights.base import VotingRights, VotingRightsAssignment
 
 from scoring_worker.cocm_voting import COCMVotingRights, GroupSource
+from scoring_worker.display_scores import squash_display_scores
 from scoring_worker.entity_mapping import (
     EntityIdMapper,
     SolidagoEntityScore,
@@ -148,6 +149,7 @@ _default_maxdiff_pipeline = _create_pipeline(
 class ScoringResult:
     entity_id: str
     score: float
+    display_score: float
     uncertainty_left: float
     uncertainty_right: float
 
@@ -386,14 +388,18 @@ def _build_users_dataframe(
 def to_scoring_results(entity_scores: list[SolidagoEntityScore]) -> list[ScoringResult]:
     """Convert raw model scores into sorted scoring results."""
 
+    displayed = squash_display_scores(
+        {index: entity.score for index, entity in enumerate(entity_scores)}
+    )
     results = [
         ScoringResult(
             entity_id=entity_score.entity_id,
             score=entity_score.score,
+            display_score=displayed[index],
             uncertainty_left=entity_score.uncertainty_left,
             uncertainty_right=entity_score.uncertainty_right,
         )
-        for entity_score in entity_scores
+        for index, entity_score in enumerate(entity_scores)
     ]
     results.sort(key=lambda result: result.score, reverse=True)
     return results

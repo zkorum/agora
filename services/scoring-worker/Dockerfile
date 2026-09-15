@@ -30,6 +30,7 @@ RUN python -m pip install --no-cache-dir --upgrade "pip>=26.1.1" "setuptools>=78
 WORKDIR /app
 
 COPY --from=builder /opt/venv /opt/venv
+COPY scripts/backfill_display_scores.py /app/scripts/backfill_display_scores.py
 ENV PATH="/opt/venv/bin:$PATH"
 
 RUN groupadd --system --gid 1000 appuser && \

@@ -8,14 +8,18 @@
       :items="rankingItems"
       :is-loading="false"
       no-items-message=""
-      score-label=""
       :compact-mode="compactMode"
       :on-click-item="props.onClickItem"
       :on-switch-tab="props.onSwitchTab"
       :on-learn-more="props.onLearnMore"
     />
     <div class="me-stats">
-      {{ t("meProgress", { percent: String(progress.percent), votes: formatAmount(progress.votes) }) }}
+      {{
+        t("meProgress", {
+          percent: String(progress.percent),
+          votes: formatAmount(progress.votes),
+        })
+      }}
     </div>
   </template>
 
@@ -30,9 +34,16 @@
     </div>
     <div class="me-banner">
       <div class="me-banner-content">
-        <div v-if="hasVoted" class="me-banner-message">{{ t("meVotesCounted") }}</div>
+        <div v-if="hasVoted" class="me-banner-message">
+          {{ t("meVotesCounted") }}
+        </div>
         <div class="me-banner-progress">
-          {{ t("meProgress", { percent: String(progress.percent), votes: formatAmount(progress.votes) }) }}
+          {{
+            t("meProgress", {
+              percent: String(progress.percent),
+              votes: formatAmount(progress.votes),
+            })
+          }}
         </div>
         <a class="me-keep-voting-link" @click="props.navigateToVotingTab()">
           {{ hasVoted ? t("meKeepVoting") : t("meStartVoting") }}
@@ -76,7 +87,7 @@ const props = defineProps<{
 }>();
 
 const { t } = useComponentI18n<MaxDiffResultsTabTranslations>(
-  maxDiffResultsTabTranslations,
+  maxDiffResultsTabTranslations
 );
 
 function parseComparisons(): MaxDiffComparison[] {
@@ -97,16 +108,17 @@ const restoredInstance = computed(() => {
   return restoreMaxDiff({ items: itemSlugIds, comparisons });
 });
 
-const rankingComplete = computed(() =>
-  restoredInstance.value?.complete ?? false,
+const rankingComplete = computed(
+  () => restoredInstance.value?.complete ?? false
 );
 
 const rankingItems = computed<MaxDiffListItem[]>(() => {
   const instance = restoredInstance.value;
-  if (instance === null || !instance.complete || instance.result === undefined) return [];
+  if (instance === null || !instance.complete || instance.result === undefined)
+    return [];
   const itemMap = new Map(props.allItems.map((i) => [i.slugId, i]));
   const scoreMap = new Map(
-    (props.loadData?.perUserScores ?? []).map((s) => [s.entitySlugId, s.score]),
+    (props.loadData?.perUserScores ?? []).map((s) => [s.entitySlugId, s.score])
   );
   return instance.result
     .map((slugId) => itemMap.get(slugId))

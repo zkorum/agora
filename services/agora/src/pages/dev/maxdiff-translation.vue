@@ -73,7 +73,6 @@
           :items="resultItems"
           :is-loading="false"
           no-items-message="No items"
-          score-label="{score}"
           :compact-mode="false"
           :on-click-item="({ itemSlugId }) => openDialog(itemSlugId)"
           :on-switch-tab="noop"

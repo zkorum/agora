@@ -57,4 +57,14 @@ if [ -d "$SERVICES_DIR/conversation-email-update-worker" ]; then
     add_warning_headers "$WORKER_TARGET"
 fi
 
+if [ -d "$SERVICES_DIR/load-testing" ]; then
+    echo "Syncing diagnostics protocol to load-testing..."
+    LOAD_TEST_TARGET="$SERVICES_DIR/load-testing/src/shared-backend"
+    mkdir -p "$LOAD_TEST_TARGET"
+    rsync -av --delete --delete-excluded \
+        --include='/rankingDiagnosticsProtocol.ts' --exclude='*' \
+        "$SHARED_BACKEND_DIR/src/" "$LOAD_TEST_TARGET/"
+    add_warning_headers "$LOAD_TEST_TARGET"
+fi
+
 echo "Shared-backend sync complete."

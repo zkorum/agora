@@ -842,7 +842,13 @@ Prefer `log.info()`, `log.warn()`, or `log.error()` for production-relevant even
 
 `log.debug()` is allowed in Python workers for dev-only or high-frequency diagnostics. Python workers default to `DEBUG` when `AGORA_DEV_MODE=true`, default to `INFO` otherwise, and support worker-specific `*_LOG_LEVEL` overrides.
 
-API and frontend should get the same explicit log-level mechanism later. Until then, keep API/frontend logs production-oriented.
+API uses `API_LOG_LEVEL` (default `info`). SQL templates require both
+`API_LOG_SQL_QUERIES=true` and DEBUG logging; parameter values are never logged.
+Ranking performance events are opt-in with `API_RANKING_PERFORMANCE_ENABLED=true`
+and `SCORING_WORKER_PERFORMANCE_ENABLED=true`, and use the existing
+`AGORA_LOAD_EVENT`/dev-log-runner capture system. See
+`services/load-testing/PERFORMANCE.md`. Keep routine logs production-oriented;
+the frontend still awaits a centralized log-level mechanism.
 
 **Examples:**
 

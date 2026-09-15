@@ -1,12 +1,11 @@
 /**
  * Server-side MaxDiff routing — generates candidate sets for voting.
  *
- * Uses greedy set cover to guarantee all item pairs co-appear in at
- * least one set, then fills remaining buffer slots with diverse sets.
- * Within each set, items are selected to maximize uncovered pairs
- * (covering design), weighted by global uncertainty (items needing
- * more data across all voters) and pairwise information gain (items
- * unresolved for this specific user).
+ * Uses greedy set cover over the user's unresolved pairs. Known relations
+ * (including transitive ones) remain covered across requests; appearances
+ * alone do not resolve the relative order of the middle items in a BWS task.
+ * Global uncertainty breaks ties, while coverage within a response keeps
+ * buffered tasks diverse.
  *
  * Pure function — no DB access.
  */
@@ -233,9 +232,10 @@ export function generateCandidateSets({
     if (items.length < 2 || bufferSize <= 0) return [];
 
     // Rebuild user's comparison matrix to find unordered items
-    const { applyComparison, getUnorderedPairs } = buildComparisonMatrix({
-        items,
-    });
+    const { applyComparison, getUnorderedPairs, getOrderedPairs } =
+        buildComparisonMatrix({
+            items,
+        });
     for (const comparison of userComparisons) {
         applyComparison(comparison);
     }
@@ -252,16 +252,19 @@ export function generateCandidateSets({
 
     const pool = [...unorderedItems];
     const isUnordered = buildUnorderedLookup(unorderedPairs);
-    const coveredPairs = new Set<string>();
+    const knownPairs = getOrderedPairs()
+        .filter(([a, b]) => unorderedItems.has(a) && unorderedItems.has(b))
+        .map(([a, b]) => pairKey(a, b));
+    const coveredPairs = new Set(knownPairs);
     const candidateSets: string[][] = [];
     const usedSignatures = new Set<string>();
     const totalPairs = (pool.length * (pool.length - 1)) / 2;
 
     for (let i = 0; i < bufferSize; i++) {
-        // Reset coverage when all pairs are covered so the greedy
-        // algorithm can differentiate items again in the next cycle.
+        // Only forget coverage planned in this buffer, not observed ordering.
         if (coveredPairs.size >= totalPairs) {
             coveredPairs.clear();
+            for (const pair of knownPairs) coveredPairs.add(pair);
         }
 
         // Build a set. If it duplicates an earlier one, rotate the pool

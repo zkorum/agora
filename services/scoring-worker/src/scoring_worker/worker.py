@@ -18,8 +18,10 @@ Run with: uv run python -m scoring_worker.worker
 from __future__ import annotations
 
 import logging
+import os
 import signal
 import time
+import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import TYPE_CHECKING
 
@@ -30,12 +32,12 @@ from sqlalchemy import create_engine, text
 from scoring_worker.config import Settings
 from scoring_worker.db import (
     ComparisonRow,
+    PublicationCallback,
     ScoredEntity,
+    ScoringPublication,
     UserScoreEntry,
     acquire_conversation_locks,
-    fetch_comparisons_batch,
-    fetch_ranking_items_batch,
-    fetch_scoring_input_revisions,
+    fetch_scoring_inputs,
     persist_scoring_batch,
     reconcile_unscored_conversations,
 )
@@ -45,6 +47,7 @@ from scoring_worker.scoring import (
     score_comparisons,
     warmup,
 )
+from scoring_worker.telemetry import emit_performance_event
 from scoring_worker.valkey_client import (
     DirtyConversation,
     mark_dirty,
@@ -93,9 +96,91 @@ def _score_one(
     *,
     entity_ids: list[str],
     comparisons: list[ComparisonRow],
+    participant_count: int,
+    performance_enabled: bool = False,
+    conversation_slug_id: str | None = None,
+    batch_id: str | None = None,
+    input_revision: int | None = None,
 ) -> ConversationScoringOutput | None:
     """Score a single conversation (called in thread pool)."""
-    return score_comparisons(entity_ids=entity_ids, comparisons=comparisons)
+    started = time.perf_counter()
+    outcome = "failure"
+    try:
+        result = score_comparisons(entity_ids=entity_ids, comparisons=comparisons)
+        outcome = "success" if result is not None else "skip"
+        return result
+    finally:
+        if performance_enabled:
+            emit_performance_event(
+                enabled=performance_enabled,
+                action="compute_completed",
+                outcome=outcome,
+                conversation_slug_id=conversation_slug_id,
+                duration_ms=(time.perf_counter() - started) * 1000,
+                metadata={
+                    "batchId": batch_id,
+                    "inputRevision": input_revision,
+                    "itemCount": len(entity_ids),
+                    "comparisonCount": len(comparisons),
+                    "participantCount": participant_count,
+                },
+            )
+
+
+def report_rejected_revisions(
+    publications: dict[int, ScoringPublication],
+    *,
+    enabled: bool,
+    batch_id: str,
+    conversations: list[DirtyConversation],
+    expected: dict[int, int],
+) -> None:
+    for item in conversations:
+        cid = item.conversation_id
+        publication = publications.get(cid)
+        if publication is not None and publication.status in {"invalidated", "missing"}:
+            emit_performance_event(
+                enabled=enabled,
+                action="revision_rejected",
+                outcome="skip",
+                conversation_slug_id=item.slug_id,
+                metadata={
+                    "batchId": batch_id,
+                    "expectedRevision": expected.get(cid),
+                    "observedRevision": publication.observed_revision,
+                    "reason": publication.status,
+                },
+            )
+
+
+def create_publication_callback(
+    *,
+    conversations: list[DirtyConversation],
+    input_revisions: dict[int, int],
+    batch_id: str,
+    performance_enabled: bool,
+    vk: valkey_lib.Valkey,
+) -> PublicationCallback:
+    items_by_id = {item.conversation_id: item for item in conversations}
+
+    def on_publication(*, conversation_id: int, publication: ScoringPublication) -> None:
+        item = items_by_id[conversation_id]
+        emit_performance_event(
+            enabled=performance_enabled,
+            action="publication_completed",
+            outcome="success" if publication.status == "published" else "skip",
+            conversation_slug_id=item.slug_id,
+            metadata={
+                "batchId": batch_id,
+                "inputRevision": input_revisions[conversation_id],
+                "observedRevision": publication.observed_revision,
+                "status": publication.status,
+            },
+        )
+        if publication.needs_requeue:
+            mark_dirty(vk, member=item.member, weight=item.weight)
+
+    return on_publication
 
 
 def deduplicate_batch(batch: list[DirtyConversation]) -> list[DirtyConversation]:
@@ -153,6 +238,7 @@ def _create_engine_with_retry(
             engine = create_engine(
                 _postgres_dsn(connection_string),
                 pool_pre_ping=True,
+                hide_parameters=True,
             )
             with engine.connect() as connection:
                 connection.execute(text("select 1"))
@@ -173,6 +259,25 @@ def _create_engine_with_retry(
 
 def _run_worker_once() -> None:
     settings = Settings()
+    logging.basicConfig(
+        level=getattr(logging, settings.resolved_log_level),
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        force=True,
+    )
+    emit_performance_event(
+        enabled=True,
+        action="logging_configured",
+        outcome="info",
+        metadata={
+            "logLevel": settings.resolved_log_level,
+            "pid": os.getpid(),
+            "performanceEnabled": settings.performance_enabled,
+            "maxWorkers": settings.max_workers,
+            "batchSize": settings.batch_size,
+            "pollSeconds": settings.poll_interval_seconds,
+            "reconcileSeconds": settings.reconcile_interval_seconds,
+        },
+    )
 
     signal.signal(signal.SIGTERM, _handle_signal)
     signal.signal(signal.SIGINT, _handle_signal)
@@ -298,6 +403,7 @@ def _run_worker_once() -> None:
 
             conv_ids = [item.conversation_id for item in to_process]
             batch_started = time.perf_counter()
+            batch_id = str(uuid.uuid4())
             batch_slugs = ", ".join(item.slug_id for item in to_process)
             log.info(
                 "[Worker] Processing %d conversation(s): %s",
@@ -309,27 +415,13 @@ def _run_worker_once() -> None:
             raise
 
         try:
-            # Step 2: Batch SELECT
-            fetch_started = time.perf_counter()
-            scoring_input_revisions = fetch_scoring_input_revisions(
+            # Step 2: Capture one coherent MVCC snapshot, then release it.
+            inputs = fetch_scoring_inputs(
                 processing_connection,
                 conversation_ids=conv_ids,
             )
-            log.info(
-                "[Worker] %s: fetched input revisions in %.3fs",
-                batch_slugs,
-                time.perf_counter() - fetch_started,
-            )
-            fetch_started = time.perf_counter()
-            ranking_items = fetch_ranking_items_batch(
-                processing_connection,
-                conversation_ids=conv_ids,
-            )
-            log.info(
-                "[Worker] %s: fetched ranking items in %.3fs",
-                batch_slugs,
-                time.perf_counter() - fetch_started,
-            )
+            scoring_input_revisions = inputs.revisions
+            ranking_items = inputs.ranking_items
             active_items = {
                 conversation_id: [
                     item.slug_id
@@ -338,18 +430,10 @@ def _run_worker_once() -> None:
                 ]
                 for conversation_id, items in ranking_items.items()
             }
-            fetch_started = time.perf_counter()
-            comparisons_result = fetch_comparisons_batch(
-                processing_connection,
-                conversation_ids=conv_ids,
-            )
-            log.info(
-                "[Worker] %s: fetched comparisons in %.3fs",
-                batch_slugs,
-                time.perf_counter() - fetch_started,
-            )
+            comparisons_result = inputs.comparisons
             comparisons = comparisons_result.comparisons
             user_idx_to_result_id = comparisons_result.user_idx_to_result_id
+            input_fetch_ms = (time.perf_counter() - batch_started) * 1000
 
             # Separate: conversations with enough data vs those to clear
             to_score: list[DirtyConversation] = []
@@ -382,6 +466,13 @@ def _run_worker_once() -> None:
                             _score_one,
                             entity_ids=active_items[item.conversation_id],
                             comparisons=comparisons[item.conversation_id],
+                            participant_count=len(
+                                user_idx_to_result_id.get(item.conversation_id, {})
+                            ),
+                            performance_enabled=settings.performance_enabled,
+                            conversation_slug_id=item.slug_id,
+                            batch_id=batch_id,
+                            input_revision=scoring_input_revisions.get(item.conversation_id),
                         ): item
                         for item in to_score
                     }
@@ -399,6 +490,7 @@ def _run_worker_once() -> None:
                                     ScoredEntity(
                                         entity_slug_id=r.entity_id,
                                         score=r.score,
+                                        display_score=r.display_score,
                                         uncertainty_left=r.uncertainty_left,
                                         uncertainty_right=r.uncertainty_right,
                                         participant_count=pc.get(r.entity_id, 0),
@@ -425,6 +517,7 @@ def _run_worker_once() -> None:
                                                 maxdiff_result_id=result_id,
                                                 entity_slug_id=r.entity_id,
                                                 score=r.score,
+                                                display_score=r.display_score,
                                                 uncertainty_left=r.uncertainty_left,
                                                 uncertainty_right=r.uncertainty_right,
                                             )
@@ -449,48 +542,57 @@ def _run_worker_once() -> None:
             )
 
             # Step 4: Final revision locking and atomic publication
-            snapshot_scored_entities = {
-                conversation_id: result[0] for conversation_id, result in scoring_results.items()
-            }
-            completed_conversation_ids = [
-                *scoring_results.keys(),
-                *to_clear,
-            ]
             publication_started = time.perf_counter()
-            published = persist_scoring_batch(
+            publications = persist_scoring_batch(
                 processing_connection,
+                inputs=inputs,
                 scoring_results=scoring_results,
                 user_scores=all_user_score_entries,
                 conversation_ids_to_clear=list(to_clear),
-                snapshot_conversation_ids=completed_conversation_ids,
-                ranking_items_by_conv=ranking_items,
-                comparisons_by_conv=comparisons,
-                total_vote_count_by_conversation=(
-                    comparisons_result.total_vote_count_by_conversation
+                on_publication=create_publication_callback(
+                    conversations=to_process,
+                    input_revisions=scoring_input_revisions,
+                    batch_id=batch_id,
+                    performance_enabled=settings.performance_enabled,
+                    vk=vk,
                 ),
-                total_participant_count_by_conversation=(
-                    comparisons_result.total_participant_count_by_conversation
-                ),
-                scored_entities_by_conv=snapshot_scored_entities,
-                scoring_input_revisions=scoring_input_revisions,
             )
             publication_finished = time.perf_counter()
+            published_count = sum(p.status == "published" for p in publications.values())
+            report_rejected_revisions(
+                publications,
+                enabled=settings.performance_enabled,
+                batch_id=batch_id,
+                conversations=to_process,
+                expected=scoring_input_revisions,
+            )
+            emit_performance_event(
+                enabled=settings.performance_enabled,
+                action="batch_completed",
+                outcome="success" if published_count else "skip",
+                duration_ms=(publication_finished - batch_started) * 1000,
+                metadata={
+                    "batchId": batch_id,
+                    "conversations": ",".join(item.slug_id for item in to_process),
+                    "inputFetchMs": input_fetch_ms,
+                    "computeAndPrepareMs": (publication_started - scoring_started) * 1000,
+                    "publicationMs": (publication_finished - publication_started) * 1000,
+                    "failedConversations": len(failed_items),
+                    "publishedConversations": published_count,
+                    "invalidatedConversations": sum(
+                        p.status == "invalidated" for p in publications.values()
+                    ),
+                },
+            )
             log.info(
                 "[Worker] %s: publication attempt completed in %.3fs "
-                "(published=%s, processing elapsed through publication=%.3fs)",
+                "(published=%d/%d, processing elapsed through publication=%.3fs)",
                 batch_slugs,
                 publication_finished - publication_started,
-                published,
+                published_count,
+                len(publications),
                 publication_finished - batch_started,
             )
-            if not published:
-                for item in to_process:
-                    mark_dirty(vk, member=item.member, weight=item.weight)
-                log.info(
-                    "[Worker] Requeued batch because scoring input revisions "
-                    "changed before publication",
-                )
-                continue
 
             # Handle failures: re-add with backoff
             for item in failed_items:

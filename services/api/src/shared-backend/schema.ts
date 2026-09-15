@@ -2322,7 +2322,7 @@ export const otpEmailDestinationStateTable = pgTable(
     ],
 );
 
-/** @service shared-analysis-worker, import-worker, content-translation-worker */
+/** @service shared-analysis-worker, import-worker, content-translation-worker, scoring-worker */
 export const conversationContentTable = pgTable(
     "conversation_content",
     {
@@ -2413,6 +2413,12 @@ export const rankingConversationConfigTable = pgTable(
         })
             .notNull()
             .default(0),
+        // New votes may lag publication; edits/removals invalidate older computations.
+        scoringInvalidationRevision: bigint("scoring_invalidation_revision", {
+            mode: "number",
+        })
+            .notNull()
+            .default(0),
         processedScoringInputRevision: bigint(
             "processed_scoring_input_revision",
             {
@@ -2435,6 +2441,10 @@ export const rankingConversationConfigTable = pgTable(
             .notNull(),
     },
     (table) => [
+        check(
+            "ranking_conversation_config_invalidation_revision_check",
+            sql`${table.scoringInvalidationRevision} >= 0 AND ${table.scoringInvalidationRevision} <= ${table.scoringInputRevision}`,
+        ),
         check(
             "ranking_conversation_config_counts_check",
             sql`${table.itemCount} >= 0 AND ${table.itemCount} <= ${table.totalItemCount} AND ${table.voteCount} >= 0 AND ${table.voteCount} <= ${table.totalVoteCount} AND ${table.participantCount} >= 0 AND ${table.participantCount} <= ${table.totalParticipantCount} AND ${table.scoringInputRevision} >= 0 AND ${table.processedScoringInputRevision} >= -1 AND ${table.processedScoringInputRevision} <= ${table.scoringInputRevision}`,
@@ -2669,6 +2679,7 @@ export const rankingItemTable = pgTable(
             .notNull()
             .default("active"),
         snapshotScore: real("snapshot_score"),
+        snapshotRankingScoreId: integer("snapshot_ranking_score_id"),
         snapshotRank: integer("snapshot_rank"),
         snapshotParticipantCount: integer("snapshot_participant_count"),
         createdAt: timestamp("created_at", {
@@ -2685,6 +2696,14 @@ export const rankingItemTable = pgTable(
             .notNull(),
     },
     (table) => [
+        foreignKey({
+            columns: [table.snapshotRankingScoreId, table.conversationId],
+            foreignColumns: [
+                rankingScoreTable.id,
+                rankingScoreTable.conversationId,
+            ],
+            name: "ranking_item_snapshot_score_conversation_fk",
+        }),
         unique("ranking_item_id_conversation_unique").on(
             table.id,
             table.conversationId,
@@ -5511,44 +5530,53 @@ export const maxdiffResultTable = pgTable(
 // ranking_conversation_config.currentRankingScoreId points to the latest.
 // Populated by the scoring worker's Valkey-driven queue loop.
 /** @service scoring-worker, api */
-export const rankingScoreTable = pgTable("ranking_score", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    conversationId: integer("conversation_id")
-        .notNull()
-        .references(() => conversationTable.id),
-    // --- Output: ranking scores (JSONB backup blob) ---
-    // Array of { entityId, score, uncertaintyLeft, uncertaintyRight }.
-    // Scores are stored in raw model units; API/UI may derive normalized display scores.
-    // Kept as backup; canonical data is in ranking_score_entity table.
-    scores: jsonb("scores").notNull(),
-    // Record<entityId, participantCount> for display (JSONB backup blob)
-    // Kept as backup; canonical data is in ranking_score_entity.participant_count.
-    participantCounts: jsonb("participant_counts").notNull(),
-    // --- Input context: what parameters produced these scores ---
-    // Snapshot of group sources used for COCM voting rights (if any).
-    // Null if no group weighting was applied.
-    groupSourcesSnapshot: jsonb("group_sources_snapshot"),
-    // Snapshot of user trust weights used (if any).
-    // Null if all users had equal trust.
-    userWeightsSnapshot: jsonb("user_weights_snapshot"),
-    // Pipeline config: typed columns replace the old JSONB blob.
-    // The old pipelineConfig JSONB is kept for backward compat during migration.
-    pipelineConfig: jsonb("pipeline_config").notNull(),
-    preferenceLearning: varchar("preference_learning", { length: 100 }),
-    votingRights: varchar("voting_rights", { length: 100 }),
-    aggregationConfig: varchar("aggregation_config", { length: 200 }),
-    // --- Metadata ---
-    computedAt: timestamp("computed_at", {
-        mode: "date",
-        precision: 0,
-    }).notNull(),
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
+export const rankingScoreTable = pgTable(
+    "ranking_score",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        conversationId: integer("conversation_id")
+            .notNull()
+            .references(() => conversationTable.id),
+        // --- Output: ranking scores (JSONB backup blob) ---
+        // Array of { entityId, score, uncertaintyLeft, uncertaintyRight }.
+        // Raw model units; the worker stores fixed-scale display values separately.
+        // Kept as backup; canonical data is in ranking_score_entity table.
+        scores: jsonb("scores").notNull(),
+        // Record<entityId, participantCount> for display (JSONB backup blob)
+        // Kept as backup; canonical data is in ranking_score_entity.participant_count.
+        participantCounts: jsonb("participant_counts").notNull(),
+        // --- Input context: what parameters produced these scores ---
+        // Snapshot of group sources used for COCM voting rights (if any).
+        // Null if no group weighting was applied.
+        groupSourcesSnapshot: jsonb("group_sources_snapshot"),
+        // Snapshot of user trust weights used (if any).
+        // Null if all users had equal trust.
+        userWeightsSnapshot: jsonb("user_weights_snapshot"),
+        // Pipeline config: typed columns replace the old JSONB blob.
+        // The old pipelineConfig JSONB is kept for backward compat during migration.
+        pipelineConfig: jsonb("pipeline_config").notNull(),
+        preferenceLearning: varchar("preference_learning", { length: 100 }),
+        votingRights: varchar("voting_rights", { length: 100 }),
+        aggregationConfig: varchar("aggregation_config", { length: 200 }),
+        // --- Metadata ---
+        computedAt: timestamp("computed_at", {
+            mode: "date",
+            precision: 0,
+        }).notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        unique("ranking_score_id_conversation_unique").on(
+            table.id,
+            table.conversationId,
+        ),
+    ],
+);
 
 /** @service scoring-worker, api */
 export const rankingConversationStatsSnapshotTable = pgTable(
@@ -5558,6 +5586,8 @@ export const rankingConversationStatsSnapshotTable = pgTable(
         conversationId: integer("conversation_id")
             .notNull()
             .references(() => conversationTable.id),
+        // Null for legacy checkpoints without a recorded raw-score provenance.
+        rankingScoreId: integer("ranking_score_id"),
         itemCount: integer("item_count").notNull(),
         totalItemCount: integer("total_item_count").notNull(),
         voteCount: integer("vote_count").notNull(),
@@ -5576,6 +5606,14 @@ export const rankingConversationStatsSnapshotTable = pgTable(
             .notNull(),
     },
     (table) => [
+        foreignKey({
+            columns: [table.rankingScoreId, table.conversationId],
+            foreignColumns: [
+                rankingScoreTable.id,
+                rankingScoreTable.conversationId,
+            ],
+            name: "ranking_stats_snapshot_score_conversation_fk",
+        }),
         unique("ranking_stats_snapshot_id_conversation_unique").on(
             table.id,
             table.conversationId,
@@ -5696,7 +5734,7 @@ export const rankingConversationStatsCheckpointTable = pgTable(
 
 // Canonical raw entity-level scores for one ranking_score computation.
 // The JSONB `scores` column on ranking_score is kept as a backup blob.
-// API/UI may derive normalized display scores from these raw values.
+// The API reads the worker's stored display scores alongside these raw values.
 /** @service scoring-worker, api */
 export const rankingScoreEntityTable = pgTable(
     "ranking_score_entity",
@@ -5707,6 +5745,8 @@ export const rankingScoreEntityTable = pgTable(
             .references(() => rankingScoreTable.id),
         entitySlugId: varchar("entity_slug_id", { length: 8 }).notNull(),
         score: real("score").notNull(),
+        // Solidago Squash, shifted to 0–1. Null until a legacy raw score is backfilled.
+        displayScore: real("display_score"),
         uncertaintyLeft: real("uncertainty_left").notNull(),
         uncertaintyRight: real("uncertainty_right").notNull(),
         participantCount: integer("participant_count").notNull().default(0),
@@ -5715,6 +5755,10 @@ export const rankingScoreEntityTable = pgTable(
         index("ranking_score_entity_slug_idx").on(
             t.rankingScoreId,
             t.entitySlugId,
+        ),
+        check(
+            "ranking_score_entity_display_score_check",
+            sql`${t.displayScore} IS NULL OR (${t.displayScore} >= 0 AND ${t.displayScore} <= 1)`,
         ),
     ],
 );
@@ -5761,11 +5805,16 @@ export const maxdiffUserEntityScoreTable = pgTable(
             .references(() => maxdiffResultTable.id),
         entitySlugId: varchar("entity_slug_id", { length: 8 }).notNull(),
         score: real("score").notNull(),
+        displayScore: real("display_score"),
         uncertaintyLeft: real("uncertainty_left").notNull(),
         uncertaintyRight: real("uncertainty_right").notNull(),
     },
     (t) => [
         unique().on(t.maxdiffResultId, t.entitySlugId),
+        check(
+            "maxdiff_user_entity_score_display_score_check",
+            sql`${t.displayScore} IS NULL OR (${t.displayScore} >= 0 AND ${t.displayScore} <= 1)`,
+        ),
         index("maxdiff_user_entity_score_result_score_idx").using(
             "btree",
             t.maxdiffResultId,

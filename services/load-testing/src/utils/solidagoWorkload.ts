@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { MaxDiffSaveRequest } from "../shared/types/dto.js";
+import { rankingStrategySchema } from "./rankingStrategies.ts";
 
 const positiveInteger = z.coerce.number().int().positive();
 const seconds = z.coerce.number().min(0).max(600);
@@ -11,6 +11,39 @@ const apiOrigin =
 export function parseSolidagoConfig(env: Record<string, string | undefined>) {
     const config = z
         .object({
+            RANKING_WORKLOAD_MODE: z
+                .enum(["iterations", "duration", "arrival-rate"])
+                .default("iterations"),
+            RANKING_DURATION_SECONDS: positiveInteger.default(300),
+            RANKING_ARRIVAL_RATE_PER_CONVERSATION: positiveInteger.default(2),
+            RANKING_MAX_VUS_PER_CONVERSATION: positiveInteger.default(100),
+            RANKING_STRATEGY: rankingStrategySchema.default("cohorts"),
+            RANKING_SEED: z.string().min(1).max(64).default("agora-ranking-v1"),
+            RANKING_NOISE_RATE: z.coerce.number().min(0).max(1).default(0.1),
+            RANKING_MAJORITY_SHARE: z.coerce
+                .number()
+                .min(0.5)
+                .max(1)
+                .default(0.8),
+            RANKING_DROPOUT_RATE: z.coerce.number().min(0).max(1).default(0.5),
+            RANKING_ITEM_ORDERS: z
+                .string()
+                .optional()
+                .transform((value, context) => {
+                    if (value === undefined) return {};
+                    try {
+                        return z
+                            .record(z.string(), z.array(z.string()).min(4))
+                            .parse(JSON.parse(value));
+                    } catch {
+                        context.addIssue({
+                            code: "custom",
+                            message:
+                                "Expected JSON mapping conversation slugs to ordered item IDs",
+                        });
+                        return z.NEVER;
+                    }
+                }),
             API_BASE_URL: z
                 .string()
                 .regex(
@@ -45,14 +78,41 @@ export function parseSolidagoConfig(env: Record<string, string | undefined>) {
         })
         .refine(
             (value) =>
+                value.RANKING_WORKLOAD_MODE !== "iterations" ||
                 value.RANKING_VUS_PER_CONVERSATION <=
-                value.RANKING_USERS_PER_CONVERSATION,
+                    value.RANKING_USERS_PER_CONVERSATION,
             {
                 message:
                     "RANKING_VUS_PER_CONVERSATION must not exceed RANKING_USERS_PER_CONVERSATION",
             },
         )
         .superRefine((value, context) => {
+            for (const [slug, order] of Object.entries(
+                value.RANKING_ITEM_ORDERS,
+            )) {
+                if (
+                    !value.CONVERSATION_SLUG_IDS.includes(slug) ||
+                    new Set(order).size !== order.length
+                ) {
+                    context.addIssue({
+                        code: "custom",
+                        path: ["RANKING_ITEM_ORDERS"],
+                        message:
+                            "Item orders must target configured conversations and contain distinct item IDs",
+                    });
+                }
+            }
+            if (
+                value.RANKING_WORKLOAD_MODE === "arrival-rate" &&
+                value.RANKING_MAX_VUS_PER_CONVERSATION <
+                    value.RANKING_VUS_PER_CONVERSATION
+            ) {
+                context.addIssue({
+                    code: "custom",
+                    path: ["RANKING_MAX_VUS_PER_CONVERSATION"],
+                    message: "Maximum VUs must cover preallocated VUs",
+                });
+            }
             if (
                 value.API_BASE_URL !== localApiBaseUrl &&
                 value.BACKEND_DID === undefined
@@ -82,6 +142,16 @@ export function parseSolidagoConfig(env: Record<string, string | undefined>) {
         .parse(env);
 
     return {
+        workloadMode: config.RANKING_WORKLOAD_MODE,
+        durationSeconds: config.RANKING_DURATION_SECONDS,
+        arrivalRate: config.RANKING_ARRIVAL_RATE_PER_CONVERSATION,
+        maxVusPerConversation: config.RANKING_MAX_VUS_PER_CONVERSATION,
+        strategy: config.RANKING_STRATEGY,
+        seed: config.RANKING_SEED,
+        noiseRate: config.RANKING_NOISE_RATE,
+        majorityShare: config.RANKING_MAJORITY_SHARE,
+        dropoutRate: config.RANKING_DROPOUT_RATE,
+        itemOrders: new Map(Object.entries(config.RANKING_ITEM_ORDERS)),
         conversations: config.CONVERSATION_SLUG_IDS,
         usersPerConversation: config.RANKING_USERS_PER_CONVERSATION,
         vusPerConversation: config.RANKING_VUS_PER_CONVERSATION,
@@ -101,52 +171,32 @@ export function buildSolidagoScenarios(
         config.conversations.map((conversationSlugId) => [
             `ranking_${conversationSlugId}`,
             {
-                executor: "shared-iterations" as const,
-                vus: config.vusPerConversation,
-                iterations: config.usersPerConversation,
-                maxDuration: `${String(config.maxDurationSeconds)}s`,
+                ...(config.workloadMode === "arrival-rate"
+                    ? {
+                          executor: "constant-arrival-rate" as const,
+                          rate: config.arrivalRate,
+                          timeUnit: "1s",
+                          duration: `${String(config.durationSeconds)}s`,
+                          preAllocatedVUs: config.vusPerConversation,
+                          maxVUs: config.maxVusPerConversation,
+                          gracefulStop: "2m",
+                      }
+                    : config.workloadMode === "duration"
+                      ? {
+                            executor: "constant-vus" as const,
+                            vus: config.vusPerConversation,
+                            duration: `${String(config.durationSeconds)}s`,
+                            gracefulStop: "2m",
+                        }
+                      : {
+                            executor: "shared-iterations" as const,
+                            vus: config.vusPerConversation,
+                            iterations: config.usersPerConversation,
+                            maxDuration: `${String(config.maxDurationSeconds)}s`,
+                        }),
                 tags: { conversation: conversationSlugId },
                 env: { RANKING_CONVERSATION_SLUG_ID: conversationSlugId },
             },
         ]),
     );
-}
-
-export function chooseComparison({
-    candidateSet,
-    preferenceGroup,
-}: {
-    candidateSet: string[];
-    preferenceGroup: number;
-}): MaxDiffSaveRequest["comparisons"][number] {
-    // A group keeps the same preference ordering across sets and participants.
-    const ordered = [...new Set(candidateSet)]
-        .map((item) => {
-            let preference = 2166136261;
-            for (const character of `${String(preferenceGroup)}:${item}`) {
-                preference =
-                    Math.imul(
-                        preference ^ character.charCodeAt(0),
-                        16777619,
-                    ) >>> 0;
-            }
-            return { item, preference };
-        })
-        .sort(
-            (a, b) =>
-                b.preference - a.preference || a.item.localeCompare(b.item),
-        );
-    const best = ordered.at(0)?.item;
-    const worst = ordered.at(-1)?.item;
-    if (
-        best === undefined ||
-        worst === undefined ||
-        best === worst ||
-        ordered.length !== candidateSet.length
-    ) {
-        throw new Error(
-            "Server candidate set must contain at least two distinct items and no duplicates",
-        );
-    }
-    return { best, worst, set: [...candidateSet] };
 }

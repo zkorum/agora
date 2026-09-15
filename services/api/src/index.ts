@@ -27,6 +27,10 @@ import {
 } from "@/shared/types/dto-auth.js";
 import { normalizeEmail } from "@/shared/types/zod-email.js";
 import fastifyAuth from "@fastify/auth";
+import {
+    createRankingPerformance,
+    startRankingResourceLogging,
+} from "./utils/rankingPerformance.js";
 import fastifyCors from "@fastify/cors";
 import fastifyMultipart from "@fastify/multipart";
 import fastifyRateLimit from "@fastify/rate-limit";
@@ -520,7 +524,35 @@ server.setErrorHandler((error: FastifyError, _request, reply) => {
 // await node.start();
 // await node.waitForPeers([Protocols.LightPush]);
 
-const db = await createDb(config, log);
+const db = await createDb({
+    config,
+    log,
+    logQueries: config.API_LOG_SQL_QUERIES,
+});
+log.info(
+    "AGORA_LOAD_EVENT %s",
+    JSON.stringify({
+        schemaVersion: 1,
+        timestamp: new Date().toISOString(),
+        scenario: "solidago-ranking",
+        phase: "api",
+        action: "logging_configured",
+        outcome: "info",
+        metadata: {
+            logLevel: config.API_LOG_LEVEL,
+            pid: process.pid,
+            sqlQueries: config.API_LOG_SQL_QUERIES,
+            performanceEnabled: config.API_RANKING_PERFORMANCE_ENABLED,
+        },
+    }),
+);
+if (config.API_RANKING_PERFORMANCE_ENABLED) {
+    const stopResourceLogging = startRankingResourceLogging(log);
+    server.addHook("onClose", () => {
+        stopResourceLogging();
+        return Promise.resolve();
+    });
+}
 const conversationEmailUpdateService = createConversationEmailUpdateService({
     db,
     baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
@@ -3092,35 +3124,66 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUcan(request);
-            const now = nowZeroMs();
-            const participationCheck = await checkConversationParticipation({
-                db,
+            const trace = createRankingPerformance({
+                enabled: config.API_RANKING_PERFORMANCE_ENABLED,
+                logger: request.log,
+                requestId: request.id,
                 conversationSlugId: request.body.conversationSlugId,
-                didWrite,
-                userAgent: request.headers["user-agent"] ?? "Unknown device",
-                now,
-                currentDisplayLanguage: getRequestDisplayLanguage({ request }),
+                operation: "save",
+                historyLength: request.body.comparisons.length,
             });
-            if (!participationCheck.success) {
-                return participationCheck;
+            let outcome: "success" | "failure" | "blocked" = "failure";
+            try {
+                const { didWrite } = await trace.measure({
+                    phase: "authentication",
+                    run: () => verifyUcan(request),
+                });
+                const now = nowZeroMs();
+                const participationCheck = await trace.measure({
+                    phase: "participation",
+                    run: () =>
+                        checkConversationParticipation({
+                            db,
+                            conversationSlugId: request.body.conversationSlugId,
+                            didWrite,
+                            userAgent:
+                                request.headers["user-agent"] ??
+                                "Unknown device",
+                            now,
+                            currentDisplayLanguage: getRequestDisplayLanguage({
+                                request,
+                            }),
+                        }),
+                });
+                if (!participationCheck.success) {
+                    outcome = "blocked";
+                    return participationCheck;
+                }
+                const { items, uncertainty } = await saveMaxdiffResult({
+                    db,
+                    conversationSlugId: request.body.conversationSlugId,
+                    userId: participationCheck.participantId,
+                    ranking: request.body.ranking,
+                    comparisons: request.body.comparisons,
+                    isComplete: request.body.isComplete,
+                    valkey: queueValkeyRef.current,
+                    performance: trace,
+                });
+                const candidateSets = trace.measureSync({
+                    phase: "routing",
+                    run: () =>
+                        generateCandidateSets({
+                            userComparisons: request.body.comparisons,
+                            items,
+                            globalUncertainty: uncertainty,
+                            bufferSize: 1,
+                        }),
+                });
+                outcome = "success";
+                return { success: true as const, candidateSets };
+            } finally {
+                trace.finish(outcome);
             }
-            const { items, uncertainty } = await saveMaxdiffResult({
-                db,
-                conversationSlugId: request.body.conversationSlugId,
-                userId: participationCheck.participantId,
-                ranking: request.body.ranking,
-                comparisons: request.body.comparisons,
-                isComplete: request.body.isComplete,
-                valkey: queueValkeyRef.current,
-            });
-            const candidateSets = generateCandidateSets({
-                userComparisons: request.body.comparisons,
-                items,
-                globalUncertainty: uncertainty,
-                bufferSize: 1,
-            });
-            return { success: true as const, candidateSets };
         },
     });
 
@@ -3134,34 +3197,66 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
-            const { id: conversationId } =
-                await useCommonPost().getPostMetadataFromSlugId({
-                    db,
-                    conversationSlugId: request.body.conversationSlugId,
-                });
-            const [loadData, { items, uncertainty }] = await Promise.all([
-                deviceStatus.isKnown
-                    ? loadMaxdiffResult({
-                          db,
-                          conversationId,
-                          userId: deviceStatus.userId,
-                      })
-                    : Promise.resolve({
-                          ranking: null,
-                          comparisons: null,
-                          isComplete: false,
-                          perUserScores: null,
-                      }),
-                computeGlobalUncertainty({ db, conversationId }),
-            ]);
-            const candidateSets = generateCandidateSets({
-                userComparisons: loadData.comparisons ?? [],
-                items,
-                globalUncertainty: uncertainty,
-                bufferSize: 1,
+            const trace = createRankingPerformance({
+                enabled: config.API_RANKING_PERFORMANCE_ENABLED,
+                logger: request.log,
+                requestId: request.id,
+                conversationSlugId: request.body.conversationSlugId,
+                operation: "load",
+                historyLength: undefined,
             });
-            return { ...loadData, candidateSets };
+            let outcome: "success" | "failure" = "failure";
+            try {
+                const { deviceStatus } = await trace.measure({
+                    phase: "authentication",
+                    run: () => verifyUcanOptionalAuth(db, request),
+                });
+                const { id: conversationId } =
+                    await useCommonPost().getPostMetadataFromSlugId({
+                        db,
+                        conversationSlugId: request.body.conversationSlugId,
+                    });
+                const [loadData, { items, uncertainty }] = await trace.measure({
+                    phase: "load",
+                    run: () =>
+                        Promise.all([
+                            deviceStatus.isKnown
+                                ? loadMaxdiffResult({
+                                      db,
+                                      conversationId,
+                                      userId: deviceStatus.userId,
+                                  })
+                                : Promise.resolve({
+                                      ranking: null,
+                                      comparisons: null,
+                                      isComplete: false,
+                                      perUserScores: null,
+                                  }),
+                            trace.measure({
+                                phase: "uncertainty",
+                                run: () =>
+                                    computeGlobalUncertainty({
+                                        db,
+                                        conversationId,
+                                    }),
+                            }),
+                        ]),
+                });
+                const candidateSets = trace.measureSync({
+                    phase: "routing",
+                    run: () =>
+                        generateCandidateSets({
+                            userComparisons: loadData.comparisons ?? [],
+                            items,
+                            globalUncertainty: uncertainty,
+                            bufferSize: 1,
+                        }),
+                });
+                outcome = "success";
+                return { ...loadData, candidateSets };
+            } finally {
+                trace.finish(outcome);
+            }
         },
     });
 

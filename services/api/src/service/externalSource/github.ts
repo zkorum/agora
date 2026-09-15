@@ -55,7 +55,10 @@ async function getDeterministicProjectMemberUserId({
                 isNull(projectOrganizationOwnershipTable.deletedAt),
             ),
         )
-        .orderBy(asc(organizationMembershipTable.createdAt), asc(organizationMembershipTable.id))
+        .orderBy(
+            asc(organizationMembershipTable.createdAt),
+            asc(organizationMembershipTable.id),
+        )
         .limit(1);
 
     return rows.at(0)?.userId;
@@ -353,7 +356,9 @@ async function upsertItemFromGitHubIssue({
 
         if (existingRows.length === 0) {
             // Create new item + external source
-            const issueBodyHtml = convertMarkdownToHtml({ markdown: issue.body });
+            const issueBodyHtml = convertMarkdownToHtml({
+                markdown: issue.body,
+            });
             const result = await createRankingItem({
                 db: tx,
                 tx,
@@ -391,6 +396,7 @@ async function upsertItemFromGitHubIssue({
                     .set({
                         lifecycleStatus: newLifecycle,
                         snapshotScore: snapshot.snapshotScore,
+                        snapshotRankingScoreId: snapshot.snapshotRankingScoreId,
                         snapshotRank: snapshot.snapshotRank,
                         snapshotParticipantCount:
                             snapshot.snapshotParticipantCount,
@@ -424,10 +430,12 @@ async function upsertItemFromGitHubIssue({
             const issueBodyHtml = convertMarkdownToHtml({
                 markdown: issue.body,
             });
-            const normalizedContent = await normalizeProviderRankingItemContent({
-                title: issue.title,
-                bodyHtml: issueBodyHtml,
-            });
+            const normalizedContent = await normalizeProviderRankingItemContent(
+                {
+                    title: issue.title,
+                    bodyHtml: issueBodyHtml,
+                },
+            );
 
             // Get current item state
             const currentItemRows = await tx
@@ -505,6 +513,7 @@ async function upsertItemFromGitHubIssue({
                         currentContentId: contentId,
                         lifecycleStatus: newLifecycle,
                         snapshotScore: snapshot.snapshotScore,
+                        snapshotRankingScoreId: snapshot.snapshotRankingScoreId,
                         snapshotRank: snapshot.snapshotRank,
                         snapshotParticipantCount:
                             snapshot.snapshotParticipantCount,
@@ -519,6 +528,7 @@ async function upsertItemFromGitHubIssue({
                         currentContentId: contentId,
                         lifecycleStatus: newLifecycle,
                         snapshotScore: null,
+                        snapshotRankingScoreId: null,
                         snapshotRank: null,
                         snapshotParticipantCount: null,
                         updatedAt: now,
@@ -612,6 +622,7 @@ async function deactivateItemByExternalId({
             .set({
                 lifecycleStatus: "canceled",
                 snapshotScore: snapshot.snapshotScore,
+                snapshotRankingScoreId: snapshot.snapshotRankingScoreId,
                 snapshotRank: snapshot.snapshotRank,
                 snapshotParticipantCount: snapshot.snapshotParticipantCount,
                 updatedAt: new Date(),

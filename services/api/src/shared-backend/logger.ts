@@ -34,16 +34,16 @@ export function safeDependencyError(error: unknown): {
 }
 
 export class DrizzleFastifyLogger implements Logger {
-    private readonly logger: Pick<BaseLogger, "info">;
+    private readonly logger: Pick<BaseLogger, "debug">;
 
     constructor({
         fastifyLogger,
     }: {
-        fastifyLogger: Pick<BaseLogger, "info">;
+        fastifyLogger: Pick<BaseLogger, "debug">;
     }) {
         this.logger = fastifyLogger;
     }
     logQuery(query: string, params: unknown[]): void {
-        this.logger.info("%s -- parameterCount=%d", query, params.length);
+        this.logger.debug("%s -- parameterCount=%d", query, params.length);
     }
 }

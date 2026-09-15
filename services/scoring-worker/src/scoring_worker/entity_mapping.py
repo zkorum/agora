@@ -7,8 +7,6 @@ keeps the int-mapping concern contained in the scoring worker boundary.
 
 from dataclasses import dataclass
 
-from scoring_worker.bws_conversion import PairwiseWin
-
 # ---------------------------------------------------------------------------
 # Types
 # ---------------------------------------------------------------------------
@@ -74,32 +72,6 @@ class EntityIdMapper:
 # ---------------------------------------------------------------------------
 # Mapping functions
 # ---------------------------------------------------------------------------
-
-
-def map_pairwise_wins_to_solidago(
-    *,
-    wins: list[PairwiseWin],
-    mapper: EntityIdMapper,
-) -> list[dict[str, int | float]]:
-    """Convert PairwiseWin list to Solidago comparison format (int entity IDs).
-
-    Each win becomes a row: {user_id, entity_a (winner), entity_b (loser),
-    comparison=1.0, comparison_max=1.0}.
-
-    Raises KeyError if a win references an entity not in the mapper.
-    """
-    # Solidago convention: comparison < 0 means entity_a is preferred.
-    # So winner → entity_a with comparison=-1.0.
-    return [
-        {
-            "user_id": win.user_id,
-            "entity_a": mapper.to_int(win.winner),
-            "entity_b": mapper.to_int(win.loser),
-            "comparison": -1.0,
-            "comparison_max": 1.0,
-        }
-        for win in wins
-    ]
 
 
 def map_scores_from_solidago(

@@ -82,6 +82,8 @@ Search semantic events directly with `rg`, for example `rg '"outcome":"failure"'
 
 #### Scenario 2: Solidago Ranking
 
+For performance investigations, use the [performance workflow](PERFORMANCE.md). It adds phase timings, native/container resource samples, primary/replica query-statistics deltas, scoring freshness checks, ranking evaluation, and a run-scoped report to the existing durable logging system.
+
 Use **disposable environments only**. Guest users and comparison history remain in the database; only load-generator keys are cleared after each participant. It requires distinct ranking fixtures, not the voting fixtures used by Scenario 1. Neither runner launches the other scenario. The former `test:all` command is now named `test:conversation-voting:build`; use `test:solidago-ranking:build` to build and run ranking load instead.
 
 Precreate each conversation in the UI with:

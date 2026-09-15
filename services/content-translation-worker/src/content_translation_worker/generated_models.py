@@ -859,6 +859,7 @@ class RankingItem(Base):
         ),
     )
     snapshot_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    snapshot_ranking_score_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     snapshot_rank: Mapped[int | None] = mapped_column(Integer, nullable=True)
     snapshot_participant_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
