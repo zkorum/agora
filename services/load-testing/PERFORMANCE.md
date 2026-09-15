@@ -12,10 +12,31 @@ before/after database snapshots, query plan, and report beneath the runner's
 Use the normal local Docker PostgreSQL primary, replica, Valkey, and monitoring
 services. The observer runs on the host alongside the native API, scoring worker,
 and k6 processes. Node.js 22.12+ is required, matching the API/tooling runtime.
+Docker-compatible Podman installations are supported. Engine info and resource
+samples are normalized from their native JSON formats, and the engine is recorded
+in the manifest. Podman CPU uses cumulative-counter differences between samples;
+its first sample (or the first after a container restart) is unavailable rather
+than reporting a lifetime average as current load.
 
 The observer implementation is in `services/load-testing/tools/performance/`,
 with the same strict TypeScript/lint checks as the load-test code. The root
 `scripts/ranking-performance.mjs` is only its launcher. k6 remains API-only.
+
+Runtime startup uses the current Node executable directly: the API's installed
+`tsx` loader runs the diagnostics helper, and a one-shot Node process runs the
+installed Vite build. Package-manager bootstrapping is kept out of the helper's
+stdin/stdout protocol. Install service dependencies separately when needed.
+
+To check readiness and build without creating participants:
+
+```bash
+CONVERSATION_SLUG_IDS=slug1 RANKING_STRATEGY=unanimous \
+node scripts/dev-log-runner.mjs --service load-testing-solidago-preflight -- \
+  node --experimental-strip-types scripts/ranking-performance.mjs check
+```
+
+The log reports each preflight stage, validates a real resource sample, and ends
+with `preflight_complete` on success.
 
 Agora-table reads use a source-only helper in
 `services/api/scripts/ranking-diagnostics-probe.ts`. It reuses the API's installed
@@ -257,8 +278,8 @@ Focused verification commands:
 pnpm --dir services/load-testing test:unit
 pnpm --dir services/load-testing lint
 pnpm --dir services/load-testing exec tsc --noEmit
-# Process-level capture/observer tests
-node --test scripts/log-markers.test.mjs scripts/ranking-performance.test.mjs
+# Process-level capture/observer and teardown tests (requires k6)
+node --test scripts/log-markers.test.mjs scripts/ranking-performance.test.mjs scripts/ranking-workload.test.mjs
 ```
 
 1. Smoke test the instrumentation and a small unanimous fixture.
@@ -270,11 +291,15 @@ node --test scripts/log-markers.test.mjs scripts/ranking-performance.test.mjs
 6. Mix hot and quiet conversations and different dataset sizes within a batch.
 7. Repeat key points with several seeds; compare quality versus cost and coverage.
 
-Specific hypotheses to investigate: whole-history JSONB/normalized rewrites,
+Specific hypotheses to investigate: whole-history JSONB updates,
 conversation-wide JSONB uncertainty aggregation inside the save transaction,
 revision-trigger hot-row contention, per-user score replacement, and queue weights
 based on the last participant's history rather than total conversation cost.
-The current worker rejects a whole publication batch if any included revision
-changed; `revision_rejected` identifies the cause, while `publication_completed`
-shows the effect on other conversations. Treat that as an explicit design concern
-when interpreting repeated computation and quiet-conversation starvation.
+Normalized history updates preserve unchanged comparisons. The worker reads one
+coherent input snapshot and publishes each conversation independently. Appended
+votes allow an earlier snapshot to publish and trigger follow-up work; edits,
+removals, and eligibility/item changes still invalidate older computations.
+`publication_completed` is emitted after each conversation's commit, with its
+captured and observed revisions and status. `revision_rejected` identifies
+invalidated or missing inputs; a newer revision alone is no longer a rejection.
+Check both progress during load and final catch-up when evaluating freshness.

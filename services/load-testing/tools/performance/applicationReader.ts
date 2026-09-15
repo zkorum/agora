@@ -1,12 +1,13 @@
 import { spawn } from "node:child_process";
 import { createInterface } from "node:readline";
+import { resolve } from "node:path";
 import { z } from "zod";
 import {
     rankingDiagnosticsReply,
     rankingDiagnosticsRequest,
     type RankingDiagnosticsRequest,
 } from "../../src/shared-backend/rankingDiagnosticsProtocol.ts";
-import { command, root } from "./io.ts";
+import { command, emit, root } from "./io.ts";
 
 type Query = RankingDiagnosticsRequest extends infer Request
     ? Request extends RankingDiagnosticsRequest
@@ -32,16 +33,16 @@ export async function startApplicationReader({
     replicaContainer: string;
     database: string;
 }) {
+    emit({
+        action: "preflight_stage",
+        metadata: { stage: "backend_diagnostics_start" },
+    });
+    // Keep Node as the direct child. Package-manager bootstrapping can consume
+    // stdin, detach a launcher, or wait interactively before the protocol starts.
     const child = spawn(
-        "pnpm",
-        [
-            "--dir",
-            "services/api",
-            "exec",
-            "tsx",
-            "scripts/ranking-diagnostics-probe.ts",
-        ],
-        { cwd: root, stdio: ["pipe", "pipe", "pipe"] },
+        process.execPath,
+        ["--import", "tsx", "scripts/ranking-diagnostics-probe.ts"],
+        { cwd: resolve(root, "services/api"), stdio: ["pipe", "pipe", "pipe"] },
     );
     const pending = new Map<
         number,
@@ -121,6 +122,10 @@ export async function startApplicationReader({
     }
     try {
         const identity = identitySchema.parse(await ready);
+        emit({
+            action: "preflight_stage",
+            metadata: { stage: "backend_diagnostics_ready", pid: identity.pid },
+        });
         if (!identity.primaryStatsAccess || !identity.replicaStatsAccess)
             throw new Error(
                 "Configure PERF_CONNECTION_STRING and PERF_CONNECTION_STRING_READ with pg_read_all_stats access for complete diagnostics",

@@ -33,49 +33,6 @@ def _enum_values(enum_cls: type[StrEnum]) -> list[str]:
     return [member.value for member in enum_cls]
 
 
-class ConversationLanguageSettingsSource(StrEnum):
-    conversation_override = "conversation_override"
-    project_inherited = "project_inherited"
-
-
-class ParticipationMode(StrEnum):
-    account_required = "account_required"
-    strong_verification = "strong_verification"
-    email_verification = "email_verification"
-    guest = "guest"
-
-
-class ConversationType(StrEnum):
-    polis = "polis"
-    ranking = "ranking"
-
-
-class EventSlug(StrEnum):
-    devconnect_2025 = "devconnect-2025"
-
-
-class DirectoryVisibility(StrEnum):
-    listed = "listed"
-    unlisted = "unlisted"
-
-
-class RankingMode(StrEnum):
-    bws = "bws"
-
-
-class RankingStatsCheckpointReasonEnum(StrEnum):
-    major_participation_milestone = "major_participation_milestone"
-    major_vote_milestone = "major_vote_milestone"
-    conversation_closed = "conversation_closed"
-
-
-class RankingItemLifecycleStatus(StrEnum):
-    active = "active"
-    completed = "completed"
-    in_progress = "in_progress"
-    canceled = "canceled"
-
-
 class SpokenLanguageCode(StrEnum):
     af = "af"
     ak = "ak"
@@ -220,6 +177,49 @@ class LanguageDetectionProvider(StrEnum):
     google_translate = "google_translate"
 
 
+class ConversationLanguageSettingsSource(StrEnum):
+    conversation_override = "conversation_override"
+    project_inherited = "project_inherited"
+
+
+class ParticipationMode(StrEnum):
+    account_required = "account_required"
+    strong_verification = "strong_verification"
+    email_verification = "email_verification"
+    guest = "guest"
+
+
+class ConversationType(StrEnum):
+    polis = "polis"
+    ranking = "ranking"
+
+
+class EventSlug(StrEnum):
+    devconnect_2025 = "devconnect-2025"
+
+
+class DirectoryVisibility(StrEnum):
+    listed = "listed"
+    unlisted = "unlisted"
+
+
+class RankingMode(StrEnum):
+    bws = "bws"
+
+
+class RankingStatsCheckpointReasonEnum(StrEnum):
+    major_participation_milestone = "major_participation_milestone"
+    major_vote_milestone = "major_vote_milestone"
+    conversation_closed = "conversation_closed"
+
+
+class RankingItemLifecycleStatus(StrEnum):
+    active = "active"
+    completed = "completed"
+    in_progress = "in_progress"
+    canceled = "canceled"
+
+
 class ExternalSourceType(StrEnum):
     github_issue = "github_issue"
 
@@ -233,6 +233,38 @@ class SurveyChoiceDisplay(StrEnum):
     auto = "auto"
     list = "list"
     dropdown = "dropdown"
+
+
+class ConversationContent(Base):
+    __tablename__ = "conversation_content"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    public_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
+    conversation_id: Mapped[int] = mapped_column(Integer)
+    title: Mapped[str] = mapped_column(String(140))
+    body: Mapped[str | None] = mapped_column(Text, nullable=True)
+    body_plain_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_language_code: Mapped[SpokenLanguageCode | None] = mapped_column(
+        SaEnum(
+            SpokenLanguageCode,
+            name="spoken_language_code",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+        nullable=True,
+    )
+    source_raw_language_code: Mapped[str | None] = mapped_column(String(35), nullable=True)
+    source_language_provider: Mapped[LanguageDetectionProvider | None] = mapped_column(
+        SaEnum(
+            LanguageDetectionProvider,
+            name="language_detection_provider",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+        nullable=True,
+    )
+    source_language_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
 
 
 class Conversation(Base):
@@ -329,6 +361,7 @@ class MaxdiffUserEntityScore(Base):
     maxdiff_result_id: Mapped[int] = mapped_column(Integer)
     entity_slug_id: Mapped[str] = mapped_column(String(8))
     score: Mapped[float] = mapped_column(Float)
+    display_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     uncertainty_left: Mapped[float] = mapped_column(Float)
     uncertainty_right: Mapped[float] = mapped_column(Float)
 
@@ -398,6 +431,7 @@ class RankingConversationConfig(Base):
     participant_count: Mapped[int] = mapped_column(Integer, server_default="0")
     total_participant_count: Mapped[int] = mapped_column(Integer, server_default="0")
     scoring_input_revision: Mapped[int] = mapped_column(BigInteger, server_default="0")
+    scoring_invalidation_revision: Mapped[int] = mapped_column(BigInteger, server_default="0")
     processed_scoring_input_revision: Mapped[int] = mapped_column(BigInteger, server_default="-1")
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
@@ -449,6 +483,7 @@ class RankingConversationStatsSnapshot(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     conversation_id: Mapped[int] = mapped_column(Integer)
+    ranking_score_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     item_count: Mapped[int] = mapped_column(Integer)
     total_item_count: Mapped[int] = mapped_column(Integer)
     vote_count: Mapped[int] = mapped_column(Integer)
@@ -532,6 +567,7 @@ class RankingItem(Base):
         ),
     )
     snapshot_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    snapshot_ranking_score_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     snapshot_rank: Mapped[int | None] = mapped_column(Integer, nullable=True)
     snapshot_participant_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
@@ -545,6 +581,7 @@ class RankingScoreEntity(Base):
     ranking_score_id: Mapped[int] = mapped_column(Integer)
     entity_slug_id: Mapped[str] = mapped_column(String(8))
     score: Mapped[float] = mapped_column(Float)
+    display_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     uncertainty_left: Mapped[float] = mapped_column(Float)
     uncertainty_right: Mapped[float] = mapped_column(Float)
     participant_count: Mapped[int] = mapped_column(Integer, server_default="0")

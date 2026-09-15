@@ -23,7 +23,6 @@ import signal
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from functools import partial
 from typing import TYPE_CHECKING
 
 import valkey as valkey_lib
@@ -33,12 +32,12 @@ from sqlalchemy import create_engine, text
 from scoring_worker.config import Settings
 from scoring_worker.db import (
     ComparisonRow,
+    PublicationCallback,
     ScoredEntity,
+    ScoringPublication,
     UserScoreEntry,
     acquire_conversation_locks,
-    fetch_comparisons_batch,
-    fetch_ranking_items_batch,
-    fetch_scoring_input_revisions,
+    fetch_scoring_inputs,
     persist_scoring_batch,
     reconcile_unscored_conversations,
 )
@@ -129,19 +128,17 @@ def _score_one(
 
 
 def report_rejected_revisions(
-    current: dict[int, int],
+    publications: dict[int, ScoringPublication],
     *,
     enabled: bool,
     batch_id: str,
     conversations: list[DirtyConversation],
-    completed_ids: list[int],
     expected: dict[int, int],
 ) -> None:
     for item in conversations:
         cid = item.conversation_id
-        if cid in completed_ids and (
-            cid not in current or cid not in expected or current[cid] != expected[cid]
-        ):
+        publication = publications.get(cid)
+        if publication is not None and publication.status in {"invalidated", "missing"}:
             emit_performance_event(
                 enabled=enabled,
                 action="revision_rejected",
@@ -150,12 +147,40 @@ def report_rejected_revisions(
                 metadata={
                     "batchId": batch_id,
                     "expectedRevision": expected.get(cid),
-                    "observedRevision": current.get(cid),
-                    "reason": "missing_revision"
-                    if cid not in current or cid not in expected
-                    else "changed_revision",
+                    "observedRevision": publication.observed_revision,
+                    "reason": publication.status,
                 },
             )
+
+
+def create_publication_callback(
+    *,
+    conversations: list[DirtyConversation],
+    input_revisions: dict[int, int],
+    batch_id: str,
+    performance_enabled: bool,
+    vk: valkey_lib.Valkey,
+) -> PublicationCallback:
+    items_by_id = {item.conversation_id: item for item in conversations}
+
+    def on_publication(*, conversation_id: int, publication: ScoringPublication) -> None:
+        item = items_by_id[conversation_id]
+        emit_performance_event(
+            enabled=performance_enabled,
+            action="publication_completed",
+            outcome="success" if publication.status == "published" else "skip",
+            conversation_slug_id=item.slug_id,
+            metadata={
+                "batchId": batch_id,
+                "inputRevision": input_revisions[conversation_id],
+                "observedRevision": publication.observed_revision,
+                "status": publication.status,
+            },
+        )
+        if publication.needs_requeue:
+            mark_dirty(vk, member=item.member, weight=item.weight)
+
+    return on_publication
 
 
 def deduplicate_batch(batch: list[DirtyConversation]) -> list[DirtyConversation]:
@@ -213,6 +238,7 @@ def _create_engine_with_retry(
             engine = create_engine(
                 _postgres_dsn(connection_string),
                 pool_pre_ping=True,
+                hide_parameters=True,
             )
             with engine.connect() as connection:
                 connection.execute(text("select 1"))
@@ -389,27 +415,13 @@ def _run_worker_once() -> None:
             raise
 
         try:
-            # Step 2: Batch SELECT
-            fetch_started = time.perf_counter()
-            scoring_input_revisions = fetch_scoring_input_revisions(
+            # Step 2: Capture one coherent MVCC snapshot, then release it.
+            inputs = fetch_scoring_inputs(
                 processing_connection,
                 conversation_ids=conv_ids,
             )
-            log.info(
-                "[Worker] %s: fetched input revisions in %.3fs",
-                batch_slugs,
-                time.perf_counter() - fetch_started,
-            )
-            fetch_started = time.perf_counter()
-            ranking_items = fetch_ranking_items_batch(
-                processing_connection,
-                conversation_ids=conv_ids,
-            )
-            log.info(
-                "[Worker] %s: fetched ranking items in %.3fs",
-                batch_slugs,
-                time.perf_counter() - fetch_started,
-            )
+            scoring_input_revisions = inputs.revisions
+            ranking_items = inputs.ranking_items
             active_items = {
                 conversation_id: [
                     item.slug_id
@@ -418,16 +430,7 @@ def _run_worker_once() -> None:
                 ]
                 for conversation_id, items in ranking_items.items()
             }
-            fetch_started = time.perf_counter()
-            comparisons_result = fetch_comparisons_batch(
-                processing_connection,
-                conversation_ids=conv_ids,
-            )
-            log.info(
-                "[Worker] %s: fetched comparisons in %.3fs",
-                batch_slugs,
-                time.perf_counter() - fetch_started,
-            )
+            comparisons_result = inputs.comparisons
             comparisons = comparisons_result.comparisons
             user_idx_to_result_id = comparisons_result.user_idx_to_result_id
             input_fetch_ms = (time.perf_counter() - batch_started) * 1000
@@ -487,6 +490,7 @@ def _run_worker_once() -> None:
                                     ScoredEntity(
                                         entity_slug_id=r.entity_id,
                                         score=r.score,
+                                        display_score=r.display_score,
                                         uncertainty_left=r.uncertainty_left,
                                         uncertainty_right=r.uncertainty_right,
                                         participant_count=pc.get(r.entity_id, 0),
@@ -513,6 +517,7 @@ def _run_worker_once() -> None:
                                                 maxdiff_result_id=result_id,
                                                 entity_slug_id=r.entity_id,
                                                 score=r.score,
+                                                display_score=r.display_score,
                                                 uncertainty_left=r.uncertainty_left,
                                                 uncertainty_right=r.uncertainty_right,
                                             )
@@ -537,46 +542,34 @@ def _run_worker_once() -> None:
             )
 
             # Step 4: Final revision locking and atomic publication
-            snapshot_scored_entities = {
-                conversation_id: result[0] for conversation_id, result in scoring_results.items()
-            }
-            completed_conversation_ids = [
-                *scoring_results.keys(),
-                *to_clear,
-            ]
             publication_started = time.perf_counter()
-            published = persist_scoring_batch(
+            publications = persist_scoring_batch(
                 processing_connection,
+                inputs=inputs,
                 scoring_results=scoring_results,
                 user_scores=all_user_score_entries,
                 conversation_ids_to_clear=list(to_clear),
-                snapshot_conversation_ids=completed_conversation_ids,
-                ranking_items_by_conv=ranking_items,
-                comparisons_by_conv=comparisons,
-                total_vote_count_by_conversation=(
-                    comparisons_result.total_vote_count_by_conversation
-                ),
-                total_participant_count_by_conversation=(
-                    comparisons_result.total_participant_count_by_conversation
-                ),
-                scored_entities_by_conv=snapshot_scored_entities,
-                scoring_input_revisions=scoring_input_revisions,
-                on_revision_rejected=partial(
-                    report_rejected_revisions,
-                    enabled=settings.performance_enabled,
-                    batch_id=batch_id,
+                on_publication=create_publication_callback(
                     conversations=to_process,
-                    completed_ids=completed_conversation_ids,
-                    expected=scoring_input_revisions,
-                )
-                if settings.performance_enabled
-                else None,
+                    input_revisions=scoring_input_revisions,
+                    batch_id=batch_id,
+                    performance_enabled=settings.performance_enabled,
+                    vk=vk,
+                ),
             )
             publication_finished = time.perf_counter()
+            published_count = sum(p.status == "published" for p in publications.values())
+            report_rejected_revisions(
+                publications,
+                enabled=settings.performance_enabled,
+                batch_id=batch_id,
+                conversations=to_process,
+                expected=scoring_input_revisions,
+            )
             emit_performance_event(
                 enabled=settings.performance_enabled,
                 action="batch_completed",
-                outcome="success" if published else "skip",
+                outcome="success" if published_count else "skip",
                 duration_ms=(publication_finished - batch_started) * 1000,
                 metadata={
                     "batchId": batch_id,
@@ -585,36 +578,21 @@ def _run_worker_once() -> None:
                     "computeAndPrepareMs": (publication_started - scoring_started) * 1000,
                     "publicationMs": (publication_finished - publication_started) * 1000,
                     "failedConversations": len(failed_items),
+                    "publishedConversations": published_count,
+                    "invalidatedConversations": sum(
+                        p.status == "invalidated" for p in publications.values()
+                    ),
                 },
             )
-            for item in to_process:
-                if item.conversation_id in completed_conversation_ids:
-                    emit_performance_event(
-                        enabled=settings.performance_enabled,
-                        action="publication_completed",
-                        outcome="success" if published else "skip",
-                        conversation_slug_id=item.slug_id,
-                        metadata={
-                            "batchId": batch_id,
-                            "inputRevision": scoring_input_revisions.get(item.conversation_id),
-                        },
-                    )
             log.info(
                 "[Worker] %s: publication attempt completed in %.3fs "
-                "(published=%s, processing elapsed through publication=%.3fs)",
+                "(published=%d/%d, processing elapsed through publication=%.3fs)",
                 batch_slugs,
                 publication_finished - publication_started,
-                published,
+                published_count,
+                len(publications),
                 publication_finished - batch_started,
             )
-            if not published:
-                for item in to_process:
-                    mark_dirty(vk, member=item.member, weight=item.weight)
-                log.info(
-                    "[Worker] Requeued batch because scoring input revisions "
-                    "changed before publication",
-                )
-                continue
 
             # Handle failures: re-add with backoff
             for item in failed_items:

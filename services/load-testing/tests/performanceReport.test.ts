@@ -139,6 +139,59 @@ await test("event summaries filter unrelated traffic and diagnose mixed-batch co
     assert.equal(measured.durationsMs["api/save/transaction/a"].p99, 8);
     assert.equal(percentiles([]).p95, null);
 });
+await test("duplicate wakeups are not counted as invalidations and partial publication is visible", () => {
+    const measured = summarizeEvents({
+        slugs: ["a", "b"],
+        events: [
+            event({
+                phase: "scoring-worker",
+                action: "batch_completed",
+                outcome: "skip",
+                conversationSlugId: undefined,
+                metadata: {
+                    conversations: "a",
+                    publishedConversations: 0,
+                    invalidatedConversations: 0,
+                },
+            }),
+            event({
+                phase: "scoring-worker",
+                action: "publication_completed",
+                outcome: "skip",
+                metadata: { status: "superseded" },
+            }),
+            event({
+                phase: "scoring-worker",
+                action: "batch_completed",
+                outcome: "success",
+                conversationSlugId: undefined,
+                metadata: {
+                    conversations: "a,b",
+                    publishedConversations: 1,
+                    invalidatedConversations: 1,
+                },
+            }),
+            event({
+                phase: "scoring-worker",
+                action: "publication_completed",
+                outcome: "skip",
+                metadata: { status: "invalidated" },
+            }),
+            event({
+                phase: "scoring-worker",
+                action: "publication_completed",
+                outcome: "success",
+                conversationSlugId: "b",
+            }),
+        ],
+    });
+    assert.equal(measured.skippedBatches, 1);
+    assert.equal(measured.rejectedBatches, 1);
+    assert.equal(measured.publishedBatches, 1);
+    assert.equal(measured.conversations.a.supersededPublications, 1);
+    assert.equal(measured.conversations.a.invalidatedPublications, 1);
+    assert.equal(measured.conversations.b.publishedSnapshots, 1);
+});
 await test("complete event capture requires actual comparison and terminal counts", () => {
     const summary = {
         metrics: {

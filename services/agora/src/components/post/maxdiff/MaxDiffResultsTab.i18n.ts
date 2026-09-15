@@ -5,7 +5,7 @@ export interface MaxDiffResultsTabTranslations {
   noResults: string;
   noItems: string;
   subtitle: string;
-  score: string;
+  scoreScaleExplanation: string;
   loadingError: string;
   retryButton: string;
   communityLearnMoreHow: string;
@@ -42,7 +42,8 @@ export const maxDiffResultsTabTranslations: Record<
     noResults: "No ranking data yet. Be the first to participate!",
     noItems: "No items in this category.",
     subtitle: "Aggregated from all participants' votes",
-    score: "Score: {score}",
+    scoreScaleExplanation:
+      "Scores use a fixed scale from 0 to 100. Small differences stay small instead of stretching every ranking to fill the bars. These scores are not percentages of participants.",
     loadingError: "Failed to load results.",
     retryButton: "Try again",
     communityLearnMoreHow:
@@ -84,7 +85,8 @@ export const maxDiffResultsTabTranslations: Record<
     title: "تصنيف المجتمع",
     noResults: "لا توجد بيانات ترتيب بعد. كن أول من يشارك!",
     subtitle: "مجمّع من أصوات جميع المشاركين",
-    score: "النتيجة: {score}",
+    scoreScaleExplanation:
+      "تستخدم الدرجات مقياسًا ثابتًا من 0 إلى 100. تبقى الفروق الصغيرة صغيرة بدلًا من تمديد كل ترتيب لملء الأشرطة. هذه الدرجات ليست نسبًا مئوية للمشاركين.",
     loadingError: "فشل تحميل النتائج.",
     retryButton: "حاول مرة أخرى",
     communityLearnMoreHow:
@@ -128,7 +130,8 @@ export const maxDiffResultsTabTranslations: Record<
     noResults:
       "Aún no hay datos de clasificación. ¡Sea el primero en participar!",
     subtitle: "Agregado a partir de los votos de todos los participantes",
-    score: "Puntuación: {score}",
+    scoreScaleExplanation:
+      "Las puntuaciones usan una escala fija de 0 a 100. Las diferencias pequeñas siguen siendo pequeñas, en lugar de ampliar cada clasificación para llenar las barras. No son porcentajes de participantes.",
     loadingError: "Error al cargar los resultados.",
     retryButton: "Intentar de nuevo",
     communityLearnMoreHow:
@@ -174,7 +177,8 @@ export const maxDiffResultsTabTranslations: Record<
       "هنوز داده رتبه‌بندی وجود ندارد. اولین نفری باشید که شرکت می‌کند!",
     noItems: "موردی در این دسته‌بندی وجود ندارد.",
     subtitle: "تجمیع شده از آرای همه شرکت‌کنندگان",
-    score: "امتیاز: {score}",
+    scoreScaleExplanation:
+      "امتیازها از مقیاس ثابت ۰ تا ۱۰۰ استفاده می‌کنند. تفاوت‌های کوچک کوچک می‌مانند و هر رتبه‌بندی برای پر کردن نوارها کشیده نمی‌شود. این امتیازها درصد شرکت‌کنندگان نیستند.",
     loadingError: "بارگذاری نتایج ناموفق بود.",
     retryButton: "دوباره تلاش کنید",
     communityLearnMoreHow:
@@ -217,7 +221,8 @@ export const maxDiffResultsTabTranslations: Record<
     noResults: "אין עדיין נתוני דירוג. היו הראשונים להשתתף!",
     noItems: "אין פריטים בקטגוריה זו.",
     subtitle: "מצטבר מהצבעות כל המשתתפים",
-    score: "ציון: {score}",
+    scoreScaleExplanation:
+      "הציונים משתמשים בסולם קבוע מ־0 עד 100. הבדלים קטנים נשארים קטנים, במקום למתוח כל דירוג כדי למלא את הפסים. הציונים אינם אחוזים מהמשתתפים.",
     loadingError: "טעינת התוצאות נכשלה.",
     retryButton: "נסו שוב",
     communityLearnMoreHow:
@@ -260,7 +265,8 @@ export const maxDiffResultsTabTranslations: Record<
     noResults:
       "Pas encore de données de classement. Soyez le premier à participer !",
     subtitle: "Agrégé à partir des votes de tous les participants",
-    score: "Score : {score}",
+    scoreScaleExplanation:
+      "Les scores utilisent une échelle fixe de 0 à 100. Les petits écarts restent petits, au lieu d’étirer chaque classement pour remplir les barres. Ces scores ne sont pas des pourcentages de participants.",
     loadingError: "Échec du chargement des résultats.",
     retryButton: "Réessayer",
     communityLearnMoreHow:
@@ -304,7 +310,8 @@ export const maxDiffResultsTabTranslations: Record<
     title: "社区排名",
     noResults: "暂无排名数据。成为第一个参与者！",
     subtitle: "汇总所有参与者的投票",
-    score: "得分：{score}",
+    scoreScaleExplanation:
+      "评分采用固定的 0–100 刻度。小差异仍然保持较小，不会为了填满条形图而拉伸每个排名。这些评分不是参与者的百分比。",
     loadingError: "加载结果失败。",
     retryButton: "重试",
     communityLearnMoreHow:
@@ -345,7 +352,8 @@ export const maxDiffResultsTabTranslations: Record<
     title: "社群排名",
     noResults: "暫無排名資料。成為第一個參與者！",
     subtitle: "匯總所有參與者的投票",
-    score: "得分：{score}",
+    scoreScaleExplanation:
+      "評分採用固定的 0–100 刻度。小差異仍然保持較小，不會為了填滿長條圖而拉伸每個排名。這些評分不是參與者的百分比。",
     loadingError: "載入結果失敗。",
     retryButton: "重試",
     communityLearnMoreHow:
@@ -386,7 +394,8 @@ export const maxDiffResultsTabTranslations: Record<
     title: "コミュニティランキング",
     noResults: "まだランキングデータがありません。最初の参加者になりましょう！",
     subtitle: "全参加者の投票を集計",
-    score: "スコア：{score}",
+    scoreScaleExplanation:
+      "スコアは0から100の固定尺度です。順位ごとに棒を引き伸ばさないため、小さな差は小さなまま表示されます。参加者の割合を表すものではありません。",
     loadingError: "結果の読み込みに失敗しました。",
     retryButton: "再試行",
     communityLearnMoreHow:
@@ -430,7 +439,8 @@ export const maxDiffResultsTabTranslations: Record<
     title: "Коомдук рейтинг",
     noResults: "Рейтинг маалыматы жок. Биринчи катышуучу болуңуз!",
     subtitle: "Бардык катышуучулардын добуштарынан топтолгон",
-    score: "Упай: {score}",
+    scoreScaleExplanation:
+      "Упайлар 0дөн 100гө чейинки туруктуу шкаланы колдонот. Ар бир рейтинг тилкелерди толтуруу үчүн созулбайт, ошондуктан кичине айырмачылыктар кичине бойдон калат. Бул упайлар катышуучулардын пайызын билдирбейт.",
     loadingError: "Натыйжаларды жүктөө ишке ашкан жок.",
     retryButton: "Кайра аракет кылуу",
     communityLearnMoreHow:
@@ -473,7 +483,8 @@ export const maxDiffResultsTabTranslations: Record<
     title: "Рейтинг сообщества",
     noResults: "Данных рейтинга пока нет. Станьте первым участником!",
     subtitle: "Агрегировано из голосов всех участников",
-    score: "Оценка: {score}",
+    scoreScaleExplanation:
+      "Оценки используют фиксированную шкалу от 0 до 100. Небольшие различия остаются небольшими: каждый рейтинг не растягивается до полной длины полос. Это не процент участников.",
     loadingError: "Не удалось загрузить результаты.",
     retryButton: "Попробовать ещё раз",
     communityLearnMoreHow:

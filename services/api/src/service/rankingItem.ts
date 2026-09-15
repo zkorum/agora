@@ -2,6 +2,7 @@ import {
     rankingItemTable,
     rankingItemContentTable,
     rankingItemExternalSourceTable,
+    rankingScoreEntityTable,
     conversationTable,
 } from "@/shared-backend/schema.js";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
@@ -423,7 +424,7 @@ export async function fetchRankingItems({
                 rankingItemContentTable.sourceLanguageConfidence,
             lifecycleStatus: rankingItemTable.lifecycleStatus,
             externalUrl: rankingItemExternalSourceTable.externalUrl,
-            snapshotScore: rankingItemTable.snapshotScore,
+            snapshotScore: rankingScoreEntityTable.displayScore,
             snapshotRank: rankingItemTable.snapshotRank,
             snapshotParticipantCount: rankingItemTable.snapshotParticipantCount,
             createdAt: rankingItemTable.createdAt,
@@ -438,6 +439,19 @@ export async function fetchRankingItems({
             eq(
                 rankingItemExternalSourceTable.rankingItemId,
                 rankingItemTable.id,
+            ),
+        )
+        .leftJoin(
+            rankingScoreEntityTable,
+            and(
+                eq(
+                    rankingScoreEntityTable.rankingScoreId,
+                    rankingItemTable.snapshotRankingScoreId,
+                ),
+                eq(
+                    rankingScoreEntityTable.entitySlugId,
+                    rankingItemTable.slugId,
+                ),
             ),
         )
         .where(
@@ -571,6 +585,12 @@ export async function updateRankingItemLifecycle({
             .update(rankingItemTable)
             .set({
                 lifecycleStatus: newStatus,
+                snapshotRankingScoreId:
+                    snapshot !== undefined
+                        ? snapshot.snapshotRankingScoreId
+                        : isReactivating
+                          ? null
+                          : undefined,
                 snapshotScore:
                     snapshot !== undefined
                         ? snapshot.snapshotScore

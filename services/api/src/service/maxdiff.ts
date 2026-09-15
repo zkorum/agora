@@ -8,8 +8,7 @@ import {
     rankingConversationStatsCheckpointTable,
     rankingConversationStatsItemTable,
     rankingConversationStatsSnapshotTable,
-    rankingScoreTable,
-    maxdiffComparisonTable,
+    rankingScoreEntityTable,
     maxdiffUserEntityScoreTable,
 } from "@/shared-backend/schema.js";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
@@ -19,11 +18,11 @@ import { httpErrors } from "@fastify/sensible";
 import {
     eq,
     and,
+    count,
     desc,
     exists,
     inArray,
     isNotNull,
-    isNull,
     sql,
 } from "drizzle-orm";
 import {
@@ -36,7 +35,6 @@ import type { RankingStatsCheckpointReason } from "@/shared/types/dto.js";
 import { z } from "zod";
 import {
     zodMaxdiffComparison,
-    zodSolidagoEntityScore,
     type MaxDiffComparison,
     type MaxdiffLifecycleStatus,
 } from "@/shared/types/zod.js";
@@ -49,41 +47,16 @@ import {
 } from "./rankingItemDisplay.js";
 import { getPrimaryDatabase, hasPrimaryDatabase } from "@/shared-backend/db.js";
 import type { RankingPerformance } from "@/utils/rankingPerformance.js";
+import { syncMaxdiffComparisons } from "./maxdiffHistory.js";
+import { buildMaxdiffAppearanceCountQuery } from "./maxdiffQueries.js";
 
 // --- Types ---
 
 export interface RankedItem {
     itemSlugId: string;
     avgRank: number;
-    score: number;
+    score: number | null;
     participantCount: number;
-}
-
-interface ScoredEntry {
-    score: number;
-}
-
-export function normalizeScores<T extends ScoredEntry>(items: T[]): T[] {
-    if (items.length === 0) {
-        return items;
-    }
-
-    const scoreValues = items.map((item) => item.score);
-    const minScore = Math.min(...scoreValues);
-    const maxScore = Math.max(...scoreValues);
-    const scoreRange = maxScore - minScore;
-
-    if (scoreRange < 1e-6) {
-        return items.map((item) => ({
-            ...item,
-            score: 0.5,
-        }));
-    }
-
-    return items.map((item) => ({
-        ...item,
-        score: (item.score - minScore) / scoreRange,
-    }));
 }
 
 // --- Global Uncertainty (for routing) ---
@@ -120,17 +93,10 @@ export async function computeGlobalUncertainty({
     }
 
     // Count item appearances via SQL aggregate (avoids loading full JSONB to app)
-    const countRows = await db.execute<{
-        item_text: string;
-        appearance_count: string;
-    }>(sql`
-        SELECT item_text, COUNT(*)::text AS appearance_count
-        FROM ${maxdiffResultTable},
-             jsonb_array_elements(${maxdiffResultTable.comparisons}) AS comp,
-             jsonb_array_elements_text(comp -> 'set') AS item_text
-        WHERE ${maxdiffResultTable.conversationId} = ${conversationId}
-        GROUP BY item_text
-    `);
+    const countRows = await buildMaxdiffAppearanceCountQuery({
+        db,
+        conversationId,
+    });
 
     const itemSet = new Set(items);
     const uncertainty = new Map<string, number>();
@@ -139,9 +105,11 @@ export async function computeGlobalUncertainty({
         uncertainty.set(item, 1);
     }
     for (const row of countRows) {
-        if (itemSet.has(row.item_text)) {
-            const count = Number(row.appearance_count);
-            uncertainty.set(row.item_text, 1 / Math.sqrt(count + 1));
+        if (itemSet.has(row.itemSlugId)) {
+            uncertainty.set(
+                row.itemSlugId,
+                1 / Math.sqrt(row.appearanceCount + 1),
+            );
         }
     }
 
@@ -208,12 +176,12 @@ export async function saveMaxdiffResult({
     }
 
     // Synchronous DB upsert — user state is immediately consistent.
-    // Counter update is handled by the scoring worker (~2s delay);
+    // Counter updates are published asynchronously by the scoring worker;
     // the frontend optimistically updates counts for the current user.
     const now = new Date();
     now.setMilliseconds(0);
 
-    // Transaction: upsert JSONB + soft-delete/insert normalized comparisons atomically.
+    // The upsert locks this participant's result before diffing normalized history.
     const save = async () =>
         await db.transaction(async (tx) => {
             const [result] = await tx
@@ -241,27 +209,12 @@ export async function saveMaxdiffResult({
                 })
                 .returning({ id: maxdiffResultTable.id });
 
-            // Dual-write: soft-delete old normalized comparisons, insert new ones
-            await tx
-                .update(maxdiffComparisonTable)
-                .set({ deletedAt: now })
-                .where(
-                    and(
-                        eq(maxdiffComparisonTable.maxdiffResultId, result.id),
-                        isNull(maxdiffComparisonTable.deletedAt),
-                    ),
-                );
-            if (comparisons.length > 0) {
-                await tx.insert(maxdiffComparisonTable).values(
-                    comparisons.map((comp, idx) => ({
-                        maxdiffResultId: result.id,
-                        position: idx,
-                        bestSlugId: comp.best,
-                        worstSlugId: comp.worst,
-                        candidateSet: comp.set,
-                    })),
-                );
-            }
+            await syncMaxdiffComparisons({
+                tx,
+                resultId: result.id,
+                comparisons,
+                now,
+            });
 
             const fetchUncertainty = () =>
                 computeGlobalUncertainty({
@@ -361,17 +314,22 @@ export async function loadMaxdiffResult({
     const scoreRows = await db
         .select({
             entitySlugId: maxdiffUserEntityScoreTable.entitySlugId,
-            score: maxdiffUserEntityScoreTable.score,
+            score: maxdiffUserEntityScoreTable.displayScore,
         })
         .from(maxdiffUserEntityScoreTable)
         .where(eq(maxdiffUserEntityScoreTable.maxdiffResultId, row.id))
         .orderBy(desc(maxdiffUserEntityScoreTable.score));
 
+    const displayScores = scoreRows.flatMap((score) =>
+        score.score === null
+            ? []
+            : [{ entitySlugId: score.entitySlugId, score: score.score }],
+    );
     return {
         ranking,
         comparisons: comparisonsResult,
         isComplete: row.isComplete,
-        perUserScores: scoreRows.length > 0 ? normalizeScores(scoreRows) : null,
+        perUserScores: displayScores.length > 0 ? displayScores : null,
     };
 }
 
@@ -535,7 +493,7 @@ async function getHistoricalMaxdiffResults({
             sourceLanguageConfidence:
                 rankingItemContentTable.sourceLanguageConfidence,
             lifecycleStatus: rankingConversationStatsItemTable.lifecycleStatus,
-            score: rankingConversationStatsItemTable.score,
+            score: rankingScoreEntityTable.displayScore,
             rank: rankingConversationStatsItemTable.rank,
             participantCount:
                 rankingConversationStatsItemTable.participantCount,
@@ -554,6 +512,26 @@ async function getHistoricalMaxdiffResults({
             eq(
                 rankingItemTable.id,
                 rankingConversationStatsItemTable.rankingItemId,
+            ),
+        )
+        .innerJoin(
+            rankingConversationStatsSnapshotTable,
+            eq(
+                rankingConversationStatsSnapshotTable.id,
+                rankingConversationStatsItemTable.statsSnapshotId,
+            ),
+        )
+        .leftJoin(
+            rankingScoreEntityTable,
+            and(
+                eq(
+                    rankingScoreEntityTable.rankingScoreId,
+                    rankingConversationStatsSnapshotTable.rankingScoreId,
+                ),
+                eq(
+                    rankingScoreEntityTable.entitySlugId,
+                    rankingItemTable.slugId,
+                ),
             ),
         )
         .where(
@@ -653,14 +631,6 @@ export async function getMaxdiffResults({
         requestedRankingStatsSnapshotId,
     });
 
-    // Fetch all results (including partial) for this conversation
-    const allResults = await readDb
-        .select({
-            id: maxdiffResultTable.id,
-        })
-        .from(maxdiffResultTable)
-        .where(eq(maxdiffResultTable.conversationId, conversationId));
-
     // Determine which lifecycle statuses to include
     const activeStatuses: MaxdiffLifecycleStatus[] =
         lifecycleFilter === "all"
@@ -685,7 +655,7 @@ export async function getMaxdiffResults({
             sourceLanguageConfidence:
                 rankingItemContentTable.sourceLanguageConfidence,
             lifecycleStatus: rankingItemTable.lifecycleStatus,
-            snapshotScore: rankingItemTable.snapshotScore,
+            snapshotScore: rankingScoreEntityTable.displayScore,
             snapshotRank: rankingItemTable.snapshotRank,
             snapshotParticipantCount: rankingItemTable.snapshotParticipantCount,
             externalUrl: rankingItemExternalSourceTable.externalUrl,
@@ -700,6 +670,19 @@ export async function getMaxdiffResults({
             eq(
                 rankingItemExternalSourceTable.rankingItemId,
                 rankingItemTable.id,
+            ),
+        )
+        .leftJoin(
+            rankingScoreEntityTable,
+            and(
+                eq(
+                    rankingScoreEntityTable.rankingScoreId,
+                    rankingItemTable.snapshotRankingScoreId,
+                ),
+                eq(
+                    rankingScoreEntityTable.entitySlugId,
+                    rankingItemTable.slugId,
+                ),
             ),
         )
         .where(
@@ -755,18 +738,24 @@ export async function getMaxdiffResults({
                 return {
                     itemSlugId: r.slugId,
                     displayContent,
-                    avgRank: 0, // not meaningful for snapshots
-                    score: r.snapshotScore ?? 0,
+                    avgRank: r.snapshotRank,
+                    score: r.snapshotScore,
                     participantCount: r.snapshotParticipantCount ?? 0,
                     lifecycleStatus: r.lifecycleStatus,
                     externalUrl: r.externalUrl,
                 };
             })
-            .sort((a, b) => b.score - a.score)
-            .map((r, idx) => ({
-                ...r,
-                avgRank: idx + 1, // use display rank
-            }));
+            .sort((a, b) => {
+                if (a.avgRank === null)
+                    return b.avgRank === null
+                        ? a.itemSlugId.localeCompare(b.itemSlugId)
+                        : 1;
+                if (b.avgRank === null) return -1;
+                return (
+                    a.avgRank - b.avgRank ||
+                    a.itemSlugId.localeCompare(b.itemSlugId)
+                );
+            });
         return { rankings };
     }
 
@@ -793,58 +782,54 @@ export async function getMaxdiffResults({
     let scored: RankedItem[];
 
     if (currentScoreId !== null) {
-        // Read from ranking_score table (Solidago pre-computed)
+        // Display values are computed once by Solidago in the scoring worker.
         const scoreRows = await readDb
             .select({
-                scores: rankingScoreTable.scores,
-                participantCounts: rankingScoreTable.participantCounts,
+                entitySlugId: rankingScoreEntityTable.entitySlugId,
+                score: rankingScoreEntityTable.displayScore,
+                participantCount: rankingScoreEntityTable.participantCount,
             })
-            .from(rankingScoreTable)
-            .where(eq(rankingScoreTable.id, currentScoreId));
+            .from(rankingScoreEntityTable)
+            .where(eq(rankingScoreEntityTable.rankingScoreId, currentScoreId))
+            .orderBy(desc(rankingScoreEntityTable.score));
 
-        if (scoreRows.length > 0) {
-            const cachedScores = z
-                .array(zodSolidagoEntityScore)
-                .parse(scoreRows[0].scores);
-            const cachedParticipantCounts = z
-                .record(z.string(), z.number())
-                .parse(scoreRows[0].participantCounts);
-
-            scored = cachedScores
-                .filter((s) => itemSlugIds.has(s.entityId))
-                .map((s, idx) => ({
-                    itemSlugId: s.entityId,
-                    avgRank: idx + 1,
-                    score: s.score,
-                    participantCount: cachedParticipantCounts[s.entityId] ?? 0,
-                }));
-            scored = normalizeScores(scored);
-        } else {
-            scored = [];
-        }
+        scored = scoreRows
+            .filter((s) => itemSlugIds.has(s.entitySlugId))
+            .map((s, idx) => ({
+                itemSlugId: s.entitySlugId,
+                avgRank: idx + 1,
+                score: s.score,
+                participantCount: s.participantCount,
+            }));
     } else {
         scored = [];
     }
 
     // No cached scores yet: ensure the conversation is in the dirty set
     // so the scoring worker picks it up. Frontend handles empty results.
-    if (
-        scored.length === 0 &&
-        items.length >= 2 &&
-        allResults.length > 0 &&
-        valkey !== undefined
-    ) {
+    if (scored.length === 0 && items.length >= 2 && valkey !== undefined) {
+        const [participation] = await readDb
+            .select({ count: count() })
+            .from(maxdiffResultTable)
+            .where(
+                and(
+                    eq(maxdiffResultTable.conversationId, conversationId),
+                    sql`jsonb_array_length(${maxdiffResultTable.comparisons}) > 0`,
+                ),
+            );
         const member = `${String(conversationId)}:${conversationSlugId}`;
-        valkey
-            .zadd(VALKEY_QUEUE_KEYS.SCORING_DIRTY_SOLIDAGO, {
-                [member]: allResults.length,
-            })
-            .catch((error: unknown) => {
-                log.error(
-                    error,
-                    `[MaxDiff] Failed to ZADD for cache-miss re-queue of ${member}`,
-                );
-            });
+        try {
+            if (participation.count > 0) {
+                await valkey.zadd(VALKEY_QUEUE_KEYS.SCORING_DIRTY_SOLIDAGO, {
+                    [member]: participation.count,
+                });
+            }
+        } catch (error) {
+            log.error(
+                error,
+                `[MaxDiff] Failed to ZADD for cache-miss re-queue of ${member}`,
+            );
+        }
     }
 
     const contentMap = new Map(
@@ -1077,6 +1062,7 @@ export async function computeItemSnapshot({
     itemSlugId,
 }: ComputeSnapshotProps): Promise<{
     snapshotScore: number | null;
+    snapshotRankingScoreId: number | null;
     snapshotRank: number | null;
     snapshotParticipantCount: number | null;
 }> {
@@ -1102,6 +1088,7 @@ export async function computeItemSnapshot({
     if (currentScoreId === null) {
         return {
             snapshotScore: null,
+            snapshotRankingScoreId: null,
             snapshotRank: null,
             snapshotParticipantCount: null,
         };
@@ -1109,52 +1096,33 @@ export async function computeItemSnapshot({
 
     const scoreRows = await db
         .select({
-            scores: rankingScoreTable.scores,
-            participantCounts: rankingScoreTable.participantCounts,
+            entitySlugId: rankingScoreEntityTable.entitySlugId,
+            rawScore: rankingScoreEntityTable.score,
+            displayScore: rankingScoreEntityTable.displayScore,
+            participantCount: rankingScoreEntityTable.participantCount,
         })
-        .from(rankingScoreTable)
-        .where(eq(rankingScoreTable.id, currentScoreId));
+        .from(rankingScoreEntityTable)
+        .where(eq(rankingScoreEntityTable.rankingScoreId, currentScoreId));
 
-    if (scoreRows.length === 0) {
-        return {
-            snapshotScore: null,
-            snapshotRank: null,
-            snapshotParticipantCount: null,
-        };
-    }
-
-    const cachedScores = z
-        .array(zodSolidagoEntityScore)
-        .parse(scoreRows[0].scores);
-    const cachedParticipantCounts = z
-        .record(z.string(), z.number())
-        .parse(scoreRows[0].participantCounts);
-
-    const itemScore = cachedScores.find((s) => s.entityId === itemSlugId);
+    const itemScore = scoreRows.find((s) => s.entitySlugId === itemSlugId);
     if (itemScore === undefined) {
         return {
             snapshotScore: null,
+            snapshotRankingScoreId: null,
             snapshotRank: null,
             snapshotParticipantCount: null,
         };
     }
 
     // Rank = position in sorted scores (1-based)
-    const rank = cachedScores.filter((s) => s.score >= itemScore.score).length;
-
-    const normalizedScores = normalizeScores(
-        cachedScores.map((score) => ({
-            entityId: score.entityId,
-            score: score.score,
-        })),
-    );
-    const normalizedItemScore = normalizedScores.find(
-        (score) => score.entityId === itemSlugId,
-    );
+    const rank = scoreRows.filter(
+        (s) => s.rawScore >= itemScore.rawScore,
+    ).length;
 
     return {
-        snapshotScore: normalizedItemScore?.score ?? null,
+        snapshotScore: itemScore.displayScore,
+        snapshotRankingScoreId: currentScoreId,
         snapshotRank: rank,
-        snapshotParticipantCount: cachedParticipantCounts[itemSlugId] ?? 0,
+        snapshotParticipantCount: itemScore.participantCount,
     };
 }

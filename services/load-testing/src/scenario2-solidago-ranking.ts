@@ -610,6 +610,7 @@ async function observeResults(
 }
 
 export async function teardown(data: SetupData): Promise<void> {
+    let evaluationFailed = false;
     logLoadEvent({
         scenario: "solidago-ranking",
         phase: "teardown",
@@ -652,14 +653,26 @@ export async function teardown(data: SetupData): Promise<void> {
                 },
             });
         } catch {
-            // request() records the failure; still observe the remaining conversations.
+            evaluationFailed = true;
+            logLoadEvent({
+                scenario: "solidago-ranking",
+                phase: "teardown",
+                action: "ranking_evaluated",
+                outcome: "failure",
+                conversationSlugId,
+                error: "Unable to fetch or evaluate the final ranking",
+            });
         }
     }
     logLoadEvent({
         scenario: "solidago-ranking",
         phase: "teardown",
         action: "scenario_finished",
-        outcome: "complete",
+        outcome: evaluationFailed ? "failure" : "complete",
         metadata: { cleanupPerformed: false, scoringFreshnessVerified: false },
     });
+    if (evaluationFailed)
+        throw new Error(
+            "Final ranking evaluation failed; inspect teardown events",
+        );
 }

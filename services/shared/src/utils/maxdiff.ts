@@ -40,7 +40,7 @@ function setUnion<T>(a: Set<T>, b: Set<T>): Set<T> {
     return result;
 }
 
-function bronKerbosch<T>(edges: Array<[T, T]>): T[][] {
+function bronKerbosch<T>(edges: [T, T][]): T[][] {
     const nodes = new Set<T>();
     for (const [a, b] of edges) {
         nodes.add(a);
@@ -95,8 +95,8 @@ function bronKerbosch<T>(edges: Array<[T, T]>): T[][] {
 
 // --- Utility functions ---
 
-function allPairs<T>(items: T[]): Array<[T, T]> {
-    const result: Array<[T, T]> = [];
+function allPairs<T>(items: T[]): [T, T][] {
+    const result: [T, T][] = [];
     for (let i = 0; i < items.length - 1; i++) {
         for (let j = i + 1; j < items.length; j++) {
             result.push([items[i], items[j]]);
@@ -135,8 +135,8 @@ export interface MaxDiffInstance {
     getCandidates: (limit?: number) => string[];
     orderBefore: (item: string, otherItems: string[]) => void;
     orderAfter: (item: string, otherItems: string[]) => void;
-    getUnorderedPairs: () => Array<[string, string]>;
-    getOrderedPairs: () => Array<[string, string]>;
+    getUnorderedPairs: () => [string, string][];
+    getOrderedPairs: () => [string, string][];
     exportState: () => MaxDiffState;
 }
 
@@ -151,7 +151,7 @@ export function createMaxDiff(items: Iterable<string>): MaxDiffInstance {
     // Comparison matrix: comparisons[i][j] = -1 means i < j (i comes before j)
     // +1 means i > j, 0 means same item, undefined means unknown
     const n = uniqueItems.length;
-    const comparisons: Array<Array<number | undefined>> = Array.from(
+    const comparisons: (number | undefined)[][] = Array.from(
         { length: n },
         () => Array.from({ length: n }, () => undefined),
     );
@@ -172,7 +172,7 @@ export function createMaxDiff(items: Iterable<string>): MaxDiffInstance {
         const i = indexOf(item);
         const j = indexOf(otherItem);
         comparisons[i][j] = -1;
-        comparisons[j][i] = +1;
+        comparisons[j][i] = 1;
     };
 
     const compareItemsByOrder = (item: string, otherItem: string): number =>
@@ -199,7 +199,7 @@ export function createMaxDiff(items: Iterable<string>): MaxDiffInstance {
         return compareGroupsByIndex(a, b);
     };
 
-    const getUnorderedPairs = (): Array<[string, string]> => {
+    const getUnorderedPairs = (): [string, string][] => {
         const pairs = allPairs(uniqueItems).filter(
             ([a, b]) => getComparison(a, b) === undefined,
         );
@@ -210,7 +210,7 @@ export function createMaxDiff(items: Iterable<string>): MaxDiffInstance {
         return pairs;
     };
 
-    const getOrderedPairs = (): Array<[string, string]> => {
+    const getOrderedPairs = (): [string, string][] => {
         const pairs = allPairs(uniqueItems).filter(
             ([a, b]) => getComparison(a, b) !== undefined,
         );

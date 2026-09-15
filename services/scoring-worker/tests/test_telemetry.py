@@ -4,6 +4,7 @@ import logging
 import pytest
 
 from scoring_worker.config import Settings
+from scoring_worker.db import ScoringPublication
 from scoring_worker.telemetry import emit_performance_event
 from scoring_worker.valkey_client import DirtyConversation
 from scoring_worker.worker import report_rejected_revisions
@@ -31,7 +32,7 @@ def test_disabled_performance_events_are_silent(caplog: pytest.LogCaptureFixture
 
 
 def test_log_level_follows_worker_convention() -> None:
-    base = {"connection_string": "postgresql://localhost/test"}
+    base = {"connection_string": "postgresql://localhost/test", "log_level": None}
     assert Settings.model_validate({**base, "AGORA_DEV_MODE": True}).resolved_log_level == "DEBUG"
     assert (
         Settings.model_validate(
@@ -52,11 +53,18 @@ def test_rejection_diagnostics_identify_only_stale_members(
     ]
     with caplog.at_level(logging.INFO):
         report_rejected_revisions(
-            {1: 10, 2: 12},
+            {
+                1: ScoringPublication(status="published", needs_requeue=True, observed_revision=12),
+                2: ScoringPublication(
+                    status="invalidated", needs_requeue=True, observed_revision=12
+                ),
+                3: ScoringPublication(
+                    status="missing", needs_requeue=False, observed_revision=None
+                ),
+            },
             enabled=True,
             batch_id="batch",
             conversations=conversations,
-            completed_ids=[1, 2, 3],
             expected={1: 10, 2: 10, 3: 10},
         )
     events = [

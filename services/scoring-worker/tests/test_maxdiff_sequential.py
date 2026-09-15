@@ -5,6 +5,9 @@ import numpy as np
 from scoring_worker.maxdiff_sequential import (
     SequentialMaxDiffTask,
     fit_sequential_maxdiff_map,
+    sequential_maxdiff_gradient,
+    sequential_maxdiff_hessian,
+    sequential_maxdiff_loss,
 )
 
 
@@ -115,3 +118,42 @@ def test_contradictory_tasks_shrink_score_gap() -> None:
     consistent_gap = consistent_fit.scores[0] - consistent_fit.scores[2]
     contradictory_gap = contradictory_fit.scores[0] - contradictory_fit.scores[2]
     assert contradictory_gap < consistent_gap
+
+
+def test_analytic_derivatives_match_finite_differences_for_mixed_tasks() -> None:
+    scores = np.array([0.3, -0.9, 1.2, 0.8, -0.6])
+    tasks = [
+        _task(best=0, worst=3, candidate_set=(0, 1, 2, 3)),
+        _task(best=2, worst=0, candidate_set=(0, 2, 4)),
+        _task(best=4, worst=1, candidate_set=(1, 4)),
+        _task(best=3, worst=2, candidate_set=(3, 2, 1)),
+        _task(best=1, worst=0, candidate_set=(4, 1, 0)),
+    ]
+    epsilon = 1e-5
+    directions = np.eye(len(scores)) * epsilon
+    numerical_gradient = np.array(
+        [
+            (
+                sequential_maxdiff_loss(scores=scores + step, tasks=tasks, prior_std_dev=7.0)
+                - sequential_maxdiff_loss(scores=scores - step, tasks=tasks, prior_std_dev=7.0)
+            )
+            / (2 * epsilon)
+            for step in directions
+        ]
+    )
+    numerical_hessian = np.column_stack(
+        [
+            (
+                sequential_maxdiff_gradient(scores=scores + step, tasks=tasks, prior_std_dev=7.0)
+                - sequential_maxdiff_gradient(scores=scores - step, tasks=tasks, prior_std_dev=7.0)
+            )
+            / (2 * epsilon)
+            for step in directions
+        ]
+    )
+    gradient = sequential_maxdiff_gradient(scores=scores, tasks=tasks, prior_std_dev=7.0)
+    hessian = sequential_maxdiff_hessian(scores=scores, tasks=tasks, prior_std_dev=7.0)
+    np.testing.assert_allclose(gradient, numerical_gradient, atol=1e-7)
+    np.testing.assert_allclose(hessian, numerical_hessian, atol=1e-7)
+    np.testing.assert_allclose(hessian, hessian.T, atol=1e-12)
+    assert np.linalg.eigvalsh(hessian).min() >= 1 / 49 - 1e-10

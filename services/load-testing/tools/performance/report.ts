@@ -110,6 +110,8 @@ interface ConversationMeasurements {
     publicationAttempts: number;
     publishedSnapshots: number;
     skippedPublications: number;
+    invalidatedPublications: number;
+    supersededPublications: number;
     firstPublication: string | null;
     lastPublication: string | null;
 }
@@ -143,6 +145,7 @@ export function summarizeEvents({
     const issues: string[] = [];
     let rejectedBatches = 0;
     let publishedBatches = 0;
+    let skippedBatches = 0;
     let mixedBatches = 0;
     const recordDuration = ({
         key,
@@ -208,7 +211,18 @@ export function summarizeEvents({
             if (!members.some((member) => scope.has(member))) continue;
             if (members.some((member) => !scope.has(member))) mixedBatches++;
             if (event.outcome === "success") publishedBatches++;
-            else if (event.outcome === "skip") rejectedBatches++;
+            else if (event.outcome === "skip") skippedBatches++;
+            const invalidated = metadata.invalidatedConversations;
+            if (invalidated === undefined) {
+                // Older workers rejected the entire batch on a changed revision.
+                if (event.outcome === "skip") rejectedBatches++;
+            } else if (
+                typeof invalidated === "number" &&
+                Number.isInteger(invalidated) &&
+                invalidated >= 0
+            ) {
+                if (invalidated > 0) rejectedBatches++;
+            } else issues.push("invalid_batch_invalidation_count");
         }
         if (slug) {
             const row = conversations.get(slug) ?? {
@@ -220,6 +234,8 @@ export function summarizeEvents({
                 publicationAttempts: 0,
                 publishedSnapshots: 0,
                 skippedPublications: 0,
+                invalidatedPublications: 0,
+                supersededPublications: 0,
                 firstPublication: null,
                 lastPublication: null,
             };
@@ -285,7 +301,13 @@ export function summarizeEvents({
                     row.publishedSnapshots++;
                     row.firstPublication ??= event.timestamp;
                     row.lastPublication = event.timestamp;
-                } else if (event.outcome === "skip") row.skippedPublications++;
+                } else if (event.outcome === "skip") {
+                    row.skippedPublications++;
+                    if (metadata.status === "invalidated")
+                        row.invalidatedPublications++;
+                    if (metadata.status === "superseded")
+                        row.supersededPublications++;
+                }
             }
             conversations.set(slug, row);
             sessions.set(slug, session);
@@ -343,6 +365,7 @@ export function summarizeEvents({
     return {
         conversations: Object.fromEntries(conversations),
         publishedBatches,
+        skippedBatches,
         rejectedBatches,
         mixedBatches,
         rejectionCauses: Object.fromEntries(rejectionCauses),

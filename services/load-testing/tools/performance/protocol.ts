@@ -86,14 +86,6 @@ export const databaseSampleSchema = z.object({
     tables: z.array(z.json()),
     replication: z.array(z.json()),
 });
-export const containerSchema = z.object({
-    Name: z.string(),
-    CPUPerc: z.string(),
-    MemUsage: z.string().optional(),
-    MemPerc: z.string().optional(),
-    BlockIO: z.string().optional(),
-});
-
 export const eventSchema = z.object({
     schemaVersion: z.literal(1),
     timestamp: z.iso.datetime({ offset: true }),

@@ -12,11 +12,15 @@ import {
   readdir,
   readFile,
   rm,
+  cp,
+  copyFile,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { resolve } from "node:path";
+import { resolve, dirname } from "node:path";
 
-for (const mode of ["success", "workload-failure", "missing-events", "invalid-response", "final-change", "snapshot-failure", "interrupted"]) {
+const repository = resolve(import.meta.dirname, "..");
+
+for (const mode of ["success", "podman", "workload-failure", "missing-events", "invalid-response", "final-change", "snapshot-failure", "interrupted", "check", "docker-port-failure"]) {
   test(`performance runner: ${mode}`, async (t) => {
     const parent = resolve(tmpdir(), "opencode");
     await mkdir(parent, { recursive: true });
@@ -27,6 +31,28 @@ for (const mode of ["success", "workload-failure", "missing-events", "invalid-re
     const latest = resolve(logRoot, "latest");
     await mkdir(bin);
     await mkdir(latest, { recursive: true });
+    // Run the real launcher/observer in an isolated repository. The real tsx
+    // loader starts a protocol fixture directly; pnpm must never be involved.
+    for (const relative of [
+      "scripts/dev-log-runner.mjs", "scripts/log-markers.mjs", "scripts/ranking-performance.mjs",
+      "services/load-testing/src/utils/solidagoWorkload.ts",
+      "services/load-testing/src/utils/rankingStrategies.ts",
+      "services/load-testing/src/utils/deterministicRandom.ts",
+      "services/load-testing/src/shared-backend/rankingDiagnosticsProtocol.ts",
+    ]) {
+      await mkdir(dirname(resolve(dir, relative)), { recursive: true });
+      await copyFile(resolve(repository, relative), resolve(dir, relative));
+    }
+    await cp(resolve(repository, "services/load-testing/tools"), resolve(dir, "services/load-testing/tools"), { recursive: true });
+    for (const service of ["api", "load-testing"]) {
+      await mkdir(resolve(dir, `services/${service}/node_modules`), { recursive: true });
+      await writeFile(resolve(dir, `services/${service}/package.json`), JSON.stringify({ type: "module" }));
+    }
+    await symlink(resolve(repository, "services/load-testing/node_modules/zod"), resolve(dir, "services/load-testing/node_modules/zod"));
+    await symlink(resolve(repository, "services/api/node_modules/tsx"), resolve(dir, "services/api/node_modules/tsx"));
+    await mkdir(resolve(dir, "services/load-testing/node_modules/vite"));
+    await writeFile(resolve(dir, "services/load-testing/node_modules/vite/package.json"), JSON.stringify({ type: "module", exports: "./index.mjs" }));
+    await writeFile(resolve(dir, "services/load-testing/node_modules/vite/index.mjs"), "export async function build() { console.log('fixture build'); }\n");
     const sourcePaths = [
       resolve(latest, "api.events.jsonl"),
       resolve(latest, "scoring-worker.events.jsonl"),
@@ -69,9 +95,10 @@ const args = process.argv.slice(2);
 const scores = JSON.parse(process.env.FIXTURE_SCORES);
 function output(data) { console.log(JSON.stringify(data)); }
 if (program === "docker") {
-  if (args[0] === "info") output({ cpus: 4, memoryBytes: 8000000000 });
+  if (args[0] === "port" && process.env.FIXTURE_MODE === "docker-port-failure") { console.error("PRIVATE_DOCKER_ERROR"); process.exit(17); }
+  if (args[0] === "info") output(process.env.FIXTURE_MODE === "podman" ? { host: { cpus: 4, memTotal: 8000000000 } } : { NCPU: 4, MemTotal: 8000000000 });
   else if (args[0] === "port") console.log("0.0.0.0:" + (args[1].includes("replica") ? "5433" : "5432"));
-  else if (args[0] === "stats") output({ Name: "postgres", CPUPerc: "1%" });
+  else if (args[0] === "stats") output(process.env.FIXTURE_MODE === "podman" ? { Name: "postgres", ContainerID: "fixture-container", CPU: 1, CPUNano: 1000000000, MemUsage: 1024, MemLimit: 4096, MemPerc: 25, BlockInput: 0, BlockOutput: 0 } : { Name: "postgres", CPUPerc: "1%" });
   else if (args.includes("valkey-cli")) console.log("0");
   else {
     const query = args.at(-1);
@@ -97,7 +124,7 @@ if (program === "docker") {
     if (process.env.FIXTURE_MODE === "interrupted") setInterval(() => {}, 1000);
     process.exitCode = process.env.FIXTURE_MODE === "workload-failure" ? 99 : 0;
   }
-} else if (program === "pnpm" && args.includes("scripts/ranking-diagnostics-probe.ts")) {
+} else if (program === "ranking-diagnostics-probe.ts") {
   output({ id: 0, ok: true, data: { primary: "agora", replica: "agora", pid: process.pid, primaryPort: 5432, replicaPort: 5433, primaryStatsAccess: true, replicaStatsAccess: true } });
   for await (const line of createInterface({ input: process.stdin })) {
     const request = JSON.parse(line);
@@ -111,10 +138,12 @@ if (program === "docker") {
   }
 } else if (program === "git") { if (args[0] === "rev-parse") console.log("fixture-commit"); }
 else if (program === "ps") { writeFileSync(process.env.FIXTURE_OBSERVER_PID, String(process.ppid)); console.log(process.env.FIXTURE_API_PID + " 1 5000"); console.log(process.env.FIXTURE_WORKER_PID + " 1 5000"); console.log(process.ppid + " 1 5000"); }
-else if (program !== "pnpm") process.exit(2);
+else { console.error("Unexpected package-manager or command launch"); process.exit(2); }
 `
     );
     await chmod(stub, 0o755);
+    await mkdir(resolve(dir, "services/api/scripts"));
+    await copyFile(stub, resolve(dir, "services/api/scripts/ranking-diagnostics-probe.ts"));
     for (const name of ["docker", "k6", "git", "pnpm", "ps"])
       await symlink(stub, resolve(bin, name));
     const address = server.address();
@@ -129,10 +158,10 @@ else if (program !== "pnpm") process.exit(2);
         process.execPath,
         "--experimental-strip-types",
         "scripts/ranking-performance.mjs",
-        "run",
+        mode === "check" ? "check" : "run",
       ],
       {
-        cwd: resolve(import.meta.dirname, ".."),
+        cwd: dir,
         env: {
           ...process.env,
           PATH: `${bin}:${process.env.PATH}`,
@@ -170,7 +199,7 @@ else if (program !== "pnpm") process.exit(2);
       let observerPid;
       const deadline = Date.now() + 10000;
       while (!observerPid && Date.now() < deadline) {
-        try { observerPid = Number(await readFile(resolve(dir, "observer-pid"), "utf8")); }
+        try { const [pid] = await Promise.all([readFile(resolve(dir, "observer-pid"), "utf8"), readFile(resolve(dir, "finished"), "utf8")]); observerPid = Number(pid); }
         catch { await new Promise(resolve => setTimeout(resolve, 25)); }
       }
       assert.ok(observerPid, output);
@@ -179,10 +208,16 @@ else if (program !== "pnpm") process.exit(2);
     const [code] = await exited;
     assert.equal(
       code,
-      mode === "success" ? 0 : mode === "workload-failure" ? 99 : 1,
+      mode === "success" || mode === "podman" || mode === "check" ? 0 : mode === "workload-failure" ? 99 : 1,
       output
     );
     const runDir = resolve(logRoot, "runs/fixture-run");
+    if (mode === "check" || mode === "docker-port-failure") {
+      assert.ok(!(await readdir(runDir)).some(name => name.startsWith("ranking-performance-")));
+      if (mode === "check") assert.ok(output.includes("preflight_complete"));
+      else { assert.ok(output.includes("docker port failed (17)"), output); assert.ok(!output.includes("PRIVATE_DOCKER_ERROR")); }
+      return;
+    }
     const artifacts = (await readdir(runDir)).find((name) =>
       name.startsWith("ranking-performance-")
     );

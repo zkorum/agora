@@ -58,15 +58,10 @@
                     </div>
                   </div>
                   <span class="score-text">
-                    {{
-                      scoreLabel.replace(
-                        "{score}",
-                        (item.score * 100).toFixed(0) + "%"
-                      )
-                    }}
+                    {{ scoreFormatter.format(item.score) }}
                   </span>
                 </div>
-                <div v-else-if="scoreLabel !== ''" class="item-meta">
+                <div v-else class="item-meta">
                   <span class="score-text unranked-text">—</span>
                 </div>
               </div>
@@ -87,6 +82,7 @@ import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import { htmlToCountedText } from "src/shared/richText";
 import type { RankingItemDisplayedContent } from "src/shared/types/zod";
 import { computed, ref } from "vue";
+import { useI18n } from "vue-i18n";
 
 import MaxDiffItemListContent, {
   type MaxDiffItemListDisplayState,
@@ -114,7 +110,6 @@ const props = defineProps<{
   items: MaxDiffListItem[];
   isLoading: boolean;
   noItemsMessage: string;
-  scoreLabel: string;
   compactMode: boolean;
   onClickItem: (item: ClickItemData) => void;
   onSwitchTab: () => void;
@@ -122,6 +117,14 @@ const props = defineProps<{
 }>();
 
 const COMPACT_LIMIT = 3;
+const { locale } = useI18n();
+const scoreFormatter = computed(
+  () =>
+    new Intl.NumberFormat(locale.value, {
+      style: "percent",
+      maximumFractionDigits: 0,
+    })
+);
 const EXPANDABLE_COMPACT_TITLE_LENGTH = 220;
 
 const displayItems = computed(() =>

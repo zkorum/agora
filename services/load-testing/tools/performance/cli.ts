@@ -13,9 +13,9 @@ import {
     readEventWindow,
     waitForCapture,
     writeJson,
+    root,
 } from "./io.ts";
 import {
-    containerSchema,
     databaseSampleSchema,
     errorMessage,
     historySchema,
@@ -53,6 +53,7 @@ import {
     startApplicationReader,
     type ApplicationReader,
 } from "./applicationReader.ts";
+import { containerInfoSchema, createContainerSampler } from "./containers.ts";
 
 const monitoringConfigSchema = z.object({
     PERF_POSTGRES_CONTAINER: z.string().min(1).default("postgres_container"),
@@ -154,11 +155,41 @@ async function preflight({
     }
     const api = await serviceConfiguration("api");
     const worker = await serviceConfiguration("scoring-worker");
+    emit({ action: "preflight_stage", metadata: { stage: "build_load_test" } });
     await command({
-        program: "pnpm",
-        args: ["--dir", "services/load-testing", "build"],
+        program: "node",
+        args: [
+            "--input-type=module",
+            "-e",
+            "import { build } from 'vite'; await build();",
+        ],
+        cwd: resolve(root, "services/load-testing"),
         timeoutMs: 120000,
     });
+    emit({
+        action: "preflight_stage",
+        metadata: { stage: "container_resources" },
+    });
+    const runtime = {
+        commit: await command({ program: "git", args: ["rev-parse", "HEAD"] }),
+        dirty: Boolean(
+            await command({ program: "git", args: ["status", "--porcelain"] }),
+        ),
+        node: process.version,
+        k6: await command({ program: "k6", args: ["version"] }),
+        platform: platform(),
+        arch: arch(),
+        hostCpuCount: cpus().length,
+        hostMemoryBytes: totalmem(),
+        dockerResources: parseJson({
+            text: await command({
+                program: "docker",
+                args: ["info", "--format", "{{json .}}"],
+            }),
+            schema: containerInfoSchema,
+            label: "container engine info",
+        }),
+    };
     return {
         paths,
         config,
@@ -174,6 +205,12 @@ async function preflight({
         api,
         worker,
         application,
+        runtime,
+        readContainers: createContainerSampler([
+            primary,
+            replica,
+            monitor.PERF_VALKEY_CONTAINER,
+        ]),
     };
 }
 type Context = Awaited<ReturnType<typeof preflight>>;
@@ -206,7 +243,7 @@ async function resourceSample({
     context: Context;
     k6Pid: number | undefined;
 }): Promise<void> {
-    const { sql, primary, replica, monitor } = context;
+    const { sql, primary, monitor } = context;
     const started = performance.now();
     const [revisions, database, queue, processes, containers] =
         await Promise.all([
@@ -233,18 +270,7 @@ async function resourceSample({
                 observerPid: process.pid,
                 probePid: context.application.pid,
             }),
-            command({
-                program: "docker",
-                args: [
-                    "stats",
-                    "--no-stream",
-                    "--format",
-                    "{{json .}}",
-                    primary,
-                    replica,
-                    monitor.PERF_VALKEY_CONTAINER,
-                ],
-            }),
+            context.readContainers(),
         ]);
     emit({
         action: "resource_sample",
@@ -253,13 +279,7 @@ async function resourceSample({
             database,
             processes,
             queueDepth: z.coerce.number().int().nonnegative().parse(queue),
-            containers: containers.split("\n").map((text) =>
-                parseJson({
-                    text,
-                    schema: containerSchema,
-                    label: "container sample",
-                }),
-            ),
+            containers,
             sampleDurationMs: performance.now() - started,
         },
     });
@@ -405,37 +425,7 @@ async function collect(context: Context): Promise<number> {
         const manifest = {
             startedAt: new Date(started).toISOString(),
             runId: paths.AGORA_LOG_RUN_ID,
-            commit: await command({
-                program: "git",
-                args: ["rev-parse", "HEAD"],
-            }),
-            dirty: Boolean(
-                await command({
-                    program: "git",
-                    args: ["status", "--porcelain"],
-                }),
-            ),
-            node: process.version,
-            k6: await command({ program: "k6", args: ["version"] }),
-            platform: platform(),
-            arch: arch(),
-            hostCpuCount: cpus().length,
-            hostMemoryBytes: totalmem(),
-            dockerResources: parseJson({
-                text: await command({
-                    program: "docker",
-                    args: [
-                        "info",
-                        "--format",
-                        '{"cpus":{{.NCPU}},"memoryBytes":{{.MemTotal}}}',
-                    ],
-                }),
-                schema: z.object({
-                    cpus: z.number().positive(),
-                    memoryBytes: z.number().positive(),
-                }),
-                label: "Docker resources",
-            }),
+            ...context.runtime,
             workload: {
                 ...config,
                 itemOrders: Object.fromEntries(config.itemOrders),
@@ -695,7 +685,20 @@ async function collect(context: Context): Promise<number> {
         });
         await writeFile(
             resolve(artifactDir, "report.md"),
-            `# Ranking performance run\n\n- Commit: ${manifest.commit}\n- Workload exit: ${String(report.exitCode)}\n- Final freshness verified: ${String(verified)}\n- Scoring drain: ${String(report.drainSeconds ?? "unverified")} seconds\n- Published/rejected batches: ${String(measured.publishedBatches)}/${String(measured.rejectedBatches)}\n- Diagnostics: ${String(observer.diagnostics.length)}\n- Participant events complete: ${String(completeParticipantEventCapture)}\n\nSee report.json for per-conversation timings, query deltas, revisions, diagnostics and ranking evaluations. Overlapping phase durations must not be summed.\n`,
+            `# Ranking performance run
+
+- Commit: ${manifest.commit}
+- Workload exit: ${String(report.exitCode)}
+- Final freshness verified: ${String(verified)}
+- Scoring drain: ${String(report.drainSeconds ?? "unverified")} seconds
+- Batches with publications: ${String(measured.publishedBatches)}
+- Batches with invalidations: ${String(measured.rejectedBatches)}
+- Batches without publications: ${String(measured.skippedBatches)}
+- Diagnostics: ${String(observer.diagnostics.length)}
+- Participant events complete: ${String(completeParticipantEventCapture)}
+
+See report.json for per-conversation timings, query deltas, revisions, diagnostics and ranking evaluations. A partially published batch can also contain invalidations. Overlapping phase durations must not be summed.
+`,
         );
         emit({
             action: "performance_report_written",
@@ -782,20 +785,29 @@ export async function main(): Promise<void> {
     try {
         const monitor = monitoringConfigSchema.parse(process.env);
         if (process.argv[2] === "prepare") await prepare(monitor);
-        else if (process.argv[2] === "run") {
+        else if (process.argv[2] === "run" || process.argv[2] === "check") {
             const application = await startApplicationReader({
                 primaryContainer: monitor.PERF_POSTGRES_CONTAINER,
                 replicaContainer: monitor.PERF_REPLICA_CONTAINER,
                 database: monitor.PERF_DATABASE,
             });
             try {
-                process.exitCode = await collect(
-                    await preflight({ monitor, application }),
-                );
+                const context = await preflight({ monitor, application });
+                await resourceSample({ context, k6Pid: undefined });
+                emit({
+                    action: "preflight_complete",
+                    outcome: "success",
+                    metadata: {
+                        conversations: context.config.conversations.join(","),
+                    },
+                });
+                if (process.argv[2] === "run")
+                    process.exitCode = await collect(context);
             } finally {
                 await application.close();
             }
-        } else throw new Error("Usage: ranking-performance.mjs prepare|run");
+        } else
+            throw new Error("Usage: ranking-performance.mjs prepare|check|run");
     } catch (error) {
         emit({
             action: "monitor_failed",

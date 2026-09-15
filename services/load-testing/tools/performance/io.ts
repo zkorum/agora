@@ -13,23 +13,43 @@ export async function command({
     program,
     args,
     timeoutMs = 15000,
+    cwd = root,
 }: {
-    program: "docker" | "git" | "ps" | "pnpm" | "k6";
+    program: "docker" | "git" | "ps" | "node" | "k6";
     args: readonly string[];
     timeoutMs?: number;
+    cwd?: string;
 }): Promise<string> {
     try {
         return (
-            await exec(program, args, {
-                cwd: root,
+            await exec(program === "node" ? process.execPath : program, args, {
+                cwd,
                 timeout: timeoutMs,
                 maxBuffer: 8_000_000,
                 encoding: "utf8",
             })
         ).stdout.trim();
-    } catch {
+    } catch (error) {
+        const details = z
+            .object({
+                code: z
+                    .union([z.number(), z.string().regex(/^[A-Z0-9_]{1,40}$/)])
+                    .optional(),
+                killed: z.boolean().optional(),
+            })
+            .safeParse(error);
+        const operation = args.at(0);
+        const name =
+            operation !== undefined && /^[A-Za-z-]{1,40}$/.test(operation)
+                ? `${program} ${operation}`
+                : program;
+        const reason =
+            details.success && details.data.killed
+                ? `timed out after ${String(timeoutMs)}ms`
+                : `failed (${details.success ? String(details.data.code ?? "unknown exit") : "unknown exit"})`;
         throw new Error(
-            `${program} command failed; verify local monitoring dependencies and permissions`,
+            `${name} ${reason}; verify local monitoring dependencies and permissions`,
+            { cause: error },
         );
     }
 }

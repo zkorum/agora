@@ -108,7 +108,6 @@
           :items="activeResultItems"
           :is-loading="false"
           :no-items-message="t('noResults')"
-          :score-label="t('score')"
           :compact-mode="currentTab === 'Summary'"
           :on-click-item="openStatementDialog"
           :on-switch-tab="() => onTabChange('Results')"
@@ -145,7 +144,6 @@
           :items="activeCompletedItems"
           :is-loading="isCompletedLoading"
           :no-items-message="t('noItems')"
-          :score-label="t('score')"
           :compact-mode="currentTab === 'Summary'"
           :on-click-item="openStatementDialog"
           :on-switch-tab="() => onTabChange('Completed')"
@@ -168,7 +166,6 @@
           :items="activeCanceledItems"
           :is-loading="isCanceledLoading"
           :no-items-message="t('noItems')"
-          :score-label="t('score')"
           :compact-mode="currentTab === 'Summary'"
           :on-click-item="openStatementDialog"
           :on-switch-tab="() => onTabChange('Canceled')"
@@ -185,6 +182,7 @@
         <div class="learn-more-content">
           <template v-if="learnMoreContext === 'community'">
             <p>{{ t("communityLearnMoreHow") }}</p>
+            <p>{{ t("scoreScaleExplanation") }}</p>
             <p>{{ t("communityLearnMoreCocm") }}</p>
             <p>{{ t("communityLearnMoreDiversity") }}</p>
             <p>
@@ -223,6 +221,7 @@
           </template>
           <template v-else>
             <p>{{ t("meLearnMorePersonal") }}</p>
+            <p>{{ t("scoreScaleExplanation") }}</p>
             <p>{{ t("meLearnMoreCounts") }}</p>
           </template>
         </div>

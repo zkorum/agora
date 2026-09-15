@@ -14,12 +14,14 @@ import {
     rankingConversationConfigTable,
     rankingConversationStatsSnapshotTable,
     rankingConversationStatsItemTable,
+    rankingScoreEntityTable,
     rankingItemTable,
     maxdiffResultTable,
     maxdiffComparisonTable,
     userTable,
 } from "../src/shared-backend/schema.js";
 import type { RankingDiagnosticsRequest } from "../src/shared-backend/rankingDiagnosticsProtocol.js";
+import { buildMaxdiffAppearanceCountQuery } from "../src/service/maxdiffQueries.js";
 
 // The no-op predicate gives observer queries a separate fingerprint from normal
 // application reads; the marker excludes them from query-cost attribution.
@@ -118,7 +120,7 @@ export function buildRankingDiagnosticsQuery({
             return db
                 .select({
                     itemSlugId: rankingItemTable.slugId,
-                    score: rankingConversationStatsItemTable.score,
+                    score: rankingScoreEntityTable.displayScore,
                     participantCount:
                         rankingConversationStatsItemTable.participantCount,
                 })
@@ -128,6 +130,26 @@ export function buildRankingDiagnosticsQuery({
                     eq(
                         rankingItemTable.id,
                         rankingConversationStatsItemTable.rankingItemId,
+                    ),
+                )
+                .innerJoin(
+                    rankingConversationStatsSnapshotTable,
+                    eq(
+                        rankingConversationStatsSnapshotTable.id,
+                        rankingConversationStatsItemTable.statsSnapshotId,
+                    ),
+                )
+                .leftJoin(
+                    rankingScoreEntityTable,
+                    and(
+                        eq(
+                            rankingScoreEntityTable.rankingScoreId,
+                            rankingConversationStatsSnapshotTable.rankingScoreId,
+                        ),
+                        eq(
+                            rankingScoreEntityTable.entitySlugId,
+                            rankingItemTable.slugId,
+                        ),
                     ),
                 )
                 .where(
@@ -184,29 +206,11 @@ export function buildRankingDiagnosticsQuery({
                         maxdiffComparisonTable.position,
                     );
             }
-            const item = sql<string>`item_text`;
-            return db
-                .select({
-                    item_text: item,
-                    appearance_count: sql<string>`count(*)::text`,
-                })
-                .from(maxdiffResultTable)
-                .crossJoin(
-                    sql`jsonb_array_elements(${maxdiffResultTable.comparisons}) as comp`,
-                )
-                .crossJoin(
-                    sql`jsonb_array_elements_text(comp -> 'set') as item_text`,
-                )
-                .where(
-                    and(
-                        observerPredicate,
-                        eq(
-                            maxdiffResultTable.conversationId,
-                            request.conversationId,
-                        ),
-                    ),
-                )
-                .groupBy(item);
+            return buildMaxdiffAppearanceCountQuery({
+                db,
+                conversationId: request.conversationId,
+                additionalFilter: observerPredicate,
+            });
         }
     }
 }

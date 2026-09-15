@@ -193,6 +193,49 @@ describe("generateCandidateSets", () => {
         expect(result.length).toBeLessThanOrEqual(3);
     });
 
+    it("never returns a fully resolved task while other pairs remain unresolved", () => {
+        const items = ["A", "B", "C", "D", "E", "F"];
+        const userComparisons = [
+            { best: "A", worst: "C", set: ["A", "B", "C"] },
+            { best: "C", worst: "D", set: ["C", "D"] },
+            { best: "E", worst: "F", set: ["E", "F"] },
+        ];
+        const matrix = buildComparisonMatrix({ items });
+        for (const comparison of userComparisons)
+            matrix.applyComparison(comparison);
+        const unresolved = matrix.getUnorderedPairs();
+        const result = generateCandidateSets({
+            userComparisons,
+            items,
+            globalUncertainty: new Map(
+                items.map((item) => [
+                    item,
+                    ["A", "B", "C", "D"].includes(item) ? 10 : 0.1,
+                ]),
+            ),
+            bufferSize: 20,
+        });
+        expect(result).not.toHaveLength(0);
+        for (const set of result) {
+            expect(
+                unresolved.some(([a, b]) => set.includes(a) && set.includes(b)),
+            ).toBe(true);
+        }
+    });
+
+    it("does not consider a task's middle pair resolved merely because it co-appeared", () => {
+        const result = generateCandidateSets({
+            userComparisons: [
+                { best: "A", worst: "D", set: ["A", "B", "C", "D"] },
+            ],
+            items: ["A", "B", "C", "D"],
+            globalUncertainty: new Map(),
+            bufferSize: 1,
+        });
+        expect(result).toHaveLength(1);
+        expect(new Set(result[0])).toEqual(new Set(["B", "C"]));
+    });
+
     it("uncertainty scoring influences group selection", () => {
         // Verify that the scoring mechanism uses uncertainty values.
         // With uniform uncertainty, generate sets and check they contain valid items.

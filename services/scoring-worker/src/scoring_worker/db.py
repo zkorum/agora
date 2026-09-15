@@ -7,15 +7,14 @@ Column name typos are caught by basedpyright at static analysis time.
 from __future__ import annotations
 
 import html
-import json
 import logging
 import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, TypedDict, cast
+from typing import TYPE_CHECKING, Any, Literal, Protocol, TypedDict, cast
 
 import regex
-from sqlalchemy import and_, delete, or_, select, text, update
+from sqlalchemy import and_, delete, insert, or_, select, text, update
 from sqlalchemy.orm import Session
 
 from scoring_worker.generated_models import (
@@ -71,6 +70,7 @@ class ComparisonRow:
 class ScoredEntity:
     entity_slug_id: str
     score: float
+    display_score: float
     uncertainty_left: float
     uncertainty_right: float
     participant_count: int
@@ -731,10 +731,34 @@ def fetch_comparisons_batch(
 
 
 @dataclass(frozen=True)
+class ScoringInputs:
+    revisions: dict[int, int]
+    ranking_items: dict[int, list[RankingItemSnapshotInput]]
+    comparisons: ComparisonsBatchResult
+
+
+def fetch_scoring_inputs(
+    connection: Connection,
+    *,
+    conversation_ids: list[int],
+) -> ScoringInputs:
+    # Release the MVCC snapshot before computation. Scores and counts must
+    # describe this exact revision even when more votes arrive during scoring.
+    with connection.begin():
+        connection.execute(text("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY"))
+        return ScoringInputs(
+            revisions=fetch_scoring_input_revisions(connection, conversation_ids=conversation_ids),
+            ranking_items=fetch_ranking_items_batch(connection, conversation_ids=conversation_ids),
+            comparisons=fetch_comparisons_batch(connection, conversation_ids=conversation_ids),
+        )
+
+
+@dataclass(frozen=True)
 class UserScoreEntry:
     maxdiff_result_id: int
     entity_slug_id: str
     score: float
+    display_score: float
     uncertainty_left: float
     uncertainty_right: float
 
@@ -745,7 +769,7 @@ def _write_scores_batch(
     conversation_ids: list[int],
     results: dict[int, tuple[list[ScoredEntity], dict[str, int]]],
     user_scores: list[UserScoreEntry] | None = None,
-) -> None:
+) -> dict[int, int]:
     """Write scoring results for multiple conversations in one transaction.
 
     `results` maps conversation_id -> (scored_entities, participant_counts).
@@ -753,9 +777,10 @@ def _write_scores_batch(
     Skips conversations with empty scores.
     """
     if not conversation_ids:
-        return
+        return {}
 
     now = datetime.now(tz=UTC).replace(microsecond=0)
+    score_ids: dict[int, int] = {}
 
     with Session(connection, join_transaction_mode="create_savepoint") as session:
         session.execute(
@@ -774,27 +799,23 @@ def _write_scores_batch(
             # Insert ranking_score (JSONB backup + typed columns)
             ranking_score = RankingScore(
                 conversation_id=conv_id,
-                scores=json.dumps(
-                    [
-                        {
-                            "entityId": s.entity_slug_id,
-                            "score": s.score,
-                            "uncertaintyLeft": s.uncertainty_left,
-                            "uncertaintyRight": s.uncertainty_right,
-                        }
-                        for s in scores
-                    ]
-                ),
-                participant_counts=json.dumps(participant_counts),
+                scores=[
+                    {
+                        "entityId": s.entity_slug_id,
+                        "score": s.score,
+                        "uncertaintyLeft": s.uncertainty_left,
+                        "uncertaintyRight": s.uncertainty_right,
+                    }
+                    for s in scores
+                ],
+                participant_counts=participant_counts,
                 group_sources_snapshot=None,
                 user_weights_snapshot=None,
-                pipeline_config=json.dumps(
-                    {
-                        "preferenceLearning": PIPELINE_CONFIG["preference_learning"],
-                        "votingRights": PIPELINE_CONFIG["voting_rights"],
-                        "aggregation": PIPELINE_CONFIG["aggregation"],
-                    }
-                ),
+                pipeline_config={
+                    "preferenceLearning": PIPELINE_CONFIG["preference_learning"],
+                    "votingRights": PIPELINE_CONFIG["voting_rights"],
+                    "aggregation": PIPELINE_CONFIG["aggregation"],
+                },
                 preference_learning=PIPELINE_CONFIG["preference_learning"],
                 voting_rights=PIPELINE_CONFIG["voting_rights"],
                 aggregation_config=PIPELINE_CONFIG["aggregation"],
@@ -803,6 +824,7 @@ def _write_scores_batch(
             )
             session.add(ranking_score)
             session.flush()  # get the auto-generated ID
+            score_ids[conv_id] = ranking_score.id
 
             # Insert normalized entity scores
             for s in scores:
@@ -811,6 +833,7 @@ def _write_scores_batch(
                         ranking_score_id=ranking_score.id,
                         entity_slug_id=s.entity_slug_id,
                         score=s.score,
+                        display_score=s.display_score,
                         uncertainty_left=s.uncertainty_left,
                         uncertainty_right=s.uncertainty_right,
                         participant_count=participant_counts.get(s.entity_slug_id, 0),
@@ -836,35 +859,25 @@ def _write_scores_batch(
                 .values(current_ranking_score_id=ranking_score.id),
             )
 
-        # Bulk upsert per-user entity scores
+        # The conversation is locked and its previous rows were deleted above.
+        # Passing values to execute lets the driver batch them without building
+        # a single statement that exceeds PostgreSQL's parameter limit.
         if user_scores:
-            from sqlalchemy.dialects.postgresql import insert as pg_insert
-
             values = [
                 {
                     "maxdiff_result_id": e.maxdiff_result_id,
                     "entity_slug_id": e.entity_slug_id,
                     "score": e.score,
+                    "display_score": e.display_score,
                     "uncertainty_left": e.uncertainty_left,
                     "uncertainty_right": e.uncertainty_right,
                 }
                 for e in user_scores
             ]
-            stmt = pg_insert(MaxdiffUserEntityScore).values(values)
-            stmt = stmt.on_conflict_do_update(
-                index_elements=[
-                    MaxdiffUserEntityScore.maxdiff_result_id,
-                    MaxdiffUserEntityScore.entity_slug_id,
-                ],
-                set_={
-                    "score": stmt.excluded.score,
-                    "uncertainty_left": stmt.excluded.uncertainty_left,
-                    "uncertainty_right": stmt.excluded.uncertainty_right,
-                },
-            )
-            session.execute(stmt)
+            session.execute(insert(MaxdiffUserEntityScore), values)
 
         session.commit()
+    return score_ids
 
 
 def _clear_scores_batch(
@@ -952,6 +965,7 @@ def _update_ranking_stats_batch(
     total_participant_count_by_conversation: dict[int, int],
     scored_entities_by_conv: dict[int, list[ScoredEntity]],
     scoring_input_revisions: dict[int, int],
+    ranking_score_ids: dict[int, int],
 ) -> None:
     """Persist current ranking counts, immutable snapshots, and SSE outbox events."""
     if not conversation_ids:
@@ -1018,6 +1032,7 @@ def _update_ranking_stats_batch(
             )
             snapshot = RankingConversationStatsSnapshot(
                 conversation_id=conversation_id,
+                ranking_score_id=ranking_score_ids.get(conversation_id),
                 item_count=len(active_items),
                 total_item_count=len(ranking_items),
                 vote_count=vote_count,
@@ -1032,23 +1047,13 @@ def _update_ranking_stats_batch(
             session.flush()
 
             scored_entities = scored_entities_by_conv.get(conversation_id, [])
-            normalized_scores_by_slug: dict[str, tuple[float, int, int]] = {}
-            if scored_entities:
-                minimum_score = min(item.score for item in scored_entities)
-                maximum_score = max(item.score for item in scored_entities)
-                score_range = maximum_score - minimum_score
-                for rank, item in enumerate(scored_entities, start=1):
-                    normalized_score = (
-                        0.5 if score_range < 1e-6 else (item.score - minimum_score) / score_range
-                    )
-                    normalized_scores_by_slug[item.entity_slug_id] = (
-                        normalized_score,
-                        rank,
-                        item.participant_count,
-                    )
+            display_scores_by_slug = {
+                item.entity_slug_id: (item.display_score, rank, item.participant_count)
+                for rank, item in enumerate(scored_entities, start=1)
+            }
 
             for item in active_items:
-                score_data = normalized_scores_by_slug.get(item.slug_id)
+                score_data = display_scores_by_slug.get(item.slug_id)
                 session.add(
                     RankingConversationStatsItem(
                         stats_snapshot_id=snapshot.id,
@@ -1144,71 +1149,115 @@ def _update_ranking_stats_batch(
         session.commit()
 
 
+@dataclass(frozen=True)
+class ScoringPublication:
+    status: Literal["published", "invalidated", "superseded", "missing"]
+    needs_requeue: bool
+    observed_revision: int | None
+
+
+class PublicationCallback(Protocol):
+    def __call__(self, *, conversation_id: int, publication: ScoringPublication) -> None: ...
+
+
 def persist_scoring_batch(
     connection: Connection,
     *,
+    inputs: ScoringInputs,
     scoring_results: dict[int, tuple[list[ScoredEntity], dict[str, int]]],
     user_scores: list[UserScoreEntry],
     conversation_ids_to_clear: list[int],
-    snapshot_conversation_ids: list[int],
-    ranking_items_by_conv: dict[int, list[RankingItemSnapshotInput]],
-    comparisons_by_conv: dict[int, list[ComparisonRow]],
-    total_vote_count_by_conversation: dict[int, int],
-    total_participant_count_by_conversation: dict[int, int],
-    scored_entities_by_conv: dict[int, list[ScoredEntity]],
-    scoring_input_revisions: dict[int, int],
-    on_revision_rejected: Callable[[dict[int, int]], None] | None = None,
-) -> bool:
-    """Atomically publish scores, immutable snapshots, checkpoints, and SSE."""
-    with connection.begin():
-        with Session(
-            connection,
-            join_transaction_mode="create_savepoint",
-        ) as session:
-            revision_rows = session.execute(
-                select(
-                    Conversation.id,
-                    RankingConversationConfig.scoring_input_revision,
-                )
-                .join(
-                    RankingConversationConfig,
-                    RankingConversationConfig.id == Conversation.ranking_config_id,
-                )
-                .where(Conversation.id.in_(snapshot_conversation_ids))
-                .order_by(Conversation.id)
-                .with_for_update(of=RankingConversationConfig)
-            ).all()
-            if len(revision_rows) != len(snapshot_conversation_ids) or any(
-                scoring_input_revisions.get(row.id) != row.scoring_input_revision
-                for row in revision_rows
-            ):
-                if on_revision_rejected is not None:
-                    on_revision_rejected(
-                        {row.id: row.scoring_input_revision for row in revision_rows}
-                    )
-                return False
-            session.commit()
-        _write_scores_batch(
-            connection,
-            conversation_ids=snapshot_conversation_ids,
-            results=scoring_results,
-            user_scores=user_scores,
-        )
-        _clear_scores_batch(
-            connection,
-            conversation_ids=conversation_ids_to_clear,
-        )
-        _update_ranking_stats_batch(
-            connection,
-            conversation_ids=snapshot_conversation_ids,
-            ranking_items_by_conv=ranking_items_by_conv,
-            comparisons_by_conv=comparisons_by_conv,
-            total_vote_count_by_conversation=total_vote_count_by_conversation,
-            total_participant_count_by_conversation=(total_participant_count_by_conversation),
-            scored_entities_by_conv=scored_entities_by_conv,
-            scoring_input_revisions=scoring_input_revisions,
-        )
-    return True
+    on_publication: PublicationCallback | None = None,
+) -> dict[int, ScoringPublication]:
+    """Publish each conversation atomically, independently of other batch inputs."""
+    publications: dict[int, ScoringPublication] = {}
+    result_to_conversation = {
+        result_id: conversation_id
+        for conversation_id, result_ids in inputs.comparisons.user_idx_to_result_id.items()
+        for result_id in result_ids.values()
+    }
+    user_scores_by_conversation: dict[int, list[UserScoreEntry]] = {}
+    for score in user_scores:
+        conversation_id = result_to_conversation[score.maxdiff_result_id]
+        user_scores_by_conversation.setdefault(conversation_id, []).append(score)
+    for conversation_id in sorted(scoring_results.keys() | set(conversation_ids_to_clear)):
+        with connection.begin():
+            publications[conversation_id] = _persist_scoring_conversation(
+                connection,
+                conversation_id=conversation_id,
+                inputs=inputs,
+                result=scoring_results.get(conversation_id),
+                user_scores=user_scores_by_conversation.get(conversation_id, []),
+            )
+        if on_publication is not None:
+            on_publication(
+                conversation_id=conversation_id, publication=publications[conversation_id]
+            )
+    return publications
+
+
+def _persist_scoring_conversation(
+    connection: Connection,
+    *,
+    conversation_id: int,
+    inputs: ScoringInputs,
+    result: tuple[list[ScoredEntity], dict[str, int]] | None,
+    user_scores: list[UserScoreEntry],
+) -> ScoringPublication:
+    input_revision = inputs.revisions[conversation_id]
+    with Session(connection, join_transaction_mode="create_savepoint") as session:
+        revision = session.execute(
+            select(
+                RankingConversationConfig.scoring_input_revision,
+                RankingConversationConfig.scoring_invalidation_revision,
+                RankingConversationConfig.processed_scoring_input_revision,
+            )
+            .join(Conversation, Conversation.ranking_config_id == RankingConversationConfig.id)
+            .where(Conversation.id == conversation_id)
+            .with_for_update(of=RankingConversationConfig)
+        ).one_or_none()
+        if revision is None:
+            return ScoringPublication(status="missing", needs_requeue=False, observed_revision=None)
+        if input_revision < revision.scoring_invalidation_revision:
+            return ScoringPublication(
+                status="invalidated",
+                needs_requeue=True,
+                observed_revision=revision.scoring_input_revision,
+            )
+        if input_revision <= revision.processed_scoring_input_revision:
+            return ScoringPublication(
+                status="superseded",
+                needs_requeue=(
+                    revision.scoring_input_revision > revision.processed_scoring_input_revision
+                ),
+                observed_revision=revision.scoring_input_revision,
+            )
+        needs_requeue = input_revision < revision.scoring_input_revision
+        session.commit()
+    ranking_score_ids = _write_scores_batch(
+        connection,
+        conversation_ids=[conversation_id],
+        results={conversation_id: result} if result is not None else {},
+        user_scores=user_scores,
+    )
+    if result is None:
+        _clear_scores_batch(connection, conversation_ids=[conversation_id])
+    _update_ranking_stats_batch(
+        connection,
+        conversation_ids=[conversation_id],
+        ranking_items_by_conv=inputs.ranking_items,
+        comparisons_by_conv=inputs.comparisons.comparisons,
+        total_vote_count_by_conversation=inputs.comparisons.total_vote_count_by_conversation,
+        total_participant_count_by_conversation=inputs.comparisons.total_participant_count_by_conversation,
+        scored_entities_by_conv={conversation_id: result[0]} if result is not None else {},
+        scoring_input_revisions=inputs.revisions,
+        ranking_score_ids=ranking_score_ids,
+    )
+    return ScoringPublication(
+        status="published",
+        needs_requeue=needs_requeue,
+        observed_revision=revision.scoring_input_revision,
+    )
 
 
 # --- Reconciliation ---
