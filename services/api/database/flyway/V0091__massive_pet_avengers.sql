@@ -1,4 +1,4 @@
 ALTER TABLE "project_document_file" DROP CONSTRAINT "project_document_file_byte_size_check";--> statement-breakpoint
 ALTER TABLE "project_document_file" ADD COLUMN "html_scripts_enabled" boolean DEFAULT false NOT NULL;--> statement-breakpoint
 ALTER TABLE "project_document_file" ADD CONSTRAINT "project_document_file_html_scripts_check" CHECK (NOT "project_document_file"."html_scripts_enabled" OR "project_document_file"."content_type" = 'text/html');--> statement-breakpoint
-ALTER TABLE "project_document_file" ADD CONSTRAINT "project_document_file_byte_size_check" CHECK ("project_document_file"."byte_size" > 0 AND "project_document_file"."byte_size" <= 26214400);
+ALTER TABLE "project_document_file" ADD CONSTRAINT "project_document_file_byte_size_check" CHECK ("project_document_file"."byte_size" > 0 AND "project_document_file"."byte_size" <= 52428800);

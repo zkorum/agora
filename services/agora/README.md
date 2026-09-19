@@ -120,8 +120,8 @@ HTML documents and Email Updates share `SandboxedHtmlFrame.vue` with explicit
 policies. Email previews and legacy documents are script-free. Newly uploaded
 HTML reports may run their own hash-authorized inline scripts in an isolated
 iframe, without same-origin privileges, forms, or popups. PDFs use the browser's
-native viewer. Document uploads are limited to 25 MiB; owner download filenames
-include an `-owner` suffix.
+native viewer. Document uploads are limited to 50 MiB per file; owner download
+filenames include an `-owner` suffix.
 
 ## Browser Support
 
