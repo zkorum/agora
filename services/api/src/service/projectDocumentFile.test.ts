@@ -63,9 +63,9 @@ describe("project document files", () => {
         expect(result.buffer.toString()).not.toContain("https://example.com");
     });
 
-    it("accepts a report above the old 20 MiB cap and rejects files beyond 25 MiB", () => {
+    it("accepts a report above 25 MiB and rejects files beyond 50 MiB", () => {
         const file = {
-            buffer: Buffer.alloc(21 * 1024 * 1024, "x"),
+            buffer: Buffer.alloc(40 * 1024 * 1024, "x"),
             originalFileName: "report.txt",
             reportedContentType: "text/plain",
         };

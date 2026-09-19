@@ -159,7 +159,7 @@ CREATE TABLE "project_document_file" (
 	"deleted_at" timestamp (0),
 	"object_deleted_at" timestamp (0),
 	CONSTRAINT "project_document_file_object_key_unique" UNIQUE("object_key"),
-	CONSTRAINT "project_document_file_byte_size_check" CHECK ("project_document_file"."byte_size" > 0 AND "project_document_file"."byte_size" <= 26214400),
+	CONSTRAINT "project_document_file_byte_size_check" CHECK ("project_document_file"."byte_size" > 0 AND "project_document_file"."byte_size" <= 52428800),
 	CONSTRAINT "project_document_file_html_scripts_check" CHECK (NOT "project_document_file"."html_scripts_enabled" OR "project_document_file"."content_type" = 'text/html')
 );
 

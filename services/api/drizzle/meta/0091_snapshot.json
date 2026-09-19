@@ -1,5 +1,5 @@
 {
-  "id": "b21dd441-a803-4f00-b4bf-1f6af7a8bfe0",
+  "id": "be22051d-f381-4889-8245-30c1f45d6475",
   "prevId": "31b2b43f-c07c-4f75-b0a4-672d07a6d55c",
   "version": "7",
   "dialect": "postgresql",
@@ -13346,7 +13346,7 @@
       "checkConstraints": {
         "project_document_file_byte_size_check": {
           "name": "project_document_file_byte_size_check",
-          "value": "\"project_document_file\".\"byte_size\" > 0 AND \"project_document_file\".\"byte_size\" <= 26214400"
+          "value": "\"project_document_file\".\"byte_size\" > 0 AND \"project_document_file\".\"byte_size\" <= 52428800"
         },
         "project_document_file_html_scripts_check": {
           "name": "project_document_file_html_scripts_check",

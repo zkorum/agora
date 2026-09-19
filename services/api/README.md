@@ -284,8 +284,10 @@ Only trusted reports should be uploaded: an authorized script can still navigate
 its own iframe, so these restrictions are not a guarantee of zero network egress.
 The database's `html_scripts_enabled` flag defaults to false. Existing HTML stays
 script-free until reuploaded through the new normalization path. Uploads support
-25 MiB (including the normalized policy); owner downloads receive an `-owner`
-filename suffix to distinguish them from participant downloads.
+50 MiB per file (including the normalized policy); owner downloads receive an
+`-owner` filename suffix to distinguish them from participant downloads. Uploading
+both versions can total 100 MiB plus multipart overhead, so the reverse proxy's
+request-body limit must accommodate the combined request.
 
 ## Test
 

@@ -238,10 +238,10 @@ describe("project document version authorization", () => {
         };
     }
 
-    it("migrates existing documents without enabling their scripts", async () => {
+    it("migrates existing documents to 50 MiB without enabling their scripts", async () => {
         const migration = readFileSync(
             new URL(
-                "../database/flyway/V0091__modern_alex_wilder.sql",
+                "../database/flyway/V0091__massive_pet_avengers.sql",
                 import.meta.url,
             ),
             "utf8",
@@ -259,9 +259,16 @@ describe("project document version authorization", () => {
             expect(files.every((file) => !file.htmlScriptsEnabled)).toBe(true);
             const updated = await tx
                 .update(projectDocumentFileTable)
-                .set({ byteSize: 21 * 1024 * 1024 })
+                .set({ byteSize: 40 * 1024 * 1024 })
                 .returning({ byteSize: projectDocumentFileTable.byteSize });
             expect(updated).toHaveLength(3);
+            await expect(
+                tx.transaction(async (savepoint) => {
+                    await savepoint
+                        .update(projectDocumentFileTable)
+                        .set({ byteSize: 51 * 1024 * 1024 });
+                }),
+            ).rejects.toMatchObject({ cause: { code: "23514" } });
         });
     });
 
