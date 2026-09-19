@@ -95,6 +95,7 @@
         "opencc": "^1.4.1",
         "p-limit": "^7.3.0",
         "parse-json-object": "^4.0.0",
+        "parse5": "^8.0.1",
         "pg": "^8.20.0",
         "postgres": "^3.4.9",
         "sanitize-html": "2.17.5",

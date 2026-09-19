@@ -21,7 +21,10 @@ import {
     getDisplayLanguageFallbackChain,
     type SupportedDisplayLanguageCodes,
 } from "@/shared/languages.js";
-import { isInlineProjectDocumentContentType } from "@/shared/projectDocument.js";
+import {
+    getProjectDocumentDownloadFileName,
+    isInlineProjectDocumentContentType,
+} from "@/shared/projectDocument.js";
 import type {
     AccessProjectDocumentRequest,
     AccessProjectDocumentResponse,
@@ -307,6 +310,7 @@ export async function uploadProjectDocument({
                 originalFileName: upload.file.originalFileName,
                 contentType: upload.file.contentType,
                 byteSize: upload.file.buffer.length,
+                htmlScriptsEnabled: upload.file.contentType === "text/html",
             })),
         );
         return {
@@ -716,10 +720,12 @@ export async function fetchProjectPageDocuments({
     db,
     projectId,
     displayLanguageCode,
+    requesterUserId,
 }: {
     db: PostgresJsDatabase;
     projectId: number;
     displayLanguageCode: SupportedDisplayLanguageCodes;
+    requesterUserId: string | undefined;
 }): Promise<ProjectPageDocument[]> {
     const rows = await db
         .select({
@@ -764,6 +770,8 @@ export async function fetchProjectPageDocuments({
             desc(projectDocumentTable.createdAt),
             desc(projectDocumentTable.id),
         );
+    if (rows.length === 0) return [];
+
     const documentsById = new Map<
         number,
         {
@@ -792,32 +800,77 @@ export async function fetchProjectPageDocuments({
     const fallbackLanguageCodes = getDisplayLanguageFallbackChain({
         languageCode: displayLanguageCode,
     });
-    return [...documentsById.values()].flatMap((document) => {
-        const localizationsByLanguageCode = new Map(
-            document.localizations.map((localization) => [
-                localization.languageCode,
-                localization,
-            ]),
-        );
-        const localization =
-            fallbackLanguageCodes
-                .map((languageCode) =>
-                    localizationsByLanguageCode.get(languageCode),
-                )
-                .find((candidate) => candidate !== undefined) ??
-            localizationsByLanguageCode.get(document.defaultLanguageCode) ??
-            document.localizations.at(0);
-        return localization === undefined
-            ? []
-            : [
-                  {
-                      documentId: document.documentId,
-                      languageCode: localization.languageCode,
-                      name: localization.name,
-                      contentType: document.contentType,
-                  },
-              ];
-    });
+    const canSeeOwnerVersions =
+        requesterUserId !== undefined &&
+        (await hasProjectCapability({
+            db,
+            userId: requesterUserId,
+            projectId,
+            capability: "project_update",
+        }));
+    const ownerFiles =
+        canSeeOwnerVersions && documentsById.size > 0
+            ? await db
+                  .select({
+                      documentId: projectDocumentFileTable.projectDocumentId,
+                      contentType: projectDocumentFileTable.contentType,
+                  })
+                  .from(projectDocumentFileTable)
+                  .where(
+                      and(
+                          inArray(projectDocumentFileTable.projectDocumentId, [
+                              ...documentsById.keys(),
+                          ]),
+                          eq(projectDocumentFileTable.audience, "owner"),
+                          eq(projectDocumentFileTable.status, "available"),
+                          isNull(projectDocumentFileTable.deletedAt),
+                      ),
+                  )
+            : [];
+    const ownerFilesByDocumentId = new Map(
+        ownerFiles.map((file) => [file.documentId, file]),
+    );
+    return [...documentsById.entries()].flatMap(
+        ([id, document]): ProjectPageDocument[] => {
+            const ownerFile = ownerFilesByDocumentId.get(id);
+            const localizationsByLanguageCode = new Map(
+                document.localizations.map((localization) => [
+                    localization.languageCode,
+                    localization,
+                ]),
+            );
+            const localization =
+                fallbackLanguageCodes
+                    .map((languageCode) =>
+                        localizationsByLanguageCode.get(languageCode),
+                    )
+                    .find((candidate) => candidate !== undefined) ??
+                localizationsByLanguageCode.get(document.defaultLanguageCode) ??
+                document.localizations.at(0);
+            return localization === undefined
+                ? []
+                : [
+                      {
+                          documentId: document.documentId,
+                          languageCode: localization.languageCode,
+                          name: localization.name,
+                          versions: {
+                              participant: {
+                                  audience: "participant",
+                                  contentType: document.contentType,
+                              },
+                              owner:
+                                  ownerFile === undefined
+                                      ? undefined
+                                      : {
+                                            audience: "owner",
+                                            contentType: ownerFile.contentType,
+                                        },
+                          },
+                      },
+                  ];
+        },
+    );
 }
 
 async function hasParticipatedInProject({
@@ -929,6 +982,11 @@ export async function accessProjectDocument({
             projectId: document.projectId,
             capability: "project_update",
         });
+        if (request.audience === "owner" && !isOwner) {
+            throw httpErrors.forbidden(
+                "Only project owners can access the owner version",
+            );
+        }
         if (
             !isOwner &&
             !(await hasParticipatedInProject({
@@ -946,6 +1004,7 @@ export async function accessProjectDocument({
                 audience: projectDocumentFileTable.audience,
                 objectKey: projectDocumentFileTable.objectKey,
                 contentType: projectDocumentFileTable.contentType,
+                htmlScriptsEnabled: projectDocumentFileTable.htmlScriptsEnabled,
             })
             .from(projectDocumentFileTable)
             .where(
@@ -953,22 +1012,10 @@ export async function accessProjectDocument({
                     eq(projectDocumentFileTable.projectDocumentId, document.id),
                     eq(projectDocumentFileTable.status, "available"),
                     isNull(projectDocumentFileTable.deletedAt),
-                    isOwner
-                        ? or(
-                              eq(projectDocumentFileTable.audience, "owner"),
-                              eq(
-                                  projectDocumentFileTable.audience,
-                                  "participant",
-                              ),
-                          )
-                        : eq(projectDocumentFileTable.audience, "participant"),
+                    eq(projectDocumentFileTable.audience, request.audience),
                 ),
             );
-        const selectedFile =
-            (isOwner
-                ? fileRows.find((file) => file.audience === "owner")
-                : undefined) ??
-            fileRows.find((file) => file.audience === "participant");
+        const selectedFile = fileRows.at(0);
         if (selectedFile === undefined) {
             throw httpErrors.notFound("Project document file not found");
         }
@@ -1018,7 +1065,13 @@ export async function accessProjectDocument({
                 "Project document localization not found",
             );
         }
-        return { selectedFile, downloadFileName };
+        return {
+            selectedFile,
+            downloadFileName: getProjectDocumentDownloadFileName({
+                fileName: downloadFileName,
+                audience: selectedFile.audience,
+            }),
+        };
     });
     const { bucketName, region } = getStorageConfig();
     const signedUrl = await generatePresignedUrl({
@@ -1036,5 +1089,7 @@ export async function accessProjectDocument({
         ...signedUrl,
         downloadFileName: access.downloadFileName,
         contentType: access.selectedFile.contentType,
+        audience: access.selectedFile.audience,
+        htmlScriptsEnabled: access.selectedFile.htmlScriptsEnabled,
     };
 }

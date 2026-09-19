@@ -1,4 +1,4 @@
-export const MAX_PROJECT_DOCUMENT_FILE_SIZE = 20 * 1024 * 1024;
+export const MAX_PROJECT_DOCUMENT_FILE_SIZE = 25 * 1024 * 1024;
 export const MAX_PROJECT_DOCUMENT_FILE_SIZE_MB =
     MAX_PROJECT_DOCUMENT_FILE_SIZE / (1024 * 1024);
 
@@ -19,6 +19,13 @@ export const PROJECT_DOCUMENT_CONTENT_TYPES = [
 
 export type ProjectDocumentContentType =
     (typeof PROJECT_DOCUMENT_CONTENT_TYPES)[number];
+
+export const PROJECT_DOCUMENT_AUDIENCES = ["participant", "owner"] as const;
+export type ProjectDocumentAudience = (typeof PROJECT_DOCUMENT_AUDIENCES)[number];
+export type InlineProjectDocumentContentType = Extract<
+    ProjectDocumentContentType,
+    "text/html" | "application/pdf"
+>;
 
 export const PROJECT_DOCUMENT_CONTENT_TYPE_BY_EXTENSION: Readonly<
     Record<string, ProjectDocumentContentType>
@@ -78,6 +85,28 @@ export function isSafeProjectDocumentFileName(fileName: string): boolean {
 
 export function isInlineProjectDocumentContentType(
     contentType: ProjectDocumentContentType,
-): boolean {
+): contentType is InlineProjectDocumentContentType {
     return contentType === "text/html" || contentType === "application/pdf";
+}
+
+export function getProjectDocumentDownloadFileName({
+    fileName,
+    audience,
+}: {
+    fileName: string;
+    audience: ProjectDocumentAudience;
+}): string {
+    if (audience === "participant") return fileName;
+
+    const extensionIndex = fileName.lastIndexOf(".");
+    const extension = extensionIndex < 0 ? "" : fileName.slice(extensionIndex);
+    const baseName = extensionIndex < 0 ? fileName : fileName.slice(0, extensionIndex);
+    const suffix = `-owner${extension}`;
+    let stem = "";
+    // Preserve complete Unicode characters while respecting the DTO's UTF-16 limit.
+    for (const character of baseName) {
+        if (stem.length + character.length + suffix.length > 255) break;
+        stem += character;
+    }
+    return `${stem}${suffix}`;
 }

@@ -2,11 +2,11 @@
   <section
     v-if="documents.length > 0"
     class="project-documents"
-    aria-labelledby="project-documents-title"
+    :aria-labelledby="headingId"
   >
     <ProjectSectionHeading
-      heading-id="project-documents-title"
-      :title="t({ key: 'documentsTitle' })"
+      :heading-id="headingId"
+      :title="t('documentsTitle')"
     />
 
     <div class="project-documents__list">
@@ -14,19 +14,20 @@
         v-for="(document, index) in documents"
         :key="document.documentId"
         :document="document"
-        :view-label="t({ key: 'viewDocument' })"
-        :download-label="t({ key: 'downloadDocument' })"
-        :loading-mode="loadingMode(document.documentId)"
-        :disabled="activeAction !== undefined"
+        :view-label="t('viewDocument')"
+        :download-label="t('downloadDocument')"
+        :participant-version-label="t('documentParticipantVersion')"
+        :owner-version-label="t('documentOwnerVersion')"
+        :active-action="activeAction"
         :show-divider="index < documents.length - 1"
-        @view="viewDocument(document)"
-        @download="downloadDocument(document)"
+        @view="viewDocument({ document, version: $event })"
+        @download="downloadDocument({ document, version: $event })"
       />
     </div>
 
     <p class="project-documents__access-hint">
       <q-icon name="mdi-lock-outline" size="0.9rem" />
-      {{ t({ key: "documentsAccessHint" }) }}
+      {{ t("documentsAccessHint") }}
     </p>
 
     <q-dialog
@@ -34,69 +35,106 @@
       maximized
       transition-show="fade"
       transition-hide="fade"
-      @hide="closeViewer"
     >
-      <div class="project-documents__viewer">
-        <header class="project-documents__viewer-header">
-          <div>
-            <strong>{{ activeDocument?.name }}</strong>
-            <span>{{ viewerFileName }}</span>
+      <div v-if="viewer !== undefined" class="project-documents__viewer">
+        <header
+          class="project-documents__viewer-header"
+          :dir="getLanguageTextDirection(languageCode)"
+        >
+          <ZKIconButton
+            class="project-documents__viewer-back"
+            :icon="backIcon"
+            icon-color="var(--q-primary)"
+            :aria-label="t('closeDocument')"
+            :title="t('closeDocument')"
+            @click="closeViewer"
+          />
+          <div class="project-documents__viewer-heading">
+            <strong :title="viewer.selection.document.name">{{
+              viewer.selection.document.name
+            }}</strong>
+            <div class="project-documents__viewer-metadata">
+              <span class="project-documents__viewer-version">{{
+                t(
+                  viewer.access.audience === "owner"
+                    ? "documentOwnerVersion"
+                    : "documentParticipantVersion"
+                )
+              }}</span>
+              <span class="project-documents__viewer-filename">{{
+                viewer.access.downloadFileName
+              }}</span>
+            </div>
           </div>
           <div class="project-documents__viewer-actions">
-            <q-btn
+            <ZKButton
+              button-type="icon"
               flat
-              no-caps
+              color="primary"
               icon="mdi-refresh"
-              :loading="activeAction?.mode === 'inline'"
-              :disable="
-                activeDocument === undefined || activeAction !== undefined
+              :loading="
+                activeAction?.mode === 'inline' ||
+                viewer.loadState === 'loading'
               "
-              :label="t({ key: 'reloadDocument' })"
-              :aria-label="t({ key: 'reloadDocument' })"
+              :disable="activeAction !== undefined"
+              :aria-label="t('reloadDocument')"
               @click="retryViewer"
-            />
-            <q-btn
+            >
+              <q-tooltip>{{ t("reloadDocument") }}</q-tooltip>
+            </ZKButton>
+            <ZKButton
+              button-type="icon"
               flat
-              no-caps
+              color="primary"
               icon="mdi-download-outline"
               :loading="activeAction?.mode === 'download'"
-              :disable="
-                activeDocument === undefined || activeAction !== undefined
-              "
-              :label="t({ key: 'downloadDocument' })"
-              :aria-label="t({ key: 'downloadDocument' })"
+              :disable="activeAction !== undefined"
+              :aria-label="t('downloadDocument')"
               @click="downloadActiveDocument"
-            />
-            <q-btn
-              flat
-              no-caps
-              :icon="backIcon"
-              :label="t({ key: 'closeDocument' })"
-              :aria-label="t({ key: 'closeDocument' })"
-              @click="isViewerOpen = false"
-            />
+            >
+              <q-tooltip>{{ t("downloadDocument") }}</q-tooltip>
+            </ZKButton>
           </div>
         </header>
-        <iframe
-          v-if="viewerUrl !== undefined && activeDocument !== undefined"
-          :key="viewerKey"
+        <SandboxedHtmlFrame
+          v-if="viewer.access.contentType === 'text/html'"
+          :id="viewer.id"
+          :key="viewer.id"
+          :mode="viewer.access.htmlScriptsEnabled ? 'interactive' : 'static'"
           class="project-documents__frame"
-          :src="viewerUrl"
-          :title="activeDocument.name"
-          :sandbox="viewerSandbox"
+          :source="{ kind: 'url', url: viewer.access.url }"
+          :title="viewer.selection.document.name"
+          @load="handleFrameLoad"
+        />
+        <!-- Native PDF viewers cannot render inside an empty sandbox. -->
+        <iframe
+          v-else
+          :id="viewer.id"
+          :key="viewer.id"
+          class="project-documents__frame"
+          :src="viewer.access.url"
+          :title="viewer.selection.document.name"
           referrerpolicy="no-referrer"
-          @load="handleViewerLoaded"
-        ></iframe>
+          @load="handleFrameLoad"
+        />
         <div
-          v-if="viewerStatus === 'loading'"
+          v-if="viewer.loadState !== 'loaded'"
           class="project-documents__viewer-loading"
-          role="status"
-          aria-live="polite"
         >
-          <q-spinner color="primary" size="2.5rem" />
-          <span class="visually-hidden">{{
-            t({ key: "documentLoading" })
-          }}</span>
+          <ErrorRetryBlock
+            v-if="
+              viewer.loadState === 'timeout' && activeAction?.mode !== 'inline'
+            "
+            :title="t('documentLoadFailed')"
+            :retry-label="t('retryAction')"
+            compact
+            @retry="retryViewer"
+          />
+          <PageLoadingSpinner
+            v-else
+            role="status"
+            :aria-label="t('documentLoading')"
+          />
         </div>
       </div>
     </q-dialog>
@@ -105,221 +143,84 @@
 
 <script setup lang="ts">
 import { isAxiosError } from "axios";
+import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
+import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
+import SandboxedHtmlFrame from "src/components/ui-library/SandboxedHtmlFrame.vue";
+import ZKButton from "src/components/ui-library/ZKButton.vue";
+import ZKIconButton from "src/components/ui-library/ZKIconButton.vue";
 import {
   getLanguageTextDirection,
   type SupportedDisplayLanguageCodes,
 } from "src/shared/languages";
-import type { ProjectDocumentContentType } from "src/shared/projectDocument";
-import type {
-  AccessProjectDocumentResponse,
-  ProjectPageDocument,
-} from "src/shared/types/dto";
-import { useBackendProjectPageApi } from "src/utils/api/projectPage";
+import type { ProjectPageDocument } from "src/shared/types/dto";
 import { useNotify } from "src/utils/ui/notify";
-import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { computed, useId } from "vue";
 
 import ProjectDocumentListItem from "./ProjectDocumentListItem.vue";
 import {
   type ProjectPageTranslations,
   translateProjectPageText,
 } from "./projectPageI18n";
+import type { ProjectDocumentAccess } from "./projectPageTypes";
 import ProjectSectionHeading from "./ProjectSectionHeading.vue";
+import { useProjectDocuments } from "./useProjectDocuments";
 
 const props = defineProps<{
   projectSlug: string;
   documents: readonly ProjectPageDocument[];
   languageCode: SupportedDisplayLanguageCodes;
+  accessDocument: ProjectDocumentAccess;
 }>();
-
-const { accessProjectDocument } = useBackendProjectPageApi();
+const headingId = `project-documents-${useId()}`;
 const { showNotifyMessage } = useNotify();
-const isViewerOpen = ref(false);
-const viewerUrl = ref<string | undefined>();
-const viewerFileName = ref<string | undefined>();
-const viewerContentType = ref<ProjectDocumentContentType | undefined>();
-const activeDocument = ref<ProjectPageDocument | undefined>();
-type ViewerStatus = "idle" | "loading" | "loaded";
-const viewerStatus = ref<ViewerStatus>("idle");
-const viewerKey = ref(0);
-let viewerLoadingTimeout: ReturnType<typeof setTimeout> | undefined;
-type DocumentActionMode = "inline" | "download";
-interface DocumentAction {
-  documentId: string;
-  mode: DocumentActionMode;
-}
-const activeAction = ref<DocumentAction | undefined>();
-let latestActionRequest = 0;
+const {
+  viewer,
+  activeAction,
+  viewDocument,
+  downloadDocument,
+  retryViewer,
+  downloadActiveDocument,
+  closeViewer,
+  handleViewerLoaded,
+} = useProjectDocuments({
+  projectSlug: () => props.projectSlug,
+  documents: () => props.documents,
+  accessDocument: (request) => props.accessDocument(request),
+  onAccessError: ({ error, retry }) => {
+    const accessDenied =
+      isAxiosError(error) &&
+      (error.response?.status === 401 || error.response?.status === 403);
+    showNotifyMessage(
+      accessDenied
+        ? t("documentAccessDenied")
+        : {
+            message: t("documentLoadFailed"),
+            actionLabel: t("retryAction"),
+            onAction: retry,
+          }
+    );
+  },
+});
+const isViewerOpen = computed({
+  get: () => viewer.value !== undefined,
+  set: (open: boolean) => {
+    if (!open) closeViewer();
+  },
+});
 const backIcon = computed(() =>
   getLanguageTextDirection(props.languageCode) === "rtl"
-    ? "mdi-arrow-right"
-    : "mdi-arrow-left"
-);
-const viewerSandbox = computed(() =>
-  viewerContentType.value === "text/html" ? "allow-scripts" : undefined
+    ? "mdi:arrow-right"
+    : "mdi:arrow-left"
 );
 
-function invalidateDocumentActions(): void {
-  latestActionRequest += 1;
-  activeAction.value = undefined;
-  isViewerOpen.value = false;
-  closeViewer();
+function t(key: keyof ProjectPageTranslations): string {
+  return translateProjectPageText({ languageCode: props.languageCode, key });
 }
 
-function startViewerLoad(): void {
-  clearViewerLoadingTimeout();
-  viewerStatus.value = "loading";
-  viewerLoadingTimeout = setTimeout(handleViewerLoaded, 15_000);
-}
-
-function handleViewerLoaded(): void {
-  clearViewerLoadingTimeout();
-  viewerStatus.value = "loaded";
-}
-
-function clearViewerLoadingTimeout(): void {
-  if (viewerLoadingTimeout === undefined) return;
-  clearTimeout(viewerLoadingTimeout);
-  viewerLoadingTimeout = undefined;
-}
-
-async function retryViewer(): Promise<void> {
-  const document = activeDocument.value;
-  if (document === undefined) return;
-  viewerStatus.value = "loading";
-  const response = await getDocumentUrl({ document, mode: "inline" });
-  if (response === undefined) {
-    viewerStatus.value = "loaded";
-    return;
+function handleFrameLoad(event: Event): void {
+  if (event.target instanceof HTMLIFrameElement) {
+    handleViewerLoaded(event.target.id);
   }
-  viewerUrl.value = response.url;
-  viewerFileName.value = response.downloadFileName;
-  viewerContentType.value = response.contentType;
-  viewerKey.value += 1;
-  startViewerLoad();
-}
-
-watch(
-  [() => props.projectSlug, () => props.documents],
-  invalidateDocumentActions
-);
-onBeforeUnmount(invalidateDocumentActions);
-
-function t({
-  key,
-  params,
-}: {
-  key: keyof ProjectPageTranslations;
-  params?: Readonly<Record<string, string | number>>;
-}): string {
-  return translateProjectPageText({
-    languageCode: props.languageCode,
-    key,
-    params,
-  });
-}
-
-function loadingMode(documentId: string): "inline" | "download" | undefined {
-  return activeAction.value?.documentId === documentId
-    ? activeAction.value.mode
-    : undefined;
-}
-
-function getCurrentDocument(
-  document: ProjectPageDocument
-): ProjectPageDocument | undefined {
-  return props.documents.find(
-    (currentDocument) =>
-      currentDocument.documentId === document.documentId &&
-      currentDocument.languageCode === document.languageCode &&
-      currentDocument.contentType === document.contentType
-  );
-}
-
-async function getDocumentUrl({
-  document,
-  mode,
-}: {
-  document: ProjectPageDocument;
-  mode: "inline" | "download";
-}): Promise<AccessProjectDocumentResponse | undefined> {
-  if (activeAction.value !== undefined) return undefined;
-  const currentDocument = getCurrentDocument(document);
-  if (currentDocument === undefined) return undefined;
-  latestActionRequest += 1;
-  const requestId = latestActionRequest;
-  activeAction.value = { documentId: currentDocument.documentId, mode };
-  try {
-    const response = await accessProjectDocument({
-      projectSlug: props.projectSlug,
-      documentId: currentDocument.documentId,
-      languageCode: currentDocument.languageCode,
-      mode,
-    });
-    return requestId === latestActionRequest ? response : undefined;
-  } catch (error) {
-    if (requestId === latestActionRequest) {
-      const accessDenied =
-        isAxiosError(error) &&
-        (error.response?.status === 401 || error.response?.status === 403);
-      showNotifyMessage(
-        accessDenied
-          ? t({ key: "documentAccessDenied" })
-          : {
-              message: t({ key: "documentLoadFailed" }),
-              actionLabel: t({ key: "retryAction" }),
-              onAction: () => {
-                if (mode === "inline") {
-                  void viewDocument(currentDocument);
-                } else {
-                  void downloadDocument(currentDocument);
-                }
-              },
-            }
-      );
-    }
-    return undefined;
-  } finally {
-    if (requestId === latestActionRequest) {
-      activeAction.value = undefined;
-    }
-  }
-}
-
-async function viewDocument(document: ProjectPageDocument): Promise<void> {
-  const response = await getDocumentUrl({ document, mode: "inline" });
-  if (response === undefined) return;
-  activeDocument.value = document;
-  viewerUrl.value = response.url;
-  viewerFileName.value = response.downloadFileName;
-  viewerContentType.value = response.contentType;
-  startViewerLoad();
-  isViewerOpen.value = true;
-}
-
-async function downloadDocument(document: ProjectPageDocument): Promise<void> {
-  const response = await getDocumentUrl({ document, mode: "download" });
-  if (response === undefined) return;
-  const anchor = window.document.createElement("a");
-  anchor.href = response.url;
-  anchor.download = response.downloadFileName;
-  anchor.rel = "noopener";
-  window.document.body.append(anchor);
-  anchor.click();
-  anchor.remove();
-}
-
-function downloadActiveDocument(): void {
-  if (activeDocument.value === undefined) return;
-  void downloadDocument(activeDocument.value);
-}
-
-function closeViewer(): void {
-  viewerUrl.value = undefined;
-  viewerFileName.value = undefined;
-  viewerContentType.value = undefined;
-  activeDocument.value = undefined;
-  clearViewerLoadingTimeout();
-  viewerStatus.value = "idle";
 }
 </script>
 
@@ -350,37 +251,69 @@ function closeViewer(): void {
   grid-template-rows: auto minmax(0, 1fr);
   width: 100%;
   height: 100%;
-  background: #eef1f6;
+  background: $app-background-color;
 }
 
 .project-documents__viewer-header {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(5.5rem, 1fr) minmax(0, 2fr) minmax(5.5rem, 1fr);
   align-items: center;
-  gap: 1rem;
-  padding: 0.65rem 1rem;
-  color: #fff;
-  background: #24273a;
+  gap: 0.75rem;
+  padding: 0.45rem 0.75rem;
+  color: $ink-darker;
+  background: $app-background-color;
+  border-block-end: 1px solid $sky-lighter;
 }
 
-.project-documents__viewer-header div {
+.project-documents__viewer-back {
+  justify-self: start;
+}
+
+.project-documents__viewer-heading {
   display: grid;
   min-width: 0;
+  text-align: center;
+  strong {
+    font-size: 0.95rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
-.project-documents__viewer-header span {
-  color: #cbd0df;
-  font-size: 0.78rem;
+.project-documents__viewer-filename {
+  color: $ink-light;
+  font-size: 0.72rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.project-documents__viewer-metadata {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.project-documents__viewer-version {
+  flex: none;
+  font-size: 0.72rem;
+  color: $primary;
+}
+
 .project-documents__viewer-actions {
   display: flex;
-  flex: none;
+  justify-self: end;
   align-items: center;
   gap: 0.25rem;
+}
+
+@media (max-width: 600px) {
+  .project-documents__viewer-filename {
+    display: none;
+  }
 }
 
 .project-documents__frame {
@@ -389,7 +322,7 @@ function closeViewer(): void {
   width: 100%;
   height: 100%;
   border: 0;
-  background: #fff;
+  background: white;
 }
 
 .project-documents__viewer-loading {
@@ -399,14 +332,5 @@ function closeViewer(): void {
   grid-column: 1;
   place-items: center;
   background: rgba(white, 0.86);
-}
-
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
 }
 </style>

@@ -29,7 +29,7 @@ import {
     ZodSupportedSpokenLanguageCodes,
 } from "@/shared/languages.js";
 import { projectOrganizationAttributionRoleValues } from "@/shared/types/project.js";
-import { PROJECT_DOCUMENT_CONTENT_TYPES } from "@/shared/projectDocument.js";
+import { MAX_PROJECT_DOCUMENT_FILE_SIZE, PROJECT_DOCUMENT_CONTENT_TYPES } from "@/shared/projectDocument.js";
 import type { EmailBranding } from "@/shared/branding/emailBranding.js";
 // import { MAX_LENGTH_TITLE, MAX_LENGTH_OPINION, MAX_LENGTH_BODY } from "./shared/shared.js"; // unfortunately it breaks drizzle generate... :o TODO: find a way
 // WARNING: when you modify these limits, change this in shared.ts as well
@@ -1523,6 +1523,7 @@ export const projectDocumentFileTable = pgTable(
         objectKey: text("object_key").notNull().unique(),
         originalFileName: text("original_file_name").notNull(),
         contentType: projectDocumentContentTypeEnum("content_type").notNull(),
+        htmlScriptsEnabled: boolean("html_scripts_enabled").notNull().default(false),
         byteSize: integer("byte_size").notNull(),
         createdAt: timestamp("created_at", {
             mode: "date",
@@ -1552,7 +1553,11 @@ export const projectDocumentFileTable = pgTable(
             ),
         check(
             "project_document_file_byte_size_check",
-            sql`${table.byteSize} > 0 AND ${table.byteSize} <= 20971520`,
+            sql`${table.byteSize} > 0 AND ${table.byteSize} <= ${sql.raw(String(MAX_PROJECT_DOCUMENT_FILE_SIZE))}`,
+        ),
+        check(
+            "project_document_file_html_scripts_check",
+            sql`NOT ${table.htmlScriptsEnabled} OR ${table.contentType} = 'text/html'`,
         ),
     ],
 );

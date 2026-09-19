@@ -2444,11 +2444,17 @@ server.after(() => {
             },
         },
         handler: async (request) => {
+            const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
             return await projectPageService.fetchProjectPage({
                 db,
                 baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
                 request: request.body,
                 currentDisplayLanguage: getRequestDisplayLanguage({ request }),
+                requesterUserId:
+                    deviceStatus.isKnown &&
+                    (!deviceStatus.isRegistered || deviceStatus.isLoggedIn)
+                        ? deviceStatus.userId
+                        : undefined,
             });
         },
     });
@@ -2613,11 +2619,17 @@ server.after(() => {
             },
         },
         handler: async (request) => {
+            const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
             return await projectPageService.fetchProjectConversationPage({
                 db,
                 baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
                 request: request.body,
                 currentDisplayLanguage: getRequestDisplayLanguage({ request }),
+                requesterUserId:
+                    deviceStatus.isKnown &&
+                    (!deviceStatus.isRegistered || deviceStatus.isLoggedIn)
+                        ? deviceStatus.userId
+                        : undefined,
             });
         },
     });

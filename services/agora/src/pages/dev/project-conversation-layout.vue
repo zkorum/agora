@@ -1,5 +1,5 @@
 <template>
-  <div class="project-conversation-layout-dev">
+  <div ref="previewRoot" class="project-conversation-layout-dev">
     <div
       v-if="controlsVisible"
       class="project-conversation-layout-dev__controls"
@@ -54,6 +54,13 @@
           :options="participationModeOptions"
         />
       </div>
+
+      <ProjectDocumentControls
+        v-model:viewer="documentViewer"
+        v-model:scenario="documentScenario"
+        :has-documents="documents.length > 0"
+        @jump="showDocuments"
+      />
     </div>
 
     <q-btn
@@ -72,6 +79,7 @@
       :project="project"
       :conversation-data="conversationData"
       :language-options="languageOptions"
+      :access-document="accessDocument"
     >
       <template #conversation-actions>
         <ConversationStickyActionBar
@@ -172,6 +180,8 @@
 
 <script setup lang="ts">
 import { useQuery } from "@tanstack/vue-query";
+import ProjectDocumentControls from "src/components/dev/projectDocuments/ProjectDocumentControls.vue";
+import { scrollToProjectDocuments, useProjectDocumentDemo } from "src/components/dev/projectDocuments/useProjectDocumentDemo";
 import AnalysisPage from "src/components/post/analysis/AnalysisPage.vue";
 import CommentSortingSelector from "src/components/post/comments/group/CommentSortingSelector.vue";
 import TranslatedCommentItem from "src/components/post/comments/group/item/TranslatedCommentItem.vue";
@@ -209,7 +219,7 @@ import {
   scrollTo,
 } from "src/utils/html/scroll";
 import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
-import { computed, ref, watch } from "vue";
+import { computed, ref, useTemplateRef, watch } from "vue";
 import { useRoute } from "vue-router";
 
 type ProjectConversationDevLanguage = "en" | "ky" | "ru";
@@ -217,6 +227,18 @@ type StatementScenario = "short" | "medium" | "long";
 type PrivacyMode = "public" | "private";
 
 const controlsVisible = ref(true);
+const previewRoot = useTemplateRef<HTMLElement>("previewRoot");
+const {
+  documents,
+  accessDocument,
+  scenario: documentScenario,
+  viewer: documentViewer,
+} = useProjectDocumentDemo();
+
+async function showDocuments(): Promise<void> {
+  controlsVisible.value = false;
+  await scrollToProjectDocuments(previewRoot.value ?? undefined);
+}
 const actionBarElement = ref<HTMLElement | null>(null);
 usePageLayout({
   enableDrawer: false,
@@ -376,7 +398,7 @@ const project = computed<ProjectPageData>(() => {
     participationCount: 492,
     voteCount: 2100,
     activityCount: 4,
-    documents: [],
+    documents: documents.value,
     attributions: localizedAttributions.value,
     contact: {
       firstName: "Aida",

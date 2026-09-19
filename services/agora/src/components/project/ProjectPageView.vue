@@ -127,7 +127,7 @@
           class="project-page-view__content-grid"
           :class="{
             'project-page-view__content-grid--without-aside':
-              !hasProjectDetails,
+              !hasProjectSidebar,
           }"
         >
           <section
@@ -196,21 +196,28 @@
             </div>
           </section>
 
-          <ProjectDetailsAside
-            v-if="hasProjectDetails"
+          <div
+            v-if="hasProjectSidebar"
             class="project-page-view__aside"
-            :attributions="project.attributions"
-            :contact="project.contact"
-            :language-code="selectedLanguage"
-          />
-
-          <ProjectDocuments
-            v-if="project.documents.length > 0"
-            class="project-page-view__supplemental"
-            :project-slug="project.slug"
-            :documents="project.documents"
-            :language-code="selectedLanguage"
-          />
+            :class="{
+              'project-page-view__aside--with-documents':
+                project.documents.length > 0,
+            }"
+          >
+            <ProjectDetailsAside
+              v-if="hasProjectDetails"
+              class="project-page-view__details"
+              :attributions="project.attributions"
+              :contact="project.contact"
+              :language-code="selectedLanguage"
+            />
+            <ProjectDocuments
+              :project-slug="project.slug"
+              :documents="project.documents"
+              :language-code="selectedLanguage"
+              :access-document="accessDocument"
+            />
+          </div>
         </div>
 
         <ProjectPageFooter :language-code="selectedLanguage" />
@@ -244,6 +251,7 @@ import {
 import {
   getProjectActivityIdentity,
   type ProjectActivity,
+  type ProjectDocumentAccess,
   type ProjectLanguageOption,
   type ProjectPageData,
 } from "./projectPageTypes";
@@ -256,6 +264,7 @@ const props = defineProps<{
   canLoadMoreActivities: boolean;
   isLoadingMoreActivities: boolean;
   languageOptions: readonly ProjectLanguageOption[];
+  accessDocument: ProjectDocumentAccess;
 }>();
 const emit = defineEmits<{
   loadMoreActivities: [];
@@ -308,6 +317,9 @@ const canLoadMoreActivities = computed(() => props.canLoadMoreActivities);
 const hasProjectDetails = computed(
   () =>
     props.project.attributions.length > 0 || props.project.contact !== undefined
+);
+const hasProjectSidebar = computed(
+  () => hasProjectDetails.value || props.project.documents.length > 0
 );
 const hasMultipleLanguageOptions = computed(
   () => new Set(props.languageOptions.map((option) => option.value)).size > 1
@@ -525,9 +537,7 @@ h1 {
 .project-page-view__content-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
-  grid-template-areas:
-    "activities aside"
-    "supplemental aside";
+  grid-template-areas: "activities aside";
   gap: clamp(1.4rem, 4vw, 2.7rem);
   align-items: start;
   margin-top: 2rem;
@@ -535,9 +545,7 @@ h1 {
 
 .project-page-view__content-grid--without-aside {
   grid-template-columns: minmax(0, 1fr);
-  grid-template-areas:
-    "activities"
-    "supplemental";
+  grid-template-areas: "activities";
 }
 
 .project-page-view__activities,
@@ -551,12 +559,9 @@ h1 {
 
 .project-page-view__aside {
   grid-area: aside;
-}
-
-.project-page-view__supplemental {
-  grid-area: supplemental;
-  min-width: 0;
-  margin-block-start: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.35rem;
 }
 
 .project-page-view__section-heading {
@@ -622,6 +627,11 @@ h2 {
   top: 5.2rem;
 }
 
+// Document lists can make the sidebar taller than the viewport.
+.project-page-view__aside--with-documents {
+  position: static;
+}
+
 @media (max-width: 860px) {
   .project-page-view__mobile-details {
     display: block;
@@ -632,10 +642,15 @@ h2 {
     grid-template-columns: 1fr;
     grid-template-areas:
       "activities"
-      "supplemental";
+      "aside";
   }
 
   .project-page-view__aside {
+    position: static;
+  }
+
+  .project-page-view__details,
+  .project-page-view__aside:not(.project-page-view__aside--with-documents) {
     display: none;
   }
 }

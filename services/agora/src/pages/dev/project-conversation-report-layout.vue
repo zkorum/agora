@@ -4,6 +4,7 @@
     :project="project"
     :conversation-data="conversationData"
     :language-options="languageOptions"
+    :access-document="accessDocument"
     report-layout
   >
     <template #conversation-actions>
@@ -95,6 +96,7 @@
 </template>
 
 <script setup lang="ts">
+import { useProjectDocumentDemo } from "src/components/dev/projectDocuments/useProjectDocumentDemo";
 import PostActionBar from "src/components/post/interactionBar/PostActionBar.vue";
 import AnalysisReport from "src/components/post/report/AnalysisReport.vue";
 import ProjectConversationView from "src/components/project/ProjectConversationView.vue";
@@ -151,6 +153,7 @@ usePageLayout({
 });
 
 const selectedLanguage = ref<SupportedDisplayLanguageCodes>("en");
+const { documents, accessDocument } = useProjectDocumentDemo();
 const currentTab = ref<"comment" | "analysis">("analysis");
 const actionBarRef = ref<HTMLElement | null>(null);
 const analysisReportRef = ref<AnalysisReportExposed | null>(null);
@@ -202,7 +205,7 @@ const project = computed<ProjectPageData>(() => ({
   participationCount: 492,
   voteCount: 2100,
   activityCount: 4,
-  documents: [],
+  documents: documents.value,
   attributions: [
     {
       role: "sponsor",

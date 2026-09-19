@@ -11,36 +11,50 @@
       </div>
     </div>
 
-    <div class="project-document-list-item__actions">
-      <ZKButton
-        v-if="isInlineProjectDocumentContentType(document.contentType)"
-        button-type="compactButton"
-        flat
-        color="primary"
-        :loading="loadingMode === 'inline'"
-        :disable="disabled"
-        :aria-label="`${viewLabel}: ${document.name}`"
-        @click="emit('view')"
-      >
-        <span class="project-document-list-item__action-content">
-          <q-icon name="mdi-eye-outline" size="1rem" />
-          {{ viewLabel }}
-        </span>
-      </ZKButton>
-      <ZKButton
-        button-type="compactButton"
-        flat
-        color="primary"
-        :loading="loadingMode === 'download'"
-        :disable="disabled"
-        :aria-label="`${downloadLabel}: ${document.name}`"
-        @click="emit('download')"
-      >
-        <span class="project-document-list-item__action-content">
-          <q-icon name="mdi-download-outline" size="1rem" />
-          {{ downloadLabel }}
-        </span>
-      </ZKButton>
+    <div
+      v-for="version in versions"
+      :key="version.audience"
+      class="project-document-list-item__version-row"
+    >
+      <span class="project-document-list-item__version">
+        <q-icon
+          v-if="version.audience === 'owner'"
+          name="mdi-lock-outline"
+          size="0.9rem"
+        />
+        {{ versionLabel(version.audience) }}
+      </span>
+      <div class="project-document-list-item__actions">
+        <ZKButton
+          v-if="isInlineProjectDocumentContentType(version.contentType)"
+          button-type="compactButton"
+          flat
+          color="primary"
+          :loading="isLoading({ version, mode: 'inline' })"
+          :disable="activeAction !== undefined"
+          :aria-label="`${viewLabel}: ${document.name} — ${versionLabel(version.audience)}`"
+          @click="emit('view', version)"
+        >
+          <span class="project-document-list-item__action-content">
+            <q-icon name="mdi-eye-outline" size="1rem" />
+            {{ viewLabel }}
+          </span>
+        </ZKButton>
+        <ZKButton
+          button-type="compactButton"
+          flat
+          color="primary"
+          :loading="isLoading({ version, mode: 'download' })"
+          :disable="activeAction !== undefined"
+          :aria-label="`${downloadLabel}: ${document.name} — ${versionLabel(version.audience)}`"
+          @click="emit('download', version)"
+        >
+          <span class="project-document-list-item__action-content">
+            <q-icon name="mdi-download-outline" size="1rem" />
+            {{ downloadLabel }}
+          </span>
+        </ZKButton>
+      </div>
     </div>
   </article>
 </template>
@@ -48,29 +62,60 @@
 <script setup lang="ts">
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { isInlineProjectDocumentContentType } from "src/shared/projectDocument";
-import type { ProjectPageDocument } from "src/shared/types/dto";
+import type {
+  ProjectDocumentVersion,
+  ProjectPageDocument,
+} from "src/shared/types/dto";
+import { computed } from "vue";
 
-defineProps<{
+import type { ProjectDocumentAction } from "./projectPageTypes";
+
+const props = defineProps<{
   document: ProjectPageDocument;
   viewLabel: string;
   downloadLabel: string;
-  loadingMode: "inline" | "download" | undefined;
-  disabled: boolean;
+  participantVersionLabel: string;
+  ownerVersionLabel: string;
+  activeAction: ProjectDocumentAction | undefined;
   showDivider: boolean;
 }>();
 
 const emit = defineEmits<{
-  view: [];
-  download: [];
+  view: [version: ProjectDocumentVersion];
+  download: [version: ProjectDocumentVersion];
 }>();
+
+const versions = computed<ProjectDocumentVersion[]>(() => {
+  const { participant, owner } = props.document.versions;
+  return owner === undefined ? [participant] : [participant, owner];
+});
+
+function versionLabel(audience: ProjectDocumentVersion["audience"]): string {
+  return audience === "owner"
+    ? props.ownerVersionLabel
+    : props.participantVersionLabel;
+}
+
+function isLoading({
+  version,
+  mode,
+}: {
+  version: ProjectDocumentVersion;
+  mode: ProjectDocumentAction["mode"];
+}): boolean {
+  return (
+    props.activeAction?.documentId === props.document.documentId &&
+    props.activeAction.audience === version.audience &&
+    props.activeAction.mode === mode
+  );
+}
 </script>
 
 <style scoped lang="scss">
 .project-document-list-item {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
+  flex-direction: column;
+  gap: 0.4rem;
   min-width: 0;
   padding-block: 0.7rem;
 }
@@ -83,14 +128,20 @@ const emit = defineEmits<{
   min-width: 0;
 }
 
+.project-document-list-item__version-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.6rem;
+  min-width: 0;
+}
+
 .project-document-list-item__name {
-  overflow: hidden;
   color: $ink-darker;
   font-size: 0.95rem;
   font-weight: var(--font-weight-medium);
   line-height: 1.3;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .project-document-list-item__actions {
@@ -98,6 +149,15 @@ const emit = defineEmits<{
   flex: none;
   align-items: center;
   gap: 0.15rem;
+  margin-inline-start: auto;
+}
+
+.project-document-list-item__version {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: $ink-light;
+  font-size: 0.75rem;
 }
 
 .project-document-list-item__action-content {
@@ -112,16 +172,5 @@ const emit = defineEmits<{
 .project-document-list-item :deep(.q-btn:focus-visible) {
   outline: 2px solid $primary;
   outline-offset: 2px;
-}
-
-@media (max-width: 400px) {
-  .project-document-list-item {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .project-document-list-item__actions {
-    align-self: flex-end;
-  }
 }
 </style>

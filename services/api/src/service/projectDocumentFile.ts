@@ -1,6 +1,13 @@
 import { httpErrors } from "@fastify/sensible";
 import { createHash } from "node:crypto";
 import {
+    defaultTreeAdapter,
+    type DefaultTreeAdapterMap,
+    html,
+    parse,
+    serialize,
+} from "parse5";
+import {
     getProjectDocumentContentTypeFromFileName,
     getProjectDocumentFileExtension,
     isSafeProjectDocumentFileName,
@@ -12,7 +19,7 @@ import type { ProjectDocumentLocalization } from "@/shared/types/dto.js";
 
 const allowedContentTypes = new Set<string>(PROJECT_DOCUMENT_CONTENT_TYPES);
 const PROJECT_DOCUMENT_HTML_CSP =
-    "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'";
+    "default-src 'none'; script-src-attr 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'";
 
 export interface ProjectDocumentFileUpload {
     buffer: Buffer;
@@ -55,41 +62,6 @@ function decodeUtf8(buffer: Buffer): string {
     }
 }
 
-function getHtmlSecurityInsertionIndex(html: string): number | undefined {
-    const leadingMatch = /^\uFEFF?\s*/u.exec(html);
-    const leadingLength = leadingMatch?.[0].length ?? 0;
-    const content = html.slice(leadingLength);
-    const openingMatch = /^(?:<!doctype\s+html(?=\s|>)|<html(?=\s|>))/iu.exec(
-        content,
-    );
-    if (openingMatch === null) {
-        return undefined;
-    }
-    const startsWithHtmlElement = openingMatch[0]
-        .toLowerCase()
-        .startsWith("<html");
-    let quote: '"' | "'" | undefined;
-    for (
-        let index = openingMatch[0].length;
-        index < content.length;
-        index += 1
-    ) {
-        const character = content[index];
-        if (quote !== undefined) {
-            if (character === quote) {
-                quote = undefined;
-            }
-        } else if (character === '"' || character === "'") {
-            quote = character;
-        } else if (character === ">") {
-            return startsWithHtmlElement
-                ? leadingLength
-                : leadingLength + index + 1;
-        }
-    }
-    return undefined;
-}
-
 function hasExpectedFileSignature({
     buffer,
     contentType,
@@ -103,15 +75,13 @@ function hasExpectedFileSignature({
                 buffer.subarray(0, 5).toString("ascii") === "%PDF-" &&
                 buffer.includes(Buffer.from("%%EOF"))
             );
-        case "text/html": {
-            return (
-                getHtmlSecurityInsertionIndex(decodeUtf8(buffer)) !== undefined
-            );
-        }
         case "application/json": {
             const parsed: unknown = JSON.parse(decodeUtf8(buffer));
             return parsed !== undefined;
         }
+        case "text/html":
+            // HTML is decoded and checked once during normalization below.
+            return true;
         case "text/plain":
         case "text/markdown":
         case "text/csv":
@@ -121,15 +91,133 @@ function hasExpectedFileSignature({
 }
 
 function applyHtmlContentSecurityPolicy(buffer: Buffer): Buffer {
-    const html = decodeUtf8(buffer);
-    const meta = `<meta http-equiv="Content-Security-Policy" content="${PROJECT_DOCUMENT_HTML_CSP}">`;
-    const insertionIndex = getHtmlSecurityInsertionIndex(html);
-    if (insertionIndex === undefined) {
-        throw httpErrors.badRequest("Document is not a complete HTML page");
+    // Uploaded HTML is untrusted. Use the browser's parsing rules rather than
+    // scanning source text: malformed doctypes can terminate before their quotes.
+    const source = decodeUtf8(buffer);
+    // This is only format sniffing; the parser determines where the policy goes.
+    if (
+        !/^\uFEFF?\s*(?:<!doctype\s+html(?=\s|>)|<html(?=\s|>))/iu.test(source)
+    ) {
+        throw httpErrors.badRequest(
+            "Document contents do not match its file format",
+        );
     }
-    return Buffer.from(
-        `${html.slice(0, insertionIndex)}${meta}${html.slice(insertionIndex)}`,
+    const document = parse(source);
+    const scriptHashes = prepareHtmlDocument(document);
+    const scriptPolicy =
+        scriptHashes.length === 0 ? "'none'" : scriptHashes.join(" ");
+    const root = document.childNodes.find((node) =>
+        defaultTreeAdapter.isElementNode(node),
     );
+    const head = root?.childNodes
+        .filter((node) => defaultTreeAdapter.isElementNode(node))
+        .find((node) => node.tagName === "head");
+    if (head === undefined) {
+        throw httpErrors.badRequest(
+            "Document contents do not match its file format",
+        );
+    }
+    const securityMetadata = [
+        [{ name: "charset", value: "utf-8" }],
+        [
+            { name: "http-equiv", value: "Content-Security-Policy" },
+            {
+                name: "content",
+                value: `${PROJECT_DOCUMENT_HTML_CSP}; script-src ${scriptPolicy}`,
+            },
+        ],
+        [
+            { name: "name", value: "referrer" },
+            { name: "content", value: "no-referrer" },
+        ],
+    ];
+    const firstChild = head.childNodes.at(0);
+    for (const attributes of securityMetadata) {
+        const meta = defaultTreeAdapter.createElement(
+            "meta",
+            html.NS.HTML,
+            attributes,
+        );
+        if (firstChild === undefined) {
+            defaultTreeAdapter.appendChild(head, meta);
+        } else {
+            defaultTreeAdapter.insertBefore(head, meta, firstChild);
+        }
+    }
+    return Buffer.from(serialize(document));
+}
+
+function prepareHtmlDocument(
+    document: DefaultTreeAdapterMap["document"],
+): string[] {
+    const scriptHashes = new Set<string>();
+    const pending: DefaultTreeAdapterMap["node"][] = [document];
+    while (pending.length > 0) {
+        const node = pending.pop();
+        if (node === undefined) break;
+        if (defaultTreeAdapter.isElementNode(node)) {
+            if (
+                node.tagName === "script" &&
+                node.namespaceURI === html.NS.HTML
+            ) {
+                const type = node.attrs
+                    .find((attribute) => attribute.name === "type")
+                    ?.value.trim()
+                    .toLowerCase();
+                const hasSource = node.attrs.some(
+                    (attribute) => attribute.name === "src",
+                );
+                if (
+                    !hasSource &&
+                    type !== "application/json" &&
+                    type !== "application/ld+json"
+                ) {
+                    const source = node.childNodes
+                        .filter((child) => defaultTreeAdapter.isTextNode(child))
+                        .map((child) =>
+                            defaultTreeAdapter.getTextNodeContent(child),
+                        )
+                        .join("");
+                    scriptHashes.add(
+                        `'sha256-${createHash("sha256").update(source).digest("base64")}'`,
+                    );
+                }
+            }
+            if (
+                node.tagName === "meta" &&
+                node.attrs.some(
+                    (attribute) =>
+                        (attribute.name === "http-equiv" &&
+                            attribute.value.trim().toLowerCase() ===
+                                "refresh") ||
+                        (attribute.name === "name" &&
+                            attribute.value.trim().toLowerCase() ===
+                                "referrer"),
+                )
+            ) {
+                defaultTreeAdapter.detachNode(node);
+                continue;
+            }
+            // CSP does not restrict iframe navigation. Remove declarative external
+            // links while preserving same-document anchors, including SVG links.
+            node.attrs = node.attrs.filter(
+                (attribute) =>
+                    attribute.name !== "href" ||
+                    attribute.value.trim().startsWith("#"),
+            );
+            if (
+                node.tagName === "template" &&
+                "content" in node &&
+                node.namespaceURI === html.NS.HTML
+            ) {
+                pending.push(defaultTreeAdapter.getTemplateContent(node));
+            }
+        }
+        if ("childNodes" in node) {
+            for (const child of node.childNodes) pending.push(child);
+        }
+    }
+    return [...scriptHashes];
 }
 
 export function normalizeProjectDocumentUploadFile(

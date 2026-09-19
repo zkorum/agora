@@ -101,6 +101,28 @@ Start the app with:
 
 Direct `pnpm dev` still works, but it does not create durable log files unless you wrap it with `scripts/dev-log-runner.mjs` from the repository root.
 
+### Project document previews
+
+From `/dev/component-testing`, open **Project page** or **Project conversation
+layout**. Use **Participant / Project owner** to compare document versions;
+owners see both participant and owner-only versions with separate actions.
+**Document requests (dev simulation)** controls normal, slow, access-denied,
+failed/retry, and empty scenarios. Click **Jump to documents** to hide the controls
+and scroll to the real document section:
+below Contact in the desktop sidebar, or below the feed on mobile. The
+report-layout preview also includes the sample documents.
+
+The previews use the production components; only the document-access function is
+replaced with local fixture URLs. Viewing and downloads do not require an account
+or S3; error notifications follow the app's normal online/offline behavior.
+
+HTML documents and Email Updates share `SandboxedHtmlFrame.vue` with explicit
+policies. Email previews and legacy documents are script-free. Newly uploaded
+HTML reports may run their own hash-authorized inline scripts in an isolated
+iframe, without same-origin privileges, forms, or popups. PDFs use the browser's
+native viewer. Document uploads are limited to 25 MiB; owner download filenames
+include an `-owner` suffix.
+
 ## Browser Support
 
 The browser compilation targets are defined once in [`.browserslistrc`](./.browserslistrc). They are consumed by Autoprefixer and by `@vitejs/plugin-legacy` during production builds. Vite's CSS output target is aligned with the same version floors in [`quasar.config.ts`](./quasar.config.ts).

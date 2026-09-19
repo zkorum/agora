@@ -47,16 +47,16 @@ const en: ProjectDocumentManagerTranslations = {
     "Upload participant-restricted project documents and provide a display name in each relevant language.",
   publicationWarningTitle: "Review before publishing",
   publicationWarningBody:
-    "Participant files are downloadable. Do not include names, contact details, account or participant identifiers, raw votes or survey responses, small demographic groups, secrets, or hidden unsuppressed data. HTML can run scripts, but remote resources and network requests are blocked; upload only trusted, self-contained reports. Apply the same care to private owner files.",
+    "Participant files are downloadable. Do not include names, contact details, account or participant identifiers, raw votes or survey responses, small demographic groups, secrets, or hidden unsuppressed data. Interactive HTML runs the uploaded scripts in an isolated frame; upload only trusted, self-contained reports. External resources and network APIs are blocked. Apply the same care to private owner files.",
   chooseFilesTitle: "Choose files",
   chooseFilesDescription:
-    "The participant file is required. The owner-only file is an optional replacement for project owners. When both are provided, they must use the same format.",
+    "The participant file is required. The optional owner-only file is an additional version: project owners can open and download both. Both files must use the same format.",
   participantFileLabel: "Participant download (required)",
   participantFileHint:
-    "The privacy-safe version available to people who participated in any consultation in this project. Project owners also receive this file when no owner-only file is provided.",
+    "The privacy-safe version available to people who voted in this project and to project owners, even when an owner-only version is also provided.",
   ownerFileLabel: "Owner-only download (optional)",
   ownerFileHint:
-    "A replacement version available only to project owners. Participants never receive this file.",
+    "An additional private version for project owners. Owners see both versions; participants never receive this file.",
   dropFile: "Drag and drop or click to browse files",
   removeFile: "Remove selected file",
   detailsTitle: "Document details",
@@ -101,13 +101,13 @@ export const projectDocumentManagerTranslations: Readonly<
       "Suba documentos restringidos a participantes e indique un nombre en cada idioma pertinente.",
     publicationWarningTitle: "Revise antes de publicar",
     publicationWarningBody:
-      "Los archivos para participantes se pueden descargar. No incluya nombres, datos de contacto, identificadores de cuenta o participante, votos o respuestas sin agregar, grupos demográficos pequeños, secretos ni datos ocultos sin anonimizar. El HTML puede ejecutar scripts, pero los recursos remotos y las solicitudes de red están bloqueados; suba solo informes autónomos de confianza. Aplique el mismo cuidado a los archivos privados.",
+      "Los archivos para participantes se pueden descargar. No incluya nombres, datos de contacto, identificadores de cuenta o participante, votos o respuestas sin agregar, grupos demográficos pequeños, secretos ni datos ocultos sin anonimizar. El HTML interactivo ejecuta los scripts subidos en un marco aislado; suba solo informes autónomos de confianza. Se bloquean los recursos externos y las API de red. Aplique el mismo cuidado a los archivos privados.",
     participantFileLabel: "Archivo anonimizado para participantes",
     participantFileHint:
       "Obligatorio. Disponible solo para participantes identificados y responsables del proyecto.",
     ownerFileLabel: "Archivo privado para responsables",
     ownerFileHint:
-      "Opcional. Si se proporciona, los responsables reciben esta versión.",
+      "Opcional. Los responsables pueden abrir esta versión privada además de la versión para participantes.",
     defaultLanguageLabel: "Idioma predeterminado del nombre",
     nameLabel: "Nombre del documento",
     downloadFileNameLabel: "Nombre del archivo descargado",
@@ -142,13 +142,13 @@ export const projectDocumentManagerTranslations: Readonly<
       "Importez des documents réservés aux participants et indiquez un nom dans chaque langue utile.",
     publicationWarningTitle: "Vérifier avant publication",
     publicationWarningBody:
-      "Les fichiers participants sont téléchargeables. N'incluez pas de noms, coordonnées, identifiants de compte ou de participant, votes ou réponses bruts, petits groupes démographiques, secrets ou données masquées non anonymisées. Le HTML peut exécuter des scripts, mais les ressources distantes et les requêtes réseau sont bloquées ; importez uniquement des rapports autonomes fiables. Appliquez les mêmes précautions aux fichiers privés.",
+      "Les fichiers participants sont téléchargeables. N'incluez pas de noms, coordonnées, identifiants de compte ou de participant, votes ou réponses bruts, petits groupes démographiques, secrets ou données masquées non anonymisées. Le HTML interactif exécute les scripts importés dans un cadre isolé ; importez uniquement des rapports autonomes fiables. Les ressources externes et les API réseau sont bloquées. Appliquez les mêmes précautions aux fichiers privés.",
     participantFileLabel: "Fichier anonymisé pour les participants",
     participantFileHint:
       "Obligatoire. Accessible uniquement aux participants connectés et aux porteurs du projet.",
     ownerFileLabel: "Fichier privé des porteurs",
     ownerFileHint:
-      "Facultatif. S'il est fourni, les porteurs reçoivent cette version.",
+      "Facultatif. Les porteurs peuvent ouvrir cette version privée en plus de la version participants.",
     defaultLanguageLabel: "Langue principale du nom",
     nameLabel: "Nom du document",
     downloadFileNameLabel: "Nom du fichier téléchargé",
@@ -182,11 +182,11 @@ export const projectDocumentManagerTranslations: Readonly<
     description: "上傳僅限參與者的專案文件，並為相關語言提供顯示名稱。",
     publicationWarningTitle: "發布前請檢查",
     publicationWarningBody:
-      "參與者檔案可供下載。請勿包含姓名、聯絡資料、帳戶或參與者識別碼、原始投票或問卷回覆、小型人口群組、密鑰或未經匿名化的隱藏資料。HTML 可執行腳本，但遠端資源與網路請求會被封鎖；請只上傳可信且自包含的報告。私人負責人檔案也應採取相同標準。",
+      "參與者檔案可供下載。請勿包含姓名、聯絡資料、帳戶或參與者識別碼、原始投票或問卷回覆、小型人口群組、密鑰或未經匿名化的隱藏資料。互動式 HTML 會在隔離框架中執行上傳的腳本；請只上傳可信且自包含的報告。外部資源與網路 API 會被封鎖。私人負責人檔案也應採取相同標準。",
     participantFileLabel: "參與者匿名化檔案",
     participantFileHint: "必填。僅供已登入的參與者和專案負責人使用。",
     ownerFileLabel: "負責人私人檔案",
-    ownerFileHint: "選填。提供後，專案負責人將取得此版本。",
+    ownerFileHint: "選填。專案負責人可同時存取此私人版本與參與者版本。",
     defaultLanguageLabel: "預設名稱語言",
     nameLabel: "文件名稱",
     downloadFileNameLabel: "下載檔名",
@@ -219,11 +219,11 @@ export const projectDocumentManagerTranslations: Readonly<
     description: "上传仅限参与者的项目文档，并为相关语言提供显示名称。",
     publicationWarningTitle: "发布前请检查",
     publicationWarningBody:
-      "参与者文件可供下载。请勿包含姓名、联系方式、账户或参与者标识、原始投票或问卷回答、小型人口群体、密钥或未经匿名化的隐藏数据。HTML 可以运行脚本，但远程资源和网络请求会被阻止；请仅上传可信且自包含的报告。私密负责人文件也应遵循相同标准。",
+      "参与者文件可供下载。请勿包含姓名、联系方式、账户或参与者标识、原始投票或问卷回答、小型人口群体、密钥或未经匿名化的隐藏数据。交互式 HTML 会在隔离框架中运行上传的脚本；请仅上传可信且自包含的报告。外部资源和网络 API 会被阻止。私密负责人文件也应遵循相同标准。",
     participantFileLabel: "参与者匿名化文件",
     participantFileHint: "必填。仅供已登录的参与者和项目负责人使用。",
     ownerFileLabel: "负责人私密文件",
-    ownerFileHint: "选填。提供后，项目负责人将获得此版本。",
+    ownerFileHint: "选填。项目负责人可同时访问此私密版本和参与者版本。",
     defaultLanguageLabel: "默认名称语言",
     nameLabel: "文档名称",
     downloadFileNameLabel: "下载文件名",
@@ -257,12 +257,13 @@ export const projectDocumentManagerTranslations: Readonly<
       "参加者限定の文書をアップロードし、必要な言語ごとに名前を設定します。",
     publicationWarningTitle: "公開前に確認",
     publicationWarningBody:
-      "参加者向けファイルはダウンロードできます。氏名、連絡先、アカウントや参加者の識別子、生の投票や調査回答、少人数の属性グループ、秘密情報、匿名化されていない非表示データを含めないでください。HTML はスクリプトを実行できますが、外部リソースとネットワーク通信は遮断されます。信頼できる自己完結型のレポートのみアップロードしてください。所有者向け非公開ファイルにも同じ注意が必要です。",
+      "参加者向けファイルはダウンロードできます。氏名、連絡先、アカウントや参加者の識別子、生の投票や調査回答、少人数の属性グループ、秘密情報、匿名化されていない非表示データを含めないでください。対話型 HTML は隔離されたフレーム内でアップロードされたスクリプトを実行します。信頼できる自己完結型レポートのみを使用してください。外部リソースとネットワーク API は遮断されます。所有者向け非公開ファイルにも同じ注意が必要です。",
     participantFileLabel: "参加者向け匿名化ファイル",
     participantFileHint:
       "必須。ログイン済み参加者とプロジェクト所有者のみ利用できます。",
     ownerFileLabel: "所有者向け非公開ファイル",
-    ownerFileHint: "任意。指定すると所有者にはこの版が提供されます。",
+    ownerFileHint:
+      "任意。所有者は参加者版に加えて、この非公開版も利用できます。",
     defaultLanguageLabel: "既定の名前の言語",
     nameLabel: "文書名",
     downloadFileNameLabel: "ダウンロードファイル名",
@@ -296,11 +297,12 @@ export const projectDocumentManagerTranslations: Readonly<
     description: "ارفع مستندات مخصصة للمشاركين وأضف اسم عرض بكل لغة ذات صلة.",
     publicationWarningTitle: "راجع قبل النشر",
     publicationWarningBody:
-      "يمكن تنزيل ملفات المشاركين. لا تُضمّن أسماء أو بيانات اتصال أو معرّفات حسابات أو مشاركين أو أصواتًا أو إجابات خامًا أو مجموعات سكانية صغيرة أو أسرارًا أو بيانات مخفية غير منقحة. يمكن لملفات HTML تشغيل البرامج النصية، لكن الموارد البعيدة وطلبات الشبكة محظورة؛ ارفع فقط تقارير موثوقة ومكتفية ذاتيًا. طبّق العناية نفسها على ملفات المالكين الخاصة.",
+      "يمكن تنزيل ملفات المشاركين. لا تُضمّن أسماء أو بيانات اتصال أو معرّفات حسابات أو مشاركين أو أصواتًا أو إجابات خامًا أو مجموعات سكانية صغيرة أو أسرارًا أو بيانات مخفية غير منقحة. يشغّل HTML التفاعلي البرامج النصية المرفوعة داخل إطار معزول؛ ارفع فقط تقارير موثوقة ومكتفية ذاتيًا. تُحظر الموارد الخارجية وواجهات الشبكة. طبّق العناية نفسها على ملفات المالكين الخاصة.",
     participantFileLabel: "ملف منقح للمشاركين",
     participantFileHint: "مطلوب. متاح فقط للمشاركين المسجلين ومالكي المشروع.",
     ownerFileLabel: "ملف خاص للمالكين",
-    ownerFileHint: "اختياري. عند توفيره يحصل مالكو المشروع على هذه النسخة.",
+    ownerFileHint:
+      "اختياري. يمكن لمالكي المشروع فتح هذه النسخة الخاصة إلى جانب نسخة المشاركين.",
     defaultLanguageLabel: "لغة الاسم الافتراضية",
     nameLabel: "اسم المستند",
     downloadFileNameLabel: "اسم الملف عند التنزيل",
@@ -334,12 +336,13 @@ export const projectDocumentManagerTranslations: Readonly<
       "اسناد ویژه شرکت‌کنندگان را بارگذاری و نام آن‌ها را به زبان‌های مرتبط وارد کنید.",
     publicationWarningTitle: "پیش از انتشار بررسی کنید",
     publicationWarningBody:
-      "فایل‌های شرکت‌کنندگان قابل دانلود هستند. نام، اطلاعات تماس، شناسه حساب یا شرکت‌کننده، رأی یا پاسخ خام، گروه‌های جمعیتی کوچک، اطلاعات محرمانه یا داده پنهان پالایش‌نشده را وارد نکنید. HTML می‌تواند اسکریپت اجرا کند، اما منابع راه دور و درخواست‌های شبکه مسدود هستند؛ فقط گزارش‌های مستقل و قابل اعتماد را بارگذاری کنید. همین دقت را برای فایل‌های خصوصی مالکان نیز به کار ببرید.",
+      "فایل‌های شرکت‌کنندگان قابل دانلود هستند. نام، اطلاعات تماس، شناسه حساب یا شرکت‌کننده، رأی یا پاسخ خام، گروه‌های جمعیتی کوچک، اطلاعات محرمانه یا داده پنهان پالایش‌نشده را وارد نکنید. HTML تعاملی اسکریپت‌های بارگذاری‌شده را در یک قاب جداگانه اجرا می‌کند؛ فقط گزارش‌های مستقل و قابل اعتماد را بارگذاری کنید. منابع خارجی و APIهای شبکه مسدود هستند. همین دقت را برای فایل‌های خصوصی مالکان نیز به کار ببرید.",
     participantFileLabel: "فایل پالایش‌شده شرکت‌کنندگان",
     participantFileHint:
       "الزامی. فقط برای شرکت‌کنندگان واردشده و مالکان پروژه در دسترس است.",
     ownerFileLabel: "فایل خصوصی مالکان",
-    ownerFileHint: "اختیاری. در صورت ارائه، مالکان این نسخه را دریافت می‌کنند.",
+    ownerFileHint:
+      "اختیاری. مالکان علاوه بر نسخه شرکت‌کنندگان، به این نسخه خصوصی هم دسترسی دارند.",
     defaultLanguageLabel: "زبان پیش‌فرض نام",
     nameLabel: "نام سند",
     downloadFileNameLabel: "نام فایل دانلودی",
@@ -373,11 +376,12 @@ export const projectDocumentManagerTranslations: Readonly<
     description: "העלאת מסמכים המוגבלים למשתתפים ומתן שם בכל שפה רלוונטית.",
     publicationWarningTitle: "בדיקה לפני פרסום",
     publicationWarningBody:
-      "קובצי המשתתפים ניתנים להורדה. אין לכלול שמות, פרטי קשר, מזהי חשבון או משתתף, הצבעות או תשובות גולמיות, קבוצות דמוגרפיות קטנות, סודות או נתונים מוסתרים שלא עברו הסרה. HTML יכול להריץ סקריפטים, אך משאבים מרוחקים ובקשות רשת חסומים; יש להעלות רק דוחות עצמאיים ממקור מהימן. יש לנקוט אותה זהירות בקבצים הפרטיים לבעלים.",
+      "קובצי המשתתפים ניתנים להורדה. אין לכלול שמות, פרטי קשר, מזהי חשבון או משתתף, הצבעות או תשובות גולמיות, קבוצות דמוגרפיות קטנות, סודות או נתונים מוסתרים שלא עברו הסרה. HTML אינטראקטיבי מריץ את הסקריפטים שהועלו במסגרת מבודדת; יש להעלות רק דוחות עצמאיים ממקור מהימן. משאבים חיצוניים וממשקי רשת חסומים. יש לנקוט אותה זהירות בקבצים הפרטיים לבעלים.",
     participantFileLabel: "קובץ מצונזר למשתתפים",
     participantFileHint: "חובה. זמין רק למשתתפים מחוברים ולבעלי הפרויקט.",
     ownerFileLabel: "קובץ פרטי לבעלים",
-    ownerFileHint: "אופציונלי. אם סופק, בעלי הפרויקט יקבלו גרסה זו.",
+    ownerFileHint:
+      "אופציונלי. בעלי הפרויקט יכולים לגשת לגרסה פרטית זו בנוסף לגרסה למשתתפים.",
     defaultLanguageLabel: "שפת ברירת המחדל של השם",
     nameLabel: "שם המסמך",
     downloadFileNameLabel: "שם הקובץ בהורדה",
@@ -410,12 +414,13 @@ export const projectDocumentManagerTranslations: Readonly<
       "Катышуучуларга арналган документтерди жүктөп, керектүү тилдерде ат бериңиз.",
     publicationWarningTitle: "Жарыялоодон мурун текшериңиз",
     publicationWarningBody:
-      "Катышуучулардын файлдарын жүктөп алууга болот. Аты-жөндөрдү, байланыш маалыматтарын, аккаунт же катышуучу идентификаторлорун, чийки добуштарды же сурамжылоо жоопторун, чакан демографиялык топторду, сырларды же жашырылган тазаланбаган маалыматтарды кошпоңуз. HTML скрипттерди иштете алат, бирок тышкы ресурстар жана тармактык сурамдар бөгөттөлөт; ишенимдүү жана өз алдынча отчетторду гана жүктөңүз. Ээлердин купуя файлдарына да ушундай талап коюңуз.",
+      "Катышуучулардын файлдарын жүктөп алууга болот. Аты-жөндөрдү, байланыш маалыматтарын, аккаунт же катышуучу идентификаторлорун, чийки добуштарды же сурамжылоо жоопторун, чакан демографиялык топторду, сырларды же жашырылган тазаланбаган маалыматтарды кошпоңуз. Интерактивдүү HTML жүктөлгөн скрипттерди обочолонгон алкакта иштетет; ишенимдүү жана өз алдынча отчетторду гана жүктөңүз. Тышкы ресурстар жана тармак API'лери бөгөттөлөт. Ээлердин купуя файлдарына да ушундай талап коюңуз.",
     participantFileLabel: "Катышуучулар үчүн жашырылган файл",
     participantFileHint:
       "Милдеттүү. Кирген катышуучуларга жана долбоор ээлерине гана жеткиликтүү.",
     ownerFileLabel: "Ээлер үчүн купуя файл",
-    ownerFileHint: "Милдеттүү эмес. Берилсе, ээлер ушул версияны алышат.",
+    ownerFileHint:
+      "Милдеттүү эмес. Ээлер катышуучулардын версиясына кошумча бул купуя версияны да ача алышат.",
     defaultLanguageLabel: "Аталыштын негизги тили",
     nameLabel: "Документтин аталышы",
     downloadFileNameLabel: "Жүктөлүүчү файлдын аталышы",
@@ -450,12 +455,13 @@ export const projectDocumentManagerTranslations: Readonly<
       "Загрузите документы для участников и укажите название на нужных языках.",
     publicationWarningTitle: "Проверьте перед публикацией",
     publicationWarningBody:
-      "Файлы для участников можно скачать. Не включайте имена, контактные данные, идентификаторы учетных записей или участников, необработанные голоса или ответы, малые демографические группы, секреты или скрытые необезличенные данные. HTML может выполнять скрипты, но внешние ресурсы и сетевые запросы блокируются; загружайте только доверенные автономные отчеты. Соблюдайте те же требования для закрытых файлов владельцев.",
+      "Файлы для участников можно скачать. Не включайте имена, контактные данные, идентификаторы учетных записей или участников, необработанные голоса или ответы, малые демографические группы, секреты или скрытые необезличенные данные. Интерактивный HTML выполняет загруженные скрипты в изолированном фрейме; загружайте только доверенные автономные отчёты. Внешние ресурсы и сетевые API блокируются. Соблюдайте те же требования для закрытых файлов владельцев.",
     participantFileLabel: "Обезличенный файл для участников",
     participantFileHint:
       "Обязательно. Доступен только вошедшим участникам и владельцам проекта.",
     ownerFileLabel: "Закрытый файл для владельцев",
-    ownerFileHint: "Необязательно. Если указан, владельцы получают эту версию.",
+    ownerFileHint:
+      "Необязательно. Владельцы могут открыть эту закрытую версию вместе с версией для участников.",
     defaultLanguageLabel: "Основной язык названия",
     nameLabel: "Название документа",
     downloadFileNameLabel: "Имя скачиваемого файла",

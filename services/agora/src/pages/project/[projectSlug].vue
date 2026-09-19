@@ -22,6 +22,7 @@
     :can-load-more-activities="nextActivityCursor !== undefined"
     :is-loading-more-activities="isLoadingMoreActivities"
     :language-options="projectPageData.languageOptions"
+    :access-document="accessProjectDocument"
     @load-more-activities="loadMoreActivities"
   />
 </template>
@@ -52,10 +53,10 @@ import { useRoute } from "vue-router";
 const activityPageSize = 12;
 
 const route = useRoute();
-const { fetchProjectPage, fetchProjectPageActivities } =
+const { fetchProjectPage, fetchProjectPageActivities, accessProjectDocument } =
   useBackendProjectPageApi();
 const { showNotifyMessage } = useNotify();
-const { isAuthInitialized, isGuestOrLoggedIn } = storeToRefs(
+const { isAuthInitialized, isGuestOrLoggedIn, userId } = storeToRefs(
   useAuthenticationStore()
 );
 const languageStore = useLanguageStore();
@@ -90,6 +91,7 @@ const projectPageQueryKey = computed(() => [
   projectSlug.value,
   displayLanguage.value,
   isGuestOrLoggedIn.value,
+  userId.value,
 ]);
 
 const projectPageQuery = useQuery({
@@ -123,7 +125,7 @@ watch(
   },
   { immediate: true }
 );
-watch([projectSlug, displayLanguage, isGuestOrLoggedIn], () => {
+watch([projectSlug, displayLanguage, isGuestOrLoggedIn, userId], () => {
   latestPaginationRequestId += 1;
   activePaginationRequestId.value = undefined;
 });
@@ -144,6 +146,7 @@ async function loadMoreActivities(): Promise<void> {
     projectSlug: projectSlug.value,
     languageCode: displayLanguage.value,
     authenticated: isGuestOrLoggedIn.value,
+    userId: userId.value,
     cursor,
   };
   latestPaginationRequestId = requestIdentity.requestId;
@@ -161,6 +164,7 @@ async function loadMoreActivities(): Promise<void> {
       requestIdentity.projectSlug !== projectSlug.value ||
       requestIdentity.languageCode !== displayLanguage.value ||
       requestIdentity.authenticated !== isGuestOrLoggedIn.value ||
+      requestIdentity.userId !== userId.value ||
       requestIdentity.cursor !== nextActivityCursor.value
     ) {
       return;
@@ -172,6 +176,7 @@ async function loadMoreActivities(): Promise<void> {
       requestIdentity.projectSlug !== projectSlug.value ||
       requestIdentity.languageCode !== displayLanguage.value ||
       requestIdentity.authenticated !== isGuestOrLoggedIn.value ||
+      requestIdentity.userId !== userId.value ||
       requestIdentity.cursor !== nextActivityCursor.value
     ) {
       return;
