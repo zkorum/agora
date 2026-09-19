@@ -14,6 +14,65 @@ const projectDocumentMetadata = {
 };
 
 describe("project document contract", () => {
+    const documentSchema =
+        Dto.fetchProjectPageResponse.shape.project.shape.documents.element;
+    const participant = { audience: "participant", contentType: "text/html" };
+    const owner = { audience: "owner", contentType: "text/html" };
+    const document = {
+        documentId: "00000000-0000-4000-8000-000000000001",
+        languageCode: "en",
+        name: "Report",
+    };
+
+    it("requires a participant version and permits an additional owner version", () => {
+        expect(
+            documentSchema.parse({
+                ...document,
+                versions: { participant, owner },
+            }).versions,
+        ).toEqual({ participant, owner });
+        expect(
+            documentSchema.parse({ ...document, versions: { participant } })
+                .versions,
+        ).toEqual({ participant });
+        expect(() =>
+            documentSchema.parse({ ...document, versions: { owner } }),
+        ).toThrow();
+        expect(() =>
+            documentSchema.parse({
+                ...document,
+                versions: { participant: owner },
+            }),
+        ).toThrow();
+        expect(() =>
+            documentSchema.parse({
+                ...document,
+                versions: { participant, owner: participant },
+            }),
+        ).toThrow();
+    });
+
+    it("requires an explicit audience for every access request", () => {
+        const request = {
+            projectSlug: "example-project",
+            documentId: document.documentId,
+            languageCode: "en",
+            mode: "inline",
+        };
+        expect(() => Dto.accessProjectDocumentRequest.parse(request)).toThrow();
+        expect(
+            Dto.accessProjectDocumentRequest.parse({
+                ...request,
+                audience: "participant",
+            }).audience,
+        ).toBe("participant");
+        expect(
+            Dto.accessProjectDocumentRequest.parse({
+                ...request,
+                audience: "owner",
+            }).audience,
+        ).toBe("owner");
+    });
     it("attaches upload metadata directly to a project", () => {
         expect(
             Dto.projectDocumentUploadMetadata.parse(projectDocumentMetadata),

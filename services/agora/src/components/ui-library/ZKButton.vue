@@ -1,19 +1,19 @@
 <template>
-  <div class="quasarBtn" :class="{ squareBtn: buttonType == 'icon' }">
-    <q-btn
-      v-bind="props"
-      no-caps
-      unelevated
-      :class="{
-        extraButtonPadding: buttonType == 'largeButton',
-        lessButtonPadding: buttonType == 'standardButton',
-        iconButtonPadding: buttonType == 'icon',
-        compactButtonPadding: buttonType == 'compactButton',
-      }"
-    >
-      <slot />
-    </q-btn>
-  </div>
+  <q-btn
+    v-bind="buttonProps"
+    class="quasarBtn"
+    no-caps
+    unelevated
+    :class="{
+      squareBtn: buttonType === 'icon',
+      extraButtonPadding: buttonType == 'largeButton',
+      lessButtonPadding: buttonType == 'standardButton',
+      iconButtonPadding: buttonType == 'icon',
+      compactButtonPadding: buttonType == 'compactButton',
+    }"
+  >
+    <slot />
+  </q-btn>
 </template>
 
 <script setup lang="ts">
@@ -23,7 +23,7 @@ type ZKBtnProps = Partial<QBtnProps> & {
   buttonType: "icon" | "standardButton" | "largeButton" | "compactButton";
 };
 
-const props = defineProps<ZKBtnProps>();
+const { buttonType, ...buttonProps } = defineProps<ZKBtnProps>();
 </script>
 
 <style lang="scss" scoped>
@@ -65,7 +65,7 @@ const props = defineProps<ZKBtnProps>();
   padding-bottom: 1.2rem;
 }
 
-.squareBtn :deep(.q-btn) {
+.squareBtn {
   aspect-ratio: 1 / 1;
 }
 
@@ -73,14 +73,12 @@ const props = defineProps<ZKBtnProps>();
   visibility: hidden;
 }
 
-.quasarBtn :deep(.q-btn) {
-  width: 100%;
-  height: 100%;
+.quasarBtn {
   line-height: 0px;
   min-height: 0px;
 }
 
-.quasarBtn :deep(.q-btn:hover) {
+.quasarBtn:hover {
   background-color: rgb(233, 235, 236);
 }
 

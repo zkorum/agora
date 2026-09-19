@@ -19,6 +19,7 @@
       :conversation-data="loadedConversationData"
       :initial-display-content="loadedConversationDisplayContent"
       :language-options="projectConversationData.languageOptions"
+      :access-document="accessProjectDocument"
       @conversation-deleted="handleConversationDeleted"
     >
       <template #conversation-actions>
@@ -173,8 +174,9 @@ usePageLayout({
 });
 const route = useRoute();
 const queryClient = useQueryClient();
-const { fetchProjectConversationPage } = useBackendProjectPageApi();
-const { isAuthInitialized, isGuestOrLoggedIn } = storeToRefs(
+const { fetchProjectConversationPage, accessProjectDocument } =
+  useBackendProjectPageApi();
+const { isAuthInitialized, isGuestOrLoggedIn, userId } = storeToRefs(
   useAuthenticationStore()
 );
 const languageStore = useLanguageStore();
@@ -255,6 +257,7 @@ const projectConversationQuery = useQuery({
     conversationSlugId.value,
     displayLanguage.value,
     isGuestOrLoggedIn.value,
+    userId.value,
   ]),
   queryFn: async () =>
     await fetchProjectConversationPage({

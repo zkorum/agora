@@ -48,6 +48,8 @@ export interface ProjectPageTranslations {
   activitiesTitle: string;
   documentsTitle: string;
   documentsAccessHint: string;
+  documentParticipantVersion: string;
+  documentOwnerVersion: string;
   viewDocument: string;
   downloadDocument: string;
   reloadDocument: string;
@@ -107,7 +109,9 @@ export const projectPageTranslations: Readonly<
     activitiesTitle: "Activities",
     documentsTitle: "Project Documents",
     documentsAccessHint:
-      "Available to project owners and people who participated in any consultation in this project.",
+      "Participant versions: project owners and anyone who has voted in this project. Owner-only versions: project owners only.",
+    documentParticipantVersion: "Participant version",
+    documentOwnerVersion: "Owner-only version",
     viewDocument: "View",
     downloadDocument: "Download",
     reloadDocument: "Reload",
@@ -161,7 +165,9 @@ export const projectPageTranslations: Readonly<
     activitiesTitle: "Actividades",
     documentsTitle: "Documentos del proyecto",
     documentsAccessHint:
-      "Inicie sesión para acceder a los documentos disponibles para participantes.",
+      "Versiones para participantes: responsables y quienes hayan votado en este proyecto. Versiones privadas: solo responsables del proyecto.",
+    documentParticipantVersion: "Versión para participantes",
+    documentOwnerVersion: "Solo responsables",
     viewDocument: "Ver",
     downloadDocument: "Descargar",
     reloadDocument: "Recargar",
@@ -215,7 +221,9 @@ export const projectPageTranslations: Readonly<
     activitiesTitle: "Activités",
     documentsTitle: "Documents du projet",
     documentsAccessHint:
-      "Connectez-vous pour accéder aux documents réservés aux participants.",
+      "Versions participants : porteurs du projet et personnes ayant voté dans ce projet. Versions privées : porteurs du projet uniquement.",
+    documentParticipantVersion: "Version participants",
+    documentOwnerVersion: "Réservée aux porteurs",
     viewDocument: "Voir",
     downloadDocument: "Télécharger",
     reloadDocument: "Recharger",
@@ -268,7 +276,10 @@ export const projectPageTranslations: Readonly<
     votesCount: "{count} 票",
     activitiesTitle: "活动",
     documentsTitle: "项目文档",
-    documentsAccessHint: "登录后可访问向咨询参与者开放的文档。",
+    documentsAccessHint:
+      "参与者版本：项目负责人及在此项目中投过票的人。负责人专用版本：仅限项目负责人。",
+    documentParticipantVersion: "参与者版本",
+    documentOwnerVersion: "负责人专用版本",
     viewDocument: "查看",
     downloadDocument: "下载",
     reloadDocument: "重新加载",
@@ -321,7 +332,10 @@ export const projectPageTranslations: Readonly<
     votesCount: "{count} 票",
     activitiesTitle: "活動",
     documentsTitle: "專案文件",
-    documentsAccessHint: "登入後可存取向諮詢參與者開放的文件。",
+    documentsAccessHint:
+      "參與者版本：專案負責人及在此專案中投過票的人。負責人專用版本：僅限專案負責人。",
+    documentParticipantVersion: "參與者版本",
+    documentOwnerVersion: "負責人專用版本",
     viewDocument: "查看",
     downloadDocument: "下載",
     reloadDocument: "重新載入",
@@ -375,7 +389,9 @@ export const projectPageTranslations: Readonly<
     activitiesTitle: "アクティビティ",
     documentsTitle: "プロジェクト文書",
     documentsAccessHint:
-      "参加者向け文書にアクセスするにはログインしてください。",
+      "参加者版：プロジェクト所有者と、このプロジェクトで投票した方が利用できます。所有者限定版：プロジェクト所有者のみが利用できます。",
+    documentParticipantVersion: "参加者版",
+    documentOwnerVersion: "所有者限定版",
     viewDocument: "表示",
     downloadDocument: "ダウンロード",
     reloadDocument: "再読み込み",
@@ -428,7 +444,10 @@ export const projectPageTranslations: Readonly<
     votesCount: "{count} أصوات",
     activitiesTitle: "الأنشطة",
     documentsTitle: "مستندات المشروع",
-    documentsAccessHint: "سجّل الدخول للوصول إلى المستندات المتاحة للمشاركين.",
+    documentsAccessHint:
+      "نسخ المشاركين: لمالكي المشروع ولكل من صوّت فيه. النسخ الخاصة بالمالكين: لمالكي المشروع فقط.",
+    documentParticipantVersion: "نسخة المشاركين",
+    documentOwnerVersion: "نسخة المالكين فقط",
     viewDocument: "عرض",
     downloadDocument: "تنزيل",
     reloadDocument: "إعادة التحميل",
@@ -481,7 +500,10 @@ export const projectPageTranslations: Readonly<
     votesCount: "{count} رأی",
     activitiesTitle: "فعالیت‌ها",
     documentsTitle: "اسناد پروژه",
-    documentsAccessHint: "برای دسترسی به اسناد ویژه شرکت‌کنندگان وارد شوید.",
+    documentsAccessHint:
+      "نسخه‌های شرکت‌کنندگان: برای مالکان پروژه و کسانی که در این پروژه رأی داده‌اند. نسخه‌های ویژه مالکان: فقط برای مالکان پروژه.",
+    documentParticipantVersion: "نسخه شرکت‌کنندگان",
+    documentOwnerVersion: "نسخه ویژه مالکان",
     viewDocument: "مشاهده",
     downloadDocument: "دانلود",
     reloadDocument: "بارگذاری دوباره",
@@ -534,7 +556,10 @@ export const projectPageTranslations: Readonly<
     votesCount: "{count} הצבעות",
     activitiesTitle: "פעילויות",
     documentsTitle: "מסמכי הפרויקט",
-    documentsAccessHint: "יש להתחבר כדי לגשת למסמכים הזמינים למשתתפים.",
+    documentsAccessHint:
+      "גרסאות למשתתפים: לבעלי הפרויקט ולמי שהצביעו בו. גרסאות לבעלים בלבד: רק לבעלי הפרויקט.",
+    documentParticipantVersion: "גרסה למשתתפים",
+    documentOwnerVersion: "גרסה לבעלים בלבד",
     viewDocument: "הצגה",
     downloadDocument: "הורדה",
     reloadDocument: "טעינה מחדש",
@@ -587,7 +612,10 @@ export const projectPageTranslations: Readonly<
     votesCount: "{count} добуш",
     activitiesTitle: "Иш-чаралар",
     documentsTitle: "Долбоордун документтери",
-    documentsAccessHint: "Катышуучулар үчүн документтерге кирүү үчүн кириңиз.",
+    documentsAccessHint:
+      "Катышуучулардын версиялары: долбоор ээлерине жана бул долбоордо добуш бергендерге. Ээлер үчүн версиялар: долбоор ээлерине гана.",
+    documentParticipantVersion: "Катышуучулар үчүн версия",
+    documentOwnerVersion: "Ээлер үчүн гана версия",
     viewDocument: "Көрүү",
     downloadDocument: "Жүктөп алуу",
     reloadDocument: "Кайра жүктөө",
@@ -641,7 +669,9 @@ export const projectPageTranslations: Readonly<
     activitiesTitle: "Активности",
     documentsTitle: "Документы проекта",
     documentsAccessHint:
-      "Войдите, чтобы получить доступ к документам для участников.",
+      "Версии для участников: для владельцев проекта и тех, кто голосовал в нём. Закрытые версии: только для владельцев проекта.",
+    documentParticipantVersion: "Версия для участников",
+    documentOwnerVersion: "Только для владельцев",
     viewDocument: "Просмотреть",
     downloadDocument: "Скачать",
     reloadDocument: "Перезагрузить",

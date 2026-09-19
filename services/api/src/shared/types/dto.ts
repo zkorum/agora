@@ -97,7 +97,7 @@ import {
 } from "./zod.js";
 import { zodEmail } from "./zod-email.js";
 import { zodPolisVoteRecord } from "./polis.js";
-import { PROJECT_DOCUMENT_CONTENT_TYPES } from "../projectDocument.js";
+import { PROJECT_DOCUMENT_AUDIENCES, PROJECT_DOCUMENT_CONTENT_TYPES } from "../projectDocument.js";
 import {
     ZodSupportedSpokenLanguageCodes,
     ZodSupportedDisplayLanguageCodes,
@@ -632,6 +632,19 @@ const zodProjectDocumentUploadMetadata = z
         },
     );
 const zodProjectDocumentContentType = z.enum(PROJECT_DOCUMENT_CONTENT_TYPES);
+const zodProjectDocumentAudience = z.enum(PROJECT_DOCUMENT_AUDIENCES);
+const zodProjectDocumentParticipantVersion = z
+    .object({
+        audience: z.literal("participant"),
+        contentType: zodProjectDocumentContentType,
+    })
+    .strict();
+const zodProjectDocumentOwnerVersion = z
+    .object({
+        audience: z.literal("owner"),
+        contentType: zodProjectDocumentContentType,
+    })
+    .strict();
 const zodAdminProjectDocumentFile = z
     .object({
         originalFileName: z.string().trim().min(1),
@@ -656,7 +669,12 @@ const zodProjectPageDocument = z
         documentId: z.uuid(),
         languageCode: ZodSupportedDisplayLanguageCodes,
         name: z.string().trim().min(1).max(MAX_LENGTH_TITLE),
-        contentType: zodProjectDocumentContentType,
+        versions: z
+            .object({
+                participant: zodProjectDocumentParticipantVersion,
+                owner: zodProjectDocumentOwnerVersion.optional(),
+            })
+            .strict(),
     })
     .strict();
 const zodProjectPageProject = z
@@ -2614,6 +2632,7 @@ export class Dto {
         .object({
             projectSlug: zodProjectSlug,
             documentId: z.uuid(),
+            audience: zodProjectDocumentAudience,
             languageCode: ZodSupportedDisplayLanguageCodes,
             mode: z.enum(["inline", "download"]),
         })
@@ -2624,6 +2643,8 @@ export class Dto {
             expiresAt: zodDateTimeFlexible,
             downloadFileName: z.string().trim().min(1).max(255),
             contentType: zodProjectDocumentContentType,
+            audience: zodProjectDocumentAudience,
+            htmlScriptsEnabled: z.boolean(),
         })
         .strict();
     static fetchProjectPageRequest = z
@@ -4493,6 +4514,9 @@ export type ProjectPageActivity = z.infer<typeof zodProjectPageActivity>;
 export type ProjectPageAttribution = z.infer<typeof zodProjectPageAttribution>;
 export type ProjectPageContact = z.infer<typeof zodProjectPageContact>;
 export type ProjectPageDocument = z.infer<typeof zodProjectPageDocument>;
+export type ProjectDocumentVersion =
+    | z.infer<typeof zodProjectDocumentParticipantVersion>
+    | z.infer<typeof zodProjectDocumentOwnerVersion>;
 export type ProjectPageProject = z.infer<typeof zodProjectPageProject>;
 export type ProjectPageLanguageOption = z.infer<
     typeof zodProjectPageLanguageOption

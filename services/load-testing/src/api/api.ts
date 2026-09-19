@@ -7605,6 +7605,8 @@ export interface ApiV1ProjectDocumentAccessPost200Response {
     'expiresAt': string;
     'downloadFileName': string;
     'contentType': ApiV1ProjectDocumentAccessPost200ResponseContentTypeEnum;
+    'audience': ApiV1ProjectDocumentAccessPost200ResponseAudienceEnum;
+    'htmlScriptsEnabled': boolean;
 }
 
 export const ApiV1ProjectDocumentAccessPost200ResponseContentTypeEnum = {
@@ -7617,14 +7619,27 @@ export const ApiV1ProjectDocumentAccessPost200ResponseContentTypeEnum = {
 } as const;
 
 export type ApiV1ProjectDocumentAccessPost200ResponseContentTypeEnum = typeof ApiV1ProjectDocumentAccessPost200ResponseContentTypeEnum[keyof typeof ApiV1ProjectDocumentAccessPost200ResponseContentTypeEnum];
+export const ApiV1ProjectDocumentAccessPost200ResponseAudienceEnum = {
+    Participant: 'participant',
+    Owner: 'owner',
+} as const;
+
+export type ApiV1ProjectDocumentAccessPost200ResponseAudienceEnum = typeof ApiV1ProjectDocumentAccessPost200ResponseAudienceEnum[keyof typeof ApiV1ProjectDocumentAccessPost200ResponseAudienceEnum];
 
 export interface ApiV1ProjectDocumentAccessPostRequest {
     'projectSlug': string;
     'documentId': string;
+    'audience': ApiV1ProjectDocumentAccessPostRequestAudienceEnum;
     'languageCode': ApiV1ProjectDocumentAccessPostRequestLanguageCodeEnum;
     'mode': ApiV1ProjectDocumentAccessPostRequestModeEnum;
 }
 
+export const ApiV1ProjectDocumentAccessPostRequestAudienceEnum = {
+    Participant: 'participant',
+    Owner: 'owner',
+} as const;
+
+export type ApiV1ProjectDocumentAccessPostRequestAudienceEnum = typeof ApiV1ProjectDocumentAccessPostRequestAudienceEnum[keyof typeof ApiV1ProjectDocumentAccessPostRequestAudienceEnum];
 export const ApiV1ProjectDocumentAccessPostRequestLanguageCodeEnum = {
     En: 'en',
     Es: 'es',
@@ -7972,7 +7987,7 @@ export interface ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInner {
     'documentId': string;
     'languageCode': ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerLanguageCodeEnum;
     'name': string;
-    'contentType': ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerContentTypeEnum;
+    'versions': ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerVersions;
 }
 
 export const ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerLanguageCodeEnum = {
@@ -7990,7 +8005,22 @@ export const ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerLanguageCo
 } as const;
 
 export type ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerLanguageCodeEnum = typeof ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerLanguageCodeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerLanguageCodeEnum];
-export const ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerContentTypeEnum = {
+
+export interface ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerVersions {
+    'participant': ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerVersionsParticipant;
+    'owner'?: ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerVersionsOwner;
+}
+export interface ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerVersionsOwner {
+    'audience': ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerVersionsOwnerAudienceEnum;
+    'contentType': ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerVersionsOwnerContentTypeEnum;
+}
+
+export const ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerVersionsOwnerAudienceEnum = {
+    Owner: 'owner',
+} as const;
+
+export type ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerVersionsOwnerAudienceEnum = typeof ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerVersionsOwnerAudienceEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerVersionsOwnerAudienceEnum];
+export const ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerVersionsOwnerContentTypeEnum = {
     TextHtml: 'text/html',
     ApplicationPdf: 'application/pdf',
     TextPlain: 'text/plain',
@@ -7999,7 +8029,28 @@ export const ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerContentTyp
     ApplicationJson: 'application/json',
 } as const;
 
-export type ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerContentTypeEnum = typeof ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerContentTypeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerContentTypeEnum];
+export type ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerVersionsOwnerContentTypeEnum = typeof ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerVersionsOwnerContentTypeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerVersionsOwnerContentTypeEnum];
+
+export interface ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerVersionsParticipant {
+    'audience': ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerVersionsParticipantAudienceEnum;
+    'contentType': ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerVersionsParticipantContentTypeEnum;
+}
+
+export const ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerVersionsParticipantAudienceEnum = {
+    Participant: 'participant',
+} as const;
+
+export type ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerVersionsParticipantAudienceEnum = typeof ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerVersionsParticipantAudienceEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerVersionsParticipantAudienceEnum];
+export const ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerVersionsParticipantContentTypeEnum = {
+    TextHtml: 'text/html',
+    ApplicationPdf: 'application/pdf',
+    TextPlain: 'text/plain',
+    TextMarkdown: 'text/markdown',
+    TextCsv: 'text/csv',
+    ApplicationJson: 'application/json',
+} as const;
+
+export type ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerVersionsParticipantContentTypeEnum = typeof ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerVersionsParticipantContentTypeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerVersionsParticipantContentTypeEnum];
 
 export interface ApiV1ProjectPageFetchPostRequest {
     'projectSlug': string;

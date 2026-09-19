@@ -1,4 +1,21 @@
 {
+    "project-documents": [
+        "user",
+        "organization",
+        "organization_membership",
+        "organization_membership_all_project_capability",
+        "project",
+        "project_organization_ownership",
+        "project_document",
+        "project_document_file",
+        "project_document_localization",
+        "conversation",
+        "opinion",
+        "opinion_moderation",
+        "vote",
+        "maxdiff_result",
+        "maxdiff_comparison"
+    ],
     "conversation-email-update-review": [
         "user",
         "user_display_language",

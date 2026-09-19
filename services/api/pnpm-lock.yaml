@@ -326,6 +326,9 @@ importers:
       parse-json-object:
         specifier: ^4.0.0
         version: 4.0.0
+      parse5:
+        specifier: ^8.0.1
+        version: 8.0.1
       pg:
         specifier: ^8.20.0
         version: 8.20.0
@@ -3988,6 +3991,9 @@ packages:
 
   parse-srcset@1.0.2:
     resolution: {integrity: sha512-/2qh0lav6CmI15FzA3i/2Bzk2zCgQhGMkvhOhKNcBVQ1ldgpbfiNTVslmooUmWJcADi1f1kIeynbDRVzNlfR6Q==}
+
+  parse5@8.0.1:
+    resolution: {integrity: sha512-z1e/HMG90obSGeidlli3hj7cbocou0/wa5HacvI3ASx34PecNjNQeaHNo5WIZpWofN9kgkqV1q5YvXe3F0FoPw==}
 
   parseley@0.12.1:
     resolution: {integrity: sha512-e6qHKe3a9HWr0oMRVDTRhKce+bRO8VGQR3NyVwcjwrbhMmFCX9KszEV35+rn4AdilFAq9VPxP/Fe1wC9Qjd2lw==}
@@ -9220,6 +9226,10 @@ snapshots:
       types-json: 5.0.0
 
   parse-srcset@1.0.2: {}
+
+  parse5@8.0.1:
+    dependencies:
+      entities: 8.0.0
 
   parseley@0.12.1:
     dependencies:

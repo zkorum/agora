@@ -1,10 +1,9 @@
 <template>
   <div class="email-viewer">
-    <iframe
+    <SandboxedHtmlFrame
+      mode="static"
       :title="title"
-      :srcdoc="email.html"
-      sandbox=""
-      referrerpolicy="no-referrer"
+      :source="{ kind: 'html', html: email.html }"
       class="email-viewer__frame"
     />
     <details class="email-viewer__text">
@@ -17,6 +16,7 @@
 </template>
 
 <script setup lang="ts">
+import SandboxedHtmlFrame from "src/components/ui-library/SandboxedHtmlFrame.vue";
 import {
   getLanguageTextDirection,
   type SupportedDisplayLanguageCodes,

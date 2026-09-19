@@ -4788,23 +4788,75 @@
                                                                 "minLength": 1,
                                                                 "maxLength": 140
                                                             },
-                                                            "contentType": {
-                                                                "type": "string",
-                                                                "enum": [
-                                                                    "text/html",
-                                                                    "application/pdf",
-                                                                    "text/plain",
-                                                                    "text/markdown",
-                                                                    "text/csv",
-                                                                    "application/json"
-                                                                ]
+                                                            "versions": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "participant": {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "audience": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "participant"
+                                                                                ]
+                                                                            },
+                                                                            "contentType": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "text/html",
+                                                                                    "application/pdf",
+                                                                                    "text/plain",
+                                                                                    "text/markdown",
+                                                                                    "text/csv",
+                                                                                    "application/json"
+                                                                                ]
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "audience",
+                                                                            "contentType"
+                                                                        ],
+                                                                        "additionalProperties": false
+                                                                    },
+                                                                    "owner": {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "audience": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "owner"
+                                                                                ]
+                                                                            },
+                                                                            "contentType": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "text/html",
+                                                                                    "application/pdf",
+                                                                                    "text/plain",
+                                                                                    "text/markdown",
+                                                                                    "text/csv",
+                                                                                    "application/json"
+                                                                                ]
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "audience",
+                                                                            "contentType"
+                                                                        ],
+                                                                        "additionalProperties": false
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "participant"
+                                                                ],
+                                                                "additionalProperties": false
                                                             }
                                                         },
                                                         "required": [
                                                             "documentId",
                                                             "languageCode",
                                                             "name",
-                                                            "contentType"
+                                                            "versions"
                                                         ],
                                                         "additionalProperties": false
                                                     }
@@ -6707,6 +6759,13 @@
                                         "format": "uuid",
                                         "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                                     },
+                                    "audience": {
+                                        "type": "string",
+                                        "enum": [
+                                            "participant",
+                                            "owner"
+                                        ]
+                                    },
                                     "languageCode": {
                                         "type": "string",
                                         "enum": [
@@ -6734,6 +6793,7 @@
                                 "required": [
                                     "projectSlug",
                                     "documentId",
+                                    "audience",
                                     "languageCode",
                                     "mode"
                                 ],
@@ -6773,13 +6833,25 @@
                                                 "text/csv",
                                                 "application/json"
                                             ]
+                                        },
+                                        "audience": {
+                                            "type": "string",
+                                            "enum": [
+                                                "participant",
+                                                "owner"
+                                            ]
+                                        },
+                                        "htmlScriptsEnabled": {
+                                            "type": "boolean"
                                         }
                                     },
                                     "required": [
                                         "url",
                                         "expiresAt",
                                         "downloadFileName",
-                                        "contentType"
+                                        "contentType",
+                                        "audience",
+                                        "htmlScriptsEnabled"
                                     ],
                                     "additionalProperties": false
                                 }
@@ -7142,23 +7214,75 @@
                                                                 "minLength": 1,
                                                                 "maxLength": 140
                                                             },
-                                                            "contentType": {
-                                                                "type": "string",
-                                                                "enum": [
-                                                                    "text/html",
-                                                                    "application/pdf",
-                                                                    "text/plain",
-                                                                    "text/markdown",
-                                                                    "text/csv",
-                                                                    "application/json"
-                                                                ]
+                                                            "versions": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "participant": {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "audience": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "participant"
+                                                                                ]
+                                                                            },
+                                                                            "contentType": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "text/html",
+                                                                                    "application/pdf",
+                                                                                    "text/plain",
+                                                                                    "text/markdown",
+                                                                                    "text/csv",
+                                                                                    "application/json"
+                                                                                ]
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "audience",
+                                                                            "contentType"
+                                                                        ],
+                                                                        "additionalProperties": false
+                                                                    },
+                                                                    "owner": {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "audience": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "owner"
+                                                                                ]
+                                                                            },
+                                                                            "contentType": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "text/html",
+                                                                                    "application/pdf",
+                                                                                    "text/plain",
+                                                                                    "text/markdown",
+                                                                                    "text/csv",
+                                                                                    "application/json"
+                                                                                ]
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "audience",
+                                                                            "contentType"
+                                                                        ],
+                                                                        "additionalProperties": false
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "participant"
+                                                                ],
+                                                                "additionalProperties": false
                                                             }
                                                         },
                                                         "required": [
                                                             "documentId",
                                                             "languageCode",
                                                             "name",
-                                                            "contentType"
+                                                            "versions"
                                                         ],
                                                         "additionalProperties": false
                                                     }

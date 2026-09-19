@@ -1,5 +1,5 @@
 <template>
-  <div class="project-page-dev">
+  <div ref="previewRoot" class="project-page-dev">
     <div v-if="controlsVisible" class="project-page-dev__scenario-bar">
       <div class="project-page-dev__scenario-header">
         <div>
@@ -70,6 +70,13 @@
           :options="bodyLengthScenarioOptions"
         />
       </div>
+
+      <ProjectDocumentControls
+        v-model:viewer="documentViewer"
+        v-model:scenario="documentScenario"
+        :has-documents="documents.length > 0"
+        @jump="showDocuments"
+      />
     </div>
 
     <q-btn
@@ -90,11 +97,14 @@
       :can-load-more-activities="false"
       :is-loading-more-activities="false"
       :language-options="languageOptions"
+      :access-document="accessDocument"
     />
   </div>
 </template>
 
 <script setup lang="ts">
+import ProjectDocumentControls from "src/components/dev/projectDocuments/ProjectDocumentControls.vue";
+import { scrollToProjectDocuments, useProjectDocumentDemo } from "src/components/dev/projectDocuments/useProjectDocumentDemo";
 import type {
   ProjectActivity,
   ProjectContact,
@@ -104,7 +114,7 @@ import type {
 import ProjectPageView from "src/components/project/ProjectPageView.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
-import { computed, ref } from "vue";
+import { computed, ref, useTemplateRef } from "vue";
 
 type ContactScenario = "email" | "web" | "both";
 type ActivityStatusScenario = "mixed" | "closed" | "empty";
@@ -138,6 +148,7 @@ type BaseDevProjectData = Omit<
   | "attributions"
   | "contact"
   | "displayContent"
+  | "documents"
   | "participantCount"
   | "participationCount"
   | "voteCount"
@@ -156,6 +167,18 @@ const activityVolumeScenario = ref<ActivityVolumeScenario>("default");
 const bodyLengthScenario = ref<BodyLengthScenario>("normal");
 const selectedLanguage = ref<SupportedDisplayLanguageCodes>("en");
 const controlsVisible = ref(true);
+const previewRoot = useTemplateRef<HTMLElement>("previewRoot");
+const {
+  documents,
+  accessDocument,
+  scenario: documentScenario,
+  viewer: documentViewer,
+} = useProjectDocumentDemo();
+
+async function showDocuments(): Promise<void> {
+  controlsVisible.value = false;
+  await scrollToProjectDocuments(previewRoot.value ?? undefined);
+}
 
 const contactScenarioOptions: {
   label: string;
@@ -603,7 +626,6 @@ const baseProject = {
   dynamicTranslationEnabled: true,
   bannerVariant: "blue",
   bannerImageUrl: projectBannerImageUrlsByLanguage.en,
-  documents: [],
 } satisfies BaseDevProjectData;
 
 const selectedProjectLanguage = computed<ProjectPageLanguage>(() => {
@@ -692,6 +714,7 @@ const activities = computed<readonly ProjectActivity[]>(() => {
 
 const project = computed<ProjectPageData>(() => ({
   ...baseProject,
+  documents: documents.value,
   attributions: localizeAttributions({
     attributions: baseAttributions,
     language: selectedProjectLanguage.value,

@@ -1,7 +1,12 @@
+import type { InlineProjectDocumentContentType } from "src/shared/projectDocument";
 import type {
+  AccessProjectDocumentRequest,
+  AccessProjectDocumentResponse,
+  ProjectDocumentVersion,
   ProjectPageActivity,
   ProjectPageAttribution,
   ProjectPageContact,
+  ProjectPageDocument,
   ProjectPageLanguageOption as SharedProjectPageLanguageOption,
   ProjectPageProject,
 } from "src/shared/types/dto";
@@ -21,6 +26,29 @@ export type ProjectAttribution = ProjectPageAttribution;
 export type ProjectContact = ProjectPageContact;
 
 export type ProjectPageData = ProjectPageProject;
+
+export type ProjectDocumentAccess = (
+  request: AccessProjectDocumentRequest
+) => Promise<AccessProjectDocumentResponse>;
+
+export type ProjectDocumentAction = Pick<
+  AccessProjectDocumentRequest,
+  "documentId" | "audience" | "mode"
+>;
+
+export interface ProjectDocumentSelection {
+  document: ProjectPageDocument;
+  version: ProjectDocumentVersion;
+}
+
+export interface ProjectDocumentViewerState {
+  id: string;
+  selection: ProjectDocumentSelection;
+  access: AccessProjectDocumentResponse & {
+    contentType: InlineProjectDocumentContentType;
+  };
+  loadState: "loading" | "loaded" | "timeout";
+}
 
 function getProjectActivityTitle(activity: ProjectActivity): string {
   return activity.displayContent.status === "available"

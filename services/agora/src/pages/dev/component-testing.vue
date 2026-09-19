@@ -34,7 +34,8 @@
       </div>
       <p class="route-card-description">
         Open a full-screen project-page showcase with static project, activity,
-        attribution, language, and contact variants.
+        attribution, language, and contact variants. Use the document controls
+        to switch between Participant and Project owner, then Jump to documents.
       </p>
     </SpaLink>
 
@@ -46,6 +47,8 @@
       <p class="route-card-description">
         Open a view-only project-scoped conversation layout using the reusable
         project shell, existing conversation action bar, and statement list.
+        Switch between Participant and Project owner, then Jump to documents to
+        compare their versions in context.
       </p>
     </SpaLink>
 

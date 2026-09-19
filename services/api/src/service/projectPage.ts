@@ -1971,9 +1971,11 @@ async function buildProjectShellPayload({
     baseImageServiceUrl,
     project,
     currentDisplayLanguage,
+    requesterUserId,
 }: ProjectPageServiceParams & {
     project: ProjectBaseRow;
     currentDisplayLanguage: SupportedDisplayLanguageCodes;
+    requesterUserId: string | undefined;
 }): Promise<ProjectShellPayload> {
     const defaultLanguageCode = getProjectDefaultDisplayLanguage({
         sourceLanguageCode: project.sourceLanguageCode,
@@ -2020,6 +2022,7 @@ async function buildProjectShellPayload({
             db,
             projectId: project.projectId,
             displayLanguageCode: preferredContentLanguage,
+            requesterUserId,
         }),
         fetchProjectAttributions({
             db,
@@ -2072,9 +2075,11 @@ async function buildProjectPagePayload({
     baseImageServiceUrl,
     request,
     currentDisplayLanguage,
+    requesterUserId,
 }: ProjectPageServiceParams & {
     request: FetchProjectPageRequest;
     currentDisplayLanguage: SupportedDisplayLanguageCodes;
+    requesterUserId: string | undefined;
 }): Promise<FetchProjectPageResponse> {
     const project = await fetchProjectBaseBySlug({
         db,
@@ -2086,6 +2091,7 @@ async function buildProjectPagePayload({
             baseImageServiceUrl,
             project,
             currentDisplayLanguage,
+            requesterUserId,
         }),
         fetchProjectActivities({
             db,
@@ -2108,15 +2114,18 @@ export async function fetchProjectPage({
     baseImageServiceUrl,
     request,
     currentDisplayLanguage,
+    requesterUserId,
 }: ProjectPageServiceParams & {
     request: FetchProjectPageRequest;
     currentDisplayLanguage: SupportedDisplayLanguageCodes;
+    requesterUserId: string | undefined;
 }): Promise<FetchProjectPageResponse> {
     return await buildProjectPagePayload({
         db,
         baseImageServiceUrl,
         request,
         currentDisplayLanguage,
+        requesterUserId,
     });
 }
 
@@ -2147,9 +2156,11 @@ export async function fetchProjectConversationPage({
     baseImageServiceUrl,
     request,
     currentDisplayLanguage,
+    requesterUserId,
 }: ProjectPageServiceParams & {
     request: FetchProjectConversationPageRequest;
     currentDisplayLanguage: SupportedDisplayLanguageCodes;
+    requesterUserId: string | undefined;
 }): Promise<FetchProjectConversationPageResponse> {
     const project = await fetchProjectBaseBySlug({
         db,
@@ -2167,6 +2178,7 @@ export async function fetchProjectConversationPage({
         baseImageServiceUrl,
         project,
         currentDisplayLanguage,
+        requesterUserId,
     });
 }
 

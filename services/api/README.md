@@ -263,6 +263,30 @@ API checks access before issuing a short-lived presigned download URL. The API
 also checks bucket access during startup when both project-document S3
 variables are configured.
 
+Project and project-conversation responses contain `documents[].versions` with a
+required `participant` entry and an optional `owner` entry. Owner metadata is
+included only for a verified, eligible requester with `project_update` capability.
+Each version carries its literal audience and content type. Owners can access
+both versions independently; the owner file never replaces the participant file.
+Document access requests must specify `audience: "participant" | "owner"`, and
+authorization is checked again before signing that exact file. A missing owner
+file returns 404 rather than falling back to the participant version.
+
+HTML uploads are normalized using `parse5` before storage. A CSP at the start of
+`<head>` permits only the uploaded inline scripts by SHA-256 hash, blocks inline
+event-handler attributes, and restricts external resources and network APIs.
+Inline styles and embedded data images/fonts remain available. Declarative
+external links and refresh redirects are removed. Interactive reports run with
+`sandbox="allow-scripts"`, never `allow-same-origin`, forms, or popups. Email
+previews remain script-free. PDF previews use the native browser viewer.
+
+Only trusted reports should be uploaded: an authorized script can still navigate
+its own iframe, so these restrictions are not a guarantee of zero network egress.
+The database's `html_scripts_enabled` flag defaults to false. Existing HTML stays
+script-free until reuploaded through the new normalization path. Uploads support
+25 MiB (including the normalized policy); owner downloads receive an `-owner`
+filename suffix to distinguish them from participant downloads.
+
 ## Test
 
 ```bash

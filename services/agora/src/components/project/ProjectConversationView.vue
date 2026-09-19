@@ -87,12 +87,26 @@
             </div>
           </section>
 
-          <ProjectDetailsAside
+          <div
             class="project-conversation-view__aside"
-            :attributions="project.attributions"
-            :contact="project.contact"
-            :language-code="selectedLanguage"
-          />
+            :class="{
+              'project-conversation-view__aside--with-documents':
+                project.documents.length > 0,
+            }"
+          >
+            <ProjectDetailsAside
+              class="project-conversation-view__details"
+              :attributions="project.attributions"
+              :contact="project.contact"
+              :language-code="selectedLanguage"
+            />
+            <ProjectDocuments
+              :project-slug="project.slug"
+              :documents="project.documents"
+              :language-code="selectedLanguage"
+              :access-document="accessDocument"
+            />
+          </div>
 
           <ProjectPageFooter
             class="project-conversation-view__footer"
@@ -126,6 +140,7 @@ import { computed, ref, watch } from "vue";
 
 import ProjectConversationHeaderCard from "./ProjectConversationHeaderCard.vue";
 import ProjectDetailsAside from "./ProjectDetailsAside.vue";
+import ProjectDocuments from "./ProjectDocuments.vue";
 import {
   getConversationSourceDisplayLanguageCode,
   getConversationSupportedLanguageCodes,
@@ -138,6 +153,7 @@ import {
   translateProjectPageText,
 } from "./projectPageI18n";
 import type {
+  ProjectDocumentAccess,
   ProjectLanguageOption,
   ProjectPageData,
 } from "./projectPageTypes";
@@ -147,6 +163,7 @@ const props = defineProps<{
   conversationData: ExtendedConversationDisplayData;
   initialDisplayContent?: ConversationContentFetchResponse;
   languageOptions: readonly ProjectLanguageOption[];
+  accessDocument: ProjectDocumentAccess;
   bannerImageUrl?: string;
   reportLayout?: boolean;
 }>();
@@ -481,8 +498,16 @@ main {
 
 .project-conversation-view__aside {
   grid-area: aside;
+  display: flex;
+  flex-direction: column;
+  gap: 2.35rem;
   position: sticky;
   top: 0;
+}
+
+// Document lists can make the sidebar taller than the viewport.
+.project-conversation-view__aside--with-documents {
+  position: static;
 }
 
 @media (min-width: 861px) {
@@ -501,11 +526,19 @@ main {
     grid-template-areas:
       "title"
       "stream"
+      "aside"
       "footer";
     padding-inline: 1rem;
   }
 
   .project-conversation-view__aside {
+    position: static;
+  }
+
+  .project-conversation-view__details,
+  .project-conversation-view__aside:not(
+    .project-conversation-view__aside--with-documents
+  ) {
     display: none;
   }
 }
@@ -517,10 +550,18 @@ main {
       grid-template-areas:
         "title"
         "stream"
+        "aside"
         "footer";
     }
 
     .project-conversation-view__aside {
+      position: static;
+    }
+
+    .project-conversation-view__details,
+    .project-conversation-view__aside:not(
+      .project-conversation-view__aside--with-documents
+    ) {
       display: none;
     }
   }
