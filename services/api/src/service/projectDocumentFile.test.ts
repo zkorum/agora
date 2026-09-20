@@ -85,20 +85,23 @@ describe("project document files", () => {
             getProjectDocumentDownloadFileName({
                 fileName: "rapport.html",
                 audience: "participant",
+                languageCode: "fr",
             }),
         ).toBe("rapport.html");
         expect(
             getProjectDocumentDownloadFileName({
                 fileName: "rapport.html",
                 audience: "owner",
+                languageCode: "fr",
             }),
-        ).toBe("rapport-owner.html");
+        ).toBe("rapport-interne-restreint.html");
         const name = getProjectDocumentDownloadFileName({
             fileName: `${"😀".repeat(124)}.html`,
             audience: "owner",
+            languageCode: "en",
         });
         expect(name.length).toBeLessThanOrEqual(255);
-        expect(name.endsWith("-owner.html")).toBe(true);
+        expect(name.endsWith("-internal-restricted.html")).toBe(true);
         expect(() => encodeURIComponent(name)).not.toThrow();
     });
     it("parses a valid HTML document from its extension and signature", () => {

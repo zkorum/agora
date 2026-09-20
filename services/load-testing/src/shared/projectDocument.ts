@@ -1,4 +1,6 @@
 /** **** WARNING: GENERATED FROM SHARED DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/
+import type { SupportedDisplayLanguageCodes } from "./languages.js";
+
 export const MAX_PROJECT_DOCUMENT_FILE_SIZE = 50 * 1024 * 1024;
 export const MAX_PROJECT_DOCUMENT_FILE_SIZE_MB =
     MAX_PROJECT_DOCUMENT_FILE_SIZE / (1024 * 1024);
@@ -90,19 +92,35 @@ export function isInlineProjectDocumentContentType(
     return contentType === "text/html" || contentType === "application/pdf";
 }
 
+const internalRestrictedFileNameSuffixes = {
+    en: "internal-restricted",
+    es: "interno-restringido",
+    fr: "interne-restreint",
+    "zh-Hant": "內部受限",
+    "zh-Hans": "内部受限",
+    ja: "内部限定",
+    ar: "داخلي-مقيّد",
+    fa: "داخلی-محدود",
+    he: "פנימי-מוגבל",
+    ky: "ички-чектелген",
+    ru: "внутренний-ограниченный-доступ",
+} satisfies Record<SupportedDisplayLanguageCodes, string>;
+
 export function getProjectDocumentDownloadFileName({
     fileName,
     audience,
+    languageCode,
 }: {
     fileName: string;
     audience: ProjectDocumentAudience;
+    languageCode: SupportedDisplayLanguageCodes;
 }): string {
     if (audience === "participant") return fileName;
 
     const extensionIndex = fileName.lastIndexOf(".");
     const extension = extensionIndex < 0 ? "" : fileName.slice(extensionIndex);
     const baseName = extensionIndex < 0 ? fileName : fileName.slice(0, extensionIndex);
-    const suffix = `-owner${extension}`;
+    const suffix = `-${internalRestrictedFileNameSuffixes[languageCode]}${extension}`;
     let stem = "";
     // Preserve complete Unicode characters while respecting the DTO's UTF-16 limit.
     for (const character of baseName) {

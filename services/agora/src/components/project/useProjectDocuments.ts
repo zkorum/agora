@@ -1,3 +1,4 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import { isInlineProjectDocumentContentType } from "src/shared/projectDocument";
 import type {
   AccessProjectDocumentResponse,
@@ -24,11 +25,13 @@ import type {
 export function useProjectDocuments({
   projectSlug,
   documents,
+  languageCode,
   accessDocument,
   onAccessError,
 }: {
   projectSlug: () => string;
   documents: () => readonly ProjectPageDocument[];
+  languageCode: () => SupportedDisplayLanguageCodes;
   accessDocument: ProjectDocumentAccess;
   onAccessError: (error: { error: unknown; retry: () => void }) => void;
 }) {
@@ -127,7 +130,7 @@ export function useProjectDocuments({
       const access = await accessDocument({
         ...action,
         projectSlug: projectSlug(),
-        languageCode: selectedDocument.languageCode,
+        languageCode: languageCode(),
       });
       if (id !== requestId || !isActive) return;
       if (
@@ -187,6 +190,7 @@ export function useProjectDocuments({
   }
 
   watch(projectSlug, closeViewer, { flush: "sync" });
+  watch(languageCode, closeViewer, { flush: "sync" });
   watch(
     documents,
     () => {

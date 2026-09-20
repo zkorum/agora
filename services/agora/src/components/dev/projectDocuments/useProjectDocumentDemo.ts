@@ -225,6 +225,7 @@ export function useProjectDocumentDemo() {
       downloadFileName: getProjectDocumentDownloadFileName({
         fileName: file.fileName,
         audience: request.audience,
+        languageCode: request.languageCode,
       }),
       expiresAt: new Date(Date.now() + 600_000),
     };

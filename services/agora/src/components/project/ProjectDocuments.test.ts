@@ -310,7 +310,10 @@ describe("project document viewer", () => {
   it("waits for access before mounting HTML in an unprivileged iframe", async () => {
     const pending = Promise.withResolvers<AccessProjectDocumentResponse>();
     const accessDocument = vi.fn<ProjectDocumentAccess>(() => pending.promise);
-    const { container } = mountDocuments({ accessDocument });
+    const { container } = mountDocuments({
+      accessDocument,
+      initialDocuments: [{ ...htmlDocument, languageCode: "fr" }],
+    });
     clickButton({
       container,
       label: "View: Project report — Participant version",

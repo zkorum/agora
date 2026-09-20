@@ -300,7 +300,7 @@ describe("project document version authorization", () => {
             request: request({ audience: "owner" }),
         });
         expect(legacy.htmlScriptsEnabled).toBe(false);
-        expect(legacy.downloadFileName).toBe("report-owner.html");
+        expect(legacy.downloadFileName).toBe("report-internal-restricted.html");
         const uploaded = await uploadProjectDocument({
             db,
             createdByUserId: OWNER,

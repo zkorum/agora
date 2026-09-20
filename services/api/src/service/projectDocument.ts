@@ -1070,6 +1070,7 @@ export async function accessProjectDocument({
             downloadFileName: getProjectDocumentDownloadFileName({
                 fileName: downloadFileName,
                 audience: selectedFile.audience,
+                languageCode: request.languageCode,
             }),
         };
     });
