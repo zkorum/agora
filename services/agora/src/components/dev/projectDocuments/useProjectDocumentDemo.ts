@@ -26,11 +26,10 @@ export const documentScenarioOptions = [
 ] satisfies { label: string; value: DocumentScenario }[];
 export const documentViewerOptions = [
   { label: "Participant", value: "participant" },
-  { label: "Project owner", value: "owner" },
+  { label: "Facilitator", value: "owner" },
 ] satisfies { label: string; value: PreviewViewer }[];
 export const documentScenarioHints = {
-  available:
-    "Choose Participant or Project owner to compare the versions shown.",
+  available: "Choose Participant or Facilitator to compare the versions shown.",
   slow: "View, Download and Reload take two seconds to test their loading buttons.",
   denied:
     "View and Download show an access-denied message. This only simulates an API response.",
@@ -48,7 +47,7 @@ export async function scrollToProjectDocuments(
     ?.scrollIntoView({ block: "center", behavior: "instant" });
 }
 
-async function createPdf(ownerOnly: boolean): Promise<Blob> {
+async function createPdf(facilitatorOnly: boolean): Promise<Blob> {
   const { jsPDF } = await import("jspdf");
   const pdf = new jsPDF();
   pdf.setFontSize(24);
@@ -56,8 +55,8 @@ async function createPdf(ownerOnly: boolean): Promise<Blob> {
   pdf.setFontSize(12);
   pdf.text(
     [
-      ownerOnly
-        ? "Owner-only version - fictional planning notes"
+      facilitatorOnly
+        ? "Facilitator version - fictional planning notes"
         : "Participant version - fictional summary",
       "",
       "214 participants / 62 statements / 1,238 votes",
@@ -66,7 +65,7 @@ async function createPdf(ownerOnly: boolean): Promise<Blob> {
       "2. Improve access to local services - 78% support",
       "3. Create spaces for young people - 71% support",
       "",
-      ownerOnly
+      facilitatorOnly
         ? "Private follow-up: prepare the next facilitation workshop."
         : "This is the same report project participants can access.",
     ],
@@ -95,7 +94,7 @@ export function useProjectDocumentDemo() {
           [
             reportHtml.replace(
               "<h1>Community priorities</h1>",
-              "<h1>Community priorities — owner-only version</h1><p>Private planning notes: prepare the next facilitation workshop. This fictional note is not in the participant version.</p>"
+              "<h1>Community priorities — Facilitator version</h1><p>Private planning notes: prepare the next facilitation workshop. This fictional note is not in the participant version.</p>"
             ),
           ],
           { type: "text/html" }

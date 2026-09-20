@@ -89,6 +89,7 @@ export async function generatePresignedUrl({
     region = config.EXPORT_CONVOS_AWS_S3_REGION,
     responseContentType,
     responseContentDisposition,
+    responseCacheControl,
 }: {
     s3Key: string;
     bucketName: string;
@@ -96,12 +97,14 @@ export async function generatePresignedUrl({
     region?: string;
     responseContentType?: string;
     responseContentDisposition?: string;
+    responseCacheControl?: string;
 }): Promise<{ url: string; expiresAt: Date }> {
     const command = new GetObjectCommand({
         Bucket: bucketName,
         Key: s3Key,
         ResponseContentType: responseContentType,
         ResponseContentDisposition: responseContentDisposition,
+        ResponseCacheControl: responseCacheControl,
     });
 
     const url = await getSignedUrl(getS3Client({ region }), command, {

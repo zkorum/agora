@@ -307,6 +307,7 @@ import {
     createConversationEmailUpdateActionService,
     registerConversationEmailUpdateActionRoutes,
 } from "./service/conversationEmailUpdateAction.js";
+import { registerProjectDocumentAccessRoute } from "./service/projectDocumentAccessRoute.js";
 import { createConversationEmailUpdateSnsIngressService } from "./service/conversationEmailUpdateSns.js";
 import {
     CONVERSATION_EMAIL_UPDATE_SIMULATOR_TOPIC_ARN,
@@ -2582,30 +2583,28 @@ server.after(() => {
         },
     });
 
-    server.withTypeProvider<ZodTypeProvider>().route({
-        method: "POST",
-        url: `/api/${apiVersion}/project/document/access`,
-        schema: {
-            body: Dto.accessProjectDocumentRequest,
-            response: {
-                200: Dto.accessProjectDocumentResponse,
-            },
-        },
-        handler: async (request) => {
-            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
-                db,
-                request,
-                {
-                    expectedKnownDeviceStatus: {
-                        isGuestOrLoggedIn: true,
+    registerProjectDocumentAccessRoute({
+        server,
+        apiVersion,
+        service: {
+            access: async ({ request, authorization }) =>
+                await projectDocumentService.accessProjectDocument({
+                    db,
+                    request,
+                    authorization,
+                }),
+            authenticateFacilitator: async ({ request }) => {
+                const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                    db,
+                    request,
+                    {
+                        expectedKnownDeviceStatus: {
+                            isLoggedIn: true,
+                        },
                     },
-                },
-            );
-            return await projectDocumentService.accessProjectDocument({
-                db,
-                request: request.body,
-                userId: deviceStatus.userId,
-            });
+                );
+                return { userId: deviceStatus.userId };
+            },
         },
     });
 

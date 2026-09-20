@@ -5,17 +5,11 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import pLimit from "p-limit";
 import { config, log } from "@/app.js";
 import {
-    conversationTable,
-    maxdiffComparisonTable,
-    maxdiffResultTable,
-    opinionModerationTable,
-    opinionTable,
     projectDocumentFileTable,
     projectDocumentLocalizationTable,
     projectDocumentTable,
     projectTable,
     userTable,
-    voteTable,
 } from "@/shared-backend/schema.js";
 import {
     getDisplayLanguageFallbackChain,
@@ -873,79 +867,18 @@ export async function fetchProjectPageDocuments({
     );
 }
 
-async function hasParticipatedInProject({
-    db,
-    projectId,
-    userId,
-}: {
-    db: PostgresJsDatabase;
-    projectId: number;
-    userId: string;
-}): Promise<boolean> {
-    const [rankingRows, polisRows] = await Promise.all([
-        db
-            .select({ id: maxdiffComparisonTable.id })
-            .from(maxdiffResultTable)
-            .innerJoin(
-                maxdiffComparisonTable,
-                eq(
-                    maxdiffComparisonTable.maxdiffResultId,
-                    maxdiffResultTable.id,
-                ),
-            )
-            .innerJoin(
-                conversationTable,
-                eq(conversationTable.id, maxdiffResultTable.conversationId),
-            )
-            .where(
-                and(
-                    eq(conversationTable.projectId, projectId),
-                    isNotNull(conversationTable.currentContentId),
-                    eq(conversationTable.isImporting, false),
-                    eq(maxdiffResultTable.participantId, userId),
-                    isNull(maxdiffComparisonTable.deletedAt),
-                ),
-            )
-            .limit(1),
-        db
-            .select({ id: voteTable.id })
-            .from(voteTable)
-            .innerJoin(opinionTable, eq(opinionTable.id, voteTable.opinionId))
-            .innerJoin(
-                conversationTable,
-                eq(conversationTable.id, opinionTable.conversationId),
-            )
-            .leftJoin(
-                opinionModerationTable,
-                and(
-                    eq(opinionModerationTable.opinionId, opinionTable.id),
-                    isNull(opinionModerationTable.deletedAt),
-                ),
-            )
-            .where(
-                and(
-                    eq(conversationTable.projectId, projectId),
-                    isNotNull(conversationTable.currentContentId),
-                    eq(conversationTable.isImporting, false),
-                    eq(voteTable.authorId, userId),
-                    isNotNull(voteTable.currentContentId),
-                    isNotNull(opinionTable.currentContentId),
-                    isNull(opinionModerationTable.id),
-                ),
-            )
-            .limit(1),
-    ]);
-    return rankingRows.length > 0 || polisRows.length > 0;
-}
+export type ProjectDocumentAccessAuthorization =
+    | { type: "public" }
+    | { type: "facilitator"; userId: string };
 
 export async function accessProjectDocument({
     db,
     request,
-    userId,
+    authorization,
 }: {
     db: PostgresJsDatabase;
     request: AccessProjectDocumentRequest;
-    userId: string;
+    authorization: ProjectDocumentAccessAuthorization;
 }): Promise<AccessProjectDocumentResponse> {
     const access = await db.transaction(async (tx) => {
         const documentRows = await tx
@@ -976,27 +909,17 @@ export async function accessProjectDocument({
         if (document === undefined) {
             throw httpErrors.notFound("Project document not found");
         }
-        const isOwner = await hasProjectCapability({
-            db: tx,
-            userId,
-            projectId: document.projectId,
-            capability: "project_update",
-        });
-        if (request.audience === "owner" && !isOwner) {
-            throw httpErrors.forbidden(
-                "Only project owners can access the owner version",
-            );
-        }
-        if (
-            !isOwner &&
-            !(await hasParticipatedInProject({
+        const isFacilitator =
+            authorization.type === "facilitator" &&
+            (await hasProjectCapability({
                 db: tx,
+                userId: authorization.userId,
                 projectId: document.projectId,
-                userId,
-            }))
-        ) {
+                capability: "project_update",
+            }));
+        if (request.audience === "owner" && !isFacilitator) {
             throw httpErrors.forbidden(
-                "Only project participants and project owners can access this document",
+                "Only project facilitators can access the facilitator version",
             );
         }
         const fileRows = await tx
@@ -1085,6 +1008,10 @@ export async function accessProjectDocument({
             mode: request.mode,
             fileName: access.downloadFileName,
         }),
+        responseCacheControl:
+            access.selectedFile.audience === "owner"
+                ? "private, no-store"
+                : undefined,
     });
     return {
         ...signedUrl,
