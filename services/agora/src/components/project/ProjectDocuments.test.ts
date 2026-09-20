@@ -410,7 +410,7 @@ describe("project document viewer", () => {
     expect(container.querySelector("iframe")).toBeNull();
   });
 
-  it("shows both versions to owners and requests exactly the chosen version", async () => {
+  it("shows both versions to facilitators and requests exactly the chosen version", async () => {
     const accessDocument = vi.fn<ProjectDocumentAccess>((request) =>
       Promise.resolve({
         ...htmlResponse,
@@ -446,7 +446,7 @@ describe("project document viewer", () => {
     await nextTick();
     clickButton({
       container,
-      label: "View: Project report — Owner-only version",
+      label: "View: Project report — Facilitator version",
     });
     await vi.waitFor(() =>
       expect(container.querySelector("iframe")?.src).toBe(
@@ -458,10 +458,10 @@ describe("project document viewer", () => {
     ).toEqual(["participant", "owner"]);
     expect(
       container.querySelector(".project-documents__viewer-version")?.textContent
-    ).toBe("Owner-only version");
+    ).toBe("Facilitator version");
   });
 
-  it("retries the same owner version through the shared notification action", async () => {
+  it("retries the same facilitator version through the shared notification action", async () => {
     const accessDocument = vi
       .fn<ProjectDocumentAccess>()
       .mockRejectedValueOnce(new Error("Unavailable"))
@@ -480,7 +480,7 @@ describe("project document viewer", () => {
     });
     clickButton({
       container,
-      label: "View: Project report — Owner-only version",
+      label: "View: Project report — Facilitator version",
     });
     await vi.waitFor(() => expect(showNotifyMessage).toHaveBeenCalledOnce());
     const notification = showNotifyMessage.mock.calls.at(0)?.[0];

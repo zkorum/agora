@@ -91,9 +91,10 @@ export function useBackendProjectPageApi() {
   ): Promise<AccessProjectDocumentResponse> {
     const params = Dto.accessProjectDocumentRequest.parse(request);
     const url = "/api/v1/project/document/access";
-    const encodedUcan = await buildEncodedUcan(url, { method: "POST" });
-    const response = await api.post(url, params, {
-      headers: buildAuthorizationHeader(encodedUcan),
+    const response = await postWithOptionalAuth({
+      url,
+      params,
+      authenticated: params.audience === "owner",
     });
     return Dto.accessProjectDocumentResponse.parse(response.data);
   }

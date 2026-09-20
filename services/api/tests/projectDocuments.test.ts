@@ -13,8 +13,6 @@ import {
     vi,
 } from "vitest";
 import {
-    conversationTable,
-    opinionTable,
     organizationMembershipAllProjectCapabilityTable,
     organizationMembershipTable,
     organizationTable,
@@ -24,7 +22,6 @@ import {
     projectOrganizationOwnershipTable,
     projectTable,
     userTable,
-    voteTable,
 } from "../src/shared-backend/schema.js";
 import {
     accessProjectDocument,
@@ -191,33 +188,6 @@ describe("project document version authorization", () => {
                     byteSize: 200,
                 });
         }
-        const conversation = firstRow(
-            await db
-                .insert(conversationTable)
-                .values({
-                    projectId,
-                    slugId: "convo001",
-                    polisConfigId: 1,
-                    currentContentId: 1,
-                })
-                .returning(),
-        );
-        const opinion = firstRow(
-            await db
-                .insert(opinionTable)
-                .values({
-                    conversationId: conversation.id,
-                    slugId: "opinion1",
-                    authorId: OWNER,
-                    currentContentId: 1,
-                })
-                .returning(),
-        );
-        await db.insert(voteTable).values({
-            opinionId: opinion.id,
-            authorId: PARTICIPANT,
-            currentContentId: 1,
-        });
     });
 
     function request({
@@ -272,7 +242,7 @@ describe("project document version authorization", () => {
         });
     });
 
-    it("returns both versions for an owner and retains participant-only documents", async () => {
+    it("returns both versions for a facilitator and retains participant-only documents", async () => {
         const documents = await fetchProjectPageDocuments({
             db,
             projectId,
@@ -296,11 +266,16 @@ describe("project document version authorization", () => {
     it("keeps old HTML static and enables scripts only for newly normalized uploads", async () => {
         const legacy = await accessProjectDocument({
             db,
-            userId: OWNER,
             request: request({ audience: "owner" }),
+            authorization: { type: "facilitator", userId: OWNER },
         });
         expect(legacy.htmlScriptsEnabled).toBe(false);
         expect(legacy.downloadFileName).toBe("report-internal-restricted.html");
+        expect(signUrl).toHaveBeenLastCalledWith(
+            expect.objectContaining({
+                responseCacheControl: "private, no-store",
+            }),
+        );
         const uploaded = await uploadProjectDocument({
             db,
             createdByUserId: OWNER,
@@ -326,13 +301,16 @@ describe("project document version authorization", () => {
         });
         const fresh = await accessProjectDocument({
             db,
-            userId: OWNER,
             request: request({
                 audience: "participant",
                 documentId: uploaded.document.documentId,
             }),
+            authorization: { type: "public" },
         });
         expect(fresh.htmlScriptsEnabled).toBe(true);
+        expect(signUrl).toHaveBeenLastCalledWith(
+            expect.objectContaining({ responseCacheControl: undefined }),
+        );
         await expect(
             db.update(projectDocumentFileTable).set({
                 htmlScriptsEnabled: true,
@@ -364,7 +342,7 @@ describe("project document version authorization", () => {
         "participant",
         "owner",
     ] satisfies AccessProjectDocumentRequest["audience"][])(
-        "lets owners explicitly view and download the %s version",
+        "lets facilitators explicitly view and download the %s version",
         async (audience) => {
             for (const mode of [
                 "inline",
@@ -372,8 +350,11 @@ describe("project document version authorization", () => {
             ] satisfies AccessProjectDocumentRequest["mode"][]) {
                 const response = await accessProjectDocument({
                     db,
-                    userId: OWNER,
                     request: request({ audience, mode }),
+                    authorization:
+                        audience === "owner"
+                            ? { type: "facilitator", userId: OWNER }
+                            : { type: "public" },
                 });
                 expect(response.audience).toBe(audience);
                 expect(response.url).toBe(
@@ -383,13 +364,13 @@ describe("project document version authorization", () => {
         },
     );
 
-    it("lets a voter access the participant version but rejects owner-version requests", async () => {
+    it("makes the participant version public but protects the facilitator version", async () => {
         expect(
             (
                 await accessProjectDocument({
                     db,
-                    userId: PARTICIPANT,
                     request: request({ audience: "participant" }),
+                    authorization: { type: "public" },
                 })
             ).audience,
         ).toBe("participant");
@@ -397,74 +378,211 @@ describe("project document version authorization", () => {
         await expect(
             accessProjectDocument({
                 db,
-                userId: PARTICIPANT,
                 request: request({ audience: "owner" }),
+                authorization: { type: "public" },
+            }),
+        ).rejects.toMatchObject({ statusCode: 403 });
+        expect(signUrl).not.toHaveBeenCalled();
+        await expect(
+            accessProjectDocument({
+                db,
+                request: request({ audience: "owner" }),
+                authorization: {
+                    type: "facilitator",
+                    userId: PARTICIPANT,
+                },
             }),
         ).rejects.toMatchObject({ statusCode: 403 });
         expect(signUrl).not.toHaveBeenCalled();
     });
 
-    it("rejects a nonparticipant and prevents cross-project document access", async () => {
+    it("does not require participation", async () => {
         await expect(
             accessProjectDocument({
                 db,
-                userId: STRANGER,
                 request: request({ audience: "participant" }),
+                authorization: { type: "public" },
             }),
-        ).rejects.toMatchObject({ statusCode: 403 });
+        ).resolves.toMatchObject({ audience: "participant" });
+    });
+
+    it.each([
+        ["participant", { type: "public" }],
+        ["owner", { type: "facilitator", userId: OWNER }],
+    ] satisfies [
+        AccessProjectDocumentRequest["audience"],
+        Parameters<typeof accessProjectDocument>[0]["authorization"],
+    ][])(
+        "prevents cross-project %s document access",
+        async (audience, authorization) => {
+            await db.insert(projectTable).values({
+                slug: "another-project",
+                title: "Another project",
+                directoryVisibility: "listed",
+                currentContentId: 2,
+            });
+            await expect(
+                accessProjectDocument({
+                    db,
+                    request: {
+                        ...request({ audience }),
+                        projectSlug: "another-project",
+                    },
+                    authorization,
+                }),
+            ).rejects.toMatchObject({ statusCode: 404 });
+            expect(signUrl).not.toHaveBeenCalled();
+        },
+    );
+
+    it.each([
+        {
+            state: "an unpublished document",
+            hide: async () =>
+                await db
+                    .update(projectDocumentTable)
+                    .set({ publishedAt: null })
+                    .where(eq(projectDocumentTable.publicId, DOCUMENT)),
+        },
+        {
+            state: "a deleted document",
+            hide: async () =>
+                await db
+                    .update(projectDocumentTable)
+                    .set({ deletedAt: new Date() })
+                    .where(eq(projectDocumentTable.publicId, DOCUMENT)),
+        },
+        {
+            state: "an unlisted project",
+            hide: async () =>
+                await db
+                    .update(projectTable)
+                    .set({ directoryVisibility: "unlisted" })
+                    .where(eq(projectTable.id, projectId)),
+        },
+        {
+            state: "an unpublished project",
+            hide: async () =>
+                await db
+                    .update(projectTable)
+                    .set({ currentContentId: null })
+                    .where(eq(projectTable.id, projectId)),
+        },
+        {
+            state: "a deleted project",
+            hide: async () =>
+                await db
+                    .update(projectTable)
+                    .set({ deletedAt: new Date() })
+                    .where(eq(projectTable.id, projectId)),
+        },
+        {
+            state: "a pending participant file",
+            hide: async () =>
+                await db
+                    .update(projectDocumentFileTable)
+                    .set({ status: "pending" })
+                    .where(
+                        and(
+                            eq(
+                                projectDocumentFileTable.audience,
+                                "participant",
+                            ),
+                            eq(
+                                projectDocumentFileTable.objectKey,
+                                `${DOCUMENT}/participant`,
+                            ),
+                        ),
+                    ),
+        },
+        {
+            state: "a deleted participant file",
+            hide: async () =>
+                await db
+                    .update(projectDocumentFileTable)
+                    .set({ deletedAt: new Date() })
+                    .where(
+                        and(
+                            eq(
+                                projectDocumentFileTable.audience,
+                                "participant",
+                            ),
+                            eq(
+                                projectDocumentFileTable.objectKey,
+                                `${DOCUMENT}/participant`,
+                            ),
+                        ),
+                    ),
+        },
+    ])("does not publicly sign $state", async ({ hide }) => {
+        await hide();
         await expect(
             accessProjectDocument({
                 db,
-                userId: OWNER,
-                request: {
-                    ...request({ audience: "owner" }),
-                    projectSlug: "another-project",
-                },
+                request: request({ audience: "participant" }),
+                authorization: { type: "public" },
             }),
         ).rejects.toMatchObject({ statusCode: 404 });
         expect(signUrl).not.toHaveBeenCalled();
     });
 
-    it("never substitutes a participant file when the requested owner version is missing", async () => {
+    it("never substitutes a participant file when the requested facilitator version is missing", async () => {
         await expect(
             accessProjectDocument({
                 db,
-                userId: OWNER,
                 request: request({
                     audience: "owner",
                     documentId: PARTICIPANT_ONLY_DOCUMENT,
                 }),
+                authorization: { type: "facilitator", userId: OWNER },
             }),
         ).rejects.toMatchObject({ statusCode: 404 });
         expect(signUrl).not.toHaveBeenCalled();
     });
 
-    it("omits deleted owner versions and denies their access", async () => {
-        await db
-            .update(projectDocumentFileTable)
-            .set({ deletedAt: new Date() })
-            .where(eq(projectDocumentFileTable.audience, "owner"));
-        const documents = await fetchProjectPageDocuments({
-            db,
-            projectId,
-            displayLanguageCode: "en",
-            requesterUserId: OWNER,
-        });
-        expect(
-            documents.every(
-                (document) => document.versions.owner === undefined,
-            ),
-        ).toBe(true);
-        await expect(
-            accessProjectDocument({
+    it.each([
+        {
+            state: "pending",
+            hide: async () =>
+                await db
+                    .update(projectDocumentFileTable)
+                    .set({ status: "pending" })
+                    .where(eq(projectDocumentFileTable.audience, "owner")),
+        },
+        {
+            state: "deleted",
+            hide: async () =>
+                await db
+                    .update(projectDocumentFileTable)
+                    .set({ deletedAt: new Date() })
+                    .where(eq(projectDocumentFileTable.audience, "owner")),
+        },
+    ])(
+        "omits $state facilitator versions and denies their access",
+        async ({ hide }) => {
+            await hide();
+            const documents = await fetchProjectPageDocuments({
                 db,
-                userId: OWNER,
-                request: request({ audience: "owner" }),
-            }),
-        ).rejects.toMatchObject({ statusCode: 404 });
-    });
+                projectId,
+                displayLanguageCode: "en",
+                requesterUserId: OWNER,
+            });
+            expect(
+                documents.every(
+                    (document) => document.versions.owner === undefined,
+                ),
+            ).toBe(true);
+            await expect(
+                accessProjectDocument({
+                    db,
+                    request: request({ audience: "owner" }),
+                    authorization: { type: "facilitator", userId: OWNER },
+                }),
+            ).rejects.toMatchObject({ statusCode: 404 });
+        },
+    );
 
-    it("rechecks ownership before signing after a capability is revoked", async () => {
+    it("rechecks facilitator access before signing after a capability is revoked", async () => {
         await db
             .update(organizationMembershipAllProjectCapabilityTable)
             .set({ deletedAt: new Date(), revokedByUserId: OWNER })
@@ -479,8 +597,8 @@ describe("project document version authorization", () => {
         await expect(
             accessProjectDocument({
                 db,
-                userId: OWNER,
                 request: request({ audience: "owner" }),
+                authorization: { type: "facilitator", userId: OWNER },
             }),
         ).rejects.toMatchObject({ statusCode: 403 });
         expect(signUrl).not.toHaveBeenCalled();
