@@ -111,6 +111,7 @@
             "
           />
           <q-input
+            class="document-manager__translation-filename"
             :model-value="localization.downloadFileName"
             outlined
             :disable="isUploading"
@@ -121,6 +122,7 @@
             "
           />
           <q-btn
+            class="document-manager__translation-remove"
             flat
             color="negative"
             no-caps
@@ -674,11 +676,22 @@ async function removePendingDocument(): Promise<void> {
 
 .document-manager__translation-row {
   display: grid;
-  grid-template-columns:
-    minmax(9rem, 0.5fr) minmax(11rem, 1fr) minmax(11rem, 1fr)
-    auto;
+  grid-template-columns: minmax(9rem, 0.65fr) minmax(0, 1fr) auto;
   gap: 0.75rem;
   align-items: center;
+}
+
+.document-manager__translation-row > * {
+  min-width: 0;
+}
+
+.document-manager__translation-filename {
+  grid-column: 1 / 3;
+}
+
+.document-manager__translation-remove {
+  grid-column: 3;
+  grid-row: 1 / 3;
 }
 
 .document-manager__hint,
@@ -751,6 +764,16 @@ async function removePendingDocument(): Promise<void> {
 @media (max-width: 700px) {
   .document-manager__translation-row {
     grid-template-columns: 1fr;
+  }
+
+  .document-manager__translation-filename,
+  .document-manager__translation-remove {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .document-manager__translation-remove {
+    justify-self: start;
   }
 
   .document-manager__file-grid {
