@@ -22,7 +22,18 @@
 | [`x-analyzer`](./services/x-analyzer)         | [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](./services/x-analyzer/COPYING)    | [![documentation](https://img.shields.io/badge/readme-blue)](./services/x-analyzer)     | 🐦 X/Twitter reply and quote tweet analyzer        |
 | [`load-testing`](./services/load-testing)     | [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](./services/load-testing/COPYING) | [![documentation](https://img.shields.io/badge/readme-blue)](./services/load-testing) | k6 load-testing suite |
 
-The [`app`](./services/app) frontend remains MPL-2.0 because it is intended as the basis of a cross-platform app, including Apple App Store distribution; its README records the licensing rationale and sources.
+## Licensing rationale
+
+We default to the strongest practical copyleft: **AGPL-3.0**, including its requirement to offer corresponding source to users interacting with modified versions over a network. This keeps improvements to the platform available to the community even when the software is operated as a hosted service.
+
+We use **MPL-2.0** where file-level copyleft better fits distribution or reuse needs:
+
+- **Frontends and code shared with them:** Apple's App Store distribution terms have historically conflicted with GPL-family restrictions on additional terms. MPL preserves copyleft for covered source files while allowing compatible executable distribution. The [`agora`](./services/agora) frontend is the basis of the cross-platform app, including planned Apple App Store distribution; its [README](./services/agora/README.md#license) records the rationale and sources. The SvelteKit [`app`](./services/app) service is the landing page; the planned full frontend migration to Svelte was not completed. Frontend-shared code such as [`shared`](./services/shared) and [`shared-app-api`](./services/shared-app-api) also uses MPL-2.0 so it can be included in these frontends.
+- **Standalone reusable libraries:** We use MPL-2.0 to allow adoption by projects with different licenses while requiring distributed changes to covered files to remain open. These standalone libraries are maintained in separate repositories; sharing backend code within this monorepo does not itself justify an exception to AGPL-3.0.
+
+The service licenses listed above and their respective `COPYING` files record the current licenses; this rationale does not relicense existing code.
+
+## Attribution and trademarks
 
 Attribution information for Agora Citizen Network is contained in the [AUTHORS](AUTHORS) file.
 
