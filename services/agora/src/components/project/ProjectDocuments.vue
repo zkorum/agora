@@ -185,6 +185,7 @@ const {
 } = useProjectDocuments({
   projectSlug: () => props.projectSlug,
   documents: () => props.documents,
+  languageCode: () => props.languageCode,
   accessDocument: (request) => props.accessDocument(request),
   onAccessError: ({ error, retry }) => {
     const accessDenied =
