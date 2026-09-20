@@ -84,11 +84,10 @@ api.interceptors.request.use(
       config.headers["Accept-Language"] = displayLanguage;
     }
 
-    // Ensure POST requests always have Content-Type set.
-    // The generated API client omits Content-Type for bodyless POST endpoints,
-    // which causes Fastify v5 to return 415 Unsupported Media Type.
-    if (config.method === "post" && !config.headers["Content-Type"]) {
-      config.headers["Content-Type"] = "application/json";
+    // Bodyless generated POST requests need a supported Fastify content type.
+    // Requests with bodies must let Axios infer their type and multipart boundary.
+    if (config.method === "post" && config.data === undefined) {
+      config.headers.setContentType("application/json", false);
     }
 
     return config;
