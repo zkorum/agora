@@ -206,8 +206,6 @@ onBeforeUnmount(() => {
   background-color: white;
   border-radius: 25px 25px 0 0;
   width: min(30rem, 100%);
-  max-height: 62vh;
-  max-height: 62dvh;
   overflow: hidden;
   transition: transform 160ms ease-out;
   will-change: transform;
@@ -215,6 +213,15 @@ onBeforeUnmount(() => {
   @media (min-width: $breakpoint-sm-min) {
     gap: 1rem;
     padding: 2rem;
+  }
+}
+
+// Outrank Quasar's iOS/Android dialog height rules so only the body scrolls.
+.q-dialog__inner.q-dialog__inner--minimized > .dialogContainer {
+  max-height: 62vh;
+  max-height: 62dvh;
+
+  @media (min-width: $breakpoint-sm-min) {
     max-height: 85dvh;
   }
 }
