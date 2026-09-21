@@ -1,9 +1,10 @@
 FROM python:3.13-slim AS build
 
 WORKDIR /app
+# Builds have no TTY; noninteractive debconf avoids prompts and frontend fallback warnings.
 RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends git && \
+    DEBIAN_FRONTEND=noninteractive apt-get upgrade -y && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends git && \
     rm -rf /var/lib/apt/lists/*
 COPY --from=ghcr.io/astral-sh/uv:0.11.6 /uv /usr/local/bin/uv
 COPY pyproject.toml uv.lock ./
@@ -14,9 +15,10 @@ RUN uv sync --frozen --no-dev --no-editable
 
 FROM python:3.13-slim
 
+# Builds have no TTY; noninteractive debconf avoids prompts and frontend fallback warnings.
 RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends tini && \
+    DEBIAN_FRONTEND=noninteractive apt-get upgrade -y && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tini && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

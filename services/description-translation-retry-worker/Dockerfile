@@ -2,9 +2,10 @@
 FROM python:3.13-slim-bookworm AS builder
 WORKDIR /build
 
+# Builds have no TTY; noninteractive debconf avoids prompts and frontend fallback warnings.
 RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends git build-essential python3-dev && \
+    DEBIAN_FRONTEND=noninteractive apt-get upgrade -y && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends git build-essential python3-dev && \
     rm -rf /var/lib/apt/lists/*
 
 RUN python -m venv /opt/venv
@@ -20,9 +21,10 @@ RUN pip install --no-cache-dir --no-deps services/description-translation-retry-
 # ---- Production ----
 FROM python:3.13-slim-bookworm
 
+# Builds have no TTY; noninteractive debconf avoids prompts and frontend fallback warnings.
 RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends tini libgomp1 && \
+    DEBIAN_FRONTEND=noninteractive apt-get upgrade -y && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tini libgomp1 && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

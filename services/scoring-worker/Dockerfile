@@ -4,9 +4,10 @@ WORKDIR /app
 
 ARG PIP_INSTALL_TARGET=.
 
+# Builds have no TTY; noninteractive debconf avoids prompts and frontend fallback warnings.
 RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends git build-essential python3-dev && \
+    DEBIAN_FRONTEND=noninteractive apt-get upgrade -y && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends git build-essential python3-dev && \
     rm -rf /var/lib/apt/lists/*
 
 RUN python -m venv /opt/venv
@@ -20,9 +21,10 @@ RUN pip install --no-cache-dir "$PIP_INSTALL_TARGET"
 # ---- Production ----
 FROM python:3.13-slim-bookworm
 
+# Builds have no TTY; noninteractive debconf avoids prompts and frontend fallback warnings.
 RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends tini && \
+    DEBIAN_FRONTEND=noninteractive apt-get upgrade -y && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tini && \
     rm -rf /var/lib/apt/lists/*
 
 RUN python -m pip install --no-cache-dir --upgrade "pip>=26.1.1" "setuptools>=78.1.1" "wheel>=0.46.2"
