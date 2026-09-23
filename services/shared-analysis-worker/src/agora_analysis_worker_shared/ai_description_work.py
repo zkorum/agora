@@ -14,13 +14,13 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session, aliased
 
-from agora_analysis_worker_shared.bedrock_label_summary import (
-    LabelSummary,
-    ParsedLabelSummaryOutput,
-)
 from agora_analysis_worker_shared.db import (
     CheckpointActivationContext,
     materialize_checkpoint_reasons_for_activated_view_snapshots,
+)
+from agora_analysis_worker_shared.description_generation import (
+    MissingDescription,
+    description_failure_message,
 )
 from agora_analysis_worker_shared.description_input import (
     ConversationDescriptionInput,
@@ -28,6 +28,10 @@ from agora_analysis_worker_shared.description_input import (
     DescriptionOutputError,
     GroupDescriptionInput,
     RepresentativeOpinionText,
+)
+from agora_analysis_worker_shared.description_language import (
+    CANONICAL_DESCRIPTION_LOCALE,
+    EnglishDescription,
 )
 from agora_analysis_worker_shared.description_translation import (
     DescriptionForTranslation,
@@ -66,7 +70,6 @@ from agora_analysis_worker_shared.generated_models import (
 from agora_analysis_worker_shared.generated_shared_types import (
     SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES,
 )
-from agora_analysis_worker_shared.provider_errors import is_provider_timeout_error
 
 log = logging.getLogger(__name__)
 POSTGRES_INSERT_BIND_PARAM_LIMIT = 60_000
@@ -74,7 +77,7 @@ DESCRIPTION_TRANSLATION_WORK_BATCH_SIZE = 4
 FIRST_PASS_MAX_EXISTING_ATTEMPT_COUNT = 1
 AI_DESCRIPTION_RETRYABLE_ERROR_CODE = "ai_description_retryable"
 AI_DESCRIPTION_NON_RETRYABLE_ERROR_CODE = "ai_description_non_retryable"
-AI_DESCRIPTION_SOURCE_LOCALE = "en"
+AI_DESCRIPTION_SOURCE_LOCALE = CANONICAL_DESCRIPTION_LOCALE
 SUPPORTED_EAGER_AI_DESCRIPTION_TARGET_LANGUAGE_CODES = set(
     SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES
 ) - {AI_DESCRIPTION_SOURCE_LOCALE}
@@ -101,12 +104,13 @@ if TYPE_CHECKING:
     from sqlalchemy.orm.attributes import InstrumentedAttribute
     from sqlalchemy.sql.elements import ColumnElement, UnaryExpression
 
+    from agora_analysis_worker_shared.description_generation import (
+        DescriptionFailure,
+        DescriptionGenerator,
+        DescriptionOutcome,
+    )
     from agora_analysis_worker_shared.description_translation import DescriptionTranslation
 
-    DescriptionGenerator = Callable[
-        [ConversationDescriptionInput],
-        ParsedLabelSummaryOutput,
-    ]
     DescriptionTranslator = Callable[
         [list[DescriptionForTranslation], list[str]],
         list[DescriptionTranslation],
@@ -209,7 +213,7 @@ class DescriptionTranslationBatchProcessResult:
 class LineageDescriptionBatchProcessResult:
     schedules: list[AiDescriptionWorkResult]
     generated_lineage_ids: list[int]
-    missing_lineage_ids: list[int] = field(default_factory=list)
+    failures: dict[int, DescriptionFailure] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -1527,36 +1531,68 @@ def queue_ai_description_content_updated_events(
         return
 
     with Session(engine) as session:
-        view_snapshot_locales: dict[int, set[str]] = {}
-        view_snapshot_candidate_ids: dict[int, set[int]] = {}
-        for conversation_id, lineage_ids in lineage_ids_by_conversation_id.items():
-            _add_lineage_description_content_update_view_snapshot_locales(
-                session,
-                conversation_ids=[conversation_id],
-                lineage_ids=sorted(set(lineage_ids)),
-                view_snapshot_locales=view_snapshot_locales,
-                view_snapshot_candidate_ids=view_snapshot_candidate_ids,
-            )
-        for (
-            conversation_id,
-            locale,
-        ), description_ids in translation_description_ids_by_conversation_locale.items():
-            _add_translation_content_update_view_snapshot_locales(
-                session,
-                conversation_ids=[conversation_id],
-                description_ids=sorted(set(description_ids)),
-                locale=locale,
-                view_snapshot_locales=view_snapshot_locales,
-                view_snapshot_candidate_ids=view_snapshot_candidate_ids,
-            )
-
-        _queue_conversation_analysis_updated_events_for_view_snapshots(
+        _queue_description_content_updates(
             session,
-            conversation_view_snapshot_ids=sorted(view_snapshot_locales),
-            locales_by_view_snapshot_id=view_snapshot_locales,
-            candidate_ids_by_view_snapshot_id=view_snapshot_candidate_ids,
+            lineage_ids_by_conversation_id=lineage_ids_by_conversation_id,
+            translation_description_ids_by_conversation_locale=(
+                translation_description_ids_by_conversation_locale
+            ),
         )
         session.commit()
+
+
+def _queue_description_content_updates(
+    session: Session,
+    *,
+    lineage_ids_by_conversation_id: Mapping[int, Sequence[int]],
+    translation_description_ids_by_conversation_locale: Mapping[tuple[int, str], Sequence[int]],
+) -> None:
+    view_snapshot_locales: dict[int, set[str]] = {}
+    view_snapshot_candidate_ids: dict[int, set[int]] = {}
+    for conversation_id, lineage_ids in lineage_ids_by_conversation_id.items():
+        _add_lineage_description_content_update_view_snapshot_locales(
+            session,
+            conversation_ids=[conversation_id],
+            lineage_ids=sorted(set(lineage_ids)),
+            view_snapshot_locales=view_snapshot_locales,
+            view_snapshot_candidate_ids=view_snapshot_candidate_ids,
+        )
+    for context, description_ids in translation_description_ids_by_conversation_locale.items():
+        conversation_id, locale = context
+        _add_translation_content_update_view_snapshot_locales(
+            session,
+            conversation_ids=[conversation_id],
+            description_ids=sorted(set(description_ids)),
+            locale=locale,
+            view_snapshot_locales=view_snapshot_locales,
+            view_snapshot_candidate_ids=view_snapshot_candidate_ids,
+        )
+    _queue_conversation_analysis_updated_events_for_view_snapshots(
+        session,
+        conversation_view_snapshot_ids=sorted(view_snapshot_locales),
+        locales_by_view_snapshot_id=view_snapshot_locales,
+        candidate_ids_by_view_snapshot_id=view_snapshot_candidate_ids,
+    )
+
+
+def schedule_repaired_description_updates(
+    session: Session,
+    *,
+    lineage_ids_by_conversation_id: Mapping[int, Sequence[int]],
+) -> None:
+    """Keep translation demand and the outbox event in the replacement transaction."""
+    conversation_ids = sorted(lineage_ids_by_conversation_id)
+    _materialize_eager_translation_work(
+        session, conversation_ids=conversation_ids, require_activated_view_snapshot=True
+    )
+    _materialize_translation_work_for_candidate_locale_requests(
+        session, conversation_ids=conversation_ids, require_activated_view_snapshot=True
+    )
+    _queue_description_content_updates(
+        session,
+        lineage_ids_by_conversation_id=lineage_ids_by_conversation_id,
+        translation_description_ids_by_conversation_locale={},
+    )
 
 
 def _fetch_required_lineage_description_rows_for_candidate(
@@ -3352,11 +3388,15 @@ def process_ai_description_locale_work_item(
                 session.commit()
                 return schedule
             if generated_descriptions is not None and lineage_request is not None:
+                description = generated_descriptions.groups.get(
+                    lineage_request.group_key, MissingDescription()
+                )
+                if not isinstance(description, EnglishDescription):
+                    raise DescriptionOutputError(description_failure_message(description))
                 _persist_generated_base_description_for_lineage_work(
                     session,
                     claim=claim,
-                    request=lineage_request,
-                    generated=generated_descriptions,
+                    description=description,
                 )
             _mark_lineage_description_work_complete(session, claim=claim)
             _materialize_eager_translation_work(
@@ -3544,7 +3584,7 @@ def _process_lineage_description_work_items_batch(
         session.commit()
 
     provider_started_at = time.perf_counter()
-    generated_by_claim_id: dict[int, ParsedLabelSummaryOutput] = {}
+    outcomes_by_claim_id: dict[int, DescriptionOutcome] = {}
     claims_by_candidate_id: dict[int, list[ClaimedLineageDescriptionWorkItem]] = {}
     for claim in processable_claims:
         if claim.id in request_by_claim_id:
@@ -3559,21 +3599,18 @@ def _process_lineage_description_work_items_batch(
             groups=[request.conversation.groups[0] for request in requests],
             analysis_snapshot_id=first_request.conversation.analysis_snapshot_id,
         )
-        generated = generate_label_summaries_with_partial_retry(
-            generate_descriptions=generate_descriptions,
-            conversation=conversation,
-            attempts=2,
-        )
+        generated = generate_descriptions(conversation)
         for claim, request in zip(candidate_claims, requests, strict=True):
-            if request.group_key in generated.clusters:
-                generated_by_claim_id[claim.id] = generated
+            outcomes_by_claim_id[claim.id] = generated.groups.get(
+                request.group_key, MissingDescription()
+            )
     provider_ms = (time.perf_counter() - provider_started_at) * 1000
 
-    missing_lineage_ids = sorted(
-        claim.lineage_id
-        for claim in processable_claims
-        if claim.id in request_by_claim_id and claim.id not in generated_by_claim_id
-    )
+    failures: dict[int, DescriptionFailure] = {}
+    for claim in processable_claims:
+        outcome = outcomes_by_claim_id.get(claim.id, MissingDescription())
+        if claim.id in request_by_claim_id and not isinstance(outcome, EnglishDescription):
+            failures[claim.lineage_id] = outcome
     with Session(engine) as session:
         completed_claims: list[ClaimedLineageDescriptionWorkItem] = []
         generated_lineage_ids: set[int] = set()
@@ -3604,16 +3641,15 @@ def _process_lineage_description_work_items_batch(
                 )
                 continue
             request = request_by_claim_id.get(claim.id)
-            generated = generated_by_claim_id.get(claim.id)
-            if request is not None and generated is not None:
+            outcome = outcomes_by_claim_id.get(claim.id)
+            if request is not None and isinstance(outcome, EnglishDescription):
                 _persist_generated_base_description_for_lineage_work(
                     session,
                     claim=claim,
-                    request=request,
-                    generated=generated,
+                    description=outcome,
                 )
                 generated_lineage_ids.add(claim.lineage_id)
-            if request is None or generated is not None:
+            if request is None or isinstance(outcome, EnglishDescription):
                 _mark_lineage_description_work_complete(session, claim=claim)
                 completed_claims.append(claim)
 
@@ -3655,7 +3691,7 @@ def _process_lineage_description_work_items_batch(
     return LineageDescriptionBatchProcessResult(
         schedules=schedules,
         generated_lineage_ids=sorted(generated_lineage_ids),
-        missing_lineage_ids=missing_lineage_ids,
+        failures=failures,
     )
 
 
@@ -3687,59 +3723,6 @@ def process_first_pass_lineage_description_work_items_batch(
         generate_descriptions=generate_descriptions,
         claim_scope=_AiDescriptionClaimScope.first_pass,
     )
-
-
-def generate_label_summaries_with_partial_retry(
-    *,
-    generate_descriptions: DescriptionGenerator,
-    conversation: ConversationDescriptionInput,
-    attempts: int,
-) -> ParsedLabelSummaryOutput:
-    generated_clusters: dict[str, LabelSummary] = {}
-    generated_mode = "strict"
-    group_by_key = {group.group_key: group for group in conversation.groups}
-    remaining_group_keys = set(group_by_key)
-    for attempt in range(1, attempts + 1):
-        if not remaining_group_keys:
-            break
-        attempt_conversation = ConversationDescriptionInput(
-            conversation_title=conversation.conversation_title,
-            conversation_body=conversation.conversation_body,
-            groups=[group_by_key[group_key] for group_key in sorted(remaining_group_keys)],
-            analysis_snapshot_id=conversation.analysis_snapshot_id,
-        )
-        try:
-            generated = generate_descriptions(attempt_conversation)
-        except Exception as error:
-            if is_provider_timeout_error(error):
-                log.warning(
-                    "[AiDescriptionWorkDB] AI label/summary partial retry attempt %d/%d timed out",
-                    attempt,
-                    attempts,
-                    exc_info=True,
-                )
-                if generated_clusters:
-                    break
-                raise
-            log.warning(
-                "[AiDescriptionWorkDB] AI label/summary partial retry attempt %d/%d failed",
-                attempt,
-                attempts,
-                exc_info=True,
-            )
-            if attempt == attempts:
-                if generated_clusters:
-                    break
-                raise
-            continue
-        generated_mode = "loose" if generated.mode == "loose" else generated_mode
-        for group_key in sorted(remaining_group_keys):
-            label_summary = generated.clusters.get(group_key)
-            if label_summary is None:
-                continue
-            generated_clusters[group_key] = label_summary
-        remaining_group_keys -= set(generated_clusters)
-    return ParsedLabelSummaryOutput(mode=generated_mode, clusters=generated_clusters)
 
 
 def process_description_translation_work_items_batch(
@@ -4446,8 +4429,7 @@ def _persist_generated_base_description_for_lineage_work(
     session: Session,
     *,
     claim: ClaimedLineageDescriptionWorkItem,
-    request: _LineageDescriptionRequest,
-    generated: ParsedLabelSummaryOutput,
+    description: EnglishDescription,
 ) -> None:
     lineage = session.execute(
         select(OpinionGroupLineage.system_description_id)
@@ -4460,18 +4442,13 @@ def _persist_generated_base_description_for_lineage_work(
     if lineage.system_description_id is not None:
         return
 
-    label_summary = generated.clusters.get(request.group_key)
-    if label_summary is None:
-        msg = f"missing generated description for group {request.group_key}"
-        raise DescriptionOutputError(msg)
-
     description_id = session.execute(
         sqlalchemy_insert(OpinionGroupDescription)
         .values(
             {
-                "locale": "en",
-                "label": label_summary.label,
-                "summary": label_summary.summary,
+                "locale": AI_DESCRIPTION_SOURCE_LOCALE,
+                "label": description.label,
+                "summary": description.summary,
             }
         )
         .returning(OpinionGroupDescription.id)

@@ -19,9 +19,13 @@ from agora_analysis_worker_shared.config import (
     validate_ai_description_config,
 )
 from agora_analysis_worker_shared.description_retry_processor import (
+    GenerateDescriptions,
     process_ai_description_conversation_ids,
 )
-from agora_analysis_worker_shared.description_services import build_description_generator
+from agora_analysis_worker_shared.description_services import (
+    build_description_generator,
+    build_description_language_detector,
+)
 from agora_analysis_worker_shared.logging_utils import (
     LOG_FORMAT,
     configure_worker_logging,
@@ -39,7 +43,7 @@ from sqlalchemy.exc import SQLAlchemyError
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from agora_analysis_worker_shared.description_retry_processor import DescriptionGenerator
+    from agora_analysis_worker_shared.description_generation import DescriptionGenerator
     from agora_analysis_worker_shared.simulation_providers import SimulationRuntime
 
 log = logging.getLogger(__name__)
@@ -187,10 +191,7 @@ def run_worker(
                         max_workers=settings.max_ai_description_concurrency,
                         ai_description_epoch=settings.ai_description_epoch,
                         retry_cooldown_seconds=settings.retry_cooldown_seconds,
-                        description_generator=description_generator,
-                        description_translator=None,
-                        claim_lineage_descriptions=True,
-                        claim_translations=False,
+                        work=GenerateDescriptions(generate=description_generator),
                         simulation_runtime=simulation_runtime,
                         log_prefix=LOG_PREFIX,
                     )
@@ -289,7 +290,9 @@ def main() -> None:
         raise SystemExit(1) from None
     log_simulation_startup(settings)
     simulation_runtime = build_simulation_runtime(settings)
-    description_generator = build_description_generator(settings)
+    description_generator = build_description_generator(
+        settings, secondary_detector=build_description_language_detector(settings)
+    )
     if description_generator is None:
         log.info("%s AI description generation disabled", LOG_PREFIX)
         return

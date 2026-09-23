@@ -2657,7 +2657,12 @@ async function fetchEnglishGroupLabels({
             summary: opinionGroupDescriptionTable.summary,
         })
         .from(opinionGroupDescriptionTable)
-        .where(inArray(opinionGroupDescriptionTable.id, descriptionIds));
+        .where(
+            and(
+                inArray(opinionGroupDescriptionTable.id, descriptionIds),
+                eq(opinionGroupDescriptionTable.locale, "en"),
+            ),
+        );
     return buildCompleteGroupLabels({
         groups,
         descriptionById: new Map(

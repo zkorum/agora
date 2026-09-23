@@ -258,11 +258,7 @@ function isGroupLabelDisplayFresh({
   groupLabels: AnalysisFrameGroupLabels;
   displayLanguage: SupportedDisplayLanguageCodes;
 }): boolean {
-  const displayedLocale = groupLabels.groupDescriptionDisplay.displayedLocale;
-  if (displayedLocale === null) {
-    return false;
-  }
-  return displayLanguage === "en" || displayedLocale === displayLanguage;
+  return groupLabels.groupDescriptionDisplay.displayedLocale === displayLanguage;
 }
 
 function expectedLabelLocales(

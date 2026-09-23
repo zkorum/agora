@@ -21,6 +21,7 @@ from agora_analysis_worker_shared.bedrock_label_summary import (
     extract_text_content_from_response,
     iter_llm_output_json_candidates,
 )
+from agora_analysis_worker_shared.description_language import CANONICAL_DESCRIPTION_LOCALE
 from agora_analysis_worker_shared.generated_shared_types import (
     SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES,
 )
@@ -29,7 +30,7 @@ if TYPE_CHECKING:
     from google.auth.credentials import Credentials
     from mypy_boto3_bedrock_runtime.type_defs import ConverseRequestTypeDef
 
-SOURCE_LANGUAGE = "en"
+SOURCE_LANGUAGE = CANONICAL_DESCRIPTION_LOCALE
 DISPLAY_LANGUAGE_TO_GOOGLE_CODE = {
     "ar": "ar",
     "en": "en",
@@ -287,26 +288,20 @@ def generate_description_translations_with_bedrock(
         description_ids = [description.description_id for description in descriptions]
         log.info(
             "[DescriptionTranslator] Bedrock translation request "
-            "model_id=%s target_locale=%s description_ids=%s system_prompt_json=%s "
-            "user_prompt=%s",
+            "model_id=%s target_locale=%s description_ids=%s",
             config.model_id,
             target_language_code,
             description_ids,
-            json.dumps(config.prompt, ensure_ascii=False),
-            _bedrock_translation_payload_json(
-                descriptions=descriptions,
-                target_language_code=target_language_code,
-            ),
         )
         response = bedrock_client.converse(**command_payload)
         model_response_text = extract_text_content_from_response(response)
         log.info(
             "[DescriptionTranslator] Bedrock translation response "
-            "model_id=%s target_locale=%s description_ids=%s response_text_json=%s",
+            "model_id=%s target_locale=%s description_ids=%s response_characters=%d",
             config.model_id,
             target_language_code,
             description_ids,
-            json.dumps(model_response_text, ensure_ascii=False),
+            len(model_response_text) if model_response_text is not None else 0,
         )
         if model_response_text is None:
             msg = "unable to extract text content from Bedrock translation response"
@@ -318,12 +313,11 @@ def generate_description_translations_with_bedrock(
         )
         log.info(
             "[DescriptionTranslator] Bedrock translation parsed "
-            "model_id=%s target_locale=%s description_ids=%s output_count=%d translations=%s",
+            "model_id=%s target_locale=%s description_ids=%s output_count=%d",
             config.model_id,
             target_language_code,
             description_ids,
             len(parsed_translations),
-            _description_translations_json(parsed_translations),
         )
         translations.extend(parsed_translations)
     return add_chinese_script_sibling_translations(translations)
@@ -387,7 +381,7 @@ def build_bedrock_translation_converse_payload(
     )
     return {
         "modelId": config.model_id,
-        "system": [{"text": json.dumps(config.prompt, ensure_ascii=False)}],
+        "system": [{"text": config.prompt}],
         "messages": [
             {
                 "role": "user",
@@ -558,22 +552,6 @@ def _bedrock_translation_payload_json(
             descriptions=descriptions,
             target_language_code=target_language_code,
         ),
-        ensure_ascii=False,
-        separators=(",", ":"),
-    )
-
-
-def _description_translations_json(translations: list[DescriptionTranslation]) -> str:
-    return json.dumps(
-        [
-            {
-                "descriptionId": translation.description_id,
-                "locale": translation.locale,
-                "label": translation.label,
-                "summary": translation.summary,
-            }
-            for translation in translations
-        ],
         ensure_ascii=False,
         separators=(",", ":"),
     )

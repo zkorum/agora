@@ -4,7 +4,6 @@ import logging
 import signal
 import time
 import uuid
-from typing import TYPE_CHECKING
 
 from agora_analysis_worker_shared.ai_description_work import (
     fetch_claimable_ai_description_work_conversation_ids,
@@ -17,6 +16,7 @@ from agora_analysis_worker_shared.config import (
     validate_ai_description_config,
 )
 from agora_analysis_worker_shared.description_retry_processor import (
+    TranslateDescriptions,
     process_ai_description_conversation_ids,
 )
 from agora_analysis_worker_shared.description_services import build_description_translator
@@ -32,10 +32,6 @@ from agora_analysis_worker_shared.simulation_providers import (
 )
 from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
-
-if TYPE_CHECKING:
-    from agora_analysis_worker_shared.bedrock_label_summary import ParsedLabelSummaryOutput
-    from agora_analysis_worker_shared.description_input import ConversationDescriptionInput
 
 logging.basicConfig(
     level=logging.INFO,
@@ -61,13 +57,6 @@ def _handle_signal(signum: int, frame: object) -> None:
     global _running
     log.info("%s Received signal %d, shutting down", LOG_PREFIX, signum)
     _running = False
-
-
-def _unused_description_generator(
-    conversation: ConversationDescriptionInput,
-) -> ParsedLabelSummaryOutput:
-    msg = "description translation retry worker cannot generate English descriptions"
-    raise RuntimeError(msg)
 
 
 def main() -> None:
@@ -247,10 +236,7 @@ def main() -> None:
                 max_workers=settings.max_ai_description_concurrency,
                 ai_description_epoch=settings.ai_description_epoch,
                 retry_cooldown_seconds=settings.retry_cooldown_seconds,
-                description_generator=_unused_description_generator,
-                description_translator=translator_bundle.translate,
-                claim_lineage_descriptions=False,
-                claim_translations=True,
+                work=TranslateDescriptions(translate=translator_bundle.translate),
                 simulation_runtime=simulation_runtime,
                 log_prefix=LOG_PREFIX,
             )

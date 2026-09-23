@@ -4,13 +4,15 @@ from dataclasses import dataclass
 from importlib import import_module
 from typing import Literal, Protocol, TypeGuard
 
-from lingua import Language, LanguageDetectorBuilder
+from agora_language.detection import (
+    HIGH_GLOBAL_LANGUAGE_CONFIDENCE,
+    local_detector,
+)
+from lingua import Language
 
 from import_worker.generated_models import SpokenLanguageCode
 
-LINGUA_MINIMUM_RELATIVE_DISTANCE = 0.2
 LINGUA_MINIMUM_LANGUAGE_CONFIDENCE = 0.4
-HIGH_GLOBAL_LANGUAGE_CONFIDENCE = 0.55
 MINIMUM_HINT_LANGUAGE_CONFIDENCE = 0.5
 MINIMUM_HINT_WITHOUT_GLOBAL_LANGUAGE_CONFIDENCE = 0.55
 MINIMUM_HINT_CONFIDENCE_MARGIN = 0.15
@@ -50,11 +52,7 @@ class OpenCcConverter(Protocol):
     def convert(self, text: str) -> str: ...
 
 
-_detector = (
-    LanguageDetectorBuilder.from_all_spoken_languages()
-    .with_minimum_relative_distance(LINGUA_MINIMUM_RELATIVE_DISTANCE)
-    .build()
-)
+_detector = local_detector()
 
 _LANGUAGE_CODE_TO_LINGUA_LANGUAGE: dict[str, Language] = {
     "ar": Language.ARABIC,

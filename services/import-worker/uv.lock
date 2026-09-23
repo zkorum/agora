@@ -19,6 +19,7 @@ name = "agora-import-worker"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "agora-shared-language" },
     { name = "google-cloud-translate" },
     { name = "lingua-language-detector" },
     { name = "opencc" },
@@ -40,6 +41,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "agora-shared-language", editable = "../shared-language" },
     { name = "basedpyright", marker = "extra == 'dev'", specifier = ">=1.29" },
     { name = "datamodel-code-generator", marker = "extra == 'dev'", specifier = ">=0.57" },
     { name = "google-cloud-translate", specifier = ">=3.20" },
@@ -55,6 +57,17 @@ requires-dist = [
     { name = "valkey", specifier = ">=6.0" },
 ]
 provides-extras = ["dev"]
+
+[[package]]
+name = "agora-shared-language"
+version = "0.1.0"
+source = { editable = "../shared-language" }
+dependencies = [
+    { name = "lingua-language-detector" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "lingua-language-detector", specifier = ">=2.1" }]
 
 [[package]]
 name = "annotated-types"

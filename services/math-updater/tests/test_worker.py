@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from agora_analysis_worker_shared.bedrock_label_summary import ParsedLabelSummaryOutput
 from agora_analysis_worker_shared.db import ClaimedWorkItem, PersistComputedAnalysisResult
+from agora_analysis_worker_shared.description_generation import DescriptionGenerationResult
 from sqlalchemy import Engine, create_engine
 from valkey import Valkey
 
@@ -37,8 +37,8 @@ def _valkey_client() -> Valkey:
 
 def _description_generator(
     _conversation: ConversationDescriptionInput,
-) -> ParsedLabelSummaryOutput:
-    return ParsedLabelSummaryOutput(mode="strict", clusters={})
+) -> DescriptionGenerationResult:
+    return DescriptionGenerationResult(groups={})
 
 
 def test_post_persist_first_pass_runs_for_ai_gated_snapshot_without_new_work(

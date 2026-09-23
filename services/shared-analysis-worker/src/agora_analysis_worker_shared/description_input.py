@@ -7,6 +7,7 @@ from agora_analysis_worker_shared.generated_models import VoteEnumSimple
 
 if TYPE_CHECKING:
     from agora_analysis_worker_shared.analysis_compute import ComputedOpinionGroup
+    from agora_analysis_worker_shared.bedrock_label_summary import LabelSummary
 
 
 class DescriptionInputError(RuntimeError):
@@ -47,10 +48,19 @@ class GroupDescriptionInput:
 
 
 @dataclass(frozen=True)
+class GroupDescriptionCorrection:
+    group_key: str
+    draft: LabelSummary
+
+
+type DescriptionGroupRequest = GroupDescriptionInput | GroupDescriptionCorrection
+
+
+@dataclass(frozen=True)
 class ConversationDescriptionInput:
     conversation_title: str
     conversation_body: str | None
-    groups: list[GroupDescriptionInput]
+    groups: list[DescriptionGroupRequest]
     analysis_snapshot_id: int | None = None
 
 

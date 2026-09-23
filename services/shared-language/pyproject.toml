@@ -1,0 +1,24 @@
+[project]
+name = "agora-shared-language"
+version = "0.1.0"
+description = "Language detection primitives shared by Agora Python workers"
+requires-python = ">=3.13"
+dependencies = ["lingua-language-detector>=2.1"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agora_language"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["F", "E", "W", "I", "N", "UP", "B", "A", "SIM", "TCH", "RUF"]
+
+[tool.basedpyright]
+typeCheckingMode = "strict"
+pythonVersion = "3.13"
