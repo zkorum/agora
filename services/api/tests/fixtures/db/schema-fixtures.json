@@ -1,4 +1,27 @@
 {
+    "project-page-counts": [
+        "project",
+        "project_content",
+        "project_content_translation",
+        "project_content_banner_localization",
+        "project_translation_target_language",
+        "project_organization_attribution",
+        "project_external_organization",
+        "project_external_organization_localization",
+        "project_contact",
+        "project_document",
+        "project_document_file",
+        "project_document_localization",
+        "organization",
+        "organization_localization",
+        "conversation",
+        "conversation_content",
+        "conversation_content_translation",
+        "conversation_translation_target_language",
+        "conversation_view_snapshot",
+        "ranking_conversation_config",
+        "ranking_conversation_stats_snapshot"
+    ],
     "project-documents": [
         "user",
         "organization",

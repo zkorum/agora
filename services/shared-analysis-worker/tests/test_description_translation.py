@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
@@ -248,7 +249,10 @@ def test_generate_description_translations_deduplicates_chinese_targets() -> Non
     ]
 
 
-def test_generate_bedrock_description_translations_deduplicates_chinese_targets() -> None:
+def test_generate_bedrock_description_translations_deduplicates_chinese_targets(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    caplog.set_level(logging.INFO)
     client = FakeBedrockTranslationClient(
         responses=[
             {
@@ -296,6 +300,9 @@ def test_generate_bedrock_description_translations_deduplicates_chinese_targets(
     assert len(client.calls) == 1
     request_json = json.dumps(client.calls[0], ensure_ascii=False)
     assert '\\"targetLocale\\":\\"zh-Hant\\"' in request_json
+    assert "Transitists" not in caplog.text
+    assert "Supports transit." not in caplog.text
+    assert "繁體標籤" not in caplog.text
 
 
 def test_parse_description_translation_output_requires_reasoning_and_expected_ids() -> None:

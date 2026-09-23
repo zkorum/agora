@@ -41,7 +41,7 @@ export function useBackendAuthApi() {
   const { buildEncodedUcan } = useCommonApi();
   const authStore = useAuthenticationStore();
 
-  const { loadUserProfile } = useUserStore();
+  const { loadUserProfileMetadata } = useUserStore();
   const { loadTopicsData } = useTopicStore();
   const { refreshNotificationData } = useNotificationStore();
   const { loadLanguagePreferencesFromBackend } = useLanguageStore();
@@ -116,7 +116,8 @@ export function useBackendAuthApi() {
   }
 
   async function loadAuthenticatedModules() {
-    await loadUserProfile();
+    // Auth needs profile metadata (roles, organizations), not the profile feeds.
+    await loadUserProfileMetadata();
 
     void (async () => {
       try {

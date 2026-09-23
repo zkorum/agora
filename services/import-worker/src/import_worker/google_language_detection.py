@@ -6,6 +6,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Protocol, TypeGuard
 
+from agora_language.detection import (
+    DetectionUnavailable,
+    UnknownLanguage,
+    detect_with_google,
+    is_google_detection_client,
+)
 from google.api_core.client_options import ClientOptions
 from google.cloud import translate_v3
 from google.oauth2.service_account import Credentials as ServiceAccountCredentials
@@ -14,8 +20,7 @@ from pydantic import BaseModel, ConfigDict
 from import_worker.language_detection import SourceLanguageMetadata, normalize_source_language_code
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
-
+    from agora_language.detection import GoogleDetectionClient
     from google.auth.credentials import Credentials
 
 LOGGER = logging.getLogger(__name__)
@@ -40,31 +45,6 @@ class ServiceAccountJson(BaseModel):
     token_uri: str = "https://oauth2.googleapis.com/token"
 
 
-class DetectedLanguage(Protocol):
-    @property
-    def language_code(self) -> str: ...
-
-    @property
-    def confidence(self) -> float: ...
-
-
-class DetectLanguageResponse(Protocol):
-    @property
-    def languages(self) -> Sequence[DetectedLanguage]: ...
-
-
-class LanguageDetectionClient(Protocol):
-    def detect_language(
-        self,
-        *,
-        parent: str,
-        content: str,
-        mime_type: str,
-        retry: object | None,
-        timeout: float,
-    ) -> DetectLanguageResponse: ...
-
-
 class GoogleCredentialsFactory(Protocol):
     def from_service_account_info(self, info: dict[str, object]) -> Credentials: ...
 
@@ -79,7 +59,7 @@ class GoogleLanguageDetectionConfig:
 
 @dataclass(frozen=True)
 class GoogleLanguageDetectionService:
-    client: LanguageDetectionClient
+    client: GoogleDetectionClient
     config: GoogleLanguageDetectionConfig
 
     def __call__(self, text: str) -> SourceLanguageMetadata:
@@ -106,7 +86,7 @@ def initialize_google_language_detection_service(
         credentials=credentials,
         client_options=ClientOptions(api_endpoint=google_cloud_translation_endpoint),
     )
-    if not _is_language_detection_client(client):
+    if not is_google_detection_client(client):
         msg = "Google Cloud Translation client does not expose detect_language()"
         raise GoogleLanguageDetectionError(msg)
     project_id = google_cloud_project_id or service_account.project_id
@@ -136,15 +116,15 @@ def detect_language_with_google(
     if text.strip() == "":
         return SourceLanguageMetadata(language_code=None, confidence=None)
 
-    response = service.client.detect_language(
+    detected_language = detect_with_google(
+        client=service.client,
         parent=f"projects/{service.config.project_id}/locations/{service.config.location}",
-        content=text,
-        mime_type="text/plain",
-        retry=None,
+        text=text,
         timeout=service.config.request_timeout_seconds,
     )
-    detected_language = response.languages[0] if len(response.languages) > 0 else None
-    if detected_language is None:
+    if isinstance(detected_language, DetectionUnavailable):
+        raise detected_language.error
+    if isinstance(detected_language, UnknownLanguage):
         return SourceLanguageMetadata(language_code=None, confidence=None)
 
     raw_language_code = detected_language.language_code
@@ -188,7 +168,3 @@ def _canonicalize_language_code(language_code: str) -> str | None:
 
 def _is_google_credentials_factory(value: object) -> TypeGuard[GoogleCredentialsFactory]:
     return callable(getattr(value, "from_service_account_info", None))
-
-
-def _is_language_detection_client(value: object) -> TypeGuard[LanguageDetectionClient]:
-    return callable(getattr(value, "detect_language", None))

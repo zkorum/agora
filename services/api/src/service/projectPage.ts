@@ -85,7 +85,6 @@ import {
     type ConversationDisplayCounts,
 } from "./conversationDisplayCounts.js";
 import { fetchProjectPageDocuments } from "./projectDocument.js";
-import { fetchProjectParticipantCounts } from "./projectParticipantCounts.js";
 
 interface ProjectPageServiceParams {
     db: PostgresJsDatabase;
@@ -1477,7 +1476,7 @@ async function assertVisibleProjectConversation({
     }
 }
 
-async function fetchProjectAggregateCounts({
+export async function fetchProjectAggregateCounts({
     db,
     projectId,
 }: {
@@ -1485,32 +1484,30 @@ async function fetchProjectAggregateCounts({
     projectId: number;
 }): Promise<{
     activityCount: number;
-    participantCount: number;
     participationCount: number;
     voteCount: number;
 }> {
     const rows = await db
         .select({
             conversationId: conversationTable.id,
-            conversationType: conversationTable.conversationType,
         })
         .from(conversationTable)
         .where(getProjectPageConversationWhereClause({ projectId }));
     const conversationIds = rows.map((row) => row.conversationId);
-    const [countsByConversationId, participantCounts] = await Promise.all([
-        fetchConversationDisplayCountsByConversationId({
+    const countsByConversationId =
+        await fetchConversationDisplayCountsByConversationId({
             db,
             conversationIds,
-        }),
-        fetchProjectParticipantCounts({ db, conversations: rows }),
-    ]);
+        });
+    let participationCount = 0;
     let voteCount = 0;
     for (const counts of countsByConversationId.values()) {
+        participationCount += counts.participantCount;
         voteCount += counts.voteCount;
     }
     return {
         activityCount: rows.length,
-        ...participantCounts,
+        participationCount,
         voteCount,
     };
 }
@@ -2050,7 +2047,6 @@ async function buildProjectShellPayload({
         dynamicTranslationEnabled: project.dynamicTranslationEnabled,
         bannerVariant: "blue",
         bannerImageUrl,
-        participantCount: aggregateCounts.participantCount,
         participationCount: aggregateCounts.participationCount,
         voteCount: aggregateCounts.voteCount,
         activityCount: aggregateCounts.activityCount,

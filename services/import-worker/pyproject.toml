@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Conversation import worker"
 requires-python = ">=3.13"
 dependencies = [
+    "agora-shared-language",
     "google-cloud-translate>=3.20",
     "lingua-language-detector>=2.1",
     "opencc>=1.1",
@@ -18,6 +19,9 @@ dependencies = [
 [tool.uv]
 required-version = ">=0.11.6"
 exclude-newer = "5 days"
+
+[tool.uv.sources]
+agora-shared-language = { path = "../shared-language", editable = true }
 
 [project.optional-dependencies]
 dev = [

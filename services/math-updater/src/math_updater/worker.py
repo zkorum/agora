@@ -58,12 +58,14 @@ from agora_analysis_worker_shared.db import (
     release_retryable_work_items_batch,
     upsert_input_snapshots_batch,
 )
+from agora_analysis_worker_shared.description_generation import description_failure_message
 from agora_analysis_worker_shared.description_input import (
     DescriptionInputError,
     DescriptionOutputError,
 )
 from agora_analysis_worker_shared.description_services import (
     build_description_generator,
+    build_description_language_detector,
     build_description_translator,
 )
 from agora_analysis_worker_shared.generated_models import AnalysisResultOutcomeEnum
@@ -103,13 +105,12 @@ if TYPE_CHECKING:
 
     from agora_analysis_worker_shared.ai_description_work import ClaimedAiDescriptionLocaleWorkItem
     from agora_analysis_worker_shared.analysis_compute import ComputedAnalysisBundle
-    from agora_analysis_worker_shared.bedrock_label_summary import ParsedLabelSummaryOutput
     from agora_analysis_worker_shared.db import (
         ClaimedWorkItem,
         OpinionGroupConfigRecord,
         PersistComputedAnalysisResult,
     )
-    from agora_analysis_worker_shared.description_input import ConversationDescriptionInput
+    from agora_analysis_worker_shared.description_generation import DescriptionGenerator
     from agora_analysis_worker_shared.description_translation import (
         DescriptionForTranslation,
         DescriptionTranslation,
@@ -117,7 +118,6 @@ if TYPE_CHECKING:
     from agora_analysis_worker_shared.simulation_providers import SimulationRuntime
     from sqlalchemy import Engine
 
-    DescriptionGenerator = Callable[[ConversationDescriptionInput], ParsedLabelSummaryOutput]
     DescriptionTranslator = Callable[
         [list[DescriptionForTranslation], list[str]],
         list[DescriptionTranslation],
@@ -682,16 +682,11 @@ def _process_ai_description_conversation_ids(
                 claims=processable_claims,
                 generate_descriptions=description_generator,
             )
-            if result.missing_lineage_ids:
-                missing_lineage_ids = set(result.missing_lineage_ids)
-                missing_error = DescriptionOutputError(
-                    "AI label/summary output did not include all requested groups"
-                )
-                retry_schedules.extend(
-                    (claim, process_claim_error(claim=claim, error=missing_error))
-                    for claim in processable_claims
-                    if claim.lineage_id in missing_lineage_ids
-                )
+            for claim in processable_claims:
+                failure = result.failures.get(claim.lineage_id)
+                if failure is not None:
+                    error = DescriptionOutputError(description_failure_message(failure))
+                    retry_schedules.append((claim, process_claim_error(claim=claim, error=error)))
         except Exception as error:
             retry_schedules.extend(
                 (claim, process_claim_error(claim=claim, error=error))
@@ -1234,7 +1229,9 @@ def _run_worker_once() -> None:
         "[MathUpdater] PostgreSQL connected (analysis_dirty_depth=%d)",
         queue_depth(vk),
     )
-    description_generator = build_description_generator(settings)
+    description_generator = build_description_generator(
+        settings, secondary_detector=build_description_language_detector(settings)
+    )
     if description_generator is None:
         log.info("[MathUpdater] AI description generation disabled")
         description_translator = None

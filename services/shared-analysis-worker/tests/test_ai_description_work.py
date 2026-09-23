@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import os
+import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
@@ -17,6 +19,7 @@ from sqlalchemy import (
     event,
     func,
     select,
+    text,
 )
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import OperationalError
@@ -24,6 +27,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 from sqlalchemy.schema import CreateSchema, DropSchema
 
+from agora_analysis_worker_shared import description_repair
 from agora_analysis_worker_shared.ai_description_work import (
     AI_DESCRIPTION_NON_RETRYABLE_ERROR_CODE,
     AI_DESCRIPTION_RETRYABLE_ERROR_CODE,
@@ -43,7 +47,6 @@ from agora_analysis_worker_shared.ai_description_work import (
     extend_ai_description_locale_work_leases,
     fetch_claimable_ai_description_work_conversation_ids,
     finalize_first_pass_ai_description_work_batch,
-    generate_label_summaries_with_partial_retry,
     materialize_requested_description_translation_work,
     materialize_requested_lineage_description_work,
     process_ai_description_locale_work_item,
@@ -66,20 +69,31 @@ from agora_analysis_worker_shared.db import (
     fetch_claimable_work_conversation_ids,
     recover_expired_running_work,
 )
+from agora_analysis_worker_shared.description_generation import (
+    DescriptionGenerationResult,
+    generate_english_descriptions,
+)
 from agora_analysis_worker_shared.description_input import (
     ConversationDescriptionInput,
     DescriptionOutputError,
     GroupDescriptionInput,
     RepresentativeOpinionText,
 )
+from agora_analysis_worker_shared.description_language import EnglishDescription
+from agora_analysis_worker_shared.description_repair import (
+    fetch_live_descriptions,
+    replace_live_description,
+)
 from agora_analysis_worker_shared.description_translation import (
     DescriptionForTranslation,
     DescriptionTranslation,
 )
 from agora_analysis_worker_shared.generated_models import (
+    AnalysisFamilyEnum,
     AnalysisResultOutcomeEnum,
     AnalysisSnapshot,
     AnalysisSnapshotResult,
+    AnalysisSpec,
     AnalysisWorkState,
     Base,
     Conversation,
@@ -97,11 +111,15 @@ from agora_analysis_worker_shared.generated_models import (
     OpinionGroupCandidateAssessment,
     OpinionGroupCandidateDescriptionLocaleRequest,
     OpinionGroupCandidateHiddenReasonEnum,
+    OpinionGroupClustererEnum,
     OpinionGroupDescription,
     OpinionGroupDescriptionTranslation,
     OpinionGroupDescriptionTranslationWork,
     OpinionGroupLineage,
     OpinionGroupLineageDescriptionWork,
+    OpinionGroupReducerEnum,
+    OpinionGroupSelectionPolicyEnum,
+    OpinionGroupSpec,
     OpinionGroupVariant,
     ParticipationMode,
     PolisConversationConfig,
@@ -115,7 +133,7 @@ from agora_analysis_worker_shared.generated_shared_types import (
 from agora_analysis_worker_shared.postgres_engine import create_postgres_engine
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
+    from collections.abc import Generator, Mapping, Sequence
 
     from sqlalchemy import Connection, ExecutionContext
 
@@ -592,6 +610,440 @@ def _insert_non_processable_ai_work_state(
     session.commit()
 
 
+def _seed_live_description_repair(session: Session) -> None:
+    _insert_non_processable_ai_work_state(session)
+    session.execute(select(ConversationViewSnapshot)).scalar_one().activated_at = NOW
+    session.add(
+        AnalysisSpec(id=1, analysis_family=AnalysisFamilyEnum.opinion_groups, created_at=NOW)
+    )
+    session.add(
+        OpinionGroupSpec(
+            id=1,
+            analysis_spec_id=1,
+            key="test",
+            version=1,
+            reducer=OpinionGroupReducerEnum.pca,
+            clusterer=OpinionGroupClustererEnum.kmeans,
+            selection_policy=OpinionGroupSelectionPolicyEnum.silhouette_size_balance,
+            min_clusterable_participants=2,
+            min_votes_per_participant=1,
+            max_group_count=6,
+            created_at=NOW,
+        )
+    )
+    session.add(
+        OpinionGroupDescription(
+            id=501,
+            locale=DisplayLanguageCode.en,
+            label="Traditionalists",
+            summary="Ce groupe défend une éducation structurée et des règles claires.",
+            created_at=NOW,
+        )
+    )
+    session.commit()
+    if session.get_bind().dialect.name == "postgresql":
+        session.execute(
+            select(
+                func.setval(
+                    func.pg_get_serial_sequence("opinion_group_description", "id"), 501, True
+                )
+            )
+        )
+        session.commit()
+
+
+@pytest.mark.parametrize("excluded", ["disabled", "deleted", "hidden", "unactivated", "unscored"])
+def test_live_repair_excludes_ineligible_descriptions(
+    lineage_scan_engine: Engine,
+    excluded: str,
+) -> None:
+    with Session(lineage_scan_engine) as session:
+        _seed_live_description_repair(session)
+        if excluded == "disabled":
+            session.execute(
+                select(PolisConversationConfig)
+            ).scalar_one().ai_labeling_enabled = False
+        elif excluded == "deleted":
+            session.execute(select(Conversation)).scalar_one().current_content_id = None
+        elif excluded == "hidden":
+            session.execute(
+                select(OpinionGroupCandidateAssessment)
+            ).scalar_one().hidden_reason = (
+                OpinionGroupCandidateHiddenReasonEnum.invalid_candidate_output
+            )
+        elif excluded == "unscored":
+            session.execute(
+                select(OpinionGroupCandidateAssessment)
+            ).scalar_one().selection_score = None
+        else:
+            session.execute(select(ConversationViewSnapshot)).scalar_one().activated_at = None
+        session.commit()
+        assert (
+            fetch_live_descriptions(
+                session, conversation_slug_id=None, after_description_id=0, limit=10
+            )
+            == []
+        )
+
+
+def test_live_repair_replaces_atomically_and_materializes_translations(
+    lineage_scan_engine: Engine,
+) -> None:
+    with Session(lineage_scan_engine) as session:
+        _seed_live_description_repair(session)
+        session.add(
+            ConversationViewSnapshot(
+                id=19,
+                conversation_id=10,
+                opinion_group_spec_id=1,
+                analysis_snapshot_id=30,
+                conversation_content_id=40,
+                view_reason=ConversationViewSnapshotReasonEnum.analysis_completed,
+                is_closed=False,
+                opinion_count=2,
+                vote_count=2,
+                participant_count=2,
+                total_opinion_count=2,
+                total_vote_count=2,
+                total_participant_count=2,
+                moderated_opinion_count=0,
+                hidden_opinion_count=0,
+                activated_at=NOW,
+                created_at=NOW - timedelta(minutes=1),
+            )
+        )
+        session.add(
+            ConversationViewSnapshotCheckpointReason(
+                id=1,
+                conversation_view_snapshot_id=19,
+                conversation_id=10,
+                opinion_group_spec_id=1,
+                reason=ConversationViewSnapshotCheckpointReasonEnum.first_displayable_analysis,
+                created_at=NOW,
+            )
+        )
+        session.execute(select(Conversation)).scalar_one().is_closed = True
+        session.commit()
+        originals = fetch_live_descriptions(
+            session, conversation_slug_id="abc12345", after_description_id=0, limit=1
+        )
+    assert len(originals) == 1
+    original = originals[0]
+    replacement = EnglishDescription(
+        label="Traditionalists", summary="This group supports clear rules and consistent parenting."
+    )
+    new_id = replace_live_description(
+        lineage_scan_engine, original=original, replacement=replacement
+    )
+    assert new_id is not None and new_id != original.description_id
+    assert (
+        replace_live_description(lineage_scan_engine, original=original, replacement=replacement)
+        is None
+    )
+    with Session(lineage_scan_engine) as session:
+        assert session.get(OpinionGroupDescription, original.description_id) is not None
+        assert (
+            session.execute(select(OpinionGroupLineage.system_description_id)).scalar_one()
+            == new_id
+        )
+        saved = session.get(OpinionGroupDescription, new_id)
+        assert saved is not None
+        assert saved.summary == replacement.summary
+        assert (
+            session.scalar(
+                select(OpinionGroupDescriptionTranslationWork.id).where(
+                    OpinionGroupDescriptionTranslationWork.description_id == new_id,
+                    OpinionGroupDescriptionTranslationWork.locale == DisplayLanguageCode.fr,
+                )
+            )
+            is not None
+        )
+        events = list(session.scalars(select(RealtimeEventOutbox)))
+        assert len(events) == 2
+        assert (
+            fetch_live_descriptions(
+                session,
+                conversation_slug_id=None,
+                after_description_id=0,
+                limit=10,
+                through_description_id=original.description_id,
+            )
+            == []
+        )
+
+
+def test_live_repair_rechecks_eligibility_after_provider_call(lineage_scan_engine: Engine) -> None:
+    with Session(lineage_scan_engine) as session:
+        _seed_live_description_repair(session)
+        original = fetch_live_descriptions(
+            session, conversation_slug_id=None, after_description_id=0, limit=1
+        )[0]
+        session.execute(select(PolisConversationConfig)).scalar_one().ai_labeling_enabled = False
+        session.commit()
+    assert (
+        replace_live_description(
+            lineage_scan_engine,
+            original=original,
+            replacement=EnglishDescription(label="Traditionalists", summary="English correction."),
+        )
+        is None
+    )
+    with Session(lineage_scan_engine) as session:
+        assert list(session.scalars(select(OpinionGroupDescription.id))) == [501]
+
+
+def test_live_repair_does_not_fall_back_to_old_analysis(lineage_scan_engine: Engine) -> None:
+    with Session(lineage_scan_engine) as session:
+        _seed_live_description_repair(session)
+        session.add(
+            ConversationViewSnapshotCheckpointReason(
+                id=1,
+                conversation_view_snapshot_id=20,
+                conversation_id=10,
+                opinion_group_spec_id=1,
+                reason=ConversationViewSnapshotCheckpointReasonEnum.first_displayable_analysis,
+                created_at=NOW,
+            )
+        )
+        session.add(
+            AnalysisSnapshot(
+                id=31,
+                conversation_id=10,
+                conversation_content_id=40,
+                input_snapshot_id=1,
+                data_generation=2,
+                computed_at=NOW,
+                created_at=NOW,
+            )
+        )
+        session.add(
+            AnalysisSnapshotResult(
+                id=51,
+                conversation_id=10,
+                analysis_snapshot_id=31,
+                opinion_group_spec_id=1,
+                outcome=AnalysisResultOutcomeEnum.insufficient_data,
+                variants_enabled=False,
+                created_at=NOW,
+            )
+        )
+        session.add(
+            ConversationViewSnapshot(
+                id=21,
+                conversation_id=10,
+                opinion_group_spec_id=1,
+                analysis_snapshot_id=31,
+                conversation_content_id=40,
+                view_reason=ConversationViewSnapshotReasonEnum.analysis_completed,
+                is_closed=False,
+                opinion_count=2,
+                vote_count=2,
+                participant_count=2,
+                total_opinion_count=2,
+                total_vote_count=2,
+                total_participant_count=2,
+                moderated_opinion_count=0,
+                hidden_opinion_count=0,
+                activated_at=NOW,
+                created_at=NOW,
+            )
+        )
+        session.commit()
+        assert (
+            fetch_live_descriptions(
+                session, conversation_slug_id=None, after_description_id=0, limit=10
+            )
+            == []
+        )
+
+
+@pytest.mark.parametrize("variants_enabled", [False, True])
+def test_live_repair_matches_selectable_variant_scope(
+    lineage_scan_engine: Engine,
+    variants_enabled: bool,
+) -> None:
+    with Session(lineage_scan_engine) as session:
+        _seed_live_description_repair(session)
+        session.execute(
+            select(AnalysisSnapshotResult)
+        ).scalar_one().variants_enabled = variants_enabled
+        session.add(
+            OpinionGroupVariant(id=602, opinion_group_spec_id=1, group_count=3, created_at=NOW)
+        )
+        session.add(
+            OpinionGroupCandidate(
+                id=402,
+                snapshot_result_id=50,
+                opinion_group_variant_id=602,
+                scope_id=702,
+                outcome=AnalysisResultOutcomeEnum.success,
+                created_at=NOW,
+            )
+        )
+        session.add(
+            OpinionGroupCandidateAssessment(
+                id=902,
+                candidate_id=402,
+                selection_score=0.8,
+                created_at=NOW,
+            )
+        )
+        session.add(
+            OpinionGroupDescription(
+                id=502,
+                locale=DisplayLanguageCode.en,
+                label="Traditionalists",
+                summary="Ce groupe soutient des règles claires pour les enfants.",
+                created_at=NOW,
+            )
+        )
+        session.add(
+            OpinionGroupLineage(id=302, scope_id=702, system_description_id=502, created_at=NOW)
+        )
+        session.add(
+            OpinionGroup(
+                id=802,
+                candidate_id=402,
+                scope_id=702,
+                lineage_id=302,
+                key="0",
+                external_id=0,
+                num_users=1,
+                created_at=NOW,
+            )
+        )
+        session.commit()
+        descriptions = fetch_live_descriptions(
+            session, conversation_slug_id=None, after_description_id=0, limit=10
+        )
+        assert [description.description_id for description in descriptions] == (
+            [501, 502] if variants_enabled else [502]
+        )
+
+
+@pytest.mark.parametrize("change", ["text", "locale", "pointer"])
+def test_live_repair_preserves_changes_made_during_provider_call(
+    lineage_scan_engine: Engine,
+    change: str,
+) -> None:
+    with Session(lineage_scan_engine) as session:
+        _seed_live_description_repair(session)
+        original = fetch_live_descriptions(
+            session, conversation_slug_id=None, after_description_id=0, limit=1
+        )[0]
+        source = session.execute(select(OpinionGroupDescription)).scalar_one()
+        if change == "text":
+            source.summary = "An independently corrected summary."
+        elif change == "locale":
+            source.locale = DisplayLanguageCode.fr
+        else:
+            session.add(
+                OpinionGroupDescription(
+                    id=502,
+                    locale=DisplayLanguageCode.en,
+                    label="Updated label",
+                    summary="An independently corrected summary.",
+                    created_at=NOW,
+                )
+            )
+            session.execute(select(OpinionGroupLineage)).scalar_one().system_description_id = 502
+        session.commit()
+        original_ids = set(session.scalars(select(OpinionGroupDescription.id)))
+    assert (
+        replace_live_description(
+            lineage_scan_engine,
+            original=original,
+            replacement=EnglishDescription(label="Traditionalists", summary="English correction."),
+        )
+        is None
+    )
+    with Session(lineage_scan_engine) as session:
+        assert set(session.scalars(select(OpinionGroupDescription.id))) == original_ids
+
+
+def test_live_repair_rolls_back_replacement_when_outbox_scheduling_fails(
+    lineage_scan_engine: Engine,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    with Session(lineage_scan_engine) as session:
+        _seed_live_description_repair(session)
+        original = fetch_live_descriptions(
+            session, conversation_slug_id=None, after_description_id=0, limit=1
+        )[0]
+
+    def fail_scheduling(
+        session: Session,
+        *,
+        lineage_ids_by_conversation_id: Mapping[int, Sequence[int]],
+    ) -> None:
+        raise RuntimeError("outbox unavailable")
+
+    monkeypatch.setattr(
+        description_repair, "schedule_repaired_description_updates", fail_scheduling
+    )
+    with pytest.raises(RuntimeError, match="outbox unavailable"):
+        replace_live_description(
+            lineage_scan_engine,
+            original=original,
+            replacement=EnglishDescription(label="Traditionalists", summary="English correction."),
+        )
+    with Session(lineage_scan_engine) as session:
+        assert session.scalar(select(OpinionGroupLineage.system_description_id)) == 501
+        assert list(session.scalars(select(OpinionGroupDescription.id))) == [501]
+
+
+def test_live_repair_checks_fresh_eligibility_after_waiting_for_a_lock(
+    lineage_scan_engine: Engine,
+) -> None:
+    if lineage_scan_engine.dialect.name != "postgresql":
+        pytest.skip("Requires PostgreSQL row locks and READ COMMITTED snapshots")
+    with Session(lineage_scan_engine) as session:
+        _seed_live_description_repair(session)
+        original = fetch_live_descriptions(
+            session, conversation_slug_id=None, after_description_id=0, limit=1
+        )[0]
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        with Session(lineage_scan_engine) as blocker:
+            blocker.execute(select(OpinionGroupLineage.id).with_for_update()).all()
+            future = executor.submit(
+                replace_live_description,
+                lineage_scan_engine,
+                original=original,
+                replacement=EnglishDescription(
+                    label="Traditionalists", summary="English correction."
+                ),
+            )
+            try:
+                deadline = time.monotonic() + 5
+                with lineage_scan_engine.connect() as observer:
+                    while True:
+                        waiting = observer.execute(
+                            select(func.count())
+                            .select_from(text("pg_stat_activity"))
+                            .where(
+                                text(
+                                    "datname = current_database() AND wait_event_type = 'Lock' "
+                                    "AND query LIKE '%opinion_group_lineage%'"
+                                )
+                            )
+                        ).scalar_one()
+                        if waiting:
+                            break
+                        assert time.monotonic() < deadline, (
+                            "repair did not wait for the lineage lock"
+                        )
+                        time.sleep(0.01)
+                config = blocker.execute(select(PolisConversationConfig)).scalar_one()
+                config.ai_labeling_enabled = False
+                blocker.commit()
+            finally:
+                blocker.rollback()
+        assert future.result(timeout=5) is None
+    with Session(lineage_scan_engine) as session:
+        assert session.scalar(select(OpinionGroupLineage.system_description_id)) == 501
+        assert list(session.scalars(select(OpinionGroupDescription.id))) == [501]
+
+
 def _candidate_locale_request(
     *,
     request_id: int,
@@ -662,14 +1114,14 @@ def test_label_summary_partial_retry_stops_after_timeout() -> None:
                     "0": LabelSummary(
                         reasoning="ok",
                         label="Transitists",
-                        summary="Supports transit.",
+                        summary="This group supports free public transit for all residents.",
                     )
                 },
             )
         raise TimeoutError("bedrock timed out")
 
-    result = generate_label_summaries_with_partial_retry(
-        generate_descriptions=generate_descriptions,
+    result = generate_english_descriptions(
+        generate=generate_descriptions,
         conversation=ConversationDescriptionInput(
             conversation_title="Transit funding",
             conversation_body="How should transit be funded?",
@@ -697,11 +1149,11 @@ def test_label_summary_partial_retry_stops_after_timeout() -> None:
             ],
             analysis_snapshot_id=30,
         ),
-        attempts=3,
     )
 
     assert calls == [["0", "1"], ["1"]]
-    assert list(result.clusters) == ["0"]
+    assert isinstance(result.groups["0"], EnglishDescription)
+    assert not isinstance(result.groups["1"], EnglishDescription)
 
 
 def _insert_attempted_eager_translation_work(session: Session) -> None:
@@ -3491,7 +3943,7 @@ def test_claimed_non_processable_lineage_work_does_not_call_generator() -> None:
     with Session(engine) as session:
         _insert_non_processable_ai_work_state(session, leased_lineage_work=True)
 
-    def fail_generator(_input: ConversationDescriptionInput) -> ParsedLabelSummaryOutput:
+    def fail_generator(_input: ConversationDescriptionInput) -> DescriptionGenerationResult:
         raise AssertionError("generator should not be called")
 
     process_ai_description_locale_work_item(

@@ -7,6 +7,7 @@ CONTENT_TRANSLATION_WORKER_DEV_SCENARIO ?= simulated-success
 CONVERSATION_EMAIL_UPDATE_WORKER_DEV_SCENARIO ?= simulated-success
 
 PYTHON_TYPECHECK_PATTERNS := \
+	services/shared-language/src/**/*.py \
 	services/shared-analysis-worker/src/**/*.py \
 	services/shared-analysis-worker/tests/**/*.py \
 	services/math-updater/src/**/*.py \
@@ -149,6 +150,7 @@ sync-import-worker-contracts:
 sync-python-shared: sync-python-shared-types sync-import-worker-contracts
 
 typecheck-python:
+	cd services/shared-analysis-worker && uv run --extra dev basedpyright ../shared-language/src
 	cd services/shared-analysis-worker && uv run --extra dev basedpyright
 	cd services/math-updater && uv run --extra dev basedpyright
 	cd services/ai-description-retry-worker && uv run --extra dev basedpyright

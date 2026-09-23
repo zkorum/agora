@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass, field
 
 import pytest
 
 from agora_analysis_worker_shared.bedrock_label_summary import (
+    CORRECTION_INSTRUCTION,
+    ENGLISH_OUTPUT_INSTRUCTION,
     BedrockLabelSummaryConfig,
     BedrockLabelSummaryError,
+    LabelSummary,
     build_bedrock_converse_payload,
     generate_label_summaries_with_bedrock,
     parse_bedrock_label_summary_response,
@@ -18,6 +22,7 @@ from agora_analysis_worker_shared.bedrock_label_summary import (
 )
 from agora_analysis_worker_shared.description_input import (
     ConversationDescriptionInput,
+    GroupDescriptionCorrection,
     GroupDescriptionInput,
     RepresentativeOpinionText,
 )
@@ -82,7 +87,17 @@ def test_build_bedrock_converse_payload_matches_existing_prompt_contract() -> No
     )
 
     assert payload["modelId"] == "test-model"
-    assert payload.get("system") == [{"text": json.dumps("System prompt", ensure_ascii=False)}]
+    assert payload.get("system") == [
+        {
+            "text": "\n\n".join(
+                [
+                    ENGLISH_OUTPUT_INSTRUCTION,
+                    "System prompt",
+                    CORRECTION_INSTRUCTION,
+                ]
+            )
+        }
+    ]
     assert payload.get("inferenceConfig") == {
         "maxTokens": 1024,
         "temperature": 0.15,
@@ -283,3 +298,44 @@ def test_generate_label_summaries_raises_after_parse_failure() -> None:
             config=_config(),
             client=client,
         )
+
+
+def test_corrections_have_no_empty_statement_input_and_do_not_log_private_text(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    request = ConversationDescriptionInput(
+        conversation_title="Private conversation title",
+        conversation_body=None,
+        groups=[
+            GroupDescriptionCorrection(
+                group_key="0",
+                draft=LabelSummary(
+                    reasoning=None, label="Private label", summary="Private original summary"
+                ),
+            )
+        ],
+    )
+    client = FakeBedrockClient(
+        responses=[
+            _bedrock_response(
+                json.dumps(
+                    {
+                        "clusters": {
+                            "0": {
+                                "reasoning": "Private reasoning",
+                                "label": "Private label",
+                                "summary": "Private translated summary",
+                            }
+                        }
+                    }
+                )
+            )
+        ]
+    )
+    with caplog.at_level(logging.INFO):
+        generate_label_summaries_with_bedrock(conversation=request, config=_config(), client=client)
+    assert "correction_count=1" in caplog.text
+    assert "Private" not in caplog.text
+    payload = build_bedrock_converse_payload(conversation=request, config=_config())
+    assert "agreesWith" not in str(payload.get("messages"))
+    assert "Private original summary" in str(payload.get("messages"))

@@ -95,3 +95,51 @@ AGORA_TEST_POSTGRES_DSN=postgresql://postgres@localhost:5432/postgres \
 ```
 
 The materialization tests create and remove their own uniquely named schemas.
+
+## Inspecting and repairing live descriptions
+
+The one-off command uses `AI_DESCRIPTION_RETRY_WORKER_*` configuration, including
+the primary database connection and provider settings. It scans only non-deleted,
+non-importing conversations with AI labeling enabled, selecting the latest activated
+opinion-group view using the API's selection rules. Closed conversations remain eligible.
+All selectable variants are included when variants are enabled; otherwise only the
+automatically selected candidate is included.
+
+```bash
+# From services/ai-description-retry-worker: report only (no database writes or LLM calls)
+uv run python -m ai_description_retry_worker.repair --conversation QYMAA_0
+
+# Correct confirmed wrong-language descriptions in this conversation
+uv run python -m ai_description_retry_worker.repair --conversation QYMAA_0 --apply
+
+# Bounded global scan; progress reports include a description-ID resume cursor
+uv run python -m ai_description_retry_worker.repair --limit 100 --batch-size 25
+uv run python -m ai_description_retry_worker.repair --after-description-id 5253 --limit 100
+```
+
+Reports are JSON lines. Ambiguous descriptions are reported as `unresolved` and are
+not automatically replaced. Configured Google language detection may be used in report
+mode; Bedrock generation is only used with `--apply`. Repair refuses simulation providers.
+Reports use snake_case fields and include `description_id`, `lineages`, and a typed
+`status`. An English description with an incorrect stored locale is reported as
+`wrong_locale`; applying that repair changes the locale through a replacement row
+without an LLM call. Reports and failure logs exclude the description text and raw
+provider/database exception details.
+
+For local AWS CLI login profiles, use `uv run --with 'botocore[crt]' python -m ...`
+if the SDK requests the optional login-provider dependency, and refresh an expired
+AWS login before using `--apply`.
+
+An English correction is checked before replacing the lineage pointer. Replacement,
+translation-work materialization, and content-update outbox events commit together.
+The command rechecks current eligibility after acquiring the lineage/source locks,
+using a fresh statement so a lock wait cannot preserve stale eligibility. It checks
+the original pointer, text, and locale after provider calls,
+retains old description rows and translations, and is safe to rerun. Checkpoints sharing
+the repaired lineage see the correction; checkpoint-only descriptions are not selected.
+New translations use the replacement ID and may temporarily fall back to English while
+they are generated.
+
+The scan excludes descriptions created after it started. `--limit` counts inspected
+descriptions, including accepted/unresolved ones. A failed correction exits nonzero;
+rerun from the beginning to revisit failures before the reported resume cursor.

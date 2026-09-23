@@ -30,60 +30,85 @@ export const useUserStore = defineStore("user", () => {
     verifiedEventTickets: EventSlug[];
   }
 
-  const emptyProfile: UserProfile = {
-    activePostCount: 0,
-    createdAt: new Date(),
-    userName: "",
-    userPostList: [],
-    userCommentList: [],
-    isSiteModerator: false,
-    isSiteOrgAdmin: false,
-    dataLoaded: false,
-    postsLoadFailed: false,
-    commentsLoadFailed: false,
-    organizationList: [],
-    verifiedEventTickets: [],
-  };
-
-  const profileData = ref(emptyProfile);
-
-  function clearProfileData() {
-    profileData.value = emptyProfile;
+  function createEmptyProfile(): UserProfile {
+    return {
+      activePostCount: 0,
+      createdAt: new Date(),
+      userName: "",
+      userPostList: [],
+      userCommentList: [],
+      isSiteModerator: false,
+      isSiteOrgAdmin: false,
+      dataLoaded: false,
+      postsLoadFailed: false,
+      commentsLoadFailed: false,
+      organizationList: [],
+      verifiedEventTickets: [],
+    };
   }
 
-  async function loadUserProfile() {
+  const profileData = ref(createEmptyProfile());
+  let profileGeneration = 0;
+
+  function clearProfileData() {
+    profileGeneration += 1;
+    profileData.value = createEmptyProfile();
+  }
+
+  function captureProfileRequest(): () => boolean {
     const requestUserId = authStore.userId;
-    const [userProfile, userPosts, userComments] = await Promise.all([
-      fetchUserProfile(),
-      fetchUserPosts(undefined),
-      fetchUserComments(undefined),
-    ]);
-    if (authStore.userId !== requestUserId) {
+    const requestGeneration = profileGeneration;
+    // Account clearing can precede the auth-store update during logout.
+    return () =>
+      authStore.userId === requestUserId &&
+      profileGeneration === requestGeneration;
+  }
+
+  async function loadUserProfileMetadata(): Promise<void> {
+    const isCurrentRequest = captureProfileRequest();
+    const userProfile = await fetchUserProfile();
+    if (!isCurrentRequest() || userProfile === undefined) {
       return;
     }
 
-    if (userProfile) {
-      profileData.value = {
-        activePostCount: userProfile.activePostCount,
-        createdAt: new Date(userProfile.createdAt),
-        userName: String(userProfile.username),
-        userPostList: userPosts ?? [],
-        userCommentList: userComments ?? [],
-        isSiteModerator: userProfile.isSiteModerator,
-        isSiteOrgAdmin: userProfile.isSiteOrgAdmin,
-        dataLoaded: true,
-        postsLoadFailed: userPosts === null,
-        commentsLoadFailed: userComments === null,
-        organizationList: userProfile.organizationList,
-        verifiedEventTickets: userProfile.verifiedEventTickets,
-      };
-    }
+    profileData.value = {
+      ...profileData.value,
+      activePostCount: userProfile.activePostCount,
+      createdAt: userProfile.createdAt,
+      userName: userProfile.username,
+      isSiteModerator: userProfile.isSiteModerator,
+      isSiteOrgAdmin: userProfile.isSiteOrgAdmin,
+      dataLoaded: true,
+      organizationList: userProfile.organizationList,
+      verifiedEventTickets: userProfile.verifiedEventTickets,
+    };
+  }
+
+  async function loadUserActivity(): Promise<void> {
+    const isCurrentRequest = captureProfileRequest();
+    const [userPosts, userComments] = await Promise.all([
+      fetchUserPosts(undefined),
+      fetchUserComments(undefined),
+    ]);
+    if (!isCurrentRequest()) return;
+
+    profileData.value = {
+      ...profileData.value,
+      userPostList: userPosts ?? [],
+      userCommentList: userComments ?? [],
+      postsLoadFailed: userPosts === null,
+      commentsLoadFailed: userComments === null,
+    };
+  }
+
+  async function loadUserProfile(): Promise<void> {
+    await Promise.all([loadUserProfileMetadata(), loadUserActivity()]);
   }
 
   async function retryUserPosts() {
-    const requestUserId = authStore.userId;
+    const isCurrentRequest = captureProfileRequest();
     const userPosts = await fetchUserPosts(undefined);
-    if (authStore.userId !== requestUserId) {
+    if (!isCurrentRequest()) {
       return;
     }
     if (userPosts) {
@@ -93,9 +118,9 @@ export const useUserStore = defineStore("user", () => {
   }
 
   async function retryUserComments() {
-    const requestUserId = authStore.userId;
+    const isCurrentRequest = captureProfileRequest();
     const userComments = await fetchUserComments(undefined);
-    if (authStore.userId !== requestUserId) {
+    if (!isCurrentRequest()) {
       return;
     }
     if (userComments) {
@@ -117,9 +142,9 @@ export const useUserStore = defineStore("user", () => {
       }
     }
 
-    const requestUserId = authStore.userId;
+    const isCurrentRequest = captureProfileRequest();
     const userPosts = await fetchUserPosts(lastPostSlugId);
-    if (authStore.userId !== requestUserId) {
+    if (!isCurrentRequest()) {
       return { reachedEndOfFeed: true };
     }
     if (userPosts) {
@@ -141,9 +166,9 @@ export const useUserStore = defineStore("user", () => {
       }
     }
 
-    const requestUserId = authStore.userId;
+    const isCurrentRequest = captureProfileRequest();
     const userComments = await fetchUserComments(lastCommentSlugId);
-    if (authStore.userId !== requestUserId) {
+    if (!isCurrentRequest()) {
       return { reachedEndOfFeed: true };
     }
     if (userComments) {
@@ -223,6 +248,7 @@ export const useUserStore = defineStore("user", () => {
 
   return {
     loadUserProfile,
+    loadUserProfileMetadata,
     retryUserPosts,
     retryUserComments,
     loadMoreUserPosts,

@@ -68,7 +68,9 @@ For each cluster:
 ## Example
 Input cluster "0":
   "agreesWith": [],
-  "disagreesWith": ["Technology always improves society", "Innovation is always beneficial"]
+  "disagreesWith": [
+    "La technologie améliore toujours la société", "L'innovation est toujours bénéfique"
+  ]
 
 Correct reasoning and output:
 {
@@ -83,7 +85,7 @@ WRONG (do not do this):
   "label": "Technologists",
   "summary": "This cluster believes technology always improves society."
 }
-The above is WRONG because "Technology always improves society" is in disagreesWith,
+The above is WRONG because "La technologie améliore toujours la société" is in disagreesWith,
 meaning they REJECT it, not believe it.
 
 ## Label Guidelines

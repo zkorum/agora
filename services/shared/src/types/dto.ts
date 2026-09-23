@@ -683,7 +683,6 @@ const zodProjectPageProject = z
         dynamicTranslationEnabled: z.boolean(),
         bannerVariant: z.enum(["blue", "purple", "green"]),
         bannerImageUrl: z.url().optional(),
-        participantCount: z.number().int().nonnegative(),
         participationCount: z.number().int().nonnegative(),
         voteCount: z.number().int().nonnegative(),
         activityCount: z.number().int().nonnegative(),

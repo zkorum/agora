@@ -7874,7 +7874,6 @@ export interface ApiV1ProjectPageFetchPost200ResponseProject {
     'dynamicTranslationEnabled': boolean;
     'bannerVariant': ApiV1ProjectPageFetchPost200ResponseProjectBannerVariantEnum;
     'bannerImageUrl'?: string;
-    'participantCount': number;
     'participationCount': number;
     'voteCount': number;
     'activityCount': number;

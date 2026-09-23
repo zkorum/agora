@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from agora_analysis_worker_shared.ai_description_lease_heartbeat import (
@@ -26,6 +27,7 @@ from agora_analysis_worker_shared.ai_description_work import (
     queue_ai_description_content_updated_events,
     retry_ai_description_locale_work_item,
 )
+from agora_analysis_worker_shared.description_generation import description_failure_message
 from agora_analysis_worker_shared.description_input import (
     DescriptionInputError,
     DescriptionOutputError,
@@ -42,15 +44,13 @@ if TYPE_CHECKING:
     from sqlalchemy import Engine
 
     from agora_analysis_worker_shared.ai_description_work import ClaimedAiDescriptionLocaleWorkItem
-    from agora_analysis_worker_shared.bedrock_label_summary import ParsedLabelSummaryOutput
-    from agora_analysis_worker_shared.description_input import ConversationDescriptionInput
+    from agora_analysis_worker_shared.description_generation import DescriptionGenerator
     from agora_analysis_worker_shared.description_translation import (
         DescriptionForTranslation,
         DescriptionTranslation,
     )
     from agora_analysis_worker_shared.simulation_providers import SimulationRuntime
 
-    DescriptionGenerator = Callable[[ConversationDescriptionInput], ParsedLabelSummaryOutput]
     DescriptionTranslator = Callable[
         [list[DescriptionForTranslation], list[str]],
         list[DescriptionTranslation],
@@ -63,6 +63,16 @@ type TranslationRetryResult = tuple[
     ClaimedDescriptionTranslationWorkItem,
     AiDescriptionWorkResult,
 ]
+
+
+@dataclass(frozen=True)
+class GenerateDescriptions:
+    generate: DescriptionGenerator
+
+
+@dataclass(frozen=True)
+class TranslateDescriptions:
+    translate: DescriptionTranslator
 
 
 def _format_ids_for_log(conversation_ids: list[int]) -> str:
@@ -106,13 +116,12 @@ def process_ai_description_conversation_ids(
     max_workers: int,
     ai_description_epoch: int,
     retry_cooldown_seconds: int,
-    description_generator: DescriptionGenerator,
-    description_translator: DescriptionTranslator | None,
-    claim_lineage_descriptions: bool,
-    claim_translations: bool,
+    work: GenerateDescriptions | TranslateDescriptions,
     simulation_runtime: SimulationRuntime | None = None,
     log_prefix: str,
 ) -> int:
+    claim_lineage_descriptions = isinstance(work, GenerateDescriptions)
+    claim_translations = isinstance(work, TranslateDescriptions)
     completed_conversation_ids = complete_non_processable_ai_description_work_batch(
         primary_engine,
         conversation_ids=conversation_ids,
@@ -137,7 +146,7 @@ def process_ai_description_conversation_ids(
         return 0
 
     claim_batch_limit = claim_limit
-    if claim_translations and not claim_lineage_descriptions:
+    if claim_translations:
         claim_batch_limit = max(
             claim_limit,
             max_workers * DESCRIPTION_TRANSLATION_WORK_BATCH_SIZE,
@@ -151,7 +160,7 @@ def process_ai_description_conversation_ids(
         lease_ttl_seconds=lease_ttl_seconds,
         limit=claim_batch_limit,
         ai_description_epoch=ai_description_epoch,
-        translation_enabled=description_translator is not None,
+        translation_enabled=claim_translations,
         claim_lineage_descriptions=claim_lineage_descriptions,
         claim_translations=claim_translations,
         require_activated_view_snapshot=True,
@@ -227,6 +236,8 @@ def process_ai_description_conversation_ids(
 
     def process_lineage_claims(
         claims: list[ClaimedLineageDescriptionWorkItem],
+        *,
+        generate: DescriptionGenerator,
     ) -> tuple[list[LineageRetryResult], set[int]]:
         processable_claims: list[ClaimedLineageDescriptionWorkItem] = []
         retry_schedules: list[LineageRetryResult] = []
@@ -256,7 +267,7 @@ def process_ai_description_conversation_ids(
             result = process_lineage_description_work_items_batch(
                 primary_engine,
                 claims=processable_claims,
-                generate_descriptions=description_generator,
+                generate_descriptions=generate,
                 require_activated_view_snapshot=True,
             )
             log.info(
@@ -265,21 +276,16 @@ def process_ai_description_conversation_ids(
                 log_prefix,
                 len(processable_claims),
                 len(result.generated_lineage_ids),
-                len(result.missing_lineage_ids),
+                len(result.failures),
                 (time.perf_counter() - provider_started_at) * 1000,
                 ",".join(sorted({claim.conversation_slug_id for claim in processable_claims})),
                 ",".join(str(claim.lineage_id) for claim in processable_claims),
             )
-            if result.missing_lineage_ids:
-                missing_lineage_ids = set(result.missing_lineage_ids)
-                missing_error = DescriptionOutputError(
-                    "AI label/summary output did not include all requested groups"
-                )
-                retry_schedules.extend(
-                    (claim, process_claim_error(claim=claim, error=missing_error))
-                    for claim in processable_claims
-                    if claim.lineage_id in missing_lineage_ids
-                )
+            for claim in processable_claims:
+                failure = result.failures.get(claim.lineage_id)
+                if failure is not None:
+                    error = DescriptionOutputError(description_failure_message(failure))
+                    retry_schedules.append((claim, process_claim_error(claim=claim, error=error)))
             return retry_schedules, set(result.generated_lineage_ids)
         except Exception as error:
             log.warning(
@@ -298,6 +304,8 @@ def process_ai_description_conversation_ids(
 
     def process_translation_claims(
         claims: list[ClaimedDescriptionTranslationWorkItem],
+        *,
+        translate: DescriptionTranslator,
     ) -> tuple[
         list[TranslationRetryResult],
         DescriptionTranslationBatchProcessResult,
@@ -331,27 +339,11 @@ def process_ai_description_conversation_ids(
             ",".join(sorted({claim.locale for claim in processable_claims})),
         )
 
-        translator = description_translator
-        if translator is None:
-            unavailable_schedules: list[TranslationRetryResult] = []
-            for claim in processable_claims:
-                try:
-                    msg = f"translation service unavailable for locale {claim.locale}"
-                    raise DescriptionInputError(msg)
-                except Exception as error:
-                    unavailable_schedules.append(
-                        (claim, process_claim_error(claim=claim, error=error))
-                    )
-            return unavailable_schedules, DescriptionTranslationBatchProcessResult(
-                schedules=[],
-                translated_description_ids=[],
-            )
-
         try:
             result = process_description_translation_work_items_batch(
                 primary_engine,
                 claims=processable_claims,
-                translate_descriptions=translator,
+                translate_descriptions=translate,
                 require_activated_view_snapshot=True,
             )
             log.info(
@@ -418,55 +410,58 @@ def process_ai_description_conversation_ids(
             translation_claims.append(claim)
 
         lineage_claim_batches = lineage_description_work_claim_batches(lineage_claims)
-        with ThreadPoolExecutor(
-            max_workers=min(max_workers, len(lineage_claim_batches) or 1)
-        ) as executor:
-            future_by_lineage_claims = {
-                executor.submit(process_lineage_claims, claims): claims
-                for claims in lineage_claim_batches
-            }
-            for future in as_completed(future_by_lineage_claims):
-                claims_for_candidate = future_by_lineage_claims[future]
-                try:
-                    retry_schedules, generated_lineage_ids = future.result()
-                    for claim, schedule in retry_schedules:
-                        if schedule.retry_released_at is not None:
-                            emit_load_event(
-                                phase=log_prefix.strip("[]").lower(),
-                                action="retry-released",
-                                outcome="info",
-                                conversation_slug_id=claim.conversation_slug_id,
-                                metadata={
-                                    "conversationId": schedule.conversation_id,
-                                    "locale": claim.locale,
-                                    "attemptCount": claim.attempt_count,
-                                    "retryReleasedAt": schedule.retry_released_at.isoformat(),
-                                    **_claim_target_metadata(claim),
-                                },
-                            )
-                    for claim in claims_for_candidate:
-                        if claim.lineage_id in generated_lineage_ids:
-                            lineage_ids_by_conversation_id.setdefault(
-                                claim.conversation_id,
-                                set(),
-                            ).add(claim.lineage_id)
-                except Exception:
-                    log.exception(
-                        "%s Failed to finalize retry state claims=%s",
-                        log_prefix,
-                        ", ".join(
-                            f"{claim.conversation_slug_id}:{claim.locale}:{claim.lineage_id}"
-                            for claim in claims_for_candidate
-                        ),
-                    )
+        if lineage_claim_batches and isinstance(work, GenerateDescriptions):
+            with ThreadPoolExecutor(
+                max_workers=min(max_workers, len(lineage_claim_batches))
+            ) as executor:
+                future_by_lineage_claims = {
+                    executor.submit(process_lineage_claims, claims, generate=work.generate): claims
+                    for claims in lineage_claim_batches
+                }
+                for future in as_completed(future_by_lineage_claims):
+                    claims_for_candidate = future_by_lineage_claims[future]
+                    try:
+                        retry_schedules, generated_lineage_ids = future.result()
+                        for claim, schedule in retry_schedules:
+                            if schedule.retry_released_at is not None:
+                                emit_load_event(
+                                    phase=log_prefix.strip("[]").lower(),
+                                    action="retry-released",
+                                    outcome="info",
+                                    conversation_slug_id=claim.conversation_slug_id,
+                                    metadata={
+                                        "conversationId": schedule.conversation_id,
+                                        "locale": claim.locale,
+                                        "attemptCount": claim.attempt_count,
+                                        "retryReleasedAt": schedule.retry_released_at.isoformat(),
+                                        **_claim_target_metadata(claim),
+                                    },
+                                )
+                        for claim in claims_for_candidate:
+                            if claim.lineage_id in generated_lineage_ids:
+                                lineage_ids_by_conversation_id.setdefault(
+                                    claim.conversation_id,
+                                    set(),
+                                ).add(claim.lineage_id)
+                    except Exception:
+                        log.exception(
+                            "%s Failed to finalize retry state claims=%s",
+                            log_prefix,
+                            ", ".join(
+                                f"{claim.conversation_slug_id}:{claim.locale}:{claim.lineage_id}"
+                                for claim in claims_for_candidate
+                            ),
+                        )
 
         translation_claim_batches = description_translation_work_claim_batches(translation_claims)
-        if translation_claim_batches:
+        if translation_claim_batches and isinstance(work, TranslateDescriptions):
             with ThreadPoolExecutor(
                 max_workers=min(max_workers, len(translation_claim_batches))
             ) as executor:
                 future_by_translation_claims = {
-                    executor.submit(process_translation_claims, claims): claims
+                    executor.submit(
+                        process_translation_claims, claims, translate=work.translate
+                    ): claims
                     for claims in translation_claim_batches
                 }
                 for future in as_completed(future_by_translation_claims):

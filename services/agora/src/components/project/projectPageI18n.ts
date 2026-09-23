@@ -6,7 +6,6 @@ import {
 
 type PluralizableProjectPageTranslationKey =
   | "projectDetailsSummary"
-  | "uniqueParticipantsCount"
   | "participationsCount"
   | "activitiesCount"
   | "votesCount"
@@ -21,7 +20,6 @@ const pluralizableProjectPageTranslationKeys: Readonly<
   Record<PluralizableProjectPageTranslationKey, true>
 > = {
   projectDetailsSummary: true,
-  uniqueParticipantsCount: true,
   participationsCount: true,
   activitiesCount: true,
   votesCount: true,
@@ -41,7 +39,6 @@ export interface ProjectPageTranslations {
   bannerImageAlt: string;
   liveConsultation: string;
   closedConsultation: string;
-  uniqueParticipantsCount: string;
   participationsCount: string;
   activitiesCount: string;
   votesCount: string;
@@ -102,7 +99,6 @@ export const projectPageTranslations: Readonly<
     bannerImageAlt: "{title} banner",
     liveConsultation: "Live consultation",
     closedConsultation: "Closed consultation",
-    uniqueParticipantsCount: "{count} unique participants",
     participationsCount: "{count} participations",
     activitiesCount: "{count} activities",
     votesCount: "{count} votes",
@@ -158,7 +154,6 @@ export const projectPageTranslations: Readonly<
     bannerImageAlt: "Banner de {title}",
     liveConsultation: "Consulta en directo",
     closedConsultation: "Consulta cerrada",
-    uniqueParticipantsCount: "{count} participantes únicos",
     participationsCount: "{count} participaciones",
     activitiesCount: "{count} actividades",
     votesCount: "{count} votos",
@@ -214,7 +209,6 @@ export const projectPageTranslations: Readonly<
     bannerImageAlt: "Bannière de {title}",
     liveConsultation: "Consultation en direct",
     closedConsultation: "Consultation terminée",
-    uniqueParticipantsCount: "{count} participants uniques",
     participationsCount: "{count} participations",
     activitiesCount: "{count} activités",
     votesCount: "{count} votes",
@@ -270,7 +264,6 @@ export const projectPageTranslations: Readonly<
     bannerImageAlt: "{title} 横幅",
     liveConsultation: "进行中的咨询",
     closedConsultation: "已结束的咨询",
-    uniqueParticipantsCount: "{count} 位独立参与者",
     participationsCount: "{count} 次对话参与",
     activitiesCount: "{count} 个活动",
     votesCount: "{count} 票",
@@ -326,7 +319,6 @@ export const projectPageTranslations: Readonly<
     bannerImageAlt: "{title} 橫幅",
     liveConsultation: "進行中的諮詢",
     closedConsultation: "已結束的諮詢",
-    uniqueParticipantsCount: "{count} 位不重複參與者",
     participationsCount: "{count} 次對話參與",
     activitiesCount: "{count} 個活動",
     votesCount: "{count} 票",
@@ -382,7 +374,6 @@ export const projectPageTranslations: Readonly<
     bannerImageAlt: "{title} のバナー",
     liveConsultation: "進行中の協議",
     closedConsultation: "終了した協議",
-    uniqueParticipantsCount: "{count}人のユニーク参加者",
     participationsCount: "{count}件の会話参加",
     activitiesCount: "{count}件のアクティビティ",
     votesCount: "{count}票",
@@ -438,7 +429,6 @@ export const projectPageTranslations: Readonly<
     bannerImageAlt: "لافتة {title}",
     liveConsultation: "استشارة مباشرة",
     closedConsultation: "استشارة مغلقة",
-    uniqueParticipantsCount: "{count} مشاركين فريدين",
     participationsCount: "{count} مشاركات في المحادثات",
     activitiesCount: "{count} أنشطة",
     votesCount: "{count} أصوات",
@@ -494,7 +484,6 @@ export const projectPageTranslations: Readonly<
     bannerImageAlt: "بنر {title}",
     liveConsultation: "مشاوره زنده",
     closedConsultation: "مشاوره بسته‌شده",
-    uniqueParticipantsCount: "{count} شرکت‌کننده منحصربه‌فرد",
     participationsCount: "{count} مشارکت در گفتگوها",
     activitiesCount: "{count} فعالیت",
     votesCount: "{count} رأی",
@@ -550,7 +539,6 @@ export const projectPageTranslations: Readonly<
     bannerImageAlt: "באנר של {title}",
     liveConsultation: "התייעצות פעילה",
     closedConsultation: "התייעצות סגורה",
-    uniqueParticipantsCount: "{count} משתתפים ייחודיים",
     participationsCount: "{count} השתתפויות בשיחות",
     activitiesCount: "{count} פעילויות",
     votesCount: "{count} הצבעות",
@@ -606,7 +594,6 @@ export const projectPageTranslations: Readonly<
     bannerImageAlt: "{title} баннери",
     liveConsultation: "Жандуу консультация",
     closedConsultation: "Жабылган консультация",
-    uniqueParticipantsCount: "{count} уникалдуу катышуучу",
     participationsCount: "{count} талкууга катышуу",
     activitiesCount: "{count} иш-чара",
     votesCount: "{count} добуш",
@@ -662,7 +649,6 @@ export const projectPageTranslations: Readonly<
     bannerImageAlt: "Баннер: {title}",
     liveConsultation: "Живая консультация",
     closedConsultation: "Закрытая консультация",
-    uniqueParticipantsCount: "{count} уникальных участников",
     participationsCount: "{count} участий в обсуждениях",
     activitiesCount: "{count} активности",
     votesCount: "{count} голосов",
@@ -719,10 +705,6 @@ const projectPageCountTranslations: Readonly<
       one: "{name} & {count} other",
       other: "{name} & {count} others",
     },
-    uniqueParticipantsCount: {
-      one: "{count} unique participant",
-      other: "{count} unique participants",
-    },
     participationsCount: {
       one: "{count} participation",
       other: "{count} participations",
@@ -737,10 +719,6 @@ const projectPageCountTranslations: Readonly<
   },
   es: {
     projectDetailsSummary: { other: "{name} y {count} más" },
-    uniqueParticipantsCount: {
-      one: "{count} participante único",
-      other: "{count} participantes únicos",
-    },
     participationsCount: {
       one: "{count} participación",
       other: "{count} participaciones",
@@ -761,10 +739,6 @@ const projectPageCountTranslations: Readonly<
       one: "{name} et {count} autre",
       other: "{name} et {count} autres",
     },
-    uniqueParticipantsCount: {
-      one: "{count} participant unique",
-      other: "{count} participants uniques",
-    },
     participationsCount: {
       one: "{count} participation",
       other: "{count} participations",
@@ -782,7 +756,6 @@ const projectPageCountTranslations: Readonly<
   },
   "zh-Hans": {
     projectDetailsSummary: { other: "{name}及其他 {count} 个" },
-    uniqueParticipantsCount: { other: "{count} 位独立参与者" },
     participationsCount: { other: "{count} 次对话参与" },
     activitiesCount: { other: "{count} 个活动" },
     votesCount: { other: "{count} 票" },
@@ -791,7 +764,6 @@ const projectPageCountTranslations: Readonly<
   },
   "zh-Hant": {
     projectDetailsSummary: { other: "{name}及其他 {count} 個" },
-    uniqueParticipantsCount: { other: "{count} 位不重複參與者" },
     participationsCount: { other: "{count} 次對話參與" },
     activitiesCount: { other: "{count} 個活動" },
     votesCount: { other: "{count} 票" },
@@ -800,7 +772,6 @@ const projectPageCountTranslations: Readonly<
   },
   ja: {
     projectDetailsSummary: { other: "{name}ほか{count}件" },
-    uniqueParticipantsCount: { other: "{count}人のユニーク参加者" },
     participationsCount: { other: "{count}件の会話参加" },
     activitiesCount: { other: "{count}件のアクティビティ" },
     votesCount: { other: "{count}票" },
@@ -809,13 +780,6 @@ const projectPageCountTranslations: Readonly<
   },
   ar: {
     projectDetailsSummary: { other: "{name} و{count} آخرون" },
-    uniqueParticipantsCount: {
-      one: "{count} مشارك فريد",
-      two: "{count} مشاركان فريدان",
-      few: "{count} مشاركين فريدين",
-      many: "{count} مشاركًا فريدًا",
-      other: "{count} مشارك فريد",
-    },
     participationsCount: {
       one: "{count} مشاركة في المحادثات",
       two: "{count} مشاركتان في المحادثات",
@@ -854,7 +818,6 @@ const projectPageCountTranslations: Readonly<
   },
   fa: {
     projectDetailsSummary: { other: "{name} و {count} مورد دیگر" },
-    uniqueParticipantsCount: { other: "{count} شرکت‌کننده منحصربه‌فرد" },
     participationsCount: { other: "{count} مشارکت در گفتگوها" },
     activitiesCount: { other: "{count} فعالیت" },
     votesCount: { other: "{count} رأی" },
@@ -863,10 +826,6 @@ const projectPageCountTranslations: Readonly<
   },
   he: {
     projectDetailsSummary: { other: "{name} ועוד {count}" },
-    uniqueParticipantsCount: {
-      one: "{count} משתתף ייחודי",
-      other: "{count} משתתפים ייחודיים",
-    },
     participationsCount: {
       one: "{count} השתתפות בשיחות",
       other: "{count} השתתפויות בשיחות",
@@ -878,7 +837,6 @@ const projectPageCountTranslations: Readonly<
   },
   ky: {
     projectDetailsSummary: { other: "{name} жана дагы {count}" },
-    uniqueParticipantsCount: { other: "{count} уникалдуу катышуучу" },
     participationsCount: { other: "{count} талкууга катышуу" },
     activitiesCount: { other: "{count} иш-чара" },
     votesCount: { other: "{count} добуш" },
@@ -887,12 +845,6 @@ const projectPageCountTranslations: Readonly<
   },
   ru: {
     projectDetailsSummary: { other: "{name} и ещё {count}" },
-    uniqueParticipantsCount: {
-      one: "{count} уникальный участник",
-      few: "{count} уникальных участника",
-      many: "{count} уникальных участников",
-      other: "{count} уникального участника",
-    },
     participationsCount: {
       one: "{count} участие в обсуждениях",
       few: "{count} участия в обсуждениях",

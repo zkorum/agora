@@ -37,7 +37,7 @@ def test_normal_mode_does_not_create_fake_providers() -> None:
         aws_description_translation_enable=False,
     )
 
-    assert build_description_generator(settings) is None
+    assert build_description_generator(settings, secondary_detector=None) is None
     assert build_description_translator(settings) is None
 
 
@@ -50,7 +50,7 @@ def test_simulation_mode_creates_fake_providers_only_when_enabled() -> None:
         description_translation_simulation_mode="success",
     )
 
-    assert build_description_generator(settings) is not None
+    assert build_description_generator(settings, secondary_detector=None) is not None
     assert build_description_translator(settings) is not None
 
 

@@ -2,13 +2,21 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from threading import Lock
 from typing import TYPE_CHECKING
+
+from agora_language.detection import (
+    DetectionUnavailable,
+    detect_with_google,
+    is_google_detection_client,
+)
 
 from agora_analysis_worker_shared.bedrock_label_summary import (
     BedrockLabelSummaryConfig,
-    BedrockLabelSummaryError,
+    create_bedrock_converse_client,
     generate_label_summaries_with_bedrock,
 )
+from agora_analysis_worker_shared.description_generation import generate_english_descriptions
 from agora_analysis_worker_shared.description_translation import (
     BedrockTranslationConfig,
     DescriptionTranslationError,
@@ -27,8 +35,17 @@ from agora_analysis_worker_shared.simulation_providers import (
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from agora_analysis_worker_shared.bedrock_label_summary import ParsedLabelSummaryOutput
+    from agora_language.detection import DetectionOutcome, LanguageDetectorFunction
+
+    from agora_analysis_worker_shared.bedrock_label_summary import (
+        BedrockConverseClient,
+        ParsedLabelSummaryOutput,
+    )
     from agora_analysis_worker_shared.config import Settings
+    from agora_analysis_worker_shared.description_generation import (
+        DescriptionGenerationResult,
+        DescriptionGenerator,
+    )
     from agora_analysis_worker_shared.description_input import ConversationDescriptionInput
     from agora_analysis_worker_shared.description_translation import (
         DescriptionForTranslation,
@@ -36,7 +53,6 @@ if TYPE_CHECKING:
         GoogleTranslationService,
     )
 
-    DescriptionGenerator = Callable[[ConversationDescriptionInput], ParsedLabelSummaryOutput]
     DescriptionTranslator = Callable[
         [list[DescriptionForTranslation], list[str]],
         list[DescriptionTranslation],
@@ -51,9 +67,19 @@ class DescriptionTranslatorBundle:
     translate: DescriptionTranslator
 
 
-def build_description_generator(settings: Settings) -> DescriptionGenerator | None:
+def build_description_generator(
+    settings: Settings,
+    *,
+    secondary_detector: LanguageDetectorFunction | None,
+) -> DescriptionGenerator | None:
     if settings.ai_description_simulation_enabled:
-        return generate_simulated_label_summaries
+
+        def simulate(conversation: ConversationDescriptionInput) -> DescriptionGenerationResult:
+            return generate_english_descriptions(
+                generate=generate_simulated_label_summaries, conversation=conversation
+            )
+
+        return simulate
 
     if not settings.bedrock_label_summary_configured:
         return None
@@ -69,19 +95,70 @@ def build_description_generator(settings: Settings) -> DescriptionGenerator | No
         read_timeout_seconds=settings.aws_ai_label_summary_read_timeout_seconds,
     )
 
+    client: BedrockConverseClient | None = None
+    initialization_lock = Lock()
+
+    def call_provider(request: ConversationDescriptionInput) -> ParsedLabelSummaryOutput:
+        nonlocal client
+        with initialization_lock:
+            if client is None:
+                client = create_bedrock_converse_client(
+                    region=config.region,
+                    connect_timeout_seconds=config.connect_timeout_seconds,
+                    read_timeout_seconds=config.read_timeout_seconds,
+                )
+        return generate_label_summaries_with_bedrock(
+            conversation=request, config=config, client=client
+        )
+
     def generate(
         conversation: ConversationDescriptionInput,
-    ) -> ParsedLabelSummaryOutput:
-        return _retry_description_provider(
-            provider_name="Bedrock",
-            attempts=2,
-            call=lambda: generate_label_summaries_with_bedrock(
-                conversation=conversation,
-                config=config,
-            ),
+    ) -> DescriptionGenerationResult:
+        return generate_english_descriptions(
+            generate=call_provider,
+            conversation=conversation,
+            secondary_detector=secondary_detector,
         )
 
     return generate
+
+
+def build_description_language_detector(settings: Settings) -> LanguageDetectorFunction | None:
+    if (
+        settings.ai_description_simulation_enabled
+        or not settings.google_translation_credentials_configured
+    ):
+        return None
+    service: GoogleTranslationService | None = None
+    initialization_lock = Lock()
+
+    def detect(text: str) -> DetectionOutcome:
+        nonlocal service
+        # Secondary detection must not make otherwise valid Bedrock generation
+        # depend on Google/Secrets Manager availability at worker startup.
+        try:
+            with initialization_lock:
+                if service is None:
+                    service = _build_google_translation_service(settings)
+        except Exception as error:
+            return DetectionUnavailable(error)
+        if service is None:
+            return DetectionUnavailable(DescriptionTranslationError("Google detection unavailable"))
+        client = service.client
+        if not is_google_detection_client(client):
+            return DetectionUnavailable(
+                DescriptionTranslationError(
+                    "Google Cloud Translation client does not expose detect_language()"
+                )
+            )
+        return detect_with_google(
+            client=client,
+            parent=f"projects/{service.config.project_id}/locations/{service.config.location}",
+            text=text,
+            timeout=service.config.request_timeout_seconds,
+        )
+
+    return detect
 
 
 def build_description_translator(settings: Settings) -> DescriptionTranslatorBundle | None:
@@ -430,35 +507,3 @@ def _retry_translation_provider(
             )
     msg = f"{provider_name} translation failed after {attempts} attempt(s)"
     raise DescriptionTranslationError(msg) from last_error
-
-
-def _retry_description_provider(
-    *,
-    provider_name: str,
-    attempts: int,
-    call: Callable[[], ParsedLabelSummaryOutput],
-) -> ParsedLabelSummaryOutput:
-    last_error: Exception | None = None
-    for attempt in range(1, attempts + 1):
-        try:
-            return call()
-        except Exception as error:
-            last_error = error
-            if is_provider_timeout_error(error):
-                log.warning(
-                    "[DescriptionGenerator] %s description attempt %d/%d timed out",
-                    provider_name,
-                    attempt,
-                    attempts,
-                    exc_info=True,
-                )
-                raise
-            log.warning(
-                "[DescriptionGenerator] %s description attempt %d/%d failed",
-                provider_name,
-                attempt,
-                attempts,
-                exc_info=True,
-            )
-    msg = f"{provider_name} description generation failed after {attempts} attempt(s)"
-    raise BedrockLabelSummaryError(msg) from last_error
