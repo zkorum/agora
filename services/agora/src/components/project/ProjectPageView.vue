@@ -93,14 +93,6 @@
 
           <div class="project-page-view__stats">
             <span>
-              <q-icon name="mdi-account-outline" size="1rem" />
-              {{
-                t("uniqueParticipantsCount", {
-                  count: project.participantCount,
-                })
-              }}
-            </span>
-            <span>
               <q-icon name="mdi-account-multiple-outline" size="1rem" />
               {{
                 t("participationsCount", {

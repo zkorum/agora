@@ -149,7 +149,6 @@ type BaseDevProjectData = Omit<
   | "contact"
   | "displayContent"
   | "documents"
-  | "participantCount"
   | "participationCount"
   | "voteCount"
 >;
@@ -733,7 +732,6 @@ const project = computed<ProjectPageData>(() => ({
     translationControl: null,
   },
   bannerImageUrl: projectBannerImageUrlsByLanguage[selectedProjectLanguage.value],
-  participantCount: calculateParticipantCount({ activities: activities.value }),
   participationCount: calculateParticipationCount({
     activities: activities.value,
   }),
@@ -1032,23 +1030,6 @@ function getBaseActivity({
     default:
       return baseActivities[3];
   }
-}
-
-function calculateParticipantCount({
-  activities,
-}: {
-  activities: readonly ProjectActivity[];
-}): number {
-  let participantCount = 0;
-
-  for (const activity of activities) {
-    participantCount = Math.max(
-      participantCount,
-      activity.stats.participantCount
-    );
-  }
-
-  return participantCount;
 }
 
 function calculateParticipationCount({

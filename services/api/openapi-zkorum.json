@@ -4737,11 +4737,6 @@
                                                     "type": "string",
                                                     "format": "uri"
                                                 },
-                                                "participantCount": {
-                                                    "type": "integer",
-                                                    "minimum": 0,
-                                                    "maximum": 9007199254740991
-                                                },
                                                 "participationCount": {
                                                     "type": "integer",
                                                     "minimum": 0,
@@ -4959,7 +4954,6 @@
                                                 "displayContent",
                                                 "dynamicTranslationEnabled",
                                                 "bannerVariant",
-                                                "participantCount",
                                                 "participationCount",
                                                 "voteCount",
                                                 "activityCount",
@@ -7163,11 +7157,6 @@
                                                     "type": "string",
                                                     "format": "uri"
                                                 },
-                                                "participantCount": {
-                                                    "type": "integer",
-                                                    "minimum": 0,
-                                                    "maximum": 9007199254740991
-                                                },
                                                 "participationCount": {
                                                     "type": "integer",
                                                     "minimum": 0,
@@ -7385,7 +7374,6 @@
                                                 "displayContent",
                                                 "dynamicTranslationEnabled",
                                                 "bannerVariant",
-                                                "participantCount",
                                                 "participationCount",
                                                 "voteCount",
                                                 "activityCount",

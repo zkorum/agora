@@ -394,7 +394,6 @@ const project = computed<ProjectPageData>(() => {
     bannerVariant: "blue",
     bannerImageUrl:
       projectBannerImageUrlsByLanguage[activeScenarioLanguage.value],
-    participantCount: 214,
     participationCount: 492,
     voteCount: 2100,
     activityCount: 4,
