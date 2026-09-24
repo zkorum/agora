@@ -6,7 +6,7 @@ import {
 } from "../languages.js";
 import {
     zodEventSlug,
-    zodNotificationItem,
+    zodRegularNotificationItem,
     zodParticipationMode,
     zodPreferredOpinionGroupCount,
     zodProjectSlug,
@@ -64,7 +64,7 @@ export type SSEConnectedData = z.infer<typeof zodSSEConnectedData>;
  */
 export const zodSSENotificationData = z
     .object({
-        notification: zodNotificationItem,
+        notification: zodRegularNotificationItem,
     })
     .strict();
 export type SSENotificationData = z.infer<typeof zodSSENotificationData>;

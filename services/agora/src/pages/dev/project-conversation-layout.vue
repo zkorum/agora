@@ -501,6 +501,11 @@ const conversationData = computed<ExtendedConversation>(() => {
       hasVoted: userVotes.value.length > 0,
       votedIndex: 0,
       surveyGate: undefined,
+      conversationCapabilities: {
+        canEdit: false,
+        canDelete: false,
+        canManageIntegrations: false,
+      },
     },
   };
 });

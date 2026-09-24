@@ -1,6 +1,10 @@
 import { createPinia, setActivePinia } from "pinia";
-import type { FetchNotificationsResponse } from "src/shared/types/dto";
-import type { NotificationItem } from "src/shared/types/zod";
+import { Dto, type FetchNotificationsResponse } from "src/shared/types/dto";
+import { zodSSENotificationData } from "src/shared/types/sse";
+import type {
+  RegularNotificationItem,
+  SecurityAddEmailNotification,
+} from "src/shared/types/zod";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { fetchNotifications } = vi.hoisted(() => ({
@@ -21,7 +25,7 @@ function notification({
   slugId: string;
   createdAt: string;
   isRead?: boolean;
-}): NotificationItem {
+}): RegularNotificationItem {
   return {
     type: "import_started",
     slugId,
@@ -31,6 +35,17 @@ function notification({
       type: "import",
       importSlugId: `import-${slugId}`,
     },
+  };
+}
+
+function securityNotification(): SecurityAddEmailNotification {
+  return {
+    type: "security_add_email",
+    slugId: "security",
+    createdAt: new Date("2026-07-20T12:00:00Z"),
+    isRead: false,
+    isSticky: true,
+    routeTarget: { type: "settings" },
   };
 }
 
@@ -57,6 +72,36 @@ describe("notification store request ordering", () => {
     fetchNotifications.mockReset();
   });
 
+  it("keeps the security reminder unread when ordinary notifications are cleared", async () => {
+    fetchNotifications.mockResolvedValueOnce({
+      numNewNotifications: 1,
+      stickyNotificationList: [securityNotification()],
+      notificationList: [
+        notification({
+          slugId: "ordinary",
+          createdAt: "2026-07-21T12:00:00Z",
+        }),
+      ],
+    });
+    const store = useNotificationStore();
+    await store.refreshNotificationData();
+
+    expect(store.numNewNotifications).toBe(2);
+    store.clearBadgeCount();
+    store.markNotificationAsRead("security");
+    expect(store.numNewNotifications).toBe(1);
+    expect(store.stickyNotificationList[0]?.isRead).toBe(false);
+
+    fetchNotifications.mockResolvedValueOnce({
+      numNewNotifications: 0,
+      stickyNotificationList: [],
+      notificationList: [],
+    });
+    await store.refreshNotificationData();
+    expect(store.numNewNotifications).toBe(0);
+    expect(store.stickyNotificationList).toEqual([]);
+  });
+
   it("keeps an SSE notification added while a refresh is in flight", async () => {
     const pendingRefresh = deferredResponse();
     fetchNotifications.mockReturnValueOnce(pendingRefresh.promise);
@@ -68,6 +113,7 @@ describe("notification store request ordering", () => {
     );
     pendingRefresh.resolve({
       numNewNotifications: 0,
+      stickyNotificationList: [],
       notificationList: [
         notification({
           slugId: "sse",
@@ -91,6 +137,7 @@ describe("notification store request ordering", () => {
     const store = useNotificationStore();
     fetchNotifications.mockResolvedValueOnce({
       numNewNotifications: 1,
+      stickyNotificationList: [],
       notificationList: [
         notification({ slugId: "existing", createdAt: "2026-07-21T12:00:00Z" }),
       ],
@@ -103,6 +150,7 @@ describe("notification store request ordering", () => {
     store.markNotificationAsRead("existing");
     pendingRefresh.resolve({
       numNewNotifications: 1,
+      stickyNotificationList: [],
       notificationList: [
         notification({ slugId: "existing", createdAt: "2026-07-21T12:00:00Z" }),
       ],
@@ -116,6 +164,7 @@ describe("notification store request ordering", () => {
     const store = useNotificationStore();
     fetchNotifications.mockResolvedValueOnce({
       numNewNotifications: 0,
+      stickyNotificationList: [],
       notificationList: [
         notification({ slugId: "first", createdAt: "2026-07-21T12:00:00Z" }),
       ],
@@ -130,6 +179,7 @@ describe("notification store request ordering", () => {
     );
     pendingPage.resolve({
       numNewNotifications: 0,
+      stickyNotificationList: [],
       notificationList: [
         notification({ slugId: "older", createdAt: "2026-07-21T11:00:00Z" }),
       ],
@@ -152,6 +202,7 @@ describe("notification store request ordering", () => {
     store.clearNotificationData();
     pendingRefresh.resolve({
       numNewNotifications: 1,
+      stickyNotificationList: [securityNotification()],
       notificationList: [
         notification({ slugId: "stale", createdAt: "2026-07-21T12:00:00Z" }),
       ],
@@ -159,6 +210,7 @@ describe("notification store request ordering", () => {
     await refreshPromise;
 
     expect(store.notificationList).toEqual([]);
+    expect(store.stickyNotificationList).toEqual([]);
     expect(store.numNewNotifications).toBe(0);
   });
 
@@ -174,6 +226,7 @@ describe("notification store request ordering", () => {
     const newerPromise = store.refreshNotificationData();
     newerRefresh.resolve({
       numNewNotifications: 1,
+      stickyNotificationList: [securityNotification()],
       notificationList: [
         notification({ slugId: "newer", createdAt: "2026-07-21T12:01:00Z" }),
       ],
@@ -181,6 +234,7 @@ describe("notification store request ordering", () => {
     await newerPromise;
     olderRefresh.resolve({
       numNewNotifications: 0,
+      stickyNotificationList: [],
       notificationList: [
         notification({ slugId: "older", createdAt: "2026-07-21T12:00:00Z" }),
       ],
@@ -190,6 +244,26 @@ describe("notification store request ordering", () => {
     expect(store.notificationList.map(({ slugId }) => slugId)).toEqual([
       "newer",
     ]);
-    expect(store.numNewNotifications).toBe(1);
+    expect(store.stickyNotificationList.map(({ slugId }) => slugId)).toEqual([
+      "security",
+    ]);
+    expect(store.numNewNotifications).toBe(2);
+  });
+});
+
+describe("security notification channel boundaries", () => {
+  it("keeps sticky reminders out of the paginated feed and SSE events", () => {
+    expect(
+      Dto.fetchNotificationsResponse.safeParse({
+        numNewNotifications: 0,
+        notificationList: [securityNotification()],
+        stickyNotificationList: [],
+      }).success
+    ).toBe(false);
+    expect(
+      zodSSENotificationData.safeParse({
+        notification: securityNotification(),
+      }).success
+    ).toBe(false);
   });
 });

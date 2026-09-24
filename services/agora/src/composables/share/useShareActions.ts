@@ -76,17 +76,23 @@ export function useShareActions(): ShareActionsComposable {
     shareUrl: string;
     shareTitle: string;
   }): void => {
-    const context = createActionContext({
-      targetType,
+    const commonContext = {
       targetId,
       targetAuthor,
       currentUser: profileData.value.userName,
       isSiteModerator: profileData.value.isSiteModerator,
-      isConversationOwner: false,
-      isOrgMember: false,
       isLoggedIn: isLoggedIn.value,
       isEmbeddedMode: isEmbeddedMode(),
-    });
+    };
+    const context =
+      targetType === "post"
+        ? createActionContext({ ...commonContext, targetType })
+        : createActionContext({
+            ...commonContext,
+            targetType,
+            isConversationOwner: false,
+            isOrgMember: false,
+          });
 
     const translations = {
       copyLink: t("copyLink"),

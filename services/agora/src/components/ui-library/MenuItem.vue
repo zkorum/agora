@@ -5,6 +5,7 @@
       :class="{
         'menu-item--warning': style === 'warning',
         'menu-item--negative': style === 'negative',
+        'menu-item--security': style === 'security',
         'menu-item--rounded-top':
           borderRadius === 'top' || borderRadius === 'both',
         'menu-item--rounded-bottom':
@@ -54,7 +55,7 @@ defineProps<{
   label: string;
   value?: string;
   valueStyle?: "default" | "gradient";
-  style?: "none" | "warning" | "negative";
+  style?: "none" | "warning" | "negative" | "security";
   showSeparator?: boolean;
   borderRadius?: "none" | "top" | "bottom" | "both";
 }>();
@@ -108,6 +109,23 @@ const chevronForward = computed(() =>
 
   &--negative {
     color: $negative;
+  }
+
+  &--security {
+    background-color: #fff4df;
+    border-inline-start: 3px solid #8a5a00;
+
+    @media (hover: hover) {
+      &:hover {
+        background-color: #ffebc4;
+      }
+    }
+
+    .menu-item__label,
+    .menu-item__value {
+      color: #8a5a00;
+      font-weight: var(--font-weight-semibold);
+    }
   }
 }
 

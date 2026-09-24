@@ -2,6 +2,7 @@ import {
     conversationTable,
     conversationContentTable,
     conversationImportTable,
+    emailTable,
     notificationNewOpinionTable,
     notificationOpinionVoteTable,
     notificationExportTable,
@@ -13,12 +14,14 @@ import {
     projectOrganizationOwnershipTable,
     userTable,
 } from "@/shared-backend/schema.js";
+import { getPrimaryDatabase } from "@/shared-backend/db.js";
 import type { FetchNotificationsResponse } from "@/shared/types/dto.js";
 import type {
     ExportRouteTarget,
-    NotificationItem,
+    RegularNotificationItem,
+    SecurityAddEmailNotification,
 } from "@/shared/types/zod.js";
-import { zodNotificationItem } from "@/shared/types/zod.js";
+import { zodRegularNotificationItem } from "@/shared/types/zod.js";
 import {
     and,
     desc,
@@ -27,6 +30,8 @@ import {
     isNotNull,
     isNull,
     lt,
+    ne,
+    notExists,
     or,
     type SQL,
 } from "drizzle-orm";
@@ -36,6 +41,54 @@ import { httpErrors } from "@fastify/sensible";
 import { log } from "@/app.js";
 import { generateRandomSlugId } from "@/crypto.js";
 import type { RealtimeSSEManager } from "./realtimeSSE.js";
+
+const addEmailSecurityKey = "add_email";
+
+// Called only after a phone or Rarimo credential has been verified. Checking
+// email on the writer keeps this cheap for accounts that already have one.
+export async function ensureAddEmailSecurityNotification({
+    db,
+    userId,
+}: {
+    db: PostgresJsDatabase;
+    userId: string;
+}): Promise<void> {
+    const activeEmail = await db
+        .select({ id: emailTable.id })
+        .from(emailTable)
+        .where(
+            and(
+                eq(emailTable.userId, userId),
+                eq(emailTable.isDeleted, false),
+            ),
+        )
+        .limit(1);
+    if (activeEmail.length > 0) return;
+
+    const existingNotification = await db
+        .select({ id: notificationTable.id })
+        .from(notificationTable)
+        .where(
+            and(
+                eq(notificationTable.userId, userId),
+                eq(notificationTable.securityKey, addEmailSecurityKey),
+            ),
+        )
+        .limit(1);
+    if (existingNotification.length > 0) return;
+
+    await db
+        .insert(notificationTable)
+        .values({
+            slugId: generateRandomSlugId(),
+            userId,
+            notificationType: "security_add_email",
+            securityKey: addEmailSecurityKey,
+        })
+        .onConflictDoNothing({
+            target: [notificationTable.userId, notificationTable.securityKey],
+        });
+}
 
 interface MarkAllNotificationsAsReadProps {
     db: PostgresJsDatabase;
@@ -52,7 +105,12 @@ export async function markAllNotificationsAsRead({
             .set({
                 isRead: true,
             })
-            .where(eq(notificationTable.userId, userId));
+            .where(
+                and(
+                    eq(notificationTable.userId, userId),
+                    ne(notificationTable.notificationType, "security_add_email"),
+                ),
+            );
     } catch (error) {
         log.error(error);
         throw httpErrors.internalServerError(
@@ -128,15 +186,56 @@ export async function getNotifications({
     userId,
     lastSlugId,
 }: GetNotificationsProps): Promise<FetchNotificationsResponse> {
-    const notificationItemList: NotificationItem[] = [];
+    const notificationItemList: RegularNotificationItem[] = [];
+
+    const stickyNotificationList: SecurityAddEmailNotification[] = [];
+
+    if (lastSlugId === undefined) {
+        const primaryDb = getPrimaryDatabase(db);
+        const pendingSecurityNotifications = await primaryDb
+            .select({
+                slugId: notificationTable.slugId,
+                createdAt: notificationTable.createdAt,
+            })
+            .from(notificationTable)
+            .where(
+                and(
+                    eq(notificationTable.userId, userId),
+                    eq(notificationTable.notificationType, "security_add_email"),
+                    eq(notificationTable.securityKey, addEmailSecurityKey),
+                    notExists(
+                        primaryDb
+                            .select({ id: emailTable.id })
+                            .from(emailTable)
+                            .where(
+                                and(
+                                    eq(emailTable.userId, userId),
+                                    eq(emailTable.isDeleted, false),
+                                ),
+                            ),
+                    ),
+                ),
+            )
+            .limit(1);
+        for (const notification of pendingSecurityNotifications) {
+            stickyNotificationList.push({
+                type: "security_add_email",
+                slugId: notification.slugId,
+                createdAt: notification.createdAt,
+                isRead: false,
+                isSticky: true,
+                routeTarget: { type: "settings" },
+            });
+        }
+    }
 
     const fetchLimit = 20;
 
     let numNewNotifications = 0;
 
     const lastCursor = await getNotificationSlugIdLastCursor({
-        db: db,
-        lastSlugId: lastSlugId,
+        db,
+        lastSlugId,
         userId,
     });
 
@@ -158,15 +257,21 @@ export async function getNotifications({
         })
         .from(notificationTable)
         .where(
-            cursorFilter === undefined
-                ? eq(notificationTable.userId, userId)
-                : and(eq(notificationTable.userId, userId), cursorFilter),
+            and(
+                eq(notificationTable.userId, userId),
+                ne(notificationTable.notificationType, "security_add_email"),
+                cursorFilter,
+            ),
         )
         .orderBy(desc(notificationTable.createdAt), desc(notificationTable.id))
         .limit(fetchLimit);
 
     if (pageNotificationRows.length === 0) {
-        return { numNewNotifications, notificationList: [] };
+        return {
+            numNewNotifications,
+            notificationList: [],
+            stickyNotificationList,
+        };
     }
 
     const pageNotificationIds = pageNotificationRows.map((row) => row.id);
@@ -239,7 +344,7 @@ export async function getNotifications({
                 notificationItem.username &&
                 notificationItem.opinionContent
             ) {
-                const parsedItem: NotificationItem = {
+                const parsedItem: RegularNotificationItem = {
                     type: "new_opinion",
                     slugId: notificationItem.slugId,
                     createdAt: notificationItem.createdAt,
@@ -319,7 +424,7 @@ export async function getNotifications({
                 notificationItem.numVotes
             ) {
                 const numVotes = notificationItem.numVotes;
-                const parsedItem: NotificationItem = {
+                const parsedItem: RegularNotificationItem = {
                     type: "opinion_vote",
                     slugId: notificationItem.slugId,
                     createdAt: notificationItem.createdAt,
@@ -413,7 +518,7 @@ export async function getNotifications({
                 }),
             };
 
-            let parsedItem: NotificationItem | null = null;
+            let parsedItem: RegularNotificationItem | null = null;
 
             switch (notificationItem.notificationType) {
                 case "export_started":
@@ -528,7 +633,7 @@ export async function getNotifications({
                 isRead: notificationItem.isRead,
             };
 
-            let parsedItem: NotificationItem | null = null;
+            let parsedItem: RegularNotificationItem | null = null;
 
             switch (notificationItem.notificationType) {
                 case "import_started":
@@ -600,6 +705,7 @@ export async function getNotifications({
     return {
         numNewNotifications: numNewNotifications,
         notificationList: notificationItemList,
+        stickyNotificationList,
     };
 }
 
@@ -700,7 +806,7 @@ interface InsertNewVoteNotificationProps {
     opinionId: number;
     conversationId: number;
     notification: Omit<
-        Extract<NotificationItem, { type: "opinion_vote" }>,
+        Extract<RegularNotificationItem, { type: "opinion_vote" }>,
         "slugId" | "createdAt" | "isRead"
     >;
     numVotes: number;
@@ -717,7 +823,7 @@ async function buildImportNotification(
     notificationSlugId: string,
     importId: number,
     conversationId: number | null,
-): Promise<NotificationItem | null> {
+): Promise<RegularNotificationItem | null> {
     try {
         // Build base query without conversation join
         const baseQuery = db
@@ -851,7 +957,7 @@ export async function broadcastImportNotification(
         if (notification) {
             // Validate notification before broadcasting
             const validationResult =
-                zodNotificationItem.safeParse(notification);
+                zodRegularNotificationItem.safeParse(notification);
             if (validationResult.success) {
                 realtimeSSEManager.broadcastToUser(
                     userId,
@@ -910,14 +1016,14 @@ async function createVoteNotification({
         isSeed: isSeed,
     });
 
-    const notificationItem: NotificationItem = {
+    const notificationItem: RegularNotificationItem = {
         ...notification,
         slugId: notificationSlugId,
         createdAt: insertedNotification.createdAt,
         isRead: insertedNotification.isRead,
     };
 
-    const validationResult = zodNotificationItem.safeParse(notificationItem);
+    const validationResult = zodRegularNotificationItem.safeParse(notificationItem);
     if (validationResult.success) {
         realtimeSSEManager?.broadcastToUser(userId, validationResult.data);
     } else {
@@ -982,7 +1088,7 @@ interface CreateOpinionNotificationForUserProps {
     opinionId: number;
     conversationId: number;
     notification: Omit<
-        Extract<NotificationItem, { type: "new_opinion" }>,
+        Extract<RegularNotificationItem, { type: "new_opinion" }>,
         "slugId" | "createdAt" | "isRead"
     >;
     realtimeSSEManager?: RealtimeSSEManager;
@@ -1020,14 +1126,14 @@ async function createOpinionNotificationForUser({
         conversationId,
     });
 
-    const notificationItem: NotificationItem = {
+    const notificationItem: RegularNotificationItem = {
         ...notification,
         slugId: notificationSlugId,
         createdAt: insertedNotification.createdAt,
         isRead: insertedNotification.isRead,
     };
 
-    const validationResult = zodNotificationItem.safeParse(notificationItem);
+    const validationResult = zodRegularNotificationItem.safeParse(notificationItem);
     if (validationResult.success) {
         realtimeSSEManager?.broadcastToUser(
             recipientUserId,

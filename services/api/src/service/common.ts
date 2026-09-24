@@ -10,6 +10,7 @@ import {
     conversationImportSourceTable,
     projectOrganizationOwnershipTable,
 } from "@/shared-backend/schema.js";
+import { getProjectCapabilitiesById } from "./projectAccess.js";
 import { toUnionUndefined } from "@/shared/shared.js";
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import type {
@@ -21,7 +22,9 @@ import type {
     FeedSortAlgorithm,
     EventSlug,
     ParticipationMode,
+    ConversationCapabilities,
 } from "@/shared/types/zod.js";
+import type { AllProjectCapability } from "./projectAccessLogic.js";
 import { zodExternalSourceConfig } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
 import { eq, desc, SQL, and, isNotNull, isNull, or } from "drizzle-orm";
@@ -54,6 +57,18 @@ interface FetchedPostItem {
 }
 
 type FetchedPostItemPerSlugId = Map<string, FetchedPostItem>;
+
+function getConversationCapabilities(
+    projectCapabilities: ReadonlySet<AllProjectCapability> | undefined,
+): ConversationCapabilities {
+    return {
+        canEdit: projectCapabilities?.has("conversation_edit") ?? false,
+        canDelete: projectCapabilities?.has("conversation_delete") ?? false,
+        canManageIntegrations:
+            projectCapabilities?.has("conversation_manage_integrations") ??
+            false,
+    };
+}
 
 function requireJoinedRankingMode({
     conversationId,
@@ -220,6 +235,7 @@ export function useCommonPost() {
                 conversationContentId: conversationContentTable.id,
                 // metadata
                 conversationId: conversationTable.id,
+                projectId: conversationTable.projectId,
                 slugId: conversationTable.slugId,
                 createdAt: conversationTable.createdAt,
                 updatedAt: conversationTable.updatedAt,
@@ -359,6 +375,7 @@ export function useCommonPost() {
             latestViewSnapshotCountsByConversationId,
             multilingualSettingsByConversationId,
             projectContextsBySlugId,
+            capabilitiesByProjectId,
         ] = await Promise.all([
             fetchConversationDisplayCountsByConversationId({
                 db,
@@ -372,6 +389,18 @@ export function useCommonPost() {
                 db,
                 conversationSlugIds,
                 currentDisplayLanguage,
+            }),
+            getProjectCapabilitiesById({
+                db,
+                userId: personalizedUserId,
+                projectIds: [
+                    ...new Set(postItems.map((item) => item.projectId)),
+                ],
+                requestedCapabilities: [
+                    "conversation_edit",
+                    "conversation_delete",
+                    "conversation_manage_integrations",
+                ],
             }),
         ]);
 
@@ -573,6 +602,12 @@ export function useCommonPost() {
                         interaction: {
                             hasVoted: false,
                             votedIndex: 0,
+                            conversationCapabilities:
+                                getConversationCapabilities(
+                                    capabilitiesByProjectId.get(
+                                        postItem.projectId,
+                                    ),
+                                ),
                         },
                     },
                 });

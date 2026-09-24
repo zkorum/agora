@@ -4,7 +4,7 @@ export interface SettingsNavigationItem {
   type: "navigation";
   label: string;
   to: keyof RouteNamedMap;
-  style?: "none" | "warning" | "negative";
+  style?: "none" | "warning" | "negative" | "security";
   value?: string;
   valueStyle?: "default" | "gradient";
   key?: string;
@@ -14,7 +14,7 @@ export interface SettingsActionItem {
   type: "action";
   label: string;
   action: () => void;
-  style?: "none" | "warning" | "negative";
+  style?: "none" | "warning" | "negative" | "security";
   value?: string;
   valueStyle?: "default" | "gradient";
   key?: string;

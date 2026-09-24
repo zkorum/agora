@@ -126,6 +126,7 @@ import { useShareActions } from "src/composables/share/useShareActions";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ConversationEmailUpdateConversationSummaryResponse } from "src/shared/types/dto";
 import type {
+  ConversationCapabilities,
   ConversationTypeConfig,
   ExternalSourceConfig,
   ParticipationMode,
@@ -172,6 +173,7 @@ const props = withDefaults(
     conversationTitle: string;
     conversationTypeConfig: ConversationTypeConfig;
     externalSourceConfig: ExternalSourceConfig | null;
+    conversationCapabilities: ConversationCapabilities;
     showIdentityCard?: boolean;
     projectSlug?: string;
   }>(),
@@ -438,11 +440,11 @@ async function clickedMoreIcon(): Promise<void> {
     isMaxDiffConversation.value &&
     props.externalSourceConfig?.sourceType === "github_issue";
 
-  postActions.showPostActions(
-    props.postSlugId,
-    props.posterUserName,
-    props.organizationName,
-    {
+  postActions.showPostActions({
+    targetId: props.postSlugId,
+    targetAuthor: props.posterUserName,
+    conversationCapabilities: props.conversationCapabilities,
+    callbacks: {
       reportPostCallback: reportContentCallback,
       openUserReportsCallback,
       muteUserCallback,
@@ -464,8 +466,8 @@ async function clickedMoreIcon(): Promise<void> {
       isConversationClosed: props.isClosed,
       isConversationExportAvailable: !isRankingConversation.value,
       conversationDeletedCallback,
-    }
-  );
+    },
+  });
 
   if (props.projectSlug !== undefined) {
     postActions.dialogState.value.actions =

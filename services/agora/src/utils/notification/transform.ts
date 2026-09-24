@@ -8,7 +8,7 @@
 import type {
   ExportFailureReason,
   ImportFailureReason,
-  NotificationItem,
+  RegularNotificationItem,
 } from "src/shared/types/zod";
 
 /**
@@ -18,7 +18,9 @@ import type {
  *
  * Also includes `failureReasonKey` for i18n lookup when a failure reason is present.
  */
-export type DisplayNotification = NotificationItem & {
+export type DisplayNotification<
+  T extends RegularNotificationItem = RegularNotificationItem,
+> = T & {
   displayMessage: string | null;
   failureReasonKey: string | null;
 };
@@ -50,7 +52,7 @@ function getFailureReasonKey(
  * - Import notifications: no message content (null) - title is sufficient
  */
 export function getDisplayMessage(
-  notification: NotificationItem
+  notification: RegularNotificationItem
 ): string | null {
   switch (notification.type) {
     case "new_opinion":
@@ -80,7 +82,7 @@ export function getDisplayMessage(
  * Get the failure reason i18n key from a notification.
  */
 function getFailureReasonKeyFromNotification(
-  notification: NotificationItem
+  notification: RegularNotificationItem
 ): string | null {
   switch (notification.type) {
     case "export_failed":
@@ -101,9 +103,9 @@ function getFailureReasonKeyFromNotification(
 /**
  * Transform a notification to include the display message and failure reason key.
  */
-export function transformNotification(
-  notification: NotificationItem
-): DisplayNotification {
+export function transformNotification<T extends RegularNotificationItem>(
+  notification: T
+): DisplayNotification<T> {
   return {
     ...notification,
     displayMessage: getDisplayMessage(notification),
@@ -114,8 +116,8 @@ export function transformNotification(
 /**
  * Transform a list of notifications.
  */
-export function transformNotifications(
-  notifications: NotificationItem[]
-): DisplayNotification[] {
+export function transformNotifications<T extends RegularNotificationItem>(
+  notifications: T[]
+): DisplayNotification<T>[] {
   return notifications.map(transformNotification);
 }

@@ -66,8 +66,6 @@ vi.mock("src/utils/actions/definitions/content-actions", () => ({
     const context: ContentActionContext = {
       isOwner: false,
       isSiteModerator: false,
-      isConversationOwner: false,
-      isOrgMember: false,
       isLoggedIn: true,
       isEmbeddedMode: false,
       targetType: "post",
@@ -537,6 +535,11 @@ function mountMetadata(postSlugId = ref("conversation-one")): HTMLElement {
         conversationTitle: "Conversation One",
         conversationTypeConfig: { conversationType: "polis" },
         externalSourceConfig: null,
+        conversationCapabilities: {
+          canEdit: false,
+          canDelete: false,
+          canManageIntegrations: false,
+        },
         showIdentityCard: false,
       })
   );

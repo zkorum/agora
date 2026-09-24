@@ -27,7 +27,6 @@ import {
     getConversationCreateEmailUpdateConfiguration,
     getProjectIdsWithCapabilityFromGrants,
     hasActivePremiumFeatureEntitlement,
-    hasCapabilityForProject,
 } from "@/service/projectAccessLogic.js";
 import { getImplicitDefaultDisplayLanguage } from "./projectLanguage.js";
 import { sourceLanguageToDisplayLanguage } from "./translationLanguageSetting.js";
@@ -1047,21 +1046,31 @@ export async function getProjectLanguageSettings({
     };
 }
 
-export async function hasProjectCapability({
+export async function getProjectCapabilitiesById({
     db,
     userId,
-    projectId,
-    capability,
+    projectIds,
+    requestedCapabilities,
 }: {
     db: PostgresDatabase;
-    userId: string;
-    projectId: number;
-    capability: AllProjectCapability;
-}): Promise<boolean> {
-    const rows = await db
+    userId: string | undefined;
+    projectIds: readonly number[];
+    requestedCapabilities: readonly [
+        AllProjectCapability,
+        ...AllProjectCapability[],
+    ];
+}): Promise<ReadonlyMap<number, ReadonlySet<AllProjectCapability>>> {
+    const capabilitiesByProjectId = new Map<
+        number,
+        Set<AllProjectCapability>
+    >();
+    if (userId === undefined || projectIds.length === 0) {
+        return capabilitiesByProjectId;
+    }
+
+    const query = db
         .select({
             projectId: projectOrganizationOwnershipTable.projectId,
-            organizationId: organizationMembershipTable.organizationId,
             capability:
                 organizationMembershipAllProjectCapabilityTable.capability,
         })
@@ -1095,24 +1104,55 @@ export async function hasProjectCapability({
                 eq(organizationMembershipTable.userId, userId),
                 isNull(organizationMembershipTable.deletedAt),
                 isNull(organizationTable.deletedAt),
-                eq(projectOrganizationOwnershipTable.projectId, projectId),
-                eq(
+                inArray(
+                    projectOrganizationOwnershipTable.projectId,
+                    projectIds,
+                ),
+                inArray(
                     organizationMembershipAllProjectCapabilityTable.capability,
-                    capability,
+                    requestedCapabilities,
                 ),
                 isNull(
                     organizationMembershipAllProjectCapabilityTable.deletedAt,
                 ),
             ),
         )
-        .limit(1);
+        .$dynamic();
 
-    return hasCapabilityForProject({
-        capabilityGrants: rows,
-        projectOwnerships: rows,
-        projectId,
-        capability,
+    const rows =
+        projectIds.length === 1 && requestedCapabilities.length === 1
+            ? await query.limit(1)
+            : await query;
+
+    for (const row of rows) {
+        let capabilities = capabilitiesByProjectId.get(row.projectId);
+        if (capabilities === undefined) {
+            capabilities = new Set<AllProjectCapability>();
+            capabilitiesByProjectId.set(row.projectId, capabilities);
+        }
+        capabilities.add(row.capability);
+    }
+    return capabilitiesByProjectId;
+}
+
+export async function hasProjectCapability({
+    db,
+    userId,
+    projectId,
+    capability,
+}: {
+    db: PostgresDatabase;
+    userId: string;
+    projectId: number;
+    capability: AllProjectCapability;
+}): Promise<boolean> {
+    const capabilitiesByProjectId = await getProjectCapabilitiesById({
+        db,
+        userId,
+        projectIds: [projectId],
+        requestedCapabilities: [capability],
     });
+    return capabilitiesByProjectId.get(projectId)?.has(capability) ?? false;
 }
 
 export async function requireProjectCapability({

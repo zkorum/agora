@@ -52,6 +52,9 @@
             :external-source-config="
               conversationData.metadata.externalSourceConfig ?? null
             "
+            :conversation-capabilities="
+              conversationData.interaction.conversationCapabilities
+            "
             :show-identity-card="false"
             :project-slug="project.slug"
             @conversation-deleted="emit('conversationDeleted')"

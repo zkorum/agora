@@ -64,6 +64,7 @@ import { mergeGuestIntoVerifiedUser } from "./merge.js";
 import { sendOtpEmail } from "./email.js";
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import { startHardAuthSession } from "./authSession.js";
+import { ensureAddEmailSecurityNotification } from "./notification.js";
 import { decideDestinationWrongGuess } from "./auth/otpPolicy.js";
 import { randomInt } from "node:crypto";
 import { setTimeout as sleep } from "node:timers/promises";
@@ -1000,6 +1001,7 @@ async function registerOrLoginWithPhoneNumber(
                 now,
                 sessionExpiry: loginSessionExpiry,
             });
+            await ensureAddEmailSecurityNotification({ db, userId: props.userId });
             return {
                 success: true,
                 accountMerged: false,
@@ -1015,6 +1017,7 @@ async function registerOrLoginWithPhoneNumber(
                 now,
                 sessionExpiry: loginSessionExpiry,
             });
+            await ensureAddEmailSecurityNotification({ db, userId: props.userId });
             return {
                 success: true,
                 accountMerged: false,
@@ -1040,6 +1043,7 @@ async function registerOrLoginWithPhoneNumber(
                 now,
                 sessionExpiry: loginSessionExpiry,
             });
+            await ensureAddEmailSecurityNotification({ db, userId: toUserId });
             log.info(
                 { verifiedUserId: toUserId, guestUserId: fromUserId },
                 "[Phone] Merged guest into verified user",
@@ -1343,6 +1347,7 @@ async function registerWithPhoneNumber({
             pepperVersion: pepperVersion,
             phoneHash: phoneHash,
         });
+        await ensureAddEmailSecurityNotification({ db: tx, userId });
     });
 }
 

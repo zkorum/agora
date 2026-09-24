@@ -32,7 +32,8 @@ import {
     zodUserReportItem,
     zodUserMuteAction,
     zodUserMuteItem,
-    zodNotificationItem,
+    zodRegularNotificationItem,
+    zodSecurityAddEmailNotification,
     zodPolisKey,
     zodAnalysisView,
     zodOrganization,
@@ -2200,7 +2201,8 @@ export class Dto {
     static fetchNotificationsResponse = z
         .object({
             numNewNotifications: z.number(),
-            notificationList: z.array(zodNotificationItem),
+            notificationList: z.array(zodRegularNotificationItem),
+            stickyNotificationList: z.array(zodSecurityAddEmailNotification),
         })
         .strict();
     static createOrganizationRequest = z

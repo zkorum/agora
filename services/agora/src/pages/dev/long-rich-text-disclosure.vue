@@ -334,6 +334,11 @@ function createConversation({
     interaction: {
       hasVoted: false,
       votedIndex: 0,
+      conversationCapabilities: {
+        canEdit: false,
+        canDelete: false,
+        canManageIntegrations: false,
+      },
     },
   };
 }

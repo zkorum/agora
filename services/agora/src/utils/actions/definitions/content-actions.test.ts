@@ -34,7 +34,6 @@ vi.mock("../core/handlers", () => ({
 
 vi.mock("../core/permissions", () => ({
   createActionContext: vi.fn(),
-  useActionPermissions: () => ({}),
 }));
 
 import { useContentActions } from "./content-actions";
@@ -42,8 +41,6 @@ import { useContentActions } from "./content-actions";
 const context: ContentActionContext = {
   isOwner: false,
   isSiteModerator: false,
-  isConversationOwner: false,
-  isOrgMember: false,
   isLoggedIn: true,
   isEmbeddedMode: false,
   targetType: "post",

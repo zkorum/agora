@@ -3947,6 +3947,7 @@ export const notificationTypeEnum = pgEnum("notification_type_enum", [
     "import_started",
     "import_completed",
     "import_failed",
+    "security_add_email",
 ]);
 
 export const notificationOpinionVoteTable = pgTable(
@@ -4067,6 +4068,7 @@ export const notificationTable = pgTable(
             .notNull(),
         isRead: boolean("is_read").notNull().default(false),
         notificationType: notificationTypeEnum("notification_type").notNull(),
+        securityKey: varchar("security_key", { length: 64 }),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -4080,6 +4082,10 @@ export const notificationTable = pgTable(
             t.userId,
             sql`${t.createdAt} DESC`,
             sql`${t.id} DESC`,
+        ),
+        uniqueIndex("notification_user_security_key_unique").on(
+            t.userId,
+            t.securityKey,
         ),
     ],
 );

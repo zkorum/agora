@@ -7,7 +7,7 @@ import { generateRandomSlugId } from "@/crypto.js";
 import { log } from "@/app.js";
 import {
     type NotificationItem,
-    zodNotificationItem,
+    zodRegularNotificationItem,
 } from "@/shared/types/zod.js";
 import type { RealtimeSSEManager } from "../realtimeSSE.js";
 
@@ -84,7 +84,7 @@ export async function createImportNotification({
                   ? { ...baseNotification, type }
                   : { ...baseNotification, type };
 
-        const validationResult = zodNotificationItem.safeParse(notificationItem);
+        const validationResult = zodRegularNotificationItem.safeParse(notificationItem);
         if (validationResult.success) {
             realtimeSSEManager.broadcastToUser(userId, validationResult.data);
         } else {

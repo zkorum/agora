@@ -5038,6 +5038,12 @@ export interface ApiV1ConversationFetchRecentPost200ResponseFeedItemListInnerCon
     'hasVoted': boolean;
     'votedIndex': number;
     'surveyGate'?: ApiV1ConversationFetchRecentPost200ResponseFeedItemListInnerConversationDataInteractionSurveyGate;
+    'conversationCapabilities': ApiV1ConversationFetchRecentPost200ResponseFeedItemListInnerConversationDataInteractionConversationCapabilities;
+}
+export interface ApiV1ConversationFetchRecentPost200ResponseFeedItemListInnerConversationDataInteractionConversationCapabilities {
+    'canEdit': boolean;
+    'canDelete': boolean;
+    'canManageIntegrations': boolean;
 }
 export interface ApiV1ConversationFetchRecentPost200ResponseFeedItemListInnerConversationDataInteractionSurveyGate {
     'hasSurvey': boolean;
@@ -6502,6 +6508,7 @@ export interface ApiV1MuteUserGetPost200ResponseInner {
 export interface ApiV1NotificationFetchPost200Response {
     'numNewNotifications': number;
     'notificationList': Array<ApiV1NotificationFetchPost200ResponseNotificationListInner>;
+    'stickyNotificationList': Array<ApiV1NotificationFetchPost200ResponseStickyNotificationListInner>;
 }
 /**
  * @type ApiV1NotificationFetchPost200ResponseNotificationListInner
@@ -6697,6 +6704,31 @@ export const ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOfRout
 } as const;
 
 export type ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOfRouteTargetTypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOfRouteTargetTypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOfRouteTargetTypeEnum];
+
+export interface ApiV1NotificationFetchPost200ResponseStickyNotificationListInner {
+    'slugId': string;
+    'isRead': boolean;
+    'createdAt': string;
+    'type': ApiV1NotificationFetchPost200ResponseStickyNotificationListInnerTypeEnum;
+    'routeTarget': ApiV1NotificationFetchPost200ResponseStickyNotificationListInnerRouteTarget;
+    'isSticky': boolean;
+}
+
+export const ApiV1NotificationFetchPost200ResponseStickyNotificationListInnerTypeEnum = {
+    SecurityAddEmail: 'security_add_email',
+} as const;
+
+export type ApiV1NotificationFetchPost200ResponseStickyNotificationListInnerTypeEnum = typeof ApiV1NotificationFetchPost200ResponseStickyNotificationListInnerTypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseStickyNotificationListInnerTypeEnum];
+
+export interface ApiV1NotificationFetchPost200ResponseStickyNotificationListInnerRouteTarget {
+    'type': ApiV1NotificationFetchPost200ResponseStickyNotificationListInnerRouteTargetTypeEnum;
+}
+
+export const ApiV1NotificationFetchPost200ResponseStickyNotificationListInnerRouteTargetTypeEnum = {
+    Settings: 'settings',
+} as const;
+
+export type ApiV1NotificationFetchPost200ResponseStickyNotificationListInnerRouteTargetTypeEnum = typeof ApiV1NotificationFetchPost200ResponseStickyNotificationListInnerRouteTargetTypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseStickyNotificationListInnerRouteTargetTypeEnum];
 
 export interface ApiV1NotificationFetchPostRequest {
     'lastSlugId'?: string;
