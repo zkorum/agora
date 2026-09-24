@@ -1,18 +1,25 @@
 import { defineStore } from "pinia";
-import type { NotificationItem } from "src/shared/types/zod";
+import type {
+  RegularNotificationItem,
+  SecurityAddEmailNotification,
+} from "src/shared/types/zod";
 import { useNotificationApi } from "src/utils/api/notification/notification";
 import {
   type DisplayNotification,
   transformNotification,
   transformNotifications,
 } from "src/utils/notification/transform";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 
 export const useNotificationStore = defineStore("notification", () => {
   const { fetchNotifications } = useNotificationApi();
 
   const notificationList = ref<DisplayNotification[]>([]);
-  const numNewNotifications = ref(0);
+  const stickyNotificationList = ref<SecurityAddEmailNotification[]>([]);
+  const numRegularNotifications = ref(0);
+  const numNewNotifications = computed(
+    () => numRegularNotifications.value + stickyNotificationList.value.length
+  );
   let listGeneration = 0;
   let badgeGeneration = 0;
   let sessionGeneration = 0;
@@ -59,6 +66,7 @@ export const useNotificationStore = defineStore("notification", () => {
     const fetchedNotifications = transformNotifications(
       response.notificationList
     );
+    stickyNotificationList.value = response.stickyNotificationList;
     notificationList.value =
       requestListGeneration === listGeneration
         ? fetchedNotifications
@@ -69,7 +77,7 @@ export const useNotificationStore = defineStore("notification", () => {
     listGeneration += 1;
 
     if (requestBadgeGeneration === badgeGeneration) {
-      numNewNotifications.value = response.numNewNotifications;
+      numRegularNotifications.value = response.numNewNotifications;
       badgeGeneration += 1;
     }
   }
@@ -98,7 +106,7 @@ export const useNotificationStore = defineStore("notification", () => {
     listGeneration += 1;
 
     if (requestBadgeGeneration === badgeGeneration) {
-      numNewNotifications.value += response.numNewNotifications;
+      numRegularNotifications.value += response.numNewNotifications;
       badgeGeneration += 1;
     }
     return response.notificationList.length > 0;
@@ -108,7 +116,7 @@ export const useNotificationStore = defineStore("notification", () => {
     return notificationList.value.some((n) => n.slugId === slugId);
   }
 
-  function addNewNotification(notification: NotificationItem) {
+  function addNewNotification(notification: RegularNotificationItem) {
     // Check for duplicates before adding
     if (hasNotification(notification.slugId)) {
       console.log(
@@ -124,7 +132,7 @@ export const useNotificationStore = defineStore("notification", () => {
 
     // Update new notification count if it's unread
     if (!notification.isRead) {
-      numNewNotifications.value += 1;
+      numRegularNotifications.value += 1;
       badgeGeneration += 1;
     }
 
@@ -144,13 +152,14 @@ export const useNotificationStore = defineStore("notification", () => {
   }
 
   function clearBadgeCount() {
-    numNewNotifications.value = 0;
+    numRegularNotifications.value = 0;
     badgeGeneration += 1;
   }
 
   function clearNotificationData() {
     notificationList.value = [];
-    numNewNotifications.value = 0;
+    stickyNotificationList.value = [];
+    numRegularNotifications.value = 0;
     listGeneration += 1;
     badgeGeneration += 1;
     sessionGeneration += 1;
@@ -167,5 +176,6 @@ export const useNotificationStore = defineStore("notification", () => {
     markNotificationAsRead,
     numNewNotifications,
     notificationList,
+    stickyNotificationList,
   };
 });

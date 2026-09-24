@@ -1,6 +1,6 @@
 import { log } from "@/app.js";
 import { VALKEY_QUEUE_KEYS } from "@/shared-backend/valkeyQueues.js";
-import { zodNotificationItem } from "@/shared/types/zod.js";
+import { zodRegularNotificationItem } from "@/shared/types/zod.js";
 import { zodImportWorkerEvent } from "./importQueueContract.js";
 import type { RealtimeSSEManager } from "./realtimeSSE.js";
 import type { ValkeyRef } from "./valkeyRef.js";
@@ -63,7 +63,7 @@ export function createImportWorkerEventBridge({
                         type: "import_started",
                     };
 
-        const validationResult = zodNotificationItem.safeParse(notificationItem);
+        const validationResult = zodRegularNotificationItem.safeParse(notificationItem);
         if (validationResult.success) {
             realtimeSSEManager.broadcastToUser(
                 event.userId,

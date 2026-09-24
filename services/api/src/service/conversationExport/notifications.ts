@@ -8,7 +8,7 @@ import { log } from "@/app.js";
 import {
     type ExportFailureReason,
     type NotificationItem,
-    zodNotificationItem,
+    zodRegularNotificationItem,
 } from "@/shared/types/zod.js";
 import type { RealtimeSSEManager } from "../realtimeSSE.js";
 
@@ -115,7 +115,7 @@ export async function createExportNotification({
                         type,
                     };
 
-        const validationResult = zodNotificationItem.safeParse(notificationItem);
+        const validationResult = zodRegularNotificationItem.safeParse(notificationItem);
         if (validationResult.success) {
             realtimeSSEManager?.broadcastToUser(userId, validationResult.data);
         } else {

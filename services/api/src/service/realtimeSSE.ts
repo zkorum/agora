@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import type { DeviceLoginStatusInternal } from "@/service/authUtil.js";
-import type { NotificationItem } from "@/shared/types/zod.js";
+import type { RegularNotificationItem } from "@/shared/types/zod.js";
 import { zodSlugId } from "@/shared/types/zod.js";
 import type {
     SSEConnectedData,
@@ -468,7 +468,7 @@ export class RealtimeSSEManager {
      */
     public broadcastToUser(
         userId: string,
-        notification: NotificationItem,
+        notification: RegularNotificationItem,
     ): void {
         const userConnections = this.connections.get(userId);
         if (!userConnections || userConnections.size === 0) {

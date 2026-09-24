@@ -9,6 +9,29 @@
     </Teleport>
 
     <PullToRefresh @refresh="pullDownTriggered">
+      <div v-if="stickyNotificationList.length > 0" class="widthConstraint">
+        <SpaLink
+          v-for="securityNotification in stickyNotificationList"
+          :key="securityNotification.slugId"
+          :to="getRouteFromTarget(securityNotification.routeTarget)"
+          class="securityNotification"
+        >
+          <div class="iconWrapper">
+            <div class="unreadDot"></div>
+            <ZKIcon
+              name="mdi:shield-alert-outline"
+              size="1.8rem"
+              color="#8a5a00"
+            />
+          </div>
+          <div class="notificationRightPortion">
+            <div class="securityCategory">{{ tSecurity('category') }}</div>
+            <div class="titleStyle unreadTitle">{{ tSecurity('title') }}</div>
+            <div class="messageStyle">{{ tSecurity('description') }}</div>
+            <div class="securityAction">{{ tSecurity('action') }}</div>
+          </div>
+        </SpaLink>
+      </div>
       <PageLoadingSpinner v-if="isLoading" />
 
       <ErrorRetryBlock
@@ -29,7 +52,7 @@
             <SpaLink
               v-for="notificationItem in notificationList"
               :key="notificationItem.slugId"
-              :to="getRouteFromTarget(notificationItem.routeTarget) ?? {}"
+              :to="getRouteFromTarget(notificationItem.routeTarget)"
             >
               <ZKHoverEffect
                 :enable-hover="true"
@@ -90,7 +113,10 @@
           {{ t("endOfFeed") }}
         </div>
 
-        <div v-if="notificationList.length == 0" class="endOfFeed">
+        <div
+          v-if="notificationList.length === 0 && stickyNotificationList.length === 0"
+          class="endOfFeed"
+        >
           {{ t("noNotifications") }}
         </div>
       </q-infinite-scroll>
@@ -112,11 +138,15 @@ import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { isNetworkOffline } from "src/composables/useNetworkStatus";
-import type { NotificationType, RouteTarget } from "src/shared/types/zod";
+import type { RegularNotificationItem, RouteTarget } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useNotificationStore } from "src/stores/notification";
 import { useNotificationApi } from "src/utils/api/notification/notification";
 import { handleNotificationRequestError } from "src/utils/api/notification/requestError";
+import {
+  type SecurityAddEmailTranslations,
+  securityAddEmailTranslations,
+} from "src/utils/notification/securityAddEmail.i18n";
 import type { DisplayNotification } from "src/utils/notification/transform";
 import { onActivated, ref, watch } from "vue";
 import type { RouteLocationRaw } from "vue-router";
@@ -131,7 +161,7 @@ defineOptions({ name: "NotificationPage" });
 const { isActive } = usePageLayout({});
 
 const notificationStore = useNotificationStore();
-const { notificationList, numNewNotifications } =
+const { notificationList, stickyNotificationList, numNewNotifications } =
   storeToRefs(notificationStore);
 const authStore = useAuthenticationStore();
 const { isAuthInitialized } = storeToRefs(authStore);
@@ -151,6 +181,9 @@ const isError = ref(false);
 const hasLoadedOnce = ref(false);
 const { t } = useComponentI18n<NotificationTranslations>(
   notificationTranslations
+);
+const { t: tSecurity } = useComponentI18n<SecurityAddEmailTranslations>(
+  securityAddEmailTranslations
 );
 
 onActivated(() => {
@@ -225,7 +258,7 @@ async function onLoad(
 }
 
 function getIconFromNotificationType(
-  notificationType: NotificationType
+  notificationType: RegularNotificationItem["type"]
 ): string {
   let icon;
   switch (notificationType) {
@@ -337,13 +370,7 @@ function pullDownTriggered(done: () => void) {
   }, 500);
 }
 
-function getRouteFromTarget(
-  routeTarget: RouteTarget | undefined
-): RouteLocationRaw | undefined {
-  if (!routeTarget) {
-    return undefined;
-  }
-
+function getRouteFromTarget(routeTarget: RouteTarget): RouteLocationRaw {
   switch (routeTarget.type) {
     case "opinion":
       return {
@@ -375,6 +402,8 @@ function getRouteFromTarget(
           params: { importSlugId: routeTarget.importSlugId },
         };
       }
+    case "settings":
+      return { name: "/settings/" };
   }
 }
 </script>
@@ -392,6 +421,26 @@ function getRouteFromTarget(
   padding: $container-padding;
 }
 
+.securityNotification {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: $container-padding;
+  background-color: #fff4df;
+  border: 1px solid #f3d59b;
+  border-radius: 12px;
+}
+
+.securityCategory,
+.securityAction {
+  color: #8a5a00;
+  font-weight: var(--font-weight-semibold);
+}
+
+.securityAction {
+  text-decoration: underline;
+}
+
 .iconWrapper {
   flex-shrink: 0;
   align-self: center;
@@ -405,7 +454,7 @@ function getRouteFromTarget(
 .unreadDot {
   position: absolute;
   top: 0;
-  left: -0.3rem;
+  inset-inline-start: -0.3rem;
   width: 0.5rem;
   height: 0.5rem;
   background-color: $primary;

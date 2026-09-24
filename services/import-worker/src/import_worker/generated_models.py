@@ -260,6 +260,7 @@ class NotificationTypeEnum(StrEnum):
     import_started = "import_started"
     import_completed = "import_completed"
     import_failed = "import_failed"
+    security_add_email = "security_add_email"
 
 
 class OpinionGroupReducerEnum(StrEnum):
@@ -597,6 +598,7 @@ class Notification(Base):
             native_enum=True,
         ),
     )
+    security_key: Mapped[str | None] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
 
 

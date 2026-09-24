@@ -29398,11 +29398,70 @@
                                                     }
                                                 ]
                                             }
+                                        },
+                                        "stickyNotificationList": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "slugId": {
+                                                        "type": "string",
+                                                        "maxLength": 10
+                                                    },
+                                                    "isRead": {
+                                                        "type": "boolean",
+                                                        "enum": [
+                                                            false
+                                                        ]
+                                                    },
+                                                    "createdAt": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "type": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "security_add_email"
+                                                        ]
+                                                    },
+                                                    "routeTarget": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "type": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "settings"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "type"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    },
+                                                    "isSticky": {
+                                                        "type": "boolean",
+                                                        "enum": [
+                                                            true
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "slugId",
+                                                    "isRead",
+                                                    "createdAt",
+                                                    "type",
+                                                    "routeTarget",
+                                                    "isSticky"
+                                                ],
+                                                "additionalProperties": false
+                                            }
                                         }
                                     },
                                     "required": [
                                         "numNewNotifications",
-                                        "notificationList"
+                                        "notificationList",
+                                        "stickyNotificationList"
                                     ],
                                     "additionalProperties": false
                                 }

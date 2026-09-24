@@ -54,6 +54,10 @@ import { useBackendAuthApi } from "src/utils/api/auth";
 import { usePhoneAuthAvailability } from "src/utils/auth/phoneAuthMode";
 import { useAuthSetup } from "src/utils/auth/setup";
 import type { SettingsInterface } from "src/utils/component/settings/settings";
+import {
+  type SecurityAddEmailTranslations,
+  securityAddEmailTranslations,
+} from "src/utils/notification/securityAddEmail.i18n";
 import { processEnv } from "src/utils/processEnv";
 import { useDialog } from "src/utils/ui/dialog";
 import { useNotify } from "src/utils/ui/notify";
@@ -78,6 +82,9 @@ const { deleteUserAccount } = useBackendAccountApi();
 const { showNotifyMessage } = useNotify();
 const { logoutRequested } = useAuthSetup();
 const { t } = useComponentI18n<SettingsTranslations>(settingsTranslations);
+const { t: tSecurity } = useComponentI18n<SecurityAddEmailTranslations>(
+  securityAddEmailTranslations
+);
 
 const { updateAuthState } = useBackendAuthApi();
 
@@ -138,7 +145,10 @@ const credentialSettings = computed<SettingsInterface[]>(() => {
     {
       type: "action",
       label: t("emailAddress"),
-      value: creds.email ?? t("clickToAdd"),
+      value:
+        creds.email ??
+        (isLoggedIn.value ? tSecurity("addNow") : t("clickToAdd")),
+      style: isLoggedIn.value && creds.email === null ? "security" : "none",
       action: () => {
         if (creds.email === null) {
           navigateToVerify({ name: "/verify/email/" });

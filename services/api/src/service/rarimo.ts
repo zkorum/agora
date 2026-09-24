@@ -27,6 +27,7 @@ import { decimalToHex, hexToUtf8 } from "@/utils/dataStructure.js";
 import { log } from "@/app.js";
 import { mergeGuestIntoVerifiedUser } from "./merge.js";
 import { startHardAuthSession } from "./authSession.js";
+import { ensureAddEmailSecurityNotification } from "./notification.js";
 import { httpErrors } from "@fastify/sensible";
 import { isUserLoggedIn } from "@/shared-backend/util.js";
 import { getPrimaryDatabase } from "@/shared-backend/db.js";
@@ -434,6 +435,15 @@ export async function verifyUserStatusAndAuthenticate({
                 );
                 accountMerged = true;
                 break;
+        }
+        if (authResult.type !== "associated_with_another_user") {
+            await ensureAddEmailSecurityNotification({
+                db: tx,
+                userId:
+                    authResult.type === "merge"
+                        ? authResult.toUserId
+                        : authResult.userId,
+            });
         }
     });
 

@@ -633,10 +633,13 @@ const zodImportRouteTarget = z
     })
     .strict();
 
+const zodSettingsRouteTarget = z.object({ type: z.literal("settings") }).strict();
+
 export const zodRouteTarget = z.discriminatedUnion("type", [
     zodOpinionRouteTarget,
     zodExportRouteTarget,
     zodImportRouteTarget,
+    zodSettingsRouteTarget,
 ]);
 
 export const zodTopicObject = z
@@ -657,6 +660,7 @@ export const zodNotificationType = z.enum([
     "import_started",
     "import_completed",
     "import_failed",
+    "security_add_email",
 ]);
 
 // Base notification schema with common fields (no message - each type defines its own content)
@@ -745,7 +749,16 @@ const zodImportFailedNotification = zodNotificationBase
     })
     .strict();
 
-export const zodNotificationItem = z.discriminatedUnion("type", [
+export const zodSecurityAddEmailNotification = zodNotificationBase
+    .extend({
+        type: z.literal("security_add_email"),
+        routeTarget: zodSettingsRouteTarget,
+        isSticky: z.literal(true),
+        isRead: z.literal(false),
+    })
+    .strict();
+
+export const zodRegularNotificationItem = z.discriminatedUnion("type", [
     zodOpinionVoteNotification,
     zodNewOpinionNotification,
     zodExportStartedNotification,
@@ -755,6 +768,11 @@ export const zodNotificationItem = z.discriminatedUnion("type", [
     zodImportStartedNotification,
     zodImportCompletedNotification,
     zodImportFailedNotification,
+]);
+
+export const zodNotificationItem = z.discriminatedUnion("type", [
+    ...zodRegularNotificationItem.options,
+    zodSecurityAddEmailNotification,
 ]);
 
 export type moderationStatusOptionsType = "moderated" | "unmoderated";
@@ -2213,6 +2231,12 @@ export type UserMuteAction = z.infer<typeof zodUserMuteAction>;
 export type UserMuteItem = z.infer<typeof zodUserMuteItem>;
 export type Username = z.infer<typeof zodUsername>;
 export type NotificationItem = z.infer<typeof zodNotificationItem>;
+export type RegularNotificationItem = z.infer<
+    typeof zodRegularNotificationItem
+>;
+export type SecurityAddEmailNotification = z.infer<
+    typeof zodSecurityAddEmailNotification
+>;
 export type NotificationType = z.infer<typeof zodNotificationType>;
 export type RouteTarget = z.infer<typeof zodRouteTarget>;
 export type OpinionRouteTarget = z.infer<typeof zodOpinionRouteTarget>;
