@@ -79,8 +79,6 @@ let preferenceMutationGeneration = 0;
 const actionContext: ContentActionContext = {
   isOwner: false,
   isSiteModerator: false,
-  isConversationOwner: false,
-  isOrgMember: false,
   isLoggedIn: true,
   isEmbeddedMode: false,
   targetType: "post",

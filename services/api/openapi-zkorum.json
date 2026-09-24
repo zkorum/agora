@@ -3948,11 +3948,32 @@
                                                                             "status"
                                                                         ],
                                                                         "additionalProperties": false
+                                                                    },
+                                                                    "conversationCapabilities": {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "canEdit": {
+                                                                                "type": "boolean"
+                                                                            },
+                                                                            "canDelete": {
+                                                                                "type": "boolean"
+                                                                            },
+                                                                            "canManageIntegrations": {
+                                                                                "type": "boolean"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "canEdit",
+                                                                            "canDelete",
+                                                                            "canManageIntegrations"
+                                                                        ],
+                                                                        "additionalProperties": false
                                                                     }
                                                                 },
                                                                 "required": [
                                                                     "hasVoted",
-                                                                    "votedIndex"
+                                                                    "votedIndex",
+                                                                    "conversationCapabilities"
                                                                 ],
                                                                 "additionalProperties": false
                                                             }
@@ -9662,11 +9683,32 @@
                                                             "status"
                                                         ],
                                                         "additionalProperties": false
+                                                    },
+                                                    "conversationCapabilities": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "canEdit": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "canDelete": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "canManageIntegrations": {
+                                                                "type": "boolean"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "canEdit",
+                                                            "canDelete",
+                                                            "canManageIntegrations"
+                                                        ],
+                                                        "additionalProperties": false
                                                     }
                                                 },
                                                 "required": [
                                                     "hasVoted",
-                                                    "votedIndex"
+                                                    "votedIndex",
+                                                    "conversationCapabilities"
                                                 ],
                                                 "additionalProperties": false
                                             }
@@ -11312,11 +11354,32 @@
                                                                     "status"
                                                                 ],
                                                                 "additionalProperties": false
+                                                            },
+                                                            "conversationCapabilities": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "canEdit": {
+                                                                        "type": "boolean"
+                                                                    },
+                                                                    "canDelete": {
+                                                                        "type": "boolean"
+                                                                    },
+                                                                    "canManageIntegrations": {
+                                                                        "type": "boolean"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "canEdit",
+                                                                    "canDelete",
+                                                                    "canManageIntegrations"
+                                                                ],
+                                                                "additionalProperties": false
                                                             }
                                                         },
                                                         "required": [
                                                             "hasVoted",
-                                                            "votedIndex"
+                                                            "votedIndex",
+                                                            "conversationCapabilities"
                                                         ],
                                                         "additionalProperties": false
                                                     }
@@ -20247,11 +20310,32 @@
                                                                         "status"
                                                                     ],
                                                                     "additionalProperties": false
+                                                                },
+                                                                "conversationCapabilities": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "canEdit": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "canDelete": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "canManageIntegrations": {
+                                                                            "type": "boolean"
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "canEdit",
+                                                                        "canDelete",
+                                                                        "canManageIntegrations"
+                                                                    ],
+                                                                    "additionalProperties": false
                                                                 }
                                                             },
                                                             "required": [
                                                                 "hasVoted",
-                                                                "votedIndex"
+                                                                "votedIndex",
+                                                                "conversationCapabilities"
                                                             ],
                                                             "additionalProperties": false
                                                         }

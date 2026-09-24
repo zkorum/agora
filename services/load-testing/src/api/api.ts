@@ -5038,6 +5038,12 @@ export interface ApiV1ConversationFetchRecentPost200ResponseFeedItemListInnerCon
     'hasVoted': boolean;
     'votedIndex': number;
     'surveyGate'?: ApiV1ConversationFetchRecentPost200ResponseFeedItemListInnerConversationDataInteractionSurveyGate;
+    'conversationCapabilities': ApiV1ConversationFetchRecentPost200ResponseFeedItemListInnerConversationDataInteractionConversationCapabilities;
+}
+export interface ApiV1ConversationFetchRecentPost200ResponseFeedItemListInnerConversationDataInteractionConversationCapabilities {
+    'canEdit': boolean;
+    'canDelete': boolean;
+    'canManageIntegrations': boolean;
 }
 export interface ApiV1ConversationFetchRecentPost200ResponseFeedItemListInnerConversationDataInteractionSurveyGate {
     'hasSurvey': boolean;

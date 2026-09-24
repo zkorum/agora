@@ -13,7 +13,12 @@
       :is-closed="extendedPostData.metadata.isClosed"
       :conversation-title="effectiveDisplayedTitle"
       :conversation-type-config="extendedPostData.metadata"
-      :external-source-config="extendedPostData.metadata.externalSourceConfig ?? null"
+      :external-source-config="
+        extendedPostData.metadata.externalSourceConfig ?? null
+      "
+      :conversation-capabilities="
+        extendedPostData.interaction.conversationCapabilities
+      "
       @open-moderation-history="$emit('openModerationHistory')"
       @conversation-deleted="$emit('conversationDeleted')"
     />

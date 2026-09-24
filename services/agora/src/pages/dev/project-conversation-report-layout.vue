@@ -325,6 +325,11 @@ const conversationData = computed<ExtendedConversation>(() => ({
     hasVoted: false,
     votedIndex: 0,
     surveyGate: undefined,
+    conversationCapabilities: {
+      canEdit: false,
+      canDelete: false,
+      canManageIntegrations: false,
+    },
   },
 }));
 

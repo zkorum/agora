@@ -22,17 +22,24 @@ export interface BaseContentAction {
 }
 
 // Context for determining available content actions
-export interface ContentActionContext {
+interface BaseContentActionContext {
   isOwner: boolean;
   isSiteModerator: boolean;
-  isConversationOwner: boolean;
-  isOrgMember: boolean;
   isLoggedIn: boolean;
   isEmbeddedMode: boolean;
-  targetType: "post" | "comment";
   targetId: string;
   targetAuthor: string;
 }
+
+export type ContentActionContext = BaseContentActionContext &
+  (
+    | { targetType: "post" }
+    | {
+        targetType: "comment";
+        isConversationOwner: boolean;
+        isOrgMember: boolean;
+      }
+  );
 
 // Content action handler function type
 export type ContentActionHandler = (
@@ -75,22 +82,6 @@ export interface ContentActionDialogState {
   isVisible: boolean;
   context: ContentActionContext | null;
   actions: ContentAction[];
-}
-
-// Permission checking function types
-export type ContentActionPermissionChecker = (
-  context: ContentActionContext
-) => boolean;
-
-export interface ContentActionPermissionCheckers {
-  canDelete: ContentActionPermissionChecker;
-  canModerate: ContentActionPermissionChecker;
-  canMute: ContentActionPermissionChecker;
-  canReport: () => boolean;
-  canShare: () => boolean;
-  canViewUserReports: ContentActionPermissionChecker;
-  canViewModerationHistory: () => boolean;
-  canCopyEmbedLink: () => boolean;
 }
 
 // Content action execution result

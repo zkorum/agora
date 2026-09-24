@@ -40,36 +40,6 @@ export function getConversationCreateEmailUpdateConfiguration({
     };
 }
 
-export function hasCapabilityForProject({
-    capabilityGrants,
-    projectOwnerships,
-    projectId,
-    capability,
-}: {
-    capabilityGrants: readonly OrganizationCapabilityGrant[];
-    projectOwnerships: readonly ProjectOrganizationOwnershipGrant[];
-    projectId: number;
-    capability: AllProjectCapability;
-}): boolean {
-    const ownerOrganizationIds = new Set<number>();
-    for (const ownership of projectOwnerships) {
-        if (ownership.projectId === projectId) {
-            ownerOrganizationIds.add(ownership.organizationId);
-        }
-    }
-
-    for (const grant of capabilityGrants) {
-        if (
-            grant.capability === capability &&
-            ownerOrganizationIds.has(grant.organizationId)
-        ) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 export function getProjectIdsWithCapabilityFromGrants({
     capabilityGrants,
     projectOwnerships,

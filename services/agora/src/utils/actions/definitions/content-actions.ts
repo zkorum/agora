@@ -6,13 +6,14 @@
 import { storeToRefs } from "pinia";
 import type { ConfirmDialogActions } from "src/components/ui-library/ZKConfirmDialog.types";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { ConversationCapabilities } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
 import { useEmbedMode } from "src/utils/ui/embedMode";
 import { ref } from "vue";
 
 import { useActionHandlers } from "../core/handlers";
-import { createActionContext, useActionPermissions } from "../core/permissions";
+import { createActionContext } from "../core/permissions";
 import type {
   ContentAction,
   ContentActionContext,
@@ -46,7 +47,6 @@ export function useContentActions() {
   const { profileData } = storeToRefs(useUserStore());
   const { isLoggedIn } = storeToRefs(useAuthenticationStore());
   const { isEmbeddedMode } = useEmbedMode();
-  const permissions = useActionPermissions();
   const handlers = useActionHandlers();
   const { t } = useComponentI18n<ActionsTranslations>(actionsTranslations);
 
@@ -137,10 +137,15 @@ export function useContentActions() {
   /**
    * Show post action dialog
    */
-  const showPostActions = (
-    targetId: string,
-    targetAuthor: string,
-    conversationOrganizationName: string,
+  const showPostActions = ({
+    targetId,
+    targetAuthor,
+    conversationCapabilities,
+    callbacks,
+  }: {
+    targetId: string;
+    targetAuthor: string;
+    conversationCapabilities: ConversationCapabilities;
     callbacks: {
       reportPostCallback: () => void;
       openUserReportsCallback: () => void | Promise<void>;
@@ -158,25 +163,15 @@ export function useContentActions() {
       isConversationClosed: boolean;
       isConversationExportAvailable: boolean;
       conversationDeletedCallback: () => void | Promise<void>;
-    }
-  ): void => {
+    };
+  }): void => {
     const currentUser = profileData.value.userName;
-    const isConversationOwner =
-      currentUser !== "" && currentUser === targetAuthor;
-    const isOrgMember =
-      conversationOrganizationName !== "" &&
-      profileData.value.organizationList.some(
-        (org) => org.name === conversationOrganizationName
-      );
-
     const context = createActionContext({
       targetType: "post",
       targetId,
       targetAuthor,
       currentUser,
       isSiteModerator: profileData.value.isSiteModerator,
-      isConversationOwner,
-      isOrgMember,
       isLoggedIn: isLoggedIn.value,
       isEmbeddedMode: isEmbeddedMode(),
     });
@@ -209,6 +204,7 @@ export function useContentActions() {
 
     const availableActions = getAvailablePostActions({
       context,
+      conversationCapabilities,
       reportPostCallback: callbacks.reportPostCallback,
       openUserReportsCallback: callbacks.openUserReportsCallback,
       muteUserCallback: callbacks.muteUserCallback,
@@ -386,7 +382,6 @@ export function useContentActions() {
     closeConfirmationDialog,
 
     // Utilities
-    permissions,
     handlers,
   };
 }

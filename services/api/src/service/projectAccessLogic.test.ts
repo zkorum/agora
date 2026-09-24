@@ -3,9 +3,6 @@ import {
     getConversationCreateEmailUpdateConfiguration,
     getProjectIdsWithCapabilityFromGrants,
     hasActivePremiumFeatureEntitlement,
-    hasCapabilityForProject,
-    type OrganizationCapabilityGrant,
-    type ProjectOrganizationOwnershipGrant,
 } from "@/service/projectAccessLogic.js";
 
 describe("getConversationCreateEmailUpdateConfiguration", () => {
@@ -35,61 +32,6 @@ describe("getConversationCreateEmailUpdateConfiguration", () => {
             hasParticipantContactEmail: true,
             scopeDefaultEnabled: true,
         });
-    });
-});
-
-describe("hasCapabilityForProject", () => {
-    const capabilityGrants: OrganizationCapabilityGrant[] = [
-        {
-            organizationId: 10,
-            capability: "conversation_edit",
-        },
-        {
-            organizationId: 11,
-            capability: "conversation_manage_integrations",
-        },
-        {
-            organizationId: 10,
-            capability: "conversation_delete",
-        },
-    ];
-    const projectOwnerships: ProjectOrganizationOwnershipGrant[] = [
-        { projectId: 1, organizationId: 10 },
-        { projectId: 1, organizationId: 11 },
-        { projectId: 2, organizationId: 12 },
-    ];
-
-    it("allows when any effective project grant has the requested capability", () => {
-        expect(
-            hasCapabilityForProject({
-                capabilityGrants,
-                projectOwnerships,
-                projectId: 1,
-                capability: "conversation_manage_integrations",
-            }),
-        ).toBe(true);
-    });
-
-    it("denies when the capability belongs to an organization that does not own the project", () => {
-        expect(
-            hasCapabilityForProject({
-                capabilityGrants,
-                projectOwnerships,
-                projectId: 2,
-                capability: "conversation_delete",
-            }),
-        ).toBe(false);
-    });
-
-    it("denies when project owner organizations lack the requested capability", () => {
-        expect(
-            hasCapabilityForProject({
-                capabilityGrants,
-                projectOwnerships,
-                projectId: 2,
-                capability: "conversation_edit",
-            }),
-        ).toBe(false);
     });
 });
 

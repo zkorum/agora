@@ -3,6 +3,7 @@
  * This file defines all available actions for posts/conversations
  */
 
+import type { ConversationCapabilities } from "src/shared/types/zod";
 import { processEnv } from "src/utils/processEnv";
 
 import type { ContentAction, ContentActionContext } from "../core/types";
@@ -31,6 +32,7 @@ interface PostActionTranslations {
  * Get all available post actions with their handlers and visibility logic
  */
 export function getPostActions({
+  conversationCapabilities,
   reportPostCallback,
   openUserReportsCallback,
   muteUserCallback,
@@ -49,6 +51,7 @@ export function getPostActions({
   isConversationExportAvailable,
   translations,
 }: {
+  conversationCapabilities: ConversationCapabilities;
   reportPostCallback: () => void;
   openUserReportsCallback: () => void | Promise<void>;
   muteUserCallback: () => void | Promise<void>;
@@ -74,7 +77,7 @@ export function getPostActions({
       icon: "mdi-pencil",
       handler: editConversationCallback,
       isVisible: (context: ContentActionContext) =>
-        (context.isOwner || context.isOrgMember) && !context.isEmbeddedMode,
+        conversationCapabilities.canEdit && !context.isEmbeddedMode,
     },
   ];
 
@@ -86,7 +89,7 @@ export function getPostActions({
           icon: "mdi-play-circle",
           handler: openConversationCallback,
           isVisible: (context: ContentActionContext) =>
-            (context.isOwner || context.isOrgMember) && !context.isEmbeddedMode,
+            conversationCapabilities.canEdit && !context.isEmbeddedMode,
         }
       : {
           id: "closeConversation",
@@ -94,7 +97,7 @@ export function getPostActions({
           icon: "mdi-stop-circle",
           handler: closeConversationCallback,
           isVisible: (context: ContentActionContext) =>
-            (context.isOwner || context.isOrgMember) && !context.isEmbeddedMode,
+            conversationCapabilities.canEdit && !context.isEmbeddedMode,
         }
   );
 
@@ -105,7 +108,8 @@ export function getPostActions({
       icon: "mdi-sync",
       handler: syncGitHubCallback,
       isVisible: (context: ContentActionContext) =>
-        (context.isOwner || context.isOrgMember) && !context.isEmbeddedMode,
+        conversationCapabilities.canManageIntegrations &&
+        !context.isEmbeddedMode,
     });
   }
 
@@ -196,8 +200,8 @@ export function getPostActions({
       variant: "destructive",
       handler: deletePostCallback,
       isVisible: (context: ContentActionContext) =>
-        (context.isOwner || context.isOrgMember) && !context.isEmbeddedMode,
-    },
+        conversationCapabilities.canDelete && !context.isEmbeddedMode,
+    }
   );
 
   return actions;
@@ -208,6 +212,7 @@ export function getPostActions({
  */
 export function getAvailablePostActions({
   context,
+  conversationCapabilities,
   reportPostCallback,
   openUserReportsCallback,
   muteUserCallback,
@@ -227,6 +232,7 @@ export function getAvailablePostActions({
   translations,
 }: {
   context: ContentActionContext;
+  conversationCapabilities: ConversationCapabilities;
   reportPostCallback: () => void;
   openUserReportsCallback: () => void | Promise<void>;
   muteUserCallback: () => void | Promise<void>;
@@ -246,6 +252,7 @@ export function getAvailablePostActions({
   translations: PostActionTranslations;
 }): ContentAction[] {
   const allActions = getPostActions({
+    conversationCapabilities,
     reportPostCallback,
     openUserReportsCallback,
     muteUserCallback,

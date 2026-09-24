@@ -1540,11 +1540,23 @@ export const zodAnalysisOpinionItemPerSlugId = z.map(
     zodSlugId,
     zodAnalysisOpinionItem,
 );
+export const zodConversationCapabilities = z
+    .object({
+        canEdit: z.boolean(),
+        canDelete: z.boolean(),
+        canManageIntegrations: z.boolean(),
+    })
+    .strict();
+export type ConversationCapabilities = z.infer<
+    typeof zodConversationCapabilities
+>;
+
 export const zodUserInteraction = z
     .object({
         hasVoted: z.boolean(),
         votedIndex: z.number().int().nonnegative(),
         surveyGate: zodSurveyGateSummary.optional(),
+        conversationCapabilities: zodConversationCapabilities,
     })
     .strict();
 export const zodExtendedConversationData = z

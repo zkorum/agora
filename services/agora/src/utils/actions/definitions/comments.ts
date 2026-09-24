@@ -43,6 +43,7 @@ export function getCommentActions(
       icon: "mdi-sword",
       handler: moderateCommentCallback,
       isVisible: (context: ContentActionContext) =>
+        context.targetType === "comment" &&
         (context.isSiteModerator ||
           context.isConversationOwner ||
           context.isOrgMember) &&
@@ -54,6 +55,7 @@ export function getCommentActions(
       icon: "mdi-account-alert",
       handler: openUserReportsCallback,
       isVisible: (context: ContentActionContext) =>
+        context.targetType === "comment" &&
         (context.isSiteModerator ||
           context.isConversationOwner ||
           context.isOrgMember) &&

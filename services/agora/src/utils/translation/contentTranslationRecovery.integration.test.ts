@@ -315,7 +315,15 @@ describe("conversation translation completion", () => {
         moderation: { status: "unmoderated" },
         externalSourceConfig: null,
       },
-      interaction: { hasVoted: false, votedIndex: 0 },
+      interaction: {
+        hasVoted: false,
+        votedIndex: 0,
+        conversationCapabilities: {
+          canEdit: false,
+          canDelete: false,
+          canManageIntegrations: false,
+        },
+      },
     };
     const initialDisplayContent: ConversationContentFetchResponse = {
       sourceVersion,
