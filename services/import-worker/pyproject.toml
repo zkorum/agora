@@ -26,7 +26,7 @@ agora-shared-language = { path = "../shared-language", editable = true }
 [project.optional-dependencies]
 dev = [
     "basedpyright>=1.29",
-    "datamodel-code-generator>=0.57",
+    "datamodel-code-generator>=0.64.0",
     "pytest>=8.0",
     "ruff>=0.9",
 ]
