@@ -8,8 +8,10 @@ function isExpectedNotificationRequestError(error: unknown): boolean {
     return false;
   }
 
+  const status = error.response?.status;
   // The response interceptor refreshes auth after 401, but does not replay the request.
-  if (error.response?.status === 401) {
+  // Gateway failures are transient and a later notification refresh can recover.
+  if (status === 401 || status === 502 || status === 503 || status === 504) {
     return true;
   }
 
