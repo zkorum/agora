@@ -1,5 +1,9 @@
 <template>
-  <OnboardingLayout body-behind-footer :back-callback="backCallback">
+  <OnboardingLayout
+    v-if="!skipPhoneRegistration"
+    body-behind-footer
+    :back-callback="backCallback"
+  >
     <template #body><DefaultImageExample /> </template>
 
     <template #footer>
@@ -36,6 +40,7 @@
       </form>
     </template>
   </OnboardingLayout>
+  <PageLoadingSpinner v-else />
 </template>
 
 <script setup lang="ts">
@@ -44,13 +49,16 @@ import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultIm
 import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import SignupAgreement from "src/components/onboarding/ui/SignupAgreement.vue";
+import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import PhoneInputForm from "src/components/verification/PhoneInputForm.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { usePhoneSubmit } from "src/composables/verification/usePhoneSubmit";
+import { useSkipUnavailablePhoneRegistration } from "src/composables/verification/useSkipUnavailablePhoneRegistration";
 import { useVerificationComplete } from "src/composables/verification/useVerificationComplete";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
+import { onboardingFlowStore } from "src/stores/onboarding/flow";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
@@ -67,6 +75,7 @@ const { t } = useComponentI18n<VerifyPhoneTranslations>(
 const { isLoggedIn, isAuthInitialized, credentials } = storeToRefs(
   useAuthenticationStore()
 );
+const { credentialUpgradeTarget } = storeToRefs(onboardingFlowStore());
 const { completeVerification } = useVerificationComplete();
 const { showNotifyMessage } = useNotify();
 const router = useRouter();
@@ -93,6 +102,18 @@ const { isLoading, submitPhone, phoneAuthAvailability, nextCodeWaitSeconds } =
       somethingWrong: t("somethingWrong"),
     },
   });
+
+const skipPhoneRegistration = useSkipUnavailablePhoneRegistration({
+  availability: phoneAuthAvailability,
+  ready: isAuthInitialized,
+  redirect: () =>
+    router.replace({
+      name:
+        credentialUpgradeTarget.value === "strong"
+          ? "/verify/identity/"
+          : "/verify/hard/",
+    }),
+});
 
 function backCallback() {
   if (activeUserIntention.value === "settings") {

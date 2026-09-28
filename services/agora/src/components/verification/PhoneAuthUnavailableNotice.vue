@@ -1,32 +1,30 @@
 <template>
-  <q-banner class="notice" rounded role="status">
+  <q-banner
+    v-if="reason === 'technical_unavailable'"
+    class="notice"
+    rounded
+    role="status"
+  >
     <q-icon name="mdi-alert-circle-outline" size="1.25rem" />
-    <span>{{ message }}</span>
+    <span>{{ t("technicalUnavailable") }}</span>
   </q-banner>
 </template>
 
 <script setup lang="ts">
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { PhoneAuthUnavailableReason } from "src/utils/auth/phoneAuthMode";
-import { computed } from "vue";
 
 import {
   type PhoneAuthUnavailableNoticeTranslations,
   phoneAuthUnavailableNoticeTranslations,
 } from "./PhoneAuthUnavailableNotice.i18n";
 
-const props = defineProps<{
+defineProps<{
   reason: PhoneAuthUnavailableReason;
 }>();
 
 const { t } = useComponentI18n<PhoneAuthUnavailableNoticeTranslations>(
   phoneAuthUnavailableNoticeTranslations
-);
-
-const message = computed(() =>
-  props.reason === "technical_unavailable"
-    ? t("technicalUnavailable")
-    : t("registrationUnavailable")
 );
 </script>
 

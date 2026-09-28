@@ -117,12 +117,15 @@ CREATE TABLE "user" (
 	"is_imported" boolean DEFAULT false NOT NULL,
 	"is_deleted" boolean DEFAULT false NOT NULL,
 	"deleted_at" timestamp (0),
+	"auth_restricted_at" timestamp (0),
+	"auth_restriction_reason" text,
 	"active_conversation_count" integer DEFAULT 0 NOT NULL,
 	"total_conversation_count" integer DEFAULT 0 NOT NULL,
 	"total_opinion_count" integer DEFAULT 0 NOT NULL,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
-	CONSTRAINT "user_username_unique" UNIQUE("username")
+	CONSTRAINT "user_username_unique" UNIQUE("username"),
+	CONSTRAINT "user_auth_restriction_reason_check" CHECK (("user"."auth_restricted_at" IS NULL) = ("user"."auth_restriction_reason" IS NULL))
 );
 
 CREATE UNIQUE INDEX "organization_membership_all_project_capability_active_unique" ON "organization_membership_all_project_capability" USING btree ("organization_membership_id","capability") WHERE "organization_membership_all_project_capability"."deleted_at" is null;

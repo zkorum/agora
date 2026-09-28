@@ -51,14 +51,20 @@ export async function mergeGuestIntoVerifiedUser({
         throw new Error("Cannot merge a user into itself");
     }
     const lockedUsers = await db
-        .select({ id: userTable.id, isDeleted: userTable.isDeleted })
+        .select({
+            id: userTable.id,
+            isDeleted: userTable.isDeleted,
+            authRestrictedAt: userTable.authRestrictedAt,
+        })
         .from(userTable)
         .where(inArray(userTable.id, [verifiedUserId, guestUserId]))
         .orderBy(userTable.id)
         .for("update");
     if (
         lockedUsers.length !== 2 ||
-        lockedUsers.some((user) => user.isDeleted)
+        lockedUsers.some(
+            (user) => user.isDeleted || user.authRestrictedAt !== null,
+        )
     ) {
         throw new Error("Cannot merge inactive users");
     }
@@ -109,9 +115,7 @@ export async function mergeGuestIntoVerifiedUser({
     await recordIdentityChangedUsers({
         db,
         userIds:
-            movedSessions.length === 0
-                ? []
-                : [guestUserId, verifiedUserId],
+            movedSessions.length === 0 ? [] : [guestUserId, verifiedUserId],
     });
 
     // 2. Transfer event tickets (no unique constraint, multiple tickets per user allowed)

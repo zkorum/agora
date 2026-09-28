@@ -1,5 +1,5 @@
 <template>
-  <OnboardingLayout body-behind-footer>
+  <OnboardingLayout v-if="!skipPhoneRegistration" body-behind-footer>
     <template #body><DefaultImageExample /> </template>
 
     <template #footer>
@@ -52,6 +52,7 @@
       </form>
     </template>
   </OnboardingLayout>
+  <PageLoadingSpinner v-else />
 </template>
 
 <script setup lang="ts">
@@ -59,10 +60,12 @@ import { storeToRefs } from "pinia";
 import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
 import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
+import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import PhoneInputForm from "src/components/verification/PhoneInputForm.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { usePhoneSubmit } from "src/composables/verification/usePhoneSubmit";
+import { useSkipUnavailablePhoneRegistration } from "src/composables/verification/useSkipUnavailablePhoneRegistration";
 import { useVerificationComplete } from "src/composables/verification/useVerificationComplete";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
@@ -107,6 +110,11 @@ const { isLoading, submitPhone, phoneAuthAvailability, nextCodeWaitSeconds } =
       somethingWrong: t("somethingWrong"),
     },
   });
+
+const skipPhoneRegistration = useSkipUnavailablePhoneRegistration({
+  availability: phoneAuthAvailability,
+  redirect: () => router.replace({ name: "/onboarding/step2-signup/" }),
+});
 
 const phoneInputFormRef = ref<{
   submit: () => boolean;

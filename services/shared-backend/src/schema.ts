@@ -1043,6 +1043,11 @@ export const userTable = pgTable("user", {
     isImported: boolean("is_imported").notNull().default(false),
     isDeleted: boolean("is_deleted").notNull().default(false),
     deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }), // Track when soft-delete occurred (hard-deleted after 15 days)
+    authRestrictedAt: timestamp("auth_restricted_at", {
+        mode: "date",
+        precision: 0,
+    }),
+    authRestrictionReason: text("auth_restriction_reason"),
     activeConversationCount: integer("active_conversation_count")
         .notNull()
         .default(0), // total conversations (without deleted conversations)
@@ -1062,7 +1067,12 @@ export const userTable = pgTable("user", {
     })
         .defaultNow()
         .notNull(),
-});
+}, (table) => [
+    check(
+        "user_auth_restriction_reason_check",
+        sql`(${table.authRestrictedAt} IS NULL) = (${table.authRestrictionReason} IS NULL)`,
+    ),
+]);
 
 export const organizationMembershipTable = pgTable(
     "organization_membership",
@@ -2052,6 +2062,31 @@ export const phoneTable = pgTable(
             .where(sql`${table.isDeleted} = false`),
         // Regular index for lookups
         index("phone_hash_idx").on(table.phoneHash),
+    ],
+);
+
+/** @service api */
+export const blockedPhoneNumberTable = pgTable(
+    "blocked_phone_number",
+    {
+        phoneHash: text("phone_hash").notNull(),
+        pepperVersion: integer("pepper_version").notNull(),
+        reason: text("reason").notNull(),
+        blockedAt: timestamp("blocked_at", { mode: "date", precision: 0 })
+            .defaultNow()
+            .notNull(),
+        revokedAt: timestamp("revoked_at", { mode: "date", precision: 0 }),
+    },
+    (table) => [
+        primaryKey({ columns: [table.phoneHash, table.pepperVersion] }),
+        check(
+            "blocked_phone_pepper_version_nonnegative_check",
+            sql`${table.pepperVersion} >= 0`,
+        ),
+        check(
+            "blocked_phone_reason_nonempty_check",
+            sql`length(btrim(${table.reason})) > 0`,
+        ),
     ],
 );
 

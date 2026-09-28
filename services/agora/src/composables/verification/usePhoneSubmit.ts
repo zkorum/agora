@@ -78,11 +78,9 @@ export function usePhoneSubmit({
   const { isBusy: isLoading } = requestGate;
 
   function showPhoneAuthUnavailable(reason: PhoneAuthUnavailableReason) {
-    showNotifyMessage(
-      reason === "technical_unavailable"
-        ? tPhoneAvailability("technicalUnavailable")
-        : tPhoneAvailability("registrationUnavailable")
-    );
+    if (reason === "technical_unavailable") {
+      showNotifyMessage(tPhoneAvailability("technicalUnavailable"));
+    }
   }
 
   async function submitPhone() {

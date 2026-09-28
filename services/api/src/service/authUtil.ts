@@ -10,12 +10,11 @@ import {
     userTable,
     zkPassportTable,
 } from "@/shared-backend/schema.js";
-import { and, eq, gt, isNotNull, isNull } from "drizzle-orm";
+import { and, eq, isNotNull, isNull } from "drizzle-orm";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
-import type { IsLoggedInResponse } from "@/shared/types/dto-auth.js";
 import { normalizeEmail } from "@/shared/types/zod-email.js";
-import { nowZeroMs } from "@/shared/util.js";
 import { httpErrors } from "@fastify/sensible";
+import { getPrimaryDatabase } from "@/shared-backend/db.js";
 import type {
     DeviceLoginStatusExtended,
     ParticipationMode,
@@ -88,28 +87,6 @@ export async function isSiteOrgAdminAccount({
         throw httpErrors.internalServerError(
             "User table returned more than 1 response while checking if a user is a site org admin",
         );
-    }
-}
-
-export async function isLoggedIn(
-    db: PostgresDatabase,
-    didWrite: string,
-): Promise<IsLoggedInResponse> {
-    const now = nowZeroMs();
-    const resultDevice = await db
-        .select({ userId: deviceTable.userId })
-        .from(deviceTable)
-        .where(
-            and(
-                eq(deviceTable.didWrite, didWrite),
-                gt(deviceTable.sessionExpiry, now),
-            ),
-        );
-    if (resultDevice.length === 0) {
-        // device has never been registered OR device is logged out
-        return { isLoggedIn: false };
-    } else {
-        return { isLoggedIn: true, userId: resultDevice[0].userId };
     }
 }
 
@@ -275,7 +252,7 @@ export async function getDeviceStatus({
     didWrite,
     now,
 }: GetDeviceStatusParams): Promise<DeviceLoginStatusInternal> {
-    const resultDevice = await db
+    const resultDevice = await getPrimaryDatabase(db)
         .select({
             sessionExpiry: deviceTable.sessionExpiry,
             phoneTableId: phoneTable.id,
@@ -288,6 +265,7 @@ export async function getDeviceStatus({
             email: emailTable.email,
             userId: deviceTable.userId,
             isDeleted: userTable.isDeleted,
+            authRestrictedAt: userTable.authRestrictedAt,
         })
         .from(deviceTable)
         .innerJoin(userTable, eq(deviceTable.userId, userTable.id))
@@ -335,6 +313,10 @@ export async function getDeviceStatus({
             isRegistered: false,
             credentials: { email: null, phone: null, rarimo: null },
         };
+    }
+
+    if (device.authRestrictedAt !== null) {
+        throw httpErrors.forbidden("Account access unavailable");
     }
 
     const sessionExpiry = device.sessionExpiry;

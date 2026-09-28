@@ -33,7 +33,7 @@
             @click="verifyPhone()"
           />
           <PhoneAuthUnavailableNotice
-            v-else
+            v-else-if="phoneAuthAvailability.reason === 'technical_unavailable'"
             :reason="phoneAuthAvailability.reason"
           />
 
@@ -62,9 +62,7 @@ import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import PhoneAuthUnavailableNotice from "src/components/verification/PhoneAuthUnavailableNotice.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
-import {
-  usePhoneAuthAvailability,
-} from "src/utils/auth/phoneAuthMode";
+import { usePhoneAuthAvailability } from "src/utils/auth/phoneAuthMode";
 import { useRouter } from "vue-router";
 
 import {

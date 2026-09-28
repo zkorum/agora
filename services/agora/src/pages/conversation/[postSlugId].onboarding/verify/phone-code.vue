@@ -1,5 +1,6 @@
 <template>
   <OnboardingLayout
+    v-if="!skipPhoneRegistration"
     :back-callback="changePhoneNumber"
     :close-callback="handleBackToConversation"
     :show-close-button="true"
@@ -40,6 +41,7 @@
       </form>
     </template>
   </OnboardingLayout>
+  <PageLoadingSpinner v-else />
 </template>
 
 <script setup lang="ts">
@@ -47,11 +49,13 @@ import { storeToRefs } from "pinia";
 import ConversationSurveyOnboardingHero from "src/components/onboarding/backgrounds/ConversationSurveyOnboardingHero.vue";
 import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
+import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import PhoneOtpForm from "src/components/verification/PhoneOtpForm.vue";
 import { useConversationOnboardingExit } from "src/composables/conversation/useConversationOnboardingExit";
 import { useConversationOnboardingRoute } from "src/composables/conversation/useConversationOnboardingRoute";
 import { useConversationSurveyState } from "src/composables/conversation/useConversationSurveyState";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useSkipUnavailablePhoneRegistration } from "src/composables/verification/useSkipUnavailablePhoneRegistration";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import {
   type VerifyPhoneCodeTranslations,
@@ -60,7 +64,11 @@ import {
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useConversationOnboardingStore } from "src/stores/conversationOnboarding";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
-import { getConversationSurveyVerifyPhonePath } from "src/utils/survey/navigation";
+import { usePhoneAuthAvailability } from "src/utils/auth/phoneAuthMode";
+import {
+  getConversationSurveyVerifyPath,
+  getConversationSurveyVerifyPhonePath,
+} from "src/utils/survey/navigation";
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 
@@ -95,6 +103,17 @@ const {
   conversationDisplayContent,
   surveyForm,
 } = useConversationSurveyState({ conversationSlugId: routeConversationSlugId });
+const skipPhoneRegistration = useSkipUnavailablePhoneRegistration({
+  availability: usePhoneAuthAvailability(phoneAuthPurpose),
+  ready: isAuthInitialized,
+  redirect: () =>
+    router.replace({
+      path: getConversationSurveyVerifyPath({
+        conversationSlugId: conversationSlugId.value,
+        routeContext: routeContext.value,
+      }),
+    }),
+});
 
 const surveyStepTotal = computed(() => {
   const questionCount = surveyForm.value?.questions.length ?? 0;
