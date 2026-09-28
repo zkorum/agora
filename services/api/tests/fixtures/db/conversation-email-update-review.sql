@@ -53,6 +53,8 @@ CREATE TYPE "public"."organization_membership_all_project_capability_enum" AS EN
 
 CREATE TYPE "public"."participation_mode" AS ENUM('account_required', 'strong_verification', 'email_verification', 'guest');
 
+CREATE TYPE "public"."polis_voting_presentation" AS ENUM('list', 'one_at_a_time');
+
 CREATE TYPE "public"."premium_feature" AS ENUM('survey', 'event_ticket', 'analysis_variants', 'dynamic_translation', 'conversation_email_update');
 
 CREATE TYPE "public"."project_organization_attribution_role" AS ENUM('project_owner', 'sponsor', 'partner');
@@ -472,6 +474,7 @@ CREATE TABLE "organization" (
 
 CREATE TABLE "polis_conversation_config" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "polis_conversation_config_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"voting_presentation" "polis_voting_presentation" DEFAULT 'list' NOT NULL,
 	"ai_labeling_enabled" boolean DEFAULT true NOT NULL,
 	"analysis_data_generation" integer DEFAULT 0 NOT NULL,
 	"preferred_opinion_group_count" integer,

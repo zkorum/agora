@@ -295,6 +295,11 @@ class ModerationReasonEnum(StrEnum):
     spam = "spam"
 
 
+class PolisVotingPresentation(StrEnum):
+    list = "list"
+    one_at_a_time = "one_at_a_time"
+
+
 class PremiumFeature(StrEnum):
     survey = "survey"
     event_ticket = "event_ticket"
@@ -1004,6 +1009,14 @@ class PolisConversationConfig(Base):
     __tablename__ = "polis_conversation_config"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    voting_presentation: Mapped[PolisVotingPresentation] = mapped_column(
+        SaEnum(
+            PolisVotingPresentation,
+            name="polis_voting_presentation",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+    )
     ai_labeling_enabled: Mapped[bool] = mapped_column(Boolean, server_default="true")
     analysis_data_generation: Mapped[int] = mapped_column(Integer, server_default="0")
     preferred_opinion_group_count: Mapped[int | None] = mapped_column(Integer, nullable=True)

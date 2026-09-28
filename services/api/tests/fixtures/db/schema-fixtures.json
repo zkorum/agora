@@ -122,6 +122,23 @@
         "analysis_snapshot_opinion",
         "conversation_view_snapshot"
     ],
+    "opinion-paging": [
+        "user",
+        "user_mute_preference",
+        "polis_conversation_config",
+        "conversation",
+        "conversation_content",
+        "opinion",
+        "opinion_content",
+        "opinion_content_translation",
+        "opinion_moderation",
+        "vote",
+        "vote_content",
+        "conversation_view_snapshot",
+        "analysis_snapshot",
+        "analysis_snapshot_opinion",
+        "content_translation_work"
+    ],
     "conversation-email-update-creation-authorization": [
         "user",
         "organization",

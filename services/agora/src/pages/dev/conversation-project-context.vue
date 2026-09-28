@@ -364,6 +364,7 @@ const conversationData = computed<ExtendedConversation>(() => {
       externalSourceConfig: null,
       importInfo: undefined,
       conversationType: "polis",
+      votingPresentation: "list",
       projectContext: projectContext.value,
     },
     payload: scenario.value.conversationOriginal,

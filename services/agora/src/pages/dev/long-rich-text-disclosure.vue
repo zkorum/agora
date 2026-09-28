@@ -299,6 +299,7 @@ function createConversation({
       authorUsername: "test-author",
       participationMode: "guest",
       conversationType: "polis",
+      votingPresentation: "list",
       isIndexed: true,
       aiLabelingEnabled: true,
       preferredOpinionGroupCount: null,

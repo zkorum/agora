@@ -61,6 +61,7 @@ export const zodParticipationMode = z.enum([
     "guest",
 ]);
 export const zodConversationType = z.enum(["polis", "ranking"]);
+export const zodPolisVotingPresentation = z.enum(["list", "one_at_a_time"]);
 export const zodRankingMode = z.enum(["bws"]);
 export const zodConversationTypeConfig = z.discriminatedUnion(
     "conversationType",
@@ -68,6 +69,7 @@ export const zodConversationTypeConfig = z.discriminatedUnion(
         z
             .object({
                 conversationType: z.literal("polis"),
+                votingPresentation: zodPolisVotingPresentation,
             })
             .strict(),
         z
@@ -545,12 +547,6 @@ export const zodConversationDataWithResult = z
     })
     .strict();
 export const zodCount = z.number().int().nonnegative();
-export const zodPublicCommentFeedFilter = z.enum([
-    "moderated",
-    "new",
-    "discover",
-    "my_votes",
-]);
 export const usernameRegex = new RegExp(
     `^[a-z0-9_]*$`, // {${MIN_LENGTH_USERNAME.toString()},${MAX_LENGTH_USERNAME.toString()}
 );
@@ -1333,6 +1329,7 @@ export const zodConversationMetadata = z.discriminatedUnion(
         zodConversationMetadataBase
             .extend({
                 conversationType: z.literal("polis"),
+                votingPresentation: zodPolisVotingPresentation,
             })
             .strict(),
         zodConversationMetadataBase
@@ -1393,6 +1390,7 @@ export const zodConversationMetadataWithId = z.discriminatedUnion(
         zodConversationMetadataWithIdBase
             .extend({
                 conversationType: z.literal("polis"),
+                votingPresentation: zodPolisVotingPresentation,
             })
             .strict(),
         zodConversationMetadataWithIdBase
@@ -2106,6 +2104,9 @@ export type ConversationProjectContext = z.infer<
 export type UserInteraction = z.infer<typeof zodUserInteraction>;
 export type ConversationMetadata = z.infer<typeof zodConversationMetadata>;
 export type RankingMode = z.infer<typeof zodRankingMode>;
+export type PolisVotingPresentation = z.infer<
+    typeof zodPolisVotingPresentation
+>;
 export type ConversationTypeConfig = z.infer<typeof zodConversationTypeConfig>;
 export type ExtendedConversationPayload = z.infer<
     typeof zodConversationDataWithResult
@@ -2225,7 +2226,6 @@ export type ConversationModerationProperties = z.infer<
 export type OpinionModerationProperties = z.infer<
     typeof zodOpinionModerationProperties
 >;
-export type CommentFeedFilter = z.infer<typeof zodPublicCommentFeedFilter>;
 export type UserMuteAction = z.infer<typeof zodUserMuteAction>;
 export type UserMuteItem = z.infer<typeof zodUserMuteItem>;
 export type Username = z.infer<typeof zodUsername>;

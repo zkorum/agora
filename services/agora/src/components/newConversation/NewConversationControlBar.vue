@@ -44,6 +44,12 @@
     @mode-change-requested="handleModeChangeRequest"
   />
 
+  <VotingPresentationDialog
+    v-if="supportsOpinionGroupAnalysis && importSettings.importType === null"
+    v-model:show-dialog="showVotingPresentationDialog"
+    v-model:voting-presentation="votingPresentation"
+  />
+
   <MaxDiffSourceDialog
     v-model="showMaxDiffSourceDialog"
     :current-config="externalSourceConfig"
@@ -151,6 +157,11 @@ import { getLanguageLabel } from "./dialog/conversationLanguageSettings.utils";
 import MaxDiffSourceDialog from "./dialog/MaxDiffSourceDialog.vue";
 import PostTypeDialog from "./dialog/PostTypeDialog.vue";
 import {
+  type VotingPresentationTranslations,
+  votingPresentationTranslations,
+} from "./dialog/VotingPresentationDialog.i18n";
+import VotingPresentationDialog from "./dialog/VotingPresentationDialog.vue";
+import {
   type NewConversationControlBarTranslations,
   newConversationControlBarTranslations,
 } from "./NewConversationControlBar.i18n";
@@ -194,6 +205,10 @@ const props = withDefaults(defineProps<Props>(), {
 const { t, locale } = useComponentI18n<NewConversationControlBarTranslations>(
   newConversationControlBarTranslations
 );
+const { t: tVotingPresentation } =
+  useComponentI18n<VotingPresentationTranslations>(
+    votingPresentationTranslations
+  );
 
 const { isLoggedIn, userId } = storeToRefs(useAuthenticationStore());
 const { profileData } = storeToRefs(useUserStore());
@@ -212,6 +227,20 @@ const conversationTypeConfig = defineModel<ConversationTypeConfig>(
   "conversationTypeConfig",
   { required: true }
 );
+const votingPresentation = computed({
+  get: () =>
+    conversationTypeConfig.value.conversationType === "polis"
+      ? conversationTypeConfig.value.votingPresentation
+      : "list",
+  set: (value: "list" | "one_at_a_time") => {
+    if (conversationTypeConfig.value.conversationType === "polis") {
+      conversationTypeConfig.value = {
+        conversationType: "polis",
+        votingPresentation: value,
+      };
+    }
+  },
+});
 const conversationType = computed(
   () => conversationTypeConfig.value.conversationType
 );
@@ -275,6 +304,7 @@ const showPostAsImage = computed(() => {
 
 const showPostAsDialogVisible = ref(false);
 const showPostTypeDialog = ref(false);
+const showVotingPresentationDialog = ref(false);
 const showVisibilityDialog = ref(false);
 const showAiLabelingDialog = ref(false);
 const showAnalysisPreferenceDialog = ref(false);
@@ -284,6 +314,7 @@ const showEventTicketRequirementDialog = ref(false);
 
 watch(supportsOpinionGroupAnalysis, (isSupported) => {
   if (!isSupported) {
+    showVotingPresentationDialog.value = false;
     showAiLabelingDialog.value = false;
     showAnalysisPreferenceDialog.value = false;
   }
@@ -686,6 +717,22 @@ const controlButtons = computed((): ControlButton[] => [
       : "pi pi-chevron-down",
     isVisible: true,
     clickHandler: toggleVisibility,
+    clickable: true,
+  },
+  {
+    id: "voting-presentation",
+    label: tVotingPresentation(
+      votingPresentation.value === "list" ? "list" : "oneAtATime"
+    ),
+    icon: showVotingPresentationDialog.value
+      ? "pi pi-chevron-up"
+      : "pi pi-chevron-down",
+    isVisible:
+      supportsOpinionGroupAnalysis.value &&
+      importSettings.value.importType === null,
+    clickHandler: () => {
+      showVotingPresentationDialog.value = true;
+    },
     clickable: true,
   },
   {

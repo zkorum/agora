@@ -28,15 +28,60 @@ const createdOpinion: DisplayedOpinionItem = {
 };
 
 describe("cacheCreatedOpinion", () => {
+  it("inserts a new statement into the first server page without losing its cursor", async () => {
+    const queryClient = new QueryClient();
+    const queryKey = ["comments", "conversation", "new", "user", "en", ["en"]];
+    const cursor = {
+      kind: "created",
+      opinionSlugId: "last-opinion",
+      opinionId: 12,
+      createdAt: new Date("2026-01-01T00:00:00Z"),
+    };
+    queryClient.setQueryData(queryKey, {
+      pages: [
+        { items: [], nextCursor: cursor },
+        { items: [], nextCursor: null },
+      ],
+      pageParams: [null, cursor],
+    });
+
+    await cacheCreatedOpinion({
+      queryClient,
+      conversationSlugId: "conversation",
+      displayedOpinionItem: createdOpinion,
+      viewerUserId: "user",
+    });
+
+    expect(queryClient.getQueryData(queryKey)).toEqual({
+      pages: [
+        { items: [createdOpinion], nextCursor: cursor },
+        { items: [], nextCursor: null },
+      ],
+      pageParams: [null, cursor],
+    });
+    queryClient.clear();
+  });
+
   it("keeps the confirmed auto-agree when older vote and statement reads finish", async () => {
     const queryClient = new QueryClient();
-    const userVotesKey = ["userVotes", "conversation"];
-    const commentsKey = ["comments", "conversation", "discover"];
+    const userVotesKey = ["userVotes", "conversation", "user"];
+    const commentsKey = [
+      "comments",
+      "conversation",
+      "discover",
+      "user",
+      "en",
+      ["en"],
+    ];
     const existingVotes: UserVote[] = [
       { opinionSlugId: "existing-opinion", votingAction: "disagree" },
     ];
     queryClient.setQueryData(userVotesKey, existingVotes);
-    queryClient.setQueryData(commentsKey, []);
+    const emptyPage = {
+      pages: [{ items: [], nextCursor: null }],
+      pageParams: [null],
+    };
+    queryClient.setQueryData(commentsKey, emptyPage);
 
     let finishVoteRead = () => {};
     let finishCommentRead = () => {};
@@ -50,8 +95,8 @@ describe("cacheCreatedOpinion", () => {
     const commentRead = queryClient.fetchQuery({
       queryKey: commentsKey,
       queryFn: () =>
-        new Promise<DisplayedOpinionItem[]>((resolve) => {
-          finishCommentRead = () => resolve([]);
+        new Promise<typeof emptyPage>((resolve) => {
+          finishCommentRead = () => resolve(emptyPage);
         }),
     });
     const readsSettled = Promise.allSettled([voteRead, commentRead]);
@@ -60,6 +105,7 @@ describe("cacheCreatedOpinion", () => {
       queryClient,
       conversationSlugId: "conversation",
       displayedOpinionItem: createdOpinion,
+      viewerUserId: "user",
     });
     finishVoteRead();
     finishCommentRead();
@@ -69,23 +115,37 @@ describe("cacheCreatedOpinion", () => {
       ...existingVotes,
       { opinionSlugId: createdOpinion.opinionSlugId, votingAction: "agree" },
     ]);
-    expect(queryClient.getQueryData(commentsKey)).toEqual([createdOpinion]);
+    expect(queryClient.getQueryData(commentsKey)).toEqual({
+      pages: [{ items: [createdOpinion], nextCursor: null }],
+      pageParams: [null],
+    });
     queryClient.clear();
   });
 
-  it("seeds ordinary lists and empty vote state without changing unrelated lists", async () => {
+  it("seeds only the current viewer's lists and vote state", async () => {
     const queryClient = new QueryClient();
     const updatedKeys = ["discover", "new", "my_votes"].map((filter) => [
-      "comments", "conversation", filter, undefined, "en", ["en"],
+      "comments",
+      "conversation",
+      filter,
+      "user",
+      "en",
+      ["en"],
     ]);
     const unchangedKeys = [
       ["comments", "conversation", "moderated"],
       ["comments", "conversation", "hidden"],
-      ["comments", "conversation", "discover", "0"],
+      // A different participant's personalized list must not receive this vote.
+      ["comments", "conversation", "my_votes", "other-user", "en", ["en"]],
       ["comments", "other-conversation", "new"],
     ];
+    const otherUserVotesKey = ["userVotes", "conversation", "other-user"];
+    queryClient.setQueryData(otherUserVotesKey, []);
     for (const queryKey of [...updatedKeys, ...unchangedKeys]) {
-      queryClient.setQueryData(queryKey, []);
+      queryClient.setQueryData(queryKey, {
+        pages: [{ items: [], nextCursor: null }],
+        pageParams: [null],
+      });
     }
 
     // Reapplying a confirmed result must not duplicate the statement or its vote.
@@ -94,24 +154,34 @@ describe("cacheCreatedOpinion", () => {
         queryClient,
         conversationSlugId: "conversation",
         displayedOpinionItem: createdOpinion,
+        viewerUserId: "user",
       });
     }
 
     for (const queryKey of updatedKeys) {
-      expect(queryClient.getQueryData(queryKey)).toEqual([createdOpinion]);
+      expect(queryClient.getQueryData(queryKey)).toEqual({
+        pages: [{ items: [createdOpinion], nextCursor: null }],
+        pageParams: [null],
+      });
     }
     for (const queryKey of unchangedKeys) {
-      expect(queryClient.getQueryData(queryKey)).toEqual([]);
+      expect(queryClient.getQueryData(queryKey)).toEqual({
+        pages: [{ items: [], nextCursor: null }],
+        pageParams: [null],
+      });
     }
-    expect(queryClient.getQueryData(["userVotes", "conversation"])).toEqual([
+    expect(
+      queryClient.getQueryData(["userVotes", "conversation", "user"])
+    ).toEqual([
       { opinionSlugId: createdOpinion.opinionSlugId, votingAction: "agree" },
     ]);
+    expect(queryClient.getQueryData(otherUserVotesKey)).toEqual([]);
     queryClient.clear();
   });
 
   it("lets an unfetched list finish loading instead of replacing it with a partial list", async () => {
     const queryClient = new QueryClient();
-    const queryKey = ["comments", "conversation", "new"];
+    const queryKey = ["comments", "conversation", "new", "user", "en", ["en"]];
     let finishRead = () => {};
     const existingOpinion = {
       ...createdOpinion,
@@ -120,8 +190,15 @@ describe("cacheCreatedOpinion", () => {
     const read = queryClient.fetchQuery({
       queryKey,
       queryFn: () =>
-        new Promise<DisplayedOpinionItem[]>((resolve) => {
-          finishRead = () => resolve([existingOpinion]);
+        new Promise<{
+          pages: { items: DisplayedOpinionItem[]; nextCursor: null }[];
+          pageParams: null[];
+        }>((resolve) => {
+          finishRead = () =>
+            resolve({
+              pages: [{ items: [existingOpinion], nextCursor: null }],
+              pageParams: [null],
+            });
         }),
     });
 
@@ -129,13 +206,17 @@ describe("cacheCreatedOpinion", () => {
       queryClient,
       conversationSlugId: "conversation",
       displayedOpinionItem: createdOpinion,
+      viewerUserId: "user",
     });
 
     expect(queryClient.getQueryData(queryKey)).toBeUndefined();
     expect(queryClient.getQueryState(queryKey)?.status).toBe("pending");
     finishRead();
     await read;
-    expect(queryClient.getQueryData(queryKey)).toEqual([existingOpinion]);
+    expect(queryClient.getQueryData(queryKey)).toEqual({
+      pages: [{ items: [existingOpinion], nextCursor: null }],
+      pageParams: [null],
+    });
     queryClient.clear();
   });
 });

@@ -275,6 +275,7 @@ describe("conversation translation completion", () => {
       metadata: {
         conversationSlugId,
         conversationType: "polis",
+        votingPresentation: "list",
         createdAt: new Date(),
         lastReactedAt: new Date(),
         opinionCount: 0,

@@ -13,6 +13,7 @@
         />
 
         <CommentActionOptions
+          v-if="props.conversationRouteContext.kind !== 'embed'"
           :comment-item="commentItem"
           :post-slug-id="postSlugId"
           :conversation-author-username="conversationAuthorUsername"

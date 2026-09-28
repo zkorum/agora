@@ -281,6 +281,7 @@ const originalState = ref<{
   inheritProjectLanguages: boolean;
   languageSettingsSource: ConversationLanguageSettingsSource;
   aiLabelingEnabled: boolean;
+  votingPresentation: "list" | "one_at_a_time";
   preferredOpinionGroupCount: PreferredOpinionGroupCount;
   surveyConfig: SurveyConfig | null;
 }>({
@@ -297,6 +298,7 @@ const originalState = ref<{
   inheritProjectLanguages: false,
   languageSettingsSource: "conversation_override",
   aiLabelingEnabled: true,
+  votingPresentation: "list",
   preferredOpinionGroupCount: null,
   surveyConfig: null,
 });
@@ -390,6 +392,13 @@ const hasUnsavedChanges = computed(() => {
   }
 
   if (
+    conversationType.value === "polis" &&
+    votingPresentation.value !== originalState.value.votingPresentation
+  ) {
+    return true;
+  }
+
+  if (
     preferredOpinionGroupCount.value !==
     originalState.value.preferredOpinionGroupCount
   ) {
@@ -424,6 +433,7 @@ const {
   importSettings,
   externalSourceConfig,
   conversationType,
+  votingPresentation,
   rankingMode,
   validationState,
   validateTitle,
@@ -554,13 +564,19 @@ function getConversationTypeConfig(): ConversationTypeConfig {
     };
   }
 
-  return { conversationType: "polis" };
+  return {
+    conversationType: "polis",
+    votingPresentation: votingPresentation.value,
+  };
 }
 
 const conversationTypeConfig = computed({
   get: getConversationTypeConfig,
   set: (value: ConversationTypeConfig) => {
     conversationType.value = value.conversationType;
+    if (value.conversationType === "polis") {
+      votingPresentation.value = value.votingPresentation;
+    }
     rankingMode.value =
       value.conversationType === "ranking" ? value.rankingMode : undefined;
   },
@@ -668,6 +684,7 @@ async function performSave(): Promise<void> {
       languageSettingsSource: effectiveLanguageSettingsSource.value,
       isIndexed: !isPrivate.value,
       participationMode: participationMode.value,
+      conversationTypeConfig: conversationTypeConfig.value,
       requiresEventTicket: requiresEventTicket.value,
       ...(conversationEmailUpdateEnabledOverride === undefined
         ? {}
@@ -675,6 +692,7 @@ async function performSave(): Promise<void> {
       ...(conversationType.value === "polis"
         ? {
             aiLabelingEnabled: aiLabelingEnabled.value,
+            votingPresentation: votingPresentation.value,
             preferredOpinionGroupCount: preferredOpinionGroupCount.value,
           }
         : {}),
@@ -901,6 +919,10 @@ onMounted(async () => {
         response.projectLanguageProject !== undefined,
       languageSettingsSource: response.languageSettingsSource,
       aiLabelingEnabled: response.aiLabelingEnabled,
+      votingPresentation:
+        response.conversationTypeConfig.conversationType === "polis"
+          ? response.conversationTypeConfig.votingPresentation
+          : "list",
       preferredOpinionGroupCount: response.preferredOpinionGroupCount,
       surveyConfig: response.surveyConfig ?? null,
     };

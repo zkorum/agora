@@ -1,25 +1,37 @@
 <template>
   <div v-if="conversationData !== undefined">
-    <CommentSection
-      ref="opinionSectionRef"
+    <OneAtATimeSection
+      v-if="opinionView?.kind === 'one_at_a_time'"
+      :key="`${conversationData.metadata.conversationSlugId}:${props.commentFilter}`"
+      ref="oneAtATimeRef"
       :post-slug-id="conversationData.metadata.conversationSlugId"
+      :order="opinionView.order"
       :conversation-author-username="conversationData.metadata.authorUsername"
-      :conversation-organization-name="conversationData.metadata.organization?.name ?? ''"
-      :participation-mode="
-        conversationData.metadata.participationMode
+      :conversation-organization-name="
+        conversationData.metadata.organization?.name ?? ''
       "
+      :participation-mode="conversationData.metadata.participationMode"
       :requires-event-ticket="conversationData.metadata.requiresEventTicket"
       :survey-gate="conversationData.interaction.surveyGate"
       :on-view-analysis="props.onViewAnalysis"
       :is-voting-disabled="isVotingDisabled"
       :conversation-route-context="props.conversationRouteContext"
-      :preloaded-queries="{
-        commentsDiscoverQuery,
-        commentsNewQuery,
-        commentsModeratedQuery,
-        hiddenCommentsQuery,
-        commentsMyVotesQuery,
-      }"
+    />
+    <CommentSection
+      v-else
+      ref="opinionSectionRef"
+      :post-slug-id="conversationData.metadata.conversationSlugId"
+      :conversation-author-username="conversationData.metadata.authorUsername"
+      :conversation-organization-name="
+        conversationData.metadata.organization?.name ?? ''
+      "
+      :participation-mode="conversationData.metadata.participationMode"
+      :requires-event-ticket="conversationData.metadata.requiresEventTicket"
+      :survey-gate="conversationData.interaction.surveyGate"
+      :on-view-analysis="props.onViewAnalysis"
+      :is-voting-disabled="isVotingDisabled"
+      :conversation-route-context="props.conversationRouteContext"
+      :filter="props.commentFilter"
     />
   </div>
 </template>
@@ -33,11 +45,7 @@ import type {
 import type { ExtendedConversationDisplayData } from "src/shared/types/zod";
 import { useUserStore } from "src/stores/user";
 import { useBackendAuthApi } from "src/utils/api/auth";
-import {
-  useCommentsQuery,
-  useHiddenCommentsQuery,
-  useInvalidateCommentQueries,
-} from "src/utils/api/comment/useCommentQueries";
+import { useInvalidateCommentQueries } from "src/utils/api/comment/useCommentQueries";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
 import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
 import {
@@ -52,6 +60,8 @@ import {
 } from "vue";
 
 import CommentSection from "./comments/CommentSection.vue";
+import OneAtATimeSection from "./comments/OneAtATimeSection.vue";
+import { resolveOpinionView } from "./comments/opinionPresentation";
 
 // Props from parent
 const props = defineProps<{
@@ -88,10 +98,12 @@ const registerSubmittedCommentHandler = inject<
 });
 
 const opinionSectionRef = ref<InstanceType<typeof CommentSection>>();
+const oneAtATimeRef = ref<InstanceType<typeof OneAtATimeSection>>();
 const isTabActive = ref(true);
 let unregisterChildRefreshHandler: (() => void) | undefined;
 
-const { markAnalysisAsStale, markCommentsAsStale } = useInvalidateCommentQueries();
+const { markAnalysisAsStale, markCommentsAsStale } =
+  useInvalidateCommentQueries();
 const { loadAuthenticatedModules } = useBackendAuthApi();
 const userStore = useUserStore();
 
@@ -101,7 +113,18 @@ const { profileData } = storeToRefs(userStore);
 const conversationSlugId = computed(
   () => props.conversationData?.metadata.conversationSlugId ?? ""
 );
-const voteCount = computed(() => props.conversationData?.metadata.voteCount);
+const opinionView = computed(() =>
+  props.conversationData === undefined
+    ? undefined
+    : resolveOpinionView({
+        metadata: props.conversationData.metadata,
+        routeContext: props.conversationRouteContext,
+        filter: props.commentFilter,
+      })
+);
+const isOneAtATime = computed(
+  () => opinionView.value?.kind === "one_at_a_time"
+);
 
 // Compute voting disabled state for drilling to CommentActionBar
 const isVotingDisabled = computed(() => {
@@ -116,43 +139,12 @@ const isVotingDisabled = computed(() => {
   return isModeratedAndLocked || data.metadata.isClosed;
 });
 
-// Preload comment queries for all filter types
-const commentsDiscoverQuery = useCommentsQuery({
-  conversationSlugId,
-  filter: "discover",
-  voteCount,
-  enabled: () => props.conversationData !== undefined,
-});
-
-const commentsNewQuery = useCommentsQuery({
-  conversationSlugId,
-  filter: "new",
-  voteCount,
-  enabled: false, // Lazy: fetched on-demand when user selects this filter
-});
-
-const commentsModeratedQuery = useCommentsQuery({
-  conversationSlugId,
-  filter: "moderated",
-  voteCount,
-  enabled: false, // Lazy: fetched on-demand when user selects this filter
-});
-
-const commentsMyVotesQuery = useCommentsQuery({
-  conversationSlugId,
-  filter: "my_votes",
-  voteCount,
-  enabled: false, // Lazy: fetched on-demand when user selects this filter
-});
-
-const hiddenCommentsQuery = useHiddenCommentsQuery({
-  conversationSlugId,
-  voteCount,
-  enabled: false, // Lazy: fetched on-demand when user selects this filter
-});
-
 const isLoading = computed(
-  () => isTabActive.value && (opinionSectionRef.value?.isLoading ?? false)
+  () =>
+    isTabActive.value &&
+    (isOneAtATime.value
+      ? (oneAtATimeRef.value?.isLoading ?? false)
+      : (opinionSectionRef.value?.isLoading ?? false))
 );
 
 // Report loading state to parent (for spinner in PostActionBar)
@@ -164,7 +156,10 @@ watch(isLoading, (loading) => {
 watch(
   () => props.commentFilter,
   (newFilter) => {
-    if (opinionSectionRef.value && opinionSectionRef.value.currentFilter !== newFilter) {
+    if (
+      opinionSectionRef.value &&
+      opinionSectionRef.value.currentFilter !== newFilter
+    ) {
       opinionSectionRef.value.handleUserFilterChange(newFilter);
     }
   }
@@ -192,6 +187,11 @@ async function submittedComment(data: SubmittedCommentData): Promise<void> {
   if (opinionSectionRef.value) {
     opinionSectionRef.value.highlightOpinion(data.displayedOpinionItem);
   }
+  if (oneAtATimeRef.value) {
+    await oneAtATimeRef.value.acknowledgeCreatedOpinion(
+      data.displayedOpinionItem.opinionSlugId
+    );
+  }
 
   // Handle deferred cache refresh if auth state changed (new guest user)
   if (data.needsCacheRefresh) {
@@ -211,6 +211,10 @@ watch(
 );
 
 async function handleChildRefresh(): Promise<void> {
+  if (oneAtATimeRef.value) {
+    await oneAtATimeRef.value.refresh();
+    return;
+  }
   const section = opinionSectionRef.value;
   if (!section) return;
   await Promise.all([
@@ -221,7 +225,8 @@ async function handleChildRefresh(): Promise<void> {
 
 function registerRefreshHandler(): void {
   unregisterChildRefreshHandler?.();
-  unregisterChildRefreshHandler = registerChildRefreshHandler(handleChildRefresh);
+  unregisterChildRefreshHandler =
+    registerChildRefreshHandler(handleChildRefresh);
 }
 
 function unregisterRefreshHandler(): void {

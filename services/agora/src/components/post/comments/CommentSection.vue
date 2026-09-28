@@ -4,7 +4,7 @@
       <div>
         <div class="container">
           <AsyncStateHandler
-            :query="activeQuery"
+            :query="listQueryState"
             :is-empty="isCommentListEmpty"
             :config="asyncStateConfig"
           >
@@ -33,30 +33,25 @@
     </q-infinite-scroll>
 
     <NewContentPill
-      v-if="
-        shouldShowNewStatementsPill && !isShowingInitialCommentsLoading
-      "
+      v-if="showNewStatementsPill && !activeQuery.isPending.value"
       :label="t('newStatementButton')"
       dismissible
       @click="showNewStatements"
-      @dismiss="dismissNewOpinionPill"
+      @dismiss="showNewStatementsPill = false"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { useQueryClient, type UseQueryReturnType } from "@tanstack/vue-query";
+import { useQueryClient } from "@tanstack/vue-query";
 import { storeToRefs } from "pinia";
 import NewContentPill from "src/components/feed/NewContentPill.vue";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
-import { useNewStatementsPill } from "src/composables/opinion/useNewStatementsPill";
-import { useOpinionFiltering } from "src/composables/opinion/useOpinionFiltering";
 import { useOpinionPagination } from "src/composables/opinion/useOpinionPagination";
 import { useOpinionVoting } from "src/composables/opinion/useOpinionVoting";
 import { useTargetOpinion } from "src/composables/opinion/useTargetOpinion";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
-  DisplayedOpinionItem,
   EventSlug,
   ParticipationMode,
   SurveyGateSummary,
@@ -64,7 +59,10 @@ import type {
 import { useOpinionUpdatesStore } from "src/stores/opinionUpdates";
 import { useUserStore } from "src/stores/user";
 import { useBackendCommentApi } from "src/utils/api/comment/comment";
-import { useInvalidateCommentQueries } from "src/utils/api/comment/useCommentQueries";
+import {
+  useInvalidateCommentQueries,
+  usePagedCommentsQuery,
+} from "src/utils/api/comment/useCommentQueries";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
 import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
 import { useNotify } from "src/utils/ui/notify";
@@ -94,26 +92,23 @@ const props = defineProps<{
   onViewAnalysis: () => void;
   isVotingDisabled: boolean;
   conversationRouteContext: ConversationRouteContext;
-  preloadedQueries: {
-    commentsDiscoverQuery: UseQueryReturnType<DisplayedOpinionItem[], Error>;
-    commentsNewQuery: UseQueryReturnType<DisplayedOpinionItem[], Error>;
-    commentsModeratedQuery: UseQueryReturnType<DisplayedOpinionItem[], Error>;
-    hiddenCommentsQuery: UseQueryReturnType<DisplayedOpinionItem[], Error>;
-    commentsMyVotesQuery: UseQueryReturnType<DisplayedOpinionItem[], Error>;
-  };
+  filter: CommentFilterOptions;
 }>();
 
 const emit = defineEmits<{
   deleted: [];
   participantCountDelta: [delta: number];
   ticketVerified: [
-    payload: { userIdChanged: boolean; needsCacheRefresh: boolean }
+    payload: { userIdChanged: boolean; needsCacheRefresh: boolean },
   ];
 }>();
 
 const isComponentMounted = ref(false);
 const isCommentTabActive = ref(true);
 const isInitialActivation = ref(true);
+const currentFilter = ref<CommentFilterOptions>(props.filter);
+const showNewStatementsPill = ref(false);
+let isCheckingForNewStatements = false;
 
 const { t } = useComponentI18n<CommentSectionTranslations>(
   commentSectionTranslations
@@ -123,33 +118,53 @@ const { profileData } = storeToRefs(useUserStore());
 const { showNotifyMessage } = useNotify();
 const opinionUpdatesStore = useOpinionUpdatesStore();
 const queryClient = useQueryClient();
-const { fetchCommentsForPost } = useBackendCommentApi();
-const scrollToActionBar = inject<({ behavior }: { behavior?: ScrollBehavior }) => void>(
-  "scrollToActionBar",
-  () => {
-    /* noop */
-  }
-);
+const { fetchOpinionPage } = useBackendCommentApi();
+const scrollToActionBar = inject<
+  ({ behavior }: { behavior?: ScrollBehavior }) => void
+>("scrollToActionBar", () => {
+  /* noop */
+});
 
 // Get invalidation utilities
 const { invalidateAll } = useInvalidateCommentQueries();
 
-// Initialize composables
-const {
-  currentFilter,
-  activeQuery,
-  currentOpinionData,
-  customIsEmpty,
-  handleUserFilterChange,
-  handleRetryLoadComments,
-} = useOpinionFiltering({
-  preloadedQueries: props.preloadedQueries,
+const activeQuery = usePagedCommentsQuery({
+  conversationSlugId: () => props.postSlugId,
+  filter: currentFilter,
 });
+const currentOpinionData = computed(() => {
+  const items =
+    activeQuery.data.value?.pages.flatMap((page) => page.items) ?? [];
+  return [...new Map(items.map((item) => [item.opinionSlugId, item])).values()];
+});
+const customIsEmpty = computed(() => currentOpinionData.value.length === 0);
+const listQueryState = {
+  isPending: activeQuery.isPending,
+  isError: computed(() => activeQuery.isError.value && customIsEmpty.value),
+  error: activeQuery.error,
+  isRefetching: activeQuery.isRefetching,
+  data: activeQuery.data,
+  refetch: () => activeQuery.refetch(),
+};
+
+watch(
+  () => props.filter,
+  (filter) => {
+    currentFilter.value = filter;
+  }
+);
+
+function handleUserFilterChange(filter: CommentFilterOptions): void {
+  currentFilter.value = filter;
+  showNewStatementsPill.value = false;
+}
+
+function handleRetryLoadComments(): void {
+  void activeQuery.refetch();
+}
 
 const refreshData = async (): Promise<void> => {
-  void invalidateAll(props.postSlugId);
-  // Refetch active query — needed for lazy queries where invalidation alone won't trigger refetch
-  void activeQuery.value.refetch();
+  await invalidateAll(props.postSlugId);
   await fetchUserVotingData();
 };
 
@@ -176,20 +191,45 @@ const {
   },
 });
 
-const { visibleOpinions, hasMore, onLoad, triggerLoadMore } =
-  useOpinionPagination({
-    currentOpinionData,
-    currentFilter,
-    isComponentMounted,
-    targetOpinion,
-  });
+const {
+  visibleOpinions,
+  hasMore: hasMoreLocally,
+  onLoad: revealMore,
+  triggerLoadMore,
+} = useOpinionPagination({
+  currentOpinionData,
+  currentFilter,
+  isComponentMounted,
+  targetOpinion,
+});
+const hasMore = computed(
+  () => hasMoreLocally.value || activeQuery.hasNextPage.value
+);
+
+async function onLoad(index: number, done: () => void): Promise<void> {
+  if (hasMoreLocally.value) {
+    revealMore(index, done);
+    return;
+  }
+  try {
+    if (activeQuery.hasNextPage.value && !activeQuery.isFetching.value) {
+      const result = await activeQuery.fetchNextPage();
+      if (!result.isError) triggerLoadMore();
+    }
+  } finally {
+    done();
+  }
+}
 
 const { userVotes, castVote, fetchUserVotingData } = useOpinionVoting({
   postSlugId: props.postSlugId,
   visibleOpinions,
 });
 
-const emptyTextByFilter: Record<CommentFilterOptions, keyof CommentSectionTranslations> = {
+const emptyTextByFilter: Record<
+  CommentFilterOptions,
+  keyof CommentSectionTranslations
+> = {
   discover: "emptyDiscover",
   new: "emptyNew",
   moderated: "emptyModerated",
@@ -205,41 +245,73 @@ const newOpinionSignalVersion = computed(() =>
   opinionUpdatesStore.getNewOpinionSignalVersion(props.postSlugId)
 );
 
-const isShowingInitialCommentsLoading = computed(
-  () => activeQuery.value.isPending.value
+let lastCheckedSignalVersion = newOpinionSignalVersion.value;
+watch(
+  [
+    newOpinionSignalVersion,
+    activeQuery.data,
+    currentFilter,
+    isCommentTabActive,
+  ],
+  ([version, data]) => {
+    if (
+      version === lastCheckedSignalVersion ||
+      !isCommentTabActive.value ||
+      (currentFilter.value !== "discover" && currentFilter.value !== "new") ||
+      data === undefined ||
+      isCheckingForNewStatements
+    ) {
+      return;
+    }
+    void checkForNewStatements();
+  }
 );
 
-async function fetchCommentsPreviewForFilter({
-  filter,
-}: {
-  filter: CommentFilterOptions;
-}): Promise<DisplayedOpinionItem[]> {
-  return await queryClient.fetchQuery({
-    queryKey: ["commentsRefreshPreview", props.postSlugId, filter],
-    queryFn: () => fetchCommentsForPost(props.postSlugId, filter, undefined),
-    staleTime: 0,
-  });
+async function checkForNewStatements(): Promise<void> {
+  isCheckingForNewStatements = true;
+  const conversationSlugId = props.postSlugId;
+  const filter = currentFilter.value;
+  const previewVersion = newOpinionSignalVersion.value;
+  try {
+    const preview = await fetchOpinionPage({
+      conversationSlugId,
+      filter,
+      cursor: null,
+    });
+    if (
+      conversationSlugId !== props.postSlugId ||
+      filter !== currentFilter.value ||
+      !isCommentTabActive.value
+    )
+      return;
+    lastCheckedSignalVersion = previewVersion;
+    const visibleIds = new Set(
+      currentOpinionData.value.map((item) => item.opinionSlugId)
+    );
+    showNewStatementsPill.value = preview.items.some(
+      (item) => !visibleIds.has(item.opinionSlugId)
+    );
+  } catch {
+    return;
+  } finally {
+    isCheckingForNewStatements = false;
+    if (
+      isCommentTabActive.value &&
+      conversationSlugId === props.postSlugId &&
+      (currentFilter.value === "discover" || currentFilter.value === "new") &&
+      newOpinionSignalVersion.value !== previewVersion
+    ) {
+      void checkForNewStatements();
+    }
+  }
 }
 
-const {
-  shouldShowNewStatementsPill,
-  showNewStatements: showNewStatementsFromPill,
-  dismissNewStatementsPill,
-  resetForCurrentView: resetNewStatementsPillForCurrentView,
-  refetchActiveQueryAndAcknowledge,
-} = useNewStatementsPill({
-  postSlugId: () => props.postSlugId,
-  currentFilter,
-  currentOpinionData,
-  activeQuery,
-  isCommentTabActive,
-  newOpinionSignalVersion,
-  fetchCommentsForFilter: fetchCommentsPreviewForFilter,
-  scrollToNewStatements: () => scrollToActionBar({ behavior: "smooth" }),
-});
-
 async function showNewStatements(): Promise<void> {
-  await showNewStatementsFromPill();
+  showNewStatementsPill.value = false;
+  scrollToActionBar({ behavior: "smooth" });
+  await queryClient.resetQueries({
+    queryKey: ["comments", props.postSlugId, currentFilter.value],
+  });
   await fetchUserVotingData();
 }
 
@@ -271,7 +343,7 @@ onMounted(async (): Promise<void> => {
 
 onActivated(async (): Promise<void> => {
   isCommentTabActive.value = true;
-  resetNewStatementsPillForCurrentView();
+  showNewStatementsPill.value = false;
   if (isInitialActivation.value) {
     isInitialActivation.value = false;
     return;
@@ -289,6 +361,8 @@ watch(
   () => props.postSlugId,
   async (newSlugId, oldSlugId) => {
     if (newSlugId && newSlugId !== oldSlugId) {
+      lastCheckedSignalVersion = newOpinionSignalVersion.value;
+      showNewStatementsPill.value = false;
       // Reset component state for new conversation
       isComponentMounted.value = false;
       await fetchUserVotingData();
@@ -307,10 +381,6 @@ async function handleOpinionMuted(): Promise<void> {
   await refreshData();
 }
 
-function dismissNewOpinionPill(): void {
-  dismissNewStatementsPill();
-}
-
 function handleOpinionDeleted(opinionSlugId: string): void {
   // If the deleted opinion is the currently highlighted one, clear it
   if (targetOpinion.value?.opinionSlugId === opinionSlugId) {
@@ -325,14 +395,11 @@ defineExpose({
   triggerLoadMore,
   handleRetryLoadComments,
   refreshData,
-  refetchActiveQuery: refetchActiveQueryAndAcknowledge,
+  refetchActiveQuery: () => activeQuery.refetch(),
   targetOpinion,
   currentFilter,
   handleUserFilterChange,
-  isLoading: computed(
-    () =>
-      activeQuery.value.isPending.value || activeQuery.value.isRefetching.value
-  ),
+  isLoading: computed(() => activeQuery.isPending.value && customIsEmpty.value),
 });
 </script>
 

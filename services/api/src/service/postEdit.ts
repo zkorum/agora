@@ -119,6 +119,7 @@ export async function getConversationForEdit({
             rankingMode: rankingConversationConfigTable.rankingMode,
             requiresEventTicket: conversationTable.requiresEventTicket,
             aiLabelingEnabled: polisConversationConfigTable.aiLabelingEnabled,
+            votingPresentation: polisConversationConfigTable.votingPresentation,
             preferredOpinionGroupCount:
                 polisConversationConfigTable.preferredOpinionGroupCount,
             postAsOrganizationName: organizationTable.displayName,
@@ -276,7 +277,13 @@ export async function getConversationForEdit({
             rankingMode: conversation.rankingMode,
         };
     } else {
-        conversationTypeConfig = { conversationType: "polis" };
+        if (conversation.votingPresentation === null) {
+            throw new Error("Polis conversation has no voting configuration");
+        }
+        conversationTypeConfig = {
+            conversationType: "polis",
+            votingPresentation: conversation.votingPresentation,
+        };
     }
 
     return {
@@ -359,6 +366,7 @@ export async function updateConversation({
         multilingualSetting,
         requiresEventTicket,
         aiLabelingEnabled,
+        conversationTypeConfig,
         preferredOpinionGroupCount,
         surveyConfig,
         conversationEmailUpdateEnabledOverride,
@@ -408,6 +416,8 @@ export async function updateConversation({
                 requiresEventTicket: conversationTable.requiresEventTicket,
                 aiLabelingEnabled:
                     polisConversationConfigTable.aiLabelingEnabled,
+                votingPresentation:
+                    polisConversationConfigTable.votingPresentation,
                 isClosed: conversationTable.isClosed,
                 currentPreferredOpinionGroupCount:
                     polisConversationConfigTable.preferredOpinionGroupCount,
@@ -690,6 +700,27 @@ export async function updateConversation({
             conversation.currentPreferredOpinionGroupCount;
         const updatedAiLabelingEnabled =
             aiLabelingEnabled ?? conversation.aiLabelingEnabled ?? true;
+        if (
+            conversationTypeConfig.conversationType !==
+            conversation.conversationType
+        ) {
+            return {
+                success: false,
+                reason: "invalid_access_settings",
+            } satisfies UpdateConversationServiceResponse;
+        }
+        if (
+            conversation.conversationType === "polis" &&
+            conversation.votingPresentation === null
+        ) {
+            throw new Error("Polis conversation has no voting configuration");
+        }
+        const currentVotingPresentation =
+            conversation.votingPresentation ?? "list";
+        const updatedVotingPresentation =
+            conversationTypeConfig.conversationType === "polis"
+                ? conversationTypeConfig.votingPresentation
+                : "list";
         const conversationSettingsChanged =
             isIndexed !== conversation.isIndexed ||
             participationMode !== conversation.participationMode ||
@@ -697,6 +728,7 @@ export async function updateConversation({
                 conversation.requiresEventTicket ||
             updatedAiLabelingEnabled !==
                 (conversation.aiLabelingEnabled ?? true) ||
+            updatedVotingPresentation !== currentVotingPresentation ||
             preferredOpinionGroupCountChanged ||
             languageSettingsSource !==
                 conversation.currentLanguageSettingsSource;
@@ -798,12 +830,14 @@ export async function updateConversation({
             conversation.polisConfigId !== null &&
             (updatedAiLabelingEnabled !==
                 (conversation.aiLabelingEnabled ?? true) ||
+                updatedVotingPresentation !== currentVotingPresentation ||
                 preferredOpinionGroupCountChanged)
         ) {
             await tx
                 .update(polisConversationConfigTable)
                 .set({
                     aiLabelingEnabled: updatedAiLabelingEnabled,
+                    votingPresentation: updatedVotingPresentation,
                     preferredOpinionGroupCount:
                         updatedPreferredOpinionGroupCount,
                     updatedAt: now,
@@ -1012,6 +1046,7 @@ export async function updateConversation({
                 participationMode,
                 requiresEventTicket: requiresEventTicket ?? null,
                 aiLabelingEnabled: updatedAiLabelingEnabled,
+                presentation: conversationTypeConfig,
                 preferredOpinionGroupCount: updatedPreferredOpinionGroupCount,
                 isClosed: conversation.isClosed,
             },

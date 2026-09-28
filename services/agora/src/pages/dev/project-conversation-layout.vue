@@ -99,7 +99,7 @@
             :conversation-title="conversation.title"
             author-username="project-team"
             :on-same-tab-click="scrollToActionBar"
-            :conversation-type-config="{ conversationType: 'polis' }"
+            :conversation-type-config="{ conversationType: 'polis', votingPresentation: 'list' }"
             :enable-route-navigation="false"
           />
         </ConversationStickyActionBar>
@@ -464,6 +464,7 @@ const conversationData = computed<ExtendedConversation>(() => {
       authorUsername: "project-team",
       participationMode: participationMode.value,
       conversationType: "polis",
+      votingPresentation: "list",
       isIndexed: privacyMode.value === "public",
       aiLabelingEnabled: false,
       preferredOpinionGroupCount: null,

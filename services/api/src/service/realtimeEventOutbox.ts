@@ -34,13 +34,9 @@ import {
     zodSSEContentTranslationUpdatedData,
     zodSSEConversationAnalysisUpdatedData,
     zodSSEConversationRankingStatsUpdatedData,
+    zodSSEConversationSettingsUpdatedData,
     zodSSEConversationSurveyUpdatedData,
 } from "@/shared/types/sse.js";
-import {
-    zodEventSlug,
-    zodParticipationMode,
-    zodPreferredOpinionGroupCount,
-} from "@/shared/types/zod.js";
 import {
     buildContentTranslationTopic,
     buildProjectContentTranslationTopic,
@@ -77,21 +73,6 @@ const zodConversationCommentStatsUpdatedData = z.object({
                 .strict(),
         )
         .default([]),
-    timestamp: z.number().int().nonnegative(),
-});
-
-const zodConversationSettingsUpdatedData = z.object({
-    conversationSlugId: z.string().min(1),
-    settings: z
-        .object({
-            isIndexed: z.boolean(),
-            participationMode: zodParticipationMode,
-            requiresEventTicket: zodEventSlug.nullable(),
-            aiLabelingEnabled: z.boolean(),
-            preferredOpinionGroupCount: zodPreferredOpinionGroupCount,
-            isClosed: z.boolean(),
-        })
-        .strict(),
     timestamp: z.number().int().nonnegative(),
 });
 
@@ -844,7 +825,7 @@ function parseRealtimeEventOutboxRow({
         }
         case "conversation_settings_updated": {
             const result =
-                zodConversationSettingsUpdatedData.safeParse(payload);
+                zodSSEConversationSettingsUpdatedData.safeParse(payload);
             if (!result.success) {
                 return undefined;
             }

@@ -292,6 +292,7 @@ const {
   inheritProjectLanguages,
   conversationEmailUpdateEnabledOverride,
   conversationType,
+  votingPresentation,
   rankingMode,
   isPrivate,
   participationMode,
@@ -323,13 +324,19 @@ function getConversationTypeConfig(): ConversationTypeConfig {
     };
   }
 
-  return { conversationType: "polis" };
+  return {
+    conversationType: "polis",
+    votingPresentation: votingPresentation.value,
+  };
 }
 
 const conversationTypeConfig = computed({
   get: getConversationTypeConfig,
   set: (value: ConversationTypeConfig) => {
     conversationType.value = value.conversationType;
+    if (value.conversationType === "polis") {
+      votingPresentation.value = value.votingPresentation;
+    }
     rankingMode.value =
       value.conversationType === "ranking" ? value.rankingMode : undefined;
   },

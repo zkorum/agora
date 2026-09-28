@@ -123,6 +123,7 @@ function buildCreateConversationRequest({
     request: Dto.createNewConversationRequest.parse({
       ...baseCreateRequest,
       conversationType: conversationDraft.conversationType,
+      votingPresentation: conversationDraft.votingPresentation,
       aiLabelingEnabled: conversationDraft.aiLabelingEnabled,
       preferredOpinionGroupCount: conversationDraft.preferredOpinionGroupCount,
       surveyConfig: normalizedSurveyConfigResult.surveyConfig,

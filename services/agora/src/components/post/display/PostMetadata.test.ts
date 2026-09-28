@@ -533,7 +533,7 @@ function mountMetadata(postSlugId = ref("conversation-one")): HTMLElement {
         participationMode: "account_required",
         isClosed: false,
         conversationTitle: "Conversation One",
-        conversationTypeConfig: { conversationType: "polis" },
+        conversationTypeConfig: { conversationType: "polis", votingPresentation: "list" },
         externalSourceConfig: null,
         conversationCapabilities: {
           canEdit: false,

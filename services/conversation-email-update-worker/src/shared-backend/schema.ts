@@ -605,6 +605,10 @@ export const conversationTypeEnum = pgEnum("conversation_type", [
     "polis",
     "ranking",
 ]);
+export const polisVotingPresentationEnum = pgEnum("polis_voting_presentation", [
+    "list",
+    "one_at_a_time",
+]);
 export const rankingModeEnum = pgEnum("ranking_mode", ["bws"]);
 export const conversationLanguageSettingsSourceEnum = pgEnum(
     "conversation_language_settings_source",
@@ -2402,6 +2406,9 @@ export const polisConversationConfigTable = pgTable(
     "polis_conversation_config",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        votingPresentation: polisVotingPresentationEnum("voting_presentation")
+            .notNull()
+            .default("list"),
         aiLabelingEnabled: boolean("ai_labeling_enabled")
             .notNull()
             .default(true),

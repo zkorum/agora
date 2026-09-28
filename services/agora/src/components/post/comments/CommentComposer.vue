@@ -78,6 +78,7 @@
 <script setup lang="ts">
 import { useQueryClient } from "@tanstack/vue-query";
 import { onClickOutside, useWindowScroll } from "@vueuse/core";
+import { storeToRefs } from "pinia";
 import Button from "primevue/button";
 import PreParticipationIntentionDialog from "src/components/authentication/intention/PreParticipationIntentionDialog.vue";
 import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
@@ -93,6 +94,7 @@ import type {
   ParticipationMode,
   SurveyGateSummary,
 } from "src/shared/types/zod";
+import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
 import { useUserStore } from "src/stores/user";
@@ -209,6 +211,7 @@ const dummyInput = ref<HTMLInputElement>();
 const { saveOpinionDraft, getOpinionDraft, deleteOpinionDraft } =
   useNewOpinionDraftsStore();
 const userStore = useUserStore();
+const { userId } = storeToRefs(useAuthenticationStore());
 
 const { createNewOpinionIntention, clearNewOpinionIntention } =
   useLoginIntentionStore();
@@ -500,6 +503,7 @@ async function submitPostClicked() {
         queryClient,
         conversationSlugId: props.postSlugId,
         displayedOpinionItem: response.displayedOpinionItem,
+        viewerUserId: userId.value,
       });
 
       emit("submittedComment", {

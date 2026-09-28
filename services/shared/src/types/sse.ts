@@ -7,6 +7,7 @@ import {
     zodEventSlug,
     zodRegularNotificationItem,
     zodParticipationMode,
+    zodConversationTypeConfig,
     zodPreferredOpinionGroupCount,
     zodProjectSlug,
     zodSlugId,
@@ -212,6 +213,7 @@ export const zodSSEConversationSettingsData = z
         participationMode: zodParticipationMode,
         requiresEventTicket: zodEventSlug.nullable(),
         aiLabelingEnabled: z.boolean(),
+        presentation: zodConversationTypeConfig,
         preferredOpinionGroupCount: zodPreferredOpinionGroupCount,
         isClosed: z.boolean(),
     })

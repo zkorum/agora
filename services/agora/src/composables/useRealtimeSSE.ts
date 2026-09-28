@@ -13,7 +13,6 @@ import {
 } from "src/shared/types/dto";
 import type {
   ExtendedConversation,
-  OpinionItem,
   ParticipationMode,
 } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
@@ -23,6 +22,10 @@ import { useNotificationStore } from "src/stores/notification";
 import { useOpinionUpdatesStore } from "src/stores/opinionUpdates";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { useBackendCommentApi } from "src/utils/api/comment/comment";
+import {
+  mapCachedOpinions,
+  type OpinionCache,
+} from "src/utils/api/comment/opinionCache";
 import { fetchAnalysisDataWithCache } from "src/utils/api/comment/useCommentQueries";
 import { useCommonApi } from "src/utils/api/common";
 import {
@@ -252,10 +255,7 @@ function isConversationCommentsQueryKey({
   queryKey: readonly unknown[];
   conversationSlugId: string;
 }): boolean {
-  return (
-    (queryKey[0] === "comments" || queryKey[0] === "hiddenComments") &&
-    queryKey[1] === conversationSlugId
-  );
+  return queryKey[0] === "comments" && queryKey[1] === conversationSlugId;
 }
 
 function isCommentStatsQueryKey({
@@ -1061,10 +1061,6 @@ export function useRealtimeSSE({
             refetchType: "none",
           });
           void queryClient.invalidateQueries({
-            queryKey: ["hiddenComments", data.conversationSlugId],
-            refetchType: "none",
-          });
-          void queryClient.invalidateQueries({
             queryKey: ["commentStats", data.conversationSlugId],
             refetchType: "active",
           });
@@ -1222,17 +1218,31 @@ export function useRealtimeSSE({
             conversationSlugId: data.conversationSlugId,
             updateConversation: (conversation) => ({
               ...conversation,
-              metadata: {
-                ...conversation.metadata,
-                isIndexed: data.settings.isIndexed,
-                participationMode: data.settings.participationMode,
-                requiresEventTicket:
-                  data.settings.requiresEventTicket ?? undefined,
-                aiLabelingEnabled: data.settings.aiLabelingEnabled,
-                preferredOpinionGroupCount:
-                  data.settings.preferredOpinionGroupCount,
-                isClosed: data.settings.isClosed,
-              },
+              metadata:
+                conversation.metadata.conversationType === "polis"
+                  ? {
+                      ...conversation.metadata,
+                      isIndexed: data.settings.isIndexed,
+                      participationMode: data.settings.participationMode,
+                      requiresEventTicket:
+                        data.settings.requiresEventTicket ?? undefined,
+                      aiLabelingEnabled: data.settings.aiLabelingEnabled,
+                      preferredOpinionGroupCount:
+                        data.settings.preferredOpinionGroupCount,
+                      votingPresentation:
+                        data.settings.presentation.conversationType === "polis"
+                          ? data.settings.presentation.votingPresentation
+                          : conversation.metadata.votingPresentation,
+                      isClosed: data.settings.isClosed,
+                    }
+                  : {
+                      ...conversation.metadata,
+                      isIndexed: data.settings.isIndexed,
+                      participationMode: data.settings.participationMode,
+                      requiresEventTicket:
+                        data.settings.requiresEventTicket ?? undefined,
+                      isClosed: data.settings.isClosed,
+                    },
             }),
           });
 
@@ -1723,7 +1733,7 @@ export function useRealtimeSSE({
       return;
     }
 
-    queryClient.setQueriesData<OpinionItem[]>(
+    queryClient.setQueriesData<OpinionCache>(
       {
         predicate: (query) =>
           isConversationCommentsQueryKey({
@@ -1736,21 +1746,24 @@ export function useRealtimeSSE({
           return opinions;
         }
 
-        return opinions.map((opinion) => {
-          const liveCounts = liveCountsByOpinionSlugId.get(
-            opinion.opinionSlugId
-          );
-          if (liveCounts === undefined) {
-            return opinion;
-          }
+        return mapCachedOpinions({
+          cache: opinions,
+          mapOpinion: (opinion) => {
+            const liveCounts = liveCountsByOpinionSlugId.get(
+              opinion.opinionSlugId
+            );
+            if (liveCounts === undefined) {
+              return opinion;
+            }
 
-          return {
-            ...opinion,
-            numParticipants: liveCounts.numParticipants,
-            numAgrees: liveCounts.numAgrees,
-            numDisagrees: liveCounts.numDisagrees,
-            numPasses: liveCounts.numPasses,
-          };
+            return {
+              ...opinion,
+              numParticipants: liveCounts.numParticipants,
+              numAgrees: liveCounts.numAgrees,
+              numDisagrees: liveCounts.numDisagrees,
+              numPasses: liveCounts.numPasses,
+            };
+          },
         });
       }
     );

@@ -3,6 +3,10 @@ import { storeToRefs } from "pinia";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { VotingAction } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
+import {
+  mapCachedOpinions,
+  type OpinionCache,
+} from "src/utils/api/comment/opinionCache";
 import { computed, type MaybeRefOrGetter, reactive, toValue } from "vue";
 
 import { useNotify } from "../../ui/notify";
@@ -26,12 +30,12 @@ export function useUserVotesQuery({
   postSlugId: MaybeRefOrGetter<string>;
 }) {
   const { fetchUserVotesForPostSlugIds } = useBackendVoteApi();
-  const { isAuthInitialized, isGuestOrLoggedIn } = storeToRefs(
+  const { isAuthInitialized, isGuestOrLoggedIn, userId } = storeToRefs(
     useAuthenticationStore()
   );
 
   return useQuery({
-    queryKey: ["userVotes", computed(() => toValue(postSlugId))],
+    queryKey: ["userVotes", computed(() => toValue(postSlugId)), userId],
     queryFn: () => fetchUserVotesForPostSlugIds([toValue(postSlugId)]),
     enabled: computed(
       () =>
@@ -54,6 +58,7 @@ export function useVoteMutation(postSlugId: string) {
   const { markAnalysisAsStale } = useInvalidateCommentQueries();
   const { getErrorMessage } = useCommonApi();
   const { updateAuthState } = useBackendAuthApi();
+  const { userId } = storeToRefs(useAuthenticationStore());
 
   return useMutation({
     mutationFn: ({
@@ -96,7 +101,8 @@ export function useVoteMutation(postSlugId: string) {
 
     // Optimistic update: update cache immediately before server responds
     onMutate: async ({ opinionSlugId, voteAction }) => {
-      const userVotesKey = ["userVotes", postSlugId];
+      const voterId = userId.value;
+      const userVotesKey = ["userVotes", postSlugId, voterId];
       const commentsKey = ["comments", postSlugId];
 
       // Get previous vote from cache BEFORE updating (for vote count delta calculation)
@@ -146,50 +152,41 @@ export function useVoteMutation(postSlugId: string) {
       });
 
       // Optimistically update ALL comments caches (for vote counts)
-      queryClient.setQueriesData<
-        Array<{
-          opinionSlugId: string;
-          numAgrees: number;
-          numDisagrees: number;
-          numPasses: number;
-        }>
-      >({ queryKey: commentsKey }, (oldComments) => {
-        if (!oldComments) return oldComments;
+      queryClient.setQueriesData<OpinionCache>(
+        { queryKey: commentsKey },
+        (oldComments) =>
+          mapCachedOpinions({
+            cache: oldComments,
+            mapOpinion: (comment) => {
+              if (comment.opinionSlugId !== opinionSlugId) return comment;
 
-        return oldComments.map((comment) => {
-          if (comment.opinionSlugId !== opinionSlugId) return comment;
+              const delta = { agree: 0, disagree: 0, pass: 0 };
+              if (previousVote?.votingAction === "agree") delta.agree--;
+              if (previousVote?.votingAction === "disagree") delta.disagree--;
+              if (previousVote?.votingAction === "pass") delta.pass--;
+              if (voteAction === "agree") delta.agree++;
+              if (voteAction === "disagree") delta.disagree++;
+              if (voteAction === "pass") delta.pass++;
 
-          // Calculate vote count delta based on previous and new votes
-          const delta = { agree: 0, disagree: 0, pass: 0 };
-
-          // Remove old vote count
-          if (previousVote?.votingAction === "agree") delta.agree--;
-          if (previousVote?.votingAction === "disagree") delta.disagree--;
-          if (previousVote?.votingAction === "pass") delta.pass--;
-
-          // Add new vote count
-          if (voteAction === "agree") delta.agree++;
-          if (voteAction === "disagree") delta.disagree++;
-          if (voteAction === "pass") delta.pass++;
-
-          return {
-            ...comment,
-            numAgrees: comment.numAgrees + delta.agree,
-            numDisagrees: comment.numDisagrees + delta.disagree,
-            numPasses: comment.numPasses + delta.pass,
-          };
-        });
-      });
+              return {
+                ...comment,
+                numAgrees: comment.numAgrees + delta.agree,
+                numDisagrees: comment.numDisagrees + delta.disagree,
+                numPasses: comment.numPasses + delta.pass,
+              };
+            },
+          })
+      );
 
       // Return context with BOTH previous values for rollback
-      return { previousUserVotes, previousComments };
+      return { previousUserVotes, previousComments, voterId };
     },
 
     onError: (error: AxiosErrorResponse, _variables, context) => {
       // Rollback BOTH caches to previous state on error
       if (context?.previousUserVotes !== undefined) {
         queryClient.setQueryData(
-          ["userVotes", postSlugId],
+          ["userVotes", postSlugId, context.voterId],
           context.previousUserVotes
         );
       }
@@ -213,7 +210,7 @@ export function useVoteMutation(postSlugId: string) {
       if (!data.success) {
         if (context?.previousUserVotes !== undefined) {
           queryClient.setQueryData(
-            ["userVotes", postSlugId],
+            ["userVotes", postSlugId, context.voterId],
             context.previousUserVotes
           );
         }
@@ -240,6 +237,22 @@ export function useVoteMutation(postSlugId: string) {
         await updateAuthState({
           partialLoginStatus: { isKnown: true },
         });
+        if (context?.voterId === undefined && userId.value !== undefined) {
+          const optimisticVotes = queryClient.getQueryData([
+            "userVotes",
+            postSlugId,
+            context.voterId,
+          ]);
+          if (optimisticVotes !== undefined) {
+            await queryClient.cancelQueries({
+              queryKey: ["userVotes", postSlugId, userId.value],
+            });
+            queryClient.setQueryData(
+              ["userVotes", postSlugId, userId.value],
+              optimisticVotes
+            );
+          }
+        }
       }
 
       // If vote was cancelled, mark My Votes query as stale (no immediate refetch)

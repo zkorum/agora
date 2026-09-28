@@ -96,6 +96,10 @@ describe("conversation update DTO", () => {
                 conversationBody: undefined,
                 isIndexed: true,
                 participationMode: "account_required",
+                conversationTypeConfig: {
+                    conversationType: "polis",
+                    votingPresentation: "list",
+                },
                 multilingualSetting: {
                     additionalLanguageCodes: [],
                     dynamicTranslationEnabled: false,

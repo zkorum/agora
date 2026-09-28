@@ -16,6 +16,7 @@ import type {
   EventSlug,
   ExternalSourceConfig,
   ParticipationMode,
+  PolisVotingPresentation,
   PreferredOpinionGroupCount,
   RankingMode,
   SurveyConfig,
@@ -60,6 +61,7 @@ export interface UseConversationDraftReturn {
   conversationEmailUpdateEnabledOverride: Ref<boolean | undefined>;
   seedOpinions: Ref<string[]>;
   conversationType: Ref<ConversationType>;
+  votingPresentation: Ref<PolisVotingPresentation>;
   rankingMode: Ref<RankingMode | undefined>;
   isPrivate: Ref<boolean>;
   participationMode: Ref<ParticipationMode>;
@@ -140,6 +142,11 @@ export function useConversationDraft(
   );
   const seedOpinions = ref<string[]>([...initialDraft.seedOpinions]);
   const conversationType = ref<ConversationType>(initialDraft.conversationType);
+  const votingPresentation = ref<PolisVotingPresentation>(
+    initialDraft.conversationType === "polis"
+      ? initialDraft.votingPresentation
+      : "list"
+  );
   const rankingMode = ref<RankingMode | undefined>(
     initialDraft.conversationType === "ranking"
       ? initialDraft.rankingMode
@@ -187,6 +194,7 @@ export function useConversationDraft(
         conversationEmailUpdateEnabledOverride.value,
       seedOpinions: [...seedOpinions.value],
       conversationType: conversationType.value,
+      votingPresentation: votingPresentation.value,
       rankingMode: rankingMode.value,
       isPrivate: isPrivate.value,
       participationMode: participationMode.value,
@@ -224,6 +232,7 @@ export function useConversationDraft(
           store.conversationDraft = {
             ...store.conversationDraft,
             conversationType: "polis",
+            votingPresentation: newSnapshot.votingPresentation,
           };
         }
         store.conversationDraft.isPrivate = newSnapshot.isPrivate;
@@ -458,7 +467,8 @@ export function useConversationDraft(
 
     // Check conversation type changes
     const hasConversationTypeChanges =
-      conversationType.value !== emptyDraft.conversationType;
+      conversationType.value !== emptyDraft.conversationType ||
+      votingPresentation.value !== "list";
 
     // Check post-as settings changes
     const hasPostAsChanges =
@@ -530,6 +540,7 @@ export function useConversationDraft(
       emptyDraft.conversationEmailUpdateEnabledOverride;
     seedOpinions.value = [];
     conversationType.value = emptyDraft.conversationType;
+    votingPresentation.value = "list";
     rankingMode.value = undefined;
     isPrivate.value = emptyDraft.isPrivate;
     participationMode.value = emptyDraft.participationMode;
@@ -615,6 +626,7 @@ export function useConversationDraft(
     conversationEmailUpdateEnabledOverride,
     seedOpinions,
     conversationType,
+    votingPresentation,
     rankingMode,
     isPrivate,
     participationMode,

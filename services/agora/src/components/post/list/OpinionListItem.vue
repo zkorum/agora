@@ -18,7 +18,7 @@
               :is-private="!isIndexed"
               :title="conversationTitle"
               size="medium"
-              :conversation-type-config="{ conversationType: 'polis' }"
+              :conversation-type-config="{ conversationType: 'polis', votingPresentation: 'list' }"
               :external-source-config="null"
               :project-context="undefined"
               project-context-title-mode="original"

@@ -250,6 +250,8 @@ export function useCommonPost() {
                 isIndexed: conversationTable.isIndexed,
                 aiLabelingEnabled:
                     polisConversationConfigTable.aiLabelingEnabled,
+                votingPresentation:
+                    polisConversationConfigTable.votingPresentation,
                 preferredOpinionGroupCount:
                     polisConversationConfigTable.preferredOpinionGroupCount,
                 participationMode: conversationTable.participationMode,
@@ -576,10 +578,16 @@ export function useCommonPost() {
                     aiLabelingEnabled: postItem.aiLabelingEnabled,
                     conversationId: postItem.conversationId,
                 });
+                if (postItem.votingPresentation === null) {
+                    throw new Error(
+                        `Missing Polis voting presentation for conversation ${String(postItem.conversationId)}`,
+                    );
+                }
 
                 return {
                     ...metadataBase,
                     conversationType: "polis",
+                    votingPresentation: postItem.votingPresentation,
                     aiLabelingEnabled,
                     preferredOpinionGroupCount:
                         postItem.preferredOpinionGroupCount,

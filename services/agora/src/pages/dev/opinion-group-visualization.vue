@@ -359,7 +359,7 @@
             :conversation-slug-id="mockConversationSlugId"
             :conversation-title="t('devConversationTitle')"
             author-username="dev"
-            :conversation-type-config="{ conversationType: 'polis' }"
+            :conversation-type-config="{ conversationType: 'polis', votingPresentation: 'list' }"
             :has-survey="hasMockSurvey"
             :enable-route-navigation="false"
             :on-same-tab-click="scrollToDevActionBar"

@@ -46,9 +46,12 @@ const importSettings = defineModel<ConversationImportSettings>(
   "importSettings",
   { required: true }
 );
-const conversationTypeConfig = defineModel<ConversationTypeConfig>("conversationTypeConfig", {
-  required: true,
-});
+const conversationTypeConfig = defineModel<ConversationTypeConfig>(
+  "conversationTypeConfig",
+  {
+    required: true,
+  }
+);
 
 const postTypeOptions = computed(() => {
   const options = [
@@ -96,18 +99,30 @@ const selectedValue = computed(() => {
 });
 
 const configMap: Record<string, ModeChangeConfig> = {
-  regular: { importType: null, conversationTypeConfig: { conversationType: "polis" } },
+  regular: {
+    importType: null,
+    conversationTypeConfig: {
+      conversationType: "polis",
+      votingPresentation: "list",
+    },
+  },
   maxdiff: {
     importType: null,
     conversationTypeConfig: { conversationType: "ranking", rankingMode: "bws" },
   },
   "polis-url": {
     importType: "polis-url",
-    conversationTypeConfig: { conversationType: "polis" },
+    conversationTypeConfig: {
+      conversationType: "polis",
+      votingPresentation: "list",
+    },
   },
   "csv-import": {
     importType: "csv-import",
-    conversationTypeConfig: { conversationType: "polis" },
+    conversationTypeConfig: {
+      conversationType: "polis",
+      votingPresentation: "list",
+    },
   },
 };
 
@@ -120,12 +135,19 @@ function handleOptionSelected(option: {
     showDialog.value = false;
   }
 
+  const nextConfig = configMap[option.value] ?? {
+    importType: null,
+    conversationTypeConfig: {
+      conversationType: "polis",
+      votingPresentation: "list",
+    },
+  };
   emit(
     "modeChangeRequested",
-    configMap[option.value] ?? {
-      importType: null,
-      conversationTypeConfig: { conversationType: "polis" },
-    }
+    option.value === "regular" &&
+      conversationTypeConfig.value.conversationType === "polis"
+      ? { ...nextConfig, conversationTypeConfig: conversationTypeConfig.value }
+      : nextConfig
   );
 }
 </script>

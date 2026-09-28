@@ -20,7 +20,7 @@
           :conversation-slug-id="conversation.slugId"
           :conversation-title="conversation.title"
           author-username="project-team"
-          :conversation-type-config="{ conversationType: 'polis' }"
+          :conversation-type-config="{ conversationType: 'polis', votingPresentation: 'list' }"
           :enable-route-navigation="false"
           :on-same-tab-click="scrollToActionBar"
         />
@@ -288,6 +288,7 @@ const conversationData = computed<ExtendedConversation>(() => ({
     authorUsername: "project-team",
     participationMode: "guest",
     conversationType: "polis",
+    votingPresentation: "list",
     isIndexed: false,
     aiLabelingEnabled: true,
     preferredOpinionGroupCount: null,
