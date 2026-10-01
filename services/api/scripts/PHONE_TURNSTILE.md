@@ -1,0 +1,19 @@
+# Phone-code Turnstile rollout
+
+Turnstile is required for **each** phone-code initiation and resend when `PHONE_TURNSTILE_ENABLED=true`, including `login_only`. It does not replace the phone denylist, destination cooldown, or global SMS budget. OTP verification itself does not send an SMS and does not require another Turnstile token. Guest reading and normal-paced participation are not challenged by this integration.
+
+## Cloudflare setup
+
+1. In the Cloudflare dashboard, create separate **managed Turnstile widgets** for staging and production. Turnstile works without moving Agora's DNS to Cloudflare. Register the exact frontend hostnames (for example, `staging.agoracitizen.app` and `www.agoracitizen.app`); the hostname is the browser's host, not the API's host. Do not place the secret key in the frontend or repository.
+2. Add each widget's **public site key** to that frontend build as `VITE_PHONE_TURNSTILE_SITE_KEY`. Provide the corresponding **private secret key** to the API as `PHONE_TURNSTILE_SECRET_KEY` through its normal secrets deployment. Configure `PHONE_TURNSTILE_ALLOWED_HOSTNAMES` with a comma-separated exact list of frontend hostnames appropriate to that environment. The API checks Siteverify's returned hostname and the fixed `phone_sms` action, not a client-supplied hostname.
+3. If using a Content Security Policy, permit Turnstile's documented `https://challenges.cloudflare.com` script and iframe sources. Test browser access and accessibility on a real device. Turnstile requires an HTTP(S) origin; a native Capacitor WebView using a custom URL scheme needs a tested HTTPS-hosted challenge flow before enforcement for that client.
+
+## Safe deployment order
+
+1. Deploy the **API compatibility change** with `PHONE_TURNSTILE_ENABLED=false` (the default). It accepts the new optional `X-Turnstile-Token` request header but does not yet require it. Keep the SMS budget policy enabled before deploying the API; an absent policy stops phone login.
+2. Deploy the frontend with its public site key. Verify both the initial phone request and resend display/complete the widget and send a **different single-use token each time**. Test known and unknown numbers without causing real unauthorized sends. Old frontend builds without a site key can still work until step 3.
+3. Set `PHONE_TURNSTILE_ENABLED=true`, `PHONE_TURNSTILE_SECRET_KEY`, and `PHONE_TURNSTILE_ALLOWED_HOSTNAMES` in the API environment, then recreate/redeploy the API instances. The API fails startup if enabled without a secret or hostname list. Missing, expired, replayed, malformed, wrong-host, wrong-action, and unverified tokens now produce **no SMS**. Siteverify outages/timeouts also stop new SMS; already-issued OTPs can still be verified.
+
+Cloudflare's [test widget and secret keys](https://developers.cloudflare.com/turnstile/troubleshooting/testing/) work for automated/local testing. Use real staging keys to verify actual hostname/action responses; production validation rejects Cloudflare test secrets, and the production frontend build rejects test site keys. The widget is rendered explicitly for SPA navigation. It acquires a token in the background, resets after one send attempt, and refreshes expired tokens. The API contacts Siteverify with a four-second timeout and never logs the token or secret. Check actual phone-login completion and Turnstile false-positive rates after enabling it. For a provider outage, temporarily turn off the enforcement flag only as an explicit operational response while the shared SMS hard cap remains in place.
+
+References: [server-side token validation](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/), [SPA rendering](https://developers.cloudflare.com/turnstile/get-started/client-side-rendering/), and [mobile WebViews](https://developers.cloudflare.com/turnstile/get-started/mobile-implementation/).

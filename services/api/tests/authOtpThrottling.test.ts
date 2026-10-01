@@ -131,6 +131,9 @@ describe("OTP destination throttling", () => {
                 "auth_attempt_email",
                 "auth_attempt_phone",
                 "blocked_phone_number",
+                "phone_sms_budget_alert",
+                "phone_sms_budget_reservation",
+                "phone_sms_budget_policy",
                 "email",
                 "phone",
                 "user_display_language",
@@ -588,6 +591,7 @@ describe("OTP destination throttling", () => {
             delivery: {
                 type: "twilio",
                 serviceSid: "VA-test",
+                budget: { reserve: async () => true },
                 client: {
                     verify: {
                         v2: {
@@ -1587,6 +1591,53 @@ describe("OTP destination throttling", () => {
         ).toHaveLength(1);
     }, 30000);
 
+    it("refuses a real Twilio send when the shared SMS budget denies admission", async () => {
+        const didWrite = "did:test:phone:budget-exhausted";
+        await createGuestDevice(didWrite);
+        const reserve = vi.fn(async () => false);
+        const create = vi.fn(async () => ({ status: "pending", toJSON: () => ({}) }));
+        const phoneAuth = {
+            mode: "enabled",
+            delivery: {
+                type: "twilio",
+                budget: { reserve },
+                serviceSid: "VA-test",
+                client: {
+                    verify: {
+                        v2: {
+                            services: () => ({
+                                verifications: { create },
+                                verificationChecks: {
+                                    create: async () => ({ status: "pending", toJSON: () => ({}) }),
+                                },
+                            }),
+                        },
+                    },
+                },
+            },
+        } satisfies PhoneAuth;
+
+        const result = await authService.authenticateAttempt({
+            db,
+            authenticateRequestBody: {
+                phoneNumber: "+14155552689",
+                defaultCallingCode: "1",
+                isRequestingNewCode: false,
+            },
+            minutesBeforeSmsCodeExpiry: 10,
+            didWrite,
+            userAgent: "test-agent",
+            throttleSmsSecondsInterval: 5,
+            phoneAuth,
+            peppers: [TEST_PEPPER],
+            now: currentNow,
+        });
+        expect(result).toEqual({ success: false, reason: "phone_auth_unavailable" });
+        expect(reserve).toHaveBeenCalledWith({ isRegistration: true });
+        expect(create).not.toHaveBeenCalled();
+        expect(await db.select().from(authAttemptPhoneTable)).toHaveLength(0);
+    }, 30000);
+
     it("refuses to accept an OTP after its number has been blocked", async () => {
         const didWrite = "did:test:phone:blocked-mid-flow";
         const phoneNumber = "+14155552681";
@@ -1941,6 +1992,7 @@ describe("OTP destination throttling", () => {
             delivery: {
                 type: "twilio",
                 serviceSid: "VA-test",
+                budget: { reserve: async () => true },
                 client: {
                     verify: {
                         v2: {

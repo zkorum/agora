@@ -2095,6 +2095,94 @@ export const blockedPhoneNumberTable = pgTable(
     ],
 );
 
+/** @service api */
+export const phoneSmsBudgetPolicyTable = pgTable(
+    "phone_sms_budget_policy",
+    {
+        id: integer("id").primaryKey(),
+        sendingEnabled: boolean("sending_enabled").notNull().default(false),
+        hourlySendLimit: integer("hourly_send_limit").notNull(),
+        dailySendLimit: integer("daily_send_limit").notNull(),
+        estimatedCentsPerSend: integer("estimated_cents_per_send").notNull(),
+        hourlyBudgetCents: integer("hourly_budget_cents").notNull(),
+        dailyBudgetCents: integer("daily_budget_cents").notNull(),
+        warningPercent: integer("warning_percent").notNull().default(75),
+        registrationPausedAt: timestamp("registration_paused_at", {
+            mode: "date",
+            precision: 3,
+        }),
+        updatedAt: timestamp("updated_at", { mode: "date", precision: 3 })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        check("phone_sms_budget_single_policy_check", sql`${table.id} = 1`),
+        check(
+            "phone_sms_budget_positive_limits_check",
+            sql`${table.hourlySendLimit} > 0 AND ${table.dailySendLimit} >= ${table.hourlySendLimit} AND ${table.estimatedCentsPerSend} > 0 AND ${table.hourlyBudgetCents} > 0 AND ${table.dailyBudgetCents} >= ${table.hourlyBudgetCents}`,
+        ),
+        check(
+            "phone_sms_budget_warning_percent_check",
+            sql`${table.warningPercent} BETWEEN 1 AND 99`,
+        ),
+    ],
+);
+
+/** @service api */
+export const phoneSmsBudgetReservationTable = pgTable(
+    "phone_sms_budget_reservation",
+    {
+        id: uuid("id").primaryKey(),
+        estimatedCents: integer("estimated_cents").notNull(),
+        reservedAt: timestamp("reserved_at", { mode: "date", precision: 3 })
+            .notNull(),
+    },
+    (table) => [
+        index("phone_sms_budget_reservation_time_idx").on(table.reservedAt),
+        check(
+            "phone_sms_budget_reservation_cents_check",
+            sql`${table.estimatedCents} > 0`,
+        ),
+    ],
+);
+
+/** @service api */
+export const phoneSmsBudgetAlertTable = pgTable(
+    "phone_sms_budget_alert",
+    {
+        id: uuid("id").primaryKey(),
+        kind: varchar("kind", { length: 16 }).notNull(),
+        day: varchar("day", { length: 10 }).notNull(),
+        nextAttemptAt: timestamp("next_attempt_at", {
+            mode: "date",
+            precision: 3,
+        }).notNull(),
+        attemptCount: integer("attempt_count").notNull().default(0),
+        sentAt: timestamp("sent_at", { mode: "date", precision: 3 }),
+        createdAt: timestamp("created_at", { mode: "date", precision: 3 })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        unique("phone_sms_budget_alert_day_kind_unique").on(
+            table.day,
+            table.kind,
+        ),
+        index("phone_sms_budget_alert_due_idx").on(
+            table.sentAt,
+            table.nextAttemptAt,
+        ),
+        check(
+            "phone_sms_budget_alert_kind_check",
+            sql`${table.kind} IN ('warning', 'hard_limit')`,
+        ),
+        check(
+            "phone_sms_budget_alert_attempts_check",
+            sql`${table.attemptCount} >= 0`,
+        ),
+    ],
+);
+
 // if user explicity logs in with the primary or any backup emails, the validation email is sent to the specified address on login.
 // if user logs in by entering a "secondary" or "other" type of email associated with their account, send validation email to the primary email associated with their account.
 // once this passed, the backend will send one-time password to secondary email addresses and user will have to verify them (multi-factor)

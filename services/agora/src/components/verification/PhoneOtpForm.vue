@@ -11,6 +11,10 @@
         <span class="phoneNumberStyle">{{ formattedPhoneNumber }}</span
         >.
       </div>
+      <PhoneTurnstile
+        ref="turnstileWidget"
+        @token-ready="sendInitialCodeWhenReady"
+      />
 
       <div class="otpDiv">
         <div class="codeInput" @keydown.enter.prevent.stop="handleEnterKey">
@@ -73,12 +77,13 @@ import { authenticate200, verifyPhoneOtp200 } from "src/shared/types/dto-auth";
 import { phoneVerificationStore } from "src/stores/onboarding/phone";
 import { useAuthPhoneApi } from "src/utils/api/auth-phone";
 import {
+  pausePhoneRegistration,
   type PhoneAuthAvailability,
   type PhoneAuthPurpose,
   type PhoneAuthUnavailableReason,
-  restrictPhoneAuthMode,
   usePhoneAuthAvailability,
 } from "src/utils/auth/phoneAuthMode";
+import { processEnv } from "src/utils/processEnv";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, onUnmounted, ref, watch, watchEffect } from "vue";
 
@@ -89,6 +94,8 @@ import {
   type PhoneOtpFormTranslations,
   phoneOtpFormTranslations,
 } from "./PhoneOtpForm.i18n";
+import { phoneTurnstileTranslations } from "./PhoneTurnstile.i18n";
+import PhoneTurnstile from "./PhoneTurnstile.vue";
 
 const props = defineProps<{
   purpose: PhoneAuthPurpose;
@@ -101,6 +108,7 @@ const emit = defineEmits<{
 const { t } = useComponentI18n<PhoneOtpFormTranslations>(
   phoneOtpFormTranslations
 );
+const { t: tTurnstile } = useComponentI18n(phoneTurnstileTranslations);
 const { t: tPhoneAvailability } =
   useComponentI18n<PhoneAuthUnavailableNoticeTranslations>(
     phoneAuthUnavailableNoticeTranslations
@@ -109,7 +117,7 @@ const { t: tPhoneAvailability } =
 const phoneStore = phoneVerificationStore();
 const { verificationPhoneNumber, pendingOtpData } = storeToRefs(phoneStore);
 const modeAvailability = usePhoneAuthAvailability(() => props.purpose);
-const responseUnavailableReason = ref<PhoneAuthUnavailableReason>();
+const responseUnavailableReason = ref<"registration_unavailable">();
 const phoneAuthAvailability = computed<PhoneAuthAvailability>(() => {
   if (responseUnavailableReason.value !== undefined) {
     return {
@@ -135,6 +143,8 @@ const {
 const { completeVerification } = useVerificationComplete();
 
 const { sendSmsCode, verifyPhoneOtp } = useAuthPhoneApi();
+const turnstileWidget = ref<InstanceType<typeof PhoneTurnstile>>();
+const initialCodeAwaitingChallenge = ref(false);
 
 const { showNotifyMessage } = useNotify();
 
@@ -186,11 +196,21 @@ watch(
       processRequestCodeResponse(pendingOtpData.value);
       pendingOtpData.value = null;
     } else {
-      await requestCodeClicked(false);
+      if (processEnv.VITE_PHONE_TURNSTILE_SITE_KEY !== undefined) {
+        initialCodeAwaitingChallenge.value = true;
+      } else {
+        await requestCodeClicked(false);
+      }
     }
   },
   { immediate: true }
 );
+
+function sendInitialCodeWhenReady(): void {
+  if (!initialCodeAwaitingChallenge.value) return;
+  initialCodeAwaitingChallenge.value = false;
+  void requestCodeClicked(false);
+}
 
 async function clickedResendButton() {
   if (!ensurePhoneAuthAvailable()) {
@@ -200,7 +220,6 @@ async function clickedResendButton() {
   if (requestGate.isBusy.value || requestGate.isTerminated.value) {
     return;
   }
-  resetCode();
   await requestCodeClicked(true);
 }
 
@@ -279,10 +298,10 @@ async function nextButtonClicked() {
             break;
           }
           case "phone_auth_unavailable":
-            handlePhoneAuthUnavailable("technical_unavailable");
+            showPhoneAuthUnavailable("technical_unavailable");
             break;
           case "phone_registration_unavailable":
-            handlePhoneAuthUnavailable("registration_unavailable");
+            handlePhoneRegistrationUnavailable();
             break;
         }
       }
@@ -306,10 +325,19 @@ async function requestCodeClicked(isRequestingNewCode: boolean) {
   }
 
   try {
+    const turnstileToken = turnstileWidget.value?.takeToken();
+    if (
+      processEnv.VITE_PHONE_TURNSTILE_SITE_KEY !== undefined &&
+      turnstileToken === undefined
+    ) {
+      showNotifyMessage(tTurnstile("retrySecurityCheck"));
+      return;
+    }
     const response = await sendSmsCode({
       isRequestingNewCode: isRequestingNewCode,
       phoneNumber: verificationPhoneNumber.value.internationalPhoneNumber,
       defaultCallingCode: verificationPhoneNumber.value.countryCallingCode,
+      turnstileToken,
     });
     if (!requestGate.isCurrent(requestId)) {
       return;
@@ -317,6 +345,7 @@ async function requestCodeClicked(isRequestingNewCode: boolean) {
     if (response.status == "success") {
       const data = authenticate200.parse(response.data);
       if (data.success) {
+        if (isRequestingNewCode) resetCode();
         processRequestCodeResponse(data);
       } else {
         switch (data.reason) {
@@ -338,7 +367,7 @@ async function requestCodeClicked(isRequestingNewCode: boolean) {
             showNotifyMessage(t("restrictedPhoneType"));
             break;
           case "phone_auth_unavailable":
-            handlePhoneAuthUnavailable("technical_unavailable");
+            showPhoneAuthUnavailable("technical_unavailable");
             break;
         }
       }
@@ -357,12 +386,9 @@ function showPhoneAuthUnavailable(reason: PhoneAuthUnavailableReason) {
   }
 }
 
-function handlePhoneAuthUnavailable(reason: PhoneAuthUnavailableReason): void {
-  restrictPhoneAuthMode(
-    reason === "technical_unavailable" ? "disabled" : "login_only"
-  );
-  responseUnavailableReason.value = reason;
-  showPhoneAuthUnavailable(reason);
+function handlePhoneRegistrationUnavailable(): void {
+  pausePhoneRegistration();
+  responseUnavailableReason.value = "registration_unavailable";
   requestGate.terminate();
 }
 

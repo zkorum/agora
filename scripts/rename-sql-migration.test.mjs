@@ -314,6 +314,29 @@ test("preserves the exact sturdy_serpent_society tool-upgrade exception", async 
   });
 });
 
+test("recognizes identical SQL deployed at a lower fractional version", async (t) => {
+  const f = await fixture(t);
+  const historical = {
+    "V0071.2__faithful_rocket_raccoon.sql": "ALTER TABLE example ALTER COLUMN title TYPE text;\n",
+    "V0094__existing.sql": "-- already deployed\n",
+  };
+  await f.seed({
+    drizzle: {
+      "0072_faithful_rocket_raccoon.sql": historical["V0071.2__faithful_rocket_raccoon.sql"],
+      "0095_new_budget.sql": "CREATE TABLE budget (id integer);\n",
+    },
+    migrations: historical,
+  });
+  const expected = {
+    ...historical,
+    "V0095__new_budget.sql": "CREATE TABLE budget (id integer);\n",
+  };
+  succeeded(await f.run());
+  assert.deepEqual(await contents(f.flyway), expected);
+  succeeded(await f.run());
+  assert.deepEqual(await contents(f.flyway), expected);
+});
+
 test("counts fractional major versions and ignores invalid prefixes and nested SQL", async (t) => {
   const f = await fixture(t);
   const ignored = {

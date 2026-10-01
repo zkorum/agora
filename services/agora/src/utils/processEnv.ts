@@ -35,6 +35,7 @@ export const envSchema = z.object({
   VITE_DEV_AUTHORIZED_PHONES: z.string().optional(), // Comma-separated list of phone numbers for dev/staging testing (must match backend). Must not be set in production (safety check enforced)
   VITE_DEV_AUTHORIZED_EMAILS: z.string().optional(), // Comma-separated list of emails for dev/staging testing (must match backend). Must not be set in production (safety check enforced)
   VITE_PHONE_AUTH_MODE: phoneAuthModeSchema.optional(), // Frontend presentation only; PHONE_AUTH_MODE on the API is authoritative
+  VITE_PHONE_TURNSTILE_SITE_KEY: z.string().min(1).optional(), // Public widget key; never put the API secret here
   VITE_DISCORD_LINK: z.string().optional(), // Discord invite link for support
   // Note: We use z.enum instead of transform because process.env contains raw strings at runtime.
   // The processEnv object reads build-time process.env values, so transforms don't run at runtime.
@@ -90,6 +91,20 @@ function validateEnvSchema(
     );
   }
 
+  if (
+    result.NODE_ENV === "production" &&
+    result.VITE_STAGING !== "true" &&
+    [
+      "1x00000000000000000000AA",
+      "2x00000000000000000000AB",
+      "1x00000000000000000000BB",
+      "2x00000000000000000000BB",
+      "3x00000000000000000000FF",
+    ].includes(result.VITE_PHONE_TURNSTILE_SITE_KEY ?? "")
+  ) {
+    throw new Error("Turnstile test site keys must not be used in production");
+  }
+
   return result;
 }
 
@@ -139,6 +154,7 @@ export const processEnv = {
   VITE_DEV_AUTHORIZED_PHONES: process.env.VITE_DEV_AUTHORIZED_PHONES,
   VITE_DEV_AUTHORIZED_EMAILS: process.env.VITE_DEV_AUTHORIZED_EMAILS,
   VITE_PHONE_AUTH_MODE: process.env.VITE_PHONE_AUTH_MODE,
+  VITE_PHONE_TURNSTILE_SITE_KEY: process.env.VITE_PHONE_TURNSTILE_SITE_KEY,
   VITE_DISCORD_LINK: process.env.VITE_DISCORD_LINK,
   VITE_EXPORT_CONVOS_ENABLED: process.env.VITE_EXPORT_CONVOS_ENABLED,
   VITE_FEATURED_CONVERSATION_SLUG: process.env.VITE_FEATURED_CONVERSATION_SLUG,

@@ -85,10 +85,12 @@ const { activeUserIntention } = storeToRefs(loginIntentionStore);
 const phoneAuthPurpose = computed(() =>
   !isAuthInitialized.value || isLoggedIn.value ? "credential" : "login"
 );
+const phoneInputFormRef = ref<InstanceType<typeof PhoneInputForm>>();
 
 const { isLoading, submitPhone, phoneAuthAvailability, nextCodeWaitSeconds } =
   usePhoneSubmit({
     purpose: phoneAuthPurpose,
+    takeTurnstileToken: () => phoneInputFormRef.value?.takeTurnstileToken(),
     onNavigateToOtp: () => router.replace({ name: "/verify/phone-code/" }),
     onAlreadyHasCredential: () => {
       showNotifyMessage(t("alreadyHasPhone"));
@@ -137,10 +139,6 @@ function checkExistingCredential() {
     void completeVerification();
   }
 }
-
-const phoneInputFormRef = ref<{
-  submit: () => boolean;
-} | null>(null);
 
 function onSubmit() {
   phoneInputFormRef.value?.submit();

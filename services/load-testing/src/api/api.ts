@@ -10449,10 +10449,11 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         /**
          * 
          * @param {ApiV1AuthAuthenticatePostRequest} apiV1AuthAuthenticatePostRequest 
+         * @param {string} [xTurnstileToken] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1AuthAuthenticatePost: async (apiV1AuthAuthenticatePostRequest: ApiV1AuthAuthenticatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        apiV1AuthAuthenticatePost: async (apiV1AuthAuthenticatePostRequest: ApiV1AuthAuthenticatePostRequest, xTurnstileToken?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'apiV1AuthAuthenticatePostRequest' is not null or undefined
             assertParamExists('apiV1AuthAuthenticatePost', 'apiV1AuthAuthenticatePostRequest', apiV1AuthAuthenticatePostRequest)
             const localVarPath = `/api/v1/auth/authenticate`;
@@ -10474,6 +10475,9 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             localVarHeaderParameter['Content-Type'] = 'application/json';
             localVarHeaderParameter['Accept'] = 'application/json';
 
+            if (xTurnstileToken != null) {
+                localVarHeaderParameter['x-turnstile-token'] = String(xTurnstileToken);
+            }
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -15297,11 +15301,12 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         /**
          * 
          * @param {ApiV1AuthAuthenticatePostRequest} apiV1AuthAuthenticatePostRequest 
+         * @param {string} [xTurnstileToken] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1AuthAuthenticatePost(apiV1AuthAuthenticatePostRequest: ApiV1AuthAuthenticatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AuthAuthenticatePost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AuthAuthenticatePost(apiV1AuthAuthenticatePostRequest, options);
+        async apiV1AuthAuthenticatePost(apiV1AuthAuthenticatePostRequest: ApiV1AuthAuthenticatePostRequest, xTurnstileToken?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AuthAuthenticatePost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AuthAuthenticatePost(apiV1AuthAuthenticatePostRequest, xTurnstileToken, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AuthAuthenticatePost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -17015,11 +17020,12 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         /**
          * 
          * @param {ApiV1AuthAuthenticatePostRequest} apiV1AuthAuthenticatePostRequest 
+         * @param {string} [xTurnstileToken] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1AuthAuthenticatePost(apiV1AuthAuthenticatePostRequest: ApiV1AuthAuthenticatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AuthAuthenticatePost200Response> {
-            return localVarFp.apiV1AuthAuthenticatePost(apiV1AuthAuthenticatePostRequest, options).then((request) => request(axios, basePath));
+        apiV1AuthAuthenticatePost(apiV1AuthAuthenticatePostRequest: ApiV1AuthAuthenticatePostRequest, xTurnstileToken?: string, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AuthAuthenticatePost200Response> {
+            return localVarFp.apiV1AuthAuthenticatePost(apiV1AuthAuthenticatePostRequest, xTurnstileToken, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -18399,11 +18405,12 @@ export class DefaultApi extends BaseAPI {
     /**
      * 
      * @param {ApiV1AuthAuthenticatePostRequest} apiV1AuthAuthenticatePostRequest 
+     * @param {string} [xTurnstileToken] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public apiV1AuthAuthenticatePost(apiV1AuthAuthenticatePostRequest: ApiV1AuthAuthenticatePostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1AuthAuthenticatePost(apiV1AuthAuthenticatePostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1AuthAuthenticatePost(apiV1AuthAuthenticatePostRequest: ApiV1AuthAuthenticatePostRequest, xTurnstileToken?: string, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AuthAuthenticatePost(apiV1AuthAuthenticatePostRequest, xTurnstileToken, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

@@ -3,6 +3,7 @@ import {
   type PhoneAuthUnavailableNoticeTranslations,
   phoneAuthUnavailableNoticeTranslations,
 } from "src/components/verification/PhoneAuthUnavailableNotice.i18n";
+import { phoneTurnstileTranslations } from "src/components/verification/PhoneTurnstile.i18n";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { createRequestGate } from "src/composables/verification/createRequestGate";
 import { useOtpTimers } from "src/composables/verification/useOtpTimers";
@@ -14,9 +15,9 @@ import { getAuthenticationStartKeyAction } from "src/utils/auth/authKeyAction";
 import {
   type PhoneAuthPurpose,
   type PhoneAuthUnavailableReason,
-  restrictPhoneAuthMode,
   usePhoneAuthAvailability,
 } from "src/utils/auth/phoneAuthMode";
+import { processEnv } from "src/utils/processEnv";
 import { type MaybeRefOrGetter, onMounted, onUnmounted } from "vue";
 
 interface PhoneSubmitTranslations {
@@ -28,6 +29,7 @@ interface PhoneSubmitTranslations {
 
 interface UsePhoneSubmitParams {
   purpose: MaybeRefOrGetter<PhoneAuthPurpose>;
+  takeTurnstileToken: () => string | undefined;
   onNavigateToOtp: () => Promise<unknown>;
   onAlreadyHasCredential: () => void;
   showNotifyMessage: (message: string) => void;
@@ -36,6 +38,7 @@ interface UsePhoneSubmitParams {
 
 export function usePhoneSubmit({
   purpose,
+  takeTurnstileToken,
   onNavigateToOtp,
   onAlreadyHasCredential,
   showNotifyMessage,
@@ -52,6 +55,7 @@ export function usePhoneSubmit({
     useComponentI18n<PhoneAuthUnavailableNoticeTranslations>(
       phoneAuthUnavailableNoticeTranslations
     );
+  const { t: tTurnstile } = useComponentI18n(phoneTurnstileTranslations);
   const phoneAuthAvailability = usePhoneAuthAvailability(purpose);
   const requestGate = createRequestGate();
   const { verificationNextCodeSeconds, setNextCodeSoonestTime, clearTimers } =
@@ -96,10 +100,19 @@ export function usePhoneSubmit({
     if (requestId === null) return;
 
     try {
+      const turnstileToken = takeTurnstileToken();
+      if (
+        processEnv.VITE_PHONE_TURNSTILE_SITE_KEY !== undefined &&
+        turnstileToken === undefined
+      ) {
+        showNotifyMessage(tTurnstile("retrySecurityCheck"));
+        return;
+      }
       const response = await sendSmsCode({
         phoneNumber,
         defaultCallingCode: verificationPhoneNumber.value.countryCallingCode,
         isRequestingNewCode: false,
+        turnstileToken,
         keyAction: getAuthenticationStartKeyAction({
           isKnown: isKnown.value,
           isRegistered: isRegistered.value,
@@ -140,7 +153,6 @@ export function usePhoneSubmit({
               showNotifyMessage(translations.restrictedPhoneType);
               break;
             case "phone_auth_unavailable":
-              restrictPhoneAuthMode("disabled");
               showPhoneAuthUnavailable("technical_unavailable");
               break;
           }

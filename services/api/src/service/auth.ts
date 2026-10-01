@@ -69,6 +69,7 @@ import { decideDestinationWrongGuess } from "./auth/otpPolicy.js";
 import { randomInt } from "node:crypto";
 import { setTimeout as sleep } from "node:timers/promises";
 import { isBlockedPhoneNumber } from "./blockedPhoneNumber.js";
+import type { PhoneSmsBudget } from "./phoneSmsBudget.js";
 
 const OTP_DESTINATION_STREAK_RESET_MS = 24 * 60 * 60 * 1000;
 const OTP_MIN_BACKOFF_SECONDS = 30;
@@ -524,6 +525,7 @@ interface LocalPhoneOtpDelivery {
 
 interface TwilioPhoneOtpDelivery {
     type: "twilio";
+    budget: PhoneSmsBudget;
     client: {
         verify: {
             v2: {
@@ -774,6 +776,7 @@ interface SendOtpPhoneNumberProps {
     phoneNumber: string;
     phoneHash: string;
     pepperVersion: number;
+    isRegistration: boolean;
     delivery: TwilioPhoneOtpDelivery;
 }
 
@@ -2139,12 +2142,13 @@ async function sendOtpPhoneNumber({
     phoneNumber,
     phoneHash,
     pepperVersion,
+    isRegistration,
     delivery,
-}: SendOtpPhoneNumberProps): Promise<void> {
+}: SendOtpPhoneNumberProps): Promise<boolean> {
     if (await isBlockedPhoneNumber({ db, phoneHash, pepperVersion })) {
-        return;
+        return false;
     }
-    // TODO: verify phone number validity with Twilio before sending the SMS
+    if (!(await delivery.budget.reserve({ isRegistration }))) return false;
     const verification = await delivery.client.verify.v2
         .services(delivery.serviceSid)
         .verifications.create({
@@ -2159,6 +2163,7 @@ async function sendOtpPhoneNumber({
         );
         throw httpErrors.internalServerError("Error while sending SMS");
     }
+    return true;
 }
 
 async function sendOtpPhoneNumberWithoutDisclosingFailure(
@@ -2747,13 +2752,15 @@ async function insertAuthAttemptCode({
         };
     }
     if (delivery.type === "twilio" && phoneAuthMode === "enabled") {
-        await sendOtpPhoneNumber({
+        const sent = await sendOtpPhoneNumber({
             db,
             phoneNumber: phoneNumber.number,
             phoneHash,
             pepperVersion: PEPPER_VERSION,
+            isRegistration: type === "register",
             delivery,
         });
+        if (!sent) return { success: false, reason: "phone_auth_unavailable" };
     } else if (delivery.type === "local") {
         console.log("\n\nCode:", codeToString(oneTimeCode), codeExpiry, "\n\n");
     }
@@ -2789,6 +2796,7 @@ async function insertAuthAttemptCode({
             phoneNumber: phoneNumber.number,
             phoneHash,
             pepperVersion: PEPPER_VERSION,
+            isRegistration: type === "register",
             delivery,
         });
     }
@@ -2987,13 +2995,15 @@ async function updateAuthAttemptCode({
 
     if (canReuseExistingCode) {
         if (delivery.type === "twilio" && phoneAuthMode === "enabled") {
-            await sendOtpPhoneNumber({
+            const sent = await sendOtpPhoneNumber({
                 db,
                 phoneNumber: phoneNumber.number,
                 phoneHash,
                 pepperVersion: PEPPER_VERSION,
+                isRegistration: type === "register",
                 delivery,
             });
+            if (!sent) return { success: false, reason: "phone_auth_unavailable" };
         } else if (delivery.type === "local") {
             console.log(
                 "\n\nCode:",
@@ -3027,6 +3037,7 @@ async function updateAuthAttemptCode({
                 phoneNumber: phoneNumber.number,
                 phoneHash,
                 pepperVersion: PEPPER_VERSION,
+                isRegistration: type === "register",
                 delivery,
             });
         }
@@ -3051,13 +3062,15 @@ async function updateAuthAttemptCode({
     const codeExpiry = new Date(now);
     codeExpiry.setMinutes(codeExpiry.getMinutes() + minutesBeforeSmsCodeExpiry);
     if (delivery.type === "twilio" && phoneAuthMode === "enabled") {
-        await sendOtpPhoneNumber({
+        const sent = await sendOtpPhoneNumber({
             db,
             phoneNumber: phoneNumber.number,
             phoneHash,
             pepperVersion: PEPPER_VERSION,
+            isRegistration: type === "register",
             delivery,
         });
+        if (!sent) return { success: false, reason: "phone_auth_unavailable" };
     } else if (delivery.type === "local") {
         console.log("\n\nCode:", codeToString(oneTimeCode), codeExpiry, "\n\n");
     }
@@ -3085,6 +3098,7 @@ async function updateAuthAttemptCode({
             phoneNumber: phoneNumber.number,
             phoneHash,
             pepperVersion: PEPPER_VERSION,
+            isRegistration: type === "register",
             delivery,
         });
     }

@@ -92,10 +92,12 @@ const { credentialUpgradeTarget, onboardingMode } = storeToRefs(
 const phoneAuthPurpose = computed(() =>
   onboardingMode.value === "SIGNUP" ? "registration" : "login"
 );
+const phoneInputFormRef = ref<InstanceType<typeof PhoneInputForm>>();
 
 const { isLoading, submitPhone, phoneAuthAvailability, nextCodeWaitSeconds } =
   usePhoneSubmit({
     purpose: phoneAuthPurpose,
+    takeTurnstileToken: () => phoneInputFormRef.value?.takeTurnstileToken(),
     onNavigateToOtp: () =>
       router.replace({ name: "/onboarding/step3-phone-2/" }),
     onAlreadyHasCredential: () => {
@@ -115,10 +117,6 @@ const skipPhoneRegistration = useSkipUnavailablePhoneRegistration({
   availability: phoneAuthAvailability,
   redirect: () => router.replace({ name: "/onboarding/step2-signup/" }),
 });
-
-const phoneInputFormRef = ref<{
-  submit: () => boolean;
-} | null>(null);
 
 function onSubmit() {
   phoneInputFormRef.value?.submit();

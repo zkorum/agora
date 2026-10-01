@@ -1274,6 +1274,17 @@
                         }
                     }
                 },
+                "parameters": [
+                    {
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 2048
+                        },
+                        "in": "header",
+                        "name": "x-turnstile-token",
+                        "required": false
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Default Response",

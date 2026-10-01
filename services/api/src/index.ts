@@ -60,10 +60,17 @@ import {
     config,
     log,
     phoneAuthConfig,
+    phoneTurnstileConfig,
     server,
     type PhoneAuthConfig,
 } from "./app.js";
 import * as authService from "@/service/auth.js";
+import {
+    createPhoneSmsBudget,
+    type PhoneSmsBudget,
+} from "@/service/phoneSmsBudget.js";
+import { createPhoneTurnstileVerifier } from "@/service/phoneTurnstile.js";
+import { sendEmail } from "@/service/email.js";
 import * as authUtilService from "@/service/authUtil.js";
 import * as csvImportService from "@/service/csvImport.js";
 import * as feedService from "@/service/feed.js";
@@ -412,6 +419,7 @@ const CONTENT_TRANSLATION_USER_RATE_LIMIT_WINDOW_MS = 60 * 1000;
 
 function initializePhoneAuth(
     phoneAuthConfig: PhoneAuthConfig,
+    budget: PhoneSmsBudget,
 ): authService.PhoneAuth {
     if (phoneAuthConfig.mode === "disabled") {
         return phoneAuthConfig;
@@ -421,6 +429,7 @@ function initializePhoneAuth(
             ? phoneAuthConfig.delivery
             : {
                   type: "twilio",
+                  budget,
                   client: twilio(
                       phoneAuthConfig.delivery.accountSid,
                       phoneAuthConfig.delivery.authToken,
@@ -440,8 +449,6 @@ function initializePhoneAuth(
         delivery,
     };
 }
-
-const phoneAuth = initializePhoneAuth(phoneAuthConfig);
 
 // GitHub integration: webhook secret and access token must both be set or both unset
 const hasGitHubWebhookSecret = config.GITHUB_WEBHOOK_SECRET !== undefined;
@@ -532,6 +539,52 @@ const db = await createDb({
     log,
     logQueries: config.API_LOG_SQL_QUERIES,
 });
+const alertRecipient = config.PHONE_SMS_BUDGET_ALERT_EMAIL;
+const phoneSmsBudget = createPhoneSmsBudget({
+    db,
+    log,
+    sendAlert:
+        alertRecipient === undefined
+            ? undefined
+            : async ({ subject, text }) => {
+                  await sendEmail({ to: alertRecipient, subject, text });
+              },
+});
+const phoneAuth = initializePhoneAuth(phoneAuthConfig, phoneSmsBudget);
+const phoneTurnstile =
+    phoneTurnstileConfig.enabled
+        ? createPhoneTurnstileVerifier({
+              secretKey: phoneTurnstileConfig.secretKey,
+              allowedHostnames: phoneTurnstileConfig.allowedHostnames,
+              log,
+          })
+        : undefined;
+if (phoneAuth.mode !== "disabled" && phoneAuth.delivery.type === "twilio") {
+    phoneSmsBudget.start();
+    server.addHook("onClose", () => {
+        phoneSmsBudget.shutdown();
+        return Promise.resolve();
+    });
+}
+
+async function getEffectivePhoneAuth({
+    forVerification = false,
+}: {
+    forVerification?: boolean;
+} = {}): Promise<authService.PhoneAuth> {
+    if (phoneAuth.mode === "disabled" || phoneAuth.delivery.type !== "twilio") {
+        return phoneAuth;
+    }
+    const mode = await phoneSmsBudget.getMode({ forVerification });
+    if (mode === "disabled") return { mode: "disabled" };
+    if (mode === "enabled" || phoneAuth.mode === "login_only") return phoneAuth;
+    return {
+        mode: "login_only",
+        delivery: phoneAuth.delivery,
+        minimumResponseTimeMs: config.PHONE_LOGIN_ONLY_RESPONSE_MIN_MS,
+        responseJitterMs: config.PHONE_LOGIN_ONLY_RESPONSE_JITTER_MS,
+    };
+}
 log.info(
     "AGORA_LOAD_EVENT %s",
     JSON.stringify({
@@ -2074,6 +2127,9 @@ server.after(() => {
         url: `/api/${apiVersion}/auth/authenticate`,
         schema: {
             body: authenticateRequestBody,
+            headers: z.looseObject({
+                "x-turnstile-token": z.string().max(2048).optional(),
+            }),
             response: { 200: authenticate200 },
         },
         handler: async (request) => {
@@ -2086,6 +2142,16 @@ server.after(() => {
                     expectedDeviceStatus: undefined,
                 },
             );
+            if (
+                phoneTurnstile !== undefined &&
+                !(await phoneTurnstile.verify(
+                    request.headers["x-turnstile-token"],
+                ))
+            ) {
+                throw server.httpErrors.forbidden(
+                    "Phone security check failed",
+                );
+            }
             // wrapper function for Typescript to be happy with the zod discriminated union type
             async function doAuthenticate(): Promise<AuthenticateResponse> {
                 if (
@@ -2105,7 +2171,7 @@ server.after(() => {
                 return await authService.authenticateAttempt({
                     db,
                     now,
-                    phoneAuth,
+                    phoneAuth: await getEffectivePhoneAuth(),
                     authenticateRequestBody: request.body,
                     minutesBeforeSmsCodeExpiry:
                         config.MINUTES_BEFORE_SMS_OTP_EXPIRY,
@@ -2159,7 +2225,9 @@ server.after(() => {
                     code: request.body.code,
                     phoneNumber: request.body.phoneNumber,
                     defaultCallingCode: request.body.defaultCallingCode,
-                    phoneAuth,
+                    phoneAuth: await getEffectivePhoneAuth({
+                        forVerification: true,
+                    }),
                     peppers: config.PEPPERS,
                     sessionLifetimeDays: config.SESSION_LIFETIME_DAYS,
                     currentDisplayLanguage: getRequestDisplayLanguage({

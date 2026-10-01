@@ -347,6 +347,8 @@ Files generated from shared directories have warning comments at the top. Always
 - **Migrations**: Flyway-based versioned migrations in `services/api/database/flyway/`
 - **Connection**: Supports both direct connection strings and AWS Secrets Manager
 
+Use Drizzle's schema-backed, typed query builder for application-table reads and writes. Prefer its `count`, `sum`, `eq`, `gte`, `returning`, transactions, and other query helpers over raw SQL or `db.execute(sql`...`)`. Do not fabricate a SQL `VALUES` or `SELECT 1` source just to make a query executable. When a PostgreSQL-specific expression has no Drizzle helper (for example, `clock_timestamp()` or a filtered aggregate), keep the `sql` fragment inside a Drizzle query over a real schema table, map its result to the correct runtime type, and explain why the exception is needed. Model absent rows explicitly; never invent a fallback value such as the application clock for a missing policy row.
+
 ### OpenAPI-First API Development
 
 1. Backend defines routes with Zod schemas + Swagger decorators

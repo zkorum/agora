@@ -114,6 +114,7 @@ const { showNotifyMessage } = useNotify();
 const phoneAuthPurpose = computed(() =>
   !isAuthInitialized.value || isLoggedIn.value ? "credential" : "login"
 );
+const phoneInputFormRef = ref<InstanceType<typeof PhoneInputForm>>();
 const { t } = useComponentI18n<VerifyPhoneTranslations>(
   verifyPhoneTranslations
 );
@@ -179,6 +180,7 @@ const backPath = computed(() => {
 const { isLoading, submitPhone, phoneAuthAvailability, nextCodeWaitSeconds } =
   usePhoneSubmit({
     purpose: phoneAuthPurpose,
+    takeTurnstileToken: () => phoneInputFormRef.value?.takeTurnstileToken(),
     onNavigateToOtp: () =>
       router.replace({
         path: getConversationSurveyVerifyPhoneCodePath({
@@ -238,10 +240,6 @@ function checkExistingCredential() {
     void completeVerification();
   }
 }
-
-const phoneInputFormRef = ref<{
-  submit: () => boolean;
-} | null>(null);
 
 function onSubmit() {
   phoneInputFormRef.value?.submit();
