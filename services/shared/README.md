@@ -28,6 +28,13 @@ This will copy the shared code to TypeScript services. If shared constants or sc
 - **Types**: Zod schemas, DTOs, conversation-analysis types
 - **Utils**: conversation utilities, common utilities
 
+## Tests
+
+Run `pnpm test` from `services/shared` using Node.js 22.18+ or 24+.
+Node-runner tests live in `tests/`, outside the synced `src/` tree, so consumer
+services do not discover them with their own test runners or compile them into
+their application source.
+
 ## Other Shared Packages
 
 - `services/shared-app-api`: Shared between frontend + API only (UCAN, DID, etc.)

@@ -6,6 +6,7 @@
     "description": "Universal shared code for all Agora services",
     "main": "index.js",
     "scripts": {
+        "test": "node --test tests/*.test.ts",
         "sync": "bash scripts/rsync_and_sed.sh",
         "format:write": "prettier --write \"**/*.{js,ts,jsx,tsx,vue,scss,html,md,json}\"",
         "format:check": "prettier . --check"
