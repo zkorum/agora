@@ -97,8 +97,9 @@ from agora_analysis_worker_shared.valkey_client import (
 from botocore.exceptions import ConnectTimeoutError, ReadTimeoutError
 from google.api_core.exceptions import DeadlineExceeded
 from google.api_core.exceptions import RetryError as GoogleRetryError
+from psycopg.errors import NotNullViolation
 from pydantic import ValidationError
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -133,6 +134,10 @@ _running = True
 _lease_heartbeat_stoppers: list[Callable[[], None]] = []
 _lease_heartbeat_stoppers_lock = Lock()
 STARTUP_RETRY_INTERVAL_SECONDS = 5.0
+
+
+def is_non_retryable_not_null_violation(error: BaseException) -> bool:
+    return isinstance(error, IntegrityError) and isinstance(error.orig, NotNullViolation)
 
 
 def _handle_signal(signum: int, frame: object) -> None:
@@ -277,6 +282,41 @@ def _format_claim(claim: ClaimedWorkItem) -> str:
 
 def _format_claims(claims: list[ClaimedWorkItem]) -> str:
     return ", ".join(_format_claim(claim) for claim in claims)
+
+
+def mark_analysis_failures_non_retryable(
+    *,
+    primary_engine: Engine,
+    vk: valkey_lib.Valkey,
+    claims: list[ClaimedWorkItem],
+    analysis_engine_epoch: int,
+    error_code: str,
+    error_message: str,
+) -> None:
+    if not claims:
+        return
+    try:
+        newer_generation_ids = mark_non_retryable_work_items_batch(
+            primary_engine,
+            claims=claims,
+            analysis_engine_epoch=analysis_engine_epoch,
+            error_code=error_code,
+            error_message=error_message,
+        )
+    except SQLAlchemyError as error:
+        log_database_error(
+            logger=log,
+            message=(
+                "[MathUpdater] Failed to mark analysis work non-retryable; "
+                "leaving claims for lease recovery"
+            ),
+            error=error,
+            context={"claims": _format_claims(claims), "error_code": error_code},
+        )
+        return
+
+    # The database returns only newer generations, never the blocked generation.
+    _enqueue_conversations_for_math_work(vk, conversation_ids=newer_generation_ids)
 
 
 def _release_unpersisted_claims_after_db_error(
@@ -1867,7 +1907,15 @@ def _run_worker_once() -> None:
                     else:
                         isolated_failed_claims: list[ClaimedWorkItem] = []
                         lineage_invariant_failed_claims: list[ClaimedWorkItem] = []
-                        for claim in completed_claims:
+                        not_null_failed_claims: list[ClaimedWorkItem] = []
+                        claims_to_isolate = completed_claims
+                        if (
+                            len(completed_claims) == 1
+                            and is_non_retryable_not_null_violation(error)
+                        ):
+                            not_null_failed_claims.append(completed_claims[0])
+                            claims_to_isolate = []
+                        for claim in claims_to_isolate:
                             try:
                                 isolated_result = persist_computed_analysis_results_batch(
                                     primary_engine,
@@ -1877,6 +1925,27 @@ def _run_worker_once() -> None:
                                     bundles_by_conversation_id=bundles_by_conversation_id,
                                     ai_generation_expected=True,
                                 )
+                            except (
+                                SQLAlchemyError,
+                                AnalysisWorkStatePersistenceError,
+                            ) as isolated_error:
+                                log_database_error(
+                                    logger=log,
+                                    message="[MathUpdater] Failed isolated computed-result persist",
+                                    error=isolated_error,
+                                    context={"claim": _format_claim(claim)},
+                                )
+                                if is_non_retryable_not_null_violation(isolated_error):
+                                    not_null_failed_claims.append(claim)
+                                elif isinstance(isolated_error, LineageAssignmentInvariantError):
+                                    lineage_invariant_failed_claims.append(claim)
+                                else:
+                                    isolated_failed_claims.append(claim)
+                                continue
+
+                            # Persistence committed. Later failures must resume this result,
+                            # not release its claim and regenerate the same analysis.
+                            try:
                                 ready_to_complete_isolated_claim = (
                                     process_or_finalize_ai_description_first_pass_after_persist(
                                         primary_engine=primary_engine,
@@ -1908,64 +1977,39 @@ def _run_worker_once() -> None:
                                         vk,
                                         conversation_ids=isolated_persist_newer_generation_ids,
                                     )
-                            except LineageAssignmentInvariantError:
-                                log.exception(
-                                    "[MathUpdater] Non-retryable lineage assignment invariant "
-                                    "failure conversationSlugId=%s conversationId=%d",
-                                    claim.conversation_slug_id,
-                                    claim.conversation_id,
-                                )
-                                lineage_invariant_failed_claims.append(claim)
                             except (
                                 SQLAlchemyError,
                                 AnalysisWorkStatePersistenceError,
-                            ) as isolated_error:
-                                log_database_error(
-                                    logger=log,
-                                    message="[MathUpdater] Failed isolated computed-result persist",
-                                    error=isolated_error,
-                                    context={"claim": _format_claim(claim)},
-                                )
-                                isolated_failed_claims.append(claim)
-
-                        if lineage_invariant_failed_claims:
-                            try:
-                                lineage_newer_generation_ids = mark_non_retryable_work_items_batch(
-                                    primary_engine,
-                                    claims=lineage_invariant_failed_claims,
-                                    analysis_engine_epoch=settings.analysis_engine_epoch,
-                                    error_code="lineage_assignment_invariant_error",
-                                    error_message=(
-                                        "lineage assignment invariant failed; see worker logs"
-                                    ),
-                                )
-                            except SQLAlchemyError as mark_error:
+                            ) as completion_error:
                                 log_database_error(
                                     logger=log,
                                     message=(
-                                        "[MathUpdater] Failed to mark lineage-invariant "
-                                        "analysis work non-retryable; lease recovery will retry"
+                                        "[MathUpdater] Failed isolated first-pass/completion; "
+                                        "leaving persisted analysis work for lease recovery"
                                     ),
-                                    error=mark_error,
-                                    context={
-                                        "claims": _format_claims(lineage_invariant_failed_claims)
-                                    },
+                                    error=completion_error,
+                                    context={"claim": _format_claim(claim)},
                                 )
-                                lineage_newer_generation_ids = []
-                            _enqueue_conversations_for_math_work(
-                                vk,
-                                conversation_ids=lineage_newer_generation_ids,
-                            )
-                            log.info(
-                                "[MathUpdater] Marked %d lineage-invariant-failed "
-                                "conversation(s) non-retryable newer_generation=%d: %s",
-                                len(lineage_invariant_failed_claims),
-                                len(lineage_newer_generation_ids),
-                                _format_processed_conversations_for_log(
-                                    conversation_ids=lineage_newer_generation_ids,
-                                    work_items=lineage_invariant_failed_claims,
-                                ),
-                            )
+
+                        mark_analysis_failures_non_retryable(
+                            primary_engine=primary_engine,
+                            vk=vk,
+                            claims=not_null_failed_claims,
+                            analysis_engine_epoch=settings.analysis_engine_epoch,
+                            error_code="analysis_persist_not_null_violation",
+                            error_message=(
+                                "analysis persistence violated a NOT NULL constraint; "
+                                "see worker logs"
+                            ),
+                        )
+                        mark_analysis_failures_non_retryable(
+                            primary_engine=primary_engine,
+                            vk=vk,
+                            claims=lineage_invariant_failed_claims,
+                            analysis_engine_epoch=settings.analysis_engine_epoch,
+                            error_code="lineage_assignment_invariant_error",
+                            error_message="lineage assignment invariant failed; see worker logs",
+                        )
 
                         if isolated_failed_claims:
                             persist_retry_conversation_ids = (

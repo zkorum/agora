@@ -24,11 +24,17 @@ def configure_worker_logging(*, log_level: LogLevel) -> None:
 
 
 _SAFE_DATABASE_CODE = re.compile(r"[0-9A-Z_]{2,32}")
+_SAFE_DATABASE_IDENTIFIER = re.compile(r"[a-zA-Z_][a-zA-Z_0-9]{0,62}")
 
 
 def _safe_database_code(error: object, name: str) -> str | None:
     value = getattr(error, name, None)
     return value if isinstance(value, str) and _SAFE_DATABASE_CODE.fullmatch(value) else None
+
+
+def _safe_database_identifier(*, diagnostic: object, name: str) -> str | None:
+    value = getattr(diagnostic, name, None)
+    return value if isinstance(value, str) and _SAFE_DATABASE_IDENTIFIER.fullmatch(value) else None
 
 
 def database_error_summary(error: BaseException) -> str:
@@ -45,6 +51,12 @@ def database_error_summary(error: BaseException) -> str:
         )
         if sqlstate is not None:
             parts.append(f"sqlstate={sqlstate}")
+        diagnostic = getattr(original, "diag", None)
+        if diagnostic is not None:
+            for name in ("schema_name", "table_name", "column_name", "constraint_name"):
+                identifier = _safe_database_identifier(diagnostic=diagnostic, name=name)
+                if identifier is not None:
+                    parts.append(f"{name}={identifier}")
 
     elif isinstance(error, SQLAlchemyError):
         # SQLAlchemy's string form includes generated SQL and parameters for many
