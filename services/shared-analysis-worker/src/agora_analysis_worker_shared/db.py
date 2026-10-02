@@ -2766,7 +2766,7 @@ def _fetch_conversation_content_id_by_conversation_id(
     return {row.id: row.current_content_id for row in rows}
 
 
-def _persist_survey_aggregate_snapshots(
+def persist_survey_aggregate_snapshots(
     session: Session,
     *,
     claims: list[ClaimedWorkItem],
@@ -2844,83 +2844,86 @@ def _persist_survey_aggregate_snapshots(
         row.conversation_id: row.id for row in snapshot_rows
     }
 
-    question_rows = session.execute(
-        sqlalchemy_insert(SurveyAggregateQuestion)
-        .values(
-            [
-                {
-                    "survey_aggregate_snapshot_id": aggregate_snapshot_id_by_conversation_id[
-                        conversation_id
-                    ],
-                    "survey_question_id": question.survey_question_id,
-                    "question_slug_id": question.question_slug_id,
-                    "question_order": question.question_order,
-                    "question_type": question.question_type,
-                    "question_text": question.question_text,
-                    "is_required": question.is_required,
-                    "is_public_aggregate_suppression_enabled": (
-                        question.is_public_aggregate_suppression_enabled
-                    ),
-                    "question_semantic_version": question.question_semantic_version,
-                }
-                for conversation_id, aggregate in aggregate_by_conversation_id.items()
-                for question in aggregate.questions
-            ]
-        )
-        .returning(
-            SurveyAggregateQuestion.id,
-            SurveyAggregateQuestion.survey_aggregate_snapshot_id,
-            SurveyAggregateQuestion.question_slug_id,
-        )
-    ).all()
-    conversation_id_by_aggregate_snapshot_id = dict(
-        (aggregate_snapshot_id, conversation_id)
-        for conversation_id, aggregate_snapshot_id in (
-            aggregate_snapshot_id_by_conversation_id.items()
-        )
-    )
-    question_id_by_conversation_key = {
-        (
-            conversation_id_by_aggregate_snapshot_id[row.survey_aggregate_snapshot_id],
-            row.question_slug_id,
-        ): row.id
-        for row in question_rows
-    }
+    # An empty SQLAlchemy multi-row insert becomes DEFAULT VALUES, not a no-op.
+    question_values: list[dict[str, object]] = [
+        {
+            "survey_aggregate_snapshot_id": aggregate_snapshot_id_by_conversation_id[
+                conversation_id
+            ],
+            "survey_question_id": question.survey_question_id,
+            "question_slug_id": question.question_slug_id,
+            "question_order": question.question_order,
+            "question_type": question.question_type,
+            "question_text": question.question_text,
+            "is_required": question.is_required,
+            "is_public_aggregate_suppression_enabled": (
+                question.is_public_aggregate_suppression_enabled
+            ),
+            "question_semantic_version": question.question_semantic_version,
+        }
+        for conversation_id, aggregate in aggregate_by_conversation_id.items()
+        for question in aggregate.questions
+    ]
+    question_id_by_conversation_key: dict[tuple[int, str], int] = {}
+    if question_values:
+        question_rows = session.execute(
+            sqlalchemy_insert(SurveyAggregateQuestion)
+            .values(question_values)
+            .returning(
+                SurveyAggregateQuestion.id,
+                SurveyAggregateQuestion.survey_aggregate_snapshot_id,
+                SurveyAggregateQuestion.question_slug_id,
+            )
+        ).all()
+        conversation_id_by_aggregate_snapshot_id = {
+            aggregate_snapshot_id: conversation_id
+            for conversation_id, aggregate_snapshot_id in (
+                aggregate_snapshot_id_by_conversation_id.items()
+            )
+        }
+        question_id_by_conversation_key = {
+            (
+                conversation_id_by_aggregate_snapshot_id[row.survey_aggregate_snapshot_id],
+                row.question_slug_id,
+            ): row.id
+            for row in question_rows
+        }
 
-    option_rows = session.execute(
-        sqlalchemy_insert(SurveyAggregateOption)
-        .values(
-            [
-                {
-                    "survey_aggregate_question_id": question_id_by_conversation_key[
-                        (conversation_id, option.question_key)
-                    ],
-                    "survey_question_option_id": option.survey_question_option_id,
-                    "option_slug_id": option.option_slug_id,
-                    "option_order": option.option_order,
-                    "option_text": option.option_text,
-                }
-                for conversation_id, aggregate in aggregate_by_conversation_id.items()
-                for option in aggregate.options
-            ]
-        )
-        .returning(
-            SurveyAggregateOption.id,
-            SurveyAggregateOption.survey_aggregate_question_id,
-            SurveyAggregateOption.option_slug_id,
-        )
-    ).all()
-    conversation_key_by_question_id = {
-        question_id: conversation_key
-        for conversation_key, question_id in question_id_by_conversation_key.items()
-    }
-    option_id_by_conversation_key = {
-        (
-            conversation_key_by_question_id[row.survey_aggregate_question_id][0],
-            f"{conversation_key_by_question_id[row.survey_aggregate_question_id][1]}:{row.option_slug_id}",
-        ): row.id
-        for row in option_rows
-    }
+    option_values: list[dict[str, object]] = [
+        {
+            "survey_aggregate_question_id": question_id_by_conversation_key[
+                (conversation_id, option.question_key)
+            ],
+            "survey_question_option_id": option.survey_question_option_id,
+            "option_slug_id": option.option_slug_id,
+            "option_order": option.option_order,
+            "option_text": option.option_text,
+        }
+        for conversation_id, aggregate in aggregate_by_conversation_id.items()
+        for option in aggregate.options
+    ]
+    option_id_by_conversation_key: dict[tuple[int, str], int] = {}
+    if option_values:
+        option_rows = session.execute(
+            sqlalchemy_insert(SurveyAggregateOption)
+            .values(option_values)
+            .returning(
+                SurveyAggregateOption.id,
+                SurveyAggregateOption.survey_aggregate_question_id,
+                SurveyAggregateOption.option_slug_id,
+            )
+        ).all()
+        conversation_key_by_question_id = {
+            question_id: conversation_key
+            for conversation_key, question_id in question_id_by_conversation_key.items()
+        }
+        option_id_by_conversation_key = {
+            (
+                conversation_key_by_question_id[row.survey_aggregate_question_id][0],
+                f"{conversation_key_by_question_id[row.survey_aggregate_question_id][1]}:{row.option_slug_id}",
+            ): row.id
+            for row in option_rows
+        }
 
     result_values: list[dict[str, object]] = [
         {
@@ -3889,7 +3892,7 @@ def persist_computed_analysis_results_batch(
                 len(group_opinion_values),
             )
 
-        survey_aggregate_snapshot_id_by_conversation_id = _persist_survey_aggregate_snapshots(
+        survey_aggregate_snapshot_id_by_conversation_id = persist_survey_aggregate_snapshots(
             session,
             claims=claims,
             snapshot_id_by_conversation_id=snapshot_id_by_conversation_id,

@@ -36,6 +36,25 @@ Join through `analysis_snapshot` for the conversation and data generation, and
 `opinion_group_variant` for the group count. These normal analysis outcomes do not
 populate `analysis_work_state.last_error_code`.
 
+## Computed-result persistence failures
+
+A PostgreSQL NOT NULL violation (`23502`) while persisting computed results is
+recorded as `analysis_persist_not_null_violation`. The failed generation is marked
+non-retryable for the current analysis engine epoch rather than immediately
+requeued. For a failed multi-conversation batch, persistence is isolated by
+conversation so unaffected conversations can still complete.
+
+Database error logs include safe schema, table, column, and constraint identifiers
+when available, without SQL parameters or failing-row contents. Fix the underlying
+code/schema issue before retrying. A newer data generation makes the work eligible
+again; to retry the same generation after a corrective deployment, increase
+`MATH_UPDATER_ANALYSIS_ENGINE_EPOCH` above its previously deployed value. The normal
+database reconciliation discovers eligible work.
+
+Failures after computed-result persistence commits retain the persisted result
+and lease-recovery path; they must not clear the persisted marker and rerun the
+same computation.
+
 ## Configuration
 
 Environment variables use the `MATH_UPDATER_` prefix.
@@ -54,6 +73,7 @@ Environment variables use the `MATH_UPDATER_` prefix.
 | `MATH_UPDATER_DEFAULT_DEBOUNCE_SECONDS`          | `5`                       | Default dirty-work debounce          |
 | `MATH_UPDATER_RECONCILIATION_INTERVAL_SECONDS`   | `60`                      | DB-to-Valkey reconciliation cadence  |
 | `MATH_UPDATER_RUNNING_RECOVERY_INTERVAL_SECONDS` | `10`                      | Expired lease recovery cadence       |
+| `MATH_UPDATER_ANALYSIS_ENGINE_EPOCH`              | `1`                       | Increase after fixing non-retryable analysis failures to retry unchanged generations |
 
 AI label/summary generation and Bedrock translation are enabled by default through `MATH_UPDATER_AWS_AI_LABEL_SUMMARY_ENABLE=true` and `MATH_UPDATER_AWS_DESCRIPTION_TRANSLATION_ENABLE=true`. Bedrock uses normal AWS credentials plus the `MATH_UPDATER_AWS_*_REGION` and model settings; there is no explicit Bedrock URL. The required runtime infrastructure is PostgreSQL and Valkey. Google translation fallback/direct translation is configured with `MATH_UPDATER_GOOGLE_*` and optional AWS Secrets Manager credential variables.
 

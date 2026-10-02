@@ -4,7 +4,9 @@ from typing import TYPE_CHECKING
 
 from agora_analysis_worker_shared.db import ClaimedWorkItem, PersistComputedAnalysisResult
 from agora_analysis_worker_shared.description_generation import DescriptionGenerationResult
+from psycopg.errors import CheckViolation, NotNullViolation
 from sqlalchemy import Engine, create_engine
+from sqlalchemy.exc import IntegrityError, OperationalError
 from valkey import Valkey
 
 from math_updater import worker
@@ -39,6 +41,72 @@ def _description_generator(
     _conversation: ConversationDescriptionInput,
 ) -> DescriptionGenerationResult:
     return DescriptionGenerationResult(groups={})
+
+
+def test_not_null_persistence_failure_is_non_retryable() -> None:
+    not_null_error = IntegrityError("insert", {}, NotNullViolation())
+    check_error = IntegrityError("insert", {}, CheckViolation())
+    connection_error = OperationalError("insert", {}, ConnectionError())
+
+    assert worker.is_non_retryable_not_null_violation(not_null_error)
+    assert not worker.is_non_retryable_not_null_violation(check_error)
+    assert not worker.is_non_retryable_not_null_violation(connection_error)
+
+
+def test_non_retryable_failure_only_enqueues_newer_work(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    marked: list[dict[str, object]] = []
+    queued: list[dict[str, object]] = []
+
+    def mark_failed(_engine: Engine, **kwargs: object) -> list[int]:
+        marked.append(kwargs)
+        return [20]
+
+    def enqueue(_vk: Valkey, **kwargs: object) -> None:
+        queued.append(kwargs)
+
+    monkeypatch.setattr(worker, "mark_non_retryable_work_items_batch", mark_failed)
+    monkeypatch.setattr(worker, "_enqueue_conversations_for_math_work", enqueue)
+    worker.mark_analysis_failures_non_retryable(
+        primary_engine=_primary_engine(),
+        vk=_valkey_client(),
+        claims=[_claim()],
+        analysis_engine_epoch=2,
+        error_code="analysis_persist_not_null_violation",
+        error_message="NOT NULL constraint failed",
+    )
+
+    assert marked == [
+        {
+            "claims": [_claim()],
+            "analysis_engine_epoch": 2,
+            "error_code": "analysis_persist_not_null_violation",
+            "error_message": "NOT NULL constraint failed",
+        }
+    ]
+    assert queued == [{"conversation_ids": [20]}]
+
+
+def test_failed_non_retryable_marker_leaves_claim_for_lease_recovery(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail_mark(_engine: Engine, **_kwargs: object) -> list[int]:
+        raise OperationalError("update", {}, ConnectionError())
+
+    def fail_enqueue(_vk: Valkey, **_kwargs: object) -> None:
+        raise AssertionError("failed marker must not requeue the claim")
+
+    monkeypatch.setattr(worker, "mark_non_retryable_work_items_batch", fail_mark)
+    monkeypatch.setattr(worker, "_enqueue_conversations_for_math_work", fail_enqueue)
+    worker.mark_analysis_failures_non_retryable(
+        primary_engine=_primary_engine(),
+        vk=_valkey_client(),
+        claims=[_claim()],
+        analysis_engine_epoch=2,
+        error_code="analysis_persist_not_null_violation",
+        error_message="NOT NULL constraint failed",
+    )
 
 
 def test_post_persist_first_pass_runs_for_ai_gated_snapshot_without_new_work(
