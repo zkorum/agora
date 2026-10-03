@@ -121,6 +121,38 @@
           />
         </div>
 
+        <!-- AI suggestions: shown on this page only, never part of the draft.
+             Hidden once publishing succeeded, while the page waits to navigate away. -->
+        <div
+          v-if="isSuggestionsBoxVisible && !isNavigatingAway"
+          class="suggestions-row"
+        >
+          <SeedSuggestionsBox
+            class="suggestions-row-box"
+            :suggestions="pendingSuggestions"
+            :tip="notConfidentTip"
+            :is-frozen="isSubmitButtonLoading"
+            :can-take-suggestion="canTakeSuggestion"
+            :can-generate="canGenerateSuggestions"
+            :is-generating="isGeneratingSuggestions"
+            :generate-more-label="generateMoreLabel"
+            @add="addSuggestion"
+            @discard="discardSuggestion"
+            @generate-more="generateSuggestions"
+            @edit-conversation="handleBack"
+          />
+          <!-- Takes the room of a statement's delete button, so the box is as wide as the statement boxes -->
+          <PrimeButton
+            icon="pi pi-trash"
+            text
+            rounded
+            class="suggestions-row-spacer"
+            aria-hidden="true"
+            tabindex="-1"
+            disabled
+          />
+        </div>
+
         <!-- Add Opinion Button -->
         <div v-if="!isSubmitButtonLoading" class="add-button-container">
           <ConversationControlButton
@@ -129,6 +161,18 @@
             :show-border="false"
             icon-position="left"
             @click="addNewOpinion"
+          />
+          <!-- Once the box is shown, its own "Generate more" button takes over -->
+          <ConversationControlButton
+            v-if="isAiSuggestionsEnabled && !isSuggestionsBoxVisible"
+            class="ai-suggestions-button"
+            :label="aiSuggestionsButtonLabel"
+            icon="pi pi-lightbulb"
+            :show-border="false"
+            icon-position="left"
+            :disabled="!canGenerateSuggestions"
+            :aria-busy="isGeneratingSuggestions"
+            @click="generateSuggestions"
           />
         </div>
       </div>
@@ -164,11 +208,13 @@ import ConversationControlButton from "src/components/newConversation/Conversati
 import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
 import NewConversationRouteGuard from "src/components/newConversation/NewConversationRouteGuard.vue";
 import SeedOpinionItem from "src/components/newConversation/SeedOpinionItem.vue";
+import SeedSuggestionsBox from "src/components/newConversation/SeedSuggestionsBox.vue";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import { useConversationDraft } from "src/composables/conversation/draft";
 import { useCreateSurveyAccess } from "src/composables/conversation/useCreateSurveyAccess";
 import type { SeedOpinionCreateFailure } from "src/composables/conversation/usePublishConversationDraft";
 import { usePublishConversationDraft } from "src/composables/conversation/usePublishConversationDraft";
+import { useSeedSuggestions } from "src/composables/conversation/useSeedSuggestions";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { validateRichTextInput } from "src/shared/richText";
 import { type RichTextValidationFailure } from "src/shared/shared";
@@ -180,13 +226,16 @@ import {
   isHistoryBackToPath,
   navigateBackOrReplace,
 } from "src/utils/nav/historyBack";
+import { processEnv } from "src/utils/processEnv";
 import { useNotify } from "src/utils/ui/notify";
 import {
   type ComponentPublicInstance,
   computed,
   nextTick,
+  onBeforeUnmount,
   onMounted,
   ref,
+  watch,
 } from "vue";
 import { useRouter } from "vue-router";
 
@@ -218,6 +267,24 @@ const isMaxDiffDraft = computed(
 
 const { previewGitHubIssues } = useMaxDiffApi();
 const { publishConversationDraft } = usePublishConversationDraft();
+
+// AI suggestions. Whether this author may use them is decided by the API alone.
+const isAiSuggestionsEnabled =
+  processEnv.VITE_AI_SUGGESTIONS_ENABLED === "true";
+const {
+  pendingSuggestions,
+  notConfidentTip,
+  isGenerating: isGeneratingSuggestions,
+  canGenerate: canGenerateSuggestions,
+  canTakeSuggestion,
+  generate,
+  add: addSuggestionToStatements,
+  discard: discardSuggestion,
+} = useSeedSuggestions({ conversationDraft });
+const isSuggestionsBoxVisible = computed(
+  () =>
+    pendingSuggestions.value.length > 0 || notConfidentTip.value !== undefined
+);
 
 const showLoginDialog = ref(false);
 const isSubmitButtonLoading = ref(false);
@@ -347,30 +414,110 @@ function clearOpinionError(index: number) {
   }
 }
 
+// "Generating" followed by one to three dots while a request is running.
+const generatingDotCount = ref(1);
+let generatingDotsTimer: ReturnType<typeof setInterval> | undefined;
+watch(isGeneratingSuggestions, (isGenerating) => {
+  clearInterval(generatingDotsTimer);
+  generatingDotCount.value = 1;
+  if (isGenerating) {
+    generatingDotsTimer = setInterval(() => {
+      generatingDotCount.value = (generatingDotCount.value % 3) + 1;
+    }, 400);
+  }
+});
+onBeforeUnmount(() => {
+  clearInterval(generatingDotsTimer);
+});
+// Dots not shown yet are replaced by punctuation spaces (U+2008, as wide as a period),
+// so the button keeps the same width while the dots move.
+const generatingLabel = computed(
+  () =>
+    `${t("aiSuggestionsGenerating")}${".".repeat(generatingDotCount.value)}${"\u2008".repeat(3 - generatingDotCount.value)}`
+);
+const aiSuggestionsButtonLabel = computed(() =>
+  isGeneratingSuggestions.value
+    ? generatingLabel.value
+    : t("aiSuggestionsButton")
+);
+const generateMoreLabel = computed(() =>
+  isGeneratingSuggestions.value
+    ? generatingLabel.value
+    : t("aiSuggestionsGenerateMore")
+);
+
+async function generateSuggestions(): Promise<void> {
+  if (isSubmitButtonLoading.value) {
+    return;
+  }
+  if (!isLoggedIn.value) {
+    showLoginDialog.value = true;
+    return;
+  }
+
+  const result = await generate();
+  if (result.success) {
+    return;
+  }
+  switch (result.reason) {
+    case "not_available":
+      showNotifyMessage(t("aiSuggestionsNotAvailable"));
+      break;
+    case "rate_limited":
+      showNotifyMessage(t("aiSuggestionsRateLimited"));
+      break;
+    case "failed":
+      showNotifyMessage(t("aiSuggestionsFailed"));
+      break;
+  }
+}
+
+async function scrollToOpinion({
+  index,
+  focus,
+}: {
+  index: number;
+  focus: boolean;
+}): Promise<void> {
+  // Wait for Vue to render the new element
+  await nextTick();
+
+  const element = opinionRefs.value[index];
+  if (element) {
+    element.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }
+
+  if (focus) {
+    const component = opinionComponentRefs.value[index];
+    if (component) {
+      component.focus();
+    }
+  }
+}
+
+async function addSuggestion(suggestionId: string): Promise<void> {
+  if (isSubmitButtonLoading.value) {
+    return;
+  }
+  const newIndex = addSuggestionToStatements(suggestionId);
+  if (newIndex !== undefined) {
+    await scrollToOpinion({ index: newIndex, focus: false });
+  }
+}
+
 async function addNewOpinion(): Promise<void> {
   if (isSubmitButtonLoading.value) {
     return;
   }
 
   conversationDraft.value.seedOpinions.push("");
-  const newIndex = conversationDraft.value.seedOpinions.length - 1;
-
-  // Wait for Vue to render the new element
-  await nextTick();
-
-  // Scroll to the new opinion and focus it
-  const newElement = opinionRefs.value[newIndex];
-  if (newElement) {
-    newElement.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-    });
-  }
-
-  const newComponent = opinionComponentRefs.value[newIndex];
-  if (newComponent) {
-    newComponent.focus();
-  }
+  await scrollToOpinion({
+    index: conversationDraft.value.seedOpinions.length - 1,
+    focus: true,
+  });
 }
 
 function removeOpinion(index: number): void {
@@ -611,7 +758,34 @@ async function onSubmit() {
 
 .add-button-container {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-start;
+  gap: 0.75rem;
+}
+
+// Same layout as a statement row (SeedOpinionItem): the box, then the room its
+// delete button takes.
+.suggestions-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.suggestions-row-box {
+  flex: 1;
+  min-width: 0;
+}
+
+.suggestions-row-spacer {
+  flex-shrink: 0;
+  visibility: hidden;
+}
+
+// Grey while a request is running, after a not-confident answer, and above the
+// statement limit.
+.add-button-container .ai-suggestions-button:disabled {
+  background-color: #e6e6e6;
+  color: #7a7a7a;
 }
 
 .opinions-list {

@@ -529,6 +529,10 @@ export function useConversationDraft(
     conversationEmailUpdateEnabledOverride.value =
       emptyDraft.conversationEmailUpdateEnabledOverride;
     seedOpinions.value = [];
+    if (store) {
+      store.conversationDraft.aiSuggestionDraftId =
+        emptyDraft.aiSuggestionDraftId;
+    }
     conversationType.value = emptyDraft.conversationType;
     rankingMode.value = undefined;
     isPrivate.value = emptyDraft.isPrivate;

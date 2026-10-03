@@ -21,6 +21,17 @@ export interface ConversationReviewTranslations {
   noGithubIssuesFound: string;
   githubPreviewError: string;
   githubPreviewRetry: string;
+  aiSuggestionsButton: string;
+  aiSuggestionsGenerating: string;
+  aiSuggestionsGenerateMore: string;
+  aiSuggestionsNote: string;
+  aiSuggestionsNotClear: string;
+  aiSuggestionAdd: string;
+  aiSuggestionDiscard: string;
+  aiSuggestionsEditConversation: string;
+  aiSuggestionsFailed: string;
+  aiSuggestionsNotAvailable: string;
+  aiSuggestionsRateLimited: string;
 }
 
 export const conversationReviewTranslations: Record<
@@ -56,6 +67,22 @@ export const conversationReviewTranslations: Record<
       "No issues found with the configured label. Items will be synced when issues are created or labeled on GitHub.",
     githubPreviewError: "Failed to load issues from GitHub",
     githubPreviewRetry: "Retry",
+    aiSuggestionsButton: "AI Suggestions",
+    aiSuggestionsGenerating: "Generating",
+    aiSuggestionsGenerateMore: "Generate more",
+    aiSuggestionsNote:
+      "Drawn from your title and description. Links and documents aren't taken into account.",
+    aiSuggestionsNotClear:
+      "Your title and description are not clear enough yet for AI suggestions.",
+    aiSuggestionAdd: "Add",
+    aiSuggestionDiscard: "Discard",
+    aiSuggestionsEditConversation: "Edit conversation",
+    aiSuggestionsFailed:
+      "Suggestions could not be generated. You can add statements yourself or try again.",
+    aiSuggestionsNotAvailable:
+      "AI suggestions are not available for this account.",
+    aiSuggestionsRateLimited:
+      "Too many requests. Please wait a minute before trying again.",
   },
   ar: {
     nextButton: "التالي",
@@ -83,6 +110,22 @@ export const conversationReviewTranslations: Record<
       "لم يتم العثور على مشكلات بالتسمية المحددة. ستتم مزامنة العناصر عند إنشاء المشكلات أو إضافة التسمية إليها على GitHub.",
     githubPreviewError: "فشل تحميل المشكلات من GitHub",
     githubPreviewRetry: "إعادة المحاولة",
+    aiSuggestionsButton: "اقتراحات الذكاء الاصطناعي",
+    aiSuggestionsGenerating: "جارٍ التوليد",
+    aiSuggestionsGenerateMore: "توليد المزيد",
+    aiSuggestionsNote:
+      "مستخلصة من العنوان والوصف. الروابط والمستندات لا تؤخذ في الاعتبار.",
+    aiSuggestionsNotClear:
+      "العنوان والوصف ليسا واضحين بما يكفي بعد لتقديم اقتراحات الذكاء الاصطناعي.",
+    aiSuggestionAdd: "إضافة",
+    aiSuggestionDiscard: "تجاهل",
+    aiSuggestionsEditConversation: "تعديل المحادثة",
+    aiSuggestionsFailed:
+      "تعذّر توليد الاقتراحات. يمكنك إضافة المقترحات بنفسك أو المحاولة مرة أخرى.",
+    aiSuggestionsNotAvailable:
+      "اقتراحات الذكاء الاصطناعي غير متاحة لهذا الحساب.",
+    aiSuggestionsRateLimited:
+      "طلبات كثيرة جدًا. يُرجى الانتظار دقيقة قبل المحاولة مرة أخرى.",
   },
   es: {
     nextButton: "Siguiente",
@@ -112,6 +155,22 @@ export const conversationReviewTranslations: Record<
       "No se encontraron incidencias con la etiqueta configurada. Los elementos se sincronizarán cuando se creen incidencias o se etiqueten en GitHub.",
     githubPreviewError: "No se pudieron cargar las incidencias de GitHub",
     githubPreviewRetry: "Reintentar",
+    aiSuggestionsButton: "Sugerencias de IA",
+    aiSuggestionsGenerating: "Generando",
+    aiSuggestionsGenerateMore: "Generar más",
+    aiSuggestionsNote:
+      "Elaboradas a partir de tu título y descripción. Los enlaces y documentos no se tienen en cuenta.",
+    aiSuggestionsNotClear:
+      "El título y la descripción aún no son lo bastante claros para generar sugerencias con IA.",
+    aiSuggestionAdd: "Añadir",
+    aiSuggestionDiscard: "Descartar",
+    aiSuggestionsEditConversation: "Editar la conversación",
+    aiSuggestionsFailed:
+      "No se pudieron generar sugerencias. Puedes añadir proposiciones tú mismo o intentarlo de nuevo.",
+    aiSuggestionsNotAvailable:
+      "Las sugerencias de IA no están disponibles para esta cuenta.",
+    aiSuggestionsRateLimited:
+      "Demasiadas solicitudes. Espera un minuto antes de volver a intentarlo.",
   },
   fa: {
     nextButton: "بعدی",
@@ -140,6 +199,22 @@ export const conversationReviewTranslations: Record<
       "هیچ مسئله‌ای با برچسب تنظیم‌شده یافت نشد. موارد زمانی همگام‌سازی می‌شوند که مسئله‌ها در GitHub ایجاد یا برچسب‌گذاری شوند.",
     githubPreviewError: "بارگیری مسائل از GitHub انجام نشد",
     githubPreviewRetry: "تلاش مجدد",
+    aiSuggestionsButton: "پیشنهادهای هوش مصنوعی",
+    aiSuggestionsGenerating: "در حال تولید",
+    aiSuggestionsGenerateMore: "تولید بیشتر",
+    aiSuggestionsNote:
+      "برگرفته از عنوان و توضیحات شما. پیوندها و اسناد در نظر گرفته نمی‌شوند.",
+    aiSuggestionsNotClear:
+      "عنوان و توضیحات شما هنوز برای پیشنهادهای هوش مصنوعی به اندازه کافی روشن نیست.",
+    aiSuggestionAdd: "افزودن",
+    aiSuggestionDiscard: "رد کردن",
+    aiSuggestionsEditConversation: "ویرایش گفتگو",
+    aiSuggestionsFailed:
+      "تولید پیشنهادها ممکن نشد. می‌توانید خودتان گزاره اضافه کنید یا دوباره تلاش کنید.",
+    aiSuggestionsNotAvailable:
+      "پیشنهادهای هوش مصنوعی برای این حساب در دسترس نیست.",
+    aiSuggestionsRateLimited:
+      "درخواست‌ها بیش از حد است. لطفاً یک دقیقه صبر کنید و دوباره تلاش کنید.",
   },
   he: {
     nextButton: "הבא",
@@ -167,6 +242,20 @@ export const conversationReviewTranslations: Record<
       "לא נמצאו בעיות עם התווית שהוגדרה. הפריטים יסונכרנו כשבעיות ייווצרו או יסומנו ב-GitHub.",
     githubPreviewError: "טעינת בעיות מ-GitHub נכשלה",
     githubPreviewRetry: "נסה שוב",
+    aiSuggestionsButton: "הצעות AI",
+    aiSuggestionsGenerating: "יוצר",
+    aiSuggestionsGenerateMore: "יצירת הצעות נוספות",
+    aiSuggestionsNote:
+      "מבוסס על הכותרת והתיאור שלך. קישורים ומסמכים אינם נלקחים בחשבון.",
+    aiSuggestionsNotClear:
+      "הכותרת והתיאור עדיין אינם ברורים מספיק להצעות בינה מלאכותית.",
+    aiSuggestionAdd: "הוספה",
+    aiSuggestionDiscard: "דחייה",
+    aiSuggestionsEditConversation: "עריכת השיחה",
+    aiSuggestionsFailed:
+      "לא ניתן היה ליצור הצעות. אפשר להוסיף הצהרות בעצמך או לנסות שוב.",
+    aiSuggestionsNotAvailable: "הצעות AI אינן זמינות לחשבון זה.",
+    aiSuggestionsRateLimited: "יותר מדי בקשות. יש להמתין דקה לפני ניסיון נוסף.",
   },
   fr: {
     nextButton: "Suivant",
@@ -197,6 +286,22 @@ export const conversationReviewTranslations: Record<
       "Aucun ticket trouvé avec le libellé configuré. Les éléments seront synchronisés lorsque des tickets seront créés ou étiquetés sur GitHub.",
     githubPreviewError: "Impossible de charger les tickets GitHub",
     githubPreviewRetry: "Réessayer",
+    aiSuggestionsButton: "Suggestions IA",
+    aiSuggestionsGenerating: "Génération",
+    aiSuggestionsGenerateMore: "En générer d'autres",
+    aiSuggestionsNote:
+      "Élaborées à partir de votre titre et de votre description. Les liens et les documents ne sont pas pris en compte.",
+    aiSuggestionsNotClear:
+      "Le titre et la description ne sont pas encore assez clairs pour proposer des suggestions IA.",
+    aiSuggestionAdd: "Ajouter",
+    aiSuggestionDiscard: "Écarter",
+    aiSuggestionsEditConversation: "Modifier la conversation",
+    aiSuggestionsFailed:
+      "Les suggestions n'ont pas pu être générées. Vous pouvez ajouter des propositions vous-même ou réessayer.",
+    aiSuggestionsNotAvailable:
+      "Les suggestions IA ne sont pas disponibles pour ce compte.",
+    aiSuggestionsRateLimited:
+      "Trop de demandes. Veuillez patienter une minute avant de réessayer.",
   },
   "zh-Hans": {
     nextButton: "下一步",
@@ -223,6 +328,17 @@ export const conversationReviewTranslations: Record<
       "未找到带有已配置标签的 issue。创建 issue 或在 GitHub 上添加标签后，项目将同步。",
     githubPreviewError: "无法从 GitHub 加载 issue",
     githubPreviewRetry: "重试",
+    aiSuggestionsButton: "AI 建议",
+    aiSuggestionsGenerating: "正在生成",
+    aiSuggestionsGenerateMore: "生成更多",
+    aiSuggestionsNote: "根据您的标题和描述生成。不包含链接和文档的内容。",
+    aiSuggestionsNotClear: "您的标题和描述还不够清晰，暂时无法生成 AI 建议。",
+    aiSuggestionAdd: "添加",
+    aiSuggestionDiscard: "放弃",
+    aiSuggestionsEditConversation: "编辑对话",
+    aiSuggestionsFailed: "无法生成建议。您可以自行添加意见，或重试。",
+    aiSuggestionsNotAvailable: "此账户无法使用 AI 建议。",
+    aiSuggestionsRateLimited: "请求过多。请等待一分钟后重试。",
   },
   "zh-Hant": {
     nextButton: "下一步",
@@ -249,6 +365,17 @@ export const conversationReviewTranslations: Record<
       "未找到帶有已設定標籤的 issue。建立 issue 或在 GitHub 上新增標籤後，項目會同步。",
     githubPreviewError: "無法從 GitHub 載入 issue",
     githubPreviewRetry: "重試",
+    aiSuggestionsButton: "AI 建議",
+    aiSuggestionsGenerating: "正在生成",
+    aiSuggestionsGenerateMore: "生成更多",
+    aiSuggestionsNote: "根據您的標題和描述生成。不包含連結和文件的內容。",
+    aiSuggestionsNotClear: "您的標題和描述還不夠清楚，暫時無法產生 AI 建議。",
+    aiSuggestionAdd: "添加",
+    aiSuggestionDiscard: "放棄",
+    aiSuggestionsEditConversation: "編輯對話",
+    aiSuggestionsFailed: "無法生成建議。您可以自行添加意見，或重試。",
+    aiSuggestionsNotAvailable: "此帳戶無法使用 AI 建議。",
+    aiSuggestionsRateLimited: "請求過多。請等待一分鐘後重試。",
   },
   ja: {
     nextButton: "次へ",
@@ -277,6 +404,21 @@ export const conversationReviewTranslations: Record<
       "設定されたラベルの Issue は見つかりませんでした。Issue が作成されるか GitHub でラベル付けされると項目が同期されます。",
     githubPreviewError: "GitHub Issues を読み込めませんでした",
     githubPreviewRetry: "再試行",
+    aiSuggestionsButton: "AI の提案",
+    aiSuggestionsGenerating: "生成中",
+    aiSuggestionsGenerateMore: "さらに生成",
+    aiSuggestionsNote:
+      "タイトルと説明をもとに作成しています。リンクやドキュメントの内容は反映されません。",
+    aiSuggestionsNotClear:
+      "タイトルと説明がまだ十分に明確ではないため、AI による提案を作成できません。",
+    aiSuggestionAdd: "追加",
+    aiSuggestionDiscard: "破棄",
+    aiSuggestionsEditConversation: "会話を編集",
+    aiSuggestionsFailed:
+      "提案を生成できませんでした。ご自身で意見を追加するか、もう一度お試しください。",
+    aiSuggestionsNotAvailable: "このアカウントでは AI の提案を利用できません。",
+    aiSuggestionsRateLimited:
+      "リクエストが多すぎます。1 分ほど待ってからもう一度お試しください。",
   },
   ky: {
     nextButton: "Кийинки",
@@ -305,6 +447,21 @@ export const conversationReviewTranslations: Record<
       "Көрсөтүлгөн энбелги менен маселелер табылган жок. Маселелер GitHub'да түзүлгөндө же энбелги коюлганда элементтер синхрондолот.",
     githubPreviewError: "GitHub маселелерин жүктөө ишке ашкан жок",
     githubPreviewRetry: "Кайра аракет кылуу",
+    aiSuggestionsButton: "AI сунуштары",
+    aiSuggestionsGenerating: "Түзүлүүдө",
+    aiSuggestionsGenerateMore: "Дагы түзүү",
+    aiSuggestionsNote:
+      "Аталышыңыз менен сүрөттөмөңүздүн негизинде түзүлдү. Шилтемелер менен документтер эске алынбайт.",
+    aiSuggestionsNotClear:
+      "Аталышыңыз жана сүрөттөмөңүз AI сунуштары үчүн азырынча жетиштүү түшүнүктүү эмес.",
+    aiSuggestionAdd: "Кошуу",
+    aiSuggestionDiscard: "Четке кагуу",
+    aiSuggestionsEditConversation: "Талкууну түзөтүү",
+    aiSuggestionsFailed:
+      "Сунуштарды түзүү мүмкүн болгон жок. Пикирлерди өзүңүз кошсоңуз же кайра аракет кылсаңыз болот.",
+    aiSuggestionsNotAvailable: "AI сунуштары бул аккаунт үчүн жеткиликсиз.",
+    aiSuggestionsRateLimited:
+      "Сурамдар өтө көп. Кайра аракет кылуудан мурун бир мүнөт күтүңүз.",
   },
   ru: {
     nextButton: "Далее",
@@ -334,5 +491,20 @@ export const conversationReviewTranslations: Record<
       "Задачи с настроенной меткой не найдены. Элементы будут синхронизированы, когда задачи будут созданы или помечены в GitHub.",
     githubPreviewError: "Не удалось загрузить задачи из GitHub",
     githubPreviewRetry: "Повторить",
+    aiSuggestionsButton: "Предложения ИИ",
+    aiSuggestionsGenerating: "Генерация",
+    aiSuggestionsGenerateMore: "Сгенерировать ещё",
+    aiSuggestionsNote:
+      "Составлено по вашему заголовку и описанию. Ссылки и документы не учитываются.",
+    aiSuggestionsNotClear:
+      "Название и описание пока недостаточно понятны для предложений ИИ.",
+    aiSuggestionAdd: "Добавить",
+    aiSuggestionDiscard: "Отклонить",
+    aiSuggestionsEditConversation: "Изменить обсуждение",
+    aiSuggestionsFailed:
+      "Не удалось сгенерировать предложения. Вы можете добавить высказывания сами или попробовать ещё раз.",
+    aiSuggestionsNotAvailable: "Предложения ИИ недоступны для этого аккаунта.",
+    aiSuggestionsRateLimited:
+      "Слишком много запросов. Подождите минуту и попробуйте снова.",
   },
 };

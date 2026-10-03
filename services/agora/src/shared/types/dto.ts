@@ -108,6 +108,7 @@ import {
     MAX_LENGTH_CONVERSATION_EMAIL_UPDATE,
     MAX_LENGTH_DESCRIPTION_CREATOR,
     MAX_LENGTH_NAME_CREATOR,
+    MAX_LENGTH_OPINION,
     MAX_LENGTH_TITLE,
     countUnicodeCodePoints,
     countUtf8Bytes,
@@ -1141,6 +1142,12 @@ const zodConversationEmailUpdateActionMutationResponse = z.discriminatedUnion(
     ],
 );
 
+// AI seed suggestions (services/api/src/service/seedSuggestion.ts)
+export const SEED_SUGGESTION_TARGET_COUNT = 3;
+export const MAX_LENGTH_SEED_SUGGESTION_TIP = 1000;
+const MAX_SEED_SUGGESTION_EXISTING_STATEMENTS = 100;
+const MAX_LENGTH_SEED_SUGGESTION_EXISTING_STATEMENT = 1000;
+
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Dto {
     static fetchFeedRequest = z
@@ -1434,6 +1441,64 @@ export class Dto {
                 .strict(),
         ],
     );
+    static generateSeedSuggestionsRequest = z
+        .object({
+            // Random identifier of the conversation draft, renewed for each new draft.
+            // Only written to the usage log, to count the drafts that used suggestions.
+            draftId: z.uuid(),
+            conversationTitle: zodConversationTitle,
+            conversationBody: zodConversationBodyInput,
+            conversationType: zodConversationType,
+            postAsOrganization: z.preprocess(
+                (val) => (val === "" || val === undefined ? undefined : val),
+                zodOrganizationSlug.optional(),
+            ),
+            // Plain text of every statement already on the page, the author's and
+            // earlier suggestions alike, so that new suggestions do not repeat them.
+            existingStatements: z
+                .array(
+                    z.string().max(MAX_LENGTH_SEED_SUGGESTION_EXISTING_STATEMENT),
+                )
+                .max(MAX_SEED_SUGGESTION_EXISTING_STATEMENTS),
+        })
+        .strict();
+    // Suggestions are only returned when the model is confident it has enough
+    // information; otherwise the author gets a tip to improve the conversation.
+    static generateSeedSuggestionsResponse = z.discriminatedUnion("confident", [
+        z
+            .object({
+                generationId: z.uuid(),
+                confident: z.literal(true),
+                suggestions: z
+                    .array(
+                        z
+                            .object({
+                                suggestionId: z.uuid(),
+                                text: z.string().min(1).max(MAX_LENGTH_OPINION),
+                            })
+                            .strict(),
+                    )
+                    .min(1)
+                    .max(SEED_SUGGESTION_TARGET_COUNT),
+            })
+            .strict(),
+        z
+            .object({
+                generationId: z.uuid(),
+                confident: z.literal(false),
+                tip: z.string().min(1).max(MAX_LENGTH_SEED_SUGGESTION_TIP),
+            })
+            .strict(),
+    ]);
+    // Sent when the author adds a suggestion to the statements. A suggestion never
+    // reported was discarded or ignored.
+    static recordSeedSuggestionUseRequest = z
+        .object({
+            draftId: z.uuid(),
+            generationId: z.uuid(),
+            suggestionId: z.uuid(),
+        })
+        .strict();
     static createNewConversationResponse = z.discriminatedUnion("success", [
         z
             .object({
@@ -4276,6 +4341,15 @@ export type CreateNewConversationRequest = z.infer<
 >;
 export type CreateNewConversationResponse = z.infer<
     typeof Dto.createNewConversationResponse
+>;
+export type GenerateSeedSuggestionsRequest = z.infer<
+    typeof Dto.generateSeedSuggestionsRequest
+>;
+export type GenerateSeedSuggestionsResponse = z.infer<
+    typeof Dto.generateSeedSuggestionsResponse
+>;
+export type RecordSeedSuggestionUseRequest = z.infer<
+    typeof Dto.recordSeedSuggestionUseRequest
 >;
 export type ImportConversationRequest = z.infer<
     typeof Dto.importConversationRequest
