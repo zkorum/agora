@@ -99,6 +99,7 @@ const zodConversationDraftBase = z.object({
   inheritProjectLanguages: z.boolean().default(false),
   conversationEmailUpdateEnabledOverride: z.boolean().optional(),
   seedOpinions: z.array(z.string()),
+  aiSuggestionDraftId: z.uuid().default(() => crypto.randomUUID()),
 
   // Publishing options
   postAs: zodPostAsSettings,

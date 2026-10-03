@@ -6185,6 +6185,46 @@ export const ApiV1ConversationOpenPost200ResponseOneOfReasonEnum = {
 export type ApiV1ConversationOpenPost200ResponseOneOfReasonEnum = typeof ApiV1ConversationOpenPost200ResponseOneOfReasonEnum[keyof typeof ApiV1ConversationOpenPost200ResponseOneOfReasonEnum];
 
 /**
+ * @type ApiV1ConversationSeedGeneratePost200Response
+ */
+export type ApiV1ConversationSeedGeneratePost200Response = ApiV1ConversationSeedGeneratePost200ResponseOneOf | ApiV1ConversationSeedGeneratePost200ResponseOneOf1;
+
+export interface ApiV1ConversationSeedGeneratePost200ResponseOneOf {
+    'generationId': string;
+    'confident': boolean;
+    'suggestions': Array<ApiV1ConversationSeedGeneratePost200ResponseOneOfSuggestionsInner>;
+}
+export interface ApiV1ConversationSeedGeneratePost200ResponseOneOf1 {
+    'generationId': string;
+    'confident': boolean;
+    'tip': string;
+}
+export interface ApiV1ConversationSeedGeneratePost200ResponseOneOfSuggestionsInner {
+    'suggestionId': string;
+    'text': string;
+}
+export interface ApiV1ConversationSeedGeneratePostRequest {
+    'draftId': string;
+    'conversationTitle': string;
+    'conversationBody'?: string;
+    'conversationType': ApiV1ConversationSeedGeneratePostRequestConversationTypeEnum;
+    'postAsOrganization': string;
+    'existingStatements': Array<string>;
+}
+
+export const ApiV1ConversationSeedGeneratePostRequestConversationTypeEnum = {
+    Polis: 'polis',
+    Ranking: 'ranking',
+} as const;
+
+export type ApiV1ConversationSeedGeneratePostRequestConversationTypeEnum = typeof ApiV1ConversationSeedGeneratePostRequestConversationTypeEnum[keyof typeof ApiV1ConversationSeedGeneratePostRequestConversationTypeEnum];
+
+export interface ApiV1ConversationSeedSuggestionUsePostRequest {
+    'draftId': string;
+    'generationId': string;
+    'suggestionId': string;
+}
+/**
  * @type ApiV1ConversationUpdatePost200Response
  */
 export type ApiV1ConversationUpdatePost200Response = ApiV1ConversationEmailUpdateActionUnsubscribePost200ResponseOneOf | ApiV1ConversationUpdatePost200ResponseOneOf;
@@ -12368,6 +12408,81 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @param {ApiV1ConversationSeedGeneratePostRequest} apiV1ConversationSeedGeneratePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationSeedGeneratePost: async (apiV1ConversationSeedGeneratePostRequest: ApiV1ConversationSeedGeneratePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ConversationSeedGeneratePostRequest' is not null or undefined
+            assertParamExists('apiV1ConversationSeedGeneratePost', 'apiV1ConversationSeedGeneratePostRequest', apiV1ConversationSeedGeneratePostRequest)
+            const localVarPath = `/api/v1/conversation/seed/generate`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ConversationSeedGeneratePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1ConversationSeedSuggestionUsePostRequest} apiV1ConversationSeedSuggestionUsePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationSeedSuggestionUsePost: async (apiV1ConversationSeedSuggestionUsePostRequest: ApiV1ConversationSeedSuggestionUsePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ConversationSeedSuggestionUsePostRequest' is not null or undefined
+            assertParamExists('apiV1ConversationSeedSuggestionUsePost', 'apiV1ConversationSeedSuggestionUsePostRequest', apiV1ConversationSeedSuggestionUsePostRequest)
+            const localVarPath = `/api/v1/conversation/seed/suggestion/use`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ConversationSeedSuggestionUsePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {ApiV1ConversationUpdatePostRequest} apiV1ConversationUpdatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -15890,6 +16005,30 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {ApiV1ConversationSeedGeneratePostRequest} apiV1ConversationSeedGeneratePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ConversationSeedGeneratePost(apiV1ConversationSeedGeneratePostRequest: ApiV1ConversationSeedGeneratePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationSeedGeneratePost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationSeedGeneratePost(apiV1ConversationSeedGeneratePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationSeedGeneratePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1ConversationSeedSuggestionUsePostRequest} apiV1ConversationSeedSuggestionUsePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ConversationSeedSuggestionUsePost(apiV1ConversationSeedSuggestionUsePostRequest: ApiV1ConversationSeedSuggestionUsePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationSeedSuggestionUsePost(apiV1ConversationSeedSuggestionUsePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationSeedSuggestionUsePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {ApiV1ConversationUpdatePostRequest} apiV1ConversationUpdatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -17449,6 +17588,24 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @param {ApiV1ConversationSeedGeneratePostRequest} apiV1ConversationSeedGeneratePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationSeedGeneratePost(apiV1ConversationSeedGeneratePostRequest: ApiV1ConversationSeedGeneratePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationSeedGeneratePost200Response> {
+            return localVarFp.apiV1ConversationSeedGeneratePost(apiV1ConversationSeedGeneratePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1ConversationSeedSuggestionUsePostRequest} apiV1ConversationSeedSuggestionUsePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationSeedSuggestionUsePost(apiV1ConversationSeedSuggestionUsePostRequest: ApiV1ConversationSeedSuggestionUsePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.apiV1ConversationSeedSuggestionUsePost(apiV1ConversationSeedSuggestionUsePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @param {ApiV1ConversationUpdatePostRequest} apiV1ConversationUpdatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -18882,6 +19039,26 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1ConversationOpenPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1ConversationOpenPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1ConversationSeedGeneratePostRequest} apiV1ConversationSeedGeneratePostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1ConversationSeedGeneratePost(apiV1ConversationSeedGeneratePostRequest: ApiV1ConversationSeedGeneratePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationSeedGeneratePost(apiV1ConversationSeedGeneratePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1ConversationSeedSuggestionUsePostRequest} apiV1ConversationSeedSuggestionUsePostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1ConversationSeedSuggestionUsePost(apiV1ConversationSeedSuggestionUsePostRequest: ApiV1ConversationSeedSuggestionUsePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationSeedSuggestionUsePost(apiV1ConversationSeedSuggestionUsePostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

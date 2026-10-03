@@ -18205,6 +18205,192 @@
                 }
             }
         },
+        "/api/v1/conversation/seed/generate": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "draftId": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                    },
+                                    "conversationTitle": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 140
+                                    },
+                                    "conversationBody": {
+                                        "type": "string"
+                                    },
+                                    "conversationType": {
+                                        "type": "string",
+                                        "enum": [
+                                            "polis",
+                                            "ranking"
+                                        ]
+                                    },
+                                    "postAsOrganization": {
+                                        "type": "string",
+                                        "maxLength": 65,
+                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                    },
+                                    "existingStatements": {
+                                        "maxItems": 100,
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "maxLength": 1000
+                                        }
+                                    }
+                                },
+                                "required": [
+                                    "draftId",
+                                    "conversationTitle",
+                                    "conversationType",
+                                    "postAsOrganization",
+                                    "existingStatements"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "generationId": {
+                                                    "type": "string",
+                                                    "format": "uuid",
+                                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                },
+                                                "confident": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
+                                                "suggestions": {
+                                                    "minItems": 1,
+                                                    "maxItems": 3,
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "suggestionId": {
+                                                                "type": "string",
+                                                                "format": "uuid",
+                                                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                            },
+                                                            "text": {
+                                                                "type": "string",
+                                                                "minLength": 1,
+                                                                "maxLength": 280
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "suggestionId",
+                                                            "text"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "generationId",
+                                                "confident",
+                                                "suggestions"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "generationId": {
+                                                    "type": "string",
+                                                    "format": "uuid",
+                                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                },
+                                                "confident": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "tip": {
+                                                    "type": "string",
+                                                    "minLength": 1,
+                                                    "maxLength": 1000
+                                                }
+                                            },
+                                            "required": [
+                                                "generationId",
+                                                "confident",
+                                                "tip"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/conversation/seed/suggestion/use": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "draftId": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                    },
+                                    "generationId": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                    },
+                                    "suggestionId": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                    }
+                                },
+                                "required": [
+                                    "draftId",
+                                    "generationId",
+                                    "suggestionId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
+        },
         "/api/v1/conversation/import": {
             "post": {
                 "requestBody": {

@@ -109,6 +109,7 @@ export function createEmptyDraft(): ConversationDraft {
     inheritProjectLanguages: false,
     conversationEmailUpdateEnabledOverride: undefined,
     seedOpinions: [],
+    aiSuggestionDraftId: crypto.randomUUID(),
 
     // Conversation Type
     conversationType: "polis",

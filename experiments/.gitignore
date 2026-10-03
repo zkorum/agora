@@ -1,0 +1,12 @@
+.venv/
+mlruns/
+mlflow.db
+mlflow-server.log
+**/data/raw/*
+**/data/processed/*
+!**/data/raw/.gitkeep
+!**/data/processed/.gitkeep
+**/runs/*
+!**/runs/.gitkeep
+**/exports/*
+!**/exports/.gitkeep

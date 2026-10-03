@@ -7,6 +7,7 @@ import {
     phoneAuthModeSchema,
 } from "./shared/types/phone-auth.js";
 import { sharedConfigSchema } from "./shared-backend/config.js";
+import { seedSuggestionSourceNames } from "./service/seedSuggestionSourceName.js";
 
 export type Environment = "development" | "production" | "staging" | "test";
 
@@ -194,6 +195,27 @@ const baseConfigSchema = sharedConfigSchema.extend({
         }),
     IMPORT_ALLOWED_ORGS: z.string().default(""), // Comma-separated org names allowed to import conversations when posting as org (empty = all orgs allowed)
     IMPORT_ALLOWED_USERS: z.string().default(""), // Comma-separated user IDs allowed to import conversations when posting as user (empty = all users allowed)
+    // AI seed suggestions on the "Add Seed Statements" page. Off by default.
+    AI_SUGGESTIONS_ENABLED: environmentBoolean(false),
+    IS_AI_SUGGESTIONS_ORG_ONLY: environmentBoolean(false), // If true, only authors posting as an organization can use AI suggestions
+    AI_SUGGESTIONS_ALLOWED_ORGS: z.string().default(""), // Comma-separated org names allowed to use AI suggestions when posting as org (empty = all orgs allowed)
+    AI_SUGGESTIONS_ALLOWED_USERS: z.string().default(""), // Comma-separated user IDs allowed to use AI suggestions when posting as user (empty = all users allowed)
+    // Where suggestions come from: "bedrock" (the real model, with the AWS credentials
+    // of the process) or "simulated" (canned answers with no model call, for tests).
+    AI_SUGGESTIONS_SOURCE: z.enum(seedSuggestionSourceNames).default("bedrock"),
+    AI_SUGGESTIONS_BEDROCK_REGION: z.string().default("us-east-1"),
+    AI_SUGGESTIONS_BEDROCK_MODEL_ID: z
+        .string()
+        .default("mistral.mistral-large-3-675b-instruct"),
+    // 0.3 is Mistral Large's own default, which the prompt was tested with.
+    AI_SUGGESTIONS_TEMPERATURE: z.coerce.number().min(0).max(1.5).default(0.3),
+    AI_SUGGESTIONS_TIMEOUT_MS: z.coerce
+        .number()
+        .int()
+        .min(1000)
+        .max(120_000)
+        .default(30_000),
+    AI_SUGGESTIONS_PROMPT: z.string().min(1).optional(), // Overrides the system prompt (service/seedSuggestionPrompt.ts)
     // CSV Import buffer configuration
     IMPORT_BUFFER_MAX_BATCH_SIZE: z.coerce
         .number()
@@ -268,6 +290,18 @@ const configSchema = baseConfigSchema.superRefine((value, ctx) => {
             path: ["TEST_CODE"],
             message:
                 "TEST_CODE, SPECIALLY_AUTHORIZED_PHONES, and SPECIALLY_AUTHORIZED_EMAILS must not enable test authentication in production",
+        });
+    }
+
+    if (
+        value.NODE_ENV === "production" &&
+        value.AI_SUGGESTIONS_SOURCE !== "bedrock"
+    ) {
+        ctx.addIssue({
+            code: "custom",
+            path: ["AI_SUGGESTIONS_SOURCE"],
+            message:
+                "AI_SUGGESTIONS_SOURCE must be bedrock in production: simulated is for development and tests",
         });
     }
 

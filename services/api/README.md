@@ -84,6 +84,17 @@ Production tokens must be GitHub fine-grained personal access tokens with these 
 
 Connector usage is additionally gated by `IS_MAXDIFF_GITHUB_ORG_ONLY`, `MAXDIFF_GITHUB_ALLOWED_ORGS`, and `MAXDIFF_GITHUB_ALLOWED_USERS`; these control which Agora users or organizations may use the connector, not which GitHub repositories the token can access.
 
+### AI Suggestions for Seed Statements
+
+On the Add Seed Statements page, authors can ask a model for statements drawn from the conversation's title and description (`POST /api/v1/conversation/seed/generate`). The request also carries the statements already on the page, both those the author wrote and the suggestions shown before, so that new suggestions differ from them; suggestions repeating one of them are dropped. A description over the limits that apply when publishing (5,000 characters) is refused before any model call. Code: `src/service/seedSuggestion*.ts`. How the prompt was chosen and evaluated: `experiments/initiatives/seed-opinions/seed-opinions-description.md`.
+
+- **Model**: Mistral Large 3 on AWS Bedrock (Converse API). In production the API's AWS role needs `bedrock:InvokeModel` on that model only (`AI_SUGGESTIONS_BEDROCK_MODEL_ID` in `AI_SUGGESTIONS_BEDROCK_REGION`, default `us-east-1`), not on all of Bedrock. Locally, normal AWS credentials or a Bedrock API key in `AWS_BEARER_TOKEN_BEDROCK` work; never commit a key.
+- **Source**: `AI_SUGGESTIONS_SOURCE=bedrock`, or `simulated` for canned answers with no model call. Production refuses `simulated`. With `simulated`, the keywords `simulate:not-confident`, `simulate:failure` and `simulate:slow` in the conversation title select the other cases.
+- **Access**: `AI_SUGGESTIONS_ENABLED` (off by default), `IS_AI_SUGGESTIONS_ORG_ONLY`, `AI_SUGGESTIONS_ALLOWED_ORGS` and `AI_SUGGESTIONS_ALLOWED_USERS`, checked with `checkFeatureAccess`. The frontend's `VITE_AI_SUGGESTIONS_ENABLED` only shows the button; keep both in step.
+- **Tuning**: `AI_SUGGESTIONS_TEMPERATURE` (0.3), `AI_SUGGESTIONS_TIMEOUT_MS` (30000) and `AI_SUGGESTIONS_PROMPT` (replaces the built-in system prompt). Generations are limited to 5 per minute per user, counted per API instance. A Bedrock call with no answer after 12 seconds is tried once more, within the overall timeout (about 1 call in 20 got no answer in testing).
+- **Usage**: each generation and each suggestion added writes a log line starting with `AGORA_AI_SUGGESTION_EVENT`, followed by JSON with identifiers, a random draft identifier, source, model, duration and confidence. No title, description or suggestion text is logged. Locally: `grep AGORA_AI_SUGGESTION_EVENT .local/logs/latest/api.log`.
+- **Switching off**: set `AI_SUGGESTIONS_ENABLED=false` (and `VITE_AI_SUGGESTIONS_ENABLED=false` to hide the button).
+
 ### LLM Integration
 
 LLM Integration cannot be tested locally by design, since it relies on an external cloud service and running a model locally is expensive.

@@ -66,6 +66,8 @@ export interface ConversationDraftBase {
   conversationEmailUpdateEnabledOverride?: boolean;
   /** Initial opinion responses to seed the conversation */
   seedOpinions: string[];
+  /** Random identifier renewed for each new draft; only sent with AI suggestion requests, for usage counts. */
+  aiSuggestionDraftId: string;
 
   // Conversation Type
   /** The broad conversation family. Ranking subtypes are represented by rankingMode. */

@@ -49,6 +49,9 @@ export const envSchema = z.object({
   VITE_MAXDIFF_GITHUB_ALLOWED_USERS: z.string().optional(), // Comma-separated user IDs allowed to use GitHub connector when posting as user
   VITE_IMPORT_ALLOWED_ORGS: z.string().optional(), // Comma-separated org names allowed to import conversations when posting as org (empty = all orgs allowed)
   VITE_IMPORT_ALLOWED_USERS: z.string().optional(), // Comma-separated user IDs allowed to import conversations when posting as user (empty = all users allowed)
+  // Shows the "AI Suggestions" button on the "Add Seed Statements" page. Off unless "true".
+  // Who may actually use it (organizations, users) is decided by the API alone.
+  VITE_AI_SUGGESTIONS_ENABLED: z.enum(["true", "false"]).optional(),
 });
 
 export type ProcessEnv = z.infer<typeof envSchema>;
@@ -149,4 +152,5 @@ export const processEnv = {
     process.env.VITE_MAXDIFF_GITHUB_ALLOWED_USERS,
   VITE_IMPORT_ALLOWED_ORGS: process.env.VITE_IMPORT_ALLOWED_ORGS,
   VITE_IMPORT_ALLOWED_USERS: process.env.VITE_IMPORT_ALLOWED_USERS,
+  VITE_AI_SUGGESTIONS_ENABLED: process.env.VITE_AI_SUGGESTIONS_ENABLED,
 } satisfies ProcessEnv;
