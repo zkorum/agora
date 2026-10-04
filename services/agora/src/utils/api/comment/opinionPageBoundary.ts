@@ -1,4 +1,10 @@
-import { Dto, type FetchOpinionPageResponse } from "src/shared/types/dto";
+import {
+  Dto,
+  type FetchOpinionPageResponse,
+  zodCreatedOpinionPageCursor,
+  zodDiscoverOpinionPageCursor,
+  zodVotedOpinionPageCursor,
+} from "src/shared/types/dto";
 import type { z } from "zod";
 
 export type OpinionPageRequest =
@@ -7,6 +13,16 @@ export type OpinionPageRequest =
 export type OpinionPageResult = FetchOpinionPageResponse & {
   nextRequest: OpinionPageRequest | undefined;
 };
+
+const createdPageResponse = Dto.fetchOpinionPageResponse.extend({
+  nextCursor: zodCreatedOpinionPageCursor.nullable(),
+});
+const discoverPageResponse = Dto.fetchOpinionPageResponse.extend({
+  nextCursor: zodDiscoverOpinionPageCursor.nullable(),
+});
+const votedPageResponse = Dto.fetchOpinionPageResponse.extend({
+  nextCursor: zodVotedOpinionPageCursor.nullable(),
+});
 
 export function initialOpinionPageRequest({
   conversationSlugId,
@@ -38,9 +54,7 @@ export function parseOpinionPageResponse({
   // The cursor is external input, and its variant must match the request filter.
   switch (request.filter) {
     case "hidden": {
-      const response = Dto.fetchOpinionPageResponse
-        .extend({ nextCursor: Dto.fetchHiddenOpinionPageRequest.shape.cursor })
-        .parse(rawResponse);
+      const response = createdPageResponse.parse(rawResponse);
       return {
         ...response,
         nextRequest:
@@ -54,11 +68,7 @@ export function parseOpinionPageResponse({
       };
     }
     case "discover": {
-      const response = Dto.fetchOpinionPageResponse
-        .extend({
-          nextCursor: Dto.fetchOpinionPageRequest.options[0].shape.cursor,
-        })
-        .parse(rawResponse);
+      const response = discoverPageResponse.parse(rawResponse);
       return {
         ...response,
         nextRequest:
@@ -72,11 +82,7 @@ export function parseOpinionPageResponse({
       };
     }
     case "my_votes": {
-      const response = Dto.fetchOpinionPageResponse
-        .extend({
-          nextCursor: Dto.fetchOpinionPageRequest.options[1].shape.cursor,
-        })
-        .parse(rawResponse);
+      const response = votedPageResponse.parse(rawResponse);
       return {
         ...response,
         nextRequest:
@@ -91,11 +97,7 @@ export function parseOpinionPageResponse({
     }
     case "new":
     case "moderated": {
-      const response = Dto.fetchOpinionPageResponse
-        .extend({
-          nextCursor: Dto.fetchOpinionPageRequest.options[2].shape.cursor,
-        })
-        .parse(rawResponse);
+      const response = createdPageResponse.parse(rawResponse);
       return {
         ...response,
         nextRequest:

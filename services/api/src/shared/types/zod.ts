@@ -70,22 +70,21 @@ export const zodParticipationMode = z.enum([
 export const zodConversationType = z.enum(["polis", "ranking"]);
 export const zodPolisVotingPresentation = z.enum(["list", "one_at_a_time"]);
 export const zodRankingMode = z.enum(["bws"]);
+export const zodPolisConversationTypeConfig = z
+    .object({
+        conversationType: z.literal("polis"),
+        votingPresentation: zodPolisVotingPresentation,
+    })
+    .strict();
+export const zodRankingConversationTypeConfig = z
+    .object({
+        conversationType: z.literal("ranking"),
+        rankingMode: zodRankingMode,
+    })
+    .strict();
 export const zodConversationTypeConfig = z.discriminatedUnion(
     "conversationType",
-    [
-        z
-            .object({
-                conversationType: z.literal("polis"),
-                votingPresentation: zodPolisVotingPresentation,
-            })
-            .strict(),
-        z
-            .object({
-                conversationType: z.literal("ranking"),
-                rankingMode: zodRankingMode,
-            })
-            .strict(),
-    ],
+    [zodPolisConversationTypeConfig, zodRankingConversationTypeConfig],
 );
 export const zodProjectOrganizationAttributionRole = z.enum(
     projectOrganizationAttributionRoleValues,

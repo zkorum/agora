@@ -17,18 +17,20 @@ import type {
   ParticipationMode,
   PolisVotingPresentation,
   PreferredOpinionGroupCount,
-  RankingMode,
   SurveyConfig,
 } from "src/shared/types/zod";
 import { projectConversationTypeConfig } from "src/shared/utils/conversationTypeConfig";
 import { isValidPolisUrl } from "src/shared/utils/polis";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
-import { areSurveyConfigsEqual } from "src/utils/survey/config";
+import {
+  areSurveyConfigsEqual,
+  cloneSurveyConfig,
+} from "src/utils/survey/config";
 import {
   areConversationMultilingualSettingsEqual,
   cloneConversationMultilingualSetting,
 } from "src/utils/translation/conversationMultilingualSetting";
-import { computed, type ComputedRef, type Ref, ref, watch } from "vue";
+import { computed, type ComputedRef, type Ref, ref, toRaw, watch } from "vue";
 
 import {
   zodPolisUrlValidation,
@@ -63,7 +65,6 @@ export interface UseConversationDraftReturn {
   conversationTypeConfig: Ref<Readonly<ConversationTypeConfig>>;
   conversationType: ComputedRef<ConversationType>;
   votingPresentation: ComputedRef<PolisVotingPresentation>;
-  rankingMode: ComputedRef<RankingMode | undefined>;
   isPrivate: Ref<boolean>;
   participationMode: Ref<ParticipationMode>;
   requiresEventTicket: Ref<EventSlug | undefined>;
@@ -140,9 +141,15 @@ export function useConversationDraft(
     initialDraft.conversationEmailUpdateEnabledOverride
   );
   const seedOpinions = ref<string[]>([...initialDraft.seedOpinions]);
-  const conversationTypeConfig = ref<Readonly<ConversationTypeConfig>>(
+  const ownedConversationTypeConfig = ref<Readonly<ConversationTypeConfig>>(
     projectConversationTypeConfig(initialDraft)
   );
+  const conversationTypeConfig = computed({
+    get: () => ownedConversationTypeConfig.value,
+    set: (value: Readonly<ConversationTypeConfig>) => {
+      ownedConversationTypeConfig.value = projectConversationTypeConfig(value);
+    },
+  });
   const conversationType = computed(
     () => conversationTypeConfig.value.conversationType
   );
@@ -150,11 +157,6 @@ export function useConversationDraft(
     conversationTypeConfig.value.conversationType === "polis"
       ? conversationTypeConfig.value.votingPresentation
       : "list"
-  );
-  const rankingMode = computed(() =>
-    conversationTypeConfig.value.conversationType === "ranking"
-      ? conversationTypeConfig.value.rankingMode
-      : undefined
   );
   const isPrivate = ref(initialDraft.isPrivate);
   const participationMode = ref<ParticipationMode>(
@@ -320,9 +322,9 @@ export function useConversationDraft(
   }
 
   function clearAllValidationErrors(): void {
-    Object.keys(validationState.value).forEach((field) => {
-      clearValidationError(field as keyof ValidationState);
-    });
+    clearValidationError("title");
+    clearValidationError("body");
+    clearValidationError("polisUrl");
   }
 
   function validateForReview(): ValidationResult {
@@ -504,10 +506,7 @@ export function useConversationDraft(
     conversationEmailUpdateEnabledOverride.value =
       emptyDraft.conversationEmailUpdateEnabledOverride;
     seedOpinions.value = [];
-    conversationTypeConfig.value = {
-      conversationType: "polis",
-      votingPresentation: "list",
-    };
+    conversationTypeConfig.value = projectConversationTypeConfig(emptyDraft);
     isPrivate.value = emptyDraft.isPrivate;
     participationMode.value = emptyDraft.participationMode;
     requiresEventTicket.value = emptyDraft.requiresEventTicket;
@@ -541,8 +540,10 @@ export function useConversationDraft(
     requiresEventTicket.value = data.requiresEventTicket;
     aiLabelingEnabled.value = data.aiLabelingEnabled;
     preferredOpinionGroupCount.value = data.preferredOpinionGroupCount;
-    conversationTypeConfig.value = projectConversationTypeConfig(data.conversationTypeConfig);
-    surveyConfig.value = data.surveyConfig;
+    conversationTypeConfig.value = data.conversationTypeConfig;
+    surveyConfig.value = cloneSurveyConfig({
+      surveyConfig: toRaw(data.surveyConfig),
+    });
 
     clearAllValidationErrors();
   }
@@ -554,7 +555,9 @@ export function useConversationDraft(
     return {
       title: title.value,
       content: content.value,
-      multilingualSetting: multilingualSetting.value,
+      multilingualSetting: cloneConversationMultilingualSetting(
+        multilingualSetting.value
+      ),
       selectedProjectSlug: selectedProjectSlug.value,
       inheritProjectLanguages: inheritProjectLanguages.value,
       isPrivate: isPrivate.value,
@@ -562,8 +565,12 @@ export function useConversationDraft(
       requiresEventTicket: requiresEventTicket.value,
       aiLabelingEnabled: aiLabelingEnabled.value,
       preferredOpinionGroupCount: preferredOpinionGroupCount.value,
-      surveyConfig: surveyConfig.value,
-      conversationTypeConfig: projectConversationTypeConfig(conversationTypeConfig.value),
+      surveyConfig: cloneSurveyConfig({
+        surveyConfig: toRaw(surveyConfig.value),
+      }),
+      conversationTypeConfig: projectConversationTypeConfig(
+        conversationTypeConfig.value
+      ),
     };
   }
 
@@ -597,7 +604,6 @@ export function useConversationDraft(
     conversationTypeConfig,
     conversationType,
     votingPresentation,
-    rankingMode,
     isPrivate,
     participationMode,
     requiresEventTicket,

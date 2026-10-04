@@ -36,7 +36,12 @@ export function classifyApiError(error: unknown): ApiErrorResponse {
   return {
     status: "error",
     kind: error instanceof ZodError ? "contract" : "unexpected",
-    message: error instanceof Error ? error.message : String(error),
+    message:
+      error instanceof Error
+        ? error.message
+        : typeof error === "string"
+          ? error
+          : "Unexpected error",
     name: error instanceof Error ? error.name : "UnknownError",
     code: undefined,
   };

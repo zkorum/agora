@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { eq, sql } from "drizzle-orm";
 import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { GenericContainer, type StartedTestContainer } from "testcontainers";
@@ -65,6 +66,15 @@ describe("notification persistence invariants", () => {
                 "utf8",
             ),
         );
+        await client.unsafe(
+            readFileSync(
+                new URL(
+                    "../database/flyway/V0096.2__avoid_redundant_notification_integrity_checks.sql",
+                    import.meta.url,
+                ),
+                "utf8",
+            ),
+        );
     }, 120_000);
 
     afterAll(async () => {
@@ -84,13 +94,11 @@ describe("notification persistence invariants", () => {
 
     it("rejects incomplete and wrong-variant notifications at commit", async () => {
         await expect(
-            db
-                .insert(notificationTable)
-                .values({
-                    userId,
-                    slugId: "missing",
-                    notificationType: "import_started",
-                }),
+            db.insert(notificationTable).values({
+                userId,
+                slugId: "missing",
+                notificationType: "import_started",
+            }),
         ).rejects.toThrow();
         await expect(
             db.transaction(async (tx) => {
@@ -124,14 +132,12 @@ describe("notification persistence invariants", () => {
                 .insert(notificationImportTable)
                 .values({ notificationId: parent.id, importId: 1 });
         });
-        await db
-            .insert(notificationTable)
-            .values({
-                userId,
-                slugId: "security",
-                notificationType: "security_add_email",
-                securityKey: "add_email",
-            });
+        await db.insert(notificationTable).values({
+            userId,
+            slugId: "security",
+            notificationType: "security_add_email",
+            securityKey: "add_email",
+        });
         expect(await db.select().from(notificationTable)).toHaveLength(2);
     });
 
@@ -166,13 +172,11 @@ describe("notification persistence invariants", () => {
                         notificationType: "export_cancelled",
                     })
                     .returning({ id: notificationTable.id });
-                await tx
-                    .insert(notificationExportTable)
-                    .values({
-                        notificationId: parent.id,
-                        exportSlugId: "export",
-                        conversationId: 1,
-                    });
+                await tx.insert(notificationExportTable).values({
+                    notificationId: parent.id,
+                    exportSlugId: "export",
+                    conversationId: 1,
+                });
             }),
         ).rejects.toThrow();
     });
@@ -216,5 +220,82 @@ describe("notification persistence invariants", () => {
                 })
                 .from(notificationOpinionVoteTable),
         ).toEqual([{ numVotes: 5, isSeed: true }]);
+    });
+
+    it("marks notifications read without executing detail integrity queries", async () => {
+        await db.transaction(async (tx) => {
+            const [parent] = await tx
+                .insert(notificationTable)
+                .values({
+                    userId,
+                    slugId: "read",
+                    notificationType: "import_started",
+                })
+                .returning({ id: notificationTable.id });
+            await tx.insert(notificationImportTable).values({
+                notificationId: parent.id,
+                importId: 1,
+            });
+        });
+        await db.transaction(async (tx) => {
+            await tx.execute(sql`SAVEPOINT integrity_probe`);
+            // Instrument the database checker only inside this rollbackable probe.
+            await tx.execute(sql`
+                CREATE OR REPLACE FUNCTION check_notification_detail_integrity(notification_id_to_check integer)
+                RETURNS void LANGUAGE plpgsql AS $$
+                BEGIN
+                    RAISE EXCEPTION 'Read updates must not query notification details';
+                END;
+                $$;
+            `);
+            await tx.update(notificationTable).set({ isRead: true });
+            await tx.execute(sql`SET CONSTRAINTS ALL IMMEDIATE`);
+            expect(
+                await tx
+                    .select({ isRead: notificationTable.isRead })
+                    .from(notificationTable),
+            ).toEqual([{ isRead: true }]);
+            await tx.execute(sql`ROLLBACK TO SAVEPOINT integrity_probe`);
+        });
+    });
+
+    it("still validates changed variants and updated detail reasons", async () => {
+        const parentId = await db.transaction(async (tx) => {
+            const [parent] = await tx
+                .insert(notificationTable)
+                .values({
+                    userId,
+                    slugId: "cancel",
+                    notificationType: "export_cancelled",
+                })
+                .returning({ id: notificationTable.id });
+            await tx.insert(notificationExportTable).values({
+                notificationId: parent.id,
+                exportSlugId: "export",
+                conversationId: 1,
+                cancellationReason: "cooldown_active",
+            });
+            return parent.id;
+        });
+        await expect(
+            db
+                .update(notificationTable)
+                .set({ notificationType: "import_completed" })
+                .where(eq(notificationTable.id, parentId)),
+        ).rejects.toThrow();
+        await expect(
+            db
+                .update(notificationExportTable)
+                .set({ cancellationReason: null })
+                .where(eq(notificationExportTable.notificationId, parentId)),
+        ).rejects.toThrow();
+        expect(
+            await db
+                .select({
+                    cancellationReason:
+                        notificationExportTable.cancellationReason,
+                })
+                .from(notificationExportTable),
+        ).toEqual([{ cancellationReason: "cooldown_active" }]);
     });
 });

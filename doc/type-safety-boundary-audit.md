@@ -310,7 +310,7 @@ canonical routing, and legitimate timestamp formats. Use compiler probes or
 type checks for construction mistakes. Avoid tests that only mirror every
 builder's object literal.
 
-## Verification
+## Verification of the original implementation
 
 - All 931 frontend tests passed after the final pagination refinement. Lint has
   zero errors and existing component-test warnings. Frontend typechecking passed
@@ -338,3 +338,41 @@ that recreates an enum already in its current generated fixture, and a merge
 test timeout under parallel load. The unchanged merge suite passed all 16 tests
 when rerun independently. The affected feature checks passed; the broader API
 suite is not reported as clean.
+
+## Follow-up review — 2026-10-05
+
+Scope: commit `d7b6c6dc`, its callers, and the contracts it changed. Concurrent
+voting/auth development was inspected only where it overlapped those contracts.
+
+| Area | Finding and correction |
+| --- | --- |
+| Correctness | Config assignment still retained a caller-owned mutable object; survey restoration and survey/language snapshots also shared nested state. Copy incoming family configs through the owned setter and reuse the existing survey/language clone helpers at data-transfer boundaries. Regression tests cover mutation before and after restoration. |
+| Type safety | Family and pagination schemas depended on discriminated-union option indexes. Expose/reuse named canonical schemas instead. Keep the complete filter/cursor request union through request construction. Replace the validation-field assertion with explicit typed field updates. |
+| Clean code | Fetching notifications constructed complete DTOs and then projected them again. Build variant content once and apply the shared projection directly to the selected record. Reuse `NotificationContent` for producer contracts; specialize the API import producer to the start event it actually owns. |
+| Security | `String(error)` could invoke arbitrary conversion hooks and throw while handling an opaque exception. Preserve real Error/string messages and use a fixed fallback for other thrown values. Tests include a null-prototype object and a throwing conversion hook. No additional authorization or injection regression was identified in the reviewed changes; this is a source review, not a penetration test. |
+| Performance | The deferred trigger checked all four detail tables twice for ordinary parent updates, including mark-read operations. V0096.2 skips metadata-only parent updates and checks shared old/new IDs only once. A PostgreSQL probe asserts that marking a regular notification read never calls the detail checker; variant and detail-reason updates still fail when invalid. Pagination response schemas are now created once rather than per response. |
+| Dead code | Remove the unused `AxiosErrorCode` union, unused draft ranking-mode projection, unused internal producer return values, unused API completion/failure input branches, and redundant caller catches around the start-notification helper's existing failure handling. |
+
+`V0096.2__avoid_redundant_notification_integrity_checks.sql` replaces a PostgreSQL
+trigger function, using the same permitted handwritten-function migration rule
+as V0096.1. The already-applied V0096.1 migration remains immutable. The follow-up
+migration was verified in a disposable PostgreSQL test container; it has not been
+applied to the local development database.
+
+Verification of the review changes:
+
+- Frontend: 9 focused files, **41 tests passed**, covering draft state/schema,
+  family controls, pagination, error classification, created-statement caches,
+  ranking ingress, and retained ranking updates.
+- API: **24 tests passed** across notification integrity, boundary contracts,
+  and user-profile serialization; the test command also passes API typechecking.
+- Before committing, the selectively staged frontend and API trees were
+  independently typechecked against HEAD. Both pass without relying on concurrent
+  uncommitted work.
+- Frontend typechecking passes with the concurrent, uncommitted
+  `utils/api/vote/voteCache.test.ts` excluded. The full workspace check remains
+  blocked by that file's old fixtures: pages omit `nextRequest` and page parameters
+  are still `null` instead of complete requests. The temporary checking config was
+  removed afterward.
+- Affected frontend/API production files pass ESLint; shared sources were synced
+  with `make sync-all`; `git diff --check` passes.

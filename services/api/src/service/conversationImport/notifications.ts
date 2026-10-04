@@ -12,40 +12,18 @@ import {
 } from "../notificationDto.js";
 import type { RealtimeSSEManager } from "../realtimeSSE.js";
 
-type ImportNotificationInput =
-    | {
-          notification: Extract<
-              NotificationContent,
-              { type: "import_started" | "import_failed" }
-          >;
-          conversationId: undefined;
-      }
-    | {
-          notification: Extract<
-              NotificationContent,
-              { type: "import_completed" }
-          > & {
-              routeTarget: {
-                  type: "import";
-                  importSlugId: string;
-                  conversationSlugId: string;
-              };
-              conversationTitle: string;
-          };
-          conversationId: number;
-      };
-
-export async function createImportNotification({
+// Completion/failure notifications are persisted by the import worker.
+export async function createImportStartedNotification({
     db,
     userId,
     importId,
-    conversationId,
     notification,
     realtimeSSEManager,
-}: ImportNotificationInput & {
+}: {
     db: PostgresJsDatabase;
     userId: string;
     importId: number;
+    notification: Extract<NotificationContent, { type: "import_started" }>;
     realtimeSSEManager: RealtimeSSEManager;
 }): Promise<void> {
     try {
@@ -66,7 +44,6 @@ export async function createImportNotification({
             await tx.insert(notificationImportTable).values({
                 notificationId: record.notificationId,
                 importId,
-                conversationId: conversationId ?? null,
             });
             return buildNotification({
                 content: notification,

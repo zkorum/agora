@@ -1,4 +1,3 @@
-import type { AxiosError } from "axios";
 import { type RawAxiosRequestConfig } from "axios";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 
@@ -17,20 +16,6 @@ import { type ApiErrorResponse, classifyApiError } from "./error";
 export type { KeyAction };
 
 export type ApiTimeoutProfile = "standard" | "extended" | "file-upload";
-
-export type AxiosErrorCode =
-  | typeof AxiosError.ERR_FR_TOO_MANY_REDIRECTS
-  | typeof AxiosError.ERR_BAD_OPTION_VALUE
-  | typeof AxiosError.ERR_BAD_OPTION
-  | typeof AxiosError.ERR_NETWORK
-  | typeof AxiosError.ERR_DEPRECATED
-  | typeof AxiosError.ERR_BAD_RESPONSE
-  | typeof AxiosError.ERR_BAD_REQUEST
-  | typeof AxiosError.ERR_NOT_SUPPORT
-  | typeof AxiosError.ERR_INVALID_URL
-  | typeof AxiosError.ERR_CANCELED
-  | typeof AxiosError.ECONNABORTED
-  | typeof AxiosError.ETIMEDOUT;
 
 export interface AxiosSuccessResponse<T> {
   data: T;

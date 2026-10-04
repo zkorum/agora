@@ -41,7 +41,10 @@ import { httpErrors } from "@fastify/sensible";
 import { log } from "@/app.js";
 import { generateRandomSlugId } from "@/crypto.js";
 import type { RealtimeSSEManager } from "./realtimeSSE.js";
-import { buildNotification } from "./notificationDto.js";
+import {
+    buildNotification,
+    type NotificationContent,
+} from "./notificationDto.js";
 
 const addEmailSecurityKey = "add_email";
 
@@ -351,11 +354,8 @@ export async function getNotifications({
                 notificationItem.username &&
                 notificationItem.opinionContent
             ) {
-                const parsedItem: RegularNotificationItem = {
+                const content: NotificationContent = {
                     type: "new_opinion",
-                    slugId: notificationItem.slugId,
-                    createdAt: notificationItem.createdAt,
-                    isRead: notificationItem.isRead,
                     message: useCommonPost().createCompactHtmlBody(
                         notificationItem.opinionContent,
                     ),
@@ -369,8 +369,8 @@ export async function getNotifications({
 
                 notificationItemList.push(
                     buildNotification({
-                        content: parsedItem,
-                        record: parsedItem,
+                        content,
+                        record: notificationItem,
                     }),
                 );
 
@@ -435,12 +435,8 @@ export async function getNotifications({
                 notificationItem.opinionContent &&
                 notificationItem.numVotes
             ) {
-                const numVotes = notificationItem.numVotes;
-                const parsedItem: RegularNotificationItem = {
+                const content: NotificationContent = {
                     type: "opinion_vote",
-                    slugId: notificationItem.slugId,
-                    createdAt: notificationItem.createdAt,
-                    isRead: notificationItem.isRead,
                     message: useCommonPost().createCompactHtmlBody(
                         notificationItem.opinionContent,
                     ),
@@ -449,14 +445,14 @@ export async function getNotifications({
                         conversationSlugId: notificationItem.conversationSlugId,
                         opinionSlugId: notificationItem.opinionSlugId,
                     },
-                    numVotes: numVotes,
+                    numVotes: notificationItem.numVotes,
                     isSeed: notificationItem.isSeed,
                 };
 
                 notificationItemList.push(
                     buildNotification({
-                        content: parsedItem,
-                        record: parsedItem,
+                        content,
+                        record: notificationItem,
                     }),
                 );
 
@@ -526,40 +522,34 @@ export async function getNotifications({
             }
 
             const baseNotification = {
-                slugId: notificationItem.slugId,
-                createdAt: notificationItem.createdAt,
-                isRead: notificationItem.isRead,
+                conversationTitle: notificationItem.conversationTitle,
                 routeTarget: createExportRouteTarget({
                     conversationSlugId: notificationItem.conversationSlugId,
                     exportSlugId: notificationItem.exportSlugId,
                 }),
             };
 
-            let parsedItem: RegularNotificationItem | null = null;
+            let content: NotificationContent;
 
             switch (notificationItem.notificationType) {
                 case "export_started":
-                    parsedItem = {
+                    content = {
                         ...baseNotification,
                         type: "export_started",
-                        conversationTitle: notificationItem.conversationTitle,
                     };
                     break;
                 case "export_completed":
-                    parsedItem = {
+                    content = {
                         ...baseNotification,
                         type: "export_completed",
-                        conversationTitle: notificationItem.conversationTitle,
                     };
                     break;
                 case "export_failed":
-                    parsedItem = {
+                    content = {
                         ...baseNotification,
                         type: "export_failed",
-                        conversationTitle: notificationItem.conversationTitle,
-                        ...(notificationItem.failureReason && {
-                            failureReason: notificationItem.failureReason,
-                        }),
+                        failureReason:
+                            notificationItem.failureReason ?? undefined,
                     };
                     break;
                 case "export_cancelled":
@@ -569,10 +559,9 @@ export async function getNotifications({
                         );
                         continue;
                     }
-                    parsedItem = {
+                    content = {
                         ...baseNotification,
                         type: "export_cancelled",
-                        conversationTitle: notificationItem.conversationTitle,
                         cancellationReason: notificationItem.cancellationReason,
                     };
                     break;
@@ -582,7 +571,7 @@ export async function getNotifications({
             }
 
             notificationItemList.push(
-                buildNotification({ content: parsedItem, record: parsedItem }),
+                buildNotification({ content, record: notificationItem }),
             );
 
             if (!notificationItem.isRead) {
@@ -650,18 +639,11 @@ export async function getNotifications({
                 continue;
             }
 
-            const baseNotification = {
-                slugId: notificationItem.slugId,
-                createdAt: notificationItem.createdAt,
-                isRead: notificationItem.isRead,
-            };
-
-            let parsedItem: RegularNotificationItem | null = null;
+            let content: NotificationContent;
 
             switch (notificationItem.notificationType) {
                 case "import_started":
-                    parsedItem = {
-                        ...baseNotification,
+                    content = {
                         type: "import_started",
                         routeTarget: {
                             type: "import",
@@ -680,8 +662,7 @@ export async function getNotifications({
                             notificationItem.conversationSlugId;
                     }
 
-                    parsedItem = {
-                        ...baseNotification,
+                    content = {
                         type: "import_completed",
                         routeTarget: importCompletedRouteTarget,
                         conversationTitle:
@@ -690,16 +671,14 @@ export async function getNotifications({
                     break;
                 }
                 case "import_failed":
-                    parsedItem = {
-                        ...baseNotification,
+                    content = {
                         type: "import_failed",
                         routeTarget: {
                             type: "import",
                             importSlugId: notificationItem.importSlugId,
                         },
-                        ...(notificationItem.failureReason && {
-                            failureReason: notificationItem.failureReason,
-                        }),
+                        failureReason:
+                            notificationItem.failureReason ?? undefined,
                     };
                     break;
                 default:
@@ -708,7 +687,7 @@ export async function getNotifications({
             }
 
             notificationItemList.push(
-                buildNotification({ content: parsedItem, record: parsedItem }),
+                buildNotification({ content, record: notificationItem }),
             );
 
             if (!notificationItem.isRead) {
@@ -828,17 +807,10 @@ interface InsertNewVoteNotificationProps {
     userId: string;
     opinionId: number;
     conversationId: number;
-    notification: Omit<
-        Extract<RegularNotificationItem, { type: "opinion_vote" }>,
-        "slugId" | "createdAt" | "isRead"
-    >;
+    notification: Extract<NotificationContent, { type: "opinion_vote" }>;
     realtimeSSEManager?: RealtimeSSEManager;
 }
 
-/**
- * Create a vote notification and broadcast it via SSE
- * Returns the notification slug ID
- */
 async function createVoteNotification({
     db,
     userId,
@@ -846,7 +818,7 @@ async function createVoteNotification({
     conversationId,
     notification,
     realtimeSSEManager,
-}: InsertNewVoteNotificationProps): Promise<string> {
+}: InsertNewVoteNotificationProps): Promise<void> {
     const notificationSlugId = generateRandomSlugId();
     const notificationItem = await getPrimaryDatabase(db).transaction(
         async (tx) => {
@@ -884,8 +856,6 @@ async function createVoteNotification({
         },
     );
     realtimeSSEManager?.broadcastToUser(userId, notificationItem);
-
-    return notificationSlugId;
 }
 
 export async function createVoteNotifications({
@@ -937,10 +907,7 @@ interface CreateOpinionNotificationForUserProps {
     opinionAuthorId: string;
     opinionId: number;
     conversationId: number;
-    notification: Omit<
-        Extract<RegularNotificationItem, { type: "new_opinion" }>,
-        "slugId" | "createdAt" | "isRead"
-    >;
+    notification: Extract<NotificationContent, { type: "new_opinion" }>;
     realtimeSSEManager?: RealtimeSSEManager;
 }
 
@@ -952,7 +919,7 @@ async function createOpinionNotificationForUser({
     conversationId,
     notification,
     realtimeSSEManager,
-}: CreateOpinionNotificationForUserProps): Promise<string> {
+}: CreateOpinionNotificationForUserProps): Promise<void> {
     const notificationSlugId = generateRandomSlugId();
     const notificationItem = await getPrimaryDatabase(db).transaction(
         async (tx) => {
@@ -989,8 +956,6 @@ async function createOpinionNotificationForUser({
         },
     );
     realtimeSSEManager?.broadcastToUser(recipientUserId, notificationItem);
-
-    return notificationSlugId;
 }
 
 interface CreateOpinionNotificationsProps {

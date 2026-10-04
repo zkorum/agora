@@ -90,12 +90,7 @@ export function useBackendCommentApi() {
       return parseOpinionPageResponse({ request, rawResponse: response.data });
     }
 
-    const input: z.input<typeof Dto.fetchOpinionPageRequest> = request.filter === "discover"
-      ? { conversationSlugId, filter: request.filter, cursor: request.cursor }
-      : request.filter === "my_votes"
-        ? { conversationSlugId, filter: request.filter, cursor: request.cursor }
-        : { conversationSlugId, filter: request.filter, cursor: request.cursor };
-    const params = Dto.fetchOpinionPageRequest.parse(input);
+    const params = Dto.fetchOpinionPageRequest.parse(request);
     const { url, options } =
       await DefaultApiAxiosParamCreator().apiV1OpinionFetchPagePost(params);
     const encodedUcan = isGuestOrLoggedIn.value

@@ -1,5 +1,5 @@
 import { AxiosError } from "axios";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
 import { classifyApiError } from "./error";
@@ -30,4 +30,18 @@ describe("API error boundaries", () => {
       });
     }
   );
+
+  it("does not invoke conversion hooks on opaque thrown objects", () => {
+    const toString = vi.fn(() => {
+      throw new Error("Object conversion must not run");
+    });
+    const errors: unknown[] = [Object.create(null), { toString }];
+    for (const error of errors) {
+      expect(classifyApiError(error)).toMatchObject({
+        kind: "unexpected",
+        message: "Unexpected error",
+      });
+    }
+    expect(toString).not.toHaveBeenCalled();
+  });
 });

@@ -56,6 +56,8 @@ import {
     zodMaxdiffComparison,
     zodConversationType,
     zodConversationTypeConfig,
+    zodPolisConversationTypeConfig,
+    zodRankingConversationTypeConfig,
     zodPolisVotingPresentation,
     zodRankingMode,
     zodConversationEffectiveMultilingualSetting,
@@ -1141,7 +1143,7 @@ const zodConversationEmailUpdateActionMutationResponse = z.discriminatedUnion(
     ],
 );
 
-const zodCreatedOpinionPageCursor = z
+export const zodCreatedOpinionPageCursor = z
     .object({
         kind: z.literal("created"),
         opinionSlugId: zodSlugId,
@@ -1149,7 +1151,7 @@ const zodCreatedOpinionPageCursor = z
         opinionId: z.number().int().positive(),
     })
     .strict();
-const zodDiscoverOpinionPageCursor = z
+export const zodDiscoverOpinionPageCursor = z
     .object({
         kind: z.literal("discover"),
         opinionSlugId: zodSlugId,
@@ -1160,7 +1162,7 @@ const zodDiscoverOpinionPageCursor = z
         routingSnapshotId: z.number().int().positive().nullable(),
     })
     .strict();
-const zodVotedOpinionPageCursor = z
+export const zodVotedOpinionPageCursor = z
     .object({
         kind: z.literal("votes"),
         opinionSlugId: zodSlugId,
@@ -1819,11 +1821,11 @@ export class Dto {
             .strict(),
     ]);
     static updateConversationTypeConfig = z.discriminatedUnion("conversationType", [
-        zodConversationTypeConfig.options[0].extend({
+        zodPolisConversationTypeConfig.extend({
             aiLabelingEnabled: z.boolean().optional(),
             preferredOpinionGroupCount: zodPreferredOpinionGroupCount.optional(),
         }).strict(),
-        zodConversationTypeConfig.options[1],
+        zodRankingConversationTypeConfig,
     ]);
     static updateConversationRequest = z
         .object({
