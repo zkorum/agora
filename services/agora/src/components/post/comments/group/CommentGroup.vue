@@ -55,6 +55,7 @@
         :survey-gate="props.surveyGate"
         :on-view-analysis="props.onViewAnalysis"
         :is-voting-disabled="props.isVotingDisabled"
+        :show-vote-results="props.showVoteResults"
         :conversation-route-context="props.conversationRouteContext"
         @deleted="deletedComment(commentItem.opinionSlugId)"
         @muted-comment="mutedComment()"
@@ -99,6 +100,7 @@ const props = defineProps<{
   surveyGate: SurveyGateSummary | undefined;
   onViewAnalysis: () => void;
   isVotingDisabled: boolean;
+  showVoteResults: boolean;
   conversationRouteContext: ConversationRouteContext;
 }>();
 

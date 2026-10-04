@@ -2,6 +2,10 @@ import { defineStore } from "pinia";
 import type { DeviceLoginStatus } from "src/shared/types/zod";
 import { computed, ref } from "vue";
 
+export type LoginStatusUpdate =
+  | (Partial<DeviceLoginStatus> & { isKnown: true; userId: string })
+  | (Partial<DeviceLoginStatus> & { isKnown?: false | undefined });
+
 export const useAuthenticationStore = defineStore("authentication", () => {
   const verificationPhoneNumber = ref("");
   const verificationDefaultCallingCode = ref("");
@@ -59,7 +63,7 @@ export const useAuthenticationStore = defineStore("authentication", () => {
   });
 
   // Function to safely update loginStatus
-  function setLoginStatus(status: Partial<DeviceLoginStatus>): {
+  function setLoginStatus(status: LoginStatusUpdate): {
     newLoginStatus: DeviceLoginStatus;
     oldLoginStatus: DeviceLoginStatus;
     newIsGuestOrLoggedIn: boolean;
@@ -75,42 +79,25 @@ export const useAuthenticationStore = defineStore("authentication", () => {
         isRegistered: false,
         credentials: nullCredentials,
       };
-    } else if (
-      status.isKnown === true ||
-      _loginStatus.value.isKnown ||
-      status.isRegistered ||
-      status.isLoggedIn
-    ) {
-      // Get userId from status if provided, otherwise keep current userId
-      // Default to empty string if neither exist (e.g., old cached state before userId was added)
-      const currentUserId = _loginStatus.value.isKnown ? _loginStatus.value.userId : '';
-      const newUserId = (status.isKnown === true && 'userId' in status && status.userId)
-        ? status.userId
-        : currentUserId;
-
-      // Preserve existing credentials if not provided in partial update
-      const currentCredentials = _loginStatus.value.isKnown
-        ? _loginStatus.value.credentials
-        : nullCredentials;
-      const newCredentials = (status.isKnown === true && 'credentials' in status && status.credentials)
-        ? status.credentials
-        : currentCredentials;
-
+    } else if (status.isKnown === true) {
       _loginStatus.value = {
         isKnown: true,
         isLoggedIn: status.isLoggedIn ?? _loginStatus.value.isLoggedIn,
         isRegistered: status.isLoggedIn
           ? true
           : (status.isRegistered ?? _loginStatus.value.isRegistered),
-        userId: newUserId,
-        credentials: newCredentials,
+        userId: status.userId,
+        credentials:
+          status.credentials ??
+          (oldLoginStatus.isKnown ? oldLoginStatus.credentials : nullCredentials),
       };
-    } else {
+    } else if (oldLoginStatus.isKnown) {
       _loginStatus.value = {
-        isKnown: false,
-        isLoggedIn: false,
-        isRegistered: false,
-        credentials: nullCredentials,
+        ...oldLoginStatus,
+        isLoggedIn: status.isLoggedIn ?? oldLoginStatus.isLoggedIn,
+        isRegistered: status.isLoggedIn
+          ? true
+          : (status.isRegistered ?? oldLoginStatus.isRegistered),
       };
     }
     return {

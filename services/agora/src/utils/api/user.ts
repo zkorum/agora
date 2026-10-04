@@ -35,7 +35,10 @@ export function useBackendUserApi() {
         },
       });
 
-      return Dto.getUserProfileResponse.parse(response.data);
+      return Dto.getUserProfileResponse.parse({
+        ...response.data,
+        createdAt: new Date(response.data.createdAt),
+      });
     } catch (e) {
       console.error(e);
       return undefined;

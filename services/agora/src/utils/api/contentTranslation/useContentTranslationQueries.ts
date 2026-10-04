@@ -82,7 +82,7 @@ export function useContentTranslationQuery({
   refetchInterval?: MaybeRefOrGetter<number | false>;
 }) {
   const { requestContentTranslation } = useBackendContentTranslationApi();
-  const { updateAuthState } = useBackendAuthApi();
+  const { ensureParticipationAuthState } = useBackendAuthApi();
 
   return useQuery<ContentTranslationResponse>({
     queryKey: computed(() =>
@@ -98,7 +98,7 @@ export function useContentTranslationQuery({
         requestMode: toValue(requestMode),
       });
       if (response.success) {
-        void updateAuthState({ partialLoginStatus: { isKnown: true } });
+        await ensureParticipationAuthState();
       }
       return response;
     },
@@ -124,7 +124,7 @@ export function useConversationContentQuery({
   refetchInterval?: MaybeRefOrGetter<number | false>;
 }) {
   const { fetchConversationContent } = useBackendContentTranslationApi();
-  const { updateAuthState } = useBackendAuthApi();
+  const { ensureParticipationAuthState } = useBackendAuthApi();
   const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
 
   return useQuery<ConversationContentFetchResponse>({
@@ -144,7 +144,7 @@ export function useConversationContentQuery({
         mode: toValue(mode),
         requestMode: toValue(requestMode),
       });
-      void updateAuthState({ partialLoginStatus: { isKnown: true } });
+      await ensureParticipationAuthState();
       return response;
     },
     enabled: computed(
@@ -171,7 +171,7 @@ export function useProjectContentQuery({
   enabled?: MaybeRefOrGetter<boolean>;
 }) {
   const { fetchProjectContent } = useBackendContentTranslationApi();
-  const { updateAuthState } = useBackendAuthApi();
+  const { ensureParticipationAuthState } = useBackendAuthApi();
   const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
 
   return useQuery<ProjectContentFetchResponse>({
@@ -193,7 +193,7 @@ export function useProjectContentQuery({
         mode: toValue(mode),
         requestMode: toValue(requestMode),
       });
-      void updateAuthState({ partialLoginStatus: { isKnown: true } });
+      await ensureParticipationAuthState();
       return response;
     },
     enabled: computed(

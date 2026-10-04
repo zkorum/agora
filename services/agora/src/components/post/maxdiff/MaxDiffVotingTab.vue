@@ -1,9 +1,18 @@
 <template>
   <div class="maxdiff-container">
+    <VotingSessionToolbar
+      :progress="{ kind: 'percentage', value: progressPercent }"
+      :can-undo="canUndo"
+      :is-busy="isActionPending"
+      :is-disabled="isParticipationDisabled || isInitializingEngine"
+      @undo="handleUndoClick"
+    />
+    <span class="progress-encouragement">{{ t("votesCountMessage") }}</span>
     <!-- Loading state -->
     <PageLoadingSpinner
       v-if="
         isInitializingEngine ||
+        isLoadingCandidates ||
         itemsQuery.isPending.value ||
         (loadQuery.isPending.value && !loadQuery.isError.value)
       "
@@ -29,7 +38,7 @@
 
     <!-- Completed ranking -->
     <div
-      v-else-if="isComplete && finalRanking.length > 0"
+      v-else-if="isComplete && finalRanking.length > 0 && !isActionPending"
       class="voting-section"
     >
       <div class="section-header-row">
@@ -53,6 +62,7 @@
         no-caps
         color="primary"
         :label="t('redoRanking')"
+        :disable="isActionPending || isParticipationDisabled"
         style="align-self: flex-start"
         @click="handleRedoRanking"
       />
@@ -78,16 +88,16 @@
           <div
             class="step-circle step-circle-best"
             :class="{
-              'step-active': selectedBest === null,
-              'step-done': selectedBest !== null,
+              'step-active': selectedBest === undefined,
+              'step-done': selectedBest !== undefined,
             }"
           >
-            <q-icon v-if="selectedBest !== null" name="check" size="0.8rem" />
+            <q-icon v-if="selectedBest !== undefined" name="check" size="0.8rem" />
             <span v-else>1</span>
           </div>
           <span
             class="step-label"
-            :class="{ 'step-label-active': selectedBest === null }"
+            :class="{ 'step-label-active': selectedBest === undefined }"
           >
             {{ t("stepSelectBest") }}
           </span>
@@ -100,7 +110,7 @@
           <div
             class="step-circle step-circle-worst"
             :class="{
-              'step-active': selectedBest !== null && selectedWorst === null,
+              'step-active': selectedBest !== undefined && selectedWorst === undefined,
             }"
           >
             <span>2</span>
@@ -109,34 +119,12 @@
             class="step-label"
             :class="{
               'step-label-active':
-                selectedBest !== null && selectedWorst === null,
+                selectedBest !== undefined && selectedWorst === undefined,
             }"
           >
             {{ t("stepSelectWorst") }}
           </span>
         </div>
-      </div>
-
-      <div class="progress-row">
-        <span class="progress-percent">{{ progressPercent }}%</span>
-        <div class="progress-bar">
-          <div
-            class="progress-fill"
-            :style="{ width: `${progressPercent}%` }"
-          ></div>
-        </div>
-        <span class="progress-encouragement">{{ t("votesCountMessage") }}</span>
-        <q-btn
-          v-if="canUndo"
-          flat
-          dense
-          no-caps
-          size="sm"
-          color="primary"
-          icon="mdi-undo"
-          :label="t('undoLastVote')"
-          @click="handleUndoClick"
-        />
       </div>
 
       <div class="candidates-grid-wrapper">
@@ -150,13 +138,14 @@
             class="candidate-card"
             role="button"
             tabindex="0"
+            :aria-disabled="isActionPending || isParticipationDisabled"
             :class="{
               'selected-best': selectedBest === item.slugId,
               'selected-worst': selectedWorst === item.slugId,
             }"
-            @click="handleCandidateClick(item.slugId)"
-            @keydown.enter.prevent="handleCandidateClick(item.slugId)"
-            @keydown.space.prevent="handleCandidateClick(item.slugId)"
+            @click="handleCandidateAction({ slugId: item.slugId, allowDialog: true })"
+            @keydown.enter.prevent="handleCandidateAction({ slugId: item.slugId, allowDialog: true })"
+            @keydown.space.prevent="handleCandidateAction({ slugId: item.slugId, allowDialog: true })"
           >
             <MaxDiffCandidateCardContent
               ref="candidateContentComponents"
@@ -183,8 +172,13 @@
       </div>
     </div>
 
-    <!-- Fallback: initialization in progress -->
-    <PageLoadingSpinner v-else />
+    <ErrorRetryBlock
+      v-else
+      :title="t('loadingError')"
+      :retry-label="t('retryButton')"
+      compact
+      @retry="retryInitialize"
+    />
 
     <MaxDiffStatementDialog
       v-model="showStatementDialog"
@@ -265,15 +259,19 @@
 </template>
 
 <script setup lang="ts">
+import { useQueryClient } from "@tanstack/vue-query";
+import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
 import PreParticipationIntentionDialog from "src/components/authentication/intention/PreParticipationIntentionDialog.vue";
 import AnalysisActionButton from "src/components/post/analysis/common/AnalysisActionButton.vue";
+import VotingSessionToolbar from "src/components/post/voting/VotingSessionToolbar.vue";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
 import type { RegisterChildRefreshHandler } from "src/composables/conversation/useConversationParentState";
 import { useParticipationGate } from "src/composables/conversation/useParticipationGate";
+import { useVotingActionGuard } from "src/composables/opinion/useVotingActionGuard";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
   ExtendedConversationDisplayData,
@@ -287,6 +285,8 @@ import {
   recordMaxDiffVote,
   restoreMaxDiff,
 } from "src/shared/utils/maxdiff";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { useMaxDiffApi } from "src/utils/api/maxdiff/maxdiff";
 import {
   type MaxDiffSaveContext,
   useMaxDiffItemsQuery,
@@ -298,6 +298,10 @@ import {
   type MaxDiffCandidateDisplayItem,
   retryMaxDiffCandidateResolution,
 } from "src/utils/maxdiffCandidateDisplay";
+import { getMaxDiffProgressPercent } from "src/utils/maxdiffProgress";
+import { haveSameMaxDiffComparisons, type MaxDiffSelection, reconcileMaxDiffItems } from "src/utils/maxdiffSession";
+import { getMaxDiffLoadQueryKey } from "src/utils/query/conversationQueryKeys";
+import { useViewerQueryScope } from "src/utils/query/viewerScope";
 import { getRankingItemDisplayText } from "src/utils/translation/rankingItemDisplayText";
 import { useNotify } from "src/utils/ui/notify";
 import {
@@ -308,6 +312,7 @@ import {
   onBeforeUnmount,
   onDeactivated,
   ref,
+  shallowRef,
   triggerRef,
   watch,
 } from "vue";
@@ -330,6 +335,14 @@ const { t } = useComponentI18n<MaxDiffVotingTabTranslations>(
 
 const $q = useQuasar();
 const { showNotifyMessage } = useNotify();
+const actionGuard = useVotingActionGuard();
+const isActionPending = actionGuard.isPending;
+const authStore = useAuthenticationStore();
+const { userId } = storeToRefs(authStore);
+const queryClient = useQueryClient();
+const viewerScope = useViewerQueryScope();
+const { loadMaxDiffResult } = useMaxDiffApi();
+let routingRefreshVersion = 0;
 const conversationSlugId = computed(
   () => props.conversationData.metadata.conversationSlugId
 );
@@ -407,6 +420,7 @@ const loadQuery = useMaxDiffLoadQuery({
 
 // Pull-to-refresh handler: refetch items and saved state
 async function handleChildRefresh(): Promise<void> {
+  if (isActionPending.value || isLoadingCandidates.value) return;
   await Promise.all([itemsQuery.refetch(), loadQuery.refetch()]);
 }
 
@@ -466,6 +480,15 @@ const candidateItemBySlugId = computed(() => {
 });
 
 function updateCandidateItemSnapshot(): boolean {
+  if (
+    candidates.value.length === 0 &&
+    instance.value !== undefined &&
+    !isComplete.value
+  ) {
+    candidateItems.value = [];
+    candidateResolutionError.value = true;
+    return false;
+  }
   const resolvedCandidateItems = createMaxDiffCandidateDisplaySnapshot({
     candidateSlugIds: candidates.value,
     itemBySlugId: itemBySlugId.value,
@@ -495,10 +518,8 @@ const saveMutation = useMaxDiffSaveMutation({
   conversationSlugId,
   onRollback: (context: MaxDiffSaveContext) => {
     instance.value = restoreMaxDiff(context.previousState);
-    triggerRef(instance);
-    isComplete.value = context.previousIsComplete;
-    finalRanking.value = context.previousFinalRanking;
     candidates.value = context.previousCandidates;
+    selection.value = { kind: "none" };
     cancelTransition();
   },
   onBlocked: handleBlockedSave,
@@ -508,16 +529,18 @@ const saveMutation = useMaxDiffSaveMutation({
 });
 
 // MaxDiff engine state
-const instance = ref<MaxDiffInstance | null>(null);
+const instance = shallowRef<MaxDiffInstance>();
 const isInitializingEngine = ref(true);
-const isComplete = ref(false);
-const finalRanking = ref<string[]>([]);
+const isLoadingCandidates = ref(false);
+const isComplete = computed(() => instance.value !== undefined &&
+  instance.value.itemCount >= 2 && instance.value.complete);
+const finalRanking = computed(() => instance.value?.result ?? []);
 const candidates = ref<string[]>([]);
-const selectedBest = ref<string | null>(null);
-const selectedWorst = ref<string | null>(null);
+const selection = shallowRef<MaxDiffSelection>({ kind: "none" });
+const selectedBest = computed(() => selection.value.kind === "none" ? undefined : selection.value.best);
+const selectedWorst = computed(() => selection.value.kind === "comparison" ? selection.value.worst : undefined);
 const isTransitioning = ref(false);
 const showTransitionSpinner = ref(false);
-let transitionTimeout: ReturnType<typeof setTimeout> | null = null;
 let transitionSpinnerTimeout: ReturnType<typeof setTimeout> | null = null;
 
 function clearTransitionSpinner(): void {
@@ -529,15 +552,12 @@ function clearTransitionSpinner(): void {
 }
 
 function cancelTransition(): void {
-  if (transitionTimeout !== null) {
-    clearTimeout(transitionTimeout);
-    transitionTimeout = null;
-  }
   clearTransitionSpinner();
   isTransitioning.value = false;
 }
 
 onBeforeUnmount(() => {
+  actionGuard.invalidate();
   unregisterRefreshHandler();
   cancelTransition();
 });
@@ -556,6 +576,7 @@ const dialogDisplayContent = ref<RankingItemDisplayedContent | undefined>(
 const dialogExternalUrl = ref<string | null>(null);
 
 function openVotingDialog(slugId: string): void {
+  const isCurrentDialog = actionGuard.capture();
   const item = candidateItemBySlugId.value.get(slugId);
   dialogItemSlugId.value = item?.slugId;
   dialogDisplayContent.value = item?.displayContent;
@@ -566,24 +587,19 @@ function openVotingDialog(slugId: string): void {
     dialogVoteLabel.value = t("cancelSelection");
     dialogVoteColor.value = undefined;
     dialogVoteFlat.value = true;
-    dialogVoteCallback.value = () => {
-      selectCandidate(slugId);
-    };
-  } else if (selectedBest.value === null) {
+  } else if (selectedBest.value === undefined) {
     dialogVoteLabel.value = t("mostImportant");
     dialogVoteColor.value = "positive";
     dialogVoteFlat.value = false;
-    dialogVoteCallback.value = () => {
-      selectCandidate(slugId);
-    };
   } else {
     dialogVoteLabel.value = t("leastImportant");
     dialogVoteColor.value = "negative";
     dialogVoteFlat.value = false;
-    dialogVoteCallback.value = () => {
-      selectCandidate(slugId);
-    };
   }
+
+  dialogVoteCallback.value = () => {
+    if (isCurrentDialog()) void handleCandidateAction({ slugId, allowDialog: false });
+  };
 
   showStatementDialog.value = true;
 }
@@ -607,8 +623,11 @@ function checkTruncation(): void {
 }
 
 const progressPercent = computed(() => {
-  if (!instance.value) return 0;
-  return Math.round(instance.value.progress * 100);
+  if (!instance.value || instance.value.itemCount < 2) return 0;
+  return getMaxDiffProgressPercent({
+    progress: instance.value.progress,
+    complete: instance.value.complete && !isActionPending.value,
+  });
 });
 
 const showLearnMoreDialog = ref(false);
@@ -621,8 +640,7 @@ function openScoringDetail(): void {
 
 const canUndo = computed(() => {
   if (!instance.value) return false;
-  if (isTransitioning.value) return false;
-  return instance.value.exportState().comparisons.length > 0;
+  return instance.value.comparisonCount > 0;
 });
 
 // Initialize engine when both queries resolve
@@ -659,14 +677,10 @@ function resolveInitialization(): boolean {
     }));
     const restored = restoreMaxDiff({ items: slugIds, comparisons });
     instance.value = restored;
-    isComplete.value = restored.complete;
-    finalRanking.value = restored.result ?? [];
   } else {
     // No saved state or load failed — create fresh instance
     const fresh = createMaxDiff(slugIds);
     instance.value = fresh;
-    isComplete.value = false;
-    finalRanking.value = [];
   }
 
   // Use candidate sets from load response (computed server-side)
@@ -704,6 +718,7 @@ watch(
     () => itemsQuery.isError.value,
     () => loadQuery.data.value,
     () => loadQuery.isError.value,
+    engineInitialized,
   ],
   ([, itemsError]) => {
     if (itemsError) {
@@ -718,9 +733,10 @@ watch(
 const canRefreshCandidateItemSnapshot = computed(
   () =>
     !isInitializingEngine.value &&
+    !isActionPending.value &&
     !isTransitioning.value &&
-    selectedBest.value === null &&
-    selectedWorst.value === null
+    !showStatementDialog.value &&
+    selection.value.kind === "none"
 );
 
 // Keep wording stable during a choice, then apply current content before the next one.
@@ -734,6 +750,103 @@ watch(
   },
   { immediate: true }
 );
+
+function reconcileEngineItems({ preserveCandidates }: { preserveCandidates: boolean }): void {
+  const current = instance.value;
+  if (current === undefined || itemsQuery.data.value === undefined) return;
+  const restored = reconcileMaxDiffItems({
+    instance: current,
+    items: itemList.value.map(item => item.slugId),
+  });
+  const changed = restored !== current;
+  if (changed) {
+    instance.value = restored;
+  }
+  if (preserveCandidates) return;
+  let replacedCandidates = false;
+  if (restored.complete) {
+    replacedCandidates = candidates.value.length !== 0;
+    candidates.value = [];
+    candidateItems.value = [];
+    candidateResolutionError.value = false;
+  } else if (candidates.value.length < 2 || candidates.value.some(id => !itemBySlugId.value.has(id))) {
+    candidates.value = restored.getCandidates();
+    replacedCandidates = true;
+  }
+  if (replacedCandidates && !restored.complete) {
+    void refreshCandidateRouting();
+  }
+}
+
+async function refreshCandidateRouting(): Promise<void> {
+  const isCurrent = actionGuard.capture();
+  const refreshVersion = ++routingRefreshVersion;
+  const slugId = conversationSlugId.value;
+  isLoadingCandidates.value = true;
+  try {
+    const response = await loadMaxDiffResult({ conversationSlugId: slugId });
+    if (!isCurrent() || refreshVersion !== routingRefreshVersion ||
+         !canRefreshCandidateItemSnapshot.value || instance.value === undefined || response.status !== "success") return;
+    if (!haveSameMaxDiffComparisons({
+      left: instance.value.exportState().comparisons,
+      right: response.data.comparisons ?? [],
+    })) return;
+    const nextCandidates = response.data.candidateSets[0];
+    if (nextCandidates === undefined || nextCandidates.some(id => !itemBySlugId.value.has(id))) return;
+    queryClient.setQueryData(
+      getMaxDiffLoadQueryKey({ conversationSlugId: slugId, viewerScope: viewerScope.value }),
+      response.data
+    );
+    candidates.value = nextCandidates;
+  } finally {
+    if (isCurrent() && refreshVersion === routingRefreshVersion) isLoadingCandidates.value = false;
+  }
+}
+
+async function applySavedCandidates({ candidateSets, isCurrent }: {
+  candidateSets: string[][];
+  isCurrent: () => boolean;
+}): Promise<void> {
+  const nextCandidates = candidateSets[0] ?? [];
+  if (nextCandidates.some(id => !itemBySlugId.value.has(id))) {
+    const refreshed = await itemsQuery.refetch();
+    if (!isCurrent()) return;
+    if (refreshed.isError) {
+      candidateResolutionError.value = true;
+      return;
+    }
+  }
+  reconcileEngineItems({ preserveCandidates: true });
+  candidates.value = instance.value?.complete ? [] : nextCandidates;
+}
+
+watch([itemList, canRefreshCandidateItemSnapshot], ([, canRefresh]) => {
+  if (canRefresh && engineInitialized.value) reconcileEngineItems({ preserveCandidates: false });
+});
+
+watch(() => props.conversationData.metadata.opinionCount, (count, previous) => {
+  if (count !== previous) void itemsQuery.refetch();
+});
+
+function resetVotingSession(): void {
+  actionGuard.invalidate();
+  routingRefreshVersion += 1;
+  cancelTransition();
+  instance.value = undefined;
+  engineInitialized.value = false;
+  isInitializingEngine.value = true;
+  isLoadingCandidates.value = false;
+  candidates.value = [];
+  candidateItems.value = [];
+  selection.value = { kind: "none" };
+  showStatementDialog.value = false;
+}
+
+watch(userId, (nextId, previousId) => {
+  if (previousId === undefined && nextId !== undefined && authStore.isGuest) return;
+  resetVotingSession();
+}, { flush: "sync" });
+watch(conversationSlugId, resetVotingSession, { flush: "sync" });
 
 async function retryInitialize(): Promise<void> {
   isInitializingEngine.value = true;
@@ -750,85 +863,77 @@ async function retryInitialize(): Promise<void> {
   }
 }
 
-async function handleCandidateClick(slugId: string): Promise<void> {
-  if (isParticipationDisabled.value) return;
-  if (await shouldOpenParticipationModal()) {
-    showLoginDialog.value = true;
-    return;
-  }
-
-  if (needsDialog(slugId)) {
-    openVotingDialog(slugId);
-    return;
-  }
-
-  selectCandidate(slugId);
+async function handleCandidateAction({ slugId, allowDialog }: { slugId: string; allowDialog: boolean }): Promise<void> {
+  await actionGuard.run(async (isCurrent) => {
+    if (isParticipationDisabled.value || isLoadingCandidates.value || !candidates.value.includes(slugId)) return;
+    if (await shouldOpenParticipationModal()) {
+      if (isCurrent()) showLoginDialog.value = true;
+      return;
+    }
+    if (!isCurrent()) return;
+    if (allowDialog && needsDialog(slugId)) {
+      openVotingDialog(slugId);
+      return;
+    }
+    await selectCandidate({ slugId, isCurrent });
+  });
 }
 
-function selectCandidate(slugId: string): void {
-  // First click = select best
-  if (selectedBest.value === null) {
-    selectedBest.value = slugId;
+async function selectCandidate({ slugId, isCurrent }: {
+  slugId: string;
+  isCurrent: () => boolean;
+}): Promise<void> {
+  const currentSelection = selection.value;
+  if (currentSelection.kind === "comparison") return;
+  if (currentSelection.kind === "none") {
+    selection.value = { kind: "best", best: slugId };
     return;
   }
 
   // Clicking the same as best = deselect
-  if (selectedBest.value === slugId) {
-    selectedBest.value = null;
+  if (currentSelection.best === slugId) {
+    selection.value = { kind: "none" };
     return;
   }
 
-  // Second click = select worst (different from best)
-  if (selectedWorst.value === null) {
-    selectedWorst.value = slugId;
-    // Both selected — record the vote
-    recordVote();
-    return;
-  }
-
-  // Clicking the same as worst = deselect
-  if (selectedWorst.value === slugId) {
-    selectedWorst.value = null;
-    return;
-  }
-
-  // Clicking a third card = replace worst
-  selectedWorst.value = slugId;
-  void recordVote();
+  const comparison = { kind: "comparison", best: currentSelection.best, worst: slugId } satisfies MaxDiffSelection;
+  selection.value = comparison;
+  await recordVote({ comparison, isCurrent });
 }
 
-function recordVote(): void {
-  if (!instance.value || !selectedBest.value || !selectedWorst.value) return;
+function captureSaveContext({ engine, isCurrent }: { engine: MaxDiffInstance; isCurrent: () => boolean }): MaxDiffSaveContext {
+  return { previousState: engine.exportState(), previousCandidates: [...candidates.value], isCurrent };
+}
 
-  // Snapshot state BEFORE optimistic update for rollback
-  const previousState = instance.value.exportState();
-  const context: MaxDiffSaveContext = {
-    previousState,
-    previousIsComplete: isComplete.value,
-    previousFinalRanking: [...finalRanking.value],
-    previousCandidates: [...candidates.value],
-    isFirstVote: previousState.comparisons.length === 0,
-  };
+async function recordVote({ comparison, isCurrent }: {
+  comparison: Extract<MaxDiffSelection, { kind: "comparison" }>;
+  isCurrent: () => boolean;
+}): Promise<void> {
 
-  const best = selectedBest.value;
-  const worst = selectedWorst.value;
+  reconcileEngineItems({ preserveCandidates: true });
+  if (candidates.value.some(id => !itemBySlugId.value.has(id))) {
+    selection.value = { kind: "none" };
+    reconcileEngineItems({ preserveCandidates: false });
+    showNotifyMessage(t("itemsChanged"));
+    return;
+  }
+
+  const engine = instance.value;
+  if (engine === undefined) return;
+  const context = captureSaveContext({ engine, isCurrent });
+  const { best, worst } = comparison;
   const currentCandidates = [...candidates.value];
 
   // Optimistic update: record in engine
   recordMaxDiffVote({
-    instance: instance.value,
+    instance: engine,
     candidates: currentCandidates,
     best,
     worst,
   });
   triggerRef(instance);
 
-  isComplete.value = instance.value.complete;
-  finalRanking.value = instance.value.result ?? [];
 
-  // Reset selection and transition to next round
-  selectedBest.value = null;
-  selectedWorst.value = null;
   isTransitioning.value = true;
 
   // Show spinner if fetch takes longer than 2s
@@ -839,31 +944,36 @@ function recordVote(): void {
 
   // Save + get next candidates from server response.
   // Runs in parallel with the 400ms transition animation.
-  const savePromise = saveMutation
-    .mutateAsync({
-      ranking: instance.value.result ?? null,
-      comparisons: instance.value.exportState().comparisons,
-      isComplete: instance.value.complete,
-      context,
-    })
-    .catch(() => undefined);
-  // onError already handles rollback — catch returns undefined on failure
-
-  transitionTimeout = setTimeout(() => {
-    void (async () => {
-      const saveResult = await savePromise;
-      if (saveResult?.success && !instance.value?.complete) {
-        candidates.value = saveResult.candidateSets[0] ?? [];
-      } else {
-        candidates.value = [];
-      }
+  const saveParams = {
+    ranking: engine.result ?? null,
+    comparisons: engine.exportState().comparisons,
+    isComplete: engine.complete,
+    context,
+  };
+  try {
+    const [saveResult] = await Promise.all([
+      saveMutation.mutateAsync(saveParams),
+      new Promise<void>(resolve => setTimeout(resolve, 400)),
+    ]);
+    if (isCurrent() && saveResult.success) {
+      await applySavedCandidates({ candidateSets: saveResult.candidateSets, isCurrent });
+    }
+  } catch {
+    // The mutation has already restored the previous candidates.
+  } finally {
+    if (isCurrent()) {
+      selection.value = { kind: "none" };
       cancelTransition();
-    })();
-  }, 400);
+    }
+  }
 }
 
-function undoLastVote(): void {
+async function undoLastVote(isCurrent: () => boolean): Promise<void> {
   if (!instance.value) return;
+  routingRefreshVersion += 1;
+  isLoadingCandidates.value = false;
+
+  reconcileEngineItems({ preserveCandidates: true });
 
   const state = instance.value.exportState();
   if (state.comparisons.length === 0) return;
@@ -872,16 +982,11 @@ function undoLastVote(): void {
   cancelTransition();
 
   // Snapshot for rollback (undo should be reversible on save failure)
-  const context: MaxDiffSaveContext = {
-    previousState: state,
-    previousIsComplete: isComplete.value,
-    previousFinalRanking: [...finalRanking.value],
-    previousCandidates: [...candidates.value],
-    isFirstVote: false,
-  };
+  const context = captureSaveContext({ engine: instance.value, isCurrent });
 
   const remainingComparisons = state.comparisons.slice(0, -1);
   const removedComparison = state.comparisons[state.comparisons.length - 1];
+  if (removedComparison === undefined) return;
 
   const restored = restoreMaxDiff({
     items: state.items,
@@ -889,84 +994,71 @@ function undoLastVote(): void {
   });
 
   instance.value = restored;
-  triggerRef(instance);
+  selection.value = { kind: "none" };
 
-  isComplete.value = restored.complete;
-  finalRanking.value = restored.result ?? [];
-  selectedBest.value = null;
-  selectedWorst.value = null;
+  const restoredCandidates = removedComparison.set.filter(id => itemBySlugId.value.has(id));
+  candidates.value = restoredCandidates.length >= 2 ? restoredCandidates : restored.getCandidates();
 
-  candidates.value = removedComparison.set;
-
-  saveMutation.mutate({
-    ranking: restored.result ?? null,
-    comparisons: restored.exportState().comparisons,
-    isComplete: restored.complete,
-    context,
-  });
+  try {
+    await saveMutation.mutateAsync({
+      ranking: restored.result ?? null,
+      comparisons: restored.exportState().comparisons,
+      isComplete: restored.complete,
+      context,
+    });
+  } catch {
+    // The mutation restores both the history and the previous candidate set.
+  }
 }
 
 async function handleUndoClick(): Promise<void> {
-  if (
-    isParticipationDisabled.value ||
-    (await shouldOpenParticipationModal())
-  ) {
-    if (!isParticipationDisabled.value) {
-      showLoginDialog.value = true;
+  await actionGuard.run(async (isCurrent) => {
+    if (isParticipationDisabled.value || !canUndo.value) return;
+    if (await shouldOpenParticipationModal()) {
+      if (isCurrent()) showLoginDialog.value = true;
+      return;
     }
-    return;
-  }
-  undoLastVote();
+    if (isCurrent()) await undoLastVote(isCurrent);
+  });
 }
 
 async function handleRedoRanking(): Promise<void> {
-  if (
-    isParticipationDisabled.value ||
-    (await shouldOpenParticipationModal())
-  ) {
-    if (!isParticipationDisabled.value) {
-      showLoginDialog.value = true;
+  await actionGuard.run(async (isCurrent) => {
+    if (isParticipationDisabled.value || instance.value === undefined) return;
+    if (await shouldOpenParticipationModal()) {
+      if (isCurrent()) showLoginDialog.value = true;
+      return;
     }
-    return;
-  }
-  $q.dialog({
-    title: t("redoConfirmTitle"),
-    message: t("redoConfirmMessage"),
-    cancel: true,
-    persistent: true,
-  }).onOk(() => {
+    const confirmed = await new Promise<boolean>(resolve => {
+      $q.dialog({
+        title: t("redoConfirmTitle"),
+        message: t("redoConfirmMessage"),
+        cancel: true,
+        persistent: true,
+      }).onOk(() => resolve(true)).onDismiss(() => resolve(false));
+    });
+    if (!confirmed || !isCurrent() || instance.value === undefined) return;
     // Snapshot for rollback
-    const context: MaxDiffSaveContext = {
-      previousState: instance.value?.exportState() ?? {
-        items: [],
-        comparisons: [],
-      },
-      previousIsComplete: isComplete.value,
-      previousFinalRanking: [...finalRanking.value],
-      previousCandidates: [...candidates.value],
-      isFirstVote: false,
-    };
+    const context = captureSaveContext({ engine: instance.value, isCurrent });
 
     cancelTransition();
     const slugIds = itemList.value.map((item) => item.slugId);
     instance.value = createMaxDiff(slugIds);
-    isComplete.value = false;
-    finalRanking.value = [];
 
     // Save empty state, use candidateSets from response
-    void (async () => {
-      const result = await saveMutation
-        .mutateAsync({
+    try {
+      const result = await saveMutation.mutateAsync({
           ranking: null,
           comparisons: [],
           isComplete: false,
           context,
-        })
-        .catch(() => undefined);
-      if (result?.success) {
-        candidates.value = result.candidateSets[0] ?? [];
+      });
+      if (result.success && isCurrent()) {
+        await applySavedCandidates({ candidateSets: result.candidateSets, isCurrent });
       }
-    })();
+    } catch {
+      // Rollback and notification are owned by the mutation.
+    }
   });
 }
 </script>
@@ -1071,39 +1163,10 @@ async function handleRedoRanking(): Promise<void> {
   font-weight: var(--font-weight-medium);
 }
 
-.progress-row {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  align-items: flex-start;
-  width: 100%;
-}
-
-.progress-percent {
-  font-size: 0.85rem;
-  font-weight: var(--font-weight-medium);
-  color: $color-text-weak;
-}
-
 .progress-encouragement {
   font-size: 0.75rem;
   color: $color-text-weak;
   opacity: 0.6;
-}
-
-.progress-bar {
-  width: 100%;
-  height: 6px;
-  background: $color-border-weak;
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background: $primary;
-  border-radius: 3px;
-  transition: width 0.3s ease;
 }
 
 .candidates-grid-wrapper {

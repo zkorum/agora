@@ -10,6 +10,7 @@
       :class="{
         'selector-content--truncate': props.labelOverflow === 'truncate',
         'selector-content--start': props.contentAlignment === 'start',
+        'selector-content--icon-start': props.iconPosition === 'start',
       }"
     >
       <span class="selector-label">{{ props.label }}</span>
@@ -31,6 +32,7 @@ const props = withDefaults(
     accessibilityLabel: string;
     buttonType: "standardButton" | "compactButton";
     iconName: string;
+    iconPosition: "start" | "end";
     iconSize: string;
     labelOverflow: "wrap" | "truncate";
     contentAlignment?: "center" | "start";
@@ -97,6 +99,14 @@ const emit = defineEmits<{
 
 .selector-icon {
   flex-shrink: 0;
+}
+
+.selector-content--icon-start {
+  flex-wrap: nowrap;
+}
+
+.selector-content--icon-start .selector-icon {
+  order: -1;
 }
 
 .dropdown-selector-button {

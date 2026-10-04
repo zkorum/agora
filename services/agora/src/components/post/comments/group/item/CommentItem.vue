@@ -61,6 +61,7 @@
             :survey-gate="props.surveyGate"
             :on-view-analysis="props.onViewAnalysis"
             :is-voting-disabled="props.isVotingDisabled"
+            :show-vote-results="props.showVoteResults"
           />
         </div>
       </div>
@@ -108,6 +109,7 @@ const props = defineProps<{
   surveyGate: SurveyGateSummary | undefined;
   onViewAnalysis: () => void;
   isVotingDisabled: boolean;
+  showVoteResults: boolean;
   contentTranslation: CommentContentTranslationPreview | undefined;
   conversationRouteContext: ConversationRouteContext;
 }>();

@@ -130,6 +130,8 @@ export interface MaxDiffState {
 
 export interface MaxDiffInstance {
     readonly items: string[];
+    readonly itemCount: number;
+    readonly comparisonCount: number;
     readonly progress: number;
     readonly complete: boolean;
     readonly result: string[] | undefined;
@@ -139,6 +141,7 @@ export interface MaxDiffInstance {
     getUnorderedPairs: () => [string, string][];
     getOrderedPairs: () => [string, string][];
     exportState: () => MaxDiffState;
+    recordComparison: (comparison: MaxDiffComparison) => void;
 }
 
 export function createMaxDiff(items: Iterable<string>): MaxDiffInstance {
@@ -152,6 +155,8 @@ export function createMaxDiff(items: Iterable<string>): MaxDiffInstance {
     // Comparison matrix: comparisons[i][j] = -1 means i < j (i comes before j)
     // +1 means i > j, 0 means same item, undefined means unknown
     const n = uniqueItems.length;
+    const totalPairCount = (n * (n - 1)) / 2;
+    let orderedPairCount = 0;
     const comparisons: (number | undefined)[][] = Array.from(
         { length: n },
         () => Array.from({ length: n }, () => undefined),
@@ -172,6 +177,7 @@ export function createMaxDiff(items: Iterable<string>): MaxDiffInstance {
     const setComparison = (item: string, otherItem: string): void => {
         const i = indexOf(item);
         const j = indexOf(otherItem);
+        if (comparisons[i][j] === undefined) orderedPairCount += 1;
         comparisons[i][j] = -1;
         comparisons[j][i] = 1;
     };
@@ -272,7 +278,7 @@ export function createMaxDiff(items: Iterable<string>): MaxDiffInstance {
                 }
             }
         }
-        if (getUnorderedPairs().length === 0) {
+        if (orderedPairCount === totalPairCount) {
             result = [...uniqueItems].sort(compareItemsByOrder);
         }
     };
@@ -300,17 +306,48 @@ export function createMaxDiff(items: Iterable<string>): MaxDiffInstance {
 
     const exportState = (): MaxDiffState => ({
         items: [...uniqueItems],
-        comparisons: [...trackedComparisons],
+        comparisons: trackedComparisons.map((comparison) => ({
+            ...comparison,
+            set: [...comparison.set],
+        })),
     });
+
+    const recordComparison = (comparison: MaxDiffComparison): void => {
+        // Preserve displayed order so Undo restores the original positions,
+        // rather than the order in which the matrix operations run.
+        trackedComparisons.push({ ...comparison, set: [...comparison.set] });
+        // Match server routing: a removed best/worst endpoint makes the round
+        // inapplicable to the active catalog, but its history remains undoable.
+        if (
+            !uniqueItems.includes(comparison.best) ||
+            (comparison.worst !== "" && !uniqueItems.includes(comparison.worst))
+        ) {
+            return;
+        }
+        orderBefore(
+            comparison.best,
+            comparison.set.filter((item) => item !== comparison.best),
+        );
+        if (comparison.worst) {
+            orderAfter(
+                comparison.worst,
+                comparison.set.filter((item) => item !== comparison.worst),
+            );
+        }
+    };
 
     return {
         get items() {
             return [...uniqueItems];
         },
+        get itemCount() {
+            return n;
+        },
+        get comparisonCount() {
+            return trackedComparisons.length;
+        },
         get progress() {
-            const ordered = getOrderedPairs().length;
-            const total = ordered + getUnorderedPairs().length;
-            return total > 0 ? ordered / total : 1;
+            return totalPairCount > 0 ? orderedPairCount / totalPairCount : 1;
         },
         get complete() {
             return result !== undefined;
@@ -337,6 +374,7 @@ export function createMaxDiff(items: Iterable<string>): MaxDiffInstance {
         getUnorderedPairs,
         getOrderedPairs,
         exportState,
+        recordComparison,
     };
 }
 
@@ -389,19 +427,7 @@ export function estimateRemainingVotes({
 export function restoreMaxDiff(state: MaxDiffState): MaxDiffInstance {
     const instance = createMaxDiff(state.items);
     for (const comparison of state.comparisons) {
-        const otherItems = comparison.set.filter(
-            (id) => id !== comparison.best && id !== comparison.worst,
-        );
-        instance.orderBefore(comparison.best, [
-            ...otherItems,
-            comparison.worst,
-        ]);
-        if (comparison.worst) {
-            instance.orderAfter(comparison.worst, [
-                ...otherItems,
-                comparison.best,
-            ]);
-        }
+        instance.recordComparison(comparison);
     }
     return instance;
 }
@@ -421,8 +447,5 @@ export function recordMaxDiffVote({
     best: string;
     worst: string;
 }): void {
-    const otherItems = candidates.filter((id) => id !== best);
-    instance.orderBefore(best, otherItems);
-    const otherItemsForWorst = candidates.filter((id) => id !== worst);
-    instance.orderAfter(worst, otherItemsForWorst);
+    instance.recordComparison({ best, worst, set: candidates });
 }

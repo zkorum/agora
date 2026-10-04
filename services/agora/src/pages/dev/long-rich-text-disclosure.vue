@@ -109,6 +109,7 @@
             <CommentItem
               v-for="statement in displayedStatements"
               :key="statement.opinionSlugId"
+              :show-vote-results="true"
               :comment-item="statement"
               post-slug-id="longtxt1"
               conversation-author-username="test-author"
@@ -172,7 +173,6 @@ import type {
   DisplayedOpinionItem,
   ExtendedConversation,
   OpinionItem,
-  VotingAction,
 } from "src/shared/types/zod";
 import { normalConversationRouteContext } from "src/utils/router/conversationRouteContext";
 import {
@@ -672,10 +672,7 @@ const displayedStatements = computed((): DisplayedOpinionItem[] => {
 
 const votingUtilities: OpinionVotingUtilities = {
   userVotes: [],
-  castVote: (
-    _opinionSlugId: string,
-    _voteAction: VotingAction
-  ): Promise<CastVoteResponse> => {
+  castVote: (): Promise<CastVoteResponse> => {
     return Promise.resolve({ success: false, reason: "conversation_closed" });
   },
 };

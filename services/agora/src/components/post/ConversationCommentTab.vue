@@ -102,7 +102,7 @@ const oneAtATimeRef = ref<InstanceType<typeof OneAtATimeSection>>();
 const isTabActive = ref(true);
 let unregisterChildRefreshHandler: (() => void) | undefined;
 
-const { markAnalysisAsStale, markCommentsAsStale } =
+const { markCommentsAsStale } =
   useInvalidateCommentQueries();
 const { loadAuthenticatedModules } = useBackendAuthApi();
 const userStore = useUserStore();
@@ -180,9 +180,6 @@ async function submittedComment(data: SubmittedCommentData): Promise<void> {
   if (currentConversation === undefined) {
     return;
   }
-
-  await markCommentsAsStale(currentConversation.metadata.conversationSlugId);
-  markAnalysisAsStale(currentConversation.metadata.conversationSlugId);
 
   if (opinionSectionRef.value) {
     opinionSectionRef.value.highlightOpinion(data.displayedOpinionItem);

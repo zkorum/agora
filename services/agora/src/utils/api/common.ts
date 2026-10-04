@@ -72,6 +72,7 @@ export function useCommonApi() {
   interface CreateRawAxiosRequestConfigProps {
     encodedUcan?: string;
     timeoutProfile?: ApiTimeoutProfile;
+    signal?: AbortSignal;
   }
 
   interface HandleAxiosStatusCodesProps {
@@ -149,6 +150,7 @@ export function useCommonApi() {
   function createRawAxiosRequestConfig({
     encodedUcan,
     timeoutProfile = "standard",
+    signal,
   }: CreateRawAxiosRequestConfigProps): RawAxiosRequestConfig {
     return {
       headers: encodedUcan
@@ -157,6 +159,7 @@ export function useCommonApi() {
           }
         : undefined,
       timeout: getTimeoutForProfile(timeoutProfile),
+      signal,
     };
   }
 

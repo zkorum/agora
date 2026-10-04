@@ -17,6 +17,7 @@
           class="analysis-cluster-selector-bar__trigger"
           content-alignment="start"
           icon-name="mdi-chevron-down"
+          icon-position="end"
           icon-size="1rem"
           label-overflow="truncate"
           @click="showDrawer = true"

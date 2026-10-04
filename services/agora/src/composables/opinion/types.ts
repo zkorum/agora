@@ -2,14 +2,16 @@ import type { CastVoteResponse } from "src/shared/types/dto";
 import type { VotingAction, VotingOption } from "src/shared/types/zod";
 
 export interface UserVote {
+  readonly opinionSlugId: string;
+  readonly votingAction: VotingOption;
+}
+
+export interface OpinionVoteParams {
   opinionSlugId: string;
-  votingAction: VotingOption;
+  voteAction: VotingAction;
 }
 
 export interface OpinionVotingUtilities {
-  userVotes: UserVote[];
-  castVote: (
-    opinionSlugId: string,
-    voteAction: VotingAction
-  ) => Promise<CastVoteResponse>;
+  userVotes: readonly UserVote[];
+  castVote: (params: OpinionVoteParams) => Promise<CastVoteResponse | undefined>;
 }

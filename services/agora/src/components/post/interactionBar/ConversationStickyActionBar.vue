@@ -33,6 +33,10 @@ watch(actionBarElement, (element) => emit("update:actionBarElement", element), {
 </script>
 
 <style scoped lang="scss">
+.sticky-action-bar {
+  padding-block-end: 0;
+}
+
 .conversation-sticky-action-bar--project {
   position: sticky;
   top: var(--header-height, 0);
@@ -41,7 +45,7 @@ watch(actionBarElement, (element) => emit("update:actionBarElement", element), {
   margin-inline: -1rem;
   padding-inline: 1rem;
   padding-block-start: 1rem;
-  padding-block-end: 0.65rem;
+  padding-block-end: 0;
   background:
     radial-gradient(
       circle at 1px 1px,

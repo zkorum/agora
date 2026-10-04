@@ -30,7 +30,7 @@ const api = vi.hoisted(() => ({
         typeof useBackendContentTranslationApi
       >["fetchConversationContent"]
     >(),
-  updateAuthState: vi.fn(),
+  ensureParticipationAuthState: vi.fn(),
   showNotifyMessage: vi.fn(),
 }));
 

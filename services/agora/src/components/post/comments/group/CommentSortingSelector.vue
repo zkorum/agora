@@ -5,6 +5,7 @@
       :accessibility-label="t('filterTitle')"
       button-type="standardButton"
       icon-name="mdi-chevron-down"
+      icon-position="end"
       icon-size="1.3rem"
       label-overflow="wrap"
       @click="showDialog = true"

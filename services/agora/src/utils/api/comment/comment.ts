@@ -63,15 +63,15 @@ type CreateNewCommentResult =
 export function useBackendCommentApi() {
   const { buildEncodedUcan, createRawAxiosRequestConfig } = useCommonApi();
   const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
-  const { updateAuthState } = useBackendAuthApi();
+  const { ensureParticipationAuthState } = useBackendAuthApi();
 
-  async function fetchOpinionPage(request: OpinionPageRequest): Promise<OpinionPageResult> {
-    const { conversationSlugId, filter, cursor } = request;
+  async function fetchOpinionPage(request: OpinionPageRequest & { signal?: AbortSignal }): Promise<OpinionPageResult> {
+    const { signal, ...pageRequest } = request;
     await waitForAuthInitialization();
-    if (filter === "hidden") {
+    if (pageRequest.filter === "hidden") {
       const input: z.input<typeof Dto.fetchHiddenOpinionPageRequest> = {
-        conversationSlugId,
-        cursor,
+        conversationSlugId: pageRequest.conversationSlugId,
+        cursor: pageRequest.cursor,
       };
       const params = Dto.fetchHiddenOpinionPageRequest.parse(input);
       const { url, options } =
@@ -85,12 +85,12 @@ export function useBackendCommentApi() {
         api
       ).apiV1OpinionFetchHiddenPagePost(
         params,
-        createRawAxiosRequestConfig({ encodedUcan, timeoutProfile: "extended" })
+        createRawAxiosRequestConfig({ encodedUcan, timeoutProfile: "extended", signal })
       );
       return parseOpinionPageResponse({ request, rawResponse: response.data });
     }
 
-    const params = Dto.fetchOpinionPageRequest.parse(request);
+    const params = Dto.fetchOpinionPageRequest.parse(pageRequest);
     const { url, options } =
       await DefaultApiAxiosParamCreator().apiV1OpinionFetchPagePost(params);
     const encodedUcan = isGuestOrLoggedIn.value
@@ -102,7 +102,7 @@ export function useBackendCommentApi() {
       api
     ).apiV1OpinionFetchPagePost(
       params,
-      createRawAxiosRequestConfig({ encodedUcan, timeoutProfile: "extended" })
+      createRawAxiosRequestConfig({ encodedUcan, timeoutProfile: "extended", signal })
     );
     return parseOpinionPageResponse({ request, rawResponse: response.data });
   }
@@ -111,15 +111,17 @@ export function useBackendCommentApi() {
     conversationSlugId,
     order,
     excludedOpinionSlugIds,
+    signal,
   }: {
     conversationSlugId: string;
     order: "discover" | "new";
-    excludedOpinionSlugIds: string[];
+    excludedOpinionSlugIds: readonly string[];
+    signal?: AbortSignal;
   }): Promise<FetchNextUnansweredOpinionResponse> {
     const params: ApiV1OpinionNextUnansweredPostRequest = {
       conversationSlugId,
       order,
-      excludedOpinionSlugIds,
+      excludedOpinionSlugIds: [...excludedOpinionSlugIds],
     };
     await waitForAuthInitialization();
     const { url, options } =
@@ -135,7 +137,7 @@ export function useBackendCommentApi() {
       api
     ).apiV1OpinionNextUnansweredPost(
       params,
-      createRawAxiosRequestConfig({ encodedUcan, timeoutProfile: "extended" })
+      createRawAxiosRequestConfig({ encodedUcan, timeoutProfile: "extended", signal })
     );
     return Dto.fetchNextUnansweredOpinionResponse.parse(response.data);
   }
@@ -187,9 +189,7 @@ export function useBackendCommentApi() {
 
     if (data.success) {
       // TODO: properly manage errors in backend and return login status to update to
-      const { authStateChanged, needsCacheRefresh } = await updateAuthState({
-        partialLoginStatus: { isKnown: true },
-      });
+      const { authStateChanged, needsCacheRefresh } = await ensureParticipationAuthState();
       return {
         success: true,
         opinionSlugId: data.opinionSlugId,

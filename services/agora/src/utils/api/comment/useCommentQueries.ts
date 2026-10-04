@@ -29,6 +29,7 @@ import {
   buildAnalysisFreshnessRequest,
   LIVE_ANALYSIS_CATCH_UP_INTERVAL_MS,
 } from "src/utils/analysis/analysisFreshness";
+import { useViewerQueryScope,type ViewerQueryScope } from "src/utils/query/viewerScope";
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
 
 import { useNotify } from "../../ui/notify";
@@ -80,9 +81,10 @@ export function usePagedCommentsQuery({
       displayLanguage,
       computed(() => [...spokenLanguages.value].sort()),
     ],
-    queryFn: ({ pageParam }) =>
+    queryFn: ({ pageParam, signal }) =>
       fetchOpinionPage({
         ...pageParam,
+        signal,
       }),
     enabled: computed(() => toValue(conversationSlugId) !== ""),
     initialPageParam: computed(() => initialOpinionPageRequest({ conversationSlugId: toValue(conversationSlugId), filter: toValue(filter) })),
@@ -557,6 +559,7 @@ export async function fetchAnalysisDataWithCache({
   voteCount,
   freshness,
   analysisQueryKey,
+  viewerScope,
 }: {
   queryClient: QueryClient;
   fetchAnalysisFrameManifest: BackendCommentApi["fetchAnalysisFrameManifest"];
@@ -572,6 +575,7 @@ export async function fetchAnalysisDataWithCache({
   voteCount: number | undefined;
   freshness: AnalysisFreshnessRequest | null;
   analysisQueryKey: AnalysisQueryKey | undefined;
+  viewerScope: ViewerQueryScope;
 }): Promise<AnalysisData> {
   const manifest = await queryClient.fetchQuery({
     queryKey: [
@@ -612,6 +616,7 @@ export async function fetchAnalysisDataWithCache({
           frameKeyPart,
           displayLanguage,
           spokenLanguages,
+          viewerScope,
         ],
         queryFn: () =>
           fetchAnalysisFrameGroups({
@@ -640,6 +645,7 @@ export async function fetchAnalysisDataWithCache({
           "agreements",
           displayLanguage,
           spokenLanguages,
+          viewerScope,
         ],
         queryFn: () =>
           fetchAnalysisFrameOpinionList({
@@ -659,6 +665,7 @@ export async function fetchAnalysisDataWithCache({
           "disagreements",
           displayLanguage,
           spokenLanguages,
+          viewerScope,
         ],
         queryFn: () =>
           fetchAnalysisFrameOpinionList({
@@ -678,6 +685,7 @@ export async function fetchAnalysisDataWithCache({
           "divisive",
           displayLanguage,
           spokenLanguages,
+          viewerScope,
         ],
         queryFn: () =>
           fetchAnalysisFrameOpinionList({
@@ -737,6 +745,7 @@ export function useAnalysisQuery({
   } = useBackendCommentApi();
   const queryClient = useQueryClient();
   const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
+  const viewerScope = useViewerQueryScope();
 
   return useQuery({
     queryKey: [
@@ -747,6 +756,7 @@ export function useAnalysisQuery({
       computed(() => toValue(aiLabelingEnabled)),
       computed(() => displayLanguage.value),
       computed(() => [...spokenLanguages.value].sort()),
+      viewerScope,
     ],
     queryFn: async () => {
       const resolvedConversationSlugId = toValue(conversationSlugId);
@@ -758,6 +768,7 @@ export function useAnalysisQuery({
       const resolvedDisplayLanguage = displayLanguage.value;
       const resolvedSpokenLanguages = [...spokenLanguages.value].sort();
       const resolvedVoteCount = toValue(voteCount);
+      const resolvedViewerScope = viewerScope.value;
       const resolvedQueryKey = [
         "analysis",
         resolvedConversationSlugId,
@@ -766,6 +777,7 @@ export function useAnalysisQuery({
         resolvedAiLabelingEnabled,
         resolvedDisplayLanguage,
         resolvedSpokenLanguages,
+        resolvedViewerScope,
       ];
       const previousAnalysis =
         queryClient.getQueryData<AnalysisData>(resolvedQueryKey);
@@ -790,6 +802,7 @@ export function useAnalysisQuery({
         voteCount: resolvedVoteCount,
         freshness,
         analysisQueryKey: resolvedQueryKey,
+        viewerScope: resolvedViewerScope,
       });
 
       const snapshot = analysisData.conversationViewSnapshot;

@@ -16,6 +16,12 @@ import {
   getConversationContentQueryKey,
   getConversationDisplayContentQueryKey,
 } from "src/utils/api/contentTranslation/conversationContentQuery";
+import { getConversationQueryKey } from "src/utils/query/conversationQueryKeys";
+import {
+  isQueryForViewerScope,
+  useViewerQueryScope,
+  type ViewerQueryScope,
+} from "src/utils/query/viewerScope";
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
 
 import { useBackendPostApi } from "./post";
@@ -211,6 +217,7 @@ export function updateConversationQueryCache({
   conversationSlugId,
   updateConversation,
   fallbackConversation,
+  viewerScope,
 }: {
   queryClient: QueryClient;
   conversationSlugId: string;
@@ -218,6 +225,7 @@ export function updateConversationQueryCache({
     conversation: ConversationCacheData
   ) => ConversationCacheChanges;
   fallbackConversation?: ConversationCacheEntry;
+  viewerScope?: ViewerQueryScope;
 }): void {
   const queryKey = ["conversation", conversationSlugId];
 
@@ -247,7 +255,12 @@ export function updateConversationQueryCache({
   };
 
   queryClient.setQueriesData<ConversationCacheEntry>(
-    { queryKey },
+    {
+      queryKey,
+      predicate: (query) =>
+        viewerScope === undefined ||
+        isQueryForViewerScope({ queryKey: query.queryKey, viewerScope }),
+    },
     (oldData) => {
       if (!oldData) {
         return oldData;
@@ -278,18 +291,21 @@ export function useConversationQuery({
   const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
   const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
   const queryClient = useQueryClient();
+  const viewerScope = useViewerQueryScope();
   const sortedSpokenLanguages = computed(() =>
     [...spokenLanguages.value].sort()
   );
 
   return useQuery({
-    queryKey: [
-      "conversation",
-      computed(() => toValue(conversationSlugId)),
-      displayLanguage,
-      sortedSpokenLanguages,
-    ],
-    queryFn: async ({ queryKey }) => {
+    queryKey: computed(() =>
+      getConversationQueryKey({
+        conversationSlugId: toValue(conversationSlugId),
+        displayLanguage: displayLanguage.value,
+        spokenLanguages: sortedSpokenLanguages.value,
+        viewerScope: viewerScope.value,
+      })
+    ),
+    queryFn: async ({ queryKey, signal }) => {
       const slugId = toValue(conversationSlugId);
       const cachedConversationBeforeFetch =
         queryClient.getQueryData<ConversationDetail>(queryKey);
@@ -299,6 +315,7 @@ export function useConversationQuery({
         await fetchConversationBySlugIdWithDisplayContent({
           postSlugId: slugId,
           loadPersonalizedData: isGuestOrLoggedIn.value,
+          signal,
         });
       const cachedConversation =
         queryClient.getQueryData<ConversationDetail>(queryKey);
@@ -348,6 +365,14 @@ export function useConversationQuery({
       });
     },
     enabled: computed(() => toValue(enabled)),
+    placeholderData: (previousData, previousQuery) =>
+      previousQuery?.queryKey[1] === toValue(conversationSlugId) &&
+      isQueryForViewerScope({
+        queryKey: previousQuery.queryKey,
+        viewerScope: viewerScope.value,
+      })
+        ? previousData
+        : undefined,
     staleTime: 60 * 1000,
     retry: false,
   });

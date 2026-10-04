@@ -132,6 +132,7 @@
               class="project-conversation-layout-dev__statement-card"
             >
               <TranslatedCommentItem
+                :show-vote-results="true"
                 :comment-item="commentItem"
                 :post-slug-id="conversation.slugId"
                 conversation-author-username="project-team"
@@ -670,10 +671,10 @@ function getRouteTab(): "comment" | "analysis" {
   return route.query.tab === "analysis" ? "analysis" : "comment";
 }
 
-function castVote(
-  opinionSlugId: string,
-  voteAction: VotingAction
-): Promise<CastVoteResponse> {
+function castVote({ opinionSlugId, voteAction }: {
+  opinionSlugId: string;
+  voteAction: VotingAction;
+}): Promise<CastVoteResponse> {
   userVotes.value = userVotes.value.filter(
     (vote) => vote.opinionSlugId !== opinionSlugId
   );

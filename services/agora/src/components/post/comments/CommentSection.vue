@@ -23,6 +23,7 @@
               :survey-gate="props.surveyGate"
               :on-view-analysis="props.onViewAnalysis"
               :is-voting-disabled="props.isVotingDisabled"
+              :show-vote-results="true"
               :conversation-route-context="props.conversationRouteContext"
               @deleted="(opinionSlugId) => handleOpinionDeleted(opinionSlugId)"
               @muted-comment="handleOpinionMuted()"
@@ -223,7 +224,6 @@ async function onLoad(index: number, done: () => void): Promise<void> {
 
 const { userVotes, castVote, fetchUserVotingData } = useOpinionVoting({
   postSlugId: props.postSlugId,
-  visibleOpinions,
 });
 
 const emptyTextByFilter: Record<

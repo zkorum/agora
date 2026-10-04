@@ -53,6 +53,7 @@
               class="analysis-view-selector"
               content-alignment="start"
               icon-name="mdi-chevron-down"
+              icon-position="end"
               icon-size="1rem"
               label-overflow="truncate"
               @click="showAnalysisViewDrawer = true"

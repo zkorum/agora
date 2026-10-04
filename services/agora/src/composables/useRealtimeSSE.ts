@@ -39,11 +39,13 @@ import { getErrorLogContext } from "src/utils/api/errorLog";
 import { retainConversationRankingStatsUpdate } from "src/utils/api/post/rankingStatsUpdate";
 import {
   applyConversationRankingStatsUpdate,
+  type ConversationDetail,
   updateConversationQueryCache,
 } from "src/utils/api/post/useConversationQuery";
 import { isLiveSurveyResultsQueryKey } from "src/utils/api/survey/surveyQueryKeys";
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { processEnv } from "src/utils/processEnv";
+import { isQueryForViewerScope, useViewerQueryScope } from "src/utils/query/viewerScope";
 import { abortIgnoringAbortError } from "src/utils/sse/abort";
 import {
   getExponentialBackoffDelayMs,
@@ -291,6 +293,7 @@ export function useRealtimeSSE({
   const authStore = useAuthenticationStore();
   const languageStore = useLanguageStore();
   const queryClient = useQueryClient();
+  const viewerScope = useViewerQueryScope();
   const {
     fetchAnalysisFrameManifest,
     fetchAnalysisFrameGroups,
@@ -315,6 +318,7 @@ export function useRealtimeSSE({
         voteCount: undefined,
         freshness: params.freshness,
         analysisQueryKey: undefined,
+        viewerScope: viewerScope.value,
       }),
   });
   const { refreshAuthState } = useBackendAuthApi();
@@ -1198,12 +1202,15 @@ export function useRealtimeSSE({
             data.timestamp
           );
 
-          const previousConversation =
-            queryClient.getQueryData<ExtendedConversation>([
-              "conversation",
-              data.conversationSlugId,
-            ]);
-          const previousMetadata = previousConversation?.metadata;
+          const previousConversation = queryClient.getQueriesData<
+            ExtendedConversation | ConversationDetail
+          >({ queryKey: ["conversation", data.conversationSlugId] })
+            .find(([queryKey, conversation]) => conversation !== undefined && isQueryForViewerScope({ queryKey, viewerScope: viewerScope.value }))?.[1];
+          const previousMetadata = previousConversation === undefined
+            ? undefined
+            : "conversationData" in previousConversation
+              ? previousConversation.conversationData.metadata
+              : previousConversation.metadata;
           const preferredOpinionGroupCountChanged =
             previousMetadata === undefined ||
             previousMetadata.preferredOpinionGroupCount !==

@@ -76,9 +76,7 @@
 </template>
 
 <script setup lang="ts">
-import { useQueryClient } from "@tanstack/vue-query";
 import { onClickOutside, useWindowScroll } from "@vueuse/core";
-import { storeToRefs } from "pinia";
 import Button from "primevue/button";
 import PreParticipationIntentionDialog from "src/components/authentication/intention/PreParticipationIntentionDialog.vue";
 import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
@@ -94,12 +92,10 @@ import type {
   ParticipationMode,
   SurveyGateSummary,
 } from "src/shared/types/zod";
-import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
 import { useUserStore } from "src/stores/user";
-import { useBackendCommentApi } from "src/utils/api/comment/comment";
-import { cacheCreatedOpinion } from "src/utils/api/comment/createdOpinionCache";
+import { useCreateCommentMutation } from "src/utils/api/comment/useCommentQueries";
 import { useInvalidateConversationQuery } from "src/utils/api/post/useConversationQuery";
 import {
   type RouteGuardDestination,
@@ -211,13 +207,11 @@ const dummyInput = ref<HTMLInputElement>();
 const { saveOpinionDraft, getOpinionDraft, deleteOpinionDraft } =
   useNewOpinionDraftsStore();
 const userStore = useUserStore();
-const { userId } = storeToRefs(useAuthenticationStore());
 
 const { createNewOpinionIntention, clearNewOpinionIntention } =
   useLoginIntentionStore();
 
-const { createNewComment } = useBackendCommentApi();
-const queryClient = useQueryClient();
+const createCommentMutation = useCreateCommentMutation();
 
 const { showNotifyMessage } = useNotify();
 const { needsAuth: isAuthBlocked, shouldOpenParticipationModal } =
@@ -493,19 +487,12 @@ async function submitPostClicked() {
   isSubmissionLoading.value = true;
 
   try {
-    const response = await createNewComment({
+    const response = await createCommentMutation.mutateAsync({
       commentBody: opinionBody.value,
-      postSlugId: props.postSlugId,
+      conversationSlugId: props.postSlugId,
     });
 
     if (response.success) {
-      await cacheCreatedOpinion({
-        queryClient,
-        conversationSlugId: props.postSlugId,
-        displayedOpinionItem: response.displayedOpinionItem,
-        viewerUserId: userId.value,
-      });
-
       emit("submittedComment", {
         displayedOpinionItem: response.displayedOpinionItem,
         needsCacheRefresh: response.needsCacheRefresh,
@@ -557,9 +544,7 @@ async function submitPostClicked() {
       }
     }
   } catch {
-    // Technical errors (network, server errors, etc.) are handled by TanStack Query
     isSubmissionLoading.value = false;
-    showNotifyMessage(t("createOpinionError"));
   }
 }
 </script>

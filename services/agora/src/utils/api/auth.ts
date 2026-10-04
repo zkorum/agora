@@ -5,7 +5,7 @@ import {
   revokeAuthSessionResponse,
 } from "src/shared/types/dto-auth";
 import type { DeviceLoginStatus } from "src/shared/types/zod";
-import { useAuthenticationStore } from "src/stores/authentication";
+import { type LoginStatusUpdate, useAuthenticationStore } from "src/stores/authentication";
 import { useLanguageStore } from "src/stores/language";
 import { useNotificationStore } from "src/stores/notification";
 import { useTopicStore } from "src/stores/topic";
@@ -26,6 +26,7 @@ import {
 } from "../auth/refreshAuthState";
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import { queryClient } from "../query/client";
+import { seedNewGuestQueries } from "../query/guestQueryCache";
 import { useRouterGuard } from "../router/guard";
 import { api } from "./client";
 import { useCommonApi } from "./common";
@@ -36,6 +37,11 @@ export interface AuthStateUpdateResult {
   authStateChanged: boolean;
   needsCacheRefresh: boolean;
 }
+
+const participationAuthRefreshes = new WeakMap<
+  ReturnType<typeof useAuthenticationStore>,
+  Promise<AuthStateUpdateResult>
+>();
 
 export function useBackendAuthApi() {
   const { buildEncodedUcan } = useCommonApi();
@@ -203,19 +209,14 @@ export function useBackendAuthApi() {
         newLoginStatus.isKnown &&
         !newLoginStatus.isRegistered;
       if (isNewGuestCreation) {
+        // Viewer-scoped queries were seeded before auth changed. Keep the
+        // confirmed first participation visible until a later background read.
         await queryClient.invalidateQueries({
-          predicate: (query) => {
-            const queryKey = query.queryKey[0];
-            return ![
-              "userVotes",
-              "comments",
-              "maxdiff-items",
-              "maxdiff-load",
-            ].includes(String(queryKey));
-          },
+          queryKey: ["feed"],
+          refetchType: "none",
         });
       } else if (!knownUserChanged) {
-        queryClient.clear();
+        await queryClient.invalidateQueries();
       }
     }
 
@@ -229,11 +230,19 @@ export function useBackendAuthApi() {
     forceRefresh = false,
     deferCacheOperations = false,
   }: {
-    partialLoginStatus: Partial<DeviceLoginStatus>;
+    partialLoginStatus: LoginStatusUpdate;
     forceRefresh?: boolean;
     deferCacheOperations?: boolean;
   }): Promise<AuthStateUpdateResult> {
     try {
+      if (
+        !authStore.isKnown &&
+        partialLoginStatus.isKnown === true &&
+        !partialLoginStatus.isRegistered &&
+        !partialLoginStatus.isLoggedIn
+      ) {
+        seedNewGuestQueries({ queryClient, userId: partialLoginStatus.userId });
+      }
       return await processAuthStatusTransition({
         statusTransition: authStore.setLoginStatus(partialLoginStatus),
         forceRefresh,
@@ -273,6 +282,27 @@ export function useBackendAuthApi() {
     return await updateAuthStateFromBackend({ loginStatus, didWrite });
   }
 
+  async function ensureParticipationAuthState(): Promise<AuthStateUpdateResult> {
+    if (authStore.isGuestOrLoggedIn && authStore.userId !== "") {
+      return { authStateChanged: false, needsCacheRefresh: false };
+    }
+    const pending = participationAuthRefreshes.get(authStore);
+    if (pending !== undefined) return await pending;
+
+    // Participation responses omit device identity/credentials. Resolve them
+    // once through the primary-backed auth endpoint, rather than inventing a guest ID.
+    const refresh = (async () => {
+      const { loginStatus, didWrite } = await requestBackendDeviceLoginStatus();
+      return await updateAuthStateFromBackend({ loginStatus, didWrite });
+    })();
+    participationAuthRefreshes.set(authStore, refresh);
+    try {
+      return await refresh;
+    } finally {
+      participationAuthRefreshes.delete(authStore);
+    }
+  }
+
   async function logoutDataCleanup({
     shouldClearLanguagePreferences,
   }: {
@@ -288,6 +318,7 @@ export function useBackendAuthApi() {
     logoutAllAuthSessions,
     getDeviceLoginStatus,
     updateAuthState,
+    ensureParticipationAuthState,
     refreshAuthState,
     loadAuthenticatedModules,
   };

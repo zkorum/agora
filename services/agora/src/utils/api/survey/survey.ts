@@ -42,24 +42,28 @@ export function useBackendSurveyApi() {
   async function createOptionalAuthConfig({
     url,
     options,
+    signal,
   }: {
     url: string;
     options: RawAxiosRequestConfig;
+    signal?: AbortSignal;
   }): Promise<RawAxiosRequestConfig> {
     await waitForAuthInitialization();
 
     if (isGuestOrLoggedIn.value) {
       const encodedUcan = await buildEncodedUcan(url, options);
-      return createRawAxiosRequestConfig({ encodedUcan });
+      return createRawAxiosRequestConfig({ encodedUcan, signal });
     }
 
-    return createRawAxiosRequestConfig({});
+    return createRawAxiosRequestConfig({ signal });
   }
 
   async function fetchSurveyForm({
     conversationSlugId,
+    signal,
   }: {
     conversationSlugId: string;
+    signal?: AbortSignal;
   }): Promise<AxiosSuccessResponse<SurveyFormFetchResponse> | AxiosErrorResponse> {
     try {
       const params = { conversationSlugId };
@@ -71,7 +75,7 @@ export function useBackendSurveyApi() {
         api
       ).apiV1SurveyFormFetchPost(
         params,
-        await createOptionalAuthConfig({ url, options })
+        await createOptionalAuthConfig({ url, options, signal })
       );
 
       return {
@@ -85,8 +89,10 @@ export function useBackendSurveyApi() {
 
   async function checkSurveyStatus({
     conversationSlugId,
+    signal,
   }: {
     conversationSlugId: string;
+    signal?: AbortSignal;
   }): Promise<
     AxiosSuccessResponse<SurveyStatusCheckResponse> | AxiosErrorResponse
   > {
@@ -100,7 +106,7 @@ export function useBackendSurveyApi() {
         api
       ).apiV1SurveyStatusCheckPost(
         params,
-        await createOptionalAuthConfig({ url, options })
+        await createOptionalAuthConfig({ url, options, signal })
       );
 
       return {

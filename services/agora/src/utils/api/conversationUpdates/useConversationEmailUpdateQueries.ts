@@ -92,7 +92,7 @@ export function useConversationEmailUpdateSummaryQuery({
 }) {
   const queryClient = useQueryClient();
   const { getConversationSummary } = useBackendConversationEmailUpdatesApi();
-  const { isAuthInitialized, userId, hasEmailVerification } = storeToRefs(
+  const { isAuthInitialized, isLoggedIn, userId, hasEmailVerification } = storeToRefs(
     useAuthenticationStore()
   );
   const resolvedConversationSlugId = computed(() =>
@@ -102,6 +102,7 @@ export function useConversationEmailUpdateSummaryQuery({
     () =>
       toValue(enabled) &&
       isAuthInitialized.value &&
+      isLoggedIn.value &&
       userId.value !== undefined &&
       hasEmailVerification.value &&
       resolvedConversationSlugId.value !== ""
@@ -139,6 +140,13 @@ export function useConversationEmailUpdateSummaryQuery({
         : { status: "loading" };
     }
   );
+
+  async function resolveOnboarding(): Promise<ConversationEmailUpdateOnboardingResolution> {
+    if (queryEnabled.value && (query.data.value === undefined || query.isStale.value)) {
+      await query.refetch();
+    }
+    return onboardingResolution.value;
+  }
 
   function markPreferenceAnswered({
     state,
@@ -195,6 +203,7 @@ export function useConversationEmailUpdateSummaryQuery({
   return {
     ...query,
     onboardingResolution,
+    resolveOnboarding,
     markPreferenceAnswered,
   };
 }

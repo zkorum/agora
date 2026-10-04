@@ -63,7 +63,11 @@ async function refreshAuthStateAfterUnauthorizedRequest(): Promise<void> {
       const { refreshAuthStateFromBackend } = await import(
         "src/utils/auth/refreshAuthState"
       );
-      await refreshAuthStateFromBackend();
+      const result = await refreshAuthStateFromBackend();
+      if (result.needsCacheRefresh) {
+        const { useUserStore } = await import("src/stores/user");
+        await useUserStore().loadUserProfileMetadata();
+      }
     } catch (error) {
       console.error("Failed to refresh auth state after 401", error);
     } finally {

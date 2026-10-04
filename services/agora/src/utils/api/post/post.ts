@@ -83,9 +83,11 @@ export function useBackendPostApi() {
   async function fetchConversationBySlugIdWithDisplayContent({
     postSlugId,
     loadPersonalizedData,
+    signal,
   }: {
     postSlugId: string;
     loadPersonalizedData: boolean;
+    signal?: AbortSignal;
   }): Promise<FetchConversationBySlugIdResult> {
     try {
       const params = Dto.getConversationRequest.parse({
@@ -94,13 +96,14 @@ export function useBackendPostApi() {
       const url = "/api/v1/conversation/get";
       const options = { method: "POST" };
       if (!loadPersonalizedData) {
-        const response = await api.post<unknown>(url, params);
+        const response = await api.post<unknown>(url, params, { signal });
         const data = Dto.getConversationResponse.parse(response.data);
 
         return await handleGetConversationResponse(data);
       } else {
         const encodedUcan = await buildEncodedUcan(url, options);
         const response = await api.post<unknown>(url, params, {
+          signal,
           headers: {
             ...buildAuthorizationHeader(encodedUcan),
           },

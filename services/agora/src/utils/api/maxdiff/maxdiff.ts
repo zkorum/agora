@@ -32,6 +32,7 @@ export function useMaxDiffApi() {
     ranking: string[] | null;
     comparisons: MaxDiffComparison[];
     isComplete: boolean;
+    isCurrent?: () => boolean;
   }
 
   type SaveMaxDiffResponseApi =
@@ -43,6 +44,7 @@ export function useMaxDiffApi() {
     ranking,
     comparisons,
     isComplete,
+    isCurrent = () => true,
   }: SaveMaxDiffParams): Promise<SaveMaxDiffResponseApi> {
     try {
       const params: ApiV1RankingBwsSavePostRequest = {
@@ -55,6 +57,7 @@ export function useMaxDiffApi() {
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1RankingBwsSavePost(params);
       const encodedUcan = await buildEncodedUcan(url, options);
+      if (!isCurrent()) throw new DOMException("Voting session changed", "AbortError");
       const response = await DefaultApiFactory(
         undefined,
         undefined,
@@ -75,6 +78,7 @@ export function useMaxDiffApi() {
 
   interface LoadMaxDiffParams {
     conversationSlugId: string;
+    signal?: AbortSignal;
   }
 
   type LoadMaxDiffSuccessResponse = AxiosSuccessResponse<MaxDiffLoadResponse>;
@@ -82,6 +86,7 @@ export function useMaxDiffApi() {
 
   async function loadMaxDiffResult({
     conversationSlugId,
+    signal,
   }: LoadMaxDiffParams): Promise<LoadMaxDiffResponse> {
     try {
       const params = { conversationSlugId };
@@ -95,7 +100,7 @@ export function useMaxDiffApi() {
         api
       ).apiV1RankingBwsLoadPost(
         params,
-        createRawAxiosRequestConfig({ encodedUcan })
+        createRawAxiosRequestConfig({ encodedUcan, signal })
       );
 
       return {
@@ -207,6 +212,7 @@ export function useMaxDiffApi() {
   interface FetchMaxDiffItemsParams {
     conversationSlugId: string;
     lifecycleFilter?: ApiV1RankingBwsResultsPostRequest["lifecycleFilter"];
+    signal?: AbortSignal;
   }
 
   type FetchMaxDiffItemsResponse =
@@ -216,6 +222,7 @@ export function useMaxDiffApi() {
   async function fetchMaxDiffItems({
     conversationSlugId,
     lifecycleFilter,
+    signal,
   }: FetchMaxDiffItemsParams): Promise<FetchMaxDiffItemsResponse> {
     try {
       const params = { conversationSlugId, lifecycleFilter };
@@ -231,7 +238,7 @@ export function useMaxDiffApi() {
         api
       ).apiV1RankingBwsItemsFetchPost(
         params,
-        createRawAxiosRequestConfig({ encodedUcan })
+        createRawAxiosRequestConfig({ encodedUcan, signal })
       );
 
       return {
