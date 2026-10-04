@@ -73,7 +73,7 @@ export function useBackendVoteApi() {
       },
     });
 
-    return response.data || []; // Return data or empty array
+    return Dto.getUserVotesByConversationsResponse.parse(response.data);
   }
 
   return { fetchUserVotesForPostSlugIds, castVoteForComment };

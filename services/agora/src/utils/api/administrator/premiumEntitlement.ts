@@ -26,16 +26,16 @@ export function useBackendAdministratorPremiumEntitlementApi() {
       administratorPremiumEntitlementApiTranslations
     );
 
-  async function postAdminPremiumEntitlement<T>({
+  async function postAdminPremiumEntitlement({
     path,
     body,
   }: {
     path: string;
     body: unknown;
-  }): Promise<T> {
+  }): Promise<unknown> {
     const options: RawAxiosRequestConfig = { method: "POST" };
     const encodedUcan = await buildEncodedUcan(path, options);
-    const response = await api.post<T>(path, body, {
+    const response = await api.post<unknown>(path, body, {
       headers: {
         ...buildAuthorizationHeader(encodedUcan),
       },

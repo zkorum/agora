@@ -1,4 +1,3 @@
-import type { ApiV1ContentTranslationRequestPostRequest } from "src/api";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
 import type {
   ConversationContentFetchRequest,
@@ -10,7 +9,7 @@ import type { z } from "zod";
 import { api } from "../client";
 import { useCommonApi } from "../common";
 
-export type RequestContentTranslationParams = ApiV1ContentTranslationRequestPostRequest;
+export type RequestContentTranslationParams = z.infer<typeof Dto.contentTranslationRequest>;
 export type ContentTranslationResponse = z.infer<
   typeof Dto.contentTranslationResponse
 >;
@@ -52,7 +51,7 @@ export function useBackendContentTranslationApi() {
     const url = "/api/v1/conversation/content/fetch";
     const options = { method: "POST" };
     const encodedUcan = await buildEncodedUcan(url, options);
-    const response = await api.post(
+    const response = await api.post<unknown>(
       url,
       parsedParams,
       createRawAxiosRequestConfig({ encodedUcan })
@@ -68,7 +67,7 @@ export function useBackendContentTranslationApi() {
     const url = "/api/v1/project/content/fetch";
     const options = { method: "POST" };
     const encodedUcan = await buildEncodedUcan(url, options);
-    const response = await api.post(
+    const response = await api.post<unknown>(
       url,
       parsedParams,
       createRawAxiosRequestConfig({ encodedUcan })

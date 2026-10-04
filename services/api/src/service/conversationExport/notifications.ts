@@ -1,134 +1,92 @@
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { getPrimaryDatabase } from "@/shared-backend/db.js";
 import {
     notificationTable,
     notificationExportTable,
 } from "@/shared-backend/schema.js";
 import { generateRandomSlugId } from "@/crypto.js";
 import { log } from "@/app.js";
-import {
-    type ExportFailureReason,
-    type NotificationItem,
-    zodRegularNotificationItem,
-} from "@/shared/types/zod.js";
+import type { NotificationContent } from "../notificationDto.js";
+import { buildNotification } from "../notificationDto.js";
 import type { RealtimeSSEManager } from "../realtimeSSE.js";
-
-type ExportNotificationType =
-    | "export_started"
-    | "export_completed"
-    | "export_failed"
-    | "export_cancelled";
 
 type ExportCancellationReason = NonNullable<
     (typeof notificationExportTable.$inferSelect)["cancellationReason"]
 >;
 
-interface CreateExportNotificationParams {
-    db: PostgresJsDatabase;
-    userId: string;
-    exportRequestId: number;
-    exportSlugId: string;
-    conversationId: number;
-    conversationSlugId: string;
-    conversationTitle: string;
-    type: ExportNotificationType;
-    failureReason?: ExportFailureReason;
-    cancellationReason?: ExportCancellationReason;
-    realtimeSSEManager?: RealtimeSSEManager;
-}
+type ExportNotificationContent =
+    | Extract<
+          NotificationContent,
+          { type: "export_started" | "export_completed" | "export_failed" }
+      >
+    | (Omit<
+          Extract<NotificationContent, { type: "export_cancelled" }>,
+          "cancellationReason"
+      > & {
+          cancellationReason: ExportCancellationReason;
+      });
 
-/**
- * Create a notification for an export event
- */
 export async function createExportNotification({
     db,
     userId,
     exportRequestId,
-    exportSlugId,
     conversationId,
-    conversationSlugId,
-    conversationTitle,
-    type,
-    failureReason,
-    cancellationReason,
+    notification,
     realtimeSSEManager,
-}: CreateExportNotificationParams): Promise<void> {
+}: {
+    db: PostgresJsDatabase;
+    userId: string;
+    exportRequestId: number;
+    conversationId: number;
+    notification: ExportNotificationContent;
+    realtimeSSEManager: RealtimeSSEManager | undefined;
+}): Promise<void> {
     try {
-        // Create notification record
-        const notificationSlugId = generateRandomSlugId();
-
-        const [notificationRecord] = await db
-            .insert(notificationTable)
-            .values({
-                slugId: notificationSlugId,
-                userId: userId,
-                notificationType: type,
-            })
-            .returning({
-                notificationId: notificationTable.id,
-                createdAt: notificationTable.createdAt,
-                isRead: notificationTable.isRead,
+        const slugId = generateRandomSlugId();
+        const content = await getPrimaryDatabase(db).transaction(async (tx) => {
+            const [record] = await tx
+                .insert(notificationTable)
+                .values({
+                    slugId,
+                    userId,
+                    notificationType: notification.type,
+                })
+                .returning({
+                    notificationId: notificationTable.id,
+                    createdAt: notificationTable.createdAt,
+                    isRead: notificationTable.isRead,
+                });
+            await tx.insert(notificationExportTable).values({
+                notificationId: record.notificationId,
+                exportRequestId,
+                exportSlugId: notification.routeTarget.exportSlugId,
+                conversationId,
+                failureReason:
+                    notification.type === "export_failed"
+                        ? notification.failureReason
+                        : undefined,
+                cancellationReason:
+                    notification.type === "export_cancelled"
+                        ? notification.cancellationReason
+                        : undefined,
             });
-
-        const notificationId = notificationRecord.notificationId;
-
-        // Create export-specific notification data
-        await db.insert(notificationExportTable).values({
-            notificationId: notificationId,
-            exportRequestId,
-            exportSlugId,
-            conversationId: conversationId,
-            failureReason,
-            cancellationReason,
+            return buildNotification({
+                content: notification,
+                record: {
+                    slugId,
+                    createdAt: record.createdAt,
+                    isRead: record.isRead,
+                },
+            });
         });
-
+        realtimeSSEManager?.broadcastToUser(userId, content);
         log.info(
-            `Created ${type} notification for user ${userId}, export ${exportSlugId}`,
+            `Created ${notification.type} notification for user ${userId}, export ${notification.routeTarget.exportSlugId}`,
         );
-
-        const baseNotification = {
-            slugId: notificationSlugId,
-            createdAt: notificationRecord.createdAt,
-            isRead: notificationRecord.isRead,
-            routeTarget: {
-                type: "export" as const,
-                conversationSlugId,
-                exportSlugId,
-            },
-            conversationTitle,
-        };
-        const notificationItem: Extract<NotificationItem, { type: typeof type }> =
-            type === "export_failed"
-                ? {
-                      ...baseNotification,
-                      type,
-                      failureReason,
-                  }
-                : type === "export_cancelled"
-                  ? {
-                        ...baseNotification,
-                        type,
-                        cancellationReason:
-                            cancellationReason ?? "Export was cancelled",
-                    }
-                  : {
-                        ...baseNotification,
-                        type,
-                    };
-
-        const validationResult = zodRegularNotificationItem.safeParse(notificationItem);
-        if (validationResult.success) {
-            realtimeSSEManager?.broadcastToUser(userId, validationResult.data);
-        } else {
-            log.error(
-                validationResult.error,
-                `Failed to validate export notification ${notificationSlugId} before broadcast`,
-            );
-        }
     } catch (error: unknown) {
-        // Don't fail the export if notification creation fails
         log.error(
             error,
-            `Failed to create ${type} notification for user ${userId}, export ${exportSlugId}:`,
+            `Failed to create ${notification.type} notification for export ${notification.routeTarget.exportSlugId}`,
         );
     }
 }

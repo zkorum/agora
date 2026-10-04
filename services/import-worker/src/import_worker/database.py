@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from pydantic import TypeAdapter
@@ -10,6 +11,11 @@ if TYPE_CHECKING:
     from sqlalchemy.engine import Connection, Engine
 
 STRING_RESULT = TypeAdapter(str)
+
+
+def database_timestamp_to_utc(value: datetime) -> datetime:
+    # PostgreSQL timestamp-without-time-zone columns store UTC in this schema.
+    return value.replace(tzinfo=UTC) if value.tzinfo is None else value.astimezone(UTC)
 
 
 def use_psycopg_driver(connection_string: str) -> str:

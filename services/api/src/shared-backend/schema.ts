@@ -4104,9 +4104,10 @@ export const notificationOpinionVoteTable = pgTable(
             .notNull(),
     },
     (t) => [
-        index("notification_opinion_vote_notification_idx").on(
+        unique("notification_opinion_vote_notification_unique").on(
             t.notificationId,
         ),
+        check("notification_opinion_vote_positive_count", sql`${t.numVotes} >= 1`),
     ],
 );
 
@@ -4134,7 +4135,7 @@ export const notificationNewOpinionTable = pgTable(
             .notNull(),
     },
     (t) => [
-        index("notification_new_opinion_notification_idx").on(t.notificationId),
+        unique("notification_new_opinion_notification_unique").on(t.notificationId),
     ],
 );
 
@@ -4161,7 +4162,7 @@ export const notificationExportTable = pgTable(
             .defaultNow()
             .notNull(),
     },
-    (t) => [index("notification_export_notification_idx").on(t.notificationId)],
+    (t) => [unique("notification_export_notification_unique").on(t.notificationId)],
 );
 
 /** @service import-worker */
@@ -4185,7 +4186,7 @@ export const notificationImportTable = pgTable(
             .defaultNow()
             .notNull(),
     },
-    (t) => [index("notification_import_notification_idx").on(t.notificationId)],
+    (t) => [unique("notification_import_notification_unique").on(t.notificationId)],
 );
 
 /** @service import-worker */

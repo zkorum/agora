@@ -12,8 +12,8 @@ import { computed, type MaybeRefOrGetter, reactive, toValue } from "vue";
 import { useNotify } from "../../ui/notify";
 import { useBackendAuthApi } from "../auth";
 import { useInvalidateCommentQueries } from "../comment/useCommentQueries";
-import type { AxiosErrorResponse } from "../common";
 import { useCommonApi } from "../common";
+import { classifyApiError } from "../error";
 import { useBackendVoteApi } from "../vote";
 import {
   type UseVoteQueriesTranslations,
@@ -182,7 +182,7 @@ export function useVoteMutation(postSlugId: string) {
       return { previousUserVotes, previousComments, voterId };
     },
 
-    onError: (error: AxiosErrorResponse, _variables, context) => {
+    onError: (error: unknown, _variables, context) => {
       // Rollback BOTH caches to previous state on error
       if (context?.previousUserVotes !== undefined) {
         queryClient.setQueryData(
@@ -198,8 +198,9 @@ export function useVoteMutation(postSlugId: string) {
       }
 
       // Handle error notification
-      if (error?.code) {
-        showNotifyMessage(getErrorMessage(error));
+      const apiError = classifyApiError(error);
+      if (apiError.kind === "transport") {
+        showNotifyMessage(getErrorMessage(apiError));
       } else {
         showNotifyMessage(t("failedToCastVote"));
       }

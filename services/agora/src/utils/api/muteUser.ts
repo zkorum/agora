@@ -4,7 +4,7 @@ import {
   DefaultApiFactory,
 } from "src/api";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type { GetMutedUsersResponse } from "src/shared/types/dto";
+import { Dto } from "src/shared/types/dto";
 import type { UserMuteAction } from "src/shared/types/zod";
 
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
@@ -79,15 +79,7 @@ export function useBackendUserMuteApi() {
         },
       });
 
-      const muteUserItemList: GetMutedUsersResponse = [];
-      response.data.forEach((muteUserItemRaw) => {
-        muteUserItemList.push({
-          username: muteUserItemRaw.username,
-          createdAt: new Date(muteUserItemRaw.createdAt),
-        });
-      });
-
-      return muteUserItemList;
+      return Dto.getMutedUsersResponse.parse(response.data);
     } catch (e) {
       console.error(e);
       showNotifyMessage(t("failedToFetchMutedUsers"));

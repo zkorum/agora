@@ -1,10 +1,8 @@
 /**
  * Composable for managing conversation draft state and validation
  *
- * This composable uses a ref-based architecture with automatic store synchronization:
- * - All state is stored in plain refs (single source of truth)
- * - When syncToStore: true, watchers automatically sync changes to the Pinia store
- * - Simple and consistent - no conditional computed refs
+ * Form state is synchronized to the draft store. Correlated conversation-family
+ * settings stay together; individual controls are read-only projections.
  */
 
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
@@ -13,6 +11,7 @@ import { MAX_LENGTH_CONVERSATION_BODY } from "src/shared/shared";
 import type {
   ConversationMultilingualSetting,
   ConversationType,
+  ConversationTypeConfig,
   EventSlug,
   ExternalSourceConfig,
   ParticipationMode,
@@ -21,6 +20,7 @@ import type {
   RankingMode,
   SurveyConfig,
 } from "src/shared/types/zod";
+import { projectConversationTypeConfig } from "src/shared/utils/conversationTypeConfig";
 import { isValidPolisUrl } from "src/shared/utils/polis";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { areSurveyConfigsEqual } from "src/utils/survey/config";
@@ -60,9 +60,10 @@ export interface UseConversationDraftReturn {
   inheritProjectLanguages: Ref<boolean>;
   conversationEmailUpdateEnabledOverride: Ref<boolean | undefined>;
   seedOpinions: Ref<string[]>;
-  conversationType: Ref<ConversationType>;
-  votingPresentation: Ref<PolisVotingPresentation>;
-  rankingMode: Ref<RankingMode | undefined>;
+  conversationTypeConfig: Ref<Readonly<ConversationTypeConfig>>;
+  conversationType: ComputedRef<ConversationType>;
+  votingPresentation: ComputedRef<PolisVotingPresentation>;
+  rankingMode: ComputedRef<RankingMode | undefined>;
   isPrivate: Ref<boolean>;
   participationMode: Ref<ParticipationMode>;
   requiresEventTicket: Ref<EventSlug | undefined>;
@@ -123,9 +124,7 @@ export function useConversationDraft(
   // ============================================================================
 
   // Initialize refs from store or empty draft
-  const initialDraft = config.syncToStore
-    ? store!.conversationDraft
-    : createEmptyDraft();
+  const initialDraft = store?.conversationDraft ?? createEmptyDraft();
 
   // All state as refs (single source of truth)
   const title = ref(initialDraft.title);
@@ -141,15 +140,20 @@ export function useConversationDraft(
     initialDraft.conversationEmailUpdateEnabledOverride
   );
   const seedOpinions = ref<string[]>([...initialDraft.seedOpinions]);
-  const conversationType = ref<ConversationType>(initialDraft.conversationType);
-  const votingPresentation = ref<PolisVotingPresentation>(
-    initialDraft.conversationType === "polis"
-      ? initialDraft.votingPresentation
+  const conversationTypeConfig = ref<Readonly<ConversationTypeConfig>>(
+    projectConversationTypeConfig(initialDraft)
+  );
+  const conversationType = computed(
+    () => conversationTypeConfig.value.conversationType
+  );
+  const votingPresentation = computed(() =>
+    conversationTypeConfig.value.conversationType === "polis"
+      ? conversationTypeConfig.value.votingPresentation
       : "list"
   );
-  const rankingMode = ref<RankingMode | undefined>(
-    initialDraft.conversationType === "ranking"
-      ? initialDraft.rankingMode
+  const rankingMode = computed(() =>
+    conversationTypeConfig.value.conversationType === "ranking"
+      ? conversationTypeConfig.value.rankingMode
       : undefined
   );
   const isPrivate = ref(initialDraft.isPrivate);
@@ -184,7 +188,7 @@ export function useConversationDraft(
 
   if (config.syncToStore && store) {
     // Create a computed object containing all draft state for efficient watching
-    const draftSnapshot = computed(() => ({
+    const draftSnapshot = computed<ConversationDraft>(() => ({
       title: title.value,
       content: content.value,
       multilingualSetting: multilingualSetting.value,
@@ -193,9 +197,6 @@ export function useConversationDraft(
       conversationEmailUpdateEnabledOverride:
         conversationEmailUpdateEnabledOverride.value,
       seedOpinions: [...seedOpinions.value],
-      conversationType: conversationType.value,
-      votingPresentation: votingPresentation.value,
-      rankingMode: rankingMode.value,
       isPrivate: isPrivate.value,
       participationMode: participationMode.value,
       requiresEventTicket: requiresEventTicket.value,
@@ -205,50 +206,14 @@ export function useConversationDraft(
       externalSourceConfig: externalSourceConfig.value,
       surveyConfig: surveyConfig.value,
       importSettings: { ...importSettings.value },
+      ...conversationTypeConfig.value,
     }));
 
     // Single deep watcher syncs all changes to store
     watch(
       draftSnapshot,
       (newSnapshot) => {
-        store.conversationDraft.title = newSnapshot.title;
-        store.conversationDraft.content = newSnapshot.content;
-        store.conversationDraft.multilingualSetting =
-          newSnapshot.multilingualSetting;
-        store.conversationDraft.selectedProjectSlug =
-          newSnapshot.selectedProjectSlug;
-        store.conversationDraft.inheritProjectLanguages =
-          newSnapshot.inheritProjectLanguages;
-        store.conversationDraft.conversationEmailUpdateEnabledOverride =
-          newSnapshot.conversationEmailUpdateEnabledOverride;
-        store.conversationDraft.seedOpinions = newSnapshot.seedOpinions;
-        if (newSnapshot.conversationType === "ranking") {
-          store.conversationDraft = {
-            ...store.conversationDraft,
-            conversationType: "ranking",
-            rankingMode: newSnapshot.rankingMode ?? "bws",
-          };
-        } else {
-          store.conversationDraft = {
-            ...store.conversationDraft,
-            conversationType: "polis",
-            votingPresentation: newSnapshot.votingPresentation,
-          };
-        }
-        store.conversationDraft.isPrivate = newSnapshot.isPrivate;
-        store.conversationDraft.participationMode =
-          newSnapshot.participationMode;
-        store.conversationDraft.requiresEventTicket =
-          newSnapshot.requiresEventTicket;
-        store.conversationDraft.aiLabelingEnabled =
-          newSnapshot.aiLabelingEnabled;
-        store.conversationDraft.preferredOpinionGroupCount =
-          newSnapshot.preferredOpinionGroupCount;
-        store.conversationDraft.postAs = newSnapshot.postAs;
-        store.conversationDraft.externalSourceConfig =
-          newSnapshot.externalSourceConfig;
-        store.conversationDraft.surveyConfig = newSnapshot.surveyConfig;
-        store.conversationDraft.importSettings = newSnapshot.importSettings;
+        store.conversationDraft = newSnapshot;
       },
       { deep: true, flush: "sync" }
     );
@@ -539,9 +504,10 @@ export function useConversationDraft(
     conversationEmailUpdateEnabledOverride.value =
       emptyDraft.conversationEmailUpdateEnabledOverride;
     seedOpinions.value = [];
-    conversationType.value = emptyDraft.conversationType;
-    votingPresentation.value = "list";
-    rankingMode.value = undefined;
+    conversationTypeConfig.value = {
+      conversationType: "polis",
+      votingPresentation: "list",
+    };
     isPrivate.value = emptyDraft.isPrivate;
     participationMode.value = emptyDraft.participationMode;
     requiresEventTicket.value = emptyDraft.requiresEventTicket;
@@ -575,6 +541,8 @@ export function useConversationDraft(
     requiresEventTicket.value = data.requiresEventTicket;
     aiLabelingEnabled.value = data.aiLabelingEnabled;
     preferredOpinionGroupCount.value = data.preferredOpinionGroupCount;
+    conversationTypeConfig.value = projectConversationTypeConfig(data.conversationTypeConfig);
+    surveyConfig.value = data.surveyConfig;
 
     clearAllValidationErrors();
   }
@@ -595,6 +563,7 @@ export function useConversationDraft(
       aiLabelingEnabled: aiLabelingEnabled.value,
       preferredOpinionGroupCount: preferredOpinionGroupCount.value,
       surveyConfig: surveyConfig.value,
+      conversationTypeConfig: projectConversationTypeConfig(conversationTypeConfig.value),
     };
   }
 
@@ -625,6 +594,7 @@ export function useConversationDraft(
     inheritProjectLanguages,
     conversationEmailUpdateEnabledOverride,
     seedOpinions,
+    conversationTypeConfig,
     conversationType,
     votingPresentation,
     rankingMode,

@@ -24,7 +24,13 @@ import {
 } from "../languages.js";
 import { projectOrganizationAttributionRoleValues } from "./project.js";
 
-export const zodDateTimeFlexible = z.coerce.date();
+// Date objects are used internally; JSON uses ISO timestamps or epoch milliseconds.
+// Restrict coercion inputs so null/booleans cannot silently become valid dates.
+export const zodDateTimeFlexible = z.union([
+    z.date(),
+    z.iso.datetime({ offset: true }),
+    z.number().int().min(-8_640_000_000_000_000).max(8_640_000_000_000_000),
+]).pipe(z.coerce.date());
 export const zodSlugId = z.string().max(10);
 export const zodOrganizationSlug = z
     .string()

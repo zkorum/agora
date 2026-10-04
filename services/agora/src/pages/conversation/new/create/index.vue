@@ -236,15 +236,15 @@ import {
 } from "src/shared/shared";
 import type { GetConversationCreateProjectOptionsResponse } from "src/shared/types/dto";
 import type {
-  ConversationTypeConfig,
   ParticipationMode,
 } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { useUserStore } from "src/stores/user";
-import { type AxiosErrorCode, useCommonApi } from "src/utils/api/common";
+import { useCommonApi } from "src/utils/api/common";
 import { useActiveImportQuery } from "src/utils/api/conversationImport/useConversationImportQueries";
+import { classifyApiError } from "src/utils/api/error";
 import { useBackendPostApi } from "src/utils/api/post/post";
 import { isHistoryPathEqual } from "src/utils/nav/historyBack";
 import { useNotify } from "src/utils/ui/notify";
@@ -291,9 +291,7 @@ const {
   selectedProjectSlug,
   inheritProjectLanguages,
   conversationEmailUpdateEnabledOverride,
-  conversationType,
-  votingPresentation,
-  rankingMode,
+  conversationTypeConfig,
   isPrivate,
   participationMode,
   requiresEventTicket,
@@ -315,32 +313,6 @@ const {
 const isSubmitButtonLoading = ref(false);
 const isTitleOverLimit = ref(false);
 const isBodyOverLimit = ref(false);
-
-function getConversationTypeConfig(): ConversationTypeConfig {
-  if (conversationType.value === "ranking") {
-    return {
-      conversationType: "ranking",
-      rankingMode: rankingMode.value ?? "bws",
-    };
-  }
-
-  return {
-    conversationType: "polis",
-    votingPresentation: votingPresentation.value,
-  };
-}
-
-const conversationTypeConfig = computed({
-  get: getConversationTypeConfig,
-  set: (value: ConversationTypeConfig) => {
-    conversationType.value = value.conversationType;
-    if (value.conversationType === "polis") {
-      votingPresentation.value = value.votingPresentation;
-    }
-    rankingMode.value =
-      value.conversationType === "ranking" ? value.rankingMode : undefined;
-  },
-});
 
 const isManualTitleEmpty = computed(
   () =>
@@ -845,9 +817,9 @@ async function handleImportSubmission(): Promise<void> {
       });
     } catch (error: unknown) {
       // Handle backend errors (org restriction, validation failures, etc.)
-      const axiosError = error as { code?: AxiosErrorCode };
+      const axiosError = classifyApiError(error);
       handleAxiosErrorStatusCodes({
-        axiosErrorCode: axiosError.code ?? "ERR_BAD_RESPONSE",
+        axiosErrorCode: axiosError.code,
         defaultMessage: t("csvImportError"),
       });
       // Don't clear the draft on error - let user fix and retry

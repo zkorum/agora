@@ -483,7 +483,6 @@ function useContentTranslationController({
         queryClient,
         conversationSlugId: currentSubject.conversationSlugId,
         updateConversation: (conversation) => ({
-          ...conversation,
           metadata: {
             ...conversation.metadata,
             multilingualSetting: response.multilingualSetting,

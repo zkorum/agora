@@ -20,7 +20,6 @@ import type {
   AnalysisFrameOpinionList,
   AnalysisFreshnessRequest,
   FetchCommentStatsResponse,
-  FetchOpinionPageResponse,
 } from "src/shared/types/dto";
 import type { AnalysisView, OpinionItem } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
@@ -33,8 +32,8 @@ import {
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
 
 import { useNotify } from "../../ui/notify";
-import type { AxiosErrorResponse } from "../common";
 import { getErrorMessage } from "../common";
+import { classifyApiError } from "../error";
 import { updateConversationQueryCache } from "../post/useConversationQuery";
 import type { AnalysisData, CommentTabFilters } from "./comment";
 import {
@@ -46,6 +45,7 @@ import {
 } from "./comment";
 import { cacheCreatedOpinion } from "./createdOpinionCache";
 import { type OpinionCache, removeCachedOpinion } from "./opinionCache";
+import { initialOpinionPageRequest, type OpinionPageRequest, type OpinionPageResult } from "./opinionPageBoundary";
 import {
   type UseCommentQueriesTranslations,
   useCommentQueriesTranslations,
@@ -63,14 +63,14 @@ export function usePagedCommentsQuery({
   const { userId } = storeToRefs(useAuthenticationStore());
 
   return useInfiniteQuery<
-    FetchOpinionPageResponse,
+    OpinionPageResult,
     Error,
     InfiniteData<
-      FetchOpinionPageResponse,
-      FetchOpinionPageResponse["nextCursor"]
+      OpinionPageResult,
+      OpinionPageRequest
     >,
     readonly unknown[],
-    FetchOpinionPageResponse["nextCursor"]
+    OpinionPageRequest
   >({
     queryKey: [
       "comments",
@@ -82,13 +82,11 @@ export function usePagedCommentsQuery({
     ],
     queryFn: ({ pageParam }) =>
       fetchOpinionPage({
-        conversationSlugId: toValue(conversationSlugId),
-        filter: toValue(filter),
-        cursor: pageParam,
+        ...pageParam,
       }),
     enabled: computed(() => toValue(conversationSlugId) !== ""),
-    initialPageParam: null,
-    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    initialPageParam: computed(() => initialOpinionPageRequest({ conversationSlugId: toValue(conversationSlugId), filter: toValue(filter) })),
+    getNextPageParam: (lastPage) => lastPage.nextRequest,
     staleTime: 30_000,
     retry: false,
   });
@@ -808,11 +806,10 @@ export function useAnalysisQuery({
               snapshot,
             });
             if (metadata === conversation.metadata) {
-              return conversation;
+              return {};
             }
 
             return {
-              ...conversation,
               metadata,
             };
           },
@@ -902,10 +899,11 @@ export function useCreateCommentMutation() {
         );
       }
     },
-    onError: (error: AxiosErrorResponse) => {
+    onError: (error: unknown) => {
       // Handle technical errors (network, server errors, etc.)
-      if (error?.code) {
-        showNotifyMessage(getErrorMessage(error));
+      const apiError = classifyApiError(error);
+      if (apiError.kind === "transport") {
+        showNotifyMessage(getErrorMessage(apiError));
       } else {
         showNotifyMessage(t("failedToCreateComment"));
       }
@@ -956,7 +954,6 @@ export function useDeleteCommentMutation() {
             variables.moderation.action === "hide";
 
           return {
-            ...conversation,
             metadata: {
               ...conversation.metadata,
               opinionCount: Math.max(
@@ -994,9 +991,10 @@ export function useDeleteCommentMutation() {
 
       showNotifyMessage(t("commentDeletedSuccessfully"));
     },
-    onError: (error: AxiosErrorResponse) => {
-      if (error?.code) {
-        showNotifyMessage(getErrorMessage(error));
+    onError: (error: unknown) => {
+      const apiError = classifyApiError(error);
+      if (apiError.kind === "transport") {
+        showNotifyMessage(getErrorMessage(apiError));
       } else {
         showNotifyMessage(t("failedToDeleteComment"));
       }

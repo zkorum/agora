@@ -23,6 +23,7 @@ import type {
 } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { waitForAuthInitialization } from "src/utils/auth/waitForAuthInitialization";
+import type { z } from "zod";
 
 import { api } from "../client";
 import type { AxiosErrorResponse, AxiosSuccessResponse } from "../common";
@@ -190,11 +191,11 @@ export function useBackendSurveyApi() {
       const params = Dto.surveyConfigUpdateRequest.parse({
         conversationSlugId,
         surveyConfig,
-      });
+      } satisfies z.input<typeof Dto.surveyConfigUpdateRequest>);
       const url = "/api/v1/survey/config/update";
       const options = { method: "POST" };
       const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await api.post(
+      const response = await api.post<unknown>(
         url,
         params,
         createRawAxiosRequestConfig({ encodedUcan })
@@ -251,7 +252,7 @@ export function useBackendSurveyApi() {
         conversationSlugId,
         analysisView,
         checkpointViewSnapshotId,
-      });
+      } satisfies z.input<typeof Dto.surveyResultsAggregatedRequest>);
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1SurveyResultsAggregatedPost(params);
       const config = await createOptionalAuthConfig({ url, options });

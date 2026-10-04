@@ -142,7 +142,6 @@ function updateSurveyGateViewerCaches({
     queryClient,
     conversationSlugId,
     updateConversation: (conversation) => ({
-      ...conversation,
       interaction: {
         ...conversation.interaction,
         surveyGate,

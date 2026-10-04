@@ -193,11 +193,11 @@ import type {
   ConversationEmailUpdateConfigurationResponse,
   ConversationLanguageSettingsSource,
   GetConversationForEditResponse,
+  UpdateConversationRequest,
 } from "src/shared/types/dto";
 import type {
   ContentLanguageMetadataOutput,
   ConversationMultilingualSetting,
-  ConversationTypeConfig,
   ParticipationMode,
   PreferredOpinionGroupCount,
   ProjectLanguageSettings,
@@ -434,7 +434,7 @@ const {
   externalSourceConfig,
   conversationType,
   votingPresentation,
-  rankingMode,
+  conversationTypeConfig,
   validationState,
   validateTitle,
   validateBody,
@@ -556,32 +556,6 @@ function handlePartialEmailReachAction(action: PartialEmailReachAction): void {
   partialEmailReachWarningMode.value = undefined;
 }
 
-function getConversationTypeConfig(): ConversationTypeConfig {
-  if (conversationType.value === "ranking") {
-    return {
-      conversationType: "ranking",
-      rankingMode: rankingMode.value ?? "bws",
-    };
-  }
-
-  return {
-    conversationType: "polis",
-    votingPresentation: votingPresentation.value,
-  };
-}
-
-const conversationTypeConfig = computed({
-  get: getConversationTypeConfig,
-  set: (value: ConversationTypeConfig) => {
-    conversationType.value = value.conversationType;
-    if (value.conversationType === "polis") {
-      votingPresentation.value = value.votingPresentation;
-    }
-    rankingMode.value =
-      value.conversationType === "ranking" ? value.rankingMode : undefined;
-  },
-});
-
 const currentProjectLanguageProject = ref<
   CurrentProjectLanguageProject | undefined
 >(undefined);
@@ -684,19 +658,22 @@ async function performSave(): Promise<void> {
       languageSettingsSource: effectiveLanguageSettingsSource.value,
       isIndexed: !isPrivate.value,
       participationMode: participationMode.value,
-      conversationTypeConfig: conversationTypeConfig.value,
+      conversationTypeConfig:
+        conversationTypeConfig.value.conversationType === "polis"
+          ? {
+              conversationType: "polis",
+              votingPresentation:
+                conversationTypeConfig.value.votingPresentation,
+              aiLabelingEnabled: aiLabelingEnabled.value,
+              preferredOpinionGroupCount: preferredOpinionGroupCount.value,
+            }
+          : {
+              conversationType: "ranking",
+              rankingMode: conversationTypeConfig.value.rankingMode,
+            },
       requiresEventTicket: requiresEventTicket.value,
-      ...(conversationEmailUpdateEnabledOverride === undefined
-        ? {}
-        : { conversationEmailUpdateEnabledOverride }),
-      ...(conversationType.value === "polis"
-        ? {
-            aiLabelingEnabled: aiLabelingEnabled.value,
-            votingPresentation: votingPresentation.value,
-            preferredOpinionGroupCount: preferredOpinionGroupCount.value,
-          }
-        : {}),
-    });
+      conversationEmailUpdateEnabledOverride,
+    } satisfies UpdateConversationRequest);
 
     if (response.success) {
       showNotifyMessage(t("updateSuccess"));
@@ -889,8 +866,8 @@ onMounted(async () => {
       aiLabelingEnabled: response.aiLabelingEnabled,
       preferredOpinionGroupCount: response.preferredOpinionGroupCount,
       surveyConfig: response.surveyConfig ?? null,
+      conversationTypeConfig: response.conversationTypeConfig,
     });
-    conversationTypeConfig.value = response.conversationTypeConfig;
     editPermissions.value = response.editPermissions;
     currentProjectLanguageProject.value =
       response.projectLanguageProject === undefined

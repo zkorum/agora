@@ -12,6 +12,7 @@ import {
   type UpdateOrganizationLocalizationRequest,
 } from "src/shared/types/dto";
 import { isHttpsUrl } from "src/utils/url";
+import type { z } from "zod";
 
 export interface SelectOption<T extends string> {
   label: string;
@@ -69,14 +70,14 @@ export function optionalText(value: string): string | undefined {
 
 function normalizeCreateOrganizationForm(
   form: OrganizationCreateFormState
-): unknown {
+): z.input<typeof Dto.createOrganizationRequest> {
   return {
     defaultLanguageCode: form.defaultLanguageCode,
     description: form.description,
     isFullImagePath: isHttpsUrl(form.imagePath),
     organizationName: form.organizationName,
     organizationSlug: form.organizationSlug,
-    ...(form.imagePath.trim() === "" ? {} : { imagePath: form.imagePath }),
+    imagePath: form.imagePath.trim() === "" ? undefined : form.imagePath,
     websiteUrl: optionalText(form.websiteUrl),
   };
 }
@@ -117,7 +118,7 @@ export function buildUpdateOrganizationLocalizationRequest({
     imagePath: optionalText(form.imagePath),
     isFullImagePath: isHttpsUrl(form.imagePath),
     setAsDefault: isDefaultLanguage || form.setAsDefault,
-  });
+  } satisfies z.input<typeof Dto.updateOrganizationLocalizationRequest>);
 }
 
 export function isUpdateOrganizationLocalizationFormValid({
@@ -140,7 +141,8 @@ export function isUpdateOrganizationLocalizationFormValid({
     imagePath: optionalText(form.imagePath),
     isFullImagePath: isHttpsUrl(form.imagePath),
     setAsDefault: isDefaultLanguage || form.setAsDefault,
-  }).success;
+  } satisfies z.input<typeof Dto.updateOrganizationLocalizationRequest>)
+    .success;
 }
 
 export function parseDisplayLanguage(

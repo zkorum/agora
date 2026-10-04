@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import { storeToRefs } from "pinia";
-import type { ApiV1RankingBwsLoadPost200Response } from "src/api";
 import type {
   MaxDiffItem,
+  MaxDiffLoadResponse,
   MaxDiffSaveResponse,
   RankingStatsCheckpointsResponse,
 } from "src/shared/types/dto";
@@ -111,7 +111,7 @@ export function useMaxDiffLoadQuery({
 
   return useQuery({
     queryKey: ["maxdiff-load", computed(() => toValue(conversationSlugId))],
-    queryFn: async (): Promise<ApiV1RankingBwsLoadPost200Response> => {
+    queryFn: async (): Promise<MaxDiffLoadResponse> => {
       const response = await loadMaxDiffResult({
         conversationSlugId: toValue(conversationSlugId),
       });
@@ -270,7 +270,7 @@ export function useMaxDiffSaveMutation({
 
       // Write saved state directly to cache instead of invalidating
       // (avoids read replica lag returning stale data before buffer flushes)
-      queryClient.setQueryData<ApiV1RankingBwsLoadPost200Response>(
+      queryClient.setQueryData<MaxDiffLoadResponse>(
         ["maxdiff-load", slugId],
         (old) => ({
           ranking: variables.ranking,

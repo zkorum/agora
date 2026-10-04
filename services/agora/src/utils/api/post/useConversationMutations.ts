@@ -40,7 +40,6 @@ export function useCloseConversationMutation() {
         queryClient,
         conversationSlugId,
         updateConversation: (oldData) => ({
-          ...oldData,
           metadata: {
             ...oldData.metadata,
             isClosed: true,
@@ -119,7 +118,6 @@ export function useOpenConversationMutation() {
         queryClient,
         conversationSlugId,
         updateConversation: (oldData) => ({
-          ...oldData,
           metadata: {
             ...oldData.metadata,
             isClosed: false,
@@ -177,6 +175,10 @@ export function useUpdateConversationMutation() {
     mutationFn: (data: UpdateConversationRequest) => updateConversation(data),
 
     onMutate: async (variables) => {
+      const polisSettings =
+        variables.conversationTypeConfig.conversationType === "polis"
+          ? variables.conversationTypeConfig
+          : undefined;
       await queryClient.cancelQueries({
         queryKey: ["conversation", variables.conversationSlugId],
       });
@@ -190,16 +192,16 @@ export function useUpdateConversationMutation() {
         conversationSlugId: variables.conversationSlugId,
         updateConversation: (oldData) => {
           const updatedData = {
-            ...oldData,
             metadata: {
               ...oldData.metadata,
               isIndexed: variables.isIndexed,
               aiLabelingEnabled:
-                variables.aiLabelingEnabled ?? oldData.metadata.aiLabelingEnabled,
+                polisSettings?.aiLabelingEnabled ??
+                oldData.metadata.aiLabelingEnabled,
               preferredOpinionGroupCount:
-                variables.preferredOpinionGroupCount === undefined
+                polisSettings?.preferredOpinionGroupCount === undefined
                   ? oldData.metadata.preferredOpinionGroupCount
-                  : variables.preferredOpinionGroupCount,
+                  : polisSettings.preferredOpinionGroupCount,
               participationMode: variables.participationMode,
               requiresEventTicket: variables.requiresEventTicket,
             },

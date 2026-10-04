@@ -1818,6 +1818,13 @@ export class Dto {
             })
             .strict(),
     ]);
+    static updateConversationTypeConfig = z.discriminatedUnion("conversationType", [
+        zodConversationTypeConfig.options[0].extend({
+            aiLabelingEnabled: z.boolean().optional(),
+            preferredOpinionGroupCount: zodPreferredOpinionGroupCount.optional(),
+        }).strict(),
+        zodConversationTypeConfig.options[1],
+    ]);
     static updateConversationRequest = z
         .object({
             conversationSlugId: zodSlugId,
@@ -1831,10 +1838,7 @@ export class Dto {
                     "conversation_override",
                 ),
             requiresEventTicket: zodEventSlug.optional(),
-            aiLabelingEnabled: z.boolean().optional(),
-            conversationTypeConfig: zodConversationTypeConfig,
-            preferredOpinionGroupCount:
-                zodPreferredOpinionGroupCount.optional(),
+            conversationTypeConfig: Dto.updateConversationTypeConfig,
             surveyConfig: zodSurveyConfigInput.nullable().optional(),
             conversationEmailUpdateEnabledOverride: z
                 .boolean()

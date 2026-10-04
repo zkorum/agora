@@ -9,6 +9,7 @@ import type {
   ExtendedConversation,
   ExtendedOpinion,
 } from "src/shared/types/zod";
+import type { z } from "zod";
 
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import { api } from "./client";
@@ -34,15 +35,7 @@ export function useBackendUserApi() {
         },
       });
 
-      return {
-        activePostCount: response.data.activePostCount,
-        createdAt: new Date(response.data.createdAt),
-        isSiteModerator: response.data.isSiteModerator,
-        isSiteOrgAdmin: response.data.isSiteOrgAdmin,
-        username: response.data.username,
-        organizationList: response.data.organizationList,
-        verifiedEventTickets: response.data.verifiedEventTickets || [],
-      };
+      return Dto.getUserProfileResponse.parse(response.data);
     } catch (e) {
       console.error(e);
       return undefined;
@@ -55,7 +48,7 @@ export function useBackendUserApi() {
     try {
       const params = Dto.fetchUserConversationsRequest.parse({
         lastConversationSlugId: lastPostSlugId,
-      });
+      } satisfies z.input<typeof Dto.fetchUserConversationsRequest>);
 
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1UserConversationFetchPost(

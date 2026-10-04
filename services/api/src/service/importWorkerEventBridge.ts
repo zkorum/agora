@@ -1,6 +1,9 @@
 import { log } from "@/app.js";
 import { VALKEY_QUEUE_KEYS } from "@/shared-backend/valkeyQueues.js";
-import { zodRegularNotificationItem } from "@/shared/types/zod.js";
+import {
+    buildNotification,
+    type NotificationContent,
+} from "./notificationDto.js";
 import { zodImportWorkerEvent } from "./importQueueContract.js";
 import type { RealtimeSSEManager } from "./realtimeSSE.js";
 import type { ValkeyRef } from "./valkeyRef.js";
@@ -35,45 +38,42 @@ export function createImportWorkerEventBridge({
         }
 
         const event = parsed.data;
-        const baseNotification = {
+        const record = {
             slugId: event.notificationSlugId,
-            createdAt: event.notificationCreatedAt,
+            createdAt: new Date(event.notificationCreatedAt),
             isRead: event.notificationIsRead,
-            routeTarget: {
-                type: "import" as const,
-                importSlugId: event.importSlugId,
-                conversationSlugId: event.conversationSlugId,
-            },
         };
-        const notificationItem: unknown =
+        const content: NotificationContent =
             event.failureReason !== undefined
                 ? {
-                      ...baseNotification,
                       type: "import_failed",
+                      routeTarget: {
+                          type: "import",
+                          importSlugId: event.importSlugId,
+                      },
                       failureReason: event.failureReason,
                   }
                 : event.conversationSlugId !== undefined
                   ? {
-                        ...baseNotification,
                         type: "import_completed",
+                        routeTarget: {
+                            type: "import",
+                            importSlugId: event.importSlugId,
+                            conversationSlugId: event.conversationSlugId,
+                        },
                         conversationTitle: event.conversationTitle,
                     }
                   : {
-                        ...baseNotification,
                         type: "import_started",
+                        routeTarget: {
+                            type: "import",
+                            importSlugId: event.importSlugId,
+                        },
                     };
-
-        const validationResult = zodRegularNotificationItem.safeParse(notificationItem);
-        if (validationResult.success) {
-            realtimeSSEManager.broadcastToUser(
-                event.userId,
-                validationResult.data,
-            );
-        } else {
-            log.warn(
-                `[ImportWorkerEventBridge] Skipping invalid notification event: ${validationResult.error.message}`,
-            );
-        }
+        realtimeSSEManager.broadcastToUser(
+            event.userId,
+            buildNotification({ content, record }),
+        );
 
         if (event.broadcastNewConversation) {
             realtimeSSEManager.broadcastToAllExcept({

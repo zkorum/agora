@@ -1,4 +1,11 @@
 {
+    "notification-integrity": [
+        "notification",
+        "notification_opinion_vote",
+        "notification_new_opinion",
+        "notification_export",
+        "notification_import"
+    ],
     "project-page-counts": [
         "project",
         "project_content",

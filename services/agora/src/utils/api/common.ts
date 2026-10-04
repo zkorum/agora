@@ -12,6 +12,7 @@ import {
   type CommonApiTranslations,
   commonApiTranslations,
 } from "./common.i18n";
+import { type ApiErrorResponse, classifyApiError } from "./error";
 
 export type { KeyAction };
 
@@ -36,12 +37,7 @@ export interface AxiosSuccessResponse<T> {
   status: "success";
 }
 
-export interface AxiosErrorResponse {
-  status: "error";
-  message: string;
-  name: string;
-  code: AxiosErrorCode;
-}
+export type AxiosErrorResponse = ApiErrorResponse;
 
 // Error categorization utilities
 export function isTimeoutError(code: string | undefined): boolean {
@@ -52,7 +48,7 @@ export function isNetworkError(code: string | undefined): boolean {
   return code === "ERR_NETWORK" || code === "ECONNABORTED";
 }
 
-export function isClientError(code: AxiosErrorCode): boolean {
+export function isClientError(code: string | undefined): boolean {
   return (
     code === "ERR_BAD_REQUEST" ||
     code === "ERR_BAD_OPTION" ||
@@ -62,7 +58,7 @@ export function isClientError(code: AxiosErrorCode): boolean {
   );
 }
 
-export function isServerError(code: AxiosErrorCode): boolean {
+export function isServerError(code: string | undefined): boolean {
   return code === "ERR_BAD_RESPONSE";
 }
 
@@ -70,7 +66,7 @@ export function isCancellationError(code: string | undefined): boolean {
   return code === "ERR_CANCELED";
 }
 
-export function shouldRetryError(code: AxiosErrorCode): boolean {
+export function shouldRetryError(code: string | undefined): boolean {
   // Retry timeouts, network errors, and server errors
   // Don't retry client errors or cancellations
   return (
@@ -94,7 +90,7 @@ export function useCommonApi() {
   }
 
   interface HandleAxiosStatusCodesProps {
-    axiosErrorCode: AxiosErrorCode;
+    axiosErrorCode: string | undefined;
     defaultMessage: string;
   }
 
@@ -135,6 +131,7 @@ export function useCommonApi() {
       case "ECONNABORTED":
       case "ETIMEDOUT":
         return t("timeoutError");
+      case undefined:
       default:
         return error.message || t("unexpectedError");
     }
@@ -149,26 +146,6 @@ export function useCommonApi() {
     if (isNetworkError(axiosErrorCode)) return;
 
     showNotifyMessage(defaultMessage);
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function createAxiosErrorResponse(error: any): AxiosErrorResponse {
-    if ("message" in error && "code" in error && "name" in error) {
-      return {
-        status: "error",
-        message: error.message,
-        code: error.code,
-        name: error.name,
-      };
-    } else {
-      console.error("Unknown error response");
-      return {
-        status: "error",
-        message: "",
-        code: "ECONNABORTED",
-        name: error.name,
-      };
-    }
   }
 
   function getTimeoutForProfile(profile: ApiTimeoutProfile): number {
@@ -215,7 +192,7 @@ export function useCommonApi() {
   return {
     createRawAxiosRequestConfig,
     buildEncodedUcan,
-    createAxiosErrorResponse,
+    createAxiosErrorResponse: classifyApiError,
     handleAxiosErrorStatusCodes,
     getErrorMessage,
   };
@@ -261,6 +238,7 @@ export function getErrorMessage(error: AxiosErrorResponse): string {
     case "ECONNABORTED":
     case "ETIMEDOUT":
       return t("timeoutError");
+    case undefined:
     default:
       return error.message || t("unexpectedError");
   }

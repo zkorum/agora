@@ -1,12 +1,42 @@
 import { QueryClient } from "@tanstack/vue-query";
 import type { UserVote } from "src/composables/opinion/types";
+import type { FetchOpinionPageResponse } from "src/shared/types/dto";
 import type { DisplayedOpinionItem } from "src/shared/types/zod";
 import { describe, expect, it } from "vitest";
 
 import { cacheCreatedOpinion } from "./createdOpinionCache";
+import type { OpinionCache } from "./opinionCache";
+import {
+  initialOpinionPageRequest,
+  type OpinionPageRequest,
+  parseOpinionPageResponse,
+} from "./opinionPageBoundary";
+
+type CommentsTestKey = readonly [
+  "comments",
+  string,
+  OpinionPageRequest["filter"],
+  ...unknown[],
+];
+function initialRequestForKey(key: CommentsTestKey): OpinionPageRequest {
+  return initialOpinionPageRequest({
+    conversationSlugId: key[1],
+    filter: key[2],
+  });
+}
+function pageForKey({
+  key,
+  items,
+  nextCursor,
+}: { key: CommentsTestKey } & FetchOpinionPageResponse) {
+  return parseOpinionPageResponse({
+    request: initialRequestForKey(key),
+    rawResponse: { items, nextCursor },
+  });
+}
 
 const createdOpinion: DisplayedOpinionItem = {
-  opinionSlugId: "new-opinion",
+  opinionSlugId: "new-op",
   opinion: "A new statement",
   sourceLanguageCode: "en",
   createdAt: new Date(),
@@ -19,7 +49,7 @@ const createdOpinion: DisplayedOpinionItem = {
   moderation: { status: "unmoderated" },
   isSeed: false,
   displayContent: {
-    sourceVersion: "new-content",
+    sourceVersion: "00000000-0000-4000-8000-000000000001",
     status: "available",
     mode: "original",
     content: { content: "A new statement" },
@@ -30,19 +60,32 @@ const createdOpinion: DisplayedOpinionItem = {
 describe("cacheCreatedOpinion", () => {
   it("inserts a new statement into the first server page without losing its cursor", async () => {
     const queryClient = new QueryClient();
-    const queryKey = ["comments", "conversation", "new", "user", "en", ["en"]];
-    const cursor = {
+    const queryKey: CommentsTestKey = [
+      "comments",
+      "conversation",
+      "new",
+      "user",
+      "en",
+      ["en"],
+    ];
+    const cursor: NonNullable<
+      Extract<OpinionPageRequest, { filter: "new" | "moderated" }>["cursor"]
+    > = {
       kind: "created",
-      opinionSlugId: "last-opinion",
+      opinionSlugId: "last-op",
       opinionId: 12,
       createdAt: new Date("2026-01-01T00:00:00Z"),
     };
-    queryClient.setQueryData(queryKey, {
+    const pageParams = [
+      initialRequestForKey(queryKey),
+      { conversationSlugId: "conversation", filter: "new", cursor },
+    ] satisfies OpinionPageRequest[];
+    queryClient.setQueryData<OpinionCache>(queryKey, {
       pages: [
-        { items: [], nextCursor: cursor },
-        { items: [], nextCursor: null },
+        pageForKey({ key: queryKey, items: [], nextCursor: cursor }),
+        pageForKey({ key: queryKey, items: [], nextCursor: null }),
       ],
-      pageParams: [null, cursor],
+      pageParams,
     });
 
     await cacheCreatedOpinion({
@@ -54,10 +97,14 @@ describe("cacheCreatedOpinion", () => {
 
     expect(queryClient.getQueryData(queryKey)).toEqual({
       pages: [
-        { items: [createdOpinion], nextCursor: cursor },
-        { items: [], nextCursor: null },
+        pageForKey({
+          key: queryKey,
+          items: [createdOpinion],
+          nextCursor: cursor,
+        }),
+        pageForKey({ key: queryKey, items: [], nextCursor: null }),
       ],
-      pageParams: [null, cursor],
+      pageParams,
     });
     queryClient.clear();
   });
@@ -65,7 +112,7 @@ describe("cacheCreatedOpinion", () => {
   it("keeps the confirmed auto-agree when older vote and statement reads finish", async () => {
     const queryClient = new QueryClient();
     const userVotesKey = ["userVotes", "conversation", "user"];
-    const commentsKey = [
+    const commentsKey: CommentsTestKey = [
       "comments",
       "conversation",
       "discover",
@@ -74,12 +121,12 @@ describe("cacheCreatedOpinion", () => {
       ["en"],
     ];
     const existingVotes: UserVote[] = [
-      { opinionSlugId: "existing-opinion", votingAction: "disagree" },
+      { opinionSlugId: "old-op", votingAction: "disagree" },
     ];
     queryClient.setQueryData(userVotesKey, existingVotes);
     const emptyPage = {
-      pages: [{ items: [], nextCursor: null }],
-      pageParams: [null],
+      pages: [pageForKey({ key: commentsKey, items: [], nextCursor: null })],
+      pageParams: [initialRequestForKey(commentsKey)],
     };
     queryClient.setQueryData(commentsKey, emptyPage);
 
@@ -116,15 +163,26 @@ describe("cacheCreatedOpinion", () => {
       { opinionSlugId: createdOpinion.opinionSlugId, votingAction: "agree" },
     ]);
     expect(queryClient.getQueryData(commentsKey)).toEqual({
-      pages: [{ items: [createdOpinion], nextCursor: null }],
-      pageParams: [null],
+      pages: [
+        pageForKey({
+          key: commentsKey,
+          items: [createdOpinion],
+          nextCursor: null,
+        }),
+      ],
+      pageParams: [initialRequestForKey(commentsKey)],
     });
     queryClient.clear();
   });
 
   it("seeds only the current viewer's lists and vote state", async () => {
     const queryClient = new QueryClient();
-    const updatedKeys = ["discover", "new", "my_votes"].map((filter) => [
+    const filters: OpinionPageRequest["filter"][] = [
+      "discover",
+      "new",
+      "my_votes",
+    ];
+    const updatedKeys: CommentsTestKey[] = filters.map((filter) => [
       "comments",
       "conversation",
       filter,
@@ -132,7 +190,7 @@ describe("cacheCreatedOpinion", () => {
       "en",
       ["en"],
     ]);
-    const unchangedKeys = [
+    const unchangedKeys: CommentsTestKey[] = [
       ["comments", "conversation", "moderated"],
       ["comments", "conversation", "hidden"],
       // A different participant's personalized list must not receive this vote.
@@ -142,9 +200,9 @@ describe("cacheCreatedOpinion", () => {
     const otherUserVotesKey = ["userVotes", "conversation", "other-user"];
     queryClient.setQueryData(otherUserVotesKey, []);
     for (const queryKey of [...updatedKeys, ...unchangedKeys]) {
-      queryClient.setQueryData(queryKey, {
-        pages: [{ items: [], nextCursor: null }],
-        pageParams: [null],
+      queryClient.setQueryData<OpinionCache>(queryKey, {
+        pages: [pageForKey({ key: queryKey, items: [], nextCursor: null })],
+        pageParams: [initialRequestForKey(queryKey)],
       });
     }
 
@@ -160,14 +218,20 @@ describe("cacheCreatedOpinion", () => {
 
     for (const queryKey of updatedKeys) {
       expect(queryClient.getQueryData(queryKey)).toEqual({
-        pages: [{ items: [createdOpinion], nextCursor: null }],
-        pageParams: [null],
+        pages: [
+          pageForKey({
+            key: queryKey,
+            items: [createdOpinion],
+            nextCursor: null,
+          }),
+        ],
+        pageParams: [initialRequestForKey(queryKey)],
       });
     }
     for (const queryKey of unchangedKeys) {
       expect(queryClient.getQueryData(queryKey)).toEqual({
-        pages: [{ items: [], nextCursor: null }],
-        pageParams: [null],
+        pages: [pageForKey({ key: queryKey, items: [], nextCursor: null })],
+        pageParams: [initialRequestForKey(queryKey)],
       });
     }
     expect(
@@ -181,23 +245,33 @@ describe("cacheCreatedOpinion", () => {
 
   it("lets an unfetched list finish loading instead of replacing it with a partial list", async () => {
     const queryClient = new QueryClient();
-    const queryKey = ["comments", "conversation", "new", "user", "en", ["en"]];
+    const queryKey: CommentsTestKey = [
+      "comments",
+      "conversation",
+      "new",
+      "user",
+      "en",
+      ["en"],
+    ];
     let finishRead = () => {};
     const existingOpinion = {
       ...createdOpinion,
-      opinionSlugId: "existing-opinion",
+      opinionSlugId: "old-op",
     };
     const read = queryClient.fetchQuery({
       queryKey,
       queryFn: () =>
-        new Promise<{
-          pages: { items: DisplayedOpinionItem[]; nextCursor: null }[];
-          pageParams: null[];
-        }>((resolve) => {
+        new Promise<OpinionCache>((resolve) => {
           finishRead = () =>
             resolve({
-              pages: [{ items: [existingOpinion], nextCursor: null }],
-              pageParams: [null],
+              pages: [
+                pageForKey({
+                  key: queryKey,
+                  items: [existingOpinion],
+                  nextCursor: null,
+                }),
+              ],
+              pageParams: [initialRequestForKey(queryKey)],
             });
         }),
     });
@@ -214,8 +288,14 @@ describe("cacheCreatedOpinion", () => {
     finishRead();
     await read;
     expect(queryClient.getQueryData(queryKey)).toEqual({
-      pages: [{ items: [existingOpinion], nextCursor: null }],
-      pageParams: [null],
+      pages: [
+        pageForKey({
+          key: queryKey,
+          items: [existingOpinion],
+          nextCursor: null,
+        }),
+      ],
+      pageParams: [initialRequestForKey(queryKey)],
     });
     queryClient.clear();
   });

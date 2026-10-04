@@ -898,11 +898,12 @@ export async function requestConversationExport({
         db,
         userId,
         exportRequestId: creationResult.requestId,
-        exportSlugId: creationResult.exportSlugId,
         conversationId: conversation.id,
-        conversationSlugId: conversation.slugId,
-        conversationTitle: conversation.title,
-        type: "export_started",
+        notification: {
+            type: "export_started",
+            conversationTitle: conversation.title,
+            routeTarget: { type: "export", conversationSlugId: conversation.slugId, exportSlugId: creationResult.exportSlugId },
+        },
         realtimeSSEManager,
     });
 
@@ -1827,7 +1828,7 @@ async function notifyRequests({
 }: {
     db: PostgresDatabase;
     requests: ExportRequestNotificationRecord[];
-    type: "export_completed" | "export_failed" | "export_cancelled";
+    type: "export_completed" | "export_failed";
     realtimeSSEManager?: RealtimeSSEManager;
 }): Promise<void> {
     for (const request of requests) {
@@ -1835,13 +1836,17 @@ async function notifyRequests({
             db,
             userId: request.userId,
             exportRequestId: request.id,
-            exportSlugId: request.slugId,
             conversationId: request.conversationId,
-            conversationSlugId: request.conversationSlugId,
-            conversationTitle: request.conversationTitle,
-            type,
-            failureReason: request.failureReason ?? undefined,
-            cancellationReason: request.cancellationReason ?? undefined,
+            notification: type === "export_failed" ? {
+                type,
+                conversationTitle: request.conversationTitle,
+                routeTarget: { type: "export", conversationSlugId: request.conversationSlugId, exportSlugId: request.slugId },
+                failureReason: request.failureReason ?? undefined,
+            } : {
+                type,
+                conversationTitle: request.conversationTitle,
+                routeTarget: { type: "export", conversationSlugId: request.conversationSlugId, exportSlugId: request.slugId },
+            },
             realtimeSSEManager,
         });
     }

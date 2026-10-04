@@ -1,20 +1,20 @@
 import type {
-  ApiV1RankingBwsGithubPreviewPost200Response,
   ApiV1RankingBwsItemsLifecycleUpdatePostRequest,
-  ApiV1RankingBwsLoadPost200Response,
   ApiV1RankingBwsResultsPostRequest,
   ApiV1RankingBwsSavePostRequest,
-  ApiV1RankingBwsSyncPost200Response,
 } from "src/api";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
 import {
   Dto,
   type MaxDiffItemsFetchResponse,
+  type MaxDiffLoadResponse,
   type MaxDiffResultsResponse,
   type MaxDiffSaveResponse,
+  type MaxDiffSyncResponse,
   type RankingStatsCheckpointsResponse,
 } from "src/shared/types/dto";
 import type { MaxDiffComparison } from "src/shared/types/zod";
+import type { z } from "zod";
 
 import { api } from "../client";
 import type { AxiosErrorResponse, AxiosSuccessResponse } from "../common";
@@ -77,8 +77,7 @@ export function useMaxDiffApi() {
     conversationSlugId: string;
   }
 
-  type LoadMaxDiffSuccessResponse =
-    AxiosSuccessResponse<ApiV1RankingBwsLoadPost200Response>;
+  type LoadMaxDiffSuccessResponse = AxiosSuccessResponse<MaxDiffLoadResponse>;
   type LoadMaxDiffResponse = LoadMaxDiffSuccessResponse | AxiosErrorResponse;
 
   async function loadMaxDiffResult({
@@ -99,7 +98,10 @@ export function useMaxDiffApi() {
         createRawAxiosRequestConfig({ encodedUcan })
       );
 
-      return { status: "success", data: response.data };
+      return {
+        status: "success",
+        data: Dto.maxdiffLoadResponse.parse(response.data),
+      };
     } catch (e) {
       return createAxiosErrorResponse(e);
     }
@@ -284,7 +286,7 @@ export function useMaxDiffApi() {
   }
 
   type SyncMaxDiffResponse =
-    | AxiosSuccessResponse<ApiV1RankingBwsSyncPost200Response>
+    | AxiosSuccessResponse<MaxDiffSyncResponse>
     | AxiosErrorResponse;
 
   async function syncMaxDiff({
@@ -305,7 +307,10 @@ export function useMaxDiffApi() {
         createRawAxiosRequestConfig({ encodedUcan })
       );
 
-      return { status: "success", data: response.data };
+      return {
+        status: "success",
+        data: Dto.maxdiffSyncResponse.parse(response.data),
+      };
     } catch (e) {
       return createAxiosErrorResponse(e);
     }
@@ -317,7 +322,7 @@ export function useMaxDiffApi() {
   }
 
   type PreviewGitHubIssuesResponse =
-    | AxiosSuccessResponse<ApiV1RankingBwsGithubPreviewPost200Response>
+    | AxiosSuccessResponse<z.infer<typeof Dto.maxdiffGitHubPreviewResponse>>
     | AxiosErrorResponse;
 
   async function previewGitHubIssues({
@@ -341,7 +346,10 @@ export function useMaxDiffApi() {
         createRawAxiosRequestConfig({ encodedUcan })
       );
 
-      return { status: "success", data: response.data };
+      return {
+        status: "success",
+        data: Dto.maxdiffGitHubPreviewResponse.parse(response.data),
+      };
     } catch (e) {
       return createAxiosErrorResponse(e);
     }

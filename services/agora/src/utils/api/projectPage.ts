@@ -27,11 +27,11 @@ export function useBackendProjectPageApi() {
     authenticated: boolean;
   }) {
     if (!authenticated) {
-      return await api.post(url, params);
+      return await api.post<unknown>(url, params);
     }
 
     const encodedUcan = await buildEncodedUcan(url, { method: "POST" });
-    return await api.post(url, params, {
+    return await api.post<unknown>(url, params, {
       headers: {
         ...buildAuthorizationHeader(encodedUcan),
       },

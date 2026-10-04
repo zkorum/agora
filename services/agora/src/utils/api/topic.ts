@@ -1,9 +1,8 @@
 import type {
   ApiV1TopicFollowPostRequest,
-  ApiV1TopicGetFollowedPost200Response,
 } from "src/api";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
-import type { GetAllTopicsResponse } from "src/shared/types/dto";
+import { Dto, type GetAllTopicsResponse, type GetUserFollowedTopicCodesResponse } from "src/shared/types/dto";
 
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import { api } from "./client";
@@ -31,7 +30,7 @@ export function useBackendTopicApi() {
 
       return {
         status: "success",
-        data: response.data,
+        data: Dto.getAllTopicsResponse.parse(response.data),
       };
     } catch (e) {
       return createAxiosErrorResponse(e);
@@ -39,7 +38,7 @@ export function useBackendTopicApi() {
   }
 
   type GetUserFollowedTopicsSuccessResponse =
-    AxiosSuccessResponse<ApiV1TopicGetFollowedPost200Response>;
+    AxiosSuccessResponse<GetUserFollowedTopicCodesResponse>;
   type GetUserFollowedTopicsResponse =
     | GetUserFollowedTopicsSuccessResponse
     | AxiosErrorResponse;
@@ -60,7 +59,7 @@ export function useBackendTopicApi() {
 
       return {
         status: "success",
-        data: response.data,
+        data: Dto.getUserFollowedTopicCodesResponse.parse(response.data),
       };
     } catch (e) {
       return createAxiosErrorResponse(e);

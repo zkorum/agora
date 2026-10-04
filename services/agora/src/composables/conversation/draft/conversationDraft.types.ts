@@ -67,15 +67,6 @@ export interface ConversationDraftBase {
   /** Initial opinion responses to seed the conversation */
   seedOpinions: string[];
 
-  // Conversation Type
-  /** The broad conversation family. Ranking subtypes are represented by rankingMode. */
-  conversationType: ConversationTypeConfig["conversationType"];
-  /** Ranking subtype; currently only "bws" is supported. */
-  rankingMode?: Extract<
-    ConversationTypeConfig,
-    { conversationType: "ranking" }
-  >["rankingMode"];
-
   // Publishing Options
   postAs: PostAsSettings;
 
@@ -105,11 +96,7 @@ export interface ConversationDraftBase {
   importSettings: ConversationImportSettings;
 }
 
-export type ConversationDraft = Omit<
-  ConversationDraftBase,
-  "conversationType" | "rankingMode"
-> &
-  ConversationTypeConfig;
+export type ConversationDraft = ConversationDraftBase & ConversationTypeConfig;
 
 /**
  * Type for conversation import method
@@ -184,6 +171,7 @@ export interface ValidationResult {
  * Form state data structure (for loading/exporting draft data)
  */
 export interface ConversationFormState {
+  conversationTypeConfig: ConversationTypeConfig;
   // Basic content
   title: string;
   content: string;

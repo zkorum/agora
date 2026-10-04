@@ -1,6 +1,7 @@
 import type { ApiV1UserUsernameUpdatePostRequest } from "src/api";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { Dto } from "src/shared/types/dto";
 import { useUserStore } from "src/stores/user";
 
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
@@ -94,7 +95,7 @@ export function useBackendAccountApi() {
         undefined,
         api
       ).apiV1AccountIsUsernameInUsePost(params);
-      return response.data;
+      return Dto.isUsernameInUseResponse.parse(response.data);
     } catch (e) {
       console.error(e);
       showNotifyMessage(t("failedToCheckUsername"));
@@ -109,7 +110,7 @@ export function useBackendAccountApi() {
         undefined,
         api
       ).apiV1AccountGenerateUnusedRandomUsernamePost();
-      return response.data;
+      return Dto.generateUnusedRandomUsernameResponse.parse(response.data);
     } catch (e) {
       console.error(e);
       showNotifyMessage(t("failedToGenerateRandomUsername"));

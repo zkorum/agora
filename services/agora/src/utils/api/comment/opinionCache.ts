@@ -1,10 +1,11 @@
 import type { InfiniteData } from "@tanstack/vue-query";
-import type { FetchOpinionPageResponse } from "src/shared/types/dto";
 import type { DisplayedOpinionItem } from "src/shared/types/zod";
 
+import type { OpinionPageRequest, OpinionPageResult } from "./opinionPageBoundary";
+
 export type OpinionCache = InfiniteData<
-  FetchOpinionPageResponse,
-  FetchOpinionPageResponse["nextCursor"]
+  OpinionPageResult,
+  OpinionPageRequest
 >;
 
 export function mapCachedOpinions({

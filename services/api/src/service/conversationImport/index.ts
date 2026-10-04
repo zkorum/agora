@@ -156,9 +156,8 @@ export async function requestConversationImport(
             db,
             userId,
             importId: createImportResult.importId,
-            importSlugId: createImportResult.importSlugId,
-            conversationId: null,
-            type: "import_started",
+            conversationId: undefined,
+            notification: { type: "import_started", routeTarget: { type: "import", importSlugId: createImportResult.importSlugId } },
             realtimeSSEManager,
         });
     } catch (error) {
@@ -253,9 +252,8 @@ export async function requestUrlImport(
             db,
             userId,
             importId: createImportResult.importId,
-            importSlugId: createImportResult.importSlugId,
-            conversationId: null,
-            type: "import_started",
+            conversationId: undefined,
+            notification: { type: "import_started", routeTarget: { type: "import", importSlugId: createImportResult.importSlugId } },
             realtimeSSEManager,
         });
     } catch (error) {

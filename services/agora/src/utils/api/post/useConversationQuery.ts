@@ -10,10 +10,6 @@ import type {
   SSEConversationRankingStatsUpdatedData,
 } from "src/shared/types/dto";
 import type { ExtendedConversation } from "src/shared/types/zod";
-import {
-  zodExtendedConversationData,
-  zodExtendedConversationDisplayData,
-} from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLanguageStore } from "src/stores/language";
 import {
@@ -38,7 +34,20 @@ export type ConversationDetailData =
 
 type ConversationCacheData = ExtendedConversation | ConversationDetailData;
 type ConversationCacheEntry = ExtendedConversation | ConversationDetail;
+type ConversationCacheChanges = {
+  metadata?: ConversationDetailData["metadata"];
+  interaction?: ConversationDetailData["interaction"];
+  payload?: ExtendedConversation["payload"];
+};
 
+export function applyConversationRankingStatsUpdate(params: {
+  conversation: ExtendedConversation;
+  data: SSEConversationRankingStatsUpdatedData;
+}): ExtendedConversation;
+export function applyConversationRankingStatsUpdate(params: {
+  conversation: ConversationDetailData;
+  data: SSEConversationRankingStatsUpdatedData;
+}): ConversationDetailData;
 export function applyConversationRankingStatsUpdate({
   conversation,
   data,
@@ -190,12 +199,10 @@ function mergeRetainedRankingStatsUpdate({
 
   return {
     ...conversation,
-    conversationData: zodExtendedConversationDisplayData.parse(
-      applyConversationRankingStatsUpdate({
-        conversation: conversation.conversationData,
-        data: update,
-      })
-    ),
+    conversationData: applyConversationRankingStatsUpdate({
+      conversation: conversation.conversationData,
+      data: update,
+    }),
   };
 }
 
@@ -209,7 +216,7 @@ export function updateConversationQueryCache({
   conversationSlugId: string;
   updateConversation: (
     conversation: ConversationCacheData
-  ) => ConversationCacheData;
+  ) => ConversationCacheChanges;
   fallbackConversation?: ConversationCacheEntry;
 }): void {
   const queryKey = ["conversation", conversationSlugId];
@@ -218,15 +225,25 @@ export function updateConversationQueryCache({
     conversation: ConversationCacheEntry
   ): ConversationCacheEntry => {
     if (isConversationDetail(conversation)) {
+      const changes = updateConversation(conversation.conversationData);
       return {
         ...conversation,
-        conversationData: zodExtendedConversationDisplayData.parse(
-          updateConversation(conversation.conversationData)
-        ),
+        conversationData: {
+          ...conversation.conversationData,
+          metadata: changes.metadata ?? conversation.conversationData.metadata,
+          interaction:
+            changes.interaction ?? conversation.conversationData.interaction,
+        },
       };
     }
 
-    return zodExtendedConversationData.parse(updateConversation(conversation));
+    const changes = updateConversation(conversation);
+    return {
+      ...conversation,
+      metadata: changes.metadata ?? conversation.metadata,
+      interaction: changes.interaction ?? conversation.interaction,
+      payload: changes.payload ?? conversation.payload,
+    };
   };
 
   queryClient.setQueriesData<ConversationCacheEntry>(

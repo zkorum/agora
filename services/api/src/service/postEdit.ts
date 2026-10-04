@@ -77,6 +77,7 @@ import {
     sourceLanguageToDisplayLanguage,
 } from "./translationLanguageSetting.js";
 import { normalizeUserRichTextInput } from "./richText.js";
+import { projectConversationTypeConfig } from "@/shared/utils/conversationTypeConfig.js";
 import { updateConversationEmailUpdateOverrideInTransaction } from "./conversationEmailUpdate.js";
 import {
     createEagerContentTranslationWorkForKnownConversation,
@@ -338,9 +339,7 @@ interface UpdateConversationProps {
     userId: string;
     googleCloudCredentials?: GoogleCloudCredentials;
     valkey?: Valkey;
-    data: Omit<UpdateConversationRequest, "conversationSlugId"> & {
-        conversationSlugId: string;
-    };
+    data: UpdateConversationRequest;
 }
 
 type UpdateConversationServiceResponse =
@@ -365,12 +364,14 @@ export async function updateConversation({
         languageSettingsSource,
         multilingualSetting,
         requiresEventTicket,
-        aiLabelingEnabled,
         conversationTypeConfig,
-        preferredOpinionGroupCount,
         surveyConfig,
         conversationEmailUpdateEnabledOverride,
     } = data;
+    const aiLabelingEnabled = conversationTypeConfig.conversationType === "polis"
+        ? conversationTypeConfig.aiLabelingEnabled : undefined;
+    const preferredOpinionGroupCount = conversationTypeConfig.conversationType === "polis"
+        ? conversationTypeConfig.preferredOpinionGroupCount : undefined;
 
     let sanitizedBody = conversationBody;
     let bodyPlainText = "";
@@ -1046,7 +1047,7 @@ export async function updateConversation({
                 participationMode,
                 requiresEventTicket: requiresEventTicket ?? null,
                 aiLabelingEnabled: updatedAiLabelingEnabled,
-                presentation: conversationTypeConfig,
+                presentation: projectConversationTypeConfig(conversationTypeConfig),
                 preferredOpinionGroupCount: updatedPreferredOpinionGroupCount,
                 isClosed: conversation.isClosed,
             },

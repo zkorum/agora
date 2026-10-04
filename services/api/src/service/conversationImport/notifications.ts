@@ -1,4 +1,5 @@
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { getPrimaryDatabase } from "@/shared-backend/db.js";
 import {
     notificationTable,
     notificationImportTable,
@@ -6,98 +7,84 @@ import {
 import { generateRandomSlugId } from "@/crypto.js";
 import { log } from "@/app.js";
 import {
-    type NotificationItem,
-    zodRegularNotificationItem,
-} from "@/shared/types/zod.js";
+    buildNotification,
+    type NotificationContent,
+} from "../notificationDto.js";
 import type { RealtimeSSEManager } from "../realtimeSSE.js";
 
-type ImportNotificationType =
-    | "import_started"
-    | "import_completed"
-    | "import_failed";
+type ImportNotificationInput =
+    | {
+          notification: Extract<
+              NotificationContent,
+              { type: "import_started" | "import_failed" }
+          >;
+          conversationId: undefined;
+      }
+    | {
+          notification: Extract<
+              NotificationContent,
+              { type: "import_completed" }
+          > & {
+              routeTarget: {
+                  type: "import";
+                  importSlugId: string;
+                  conversationSlugId: string;
+              };
+              conversationTitle: string;
+          };
+          conversationId: number;
+      };
 
-interface CreateImportNotificationParams {
-    db: PostgresJsDatabase;
-    userId: string;
-    importId: number;
-    importSlugId: string;
-    conversationId: number | null;
-    type: ImportNotificationType;
-    realtimeSSEManager: RealtimeSSEManager;
-}
-
-/**
- * Create a notification for an import event
- */
 export async function createImportNotification({
     db,
     userId,
     importId,
-    importSlugId,
     conversationId,
-    type,
+    notification,
     realtimeSSEManager,
-}: CreateImportNotificationParams): Promise<void> {
+}: ImportNotificationInput & {
+    db: PostgresJsDatabase;
+    userId: string;
+    importId: number;
+    realtimeSSEManager: RealtimeSSEManager;
+}): Promise<void> {
     try {
-        // Create notification record
-        const notificationSlugId = generateRandomSlugId();
-
-        const [notificationRecord] = await db
-            .insert(notificationTable)
-            .values({
-                slugId: notificationSlugId,
-                userId: userId,
-                notificationType: type,
-            })
-            .returning({
-                notificationId: notificationTable.id,
-                createdAt: notificationTable.createdAt,
-                isRead: notificationTable.isRead,
+        const slugId = generateRandomSlugId();
+        const content = await getPrimaryDatabase(db).transaction(async (tx) => {
+            const [record] = await tx
+                .insert(notificationTable)
+                .values({
+                    slugId,
+                    userId,
+                    notificationType: notification.type,
+                })
+                .returning({
+                    notificationId: notificationTable.id,
+                    createdAt: notificationTable.createdAt,
+                    isRead: notificationTable.isRead,
+                });
+            await tx.insert(notificationImportTable).values({
+                notificationId: record.notificationId,
+                importId,
+                conversationId: conversationId ?? null,
             });
-
-        const notificationId = notificationRecord.notificationId;
-
-        // Create import-specific notification data
-        await db.insert(notificationImportTable).values({
-            notificationId: notificationId,
-            importId: importId,
-            conversationId: conversationId,
+            return buildNotification({
+                content: notification,
+                record: {
+                    slugId,
+                    createdAt: record.createdAt,
+                    isRead: record.isRead,
+                },
+            });
         });
-
+        realtimeSSEManager.broadcastToUser(userId, content);
         log.info(
-            `Created ${type} notification for user ${userId}, import ${String(importId)}`,
+            `Created ${notification.type} notification for import ${notification.routeTarget.importSlugId}`,
         );
-
-        const baseNotification = {
-            slugId: notificationSlugId,
-            createdAt: notificationRecord.createdAt,
-            isRead: notificationRecord.isRead,
-            routeTarget: {
-                type: "import" as const,
-                importSlugId,
-            },
-        };
-        const notificationItem: Extract<NotificationItem, { type: typeof type }> =
-            type === "import_completed"
-                ? { ...baseNotification, type }
-                : type === "import_failed"
-                  ? { ...baseNotification, type }
-                  : { ...baseNotification, type };
-
-        const validationResult = zodRegularNotificationItem.safeParse(notificationItem);
-        if (validationResult.success) {
-            realtimeSSEManager.broadcastToUser(userId, validationResult.data);
-        } else {
-            log.error(
-                validationResult.error,
-                `Failed to validate import notification ${notificationSlugId} before broadcast`,
-            );
-        }
     } catch (error: unknown) {
-        // Don't fail the import if notification creation fails
         log.error(
             error,
-            `Failed to create ${type} notification for user ${userId}, import ${String(importId)}:`,
+            `Failed to create ${notification.type} notification for import ${notification.routeTarget.importSlugId}`,
         );
     }
 }

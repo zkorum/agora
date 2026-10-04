@@ -6240,9 +6240,7 @@ export interface ApiV1ConversationUpdatePostRequest {
     'multilingualSetting': ApiV1ConversationCreatePostRequestOneOfMultilingualSetting;
     'languageSettingsSource'?: ApiV1ConversationUpdatePostRequestLanguageSettingsSourceEnum;
     'requiresEventTicket'?: ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum;
-    'aiLabelingEnabled'?: boolean;
-    'conversationTypeConfig': ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfig;
-    'preferredOpinionGroupCount'?: number | null;
+    'conversationTypeConfig': ApiV1ConversationUpdatePostRequestConversationTypeConfig;
     'surveyConfig'?: ApiV1ConversationCreatePostRequestOneOfSurveyConfig | null;
     'conversationEmailUpdateEnabledOverride'?: boolean | null;
 }
@@ -6266,6 +6264,30 @@ export const ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum = {
 } as const;
 
 export type ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum = typeof ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum[keyof typeof ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum];
+
+/**
+ * @type ApiV1ConversationUpdatePostRequestConversationTypeConfig
+ */
+export type ApiV1ConversationUpdatePostRequestConversationTypeConfig = ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf1 | ApiV1ConversationUpdatePostRequestConversationTypeConfigOneOf;
+
+export interface ApiV1ConversationUpdatePostRequestConversationTypeConfigOneOf {
+    'conversationType': ApiV1ConversationUpdatePostRequestConversationTypeConfigOneOfConversationTypeEnum;
+    'votingPresentation': ApiV1ConversationUpdatePostRequestConversationTypeConfigOneOfVotingPresentationEnum;
+    'aiLabelingEnabled'?: boolean;
+    'preferredOpinionGroupCount'?: number | null;
+}
+
+export const ApiV1ConversationUpdatePostRequestConversationTypeConfigOneOfConversationTypeEnum = {
+    Polis: 'polis',
+} as const;
+
+export type ApiV1ConversationUpdatePostRequestConversationTypeConfigOneOfConversationTypeEnum = typeof ApiV1ConversationUpdatePostRequestConversationTypeConfigOneOfConversationTypeEnum[keyof typeof ApiV1ConversationUpdatePostRequestConversationTypeConfigOneOfConversationTypeEnum];
+export const ApiV1ConversationUpdatePostRequestConversationTypeConfigOneOfVotingPresentationEnum = {
+    List: 'list',
+    OneAtATime: 'one_at_a_time',
+} as const;
+
+export type ApiV1ConversationUpdatePostRequestConversationTypeConfigOneOfVotingPresentationEnum = typeof ApiV1ConversationUpdatePostRequestConversationTypeConfigOneOfVotingPresentationEnum[keyof typeof ApiV1ConversationUpdatePostRequestConversationTypeConfigOneOfVotingPresentationEnum];
 
 export interface ApiV1ConversationValidateCsvPost200Response {
     'summaryFile'?: ApiV1ConversationValidateCsvPost200ResponseSummaryFile;
@@ -7447,7 +7469,7 @@ export type ApiV1OpinionFetchPagePostRequestOneOf1FilterEnum = typeof ApiV1Opini
 export interface ApiV1OpinionFetchPagePostRequestOneOf1Cursor {
     'kind': ApiV1OpinionFetchPagePostRequestOneOf1CursorKindEnum;
     'opinionSlugId': string;
-    'voteUpdatedAt': any;
+    'voteUpdatedAt': ApiV1ProjectPageFetchPostRequestActivityCursorCreatedAt;
     'voteId': number;
 }
 
@@ -7473,7 +7495,7 @@ export type ApiV1OpinionFetchPagePostRequestOneOf2FilterEnum = typeof ApiV1Opini
 export interface ApiV1OpinionFetchPagePostRequestOneOf2Cursor {
     'kind': ApiV1OpinionFetchPagePostRequestOneOf2CursorKindEnum;
     'opinionSlugId': string;
-    'createdAt': any;
+    'createdAt': ApiV1ProjectPageFetchPostRequestActivityCursorCreatedAt;
     'opinionId': number;
 }
 
@@ -7486,7 +7508,7 @@ export type ApiV1OpinionFetchPagePostRequestOneOf2CursorKindEnum = typeof ApiV1O
 export interface ApiV1OpinionFetchPagePostRequestOneOfCursor {
     'kind': ApiV1OpinionFetchPagePostRequestOneOfCursorKindEnum;
     'opinionSlugId': string;
-    'createdAt': any;
+    'createdAt': ApiV1ProjectPageFetchPostRequestActivityCursorCreatedAt;
     'opinionId': number;
     'wasVoted': boolean;
     'routingPriority': number | null;
@@ -8125,8 +8147,10 @@ export interface ApiV1ProjectPageFetchPostRequest {
 }
 export interface ApiV1ProjectPageFetchPostRequestActivityCursor {
     'isIndexed': boolean;
-    'createdAt': any;
+    'createdAt': ApiV1ProjectPageFetchPostRequestActivityCursorCreatedAt;
     'conversationId': number;
+}
+export interface ApiV1ProjectPageFetchPostRequestActivityCursorCreatedAt {
 }
 export interface ApiV1RankingBwsGithubPreviewPost200Response {
     'issues': Array<ApiV1RankingBwsGithubPreviewPost200ResponseIssuesInner>;
