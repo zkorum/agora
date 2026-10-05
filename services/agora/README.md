@@ -24,6 +24,24 @@ Run:
 pnpm prepare
 ```
 
+## Project banner images
+
+Project, conversation, and report pages share `ProjectBannerImage.vue` for banner
+rendering. Images fill the available width and use their **natural aspect ratio**
+so artwork is neither cropped nor surrounded by added empty bands. For X-style
+banner proportions, use artwork around **1500 × 500 px** (or another 3:1
+resolution).
+
+Images use `height: auto` and `aspect-ratio: auto 3 / 1`: the 3:1 ratio is only a
+loading placeholder, replaced by the image's natural proportions once loaded.
+Artwork with a different ratio can change the placeholder height on load.
+Language and consultation-status controls sit below uploaded banners rather than
+covering the artwork.
+
+References: [web.dev responsive images](https://web.dev/learn/design/responsive-images),
+[MDN aspect-ratio](https://developer.mozilla.org/en-US/docs/Web/CSS/aspect-ratio),
+and [MDN object-fit](https://developer.mozilla.org/en-US/docs/Web/CSS/object-fit).
+
 ## Environment Variables
 
 ### Setup
