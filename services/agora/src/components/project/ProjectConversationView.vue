@@ -18,12 +18,11 @@
             effectiveBannerImageUrl !== undefined,
         }"
       >
-        <img
+        <ProjectBannerImage
           v-if="effectiveBannerImageUrl !== undefined"
           :key="effectiveBannerImageUrl"
           :src="effectiveBannerImageUrl"
           :alt="t('bannerImageAlt', { title: projectTitle })"
-          class="project-conversation-view__banner-image"
         />
         <div class="project-conversation-view__banner-grid"></div>
         <div
@@ -138,6 +137,7 @@ import {
 } from "src/utils/translation/useContentTranslationRecovery";
 import { computed, ref, watch } from "vue";
 
+import ProjectBannerImage from "./ProjectBannerImage.vue";
 import ProjectConversationHeaderCard from "./ProjectConversationHeaderCard.vue";
 import ProjectDetailsAside from "./ProjectDetailsAside.vue";
 import ProjectDocuments from "./ProjectDocuments.vue";
@@ -374,14 +374,6 @@ main {
   pointer-events: none;
 }
 
-.project-conversation-view__banner-image {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
 .project-conversation-view__banner-grid {
   position: absolute;
   z-index: 1;
@@ -396,15 +388,24 @@ main {
     );
 }
 
-.project-conversation-view__banner--with-image {
+.project-conversation-view__banner.project-conversation-view__banner--with-image {
+  height: auto;
   background: $app-background-color;
 
+  &::after,
   .project-conversation-view__banner-grid {
-    background: linear-gradient(
-      180deg,
-      rgba($ink-darkest, 0.02),
-      rgba($app-background-color, 0.16)
-    );
+    display: none;
+  }
+
+  .project-conversation-view__banner-controls {
+    padding-block-end: 0.85rem;
+  }
+}
+
+.project-conversation-view__banner--with-image
+  + .project-conversation-view__shell {
+  .project-conversation-header-card {
+    margin-block-start: 0;
   }
 }
 

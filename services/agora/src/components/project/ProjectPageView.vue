@@ -14,15 +14,15 @@
             selectedBannerImageUrl !== undefined,
         }"
       >
-        <img
+        <ProjectBannerImage
           v-if="selectedBannerImageUrl !== undefined"
           :key="selectedBannerImageUrl"
-          class="project-page-view__banner-image"
           :src="selectedBannerImageUrl"
           :alt="t('bannerImageAlt', { title: displayedProjectContent.title })"
         />
         <div class="project-page-view__banner-grid"></div>
         <div
+          v-if="hasMultipleLanguageOptions || consultationStatus !== 'none'"
           class="project-page-view__banner-controls"
           :class="{
             'project-page-view__banner-controls--without-language':
@@ -230,6 +230,7 @@ import { useProjectDisplayContent } from "src/utils/translation/useProjectDispla
 import { computed } from "vue";
 
 import ProjectActivityCard from "./ProjectActivityCard.vue";
+import ProjectBannerImage from "./ProjectBannerImage.vue";
 import ProjectDetailsAside from "./ProjectDetailsAside.vue";
 import ProjectDocuments from "./ProjectDocuments.vue";
 import ProjectEmailUpdatesMenu from "./ProjectEmailUpdatesMenu.vue";
@@ -361,14 +362,6 @@ main {
   );
 }
 
-.project-page-view__banner-image {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
 .project-page-view__banner-grid {
   position: absolute;
   inset: 0;
@@ -382,15 +375,16 @@ main {
     );
 }
 
-.project-page-view__banner--with-image {
+.project-page-view__banner.project-page-view__banner--with-image {
+  height: auto;
   background: $app-background-color;
 
   .project-page-view__banner-grid {
-    background: linear-gradient(
-      180deg,
-      rgba($ink-darkest, 0.02),
-      rgba($app-background-color, 0.16)
-    );
+    display: none;
+  }
+
+  .project-page-view__banner-controls {
+    padding-block-end: 0.85rem;
   }
 }
 
