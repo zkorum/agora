@@ -90,6 +90,7 @@
         "conversation_export_generation",
         "conversation_export_request"
     ],
+    "security-add-email-backfill": ["user", "email", "phone", "zk_passport"],
     "auth-otp": [
         "user",
         "device",

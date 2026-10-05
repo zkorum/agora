@@ -22,5 +22,7 @@ fi
 # running TypeScript's checker by default.
 pnpm typecheck
 
+node --test scripts/*.test.mjs
+
 # Run vitest with any additional arguments passed to this script
 exec pnpm vitest "$@"

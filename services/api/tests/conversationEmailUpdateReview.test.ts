@@ -1717,13 +1717,9 @@ describe("locked Conversation Email Update reviews", () => {
         "not a URL",
         "https://[invalid",
         "javascript:alert(1)",
-        "https://tracker.example.com/banner.png",
-        "https://images.example.com.evil.example/banner.png",
         "https://user:password@images.example.com/banner.png",
-        "http://images.example.com/banner.png",
-        "https://images.example.com:8443/banner.png",
     ])(
-        "follow-up: excludes untrusted image %s from review snapshots",
+        "follow-up: excludes invalid image %s from review snapshots",
         async (bannerPath) => {
             await db
                 .update(projectContentTable)
@@ -1734,6 +1730,26 @@ describe("locked Conversation Email Update reviews", () => {
                 .select()
                 .from(conversationEmailUpdateTable);
             expect(update.brandingSnapshot?.bannerImageUrl).toBeUndefined();
+        },
+    );
+
+    it.each([
+        "https://tracker.example.com/banner.png",
+        "https://images.example.com.evil.example/banner.png",
+        "http://images.example.com/banner.png",
+        "https://images.example.com:8443/banner.png",
+    ])(
+        "follow-up: preserves public stored branding image %s in review snapshots",
+        async (bannerPath) => {
+            await db
+                .update(projectContentTable)
+                .set({ bannerPath, bannerIsFullPath: true });
+            const review = await prepare();
+            expect(review.branding.bannerImageUrl).toBe(bannerPath);
+            const [update] = await db
+                .select()
+                .from(conversationEmailUpdateTable);
+            expect(update.brandingSnapshot?.bannerImageUrl).toBe(bannerPath);
         },
     );
 

@@ -123,6 +123,7 @@ from agora_analysis_worker_shared.generated_models import (
     OpinionGroupVariant,
     ParticipationMode,
     PolisConversationConfig,
+    PolisVotingPresentation,
     RealtimeEventOutbox,
     SpokenLanguageCode,
     VoteEnumSimple,
@@ -444,6 +445,7 @@ def _insert_non_processable_ai_work_state(
     session.add(
         PolisConversationConfig(
             id=10,
+            voting_presentation=PolisVotingPresentation.list,
             ai_labeling_enabled=True,
             analysis_data_generation=1,
             preferred_opinion_group_count=None,
