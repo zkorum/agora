@@ -19,6 +19,8 @@ import {
 } from "src/shared/types/zod";
 import { useLanguageStore } from "src/stores/language";
 import { useBackendAuthApi } from "src/utils/api/auth";
+import { getSurveyFormQueryKey, getSurveyStatusQueryKey } from "src/utils/query/conversationQueryKeys";
+import { isQueryForViewerScope, useViewerQueryScope,type ViewerQueryScope } from "src/utils/query/viewerScope";
 import {
   buildSurveyAnswerSubmission,
   isSurveyAnswerSubmittable,
@@ -83,28 +85,33 @@ function deriveSurveyRouteResolutionFromForm({
 function getCachedSurveyForm({
   queryClient,
   conversationSlugId,
+  viewerScope,
 }: {
   queryClient: QueryClient;
   conversationSlugId: string;
+  viewerScope: ViewerQueryScope;
 }): SurveyFormData | undefined {
   const formEntries = queryClient.getQueriesData<SurveyFormData>({
     queryKey: ["survey-form", conversationSlugId],
   });
-  return formEntries.find((entry) => entry[1] !== undefined)?.[1];
+  return formEntries.find(([queryKey, data]) => data !== undefined && isQueryForViewerScope({ queryKey, viewerScope }))?.[1];
 }
 
 function updateSurveyStatusCache({
   queryClient,
   conversationSlugId,
   surveyGate,
+  viewerScope,
 }: {
   queryClient: QueryClient;
   conversationSlugId: string;
   surveyGate: SurveyGateSummary;
+  viewerScope: ViewerQueryScope;
 }): void {
   const cachedSurveyForm = getCachedSurveyForm({
     queryClient,
     conversationSlugId,
+    viewerScope,
   });
   const routeResolution = deriveSurveyRouteResolutionFromForm({
     surveyGate,
@@ -112,7 +119,7 @@ function updateSurveyStatusCache({
   });
 
   queryClient.setQueriesData<SurveyStatusCheckResponse>(
-    { queryKey: ["survey-status", conversationSlugId] },
+    { queryKey: getSurveyStatusQueryKey({ conversationSlugId, viewerScope }), exact: true },
     (oldData) => {
       if (oldData === undefined) {
         return oldData;
@@ -131,18 +138,20 @@ function updateSurveyGateViewerCaches({
   queryClient,
   conversationSlugId,
   surveyGate,
+  viewerScope,
 }: {
   queryClient: QueryClient;
   conversationSlugId: string;
   surveyGate: SurveyGateSummary;
+  viewerScope: ViewerQueryScope;
 }): void {
-  updateSurveyStatusCache({ queryClient, conversationSlugId, surveyGate });
+  updateSurveyStatusCache({ queryClient, conversationSlugId, surveyGate, viewerScope });
 
   updateConversationQueryCache({
     queryClient,
     conversationSlugId,
+    viewerScope,
     updateConversation: (conversation) => ({
-      ...conversation,
       interaction: {
         ...conversation.interaction,
         surveyGate,
@@ -200,15 +209,17 @@ function updateSurveyFormAnswerCaches({
   questionSlugId,
   answer,
   surveyGate,
+  viewerScope,
 }: {
   queryClient: QueryClient;
   conversationSlugId: string;
   questionSlugId: string;
   answer: SurveyAnswerDraft | null;
   surveyGate: SurveyGateSummary;
+  viewerScope: ViewerQueryScope;
 }): void {
   queryClient.setQueriesData<SurveyFormData>(
-    { queryKey: ["survey-form", conversationSlugId] },
+    { queryKey: ["survey-form", conversationSlugId], predicate: (query) => isQueryForViewerScope({ queryKey: query.queryKey, viewerScope }) },
     (oldData) => {
       if (oldData === undefined) {
         return oldData;
@@ -232,13 +243,15 @@ function clearSurveyFormAnswerCaches({
   queryClient,
   conversationSlugId,
   surveyGate,
+  viewerScope,
 }: {
   queryClient: QueryClient;
   conversationSlugId: string;
   surveyGate: SurveyGateSummary;
+  viewerScope: ViewerQueryScope;
 }): void {
   queryClient.setQueriesData<SurveyFormData>(
-    { queryKey: ["survey-form", conversationSlugId] },
+    { queryKey: ["survey-form", conversationSlugId], predicate: (query) => isQueryForViewerScope({ queryKey: query.queryKey, viewerScope }) },
     (oldData) => {
       if (oldData === undefined) {
         return oldData;
@@ -317,12 +330,14 @@ export function useSurveyStatusQuery({
   enabled?: MaybeRefOrGetter<boolean>;
 }) {
   const { checkSurveyStatus } = useBackendSurveyApi();
+  const viewerScope = useViewerQueryScope();
 
   return useQuery({
-    queryKey: ["survey-status", computed(() => toValue(conversationSlugId))],
-    queryFn: async () => {
+    queryKey: computed(() => getSurveyStatusQueryKey({ conversationSlugId: toValue(conversationSlugId), viewerScope: viewerScope.value })),
+    queryFn: async ({ signal }) => {
       const response = await checkSurveyStatus({
         conversationSlugId: toValue(conversationSlugId),
+        signal,
       });
       if (response.status !== "success") {
         throw new Error("Failed to load survey status");
@@ -345,6 +360,7 @@ export function useSurveyFormQuery({
   enabled?: MaybeRefOrGetter<boolean>;
 }) {
   const { fetchSurveyForm } = useBackendSurveyApi();
+  const viewerScope = useViewerQueryScope();
   const { showNotifyMessage } = useNotify();
   const { t } = useComponentI18n<UseSurveyQueriesTranslations>(
     useSurveyQueriesTranslations
@@ -352,15 +368,16 @@ export function useSurveyFormQuery({
   const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
 
   return useQuery({
-    queryKey: [
-      "survey-form",
-      computed(() => toValue(conversationSlugId)),
-      displayLanguage,
-      computed(() => [...spokenLanguages.value].sort()),
-    ],
-    queryFn: async (): Promise<SurveyFormData> => {
+    queryKey: computed(() => getSurveyFormQueryKey({
+      conversationSlugId: toValue(conversationSlugId),
+      displayLanguage: displayLanguage.value,
+      spokenLanguages: spokenLanguages.value,
+      viewerScope: viewerScope.value,
+    })),
+    queryFn: async ({ signal }): Promise<SurveyFormData> => {
       const response = await fetchSurveyForm({
         conversationSlugId: toValue(conversationSlugId),
+        signal,
       });
       if (response.status !== "success") {
         throw new Error("Failed to load survey form");
@@ -460,8 +477,9 @@ export function useSurveyAnswerSaveMutation({
   conversationSlugId: MaybeRefOrGetter<string>;
 }) {
   const { saveSurveyAnswer } = useBackendSurveyApi();
-  const { updateAuthState } = useBackendAuthApi();
+  const { ensureParticipationAuthState } = useBackendAuthApi();
   const queryClient = useQueryClient();
+  const viewerScope = useViewerQueryScope();
 
   return useMutation({
     mutationFn: async ({
@@ -486,7 +504,7 @@ export function useSurveyAnswerSaveMutation({
         return;
       }
 
-      await updateAuthState({ partialLoginStatus: { isKnown: true } });
+      await ensureParticipationAuthState();
 
       const slugId = toValue(conversationSlugId);
       updateSurveyFormAnswerCaches({
@@ -495,11 +513,13 @@ export function useSurveyAnswerSaveMutation({
         questionSlugId: variables.questionSlugId,
         answer: variables.answer,
         surveyGate: data.surveyGate,
+        viewerScope: viewerScope.value,
       });
       updateSurveyGateViewerCaches({
         queryClient,
         conversationSlugId: slugId,
         surveyGate: data.surveyGate,
+        viewerScope: viewerScope.value,
       });
       await markSurveyViewerQueriesStale({
         queryClient,
@@ -517,8 +537,9 @@ export function useSurveyWithdrawMutation({
   conversationSlugId: MaybeRefOrGetter<string>;
 }) {
   const { withdrawSurveyResponse } = useBackendSurveyApi();
-  const { updateAuthState } = useBackendAuthApi();
+  const { ensureParticipationAuthState } = useBackendAuthApi();
   const queryClient = useQueryClient();
+  const viewerScope = useViewerQueryScope();
 
   return useMutation({
     mutationFn: async () => {
@@ -535,18 +556,20 @@ export function useSurveyWithdrawMutation({
         return;
       }
 
-      await updateAuthState({ partialLoginStatus: { isKnown: true } });
+      await ensureParticipationAuthState();
 
       const slugId = toValue(conversationSlugId);
       clearSurveyFormAnswerCaches({
         queryClient,
         conversationSlugId: slugId,
         surveyGate: data.surveyGate,
+        viewerScope: viewerScope.value,
       });
       updateSurveyGateViewerCaches({
         queryClient,
         conversationSlugId: slugId,
         surveyGate: data.surveyGate,
+        viewerScope: viewerScope.value,
       });
       await markSurveyViewerQueriesStale({
         queryClient,
@@ -565,6 +588,7 @@ export function useSurveyConfigUpdateMutation({
 }) {
   const { updateSurveyConfig } = useBackendSurveyApi();
   const queryClient = useQueryClient();
+  const viewerScope = useViewerQueryScope();
 
   return useMutation({
     mutationFn: async ({ surveyConfig }: { surveyConfig: SurveyConfig }) => {
@@ -584,6 +608,7 @@ export function useSurveyConfigUpdateMutation({
         queryClient,
         conversationSlugId: slugId,
         surveyGate: data.surveyGate,
+        viewerScope: viewerScope.value,
       });
 
       await markSurveyViewerQueriesStale({
@@ -603,6 +628,7 @@ export function useSurveyConfigDeleteMutation({
 }) {
   const { deleteSurveyConfig } = useBackendSurveyApi();
   const queryClient = useQueryClient();
+  const viewerScope = useViewerQueryScope();
 
   return useMutation({
     mutationFn: async () => {
@@ -621,6 +647,7 @@ export function useSurveyConfigDeleteMutation({
         queryClient,
         conversationSlugId: slugId,
         surveyGate: data.surveyGate,
+        viewerScope: viewerScope.value,
       });
       await markSurveyViewerQueriesStale({
         queryClient,

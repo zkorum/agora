@@ -23,6 +23,7 @@
         :on-country-code="onCountryCodeUpdate"
         :on-keydown-enter="submit"
       />
+      <PhoneTurnstile ref="turnstileWidget" />
 
       <div
         v-if="
@@ -83,6 +84,7 @@ import {
   type PhoneInputFormTranslations,
   phoneInputFormTranslations,
 } from "./PhoneInputForm.i18n";
+import PhoneTurnstile from "./PhoneTurnstile.vue";
 
 const props = defineProps<{
   purpose: PhoneAuthPurpose;
@@ -106,6 +108,7 @@ const phoneData = reactive({
 
 const { verificationPhoneNumber } = storeToRefs(phoneVerificationStore());
 const phoneAuthAvailability = usePhoneAuthAvailability(() => props.purpose);
+const turnstileWidget = ref<InstanceType<typeof PhoneTurnstile>>();
 
 interface PhoneNumber {
   fullNumber: string;
@@ -233,7 +236,11 @@ function submit(): boolean {
   return true;
 }
 
-defineExpose({ submit });
+function takeTurnstileToken(): string | undefined {
+  return turnstileWidget.value?.takeToken();
+}
+
+defineExpose({ submit, takeTurnstileToken });
 </script>
 
 <style scoped lang="scss">

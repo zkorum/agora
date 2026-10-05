@@ -30,7 +30,7 @@ const api = vi.hoisted(() => ({
         typeof useBackendContentTranslationApi
       >["fetchConversationContent"]
     >(),
-  updateAuthState: vi.fn(),
+  ensureParticipationAuthState: vi.fn(),
   showNotifyMessage: vi.fn(),
 }));
 
@@ -275,6 +275,7 @@ describe("conversation translation completion", () => {
       metadata: {
         conversationSlugId,
         conversationType: "polis",
+        votingPresentation: "list",
         createdAt: new Date(),
         lastReactedAt: new Date(),
         opinionCount: 0,

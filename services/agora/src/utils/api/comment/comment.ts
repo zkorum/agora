@@ -3,9 +3,8 @@ import type {
   ApiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest,
   ApiV1OpinionFetchAnalysisFrameManifestByConversationPostRequest,
   ApiV1OpinionFetchAnalysisFrameOpinionListByFramePostRequest,
-  ApiV1OpinionFetchByConversationPostRequest,
   ApiV1OpinionFetchBySlugIdListPostRequest,
-  ApiV1OpinionFetchHiddenByConversationPostRequest,
+  ApiV1OpinionNextUnansweredPostRequest,
 } from "src/api";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
 import type {
@@ -20,20 +19,22 @@ import type {
   CreateOpinionRequest,
   FetchAnalysisCheckpointsResponse,
   FetchCommentStatsResponse,
+  FetchNextUnansweredOpinionResponse,
 } from "src/shared/types/dto";
 import { Dto } from "src/shared/types/dto";
 import type {
   AnalysisView,
   DisplayedOpinionItem,
   OpinionItem,
-  PolisKey,
 } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { waitForAuthInitialization } from "src/utils/auth/waitForAuthInitialization";
+import type { z } from "zod";
 
 import { useBackendAuthApi } from "../auth";
 import { api } from "../client";
 import { useCommonApi } from "../common";
+import { type OpinionPageRequest, type OpinionPageResult,parseOpinionPageResponse } from "./opinionPageBoundary";
 
 export {
   type AnalysisData,
@@ -43,12 +44,7 @@ export {
   mergeLiveAnalysisSnapshotMetadata,
 } from "./analysisData";
 
-export type CommentTabFilters =
-  | "new"
-  | "moderated"
-  | "discover"
-  | "hidden"
-  | "my_votes";
+export type CommentTabFilters = OpinionPageRequest["filter"];
 
 type CreateNewCommentResult =
   | {
@@ -66,59 +62,84 @@ type CreateNewCommentResult =
 
 export function useBackendCommentApi() {
   const { buildEncodedUcan, createRawAxiosRequestConfig } = useCommonApi();
-  const { isGuestOrLoggedIn } = storeToRefs(
-    useAuthenticationStore()
-  );
-  const { updateAuthState } = useBackendAuthApi();
+  const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
+  const { ensureParticipationAuthState } = useBackendAuthApi();
 
-  function parseFetchOpinionsResponse(data: unknown): DisplayedOpinionItem[] {
-    const result = Dto.fetchOpinionsResponse.safeParse(data);
-
-    if (!result.success) {
-      console.error("Failed to parse displayed opinion data with zod:", result.error);
-      return [];
-    }
-
-    return result.data;
-  }
-
-  function parseFetchHiddenOpinionsResponse(data: unknown): DisplayedOpinionItem[] {
-    const result = Dto.fetchHiddenOpinionsResponse.safeParse(data);
-
-    if (!result.success) {
-      console.error("Failed to parse hidden opinion data with zod:", result.error);
-      return [];
-    }
-
-    return result.data;
-  }
-
-  async function fetchHiddenCommentsForPost(
-    postSlugId: string
-  ): Promise<DisplayedOpinionItem[]> {
-    const params: ApiV1OpinionFetchHiddenByConversationPostRequest = {
-      conversationSlugId: postSlugId,
-    };
-
-    const { url, options } =
-      await DefaultApiAxiosParamCreator().apiV1OpinionFetchHiddenByConversationPost(
-        params
+  async function fetchOpinionPage(request: OpinionPageRequest & { signal?: AbortSignal }): Promise<OpinionPageResult> {
+    const { signal, ...pageRequest } = request;
+    await waitForAuthInitialization();
+    if (pageRequest.filter === "hidden") {
+      const input: z.input<typeof Dto.fetchHiddenOpinionPageRequest> = {
+        conversationSlugId: pageRequest.conversationSlugId,
+        cursor: pageRequest.cursor,
+      };
+      const params = Dto.fetchHiddenOpinionPageRequest.parse(input);
+      const { url, options } =
+        await DefaultApiAxiosParamCreator().apiV1OpinionFetchHiddenPagePost(
+          params
+        );
+      const encodedUcan = await buildEncodedUcan(url, options);
+      const response = await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1OpinionFetchHiddenPagePost(
+        params,
+        createRawAxiosRequestConfig({ encodedUcan, timeoutProfile: "extended", signal })
       );
-    const encodedUcan = await buildEncodedUcan(url, options);
+      return parseOpinionPageResponse({ request, rawResponse: response.data });
+    }
 
+    const params = Dto.fetchOpinionPageRequest.parse(pageRequest);
+    const { url, options } =
+      await DefaultApiAxiosParamCreator().apiV1OpinionFetchPagePost(params);
+    const encodedUcan = isGuestOrLoggedIn.value
+      ? await buildEncodedUcan(url, options)
+      : undefined;
     const response = await DefaultApiFactory(
       undefined,
       undefined,
       api
-    ).apiV1OpinionFetchHiddenByConversationPost(
+    ).apiV1OpinionFetchPagePost(
       params,
-      createRawAxiosRequestConfig({
-        encodedUcan: encodedUcan,
-        timeoutProfile: "extended",
-      })
+      createRawAxiosRequestConfig({ encodedUcan, timeoutProfile: "extended", signal })
     );
+    return parseOpinionPageResponse({ request, rawResponse: response.data });
+  }
 
-    return parseFetchHiddenOpinionsResponse(response.data);
+  async function fetchNextUnansweredOpinion({
+    conversationSlugId,
+    order,
+    excludedOpinionSlugIds,
+    signal,
+  }: {
+    conversationSlugId: string;
+    order: "discover" | "new";
+    excludedOpinionSlugIds: readonly string[];
+    signal?: AbortSignal;
+  }): Promise<FetchNextUnansweredOpinionResponse> {
+    const params: ApiV1OpinionNextUnansweredPostRequest = {
+      conversationSlugId,
+      order,
+      excludedOpinionSlugIds: [...excludedOpinionSlugIds],
+    };
+    await waitForAuthInitialization();
+    const { url, options } =
+      await DefaultApiAxiosParamCreator().apiV1OpinionNextUnansweredPost(
+        params
+      );
+    const encodedUcan = isGuestOrLoggedIn.value
+      ? await buildEncodedUcan(url, options)
+      : undefined;
+    const response = await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1OpinionNextUnansweredPost(
+      params,
+      createRawAxiosRequestConfig({ encodedUcan, timeoutProfile: "extended", signal })
+    );
+    return Dto.fetchNextUnansweredOpinionResponse.parse(response.data);
   }
 
   async function fetchCommentStatsForPost(
@@ -138,56 +159,6 @@ export function useBackendCommentApi() {
     );
 
     return Dto.fetchCommentStatsResponse.parse(response.data);
-  }
-
-  async function fetchCommentsForPost(
-    postSlugId: string,
-    filter: CommentTabFilters,
-    clusterKey: PolisKey | undefined
-  ): Promise<DisplayedOpinionItem[]> {
-    if (filter === "hidden") {
-      return await fetchHiddenCommentsForPost(postSlugId);
-    }
-
-    const params: ApiV1OpinionFetchByConversationPostRequest = {
-      conversationSlugId: postSlugId,
-      filter: filter,
-      clusterKey: clusterKey,
-    };
-
-    await waitForAuthInitialization();
-
-    if (isGuestOrLoggedIn.value) {
-      const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1OpinionFetchByConversationPost(
-          params
-        );
-      const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1OpinionFetchByConversationPost(
-        params,
-        createRawAxiosRequestConfig({
-          encodedUcan: encodedUcan,
-          timeoutProfile: "extended",
-        })
-      );
-
-      return parseFetchOpinionsResponse(response.data);
-    } else {
-      const response = await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1OpinionFetchByConversationPost(
-        params,
-        createRawAxiosRequestConfig({ timeoutProfile: "extended" })
-      );
-
-      return parseFetchOpinionsResponse(response.data);
-    }
   }
 
   async function createNewComment({
@@ -218,9 +189,7 @@ export function useBackendCommentApi() {
 
     if (data.success) {
       // TODO: properly manage errors in backend and return login status to update to
-      const { authStateChanged, needsCacheRefresh } = await updateAuthState({
-        partialLoginStatus: { isKnown: true },
-      });
+      const { authStateChanged, needsCacheRefresh } = await ensureParticipationAuthState();
       return {
         success: true,
         opinionSlugId: data.opinionSlugId,
@@ -494,8 +463,8 @@ export function useBackendCommentApi() {
 
   return {
     createNewComment,
-    fetchCommentsForPost,
-    fetchHiddenCommentsForPost,
+    fetchOpinionPage,
+    fetchNextUnansweredOpinion,
     fetchCommentStatsForPost,
     deleteCommentBySlugId,
     fetchOpinionsBySlugIdList,

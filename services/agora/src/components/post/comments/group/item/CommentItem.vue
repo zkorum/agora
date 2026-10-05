@@ -13,6 +13,7 @@
         />
 
         <CommentActionOptions
+          v-if="props.conversationRouteContext.kind !== 'embed'"
           :comment-item="commentItem"
           :post-slug-id="postSlugId"
           :conversation-author-username="conversationAuthorUsername"
@@ -60,6 +61,7 @@
             :survey-gate="props.surveyGate"
             :on-view-analysis="props.onViewAnalysis"
             :is-voting-disabled="props.isVotingDisabled"
+            :show-vote-results="props.showVoteResults"
           />
         </div>
       </div>
@@ -107,6 +109,7 @@ const props = defineProps<{
   surveyGate: SurveyGateSummary | undefined;
   onViewAnalysis: () => void;
   isVotingDisabled: boolean;
+  showVoteResults: boolean;
   contentTranslation: CommentContentTranslationPreview | undefined;
   conversationRouteContext: ConversationRouteContext;
 }>();

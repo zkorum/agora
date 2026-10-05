@@ -1,5 +1,5 @@
 <template>
-  <OnboardingLayout body-behind-footer>
+  <OnboardingLayout v-if="!skipPhoneRegistration" body-behind-footer>
     <template #body><DefaultImageExample /> </template>
 
     <template #footer>
@@ -31,6 +31,7 @@
       </form>
     </template>
   </OnboardingLayout>
+  <PageLoadingSpinner v-else />
 </template>
 
 <script setup lang="ts">
@@ -38,10 +39,14 @@ import { storeToRefs } from "pinia";
 import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
 import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
+import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import PhoneOtpForm from "src/components/verification/PhoneOtpForm.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useSkipUnavailablePhoneRegistration } from "src/composables/verification/useSkipUnavailablePhoneRegistration";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { onboardingFlowStore } from "src/stores/onboarding/flow";
+import { usePhoneAuthAvailability } from "src/utils/auth/phoneAuthMode";
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 
@@ -56,9 +61,21 @@ const { t } = useComponentI18n<VerifyPhoneCodeTranslations>(
 
 const router = useRouter();
 const { isAuthInitialized, isLoggedIn } = storeToRefs(useAuthenticationStore());
+const { credentialUpgradeTarget } = storeToRefs(onboardingFlowStore());
 const phoneAuthPurpose = computed(() =>
   !isAuthInitialized.value || isLoggedIn.value ? "credential" : "login"
 );
+const skipPhoneRegistration = useSkipUnavailablePhoneRegistration({
+  availability: usePhoneAuthAvailability(phoneAuthPurpose),
+  ready: isAuthInitialized,
+  redirect: () =>
+    router.replace({
+      name:
+        credentialUpgradeTarget.value === "strong"
+          ? "/verify/identity/"
+          : "/verify/hard/",
+    }),
+});
 
 const phoneOtpFormRef = ref<{
   nextButtonClicked: () => void;

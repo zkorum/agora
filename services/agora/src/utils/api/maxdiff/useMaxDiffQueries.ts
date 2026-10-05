@@ -1,20 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import { storeToRefs } from "pinia";
-import type { ApiV1RankingBwsLoadPost200Response } from "src/api";
 import type {
   MaxDiffItem,
+  MaxDiffLoadResponse,
   MaxDiffSaveResponse,
   RankingStatsCheckpointsResponse,
 } from "src/shared/types/dto";
 import type { ParticipationBlockedReason } from "src/shared/types/zod";
-import type {
-  ExtendedConversation,
-  MaxDiffComparison,
-} from "src/shared/types/zod";
+import type { MaxDiffComparison } from "src/shared/types/zod";
 import type { MaxDiffState } from "src/shared/utils/maxdiff";
 import { useLanguageStore } from "src/stores/language";
 import { getRetainedConversationRankingStatsUpdate } from "src/utils/api/post/rankingStatsUpdate";
+import { updateConversationQueryCache } from "src/utils/api/post/useConversationQuery";
 import { hasPendingMaxDiffItemTranslations } from "src/utils/maxdiffTranslation";
+import { getMaxDiffLoadQueryKey } from "src/utils/query/conversationQueryKeys";
+import { useViewerQueryScope } from "src/utils/query/viewerScope";
 import {
   isContentTranslationEventForIdentity,
   useContentTranslationRecovery,
@@ -40,10 +40,11 @@ export function useMaxDiffItemsQuery({
       computed(() => displayLanguage.value),
       computed(() => spokenLanguages.value.join(",")),
     ],
-    queryFn: async (): Promise<MaxDiffItem[]> => {
+    queryFn: async ({ signal }): Promise<MaxDiffItem[]> => {
       const response = await fetchMaxDiffItems({
         conversationSlugId: toValue(conversationSlugId),
         lifecycleFilter: "active",
+        signal,
       });
       if (response.status !== "success") {
         throw new Error("Failed to fetch MaxDiff items");
@@ -108,12 +109,14 @@ export function useMaxDiffLoadQuery({
   enabled: MaybeRefOrGetter<boolean>;
 }) {
   const { loadMaxDiffResult } = useMaxDiffApi();
+  const viewerScope = useViewerQueryScope();
 
   return useQuery({
-    queryKey: ["maxdiff-load", computed(() => toValue(conversationSlugId))],
-    queryFn: async (): Promise<ApiV1RankingBwsLoadPost200Response> => {
+    queryKey: computed(() => getMaxDiffLoadQueryKey({ conversationSlugId: toValue(conversationSlugId), viewerScope: viewerScope.value })),
+    queryFn: async ({ signal }): Promise<MaxDiffLoadResponse> => {
       const response = await loadMaxDiffResult({
         conversationSlugId: toValue(conversationSlugId),
+        signal,
       });
       if (response.status !== "success") {
         throw new Error("Failed to load MaxDiff state");
@@ -174,10 +177,8 @@ export function useRankingStatsCheckpointsQuery({
 
 export interface MaxDiffSaveContext {
   previousState: MaxDiffState;
-  previousIsComplete: boolean;
-  previousFinalRanking: string[];
   previousCandidates: string[];
-  isFirstVote: boolean;
+  isCurrent: () => boolean;
 }
 
 interface MaxDiffSaveMutationParams {
@@ -199,8 +200,9 @@ export function useMaxDiffSaveMutation({
   onNetworkError: () => void;
 }) {
   const { saveMaxDiffResult } = useMaxDiffApi();
-  const { updateAuthState } = useBackendAuthApi();
+  const { ensureParticipationAuthState } = useBackendAuthApi();
   const queryClient = useQueryClient();
+  const viewerScope = useViewerQueryScope();
 
   return useMutation({
     mutationFn: async (params: MaxDiffSaveMutationParams) => {
@@ -209,6 +211,7 @@ export function useMaxDiffSaveMutation({
         ranking: params.ranking,
         comparisons: params.comparisons,
         isComplete: params.isComplete,
+        isCurrent: params.context.isCurrent,
       });
       if (response.status !== "success") {
         throw new Error("Failed to save MaxDiff result");
@@ -217,13 +220,15 @@ export function useMaxDiffSaveMutation({
     },
 
     onSuccess: async (data: MaxDiffSaveResponse, variables) => {
+      if (!variables.context.isCurrent()) return;
       if (!data.success) {
         onRollback(variables.context);
         onBlocked(data.reason);
         return;
       }
 
-      await updateAuthState({ partialLoginStatus: { isKnown: true } });
+      await ensureParticipationAuthState();
+      if (!variables.context.isCurrent()) return;
 
       const slugId = toValue(conversationSlugId);
 
@@ -231,6 +236,7 @@ export function useMaxDiffSaveMutation({
       // from overwriting our optimistic updates (same pattern as Polis useVoteMutation)
       await queryClient.cancelQueries({ queryKey: ["conversation", slugId] });
       await queryClient.cancelQueries({ queryKey: ["maxdiff-load", slugId] });
+      if (!variables.context.isCurrent()) return;
 
       // Compute count deltas (supports vote, undo, and redo)
       const comparisonDelta =
@@ -245,11 +251,10 @@ export function useMaxDiffSaveMutation({
       const participantDelta = becameParticipant ? 1 : lostParticipant ? -1 : 0;
 
       // Optimistically update conversation counts
-      queryClient.setQueryData(
-        ["conversation", slugId],
-        (old: ExtendedConversation | undefined) => {
-          if (old === undefined) return old;
-          return {
+      updateConversationQueryCache({
+        queryClient,
+        conversationSlugId: slugId,
+        updateConversation: (old) => ({
             ...old,
             metadata: {
               ...old.metadata,
@@ -264,14 +269,13 @@ export function useMaxDiffSaveMutation({
                   }
                 : {}),
             },
-          };
-        }
-      );
+          }),
+      });
 
       // Write saved state directly to cache instead of invalidating
       // (avoids read replica lag returning stale data before buffer flushes)
-      queryClient.setQueryData<ApiV1RankingBwsLoadPost200Response>(
-        ["maxdiff-load", slugId],
+      queryClient.setQueryData<MaxDiffLoadResponse>(
+        getMaxDiffLoadQueryKey({ conversationSlugId: slugId, viewerScope: viewerScope.value }),
         (old) => ({
           ranking: variables.ranking,
           comparisons: variables.comparisons.map((c) => ({
@@ -280,7 +284,7 @@ export function useMaxDiffSaveMutation({
             set: c.set,
           })),
           isComplete: variables.isComplete,
-          candidateSets: old?.candidateSets ?? [],
+          candidateSets: data.candidateSets,
           perUserScores: old?.perUserScores ?? null,
         })
       );
@@ -292,6 +296,7 @@ export function useMaxDiffSaveMutation({
     },
 
     onError: (_error, variables) => {
+      if (!variables.context.isCurrent()) return;
       onRollback(variables.context);
       onNetworkError();
     },

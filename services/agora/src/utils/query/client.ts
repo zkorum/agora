@@ -1,6 +1,6 @@
 import { QueryClient } from "@tanstack/vue-query";
-import type { AxiosErrorResponse } from "src/utils/api/common";
 import { isTimeoutError, shouldRetryError } from "src/utils/api/common";
+import { classifyApiError } from "src/utils/api/error";
 
 // Create a client with custom configuration for our timeout and retry needs
 export const queryClient = new QueryClient({
@@ -15,19 +15,8 @@ export const queryClient = new QueryClient({
         // Don't retry more than 3 times
         if (failureCount >= 3) return false;
 
-        // Check if it's an Axios error and should be retried
-        const axiosError = error as AxiosErrorResponse;
-        if (axiosError.code) {
-          return shouldRetryError(axiosError.code);
-        }
-
-        // For non-Axios errors, retry network and server errors
-        return (
-          error instanceof Error &&
-          (error.message.includes("Network") ||
-            error.message.includes("timeout") ||
-            error.message.includes("fetch"))
-        );
+        const apiError = classifyApiError(error);
+        return apiError.kind === "transport" && shouldRetryError(apiError.code);
       },
       // Exponential backoff with jitter
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
@@ -41,8 +30,8 @@ export const queryClient = new QueryClient({
       retry: (failureCount, error) => {
         if (failureCount >= 2) return false;
 
-        const axiosError = error as AxiosErrorResponse;
-        if (axiosError.code) {
+        const axiosError = classifyApiError(error);
+        if (axiosError.kind === "transport") {
           return (
             isTimeoutError(axiosError.code) || axiosError.code === "ERR_NETWORK"
           );

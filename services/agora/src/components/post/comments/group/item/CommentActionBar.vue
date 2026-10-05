@@ -5,36 +5,36 @@
         vote-type="disagree"
         :label="t('disagree')"
         :is-selected="userVoteAction === 'disagree'"
-        :disabled="isVotingDisabled"
+        :disabled="isVotingDisabled || isCastingVote"
         :set-aria-label="`${t('disagreeAriaLabel')} ${localNumDisagrees}`"
         :vote-count="localNumDisagrees"
         :percentage="formatPercentage(relativeTotalPercentageDisagrees)"
-        :show-vote-count="userCastedVote"
-        @click="castPersonalVote(props.commentItem.opinionSlugId, 'disagree')"
+        :show-vote-count="props.showVoteResults && userCastedVote"
+        @click="castPersonalVote({ opinionSlugId: props.commentItem.opinionSlugId, voteAction: 'disagree' })"
       />
 
       <VotingButton
         vote-type="pass"
         :label="t('pass')"
         :is-selected="userVoteAction === 'pass'"
-        :disabled="isVotingDisabled"
+        :disabled="isVotingDisabled || isCastingVote"
         :set-aria-label="`${t('passAriaLabel')} ${localNumPasses}`"
         :vote-count="localNumPasses"
         :percentage="formatPercentage(relativeTotalPercentagePasses)"
-        :show-vote-count="userCastedVote"
-        @click="castPersonalVote(props.commentItem.opinionSlugId, 'pass')"
+        :show-vote-count="props.showVoteResults && userCastedVote"
+        @click="castPersonalVote({ opinionSlugId: props.commentItem.opinionSlugId, voteAction: 'pass' })"
       />
 
       <VotingButton
         vote-type="agree"
         :label="t('agree')"
         :is-selected="userVoteAction === 'agree'"
-        :disabled="isVotingDisabled"
+        :disabled="isVotingDisabled || isCastingVote"
         :set-aria-label="`${t('agreeAriaLabel')} ${localNumAgrees}`"
         :vote-count="localNumAgrees"
         :percentage="formatPercentage(relativeTotalPercentageAgrees)"
-        :show-vote-count="userCastedVote"
-        @click="castPersonalVote(props.commentItem.opinionSlugId, 'agree')"
+        :show-vote-count="props.showVoteResults && userCastedVote"
+        @click="castPersonalVote({ opinionSlugId: props.commentItem.opinionSlugId, voteAction: 'agree' })"
       />
     </div>
 
@@ -70,24 +70,25 @@ import PreParticipationIntentionDialog from "src/components/authentication/inten
 import VotingButton from "src/components/features/opinion/VotingButton.vue";
 import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
 import { useParticipationGate } from "src/composables/conversation/useParticipationGate";
-import type { OpinionVotingUtilities } from "src/composables/opinion/types";
+import type { OpinionVoteParams, OpinionVotingUtilities } from "src/composables/opinion/types";
+import { useVotingActionGuard } from "src/composables/opinion/useVotingActionGuard";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   type EventSlug,
   type OpinionItem,
   type ParticipationMode,
   type SurveyGateSummary,
-  type VotingAction,
 } from "src/shared/types/zod";
 import { calculatePercentage } from "src/shared/util";
-import { useBackendAuthApi } from "src/utils/api/auth";
+import type { AnalysisData } from "src/utils/api/comment/analysisData";
 import { useInvalidateConversationQuery } from "src/utils/api/post/useConversationQuery";
 import { useUserClusteringSession } from "src/utils/api/vote/useVoteQueries";
 import { formatPercentage } from "src/utils/common";
 import { computeBannerState } from "src/utils/component/bannerState";
 import { MIN_VOTES_FOR_CLUSTER } from "src/utils/component/opinion";
+import { isQueryForViewerScope, useViewerQueryScope } from "src/utils/query/viewerScope";
 import { useNotify } from "src/utils/ui/notify";
-import { computed, ref } from "vue";
+import { computed, onUnmounted, ref } from "vue";
 
 import {
   type CommentActionBarTranslations,
@@ -103,9 +104,13 @@ const props = defineProps<{
   surveyGate: SurveyGateSummary | undefined;
   onViewAnalysis: () => void;
   isVotingDisabled: boolean;
+  showVoteResults: boolean;
 }>();
 
 const showLoginDialog = ref(false);
+const actionGuard = useVotingActionGuard();
+const isCastingVote = actionGuard.isPending;
+onUnmounted(actionGuard.invalidate);
 const hasVotedThisSession = ref(false);
 const { setOpinionAgreementIntention } = useConversationLoginIntentions();
 const { needsAuth: isAuthBlocked, shouldOpenParticipationModal } =
@@ -117,11 +122,11 @@ const { needsAuth: isAuthBlocked, shouldOpenParticipationModal } =
   });
 
 const { showNotifyMessage } = useNotify();
-const { updateAuthState } = useBackendAuthApi();
 const { invalidateConversation } = useInvalidateConversationQuery();
 
 // Query client for reading analysis cache
 const queryClient = useQueryClient();
+const viewerScope = useViewerQueryScope();
 
 const { t } = useComponentI18n<CommentActionBarTranslations>(
   commentActionBarTranslations
@@ -136,9 +141,10 @@ const userClusteredThisMount = ref(false);
 // Check if user is in a cluster by looking at analysis cache
 // This matches the same check in useVoteQueries.ts that determines whether to ask backend
 const userIsClusteredFromCache = computed(() => {
-  const analysisQueryData = queryClient.getQueriesData<{
-    polisClusters?: Record<string, { isUserInCluster?: boolean } | undefined>;
-  }>({ queryKey: ["analysis", props.postSlugId] });
+  const analysisQueryData = queryClient.getQueriesData<AnalysisData>({
+    queryKey: ["analysis", props.postSlugId],
+    predicate: query => isQueryForViewerScope({ queryKey: query.queryKey, viewerScope: viewerScope.value }),
+  });
 
   return analysisQueryData.some(
     ([, analysisData]) =>
@@ -195,14 +201,14 @@ function onLoginCallback() {
   );
 }
 
-async function castPersonalVote(
-  opinionSlugId: string,
-  voteAction: VotingAction
-): Promise<void> {
+async function castPersonalVote({ opinionSlugId, voteAction }: OpinionVoteParams): Promise<void> {
+  await actionGuard.run(async (isCurrent) => {
+  if (props.isVotingDisabled) return;
   if (await shouldOpenParticipationModal()) {
-    showLoginDialog.value = true;
+    if (isCurrent()) showLoginDialog.value = true;
     return;
   }
+  if (!isCurrent()) return;
 
   // Allow re-clicking the same vote to cancel it
   // If already voted and clicking same button, treat as cancel
@@ -215,10 +221,9 @@ async function castPersonalVote(
 
   // Cast vote - TanStack Query handles optimistic updates automatically
   try {
-    const result = await props.votingUtilities.castVote(
-      opinionSlugId,
-      voteAction
-    );
+    const result = await props.votingUtilities.castVote({ opinionSlugId, voteAction });
+
+    if (result === undefined || !isCurrent()) return;
 
     if (result.success) {
       // Detect clustering for the first time this mount
@@ -230,7 +235,6 @@ async function castPersonalVote(
       if (!isCancellation) {
         hasVotedThisSession.value = true;
       }
-      await updateAuthState({ partialLoginStatus: { isKnown: true } });
     } else {
       // Show specific error message based on reason
       if (result.reason === "conversation_closed") {
@@ -258,8 +262,9 @@ async function castPersonalVote(
       invalidateConversation(props.postSlugId);
     }
   } catch {
-    showNotifyMessage(t("voteFailed"));
+    if (isCurrent()) showNotifyMessage(t("voteFailed"));
   }
+  });
 }
 
 // Vote banner logic (3 states): uses pure function for testability

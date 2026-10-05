@@ -69,7 +69,7 @@ export function useBackendAdministratorProjectApi() {
       const url = "/api/v1/administrator/project/create";
       const options = { method: "POST" };
       const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await api.post(url, params, {
+      const response = await api.post<unknown>(url, params, {
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },
@@ -104,7 +104,7 @@ export function useBackendAdministratorProjectApi() {
       const url = "/api/v1/administrator/project/get-project-options";
       const options = { method: "POST" };
       const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await api.post(
+      const response = await api.post<unknown>(
         url,
         {},
         {
@@ -131,7 +131,7 @@ export function useBackendAdministratorProjectApi() {
       const url = "/api/v1/administrator/project/get-project-details";
       const options = { method: "POST" };
       const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await api.post(url, params, {
+      const response = await api.post<unknown>(url, params, {
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },
@@ -154,7 +154,7 @@ export function useBackendAdministratorProjectApi() {
       const url = "/api/v1/administrator/project/language-settings/update";
       const options = { method: "POST" };
       const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await api.post(url, params, {
+      const response = await api.post<unknown>(url, params, {
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },
@@ -187,7 +187,7 @@ export function useBackendAdministratorProjectApi() {
       const url = "/api/v1/administrator/project/slug/update";
       const options = { method: "POST" };
       const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await api.post(url, params, {
+      const response = await api.post<unknown>(url, params, {
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },
@@ -244,7 +244,7 @@ export function useBackendAdministratorProjectApi() {
       const url = "/api/v1/administrator/project/update";
       const options = { method: "POST" };
       const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await api.post(url, params, {
+      const response = await api.post<unknown>(url, params, {
         headers: {
           ...buildAuthorizationHeader(encodedUcan),
         },
@@ -278,7 +278,7 @@ export function useBackendAdministratorProjectApi() {
     const params = Dto.listProjectDocumentsRequest.parse(request);
     const url = "/api/v1/administrator/project/document/list";
     const encodedUcan = await buildEncodedUcan(url, { method: "POST" });
-    const response = await api.post(url, params, {
+    const response = await api.post<unknown>(url, params, {
       headers: buildAuthorizationHeader(encodedUcan),
     });
     return Dto.listProjectDocumentsResponse.parse(response.data);
@@ -320,7 +320,7 @@ export function useBackendAdministratorProjectApi() {
       encodedUcan,
       timeoutProfile: "file-upload",
     });
-    const response = await api.post(url, formData, requestConfig);
+    const response = await api.post<unknown>(url, formData, requestConfig);
     return Dto.uploadProjectDocumentResponse.parse(response.data).document;
   }
 

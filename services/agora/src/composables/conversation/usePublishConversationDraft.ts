@@ -21,6 +21,7 @@ import { useInvalidateFeedQuery } from "src/utils/api/post/useFeedQuery";
 import { buildSurveyConfigForSave } from "src/utils/survey/config";
 import { useNotify } from "src/utils/ui/notify";
 import { useRouter } from "vue-router";
+import type { z } from "zod";
 
 interface PublishConversationDraftParams {
   conversationDraft: ConversationDraft;
@@ -60,7 +61,7 @@ function buildBaseCreateConversationRequest({
 }: {
   conversationDraft: ConversationDraft;
   postAsOrganizationSlug: string | undefined;
-}) {
+}): z.input<typeof Dto.createNewConversationBaseRequest> {
   return {
     conversationTitle: conversationDraft.title,
     conversationBody:
@@ -104,7 +105,7 @@ function buildCreateConversationRequest({
         conversationType: conversationDraft.conversationType,
         rankingMode: conversationDraft.rankingMode,
         externalSourceConfig: conversationDraft.externalSourceConfig,
-      }),
+      } satisfies z.input<typeof Dto.createNewConversationRequest>),
     };
   }
 
@@ -123,10 +124,11 @@ function buildCreateConversationRequest({
     request: Dto.createNewConversationRequest.parse({
       ...baseCreateRequest,
       conversationType: conversationDraft.conversationType,
+      votingPresentation: conversationDraft.votingPresentation,
       aiLabelingEnabled: conversationDraft.aiLabelingEnabled,
       preferredOpinionGroupCount: conversationDraft.preferredOpinionGroupCount,
       surveyConfig: normalizedSurveyConfigResult.surveyConfig,
-    }),
+    } satisfies z.input<typeof Dto.createNewConversationRequest>),
   };
 }
 

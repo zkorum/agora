@@ -112,6 +112,7 @@ export function createEmptyDraft(): ConversationDraft {
 
     // Conversation Type
     conversationType: "polis",
+    votingPresentation: "list",
 
     // Publishing Options
     postAs: {

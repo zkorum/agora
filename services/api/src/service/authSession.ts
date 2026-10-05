@@ -5,7 +5,7 @@ import {
     userTable,
 } from "@/shared-backend/schema.js";
 import type { AuthSession } from "@/shared/types/dto-auth.js";
-import { and, desc, eq, gt, lte, ne } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, lte, ne } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { z } from "zod";
 
@@ -234,7 +234,7 @@ export async function revokeAllSessions({
     db: PostgresJsDatabase;
     userId: string;
     now: Date;
-    reason?: "logout_all" | "account_deleted";
+    reason?: "logout_all" | "account_deleted" | "revoked";
 }): Promise<number> {
     const primaryDb = getPrimaryDatabase(db);
     return await primaryDb.transaction(async (tx) => {
@@ -256,7 +256,7 @@ export async function revokeAllSessionsWithinTransaction({
     db: PostgresJsDatabase;
     userId: string;
     now: Date;
-    reason: "logout_all" | "account_deleted";
+    reason: "logout_all" | "account_deleted" | "revoked";
 }): Promise<number> {
     const revoked = await db
         .update(deviceTable)
@@ -344,7 +344,13 @@ async function startSessionWithinTransaction({
     const users = await db
         .select({ userId: userTable.id })
         .from(userTable)
-        .where(and(eq(userTable.id, userId), eq(userTable.isDeleted, false)))
+        .where(
+            and(
+                eq(userTable.id, userId),
+                eq(userTable.isDeleted, false),
+                isNull(userTable.authRestrictedAt),
+            ),
+        )
         .for("update");
     if (users.length !== 1) {
         throw new Error("Cannot start a session for an inactive user");

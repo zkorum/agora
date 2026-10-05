@@ -82,13 +82,7 @@
           :on-view-analysis="viewAnalysisTab"
           :is-voting-disabled="isVotingDisabled"
           :conversation-route-context="conversationRouteContext"
-          :preloaded-queries="{
-            commentsDiscoverQuery,
-            commentsNewQuery,
-            commentsModeratedQuery,
-            hiddenCommentsQuery,
-            commentsMyVotesQuery,
-          }"
+          filter="discover"
         />
       </div>
     </ZKHoverEffect>
@@ -124,8 +118,6 @@ import { useBackendAuthApi } from "src/utils/api/auth";
 import {
   useAnalysisCheckpointsQuery,
   useAnalysisQuery,
-  useCommentsQuery,
-  useHiddenCommentsQuery,
   useInvalidateCommentQueries,
 } from "src/utils/api/comment/useCommentQueries";
 import { useSurveyResultsAggregatedQuery } from "src/utils/api/survey/useSurveyQueries";
@@ -194,7 +186,6 @@ const {
   markAnalysisAsStale,
   markCommentsAsStale,
   invalidateComments,
-  invalidateHiddenComments,
 } = useInvalidateCommentQueries();
 const { loadAuthenticatedModules } = useBackendAuthApi();
 const userStore = useUserStore();
@@ -218,10 +209,6 @@ const isAnalysisQueryEnabled = computed(
   () => isAnalysisEnabled.value && !isLiveAnalysisPaused.value
 );
 
-// Create a computed property to ensure reactivity for the query's enabled parameter
-const isSiteModerator = computed(() => profileData.value.isSiteModerator);
-
-// Preload both analysis and comment data immediately when component mounts (only if not in compact mode)
 const analysisQuery = useAnalysisQuery({
   conversationSlugId: props.conversationData.metadata.conversationSlugId,
   voteCount: props.conversationData.metadata.voteCount,
@@ -237,41 +224,6 @@ const analysisCheckpointsQuery = useAnalysisCheckpointsQuery({
 const surveyResultsQuery = useSurveyResultsAggregatedQuery({
   conversationSlugId: props.conversationData.metadata.conversationSlugId,
   enabled: computed(() => isAnalysisEnabled.value && hasSurvey.value),
-});
-
-// Preload comment queries for all filter types (only if not in compact mode)
-const commentsDiscoverQuery = useCommentsQuery({
-  conversationSlugId: props.conversationData.metadata.conversationSlugId,
-  filter: "discover",
-  voteCount: props.conversationData.metadata.voteCount,
-  enabled: !props.compactMode,
-});
-
-const commentsNewQuery = useCommentsQuery({
-  conversationSlugId: props.conversationData.metadata.conversationSlugId,
-  filter: "new",
-  voteCount: props.conversationData.metadata.voteCount,
-  enabled: false, // Lazy: fetched on-demand when user selects this filter
-});
-
-const commentsModeratedQuery = useCommentsQuery({
-  conversationSlugId: props.conversationData.metadata.conversationSlugId,
-  filter: "moderated",
-  voteCount: props.conversationData.metadata.voteCount,
-  enabled: false, // Lazy: fetched on-demand when user selects this filter
-});
-
-const commentsMyVotesQuery = useCommentsQuery({
-  conversationSlugId: props.conversationData.metadata.conversationSlugId,
-  filter: "my_votes",
-  voteCount: props.conversationData.metadata.voteCount,
-  enabled: false, // Lazy: fetched on-demand when user selects this filter
-});
-
-const hiddenCommentsQuery = useHiddenCommentsQuery({
-  conversationSlugId: props.conversationData.metadata.conversationSlugId,
-  voteCount: props.conversationData.metadata.voteCount,
-  enabled: false, // Lazy: fetched on-demand when user selects this filter
 });
 
 const isVotingDisabled = computed(() => {
@@ -387,25 +339,7 @@ onMounted(async () => {
 watch(currentTab, async (newTab) => {
   if (!props.compactMode) {
     if (newTab === "comment") {
-      // Check and refetch comment queries if they are stale
-      const commentQueries = [
-        commentsDiscoverQuery,
-        commentsNewQuery,
-        commentsModeratedQuery,
-        commentsMyVotesQuery,
-      ];
-
-      // Only include hiddenCommentsQuery if user is a moderator
-      if (isSiteModerator.value) {
-        commentQueries.push(hiddenCommentsQuery);
-      }
-
-      const staleOrUnfetchedQueries = commentQueries.filter(
-        (query) => query.isStale.value || !query.data.value
-      );
-      await Promise.all(
-        staleOrUnfetchedQueries.map((query) => query.refetch())
-      );
+      await opinionSectionRef.value?.refreshData();
     } else if (newTab === "analysis") {
       // Check and refetch analysis query if it is stale
       if (analysisQuery.isStale.value) {
@@ -425,10 +359,6 @@ async function refreshAllData(): Promise<void> {
   // Invalidate all queries to force fresh data
   invalidateComments(slugId);
   invalidateAnalysis(slugId);
-
-  if (isSiteModerator.value) {
-    invalidateHiddenComments(slugId);
-  }
 
   // Refresh comment data if the component is rendered
   if (opinionSectionRef.value) {

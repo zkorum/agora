@@ -111,6 +111,7 @@ describe("NewConversationControlBar", () => {
   it("only shows opinion-group controls for Polis conversations", async () => {
     const conversationTypeConfig = ref<ConversationTypeConfig>({
       conversationType: "polis",
+      votingPresentation: "list",
     });
     const TestRoot = defineComponent({
       setup() {

@@ -23,6 +23,7 @@ import type {
 } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { waitForAuthInitialization } from "src/utils/auth/waitForAuthInitialization";
+import type { z } from "zod";
 
 import { api } from "../client";
 import type { AxiosErrorResponse, AxiosSuccessResponse } from "../common";
@@ -41,24 +42,28 @@ export function useBackendSurveyApi() {
   async function createOptionalAuthConfig({
     url,
     options,
+    signal,
   }: {
     url: string;
     options: RawAxiosRequestConfig;
+    signal?: AbortSignal;
   }): Promise<RawAxiosRequestConfig> {
     await waitForAuthInitialization();
 
     if (isGuestOrLoggedIn.value) {
       const encodedUcan = await buildEncodedUcan(url, options);
-      return createRawAxiosRequestConfig({ encodedUcan });
+      return createRawAxiosRequestConfig({ encodedUcan, signal });
     }
 
-    return createRawAxiosRequestConfig({});
+    return createRawAxiosRequestConfig({ signal });
   }
 
   async function fetchSurveyForm({
     conversationSlugId,
+    signal,
   }: {
     conversationSlugId: string;
+    signal?: AbortSignal;
   }): Promise<AxiosSuccessResponse<SurveyFormFetchResponse> | AxiosErrorResponse> {
     try {
       const params = { conversationSlugId };
@@ -70,7 +75,7 @@ export function useBackendSurveyApi() {
         api
       ).apiV1SurveyFormFetchPost(
         params,
-        await createOptionalAuthConfig({ url, options })
+        await createOptionalAuthConfig({ url, options, signal })
       );
 
       return {
@@ -84,8 +89,10 @@ export function useBackendSurveyApi() {
 
   async function checkSurveyStatus({
     conversationSlugId,
+    signal,
   }: {
     conversationSlugId: string;
+    signal?: AbortSignal;
   }): Promise<
     AxiosSuccessResponse<SurveyStatusCheckResponse> | AxiosErrorResponse
   > {
@@ -99,7 +106,7 @@ export function useBackendSurveyApi() {
         api
       ).apiV1SurveyStatusCheckPost(
         params,
-        await createOptionalAuthConfig({ url, options })
+        await createOptionalAuthConfig({ url, options, signal })
       );
 
       return {
@@ -190,11 +197,11 @@ export function useBackendSurveyApi() {
       const params = Dto.surveyConfigUpdateRequest.parse({
         conversationSlugId,
         surveyConfig,
-      });
+      } satisfies z.input<typeof Dto.surveyConfigUpdateRequest>);
       const url = "/api/v1/survey/config/update";
       const options = { method: "POST" };
       const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await api.post(
+      const response = await api.post<unknown>(
         url,
         params,
         createRawAxiosRequestConfig({ encodedUcan })
@@ -251,7 +258,7 @@ export function useBackendSurveyApi() {
         conversationSlugId,
         analysisView,
         checkpointViewSnapshotId,
-      });
+      } satisfies z.input<typeof Dto.surveyResultsAggregatedRequest>);
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1SurveyResultsAggregatedPost(params);
       const config = await createOptionalAuthConfig({ url, options });

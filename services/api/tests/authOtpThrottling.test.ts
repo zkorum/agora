@@ -26,16 +26,22 @@ process.env.PEPPERS = TEST_PEPPER;
 process.env.VERIFICATOR_SVC_BASE_URL = "http://localhost:3000";
 
 const authService = await import("../src/service/auth.js");
+const authUtilService = await import("../src/service/authUtil.js");
+const { mergeGuestIntoVerifiedUser } = await import("../src/service/merge.js");
+const { applyReviewedManifest } =
+    await import("../scripts/import-blocked-phones.js");
+const { incidentManifestSchema } =
+    await import("../scripts/twilioIncidentManifestSchema.js");
 const authSessionService = await import("../src/service/authSession.js");
-const realtimeEventOutboxService = await import(
-    "../src/service/realtimeEventOutbox.js"
-);
+const realtimeEventOutboxService =
+    await import("../src/service/realtimeEventOutbox.js");
 const schema = await import("../src/shared-backend/schema.js");
 const { normalizeEmail } = await import("../src/shared/types/zod-email.js");
 
 const {
     authAttemptEmailTable,
     authAttemptPhoneTable,
+    blockedPhoneNumberTable,
     deviceTable,
     emailTable,
     otpEmailDestinationStateTable,
@@ -121,8 +127,13 @@ describe("OTP destination throttling", () => {
                 "realtime_event_outbox",
                 "otp_email_destination_state",
                 "otp_phone_destination_state",
+                "notification",
                 "auth_attempt_email",
                 "auth_attempt_phone",
+                "blocked_phone_number",
+                "phone_sms_budget_alert",
+                "phone_sms_budget_reservation",
+                "phone_sms_budget_policy",
                 "email",
                 "phone",
                 "user_display_language",
@@ -580,6 +591,7 @@ describe("OTP destination throttling", () => {
             delivery: {
                 type: "twilio",
                 serviceSid: "VA-test",
+                budget: { reserve: async () => true },
                 client: {
                     verify: {
                         v2: {
@@ -1508,6 +1520,421 @@ describe("OTP destination throttling", () => {
         expect(await db.select().from(authAttemptPhoneTable)).toHaveLength(2);
     }, 30000);
 
+    it("does not send an OTP for a blocked existing phone credential", async () => {
+        const phoneNumber = "+14155552680";
+        const didWrite = "did:test:phone:blocked-existing";
+        const userId = crypto.randomUUID();
+        await db
+            .insert(userTable)
+            .values({ id: userId, username: "blockedowner" });
+
+        await createGuestDevice(didWrite);
+        const initial = await authService.authenticateAttempt({
+            db,
+            authenticateRequestBody: {
+                phoneNumber,
+                defaultCallingCode: "1",
+                isRequestingNewCode: false,
+            },
+            minutesBeforeSmsCodeExpiry: 10,
+            didWrite,
+            userAgent: "test-agent",
+            throttleSmsSecondsInterval: 5,
+            phoneAuth: loginOnlyPhoneAuth,
+            peppers: [TEST_PEPPER],
+            now: currentNow,
+        });
+        expect(initial.success).toBe(true);
+        const [attempt] = await db
+            .select()
+            .from(authAttemptPhoneTable)
+            .where(eq(authAttemptPhoneTable.didWrite, didWrite));
+        await db.insert(phoneTable).values({
+            userId,
+            phoneHash: attempt.phoneHash,
+            pepperVersion: attempt.pepperVersion,
+            countryCallingCode: attempt.countryCallingCode,
+            phoneCountryCode: attempt.phoneCountryCode,
+            lastTwoDigits: attempt.lastTwoDigits,
+        });
+        await db.insert(blockedPhoneNumberTable).values({
+            phoneHash: attempt.phoneHash,
+            pepperVersion: attempt.pepperVersion,
+            reason: "reviewed incident registration",
+        });
+
+        setCurrentNow("2026-01-01T00:00:06.000Z");
+        const result = await authService.authenticateAttempt({
+            db,
+            authenticateRequestBody: {
+                phoneNumber,
+                defaultCallingCode: "1",
+                isRequestingNewCode: true,
+            },
+            minutesBeforeSmsCodeExpiry: 10,
+            didWrite,
+            userAgent: "test-agent",
+            throttleSmsSecondsInterval: 5,
+            phoneAuth: loginOnlyPhoneAuth,
+            peppers: [TEST_PEPPER],
+            now: currentNow,
+        });
+        const [blockedAttempt] = await db
+            .select()
+            .from(authAttemptPhoneTable)
+            .where(eq(authAttemptPhoneTable.didWrite, didWrite));
+        expect(result.success).toBe(true);
+        expect(blockedAttempt.isSynthetic).toBe(true);
+        expect(blockedAttempt.type).toBe("register");
+        expect(
+            await db.select().from(otpPhoneDestinationStateTable),
+        ).toHaveLength(1);
+    }, 30000);
+
+    it("refuses a real Twilio send when the shared SMS budget denies admission", async () => {
+        const didWrite = "did:test:phone:budget-exhausted";
+        await createGuestDevice(didWrite);
+        const reserve = vi.fn(async () => false);
+        const create = vi.fn(async () => ({ status: "pending", toJSON: () => ({}) }));
+        const phoneAuth = {
+            mode: "enabled",
+            delivery: {
+                type: "twilio",
+                budget: { reserve },
+                serviceSid: "VA-test",
+                client: {
+                    verify: {
+                        v2: {
+                            services: () => ({
+                                verifications: { create },
+                                verificationChecks: {
+                                    create: async () => ({ status: "pending", toJSON: () => ({}) }),
+                                },
+                            }),
+                        },
+                    },
+                },
+            },
+        } satisfies PhoneAuth;
+
+        const result = await authService.authenticateAttempt({
+            db,
+            authenticateRequestBody: {
+                phoneNumber: "+14155552689",
+                defaultCallingCode: "1",
+                isRequestingNewCode: false,
+            },
+            minutesBeforeSmsCodeExpiry: 10,
+            didWrite,
+            userAgent: "test-agent",
+            throttleSmsSecondsInterval: 5,
+            phoneAuth,
+            peppers: [TEST_PEPPER],
+            now: currentNow,
+        });
+        expect(result).toEqual({ success: false, reason: "phone_auth_unavailable" });
+        expect(reserve).toHaveBeenCalledWith({ isRegistration: true });
+        expect(create).not.toHaveBeenCalled();
+        expect(await db.select().from(authAttemptPhoneTable)).toHaveLength(0);
+    }, 30000);
+
+    it("refuses to accept an OTP after its number has been blocked", async () => {
+        const didWrite = "did:test:phone:blocked-mid-flow";
+        const phoneNumber = "+14155552681";
+        await createGuestDevice(didWrite);
+        const initial = await authService.authenticateAttempt({
+            db,
+            authenticateRequestBody: {
+                phoneNumber,
+                defaultCallingCode: "1",
+                isRequestingNewCode: false,
+            },
+            minutesBeforeSmsCodeExpiry: 10,
+            didWrite,
+            userAgent: "test-agent",
+            throttleSmsSecondsInterval: 5,
+            phoneAuth: enabledPhoneAuth,
+            peppers: [TEST_PEPPER],
+            now: currentNow,
+        });
+        expect(initial.success).toBe(true);
+        const [attempt] = await db
+            .select()
+            .from(authAttemptPhoneTable)
+            .where(eq(authAttemptPhoneTable.didWrite, didWrite));
+        await db.insert(blockedPhoneNumberTable).values({
+            phoneHash: attempt.phoneHash,
+            pepperVersion: attempt.pepperVersion,
+            reason: "reviewed incident request",
+        });
+
+        const result = await authService.verifyPhoneOtp({
+            db,
+            maxAttempt: 3,
+            didWrite,
+            code: attempt.code,
+            phoneNumber,
+            defaultCallingCode: "1",
+            peppers: [TEST_PEPPER],
+            phoneAuth: enabledPhoneAuth,
+            sessionLifetimeDays: 90,
+            now: currentNow,
+            currentDisplayLanguage: "en",
+        });
+        expect(result.success).toBe(false);
+        expect(await db.select().from(phoneTable)).toHaveLength(0);
+    }, 30000);
+
+    it("imports reviewed registration bans, revokes sessions, and rejects account access", async () => {
+        const didWrite = "did:test:phone:incident-account";
+        const phoneNumber = "+14155552682";
+        const { userId } = await createGuestDevice(didWrite);
+        const start = await authService.authenticateAttempt({
+            db,
+            authenticateRequestBody: {
+                phoneNumber,
+                defaultCallingCode: "1",
+                isRequestingNewCode: false,
+            },
+            minutesBeforeSmsCodeExpiry: 10,
+            didWrite,
+            userAgent: "test-agent",
+            throttleSmsSecondsInterval: 5,
+            phoneAuth: enabledPhoneAuth,
+            peppers: [TEST_PEPPER],
+            now: currentNow,
+        });
+        expect(start.success).toBe(true);
+        const [attempt] = await db
+            .select()
+            .from(authAttemptPhoneTable)
+            .where(eq(authAttemptPhoneTable.didWrite, didWrite));
+        const registered = await authService.verifyPhoneOtp({
+            db,
+            maxAttempt: 3,
+            didWrite,
+            code: attempt.code,
+            phoneNumber,
+            defaultCallingCode: "1",
+            peppers: [TEST_PEPPER],
+            phoneAuth: enabledPhoneAuth,
+            sessionLifetimeDays: 90,
+            now: currentNow,
+            currentDisplayLanguage: "en",
+        });
+        expect(registered.success).toBe(true);
+
+        const incidentManifest = incidentManifestSchema.parse({
+            incidentId: "twilio-2026-07-28",
+            reviewedBy: "incident-reviewer",
+            entries: [
+                {
+                    phoneHash: attempt.phoneHash,
+                    pepperVersion: attempt.pepperVersion,
+                    countryCode: "US",
+                    firstSeenAt: currentNow.toISOString(),
+                    firstAttemptLogLine: 42,
+                    attemptCount: 1,
+                    classification: "registered_during_incident",
+                    associatedUserId: userId,
+                    registrationLogLine: 50,
+                    approved: true,
+                    restrictAccount: true,
+                    reason: "Reviewed incident registration",
+                },
+            ],
+        });
+        await applyReviewedManifest({
+            db,
+            manifest: incidentManifest,
+            now: currentNow,
+        });
+        await applyReviewedManifest({
+            db,
+            manifest: incidentManifest,
+            now: currentNow,
+        });
+        const [restricted] = await db
+            .select({ restrictedAt: userTable.authRestrictedAt })
+            .from(userTable)
+            .where(eq(userTable.id, userId));
+        expect(restricted.restrictedAt).not.toBeNull();
+        const [device] = await db
+            .select({ expiry: deviceTable.sessionExpiry })
+            .from(deviceTable)
+            .where(eq(deviceTable.didWrite, didWrite));
+        expect(device.expiry).toEqual(currentNow);
+        expect(await db.select().from(blockedPhoneNumberTable)).toHaveLength(1);
+        await expect(
+            authUtilService.getDeviceStatus({ db, didWrite, now: currentNow }),
+        ).rejects.toMatchObject({ statusCode: 403 });
+        await expect(
+            authSessionService.startHardAuthSession({
+                db,
+                userId,
+                didWrite: "did:test:phone:incident-new-device",
+                transition: { type: "new_device", userAgent: "test-agent" },
+                now: currentNow,
+                sessionExpiry: SESSION_EXPIRY,
+            }),
+        ).rejects.toThrow("Cannot start a session for an inactive user");
+    }, 30000);
+
+    it("rolls back a phone block when the reviewed account does not own its credential", async () => {
+        const didWrite = "did:test:phone:incorrect-incident-owner";
+        const phoneNumber = "+14155552683";
+        const { userId } = await createGuestDevice(didWrite);
+        const start = await authService.authenticateAttempt({
+            db,
+            authenticateRequestBody: {
+                phoneNumber,
+                defaultCallingCode: "1",
+                isRequestingNewCode: false,
+            },
+            minutesBeforeSmsCodeExpiry: 10,
+            didWrite,
+            userAgent: "test-agent",
+            throttleSmsSecondsInterval: 5,
+            phoneAuth: enabledPhoneAuth,
+            peppers: [TEST_PEPPER],
+            now: currentNow,
+        });
+        expect(start.success).toBe(true);
+        const [attempt] = await db
+            .select()
+            .from(authAttemptPhoneTable)
+            .where(eq(authAttemptPhoneTable.didWrite, didWrite));
+
+        await expect(
+            applyReviewedManifest({
+                db,
+                now: currentNow,
+                manifest: incidentManifestSchema.parse({
+                    incidentId: "twilio-2026-07-28",
+                    reviewedBy: "incident-reviewer",
+                    entries: [
+                        {
+                            phoneHash: attempt.phoneHash,
+                            pepperVersion: attempt.pepperVersion,
+                            countryCode: "US",
+                            firstSeenAt: currentNow.toISOString(),
+                            firstAttemptLogLine: 42,
+                            attemptCount: 1,
+                            classification: "registered_during_incident",
+                            associatedUserId: userId,
+                            registrationLogLine: 50,
+                            approved: true,
+                            restrictAccount: true,
+                            reason: "Reviewed registration without matching credential",
+                        },
+                    ],
+                }),
+            }),
+        ).rejects.toThrow(
+            "Reviewed account no longer owns this active phone credential",
+        );
+        expect(await db.select().from(blockedPhoneNumberTable)).toHaveLength(0);
+        const [currentAttempt] = await db
+            .select({ expiry: authAttemptPhoneTable.codeExpiry })
+            .from(authAttemptPhoneTable)
+            .where(eq(authAttemptPhoneTable.didWrite, didWrite));
+        expect(currentAttempt.expiry).toEqual(attempt.codeExpiry);
+    }, 30000);
+
+    it("invalidates blocked phone challenges without expiring unrelated challenges", async () => {
+        const blockedDid = "did:test:phone:blocked-challenge";
+        const allowedDid = "did:test:phone:allowed-challenge";
+        await createGuestDevice(blockedDid);
+        await createGuestDevice(allowedDid);
+
+        for (const [didWrite, phoneNumber] of [
+            [blockedDid, "+14155552684"],
+            [allowedDid, "+14155552685"],
+        ]) {
+            const response = await authService.authenticateAttempt({
+                db,
+                authenticateRequestBody: {
+                    phoneNumber,
+                    defaultCallingCode: "1",
+                    isRequestingNewCode: false,
+                },
+                minutesBeforeSmsCodeExpiry: 10,
+                didWrite,
+                userAgent: "test-agent",
+                throttleSmsSecondsInterval: 5,
+                phoneAuth: enabledPhoneAuth,
+                peppers: [TEST_PEPPER],
+                now: currentNow,
+            });
+            expect(response.success).toBe(true);
+        }
+
+        const [blockedAttempt] = await db
+            .select()
+            .from(authAttemptPhoneTable)
+            .where(eq(authAttemptPhoneTable.didWrite, blockedDid));
+        const manifest = incidentManifestSchema.parse({
+            incidentId: "twilio-2026-07-28",
+            reviewedBy: "incident-reviewer",
+            entries: [
+                {
+                    phoneHash: blockedAttempt.phoneHash,
+                    pepperVersion: blockedAttempt.pepperVersion,
+                    countryCode: "US",
+                    firstSeenAt: currentNow.toISOString(),
+                    firstAttemptLogLine: 42,
+                    attemptCount: 1,
+                    classification: "attempt_candidate",
+                    approved: true,
+                    restrictAccount: false,
+                    reason: "Reviewed incident request",
+                },
+            ],
+        });
+        await applyReviewedManifest({ db, manifest, now: currentNow });
+
+        const activeAttempts = await db
+            .select({
+                didWrite: authAttemptPhoneTable.didWrite,
+                codeExpiry: authAttemptPhoneTable.codeExpiry,
+            })
+            .from(authAttemptPhoneTable);
+        expect(
+            activeAttempts.find((attempt) => attempt.didWrite === blockedDid)
+                ?.codeExpiry,
+        ).toEqual(currentNow);
+        expect(
+            activeAttempts
+                .find((attempt) => attempt.didWrite === allowedDid)
+                ?.codeExpiry.getTime(),
+        ).toBeGreaterThan(currentNow.getTime());
+    }, 30000);
+
+    it("does not merge a guest into a restricted account", async () => {
+        const { userId: targetUserId } = await createGuestDevice(
+            "did:test:restricted:target",
+        );
+        const { userId: guestUserId } = await createGuestDevice(
+            "did:test:restricted:guest",
+        );
+        await db
+            .update(userTable)
+            .set({
+                authRestrictedAt: currentNow,
+                authRestrictionReason: "twilio-2026-07-28",
+            })
+            .where(eq(userTable.id, targetUserId));
+
+        await expect(
+            mergeGuestIntoVerifiedUser({
+                db,
+                verifiedUserId: targetUserId,
+                guestUserId,
+                now: currentNow,
+            }),
+        ).rejects.toThrow("Cannot merge inactive users");
+    }, 30000);
+
     it("rejects phone verification before accessing an OTP when disabled", async () => {
         const authenticateResponse = await authService.authenticateAttempt({
             db,
@@ -1565,6 +1992,7 @@ describe("OTP destination throttling", () => {
             delivery: {
                 type: "twilio",
                 serviceSid: "VA-test",
+                budget: { reserve: async () => true },
                 client: {
                     verify: {
                         v2: {
@@ -1975,13 +2403,12 @@ describe("OTP destination throttling", () => {
         `;
 
         let didResolve = false;
-        const safeUpperBound =
-            realtimeEventOutboxService
-                .fetchSafeOutboxUpperBound({ db })
-                .then((value) => {
-                    didResolve = true;
-                    return value;
-                });
+        const safeUpperBound = realtimeEventOutboxService
+            .fetchSafeOutboxUpperBound({ db })
+            .then((value) => {
+                didResolve = true;
+                return value;
+            });
         await new Promise<void>((resolve) => {
             setTimeout(resolve, 50);
         });

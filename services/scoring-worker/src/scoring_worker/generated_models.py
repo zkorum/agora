@@ -787,6 +787,8 @@ class User(Base):
     is_imported: Mapped[bool] = mapped_column(Boolean, server_default="false")
     is_deleted: Mapped[bool] = mapped_column(Boolean, server_default="false")
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    auth_restricted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    auth_restriction_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     active_conversation_count: Mapped[int] = mapped_column(Integer, server_default="0")
     total_conversation_count: Mapped[int] = mapped_column(Integer, server_default="0")
     total_opinion_count: Mapped[int] = mapped_column(Integer, server_default="0")

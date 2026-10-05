@@ -2,6 +2,7 @@ import {
     zodEventSlug,
     zodImportFailureReason,
     zodParticipationMode,
+    zodSlugId,
 } from "@/shared/types/zod.js";
 import { ZodSupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import { z } from "zod";
@@ -116,13 +117,13 @@ export const zodImportNotificationEvent = withJsonSchemaId(
         .object({
             type: z.literal("import_notification"),
             userId: z.string(),
-            notificationSlugId: z.string(),
-            notificationCreatedAt: z.string(),
+            notificationSlugId: zodSlugId,
+            notificationCreatedAt: z.iso.datetime({ offset: true }),
             notificationIsRead: z.boolean(),
             importId: z.number().int(),
-            importSlugId: z.string(),
+            importSlugId: zodSlugId,
             conversationId: z.number().int().nullable(),
-            conversationSlugId: z.string().optional(),
+            conversationSlugId: zodSlugId.optional(),
             conversationTitle: z.string().optional(),
             failureReason: zodImportFailureReason.optional(),
             broadcastNewConversation: z.boolean().default(false),

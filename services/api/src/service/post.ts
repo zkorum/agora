@@ -14,7 +14,10 @@ import { generateRandomSlugId } from "@/crypto.js";
 import { log } from "@/app.js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
-import type { ExtendedConversation } from "@/shared/types/zod.js";
+import type {
+    ConversationTypeConfig,
+    ExtendedConversation,
+} from "@/shared/types/zod.js";
 import type {
     CloseConversationResponse,
     CreateNewConversationRequest,
@@ -331,6 +334,7 @@ export async function createNewPost({
                       .insert(polisConversationConfigTable)
                       .values({
                           aiLabelingEnabled: request.aiLabelingEnabled,
+                          votingPresentation: request.votingPresentation,
                           preferredOpinionGroupCount:
                               request.preferredOpinionGroupCount,
                           createdAt: now,
@@ -748,6 +752,29 @@ export async function deletePostBySlugId({
     }
 }
 
+function getVotingPresentationConfig({
+    conversationType,
+    votingPresentation,
+    rankingMode,
+}: {
+    conversationType: "polis" | "ranking";
+    votingPresentation: "list" | "one_at_a_time" | null;
+    rankingMode: "bws" | null;
+}): ConversationTypeConfig {
+    if (conversationType === "ranking") {
+        if (rankingMode === null) {
+            throw new Error(
+                "Ranking conversation has no ranking configuration",
+            );
+        }
+        return { conversationType, rankingMode };
+    }
+    if (votingPresentation === null) {
+        throw new Error("Polis conversation has no voting configuration");
+    }
+    return { conversationType, votingPresentation };
+}
+
 interface CloseConversationProps {
     db: PostgresDatabase;
     conversationSlugId: string;
@@ -770,6 +797,8 @@ export async function closeConversation({
             participationMode: conversationTable.participationMode,
             requiresEventTicket: conversationTable.requiresEventTicket,
             aiLabelingEnabled: polisConversationConfigTable.aiLabelingEnabled,
+            votingPresentation: polisConversationConfigTable.votingPresentation,
+            rankingMode: rankingConversationConfigTable.rankingMode,
             preferredOpinionGroupCount:
                 polisConversationConfigTable.preferredOpinionGroupCount,
             conversationType: conversationTable.conversationType,
@@ -780,6 +809,13 @@ export async function closeConversation({
             eq(
                 polisConversationConfigTable.id,
                 conversationTable.polisConfigId,
+            ),
+        )
+        .leftJoin(
+            rankingConversationConfigTable,
+            eq(
+                rankingConversationConfigTable.id,
+                conversationTable.rankingConfigId,
             ),
         )
         .where(eq(conversationTable.slugId, conversationSlugId))
@@ -839,6 +875,7 @@ export async function closeConversation({
                 participationMode: conversation[0].participationMode,
                 requiresEventTicket: conversation[0].requiresEventTicket,
                 aiLabelingEnabled: conversation[0].aiLabelingEnabled ?? false,
+                presentation: getVotingPresentationConfig(conversation[0]),
                 preferredOpinionGroupCount:
                     conversation[0].preferredOpinionGroupCount ?? null,
                 isClosed: true,
@@ -883,6 +920,8 @@ export async function openConversation({
             participationMode: conversationTable.participationMode,
             requiresEventTicket: conversationTable.requiresEventTicket,
             aiLabelingEnabled: polisConversationConfigTable.aiLabelingEnabled,
+            votingPresentation: polisConversationConfigTable.votingPresentation,
+            rankingMode: rankingConversationConfigTable.rankingMode,
             preferredOpinionGroupCount:
                 polisConversationConfigTable.preferredOpinionGroupCount,
             conversationType: conversationTable.conversationType,
@@ -893,6 +932,13 @@ export async function openConversation({
             eq(
                 polisConversationConfigTable.id,
                 conversationTable.polisConfigId,
+            ),
+        )
+        .leftJoin(
+            rankingConversationConfigTable,
+            eq(
+                rankingConversationConfigTable.id,
+                conversationTable.rankingConfigId,
             ),
         )
         .where(eq(conversationTable.slugId, conversationSlugId))
@@ -944,6 +990,7 @@ export async function openConversation({
                 participationMode: conversation[0].participationMode,
                 requiresEventTicket: conversation[0].requiresEventTicket,
                 aiLabelingEnabled: conversation[0].aiLabelingEnabled ?? false,
+                presentation: getVotingPresentationConfig(conversation[0]),
                 preferredOpinionGroupCount:
                     conversation[0].preferredOpinionGroupCount ?? null,
                 isClosed: false,

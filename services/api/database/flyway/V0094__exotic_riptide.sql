@@ -1,0 +1,2 @@
+CREATE TYPE "public"."polis_voting_presentation" AS ENUM('list', 'one_at_a_time');--> statement-breakpoint
+ALTER TABLE "polis_conversation_config" ADD COLUMN "voting_presentation" "polis_voting_presentation" DEFAULT 'list' NOT NULL;

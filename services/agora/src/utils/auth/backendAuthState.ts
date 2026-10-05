@@ -1,6 +1,8 @@
 import type { DeviceLoginStatus } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { runIfCurrentDid } from "src/utils/crypto/ucan/operation";
+import { queryClient } from "src/utils/query/client";
+import { seedNewGuestQueries } from "src/utils/query/guestQueryCache";
 
 import { getBackendAuthStatusAction } from "./backendAuthStateDecision";
 import { resetLocalAuthStateIfDidMatches } from "./localAuthState";
@@ -34,7 +36,12 @@ export async function applyBackendAuthStatus({
 
   const statusUpdate = await runIfCurrentDid({
     didWrite,
-    operation: () => authStore.setLoginStatus(loginStatus),
+    operation: () => {
+      if (!authStore.isKnown && loginStatus.isKnown && !loginStatus.isRegistered) {
+        seedNewGuestQueries({ queryClient, userId: loginStatus.userId });
+      }
+      return authStore.setLoginStatus(loginStatus);
+    },
   });
   return statusUpdate.matched
     ? { type: "updated", transition: statusUpdate.result }

@@ -12,7 +12,7 @@ import {
 } from "../src/service/notification.js";
 import { readDbFixtureSql } from "./dbFixture.js";
 
-const schema = readDbFixtureSql("auth-otp.sql");
+const schema = readDbFixtureSql("security-add-email-backfill.sql");
 const schemaMigration = await readFile(
     new URL("../database/flyway/V0092__empty_micromax.sql", import.meta.url),
     "utf8",

@@ -18,7 +18,7 @@ export function usePremiumFeatureApi() {
     const options = { method: "POST" };
     const encodedUcan = await buildEncodedUcan(url, options);
 
-    const response = await api.post(
+    const response = await api.post<unknown>(
       url,
       payload,
       createRawAxiosRequestConfig({ encodedUcan })

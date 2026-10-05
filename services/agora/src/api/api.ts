@@ -2726,6 +2726,7 @@ export interface ApiV1ConversationCreatePostRequestOneOf {
     'requiresEventTicket'?: ApiV1ConversationCreatePostRequestOneOfRequiresEventTicketEnum;
     'conversationEmailUpdateEnabledOverride'?: boolean;
     'conversationType': ApiV1ConversationCreatePostRequestOneOfConversationTypeEnum;
+    'votingPresentation'?: ApiV1ConversationCreatePostRequestOneOfVotingPresentationEnum;
     'aiLabelingEnabled'?: boolean;
     'preferredOpinionGroupCount'?: number | null;
     'surveyConfig'?: ApiV1ConversationCreatePostRequestOneOfSurveyConfig | null;
@@ -2755,6 +2756,12 @@ export const ApiV1ConversationCreatePostRequestOneOfConversationTypeEnum = {
 } as const;
 
 export type ApiV1ConversationCreatePostRequestOneOfConversationTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOfConversationTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfConversationTypeEnum];
+export const ApiV1ConversationCreatePostRequestOneOfVotingPresentationEnum = {
+    List: 'list',
+    OneAtATime: 'one_at_a_time',
+} as const;
+
+export type ApiV1ConversationCreatePostRequestOneOfVotingPresentationEnum = typeof ApiV1ConversationCreatePostRequestOneOfVotingPresentationEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfVotingPresentationEnum];
 
 export interface ApiV1ConversationCreatePostRequestOneOf1 {
     'conversationTitle': string;
@@ -5098,6 +5105,7 @@ export interface ApiV1ConversationFetchRecentPost200ResponseFeedItemListInnerCon
     'importInfo'?: ApiV1ConversationFetchRecentPost200ResponseFeedItemListInnerConversationDataMetadataOneOfImportInfo;
     'projectContext'?: ApiV1ConversationFetchRecentPost200ResponseFeedItemListInnerConversationDataMetadataOneOfProjectContext;
     'conversationType': ApiV1ConversationFetchRecentPost200ResponseFeedItemListInnerConversationDataMetadataOneOfConversationTypeEnum;
+    'votingPresentation': ApiV1ConversationFetchRecentPost200ResponseFeedItemListInnerConversationDataMetadataOneOfVotingPresentationEnum;
 }
 
 export const ApiV1ConversationFetchRecentPost200ResponseFeedItemListInnerConversationDataMetadataOneOfParticipationModeEnum = {
@@ -5118,6 +5126,12 @@ export const ApiV1ConversationFetchRecentPost200ResponseFeedItemListInnerConvers
 } as const;
 
 export type ApiV1ConversationFetchRecentPost200ResponseFeedItemListInnerConversationDataMetadataOneOfConversationTypeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseFeedItemListInnerConversationDataMetadataOneOfConversationTypeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseFeedItemListInnerConversationDataMetadataOneOfConversationTypeEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseFeedItemListInnerConversationDataMetadataOneOfVotingPresentationEnum = {
+    List: 'list',
+    OneAtATime: 'one_at_a_time',
+} as const;
+
+export type ApiV1ConversationFetchRecentPost200ResponseFeedItemListInnerConversationDataMetadataOneOfVotingPresentationEnum = typeof ApiV1ConversationFetchRecentPost200ResponseFeedItemListInnerConversationDataMetadataOneOfVotingPresentationEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseFeedItemListInnerConversationDataMetadataOneOfVotingPresentationEnum];
 
 export interface ApiV1ConversationFetchRecentPost200ResponseFeedItemListInnerConversationDataMetadataOneOf1 {
     'conversationSlugId': string;
@@ -5840,6 +5854,7 @@ export type ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfi
 
 export interface ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf {
     'conversationType': ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOfConversationTypeEnum;
+    'votingPresentation': ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOfVotingPresentationEnum;
 }
 
 export const ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOfConversationTypeEnum = {
@@ -5847,6 +5862,12 @@ export const ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConf
 } as const;
 
 export type ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOfConversationTypeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOfConversationTypeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOfConversationTypeEnum];
+export const ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOfVotingPresentationEnum = {
+    List: 'list',
+    OneAtATime: 'one_at_a_time',
+} as const;
+
+export type ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOfVotingPresentationEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOfVotingPresentationEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOfVotingPresentationEnum];
 
 export interface ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf1 {
     'conversationType': ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf1ConversationTypeEnum;
@@ -6219,8 +6240,7 @@ export interface ApiV1ConversationUpdatePostRequest {
     'multilingualSetting': ApiV1ConversationCreatePostRequestOneOfMultilingualSetting;
     'languageSettingsSource'?: ApiV1ConversationUpdatePostRequestLanguageSettingsSourceEnum;
     'requiresEventTicket'?: ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum;
-    'aiLabelingEnabled'?: boolean;
-    'preferredOpinionGroupCount'?: number | null;
+    'conversationTypeConfig': ApiV1ConversationUpdatePostRequestConversationTypeConfig;
     'surveyConfig'?: ApiV1ConversationCreatePostRequestOneOfSurveyConfig | null;
     'conversationEmailUpdateEnabledOverride'?: boolean | null;
 }
@@ -6244,6 +6264,30 @@ export const ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum = {
 } as const;
 
 export type ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum = typeof ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum[keyof typeof ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum];
+
+/**
+ * @type ApiV1ConversationUpdatePostRequestConversationTypeConfig
+ */
+export type ApiV1ConversationUpdatePostRequestConversationTypeConfig = ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf1 | ApiV1ConversationUpdatePostRequestConversationTypeConfigOneOf;
+
+export interface ApiV1ConversationUpdatePostRequestConversationTypeConfigOneOf {
+    'conversationType': ApiV1ConversationUpdatePostRequestConversationTypeConfigOneOfConversationTypeEnum;
+    'votingPresentation': ApiV1ConversationUpdatePostRequestConversationTypeConfigOneOfVotingPresentationEnum;
+    'aiLabelingEnabled'?: boolean;
+    'preferredOpinionGroupCount'?: number | null;
+}
+
+export const ApiV1ConversationUpdatePostRequestConversationTypeConfigOneOfConversationTypeEnum = {
+    Polis: 'polis',
+} as const;
+
+export type ApiV1ConversationUpdatePostRequestConversationTypeConfigOneOfConversationTypeEnum = typeof ApiV1ConversationUpdatePostRequestConversationTypeConfigOneOfConversationTypeEnum[keyof typeof ApiV1ConversationUpdatePostRequestConversationTypeConfigOneOfConversationTypeEnum];
+export const ApiV1ConversationUpdatePostRequestConversationTypeConfigOneOfVotingPresentationEnum = {
+    List: 'list',
+    OneAtATime: 'one_at_a_time',
+} as const;
+
+export type ApiV1ConversationUpdatePostRequestConversationTypeConfigOneOfVotingPresentationEnum = typeof ApiV1ConversationUpdatePostRequestConversationTypeConfigOneOfVotingPresentationEnum[keyof typeof ApiV1ConversationUpdatePostRequestConversationTypeConfigOneOfVotingPresentationEnum];
 
 export interface ApiV1ConversationValidateCsvPost200Response {
     'summaryFile'?: ApiV1ConversationValidateCsvPost200ResponseSummaryFile;
@@ -7466,31 +7510,6 @@ export const ApiV1OpinionFetchAnalysisFrameOpinionListByFramePostRequestKindEnum
 
 export type ApiV1OpinionFetchAnalysisFrameOpinionListByFramePostRequestKindEnum = typeof ApiV1OpinionFetchAnalysisFrameOpinionListByFramePostRequestKindEnum[keyof typeof ApiV1OpinionFetchAnalysisFrameOpinionListByFramePostRequestKindEnum];
 
-export interface ApiV1OpinionFetchByConversationPostRequest {
-    'conversationSlugId': string;
-    'filter': ApiV1OpinionFetchByConversationPostRequestFilterEnum;
-    'clusterKey'?: ApiV1OpinionFetchByConversationPostRequestClusterKeyEnum;
-}
-
-export const ApiV1OpinionFetchByConversationPostRequestFilterEnum = {
-    Moderated: 'moderated',
-    New: 'new',
-    Discover: 'discover',
-    MyVotes: 'my_votes',
-} as const;
-
-export type ApiV1OpinionFetchByConversationPostRequestFilterEnum = typeof ApiV1OpinionFetchByConversationPostRequestFilterEnum[keyof typeof ApiV1OpinionFetchByConversationPostRequestFilterEnum];
-export const ApiV1OpinionFetchByConversationPostRequestClusterKeyEnum = {
-    _0: '0',
-    _1: '1',
-    _2: '2',
-    _3: '3',
-    _4: '4',
-    _5: '5',
-} as const;
-
-export type ApiV1OpinionFetchByConversationPostRequestClusterKeyEnum = typeof ApiV1OpinionFetchByConversationPostRequestClusterKeyEnum[keyof typeof ApiV1OpinionFetchByConversationPostRequestClusterKeyEnum];
-
 export interface ApiV1OpinionFetchBySlugIdListPostRequest {
     'opinionSlugIdList': Array<string>;
 }
@@ -7506,10 +7525,191 @@ export interface ApiV1OpinionFetchCommentStatsByConversationPost200Response {
     'hiddenOpinionCount': number;
     'isClosed': boolean;
 }
-export interface ApiV1OpinionFetchHiddenByConversationPostRequest {
+export interface ApiV1OpinionFetchHiddenPagePostRequest {
     'conversationSlugId': string;
-    'createdAt'?: string;
+    'cursor': ApiV1OpinionFetchPagePostRequestOneOf2Cursor | null;
 }
+export interface ApiV1OpinionFetchPagePost200Response {
+    'items': Array<ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItem>;
+    'nextCursor': ApiV1OpinionFetchPagePost200ResponseNextCursor | null;
+}
+/**
+ * @type ApiV1OpinionFetchPagePost200ResponseNextCursor
+ */
+export type ApiV1OpinionFetchPagePost200ResponseNextCursor = ApiV1OpinionFetchPagePost200ResponseNextCursorOneOf | ApiV1OpinionFetchPagePost200ResponseNextCursorOneOf1 | ApiV1OpinionFetchPagePost200ResponseNextCursorOneOf2;
+
+export interface ApiV1OpinionFetchPagePost200ResponseNextCursorOneOf {
+    'kind': ApiV1OpinionFetchPagePost200ResponseNextCursorOneOfKindEnum;
+    'opinionSlugId': string;
+    'createdAt': string;
+    'opinionId': number;
+}
+
+export const ApiV1OpinionFetchPagePost200ResponseNextCursorOneOfKindEnum = {
+    Created: 'created',
+} as const;
+
+export type ApiV1OpinionFetchPagePost200ResponseNextCursorOneOfKindEnum = typeof ApiV1OpinionFetchPagePost200ResponseNextCursorOneOfKindEnum[keyof typeof ApiV1OpinionFetchPagePost200ResponseNextCursorOneOfKindEnum];
+
+export interface ApiV1OpinionFetchPagePost200ResponseNextCursorOneOf1 {
+    'kind': ApiV1OpinionFetchPagePost200ResponseNextCursorOneOf1KindEnum;
+    'opinionSlugId': string;
+    'createdAt': string;
+    'opinionId': number;
+    'wasVoted': boolean;
+    'routingPriority': number | null;
+    'routingSnapshotId': number | null;
+}
+
+export const ApiV1OpinionFetchPagePost200ResponseNextCursorOneOf1KindEnum = {
+    Discover: 'discover',
+} as const;
+
+export type ApiV1OpinionFetchPagePost200ResponseNextCursorOneOf1KindEnum = typeof ApiV1OpinionFetchPagePost200ResponseNextCursorOneOf1KindEnum[keyof typeof ApiV1OpinionFetchPagePost200ResponseNextCursorOneOf1KindEnum];
+
+export interface ApiV1OpinionFetchPagePost200ResponseNextCursorOneOf2 {
+    'kind': ApiV1OpinionFetchPagePost200ResponseNextCursorOneOf2KindEnum;
+    'opinionSlugId': string;
+    'voteUpdatedAt': string;
+    'voteId': number;
+}
+
+export const ApiV1OpinionFetchPagePost200ResponseNextCursorOneOf2KindEnum = {
+    Votes: 'votes',
+} as const;
+
+export type ApiV1OpinionFetchPagePost200ResponseNextCursorOneOf2KindEnum = typeof ApiV1OpinionFetchPagePost200ResponseNextCursorOneOf2KindEnum[keyof typeof ApiV1OpinionFetchPagePost200ResponseNextCursorOneOf2KindEnum];
+
+/**
+ * @type ApiV1OpinionFetchPagePostRequest
+ */
+export type ApiV1OpinionFetchPagePostRequest = ApiV1OpinionFetchPagePostRequestOneOf | ApiV1OpinionFetchPagePostRequestOneOf1 | ApiV1OpinionFetchPagePostRequestOneOf2;
+
+export interface ApiV1OpinionFetchPagePostRequestOneOf {
+    'conversationSlugId': string;
+    'filter': ApiV1OpinionFetchPagePostRequestOneOfFilterEnum;
+    'cursor': ApiV1OpinionFetchPagePostRequestOneOfCursor | null;
+}
+
+export const ApiV1OpinionFetchPagePostRequestOneOfFilterEnum = {
+    Discover: 'discover',
+} as const;
+
+export type ApiV1OpinionFetchPagePostRequestOneOfFilterEnum = typeof ApiV1OpinionFetchPagePostRequestOneOfFilterEnum[keyof typeof ApiV1OpinionFetchPagePostRequestOneOfFilterEnum];
+
+export interface ApiV1OpinionFetchPagePostRequestOneOf1 {
+    'conversationSlugId': string;
+    'filter': ApiV1OpinionFetchPagePostRequestOneOf1FilterEnum;
+    'cursor': ApiV1OpinionFetchPagePostRequestOneOf1Cursor | null;
+}
+
+export const ApiV1OpinionFetchPagePostRequestOneOf1FilterEnum = {
+    MyVotes: 'my_votes',
+} as const;
+
+export type ApiV1OpinionFetchPagePostRequestOneOf1FilterEnum = typeof ApiV1OpinionFetchPagePostRequestOneOf1FilterEnum[keyof typeof ApiV1OpinionFetchPagePostRequestOneOf1FilterEnum];
+
+export interface ApiV1OpinionFetchPagePostRequestOneOf1Cursor {
+    'kind': ApiV1OpinionFetchPagePostRequestOneOf1CursorKindEnum;
+    'opinionSlugId': string;
+    'voteUpdatedAt': ApiV1ProjectPageFetchPostRequestActivityCursorCreatedAt;
+    'voteId': number;
+}
+
+export const ApiV1OpinionFetchPagePostRequestOneOf1CursorKindEnum = {
+    Votes: 'votes',
+} as const;
+
+export type ApiV1OpinionFetchPagePostRequestOneOf1CursorKindEnum = typeof ApiV1OpinionFetchPagePostRequestOneOf1CursorKindEnum[keyof typeof ApiV1OpinionFetchPagePostRequestOneOf1CursorKindEnum];
+
+export interface ApiV1OpinionFetchPagePostRequestOneOf2 {
+    'conversationSlugId': string;
+    'filter': ApiV1OpinionFetchPagePostRequestOneOf2FilterEnum;
+    'cursor': ApiV1OpinionFetchPagePostRequestOneOf2Cursor | null;
+}
+
+export const ApiV1OpinionFetchPagePostRequestOneOf2FilterEnum = {
+    New: 'new',
+    Moderated: 'moderated',
+} as const;
+
+export type ApiV1OpinionFetchPagePostRequestOneOf2FilterEnum = typeof ApiV1OpinionFetchPagePostRequestOneOf2FilterEnum[keyof typeof ApiV1OpinionFetchPagePostRequestOneOf2FilterEnum];
+
+export interface ApiV1OpinionFetchPagePostRequestOneOf2Cursor {
+    'kind': ApiV1OpinionFetchPagePostRequestOneOf2CursorKindEnum;
+    'opinionSlugId': string;
+    'createdAt': ApiV1ProjectPageFetchPostRequestActivityCursorCreatedAt;
+    'opinionId': number;
+}
+
+export const ApiV1OpinionFetchPagePostRequestOneOf2CursorKindEnum = {
+    Created: 'created',
+} as const;
+
+export type ApiV1OpinionFetchPagePostRequestOneOf2CursorKindEnum = typeof ApiV1OpinionFetchPagePostRequestOneOf2CursorKindEnum[keyof typeof ApiV1OpinionFetchPagePostRequestOneOf2CursorKindEnum];
+
+export interface ApiV1OpinionFetchPagePostRequestOneOfCursor {
+    'kind': ApiV1OpinionFetchPagePostRequestOneOfCursorKindEnum;
+    'opinionSlugId': string;
+    'createdAt': ApiV1ProjectPageFetchPostRequestActivityCursorCreatedAt;
+    'opinionId': number;
+    'wasVoted': boolean;
+    'routingPriority': number | null;
+    'routingSnapshotId': number | null;
+}
+
+export const ApiV1OpinionFetchPagePostRequestOneOfCursorKindEnum = {
+    Discover: 'discover',
+} as const;
+
+export type ApiV1OpinionFetchPagePostRequestOneOfCursorKindEnum = typeof ApiV1OpinionFetchPagePostRequestOneOfCursorKindEnum[keyof typeof ApiV1OpinionFetchPagePostRequestOneOfCursorKindEnum];
+
+/**
+ * @type ApiV1OpinionNextUnansweredPost200Response
+ */
+export type ApiV1OpinionNextUnansweredPost200Response = ApiV1OpinionNextUnansweredPost200ResponseOneOf | ApiV1OpinionNextUnansweredPost200ResponseOneOf1;
+
+export interface ApiV1OpinionNextUnansweredPost200ResponseOneOf {
+    'status': ApiV1OpinionNextUnansweredPost200ResponseOneOfStatusEnum;
+    'opinion': ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItem;
+    'remainingCount': number;
+}
+
+export const ApiV1OpinionNextUnansweredPost200ResponseOneOfStatusEnum = {
+    Ready: 'ready',
+} as const;
+
+export type ApiV1OpinionNextUnansweredPost200ResponseOneOfStatusEnum = typeof ApiV1OpinionNextUnansweredPost200ResponseOneOfStatusEnum[keyof typeof ApiV1OpinionNextUnansweredPost200ResponseOneOfStatusEnum];
+
+export interface ApiV1OpinionNextUnansweredPost200ResponseOneOf1 {
+    'status': ApiV1OpinionNextUnansweredPost200ResponseOneOf1StatusEnum;
+    'remainingCount': ApiV1OpinionNextUnansweredPost200ResponseOneOf1RemainingCountEnum;
+}
+
+export const ApiV1OpinionNextUnansweredPost200ResponseOneOf1StatusEnum = {
+    CaughtUp: 'caught_up',
+} as const;
+
+export type ApiV1OpinionNextUnansweredPost200ResponseOneOf1StatusEnum = typeof ApiV1OpinionNextUnansweredPost200ResponseOneOf1StatusEnum[keyof typeof ApiV1OpinionNextUnansweredPost200ResponseOneOf1StatusEnum];
+export const ApiV1OpinionNextUnansweredPost200ResponseOneOf1RemainingCountEnum = {
+    NUMBER_0: 0,
+} as const;
+
+export type ApiV1OpinionNextUnansweredPost200ResponseOneOf1RemainingCountEnum = typeof ApiV1OpinionNextUnansweredPost200ResponseOneOf1RemainingCountEnum[keyof typeof ApiV1OpinionNextUnansweredPost200ResponseOneOf1RemainingCountEnum];
+
+export interface ApiV1OpinionNextUnansweredPostRequest {
+    'conversationSlugId': string;
+    'order': ApiV1OpinionNextUnansweredPostRequestOrderEnum;
+    'excludedOpinionSlugIds'?: Array<string>;
+}
+
+export const ApiV1OpinionNextUnansweredPostRequestOrderEnum = {
+    Discover: 'discover',
+    New: 'new',
+} as const;
+
+export type ApiV1OpinionNextUnansweredPostRequestOrderEnum = typeof ApiV1OpinionNextUnansweredPostRequestOrderEnum[keyof typeof ApiV1OpinionNextUnansweredPostRequestOrderEnum];
+
 export interface ApiV1PremiumFeatureAccessCheckPost200Response {
     'hasAccess': boolean;
 }
@@ -8090,8 +8290,10 @@ export interface ApiV1ProjectPageFetchPostRequest {
 }
 export interface ApiV1ProjectPageFetchPostRequestActivityCursor {
     'isIndexed': boolean;
-    'createdAt': any;
+    'createdAt': ApiV1ProjectPageFetchPostRequestActivityCursorCreatedAt;
     'conversationId': number;
+}
+export interface ApiV1ProjectPageFetchPostRequestActivityCursorCreatedAt {
 }
 export interface ApiV1RankingBwsGithubPreviewPost200Response {
     'issues': Array<ApiV1RankingBwsGithubPreviewPost200ResponseIssuesInner>;
@@ -10414,10 +10616,11 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         /**
          * 
          * @param {ApiV1AuthAuthenticatePostRequest} apiV1AuthAuthenticatePostRequest 
+         * @param {string} [xTurnstileToken] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1AuthAuthenticatePost: async (apiV1AuthAuthenticatePostRequest: ApiV1AuthAuthenticatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        apiV1AuthAuthenticatePost: async (apiV1AuthAuthenticatePostRequest: ApiV1AuthAuthenticatePostRequest, xTurnstileToken?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'apiV1AuthAuthenticatePostRequest' is not null or undefined
             assertParamExists('apiV1AuthAuthenticatePost', 'apiV1AuthAuthenticatePostRequest', apiV1AuthAuthenticatePostRequest)
             const localVarPath = `/api/v1/auth/authenticate`;
@@ -10439,6 +10642,9 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             localVarHeaderParameter['Content-Type'] = 'application/json';
             localVarHeaderParameter['Accept'] = 'application/json';
 
+            if (xTurnstileToken != null) {
+                localVarHeaderParameter['x-turnstile-token'] = String(xTurnstileToken);
+            }
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -13106,44 +13312,6 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1OpinionFetchByConversationPostRequest} apiV1OpinionFetchByConversationPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1OpinionFetchByConversationPost: async (apiV1OpinionFetchByConversationPostRequest: ApiV1OpinionFetchByConversationPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1OpinionFetchByConversationPostRequest' is not null or undefined
-            assertParamExists('apiV1OpinionFetchByConversationPost', 'apiV1OpinionFetchByConversationPostRequest', apiV1OpinionFetchByConversationPostRequest)
-            const localVarPath = `/api/v1/opinion/fetch-by-conversation`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1OpinionFetchByConversationPostRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
          * @param {ApiV1OpinionFetchBySlugIdListPostRequest} apiV1OpinionFetchBySlugIdListPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -13220,14 +13388,14 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1OpinionFetchHiddenByConversationPostRequest} apiV1OpinionFetchHiddenByConversationPostRequest 
+         * @param {ApiV1OpinionFetchHiddenPagePostRequest} apiV1OpinionFetchHiddenPagePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1OpinionFetchHiddenByConversationPost: async (apiV1OpinionFetchHiddenByConversationPostRequest: ApiV1OpinionFetchHiddenByConversationPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1OpinionFetchHiddenByConversationPostRequest' is not null or undefined
-            assertParamExists('apiV1OpinionFetchHiddenByConversationPost', 'apiV1OpinionFetchHiddenByConversationPostRequest', apiV1OpinionFetchHiddenByConversationPostRequest)
-            const localVarPath = `/api/v1/opinion/fetch-hidden-by-conversation`;
+        apiV1OpinionFetchHiddenPagePost: async (apiV1OpinionFetchHiddenPagePostRequest: ApiV1OpinionFetchHiddenPagePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1OpinionFetchHiddenPagePostRequest' is not null or undefined
+            assertParamExists('apiV1OpinionFetchHiddenPagePost', 'apiV1OpinionFetchHiddenPagePostRequest', apiV1OpinionFetchHiddenPagePostRequest)
+            const localVarPath = `/api/v1/opinion/fetch-hidden-page`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -13249,7 +13417,83 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1OpinionFetchHiddenByConversationPostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1OpinionFetchHiddenPagePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1OpinionFetchPagePostRequest} apiV1OpinionFetchPagePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1OpinionFetchPagePost: async (apiV1OpinionFetchPagePostRequest: ApiV1OpinionFetchPagePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1OpinionFetchPagePostRequest' is not null or undefined
+            assertParamExists('apiV1OpinionFetchPagePost', 'apiV1OpinionFetchPagePostRequest', apiV1OpinionFetchPagePostRequest)
+            const localVarPath = `/api/v1/opinion/fetch-page`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1OpinionFetchPagePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1OpinionNextUnansweredPostRequest} apiV1OpinionNextUnansweredPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1OpinionNextUnansweredPost: async (apiV1OpinionNextUnansweredPostRequest: ApiV1OpinionNextUnansweredPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1OpinionNextUnansweredPostRequest' is not null or undefined
+            assertParamExists('apiV1OpinionNextUnansweredPost', 'apiV1OpinionNextUnansweredPostRequest', apiV1OpinionNextUnansweredPostRequest)
+            const localVarPath = `/api/v1/opinion/next-unanswered`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1OpinionNextUnansweredPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -15262,11 +15506,12 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         /**
          * 
          * @param {ApiV1AuthAuthenticatePostRequest} apiV1AuthAuthenticatePostRequest 
+         * @param {string} [xTurnstileToken] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1AuthAuthenticatePost(apiV1AuthAuthenticatePostRequest: ApiV1AuthAuthenticatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AuthAuthenticatePost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AuthAuthenticatePost(apiV1AuthAuthenticatePostRequest, options);
+        async apiV1AuthAuthenticatePost(apiV1AuthAuthenticatePostRequest: ApiV1AuthAuthenticatePostRequest, xTurnstileToken?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AuthAuthenticatePost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AuthAuthenticatePost(apiV1AuthAuthenticatePostRequest, xTurnstileToken, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AuthAuthenticatePost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -16127,18 +16372,6 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {ApiV1OpinionFetchByConversationPostRequest} apiV1OpinionFetchByConversationPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiV1OpinionFetchByConversationPost(apiV1OpinionFetchByConversationPostRequest: ApiV1OpinionFetchByConversationPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItem>>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1OpinionFetchByConversationPost(apiV1OpinionFetchByConversationPostRequest, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1OpinionFetchByConversationPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
          * @param {ApiV1OpinionFetchBySlugIdListPostRequest} apiV1OpinionFetchBySlugIdListPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -16163,14 +16396,38 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {ApiV1OpinionFetchHiddenByConversationPostRequest} apiV1OpinionFetchHiddenByConversationPostRequest 
+         * @param {ApiV1OpinionFetchHiddenPagePostRequest} apiV1OpinionFetchHiddenPagePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1OpinionFetchHiddenByConversationPost(apiV1OpinionFetchHiddenByConversationPostRequest: ApiV1OpinionFetchHiddenByConversationPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItem>>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1OpinionFetchHiddenByConversationPost(apiV1OpinionFetchHiddenByConversationPostRequest, options);
+        async apiV1OpinionFetchHiddenPagePost(apiV1OpinionFetchHiddenPagePostRequest: ApiV1OpinionFetchHiddenPagePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1OpinionFetchPagePost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1OpinionFetchHiddenPagePost(apiV1OpinionFetchHiddenPagePostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1OpinionFetchHiddenByConversationPost']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1OpinionFetchHiddenPagePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1OpinionFetchPagePostRequest} apiV1OpinionFetchPagePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1OpinionFetchPagePost(apiV1OpinionFetchPagePostRequest: ApiV1OpinionFetchPagePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1OpinionFetchPagePost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1OpinionFetchPagePost(apiV1OpinionFetchPagePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1OpinionFetchPagePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1OpinionNextUnansweredPostRequest} apiV1OpinionNextUnansweredPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1OpinionNextUnansweredPost(apiV1OpinionNextUnansweredPostRequest: ApiV1OpinionNextUnansweredPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1OpinionNextUnansweredPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1OpinionNextUnansweredPost(apiV1OpinionNextUnansweredPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1OpinionNextUnansweredPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -16980,11 +17237,12 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         /**
          * 
          * @param {ApiV1AuthAuthenticatePostRequest} apiV1AuthAuthenticatePostRequest 
+         * @param {string} [xTurnstileToken] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1AuthAuthenticatePost(apiV1AuthAuthenticatePostRequest: ApiV1AuthAuthenticatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AuthAuthenticatePost200Response> {
-            return localVarFp.apiV1AuthAuthenticatePost(apiV1AuthAuthenticatePostRequest, options).then((request) => request(axios, basePath));
+        apiV1AuthAuthenticatePost(apiV1AuthAuthenticatePostRequest: ApiV1AuthAuthenticatePostRequest, xTurnstileToken?: string, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AuthAuthenticatePost200Response> {
+            return localVarFp.apiV1AuthAuthenticatePost(apiV1AuthAuthenticatePostRequest, xTurnstileToken, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -17626,15 +17884,6 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
-         * @param {ApiV1OpinionFetchByConversationPostRequest} apiV1OpinionFetchByConversationPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1OpinionFetchByConversationPost(apiV1OpinionFetchByConversationPostRequest: ApiV1OpinionFetchByConversationPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItem>> {
-            return localVarFp.apiV1OpinionFetchByConversationPost(apiV1OpinionFetchByConversationPostRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
          * @param {ApiV1OpinionFetchBySlugIdListPostRequest} apiV1OpinionFetchBySlugIdListPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -17653,12 +17902,30 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
-         * @param {ApiV1OpinionFetchHiddenByConversationPostRequest} apiV1OpinionFetchHiddenByConversationPostRequest 
+         * @param {ApiV1OpinionFetchHiddenPagePostRequest} apiV1OpinionFetchHiddenPagePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1OpinionFetchHiddenByConversationPost(apiV1OpinionFetchHiddenByConversationPostRequest: ApiV1OpinionFetchHiddenByConversationPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiV1OpinionCreatePost200ResponseOneOfDisplayedOpinionItem>> {
-            return localVarFp.apiV1OpinionFetchHiddenByConversationPost(apiV1OpinionFetchHiddenByConversationPostRequest, options).then((request) => request(axios, basePath));
+        apiV1OpinionFetchHiddenPagePost(apiV1OpinionFetchHiddenPagePostRequest: ApiV1OpinionFetchHiddenPagePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1OpinionFetchPagePost200Response> {
+            return localVarFp.apiV1OpinionFetchHiddenPagePost(apiV1OpinionFetchHiddenPagePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1OpinionFetchPagePostRequest} apiV1OpinionFetchPagePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1OpinionFetchPagePost(apiV1OpinionFetchPagePostRequest: ApiV1OpinionFetchPagePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1OpinionFetchPagePost200Response> {
+            return localVarFp.apiV1OpinionFetchPagePost(apiV1OpinionFetchPagePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1OpinionNextUnansweredPostRequest} apiV1OpinionNextUnansweredPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1OpinionNextUnansweredPost(apiV1OpinionNextUnansweredPostRequest: ApiV1OpinionNextUnansweredPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1OpinionNextUnansweredPost200Response> {
+            return localVarFp.apiV1OpinionNextUnansweredPost(apiV1OpinionNextUnansweredPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -18364,11 +18631,12 @@ export class DefaultApi extends BaseAPI {
     /**
      * 
      * @param {ApiV1AuthAuthenticatePostRequest} apiV1AuthAuthenticatePostRequest 
+     * @param {string} [xTurnstileToken] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public apiV1AuthAuthenticatePost(apiV1AuthAuthenticatePostRequest: ApiV1AuthAuthenticatePostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1AuthAuthenticatePost(apiV1AuthAuthenticatePostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1AuthAuthenticatePost(apiV1AuthAuthenticatePostRequest: ApiV1AuthAuthenticatePostRequest, xTurnstileToken?: string, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AuthAuthenticatePost(apiV1AuthAuthenticatePostRequest, xTurnstileToken, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -19083,16 +19351,6 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
-     * @param {ApiV1OpinionFetchByConversationPostRequest} apiV1OpinionFetchByConversationPostRequest 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public apiV1OpinionFetchByConversationPost(apiV1OpinionFetchByConversationPostRequest: ApiV1OpinionFetchByConversationPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1OpinionFetchByConversationPost(apiV1OpinionFetchByConversationPostRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
      * @param {ApiV1OpinionFetchBySlugIdListPostRequest} apiV1OpinionFetchBySlugIdListPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -19113,12 +19371,32 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
-     * @param {ApiV1OpinionFetchHiddenByConversationPostRequest} apiV1OpinionFetchHiddenByConversationPostRequest 
+     * @param {ApiV1OpinionFetchHiddenPagePostRequest} apiV1OpinionFetchHiddenPagePostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public apiV1OpinionFetchHiddenByConversationPost(apiV1OpinionFetchHiddenByConversationPostRequest: ApiV1OpinionFetchHiddenByConversationPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1OpinionFetchHiddenByConversationPost(apiV1OpinionFetchHiddenByConversationPostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1OpinionFetchHiddenPagePost(apiV1OpinionFetchHiddenPagePostRequest: ApiV1OpinionFetchHiddenPagePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1OpinionFetchHiddenPagePost(apiV1OpinionFetchHiddenPagePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1OpinionFetchPagePostRequest} apiV1OpinionFetchPagePostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1OpinionFetchPagePost(apiV1OpinionFetchPagePostRequest: ApiV1OpinionFetchPagePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1OpinionFetchPagePost(apiV1OpinionFetchPagePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1OpinionNextUnansweredPostRequest} apiV1OpinionNextUnansweredPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1OpinionNextUnansweredPost(apiV1OpinionNextUnansweredPostRequest: ApiV1OpinionNextUnansweredPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1OpinionNextUnansweredPost(apiV1OpinionNextUnansweredPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

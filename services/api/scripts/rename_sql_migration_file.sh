@@ -47,10 +47,12 @@ for filename in "$FLYWAY_DIRECTORY"/*.sql; do
         for existing_filename in "${existing_files[@]:-}"; do
             existing_basename=${existing_filename##*/}
             if [ -f "$existing_filename" ] && [[ $existing_basename =~ $flyway_pattern ]]; then
-                # Historical renumbering only increases the Drizzle index. A newer
-                # index reusing an older random description is a new migration.
+                # Most historical renumbering increased the Drizzle index. An
+                # earlier fractional Flyway version is also a match when the SQL
+                # is identical; a reused description with different SQL is new.
                 if [ "${BASH_REMATCH[3]}" = "$rest_of_basename" ] &&
-                    [ "$((10#${BASH_REMATCH[1]}))" -ge "$version_number" ]; then
+                    { [ "$((10#${BASH_REMATCH[1]}))" -ge "$version_number" ] ||
+                        cmp -s "$filename" "$existing_filename"; }; then
                     already_migrated=true
                     # Consume each historical copy once, in ascending source order.
                     existing_files[existing_index]=""

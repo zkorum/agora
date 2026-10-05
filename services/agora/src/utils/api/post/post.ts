@@ -30,6 +30,7 @@ import type {
 } from "src/shared/types/zod";
 import { CSV_UPLOAD_FIELD_NAMES } from "src/shared-app-api/csvUpload";
 import { useRouter } from "vue-router";
+import type { z } from "zod";
 
 import {
   buildAuthorizationHeader,
@@ -82,24 +83,27 @@ export function useBackendPostApi() {
   async function fetchConversationBySlugIdWithDisplayContent({
     postSlugId,
     loadPersonalizedData,
+    signal,
   }: {
     postSlugId: string;
     loadPersonalizedData: boolean;
+    signal?: AbortSignal;
   }): Promise<FetchConversationBySlugIdResult> {
     try {
       const params = Dto.getConversationRequest.parse({
         conversationSlugId: postSlugId,
-      });
+      } satisfies z.input<typeof Dto.getConversationRequest>);
       const url = "/api/v1/conversation/get";
       const options = { method: "POST" };
       if (!loadPersonalizedData) {
-        const response = await api.post(url, params);
+        const response = await api.post<unknown>(url, params, { signal });
         const data = Dto.getConversationResponse.parse(response.data);
 
         return await handleGetConversationResponse(data);
       } else {
         const encodedUcan = await buildEncodedUcan(url, options);
-        const response = await api.post(url, params, {
+        const response = await api.post<unknown>(url, params, {
+          signal,
           headers: {
             ...buildAuthorizationHeader(encodedUcan),
           },
@@ -188,9 +192,9 @@ export function useBackendPostApi() {
     const url = "/api/v1/project/create-options/list";
     const params = Dto.getConversationCreateProjectOptionsRequest.parse({
       postAsOrganization: postAsOrganizationSlug,
-    });
+    } satisfies z.input<typeof Dto.getConversationCreateProjectOptionsRequest>);
     const encodedUcan = await buildEncodedUcan(url, { method: "POST" });
-    const response = await api.post(
+    const response = await api.post<unknown>(
       url,
       params,
       createRawAxiosRequestConfig({ encodedUcan })
@@ -281,7 +285,7 @@ export function useBackendPostApi() {
       timeoutProfile: "file-upload",
     });
 
-    const response = await api.post(url, formData, {
+    const response = await api.post<unknown>(url, formData, {
       ...config,
       headers: {
         ...config.headers,
@@ -316,12 +320,12 @@ export function useBackendPostApi() {
         requiresEventTicket,
         aiLabelingEnabled,
         preferredOpinionGroupCount,
-      });
+      } satisfies z.input<typeof Dto.importConversationRequest>);
 
       const url = "/api/v1/conversation/import";
       const options = { method: "POST" };
       const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await api.post(
+      const response = await api.post<unknown>(
         url,
         params,
         createRawAxiosRequestConfig({
@@ -347,7 +351,7 @@ export function useBackendPostApi() {
       const url = "/api/v1/conversation/create";
       const options = { method: "POST" };
       const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await api.post(
+      const response = await api.post<unknown>(
         url,
         params,
         createRawAxiosRequestConfig({ encodedUcan: encodedUcan })
@@ -429,7 +433,7 @@ export function useBackendPostApi() {
         timeoutProfile: "file-upload",
       });
 
-      const response = await api.post(url, formData, {
+      const response = await api.post<unknown>(url, formData, {
         ...config,
         headers: {
           ...config.headers,

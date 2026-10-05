@@ -151,17 +151,8 @@ export function useParticipationGate({
       return true;
     }
 
-    if (!resolveEmailUpdates.value) {
-      resolveEmailUpdates.value = true;
-      await emailUpdateSummaryQuery.refetch();
-    } else if (
-      emailUpdateSummaryQuery.onboardingResolution.value.status === "loading"
-    ) {
-      await emailUpdateSummaryQuery.refetch();
-    }
-
-    const emailUpdateStatus =
-      emailUpdateSummaryQuery.onboardingResolution.value.status;
+    resolveEmailUpdates.value = true;
+    const emailUpdateStatus = (await emailUpdateSummaryQuery.resolveOnboarding()).status;
     if (
       emailUpdateStatus === "required" ||
       emailUpdateStatus === "transient_error"

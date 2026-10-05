@@ -25,7 +25,6 @@ import {
     zodOpinionModerationAction,
     zodConversationModerationProperties,
     zodOpinionModerationProperties,
-    zodPublicCommentFeedFilter,
     zodUserReportReason,
     zodUserReportExplanation,
     zodUserReportItem,
@@ -56,6 +55,9 @@ import {
     zodMaxdiffComparison,
     zodConversationType,
     zodConversationTypeConfig,
+    zodPolisConversationTypeConfig,
+    zodRankingConversationTypeConfig,
+    zodPolisVotingPresentation,
     zodRankingMode,
     zodConversationEffectiveMultilingualSetting,
     zodConversationLanguageSettingOutput,
@@ -1140,6 +1142,34 @@ const zodConversationEmailUpdateActionMutationResponse = z.discriminatedUnion(
     ],
 );
 
+export const zodCreatedOpinionPageCursor = z
+    .object({
+        kind: z.literal("created"),
+        opinionSlugId: zodSlugId,
+        createdAt: zodDateTimeFlexible,
+        opinionId: z.number().int().positive(),
+    })
+    .strict();
+export const zodDiscoverOpinionPageCursor = z
+    .object({
+        kind: z.literal("discover"),
+        opinionSlugId: zodSlugId,
+        createdAt: zodDateTimeFlexible,
+        opinionId: z.number().int().positive(),
+        wasVoted: z.boolean(),
+        routingPriority: z.number().nullable(),
+        routingSnapshotId: z.number().int().positive().nullable(),
+    })
+    .strict();
+export const zodVotedOpinionPageCursor = z
+    .object({
+        kind: z.literal("votes"),
+        opinionSlugId: zodSlugId,
+        voteUpdatedAt: zodDateTimeFlexible,
+        voteId: z.number().int().positive(),
+    })
+    .strict();
+
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Dto {
     static fetchFeedRequest = z
@@ -1170,14 +1200,68 @@ export class Dto {
             comments: z.array(zodOpinionItem),
         })
         .strict();
-    static fetchOpinionsRequest = z
+    static opinionPageCursor = z.discriminatedUnion("kind", [
+        zodCreatedOpinionPageCursor,
+        zodDiscoverOpinionPageCursor,
+        zodVotedOpinionPageCursor,
+    ]);
+    static fetchOpinionPageRequest = z.discriminatedUnion("filter", [
+        z
+            .object({
+                conversationSlugId: zodSlugId,
+                filter: z.literal("discover"),
+                cursor: zodDiscoverOpinionPageCursor.nullable(),
+            })
+            .strict(),
+        z
+            .object({
+                conversationSlugId: zodSlugId,
+                filter: z.literal("my_votes"),
+                cursor: zodVotedOpinionPageCursor.nullable(),
+            })
+            .strict(),
+        z
+            .object({
+                conversationSlugId: zodSlugId,
+                filter: z.enum(["new", "moderated"]),
+                cursor: zodCreatedOpinionPageCursor.nullable(),
+            })
+            .strict(),
+    ]);
+    static fetchOpinionPageResponse = z
         .object({
-            conversationSlugId: zodSlugId, // z.object() does not exist :(
-            filter: zodPublicCommentFeedFilter,
-            clusterKey: zodPolisKey.optional(),
+            items: z.array(zodDisplayedOpinionItem),
+            nextCursor: Dto.opinionPageCursor.nullable(),
         })
         .strict();
-    static fetchOpinionsResponse = z.array(zodDisplayedOpinionItem);
+    static fetchHiddenOpinionPageRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+            cursor: zodCreatedOpinionPageCursor.nullable(),
+        })
+        .strict();
+    static fetchNextUnansweredOpinionRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+            order: z.enum(["discover", "new"]),
+            excludedOpinionSlugIds: z.array(zodSlugId).max(100).default([]),
+        })
+        .strict();
+    static fetchNextUnansweredOpinionResponse = z.discriminatedUnion("status", [
+        z
+            .object({
+                status: z.literal("ready"),
+                opinion: zodDisplayedOpinionItem,
+                remainingCount: z.number().int().positive(),
+            })
+            .strict(),
+        z
+            .object({
+                status: z.literal("caught_up"),
+                remainingCount: z.literal(0),
+            })
+            .strict(),
+    ]);
     static fetchCommentStatsRequest = z
         .object({
             conversationSlugId: zodSlugId,
@@ -1382,13 +1466,6 @@ export class Dto {
         })
         .strict();
     static fetchAnalysisCheckpointsResponse = z.array(Dto.analysisCheckpoint);
-    static fetchHiddenOpinionsRequest = z
-        .object({
-            conversationSlugId: zodSlugId, // z.object() does not exist :(
-            createdAt: z.iso.datetime().optional(),
-        })
-        .strict();
-    static fetchHiddenOpinionsResponse = z.array(zodDisplayedOpinionItem);
     static createNewConversationBaseRequest = z
         .object({
             conversationTitle: zodConversationTitle,
@@ -1416,6 +1493,8 @@ export class Dto {
             Dto.createNewConversationBaseRequest
                 .extend({
                     conversationType: z.literal("polis"),
+                    votingPresentation:
+                        zodPolisVotingPresentation.default("list"),
                     aiLabelingEnabled: z.boolean().default(true),
                     preferredOpinionGroupCount:
                         zodPreferredOpinionGroupCount.default(null),
@@ -1740,6 +1819,13 @@ export class Dto {
             })
             .strict(),
     ]);
+    static updateConversationTypeConfig = z.discriminatedUnion("conversationType", [
+        zodPolisConversationTypeConfig.extend({
+            aiLabelingEnabled: z.boolean().optional(),
+            preferredOpinionGroupCount: zodPreferredOpinionGroupCount.optional(),
+        }).strict(),
+        zodRankingConversationTypeConfig,
+    ]);
     static updateConversationRequest = z
         .object({
             conversationSlugId: zodSlugId,
@@ -1753,9 +1839,7 @@ export class Dto {
                     "conversation_override",
                 ),
             requiresEventTicket: zodEventSlug.optional(),
-            aiLabelingEnabled: z.boolean().optional(),
-            preferredOpinionGroupCount:
-                zodPreferredOpinionGroupCount.optional(),
+            conversationTypeConfig: Dto.updateConversationTypeConfig,
             surveyConfig: zodSurveyConfigInput.nullable().optional(),
             conversationEmailUpdateEnabledOverride: z
                 .boolean()
@@ -4320,8 +4404,12 @@ export type CreateOpinionRequest = z.infer<typeof Dto.createOpinionRequest>;
 export type FetchUserVotesForPostSlugIdsResponse = z.infer<
     typeof Dto.getUserVotesByConversationsResponse
 >;
-export type FetchCommentFeedResponse = z.infer<
-    typeof Dto.fetchOpinionsResponse
+export type FetchOpinionPageResponse = z.infer<
+    typeof Dto.fetchOpinionPageResponse
+>;
+export type OpinionPageCursor = z.infer<typeof Dto.opinionPageCursor>;
+export type FetchNextUnansweredOpinionResponse = z.infer<
+    typeof Dto.fetchNextUnansweredOpinionResponse
 >;
 export type FetchCommentStatsResponse = z.infer<
     typeof Dto.fetchCommentStatsResponse

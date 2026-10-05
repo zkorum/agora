@@ -54,9 +54,9 @@
 </template>
 
 <script setup lang="ts">
-import type { ApiV1RankingBwsLoadPost200Response } from "src/api";
 import AnalysisActionButton from "src/components/post/analysis/common/AnalysisActionButton.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { MaxDiffLoadResponse } from "src/shared/types/dto";
 import type { MaxDiffComparison } from "src/shared/types/zod";
 import { restoreMaxDiff } from "src/shared/utils/maxdiff";
 import { formatAmount } from "src/utils/common";
@@ -77,7 +77,7 @@ interface ClickItemData {
 
 const props = defineProps<{
   conversationSlugId: string;
-  loadData: ApiV1RankingBwsLoadPost200Response | undefined;
+  loadData: MaxDiffLoadResponse | undefined;
   allItems: MaxDiffListItem[];
   compactMode: boolean;
   onClickItem: (item: ClickItemData) => void;
@@ -93,11 +93,7 @@ const { t } = useComponentI18n<MaxDiffResultsTabTranslations>(
 function parseComparisons(): MaxDiffComparison[] {
   const data = props.loadData;
   if (data === undefined || data.comparisons === null) return [];
-  return data.comparisons.map((c) => ({
-    best: c.best,
-    worst: c.worst,
-    set: c.set,
-  }));
+  return data.comparisons;
 }
 
 const restoredInstance = computed(() => {

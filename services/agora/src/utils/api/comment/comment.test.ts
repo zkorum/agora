@@ -100,6 +100,7 @@ function conversationMetadata(
     authorUsername: "alice",
     participationMode: "guest",
     conversationType: "polis",
+    votingPresentation: "list",
     isIndexed: true,
     aiLabelingEnabled: false,
     preferredOpinionGroupCount: null,

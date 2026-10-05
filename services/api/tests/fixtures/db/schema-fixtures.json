@@ -1,4 +1,11 @@
 {
+    "notification-integrity": [
+        "notification",
+        "notification_opinion_vote",
+        "notification_new_opinion",
+        "notification_export",
+        "notification_import"
+    ],
     "project-page-counts": [
         "project",
         "project_content",
@@ -83,17 +90,23 @@
         "conversation_export_generation",
         "conversation_export_request"
     ],
+    "security-add-email-backfill": ["user", "email", "phone", "zk_passport"],
     "auth-otp": [
         "user",
         "device",
         "email",
         "phone",
+        "blocked_phone_number",
+        "phone_sms_budget_policy",
+        "phone_sms_budget_reservation",
+        "phone_sms_budget_alert",
         "zk_passport",
         "user_display_language",
         "auth_attempt_email",
         "auth_attempt_phone",
         "otp_email_destination_state",
         "otp_phone_destination_state",
+        "notification",
         "realtime_event_outbox"
     ],
     "zupass-auth": [
@@ -119,6 +132,23 @@
         "opinion_moderation",
         "analysis_snapshot_opinion",
         "conversation_view_snapshot"
+    ],
+    "opinion-paging": [
+        "user",
+        "user_mute_preference",
+        "polis_conversation_config",
+        "conversation",
+        "conversation_content",
+        "opinion",
+        "opinion_content",
+        "opinion_content_translation",
+        "opinion_moderation",
+        "vote",
+        "vote_content",
+        "conversation_view_snapshot",
+        "analysis_snapshot",
+        "analysis_snapshot_opinion",
+        "content_translation_work"
     ],
     "conversation-email-update-creation-authorization": [
         "user",

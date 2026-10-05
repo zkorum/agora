@@ -18,7 +18,7 @@
         />
       </div>
 
-      <div class="actions-container">
+      <div v-if="!isEmbeddedMode()" class="actions-container">
         <!-- Three-dot menu -->
         <ZKButton
           button-type="icon"

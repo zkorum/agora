@@ -1,5 +1,7 @@
 import {
+  type InfiniteData,
   type QueryClient,
+  useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
@@ -19,23 +21,20 @@ import type {
   AnalysisFreshnessRequest,
   FetchCommentStatsResponse,
 } from "src/shared/types/dto";
-import type {
-  AnalysisView,
-  DisplayedOpinionItem,
-  OpinionItem,
-  PolisKey,
-} from "src/shared/types/zod";
+import type { AnalysisView, OpinionItem } from "src/shared/types/zod";
+import { useAuthenticationStore } from "src/stores/authentication";
 import { useLanguageStore } from "src/stores/language";
 import { useUserStore } from "src/stores/user";
 import {
   buildAnalysisFreshnessRequest,
   LIVE_ANALYSIS_CATCH_UP_INTERVAL_MS,
 } from "src/utils/analysis/analysisFreshness";
+import { useViewerQueryScope,type ViewerQueryScope } from "src/utils/query/viewerScope";
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
 
 import { useNotify } from "../../ui/notify";
-import type { AxiosErrorResponse } from "../common";
 import { getErrorMessage } from "../common";
+import { classifyApiError } from "../error";
 import { updateConversationQueryCache } from "../post/useConversationQuery";
 import type { AnalysisData, CommentTabFilters } from "./comment";
 import {
@@ -46,75 +45,52 @@ import {
   useBackendCommentApi,
 } from "./comment";
 import { cacheCreatedOpinion } from "./createdOpinionCache";
+import { type OpinionCache, removeCachedOpinion } from "./opinionCache";
+import { initialOpinionPageRequest, type OpinionPageRequest, type OpinionPageResult } from "./opinionPageBoundary";
 import {
   type UseCommentQueriesTranslations,
   useCommentQueriesTranslations,
 } from "./useCommentQueries.i18n";
 
-export function useCommentsQuery({
+export function usePagedCommentsQuery({
   conversationSlugId,
   filter,
-  clusterKey,
-  voteCount,
-  enabled = true,
 }: {
   conversationSlugId: MaybeRefOrGetter<string>;
-  filter: CommentTabFilters;
-  clusterKey?: PolisKey;
-  voteCount?: MaybeRefOrGetter<number | undefined>;
-  enabled?: MaybeRefOrGetter<boolean>;
+  filter: MaybeRefOrGetter<CommentTabFilters>;
 }) {
-  const { fetchCommentsForPost } = useBackendCommentApi();
+  const { fetchOpinionPage } = useBackendCommentApi();
   const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
+  const { userId } = storeToRefs(useAuthenticationStore());
 
-  return useQuery<DisplayedOpinionItem[], Error>({
+  return useInfiniteQuery<
+    OpinionPageResult,
+    Error,
+    InfiniteData<
+      OpinionPageResult,
+      OpinionPageRequest
+    >,
+    readonly unknown[],
+    OpinionPageRequest
+  >({
     queryKey: [
       "comments",
       computed(() => toValue(conversationSlugId)),
-      filter,
-      clusterKey,
-      computed(() => displayLanguage.value),
+      computed(() => toValue(filter)),
+      computed(() => userId.value),
+      displayLanguage,
       computed(() => [...spokenLanguages.value].sort()),
     ],
-    queryFn: () =>
-      fetchCommentsForPost(toValue(conversationSlugId), filter, clusterKey),
-    enabled: computed(
-      () => toValue(enabled) && toValue(conversationSlugId) !== ""
-    ),
-    staleTime: () => getAnalysisStaleTime(toValue(voteCount)),
-    // Note: bypassed by manual invalidation on tab changes
-    placeholderData: (previousData) => previousData, // Preserve previous data during refetches
-    retry: false, // Disable auto-retry
-  });
-}
-
-export function useHiddenCommentsQuery({
-  conversationSlugId,
-  voteCount,
-  enabled = true,
-}: {
-  conversationSlugId: MaybeRefOrGetter<string>;
-  voteCount?: MaybeRefOrGetter<number | undefined>;
-  enabled?: MaybeRefOrGetter<boolean>;
-}) {
-  const { fetchHiddenCommentsForPost } = useBackendCommentApi();
-  const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
-
-  return useQuery<DisplayedOpinionItem[], Error>({
-    queryKey: [
-      "hiddenComments",
-      computed(() => toValue(conversationSlugId)),
-      computed(() => displayLanguage.value),
-      computed(() => [...spokenLanguages.value].sort()),
-    ],
-    queryFn: () => fetchHiddenCommentsForPost(toValue(conversationSlugId)),
-    enabled: computed(
-      () => toValue(enabled) && toValue(conversationSlugId) !== ""
-    ),
-    staleTime: () => getAnalysisStaleTime(toValue(voteCount)),
-    // Note: bypassed by manual invalidation on tab changes
-    placeholderData: (previousData) => previousData, // Preserve previous data during refetches
-    retry: false, // Disable auto-retry
+    queryFn: ({ pageParam, signal }) =>
+      fetchOpinionPage({
+        ...pageParam,
+        signal,
+      }),
+    enabled: computed(() => toValue(conversationSlugId) !== ""),
+    initialPageParam: computed(() => initialOpinionPageRequest({ conversationSlugId: toValue(conversationSlugId), filter: toValue(filter) })),
+    getNextPageParam: (lastPage) => lastPage.nextRequest,
+    staleTime: 30_000,
+    retry: false,
   });
 }
 
@@ -258,7 +234,9 @@ function isGroupLabelDisplayFresh({
   groupLabels: AnalysisFrameGroupLabels;
   displayLanguage: SupportedDisplayLanguageCodes;
 }): boolean {
-  return groupLabels.groupDescriptionDisplay.displayedLocale === displayLanguage;
+  return (
+    groupLabels.groupDescriptionDisplay.displayedLocale === displayLanguage
+  );
 }
 
 function expectedLabelLocales(
@@ -581,6 +559,7 @@ export async function fetchAnalysisDataWithCache({
   voteCount,
   freshness,
   analysisQueryKey,
+  viewerScope,
 }: {
   queryClient: QueryClient;
   fetchAnalysisFrameManifest: BackendCommentApi["fetchAnalysisFrameManifest"];
@@ -596,6 +575,7 @@ export async function fetchAnalysisDataWithCache({
   voteCount: number | undefined;
   freshness: AnalysisFreshnessRequest | null;
   analysisQueryKey: AnalysisQueryKey | undefined;
+  viewerScope: ViewerQueryScope;
 }): Promise<AnalysisData> {
   const manifest = await queryClient.fetchQuery({
     queryKey: [
@@ -636,6 +616,7 @@ export async function fetchAnalysisDataWithCache({
           frameKeyPart,
           displayLanguage,
           spokenLanguages,
+          viewerScope,
         ],
         queryFn: () =>
           fetchAnalysisFrameGroups({
@@ -664,6 +645,7 @@ export async function fetchAnalysisDataWithCache({
           "agreements",
           displayLanguage,
           spokenLanguages,
+          viewerScope,
         ],
         queryFn: () =>
           fetchAnalysisFrameOpinionList({
@@ -683,6 +665,7 @@ export async function fetchAnalysisDataWithCache({
           "disagreements",
           displayLanguage,
           spokenLanguages,
+          viewerScope,
         ],
         queryFn: () =>
           fetchAnalysisFrameOpinionList({
@@ -702,6 +685,7 @@ export async function fetchAnalysisDataWithCache({
           "divisive",
           displayLanguage,
           spokenLanguages,
+          viewerScope,
         ],
         queryFn: () =>
           fetchAnalysisFrameOpinionList({
@@ -761,6 +745,7 @@ export function useAnalysisQuery({
   } = useBackendCommentApi();
   const queryClient = useQueryClient();
   const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
+  const viewerScope = useViewerQueryScope();
 
   return useQuery({
     queryKey: [
@@ -771,6 +756,7 @@ export function useAnalysisQuery({
       computed(() => toValue(aiLabelingEnabled)),
       computed(() => displayLanguage.value),
       computed(() => [...spokenLanguages.value].sort()),
+      viewerScope,
     ],
     queryFn: async () => {
       const resolvedConversationSlugId = toValue(conversationSlugId);
@@ -782,6 +768,7 @@ export function useAnalysisQuery({
       const resolvedDisplayLanguage = displayLanguage.value;
       const resolvedSpokenLanguages = [...spokenLanguages.value].sort();
       const resolvedVoteCount = toValue(voteCount);
+      const resolvedViewerScope = viewerScope.value;
       const resolvedQueryKey = [
         "analysis",
         resolvedConversationSlugId,
@@ -790,6 +777,7 @@ export function useAnalysisQuery({
         resolvedAiLabelingEnabled,
         resolvedDisplayLanguage,
         resolvedSpokenLanguages,
+        resolvedViewerScope,
       ];
       const previousAnalysis =
         queryClient.getQueryData<AnalysisData>(resolvedQueryKey);
@@ -814,6 +802,7 @@ export function useAnalysisQuery({
         voteCount: resolvedVoteCount,
         freshness,
         analysisQueryKey: resolvedQueryKey,
+        viewerScope: resolvedViewerScope,
       });
 
       const snapshot = analysisData.conversationViewSnapshot;
@@ -830,11 +819,10 @@ export function useAnalysisQuery({
               snapshot,
             });
             if (metadata === conversation.metadata) {
-              return conversation;
+              return {};
             }
 
             return {
-              ...conversation,
               metadata,
             };
           },
@@ -882,6 +870,7 @@ export function useAnalysisCheckpointsQuery({
 export function useCreateCommentMutation() {
   const { createNewComment } = useBackendCommentApi();
   const queryClient = useQueryClient();
+  const { userId } = storeToRefs(useAuthenticationStore());
   const { showNotifyMessage } = useNotify();
   const { t } = useComponentI18n<UseCommentQueriesTranslations>(
     useCommentQueriesTranslations
@@ -908,6 +897,7 @@ export function useCreateCommentMutation() {
           queryClient,
           conversationSlugId: variables.conversationSlugId,
           displayedOpinionItem: data.displayedOpinionItem,
+          viewerUserId: userId.value,
         });
         void markCommentsAsStale(variables.conversationSlugId);
         // Mark analysis as stale without immediate refetch
@@ -922,10 +912,11 @@ export function useCreateCommentMutation() {
         );
       }
     },
-    onError: (error: AxiosErrorResponse) => {
+    onError: (error: unknown) => {
       // Handle technical errors (network, server errors, etc.)
-      if (error?.code) {
-        showNotifyMessage(getErrorMessage(error));
+      const apiError = classifyApiError(error);
+      if (apiError.kind === "transport") {
+        showNotifyMessage(getErrorMessage(apiError));
       } else {
         showNotifyMessage(t("failedToCreateComment"));
       }
@@ -954,20 +945,13 @@ export function useDeleteCommentMutation() {
       deleteCommentBySlugId(commentSlugId),
     onSuccess: (_data, variables, _context: unknown) => {
       // Remove from TanStack Query cache (conversation page - all filters)
-      queryClient.setQueriesData<OpinionItem[]>(
+      queryClient.setQueriesData<OpinionCache>(
         { queryKey: ["comments"] },
         (oldData) =>
-          oldData?.filter(
-            (opinion) => opinion.opinionSlugId !== variables.commentSlugId
-          ) ?? []
-      );
-
-      queryClient.setQueriesData<OpinionItem[]>(
-        { queryKey: ["hiddenComments"] },
-        (oldData) =>
-          oldData?.filter(
-            (opinion) => opinion.opinionSlugId !== variables.commentSlugId
-          ) ?? []
+          removeCachedOpinion({
+            cache: oldData,
+            opinionSlugId: variables.commentSlugId,
+          })
       );
 
       updateConversationQueryCache({
@@ -983,7 +967,6 @@ export function useDeleteCommentMutation() {
             variables.moderation.action === "hide";
 
           return {
-            ...conversation,
             metadata: {
               ...conversation.metadata,
               opinionCount: Math.max(
@@ -1021,9 +1004,10 @@ export function useDeleteCommentMutation() {
 
       showNotifyMessage(t("commentDeletedSuccessfully"));
     },
-    onError: (error: AxiosErrorResponse) => {
-      if (error?.code) {
-        showNotifyMessage(getErrorMessage(error));
+    onError: (error: unknown) => {
+      const apiError = classifyApiError(error);
+      if (apiError.kind === "transport") {
+        showNotifyMessage(getErrorMessage(apiError));
       } else {
         showNotifyMessage(t("failedToDeleteComment"));
       }
@@ -1040,11 +1024,6 @@ export function useInvalidateCommentQueries() {
     invalidateComments: (conversationSlugId: string) => {
       void queryClient.invalidateQueries({
         queryKey: ["comments", conversationSlugId],
-      });
-    },
-    invalidateHiddenComments: (conversationSlugId: string) => {
-      void queryClient.invalidateQueries({
-        queryKey: ["hiddenComments", conversationSlugId],
       });
     },
     invalidateAnalysis: (conversationSlugId: string) => {
@@ -1118,24 +1097,15 @@ export function useInvalidateCommentQueries() {
       });
     },
     markCommentsAsStale: (conversationSlugId: string) => {
-      return Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["comments", conversationSlugId],
-          refetchType: "none", // Mark as stale but don't refetch immediately
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["hiddenComments", conversationSlugId],
-          refetchType: "none",
-        }),
-      ]);
+      return queryClient.invalidateQueries({
+        queryKey: ["comments", conversationSlugId],
+        refetchType: "none", // Mark as stale but don't refetch immediately
+      });
     },
     invalidateAll: (conversationSlugId: string) => {
       return Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["comments", conversationSlugId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["hiddenComments", conversationSlugId],
         }),
         queryClient.invalidateQueries({
           queryKey: ["analysis", conversationSlugId],

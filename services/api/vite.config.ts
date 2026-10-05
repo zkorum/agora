@@ -7,6 +7,6 @@ export default defineConfig({
     test: {
         globals: true,
         environment: "node",
-        exclude: ["dist/**", "node_modules/**"],
+        exclude: ["dist/**", "node_modules/**", "scripts/*.test.mjs"],
     },
 });

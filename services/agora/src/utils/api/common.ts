@@ -1,4 +1,3 @@
-import type { AxiosError } from "axios";
 import { type RawAxiosRequestConfig } from "axios";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 
@@ -12,36 +11,18 @@ import {
   type CommonApiTranslations,
   commonApiTranslations,
 } from "./common.i18n";
+import { type ApiErrorResponse, classifyApiError } from "./error";
 
 export type { KeyAction };
 
 export type ApiTimeoutProfile = "standard" | "extended" | "file-upload";
-
-export type AxiosErrorCode =
-  | typeof AxiosError.ERR_FR_TOO_MANY_REDIRECTS
-  | typeof AxiosError.ERR_BAD_OPTION_VALUE
-  | typeof AxiosError.ERR_BAD_OPTION
-  | typeof AxiosError.ERR_NETWORK
-  | typeof AxiosError.ERR_DEPRECATED
-  | typeof AxiosError.ERR_BAD_RESPONSE
-  | typeof AxiosError.ERR_BAD_REQUEST
-  | typeof AxiosError.ERR_NOT_SUPPORT
-  | typeof AxiosError.ERR_INVALID_URL
-  | typeof AxiosError.ERR_CANCELED
-  | typeof AxiosError.ECONNABORTED
-  | typeof AxiosError.ETIMEDOUT;
 
 export interface AxiosSuccessResponse<T> {
   data: T;
   status: "success";
 }
 
-export interface AxiosErrorResponse {
-  status: "error";
-  message: string;
-  name: string;
-  code: AxiosErrorCode;
-}
+export type AxiosErrorResponse = ApiErrorResponse;
 
 // Error categorization utilities
 export function isTimeoutError(code: string | undefined): boolean {
@@ -52,7 +33,7 @@ export function isNetworkError(code: string | undefined): boolean {
   return code === "ERR_NETWORK" || code === "ECONNABORTED";
 }
 
-export function isClientError(code: AxiosErrorCode): boolean {
+export function isClientError(code: string | undefined): boolean {
   return (
     code === "ERR_BAD_REQUEST" ||
     code === "ERR_BAD_OPTION" ||
@@ -62,7 +43,7 @@ export function isClientError(code: AxiosErrorCode): boolean {
   );
 }
 
-export function isServerError(code: AxiosErrorCode): boolean {
+export function isServerError(code: string | undefined): boolean {
   return code === "ERR_BAD_RESPONSE";
 }
 
@@ -70,7 +51,7 @@ export function isCancellationError(code: string | undefined): boolean {
   return code === "ERR_CANCELED";
 }
 
-export function shouldRetryError(code: AxiosErrorCode): boolean {
+export function shouldRetryError(code: string | undefined): boolean {
   // Retry timeouts, network errors, and server errors
   // Don't retry client errors or cancellations
   return (
@@ -91,10 +72,11 @@ export function useCommonApi() {
   interface CreateRawAxiosRequestConfigProps {
     encodedUcan?: string;
     timeoutProfile?: ApiTimeoutProfile;
+    signal?: AbortSignal;
   }
 
   interface HandleAxiosStatusCodesProps {
-    axiosErrorCode: AxiosErrorCode;
+    axiosErrorCode: string | undefined;
     defaultMessage: string;
   }
 
@@ -135,6 +117,7 @@ export function useCommonApi() {
       case "ECONNABORTED":
       case "ETIMEDOUT":
         return t("timeoutError");
+      case undefined:
       default:
         return error.message || t("unexpectedError");
     }
@@ -149,26 +132,6 @@ export function useCommonApi() {
     if (isNetworkError(axiosErrorCode)) return;
 
     showNotifyMessage(defaultMessage);
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function createAxiosErrorResponse(error: any): AxiosErrorResponse {
-    if ("message" in error && "code" in error && "name" in error) {
-      return {
-        status: "error",
-        message: error.message,
-        code: error.code,
-        name: error.name,
-      };
-    } else {
-      console.error("Unknown error response");
-      return {
-        status: "error",
-        message: "",
-        code: "ECONNABORTED",
-        name: error.name,
-      };
-    }
   }
 
   function getTimeoutForProfile(profile: ApiTimeoutProfile): number {
@@ -187,6 +150,7 @@ export function useCommonApi() {
   function createRawAxiosRequestConfig({
     encodedUcan,
     timeoutProfile = "standard",
+    signal,
   }: CreateRawAxiosRequestConfigProps): RawAxiosRequestConfig {
     return {
       headers: encodedUcan
@@ -195,6 +159,7 @@ export function useCommonApi() {
           }
         : undefined,
       timeout: getTimeoutForProfile(timeoutProfile),
+      signal,
     };
   }
 
@@ -215,7 +180,7 @@ export function useCommonApi() {
   return {
     createRawAxiosRequestConfig,
     buildEncodedUcan,
-    createAxiosErrorResponse,
+    createAxiosErrorResponse: classifyApiError,
     handleAxiosErrorStatusCodes,
     getErrorMessage,
   };
@@ -261,6 +226,7 @@ export function getErrorMessage(error: AxiosErrorResponse): string {
     case "ECONNABORTED":
     case "ETIMEDOUT":
       return t("timeoutError");
+    case undefined:
     default:
       return error.message || t("unexpectedError");
   }

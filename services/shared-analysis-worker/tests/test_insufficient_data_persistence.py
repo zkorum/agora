@@ -38,6 +38,7 @@ from agora_analysis_worker_shared.generated_models import (
     OpinionGroupVariant,
     ParticipationMode,
     PolisConversationConfig,
+    PolisVotingPresentation,
     RealtimeEventOutbox,
 )
 from agora_analysis_worker_shared.input_snapshot import VoteInputRow, prepare_input_snapshot
@@ -86,6 +87,7 @@ def test_empty_vote_matrix_publishes_activated_zero_count_snapshot(
         session.add(
             PolisConversationConfig(
                 id=10,
+                voting_presentation=PolisVotingPresentation.list,
                 ai_labeling_enabled=True,
                 analysis_data_generation=2,
                 preferred_opinion_group_count=None,
@@ -242,6 +244,7 @@ def test_collapsed_projection_is_persisted_and_waits_for_new_generation(
         session.add(
             PolisConversationConfig(
                 id=10,
+                voting_presentation=PolisVotingPresentation.list,
                 ai_labeling_enabled=True,
                 analysis_data_generation=2,
                 created_at=NOW,

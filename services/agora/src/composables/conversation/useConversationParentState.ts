@@ -1,4 +1,5 @@
 import { storeToRefs } from "pinia";
+import { getInitialFilterFromRoute } from "src/composables/opinion/getInitialFilterFromRoute";
 import type { DisplayedOpinionItem } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
@@ -210,7 +211,11 @@ export function useConversationParentState({
   }
 
   // Filter state: owned here, displayed in PostActionBar slot, synced with child route via props
-  const commentFilter = ref<CommentFilterOptions>("discover");
+  const commentFilter = ref<CommentFilterOptions>(
+    routeContextValue.value.kind === "embed"
+      ? "discover"
+      : getInitialFilterFromRoute(route)
+  );
 
   // Provide state and functions to child routes
   provide("refreshConversation", async () => {

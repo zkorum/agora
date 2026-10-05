@@ -29,6 +29,7 @@ vi.mock("pinia", () => ({
 vi.mock("src/stores/authentication", () => ({
   useAuthenticationStore: () => ({
     isAuthInitialized: ref(true),
+    isLoggedIn: ref(true),
     userId: ref("user-one"),
     hasEmailVerification: ref(true),
   }),

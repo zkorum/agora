@@ -1,5 +1,6 @@
 <template>
   <OnboardingLayout
+    v-if="!skipPhoneRegistration"
     :back-callback="handleBackToAuthChoice"
     :close-callback="handleBackToConversation"
     :show-close-button="true"
@@ -54,6 +55,7 @@
       </form>
     </template>
   </OnboardingLayout>
+  <PageLoadingSpinner v-else />
 </template>
 
 <script setup lang="ts">
@@ -70,6 +72,7 @@ import { useConversationOnboardingRoute } from "src/composables/conversation/use
 import { useConversationSurveyState } from "src/composables/conversation/useConversationSurveyState";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { usePhoneSubmit } from "src/composables/verification/usePhoneSubmit";
+import { useSkipUnavailablePhoneRegistration } from "src/composables/verification/useSkipUnavailablePhoneRegistration";
 import { useVerificationComplete } from "src/composables/verification/useVerificationComplete";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import {
@@ -111,6 +114,7 @@ const { showNotifyMessage } = useNotify();
 const phoneAuthPurpose = computed(() =>
   !isAuthInitialized.value || isLoggedIn.value ? "credential" : "login"
 );
+const phoneInputFormRef = ref<InstanceType<typeof PhoneInputForm>>();
 const { t } = useComponentI18n<VerifyPhoneTranslations>(
   verifyPhoneTranslations
 );
@@ -176,6 +180,7 @@ const backPath = computed(() => {
 const { isLoading, submitPhone, phoneAuthAvailability, nextCodeWaitSeconds } =
   usePhoneSubmit({
     purpose: phoneAuthPurpose,
+    takeTurnstileToken: () => phoneInputFormRef.value?.takeTurnstileToken(),
     onNavigateToOtp: () =>
       router.replace({
         path: getConversationSurveyVerifyPhoneCodePath({
@@ -195,6 +200,12 @@ const { isLoading, submitPhone, phoneAuthAvailability, nextCodeWaitSeconds } =
       somethingWrong: t("somethingWrong"),
     },
   });
+
+const skipPhoneRegistration = useSkipUnavailablePhoneRegistration({
+  availability: phoneAuthAvailability,
+  ready: isAuthInitialized,
+  redirect: () => router.replace({ path: backPath.value }),
+});
 
 watch(
   [isInitialLoading, requirementState],
@@ -229,10 +240,6 @@ function checkExistingCredential() {
     void completeVerification();
   }
 }
-
-const phoneInputFormRef = ref<{
-  submit: () => boolean;
-} | null>(null);
 
 function onSubmit() {
   phoneInputFormRef.value?.submit();

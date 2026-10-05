@@ -15,6 +15,7 @@ import {
 import type { OrganizationProperties } from "src/shared/types/zod";
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { useNotify } from "src/utils/ui/notify";
+import type { z } from "zod";
 
 import { api } from "../client";
 import { useCommonApi } from "../common";
@@ -54,7 +55,7 @@ export function useBackendAdministratorOrganizationApi() {
     responseSchema?: { parse: (data: unknown) => TResponse };
   }): Promise<TResponse | undefined> {
     const encodedUcan = await buildEncodedUcan(url, { method: "POST" });
-    const response = await api.post(url, data, {
+    const response = await api.post<unknown>(url, data, {
       headers: {
         ...buildAuthorizationHeader(encodedUcan),
       },
@@ -107,7 +108,7 @@ export function useBackendAdministratorOrganizationApi() {
     try {
       const params = Dto.getAdminNoProjectEmailUpdatesRequest.parse({
         organizationSlug,
-      });
+      } satisfies z.input<typeof Dto.getAdminNoProjectEmailUpdatesRequest>);
       return await postWithUcan({
         url: "/api/v1/administrator/organization/no-project-email-updates/get",
         data: params,
@@ -143,7 +144,7 @@ export function useBackendAdministratorOrganizationApi() {
     try {
       const params = Dto.getOrganizationMembersRequest.parse({
         organizationName,
-      });
+      } satisfies z.input<typeof Dto.getOrganizationMembersRequest>);
       const response = await postWithUcan({
         url: "/api/v1/administrator/organization/get-members",
         data: params,
@@ -168,7 +169,7 @@ export function useBackendAdministratorOrganizationApi() {
       const params = Dto.addUserOrganizationMappingRequest.parse({
         username,
         organizationName,
-      });
+      } satisfies z.input<typeof Dto.addUserOrganizationMappingRequest>);
       await postWithUcan({
         url: "/api/v1/administrator/organization/add-user-organization-mapping",
         data: params,
@@ -193,7 +194,7 @@ export function useBackendAdministratorOrganizationApi() {
       const params = Dto.removeUserOrganizationMappingRequest.parse({
         username,
         organizationName,
-      });
+      } satisfies z.input<typeof Dto.removeUserOrganizationMappingRequest>);
       await postWithUcan({
         url: "/api/v1/administrator/organization/remove-user-organization-mapping",
         data: params,
@@ -215,7 +216,7 @@ export function useBackendAdministratorOrganizationApi() {
     try {
       const params = Dto.deleteOrganizationRequest.parse({
         organizationName,
-      });
+      } satisfies z.input<typeof Dto.deleteOrganizationRequest>);
       await postWithUcan({
         url: "/api/v1/administrator/organization/delete-organization",
         data: params,
@@ -252,7 +253,9 @@ export function useBackendAdministratorOrganizationApi() {
     username: string
   ): Promise<OrganizationProperties[]> {
     try {
-      const params = Dto.getOrganizationsByUsernameRequest.parse({ username });
+      const params = Dto.getOrganizationsByUsernameRequest.parse({
+        username,
+      } satisfies z.input<typeof Dto.getOrganizationsByUsernameRequest>);
       const response = await postWithUcan({
         url: "/api/v1/administrator/organization/get-organization-names-by-username",
         data: params,

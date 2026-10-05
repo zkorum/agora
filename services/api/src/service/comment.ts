@@ -2,6 +2,7 @@ import { generateRandomSlugId } from "@/crypto.js";
 import { getPrimaryDatabase, hasPrimaryDatabase } from "@/shared-backend/db.js";
 import {
     analysisSnapshotResultTable,
+    analysisSnapshotTable,
     analysisSnapshotOpinionTable,
     contentTranslationWorkTable,
     opinionContentTable,
@@ -46,6 +47,7 @@ import type {
     CreateCommentResponse,
     FetchCommentStatsResponse,
     GetOpinionBySlugIdListResponse,
+    OpinionPageCursor,
 } from "@/shared/types/dto.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
@@ -60,6 +62,9 @@ import {
     or,
     SQL,
     inArray,
+    notInArray,
+    count,
+    lt,
 } from "drizzle-orm";
 import type {
     AnalysisOpinionItem,
@@ -78,7 +83,6 @@ import { httpErrors } from "@fastify/sensible";
 import { useCommonComment } from "./common.js";
 import { log } from "@/app.js";
 import { createCommentModerationPropertyObject } from "./moderation.js";
-import { getUserMutePreferences } from "./muteUser.js";
 import { checkConversationParticipation } from "./participationGate.js";
 import type { VoteBuffer } from "./voteBuffer.js";
 import type { ImportPolisResults } from "@/shared/types/polis.js";
@@ -487,18 +491,41 @@ interface FetchOpinionsProps {
     db: PostgresJsDatabase;
     postSlugId: SlugId;
     personalizationUserId?: string;
-    filterTarget: "new" | "moderated" | "hidden" | "discover" | "my_votes";
+    filterTarget:
+        | "new"
+        | "moderated"
+        | "hidden"
+        | "discover"
+        | "my_votes"
+        | "unanswered_discover"
+        | "unanswered_new";
     limit: number;
+    excludedOpinionSlugIds: string[];
+    cursor: OpinionPageCursor | null;
     displayContentPreferences: OpinionDisplayContentPreferences;
 }
 
-interface FetchOpinionsByPostIdProps {
-    db: PostgresJsDatabase;
+interface FetchOpinionsByPostIdProps extends Omit<
+    FetchOpinionsProps,
+    "postSlugId"
+> {
     postId: number;
-    personalizationUserId?: string;
-    filterTarget: "new" | "moderated" | "hidden" | "discover" | "my_votes";
-    limit: number;
-    displayContentPreferences: OpinionDisplayContentPreferences;
+}
+
+function getUnansweredOpinionFilter({
+    personalizationUserId,
+    excludedOpinionSlugIds,
+}: {
+    personalizationUserId: string | undefined;
+    excludedOpinionSlugIds: string[];
+}): SQL | undefined {
+    return and(
+        isNull(opinionModerationTable.id),
+        personalizationUserId === undefined ? undefined : isNull(voteTable.id),
+        excludedOpinionSlugIds.length === 0
+            ? undefined
+            : notInArray(opinionTable.slugId, excludedOpinionSlugIds),
+    );
 }
 
 export async function fetchOpinionsByPostId({
@@ -507,8 +534,13 @@ export async function fetchOpinionsByPostId({
     personalizationUserId,
     filterTarget,
     limit,
+    excludedOpinionSlugIds,
+    cursor,
     displayContentPreferences,
-}: FetchOpinionsByPostIdProps): Promise<DisplayedOpinionItemPerSlugId> {
+}: FetchOpinionsByPostIdProps): Promise<{
+    items: DisplayedOpinionItemPerSlugId;
+    cursorsByOpinionSlugId: Map<string, OpinionPageCursor>;
+}> {
     // Require authentication early for my_votes filter (prevent spam)
     if (filterTarget === "my_votes" && !personalizationUserId) {
         throw httpErrors.unauthorized(
@@ -559,14 +591,63 @@ export async function fetchOpinionsByPostId({
             whereClause = and(whereClause, isNull(opinionModerationTable.id));
             break;
         }
+        case "unanswered_new": {
+            whereClause = and(
+                whereClause,
+                getUnansweredOpinionFilter({
+                    personalizationUserId,
+                    excludedOpinionSlugIds,
+                }),
+            );
+            shouldJoinVoteTable = personalizationUserId !== undefined;
+            break;
+        }
+        case "unanswered_discover":
         case "discover": {
-            whereClause = and(whereClause, isNull(opinionModerationTable.id));
-            const selectedCandidate = await getSelectedOpinionGroupCandidate({
-                db,
-                conversationId: postId,
-                displayLanguage: "en",
-            });
-            discoverAnalysisSnapshotId = selectedCandidate?.snapshotId;
+            whereClause = and(
+                whereClause,
+                filterTarget === "discover"
+                    ? isNull(opinionModerationTable.id)
+                    : getUnansweredOpinionFilter({
+                          personalizationUserId,
+                          excludedOpinionSlugIds,
+                      }),
+            );
+            if (cursor?.kind === "discover") {
+                if (cursor.routingSnapshotId !== null) {
+                    const snapshots = await db
+                        .select({ id: analysisSnapshotTable.id })
+                        .from(analysisSnapshotTable)
+                        .where(
+                            and(
+                                eq(
+                                    analysisSnapshotTable.id,
+                                    cursor.routingSnapshotId,
+                                ),
+                                eq(
+                                    analysisSnapshotTable.conversationId,
+                                    postId,
+                                ),
+                            ),
+                        )
+                        .limit(1);
+                    if (snapshots.length === 0) {
+                        throw httpErrors.badRequest(
+                            "Opinion page cursor references another conversation",
+                        );
+                    }
+                }
+                discoverAnalysisSnapshotId =
+                    cursor.routingSnapshotId ?? undefined;
+            } else {
+                const selectedCandidate =
+                    await getSelectedOpinionGroupCandidate({
+                        db,
+                        conversationId: postId,
+                        displayLanguage: "en",
+                    });
+                discoverAnalysisSnapshotId = selectedCandidate?.snapshotId;
+            }
 
             const discoverOrderClause =
                 discoverAnalysisSnapshotId === undefined
@@ -581,7 +662,9 @@ export async function fetchOpinionsByPostId({
             if (personalizationUserId) {
                 shouldJoinVoteTable = true;
                 orderByClause = [
-                    asc(isNotNull(voteTable.id)),
+                    ...(filterTarget === "discover"
+                        ? [asc(isNotNull(voteTable.id))]
+                        : []),
                     ...discoverOrderClause,
                 ];
             } else {
@@ -607,11 +690,89 @@ export async function fetchOpinionsByPostId({
             break;
         }
     }
+    if (cursor !== null) {
+        if (
+            (filterTarget === "discover" && cursor.kind !== "discover") ||
+            (filterTarget === "my_votes" && cursor.kind !== "votes") ||
+            (filterTarget !== "discover" &&
+                filterTarget !== "my_votes" &&
+                cursor.kind !== "created")
+        ) {
+            throw httpErrors.badRequest(
+                "Opinion page cursor does not match its filter",
+            );
+        }
+        if (cursor.kind === "discover" || cursor.kind === "created") {
+            const olderOpinion = or(
+                lt(opinionTable.createdAt, cursor.createdAt),
+                and(
+                    eq(opinionTable.createdAt, cursor.createdAt),
+                    lt(opinionTable.id, cursor.opinionId),
+                ),
+            );
+            if (cursor.kind === "created") {
+                whereClause = and(whereClause, olderOpinion);
+            } else {
+                const voteOrder = shouldJoinVoteTable
+                    ? sql<number>`case when ${voteTable.id} is null then 0 else 1 end`
+                    : sql<number>`0`;
+                const priority =
+                    discoverAnalysisSnapshotId === undefined
+                        ? sql<number>`0`
+                        : sql<number>`coalesce(${routingAnalysisSnapshotOpinionTable.routingPriority}, '-Infinity'::real)`;
+                const cursorPriority =
+                    discoverAnalysisSnapshotId === undefined
+                        ? sql<number>`0`
+                        : sql<number>`coalesce(${cursor.routingPriority}, '-Infinity'::real)`;
+                const belowPriority = or(
+                    sql`${priority} < ${cursorPriority}`,
+                    and(sql`${priority} = ${cursorPriority}`, olderOpinion),
+                );
+                const cursorVoteOrder = cursor.wasVoted ? 1 : 0;
+                whereClause = and(
+                    whereClause,
+                    ne(opinionTable.id, cursor.opinionId),
+                    or(
+                        sql`${voteOrder} > ${cursorVoteOrder}`,
+                        and(
+                            sql`${voteOrder} = ${cursorVoteOrder}`,
+                            belowPriority,
+                        ),
+                    ),
+                );
+            }
+        } else {
+            whereClause = and(
+                whereClause,
+                or(
+                    lt(voteTable.updatedAt, cursor.voteUpdatedAt),
+                    and(
+                        eq(voteTable.updatedAt, cursor.voteUpdatedAt),
+                        lt(voteTable.id, cursor.voteId),
+                    ),
+                ),
+            );
+        }
+    }
     // Build query with conditional vote table join
     let query = db
         .select({
             // comment payload
             commentSlugId: opinionTable.slugId,
+            opinionId: opinionTable.id,
+            wasVoted: shouldJoinVoteTable
+                ? sql<boolean>`${voteTable.id} is not null`
+                : sql<boolean>`false`,
+            voteId: shouldJoinVoteTable
+                ? voteTable.id
+                : sql<number | null>`null`,
+            voteUpdatedAt: shouldJoinVoteTable
+                ? voteTable.updatedAt
+                : sql<Date | null>`null`,
+            routingPriority:
+                discoverAnalysisSnapshotId === undefined
+                    ? sql<number | null>`null`
+                    : routingAnalysisSnapshotOpinionTable.routingPriority,
             opinionContentId: opinionContentTable.id,
             contentPublicId: opinionContentTable.publicId,
             createdAt: opinionTable.createdAt,
@@ -701,6 +862,7 @@ export async function fetchOpinionsByPostId({
             and(
                 eq(voteTable.opinionId, opinionTable.id),
                 eq(voteTable.authorId, personalizationUserId),
+                isNotNull(voteTable.currentContentId),
             ),
         );
     }
@@ -721,16 +883,68 @@ export async function fetchOpinionsByPostId({
         );
     }
 
+    if (personalizationUserId !== undefined) {
+        query = query.leftJoin(
+            userMutePreferenceTable,
+            and(
+                eq(userMutePreferenceTable.sourceUserId, personalizationUserId),
+                eq(userMutePreferenceTable.targetUserId, opinionTable.authorId),
+                isNull(userMutePreferenceTable.deletedAt),
+            ),
+        );
+        whereClause = and(whereClause, isNull(userMutePreferenceTable.id));
+    }
+
     const results = await query
         .orderBy(...orderByClause)
         .where(and(whereClause, eq(userTable.isDeleted, false)))
-        .limit(limit); // TODO: infinite virtual scrolling instead
+        .limit(limit);
 
     const opinionItemMap: DisplayedOpinionItemPerSlugId = new Map<
         string,
         DisplayedOpinionItem
     >();
-    results.map((opinionResponse) => {
+    const cursorsByOpinionSlugId = new Map<string, OpinionPageCursor>();
+    for (const opinionResponse of results) {
+        let cursorForOpinion: OpinionPageCursor;
+        if (filterTarget === "my_votes") {
+            if (
+                opinionResponse.voteId === null ||
+                opinionResponse.voteUpdatedAt === null
+            ) {
+                throw new Error("An active vote has no vote cursor");
+            }
+            cursorForOpinion = {
+                kind: "votes",
+                opinionSlugId: opinionResponse.commentSlugId,
+                voteId: opinionResponse.voteId,
+                voteUpdatedAt: opinionResponse.voteUpdatedAt,
+            };
+        } else if (
+            filterTarget === "discover" ||
+            filterTarget === "unanswered_discover"
+        ) {
+            cursorForOpinion = {
+                kind: "discover",
+                opinionSlugId: opinionResponse.commentSlugId,
+                opinionId: opinionResponse.opinionId,
+                createdAt: opinionResponse.createdAt,
+                wasVoted: opinionResponse.wasVoted,
+                routingPriority: opinionResponse.routingPriority,
+                routingSnapshotId: discoverAnalysisSnapshotId ?? null,
+            };
+        } else {
+            cursorForOpinion = {
+                kind: "created",
+                opinionSlugId: opinionResponse.commentSlugId,
+                opinionId: opinionResponse.opinionId,
+                createdAt: opinionResponse.createdAt,
+            };
+        }
+        cursorsByOpinionSlugId.set(
+            opinionResponse.commentSlugId,
+            cursorForOpinion,
+        );
         const moderationProperties = createCommentModerationPropertyObject(
             opinionResponse.moderationAction,
             opinionResponse.moderationExplanation,
@@ -794,26 +1008,12 @@ export async function fetchOpinionsByPostId({
             }),
         };
         opinionItemMap.set(opinionResponse.commentSlugId, item);
-    });
-
-    if (personalizationUserId) {
-        const mutedUserItems = await getUserMutePreferences({
-            db: db,
-            userId: personalizationUserId,
-        });
-
-        opinionItemMap.forEach((opinionItem, opinionSlugId, map) => {
-            if (
-                mutedUserItems.some(
-                    (muteItem) => muteItem.username === opinionItem.username,
-                )
-            ) {
-                map.delete(opinionSlugId);
-            }
-        });
     }
 
-    return opinionItemMap;
+    return {
+        items: opinionItemMap,
+        cursorsByOpinionSlugId,
+    };
 }
 
 export async function fetchOpinionsByPostSlugId({
@@ -822,8 +1022,13 @@ export async function fetchOpinionsByPostSlugId({
     personalizationUserId,
     filterTarget,
     limit,
+    excludedOpinionSlugIds,
+    cursor,
     displayContentPreferences,
-}: FetchOpinionsProps): Promise<DisplayedOpinionItemPerSlugId> {
+}: FetchOpinionsProps): Promise<{
+    items: DisplayedOpinionItemPerSlugId;
+    cursorsByOpinionSlugId: Map<string, OpinionPageCursor>;
+}> {
     const postId = await getPostIdFromPostSlugId(db, postSlugId);
     return await fetchOpinionsByPostId({
         db,
@@ -831,8 +1036,110 @@ export async function fetchOpinionsByPostSlugId({
         personalizationUserId,
         filterTarget,
         limit,
+        excludedOpinionSlugIds,
+        cursor,
         displayContentPreferences,
     });
+}
+
+export async function countUnansweredOpinions({
+    db,
+    conversationSlugId,
+    personalizationUserId,
+    excludedOpinionSlugIds,
+}: {
+    db: PostgresJsDatabase;
+    conversationSlugId: string;
+    personalizationUserId: string | undefined;
+    excludedOpinionSlugIds: string[];
+}): Promise<number> {
+    const result = await db
+        .select({ remainingCount: count() })
+        .from(opinionTable)
+        .innerJoin(
+            conversationTable,
+            eq(conversationTable.id, opinionTable.conversationId),
+        )
+        .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
+        .leftJoin(
+            opinionModerationTable,
+            and(
+                eq(opinionModerationTable.opinionId, opinionTable.id),
+                isNull(opinionModerationTable.deletedAt),
+            ),
+        )
+        .leftJoin(
+            voteTable,
+            personalizationUserId === undefined
+                ? sql`false`
+                : and(
+                      eq(voteTable.opinionId, opinionTable.id),
+                      eq(voteTable.authorId, personalizationUserId),
+                      isNotNull(voteTable.currentContentId),
+                  ),
+        )
+        .leftJoin(
+            userMutePreferenceTable,
+            personalizationUserId === undefined
+                ? sql`false`
+                : and(
+                      eq(
+                          userMutePreferenceTable.sourceUserId,
+                          personalizationUserId,
+                      ),
+                      eq(
+                          userMutePreferenceTable.targetUserId,
+                          opinionTable.authorId,
+                      ),
+                      isNull(userMutePreferenceTable.deletedAt),
+                  ),
+        )
+        .where(
+            and(
+                eq(conversationTable.slugId, conversationSlugId),
+                eq(conversationTable.conversationType, "polis"),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
+                isNotNull(opinionTable.currentContentId),
+                eq(userTable.isDeleted, false),
+                isNull(userMutePreferenceTable.id),
+                getUnansweredOpinionFilter({
+                    personalizationUserId,
+                    excludedOpinionSlugIds,
+                }),
+            ),
+        );
+
+    return result[0]?.remainingCount ?? 0;
+}
+
+export async function requirePolisConversation({
+    db,
+    conversationSlugId,
+}: {
+    db: PostgresJsDatabase;
+    conversationSlugId: string;
+}): Promise<void> {
+    const rows = await db
+        .select({ conversationType: conversationTable.conversationType })
+        .from(conversationTable)
+        .where(
+            and(
+                eq(conversationTable.slugId, conversationSlugId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
+            ),
+        )
+        .limit(1);
+    const conversation = rows.at(0);
+    if (conversation === undefined) {
+        throw httpErrors.notFound("Conversation not found");
+    }
+    if (conversation.conversationType !== "polis") {
+        throw httpErrors.badRequest(
+            "One-at-a-time voting requires a Polis conversation",
+        );
+    }
 }
 
 export async function fetchCommentStatsByConversationSlugId({
@@ -3015,8 +3322,10 @@ async function getHasVotedOnAllAvailableOpinions({
             and(
                 eq(conversationTable.slugId, conversationSlugId),
                 isNotNull(opinionTable.currentContentId),
-                isNull(opinionModerationTable.id),
-                isNull(voteTable.id),
+                getUnansweredOpinionFilter({
+                    personalizationUserId,
+                    excludedOpinionSlugIds: [],
+                }),
                 isNull(userMutePreferenceTable.id),
                 eq(userTable.isDeleted, false),
             ),
@@ -3150,7 +3459,9 @@ export async function postNewOpinion(
             if (error instanceof Error) {
                 throw httpErrors.badRequest(error.message);
             } else {
-                throw httpErrors.badRequest("Error while sanitizing request body");
+                throw httpErrors.badRequest(
+                    "Error while sanitizing request body",
+                );
             }
         }
     }

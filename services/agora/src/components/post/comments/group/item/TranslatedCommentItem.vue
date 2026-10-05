@@ -10,6 +10,7 @@
     :survey-gate="surveyGate"
     :on-view-analysis="onViewAnalysis"
     :is-voting-disabled="isVotingDisabled"
+    :show-vote-results="showVoteResults"
     :content-translation="translationPreview"
     :conversation-route-context="conversationRouteContext"
     @update:content-translation-mode="setTranslationMode"
@@ -43,6 +44,7 @@ const props = defineProps<{
   surveyGate: SurveyGateSummary | undefined;
   onViewAnalysis: () => void;
   isVotingDisabled: boolean;
+  showVoteResults: boolean;
   conversationRouteContext: ConversationRouteContext;
 }>();
 

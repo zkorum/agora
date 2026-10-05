@@ -17,6 +17,10 @@ const environmentBoolean = (defaultValue: boolean) =>
         .default(defaultValue ? "true" : "false")
         .transform((value) => value === "true");
 
+const turnstileHostnamesSchema = z
+    .array(z.string().regex(/^[A-Za-z0-9][A-Za-z0-9.-]*$/))
+    .nonempty();
+
 const baseConfigSchema = sharedConfigSchema.extend({
     API_LOG_LEVEL: z
         .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
@@ -71,6 +75,14 @@ const baseConfigSchema = sharedConfigSchema.extend({
     TWILIO_ACCOUNT_SID: z.string().min(1).optional(),
     TWILIO_AUTH_TOKEN: z.string().min(1).optional(),
     TWILIO_SERVICE_SID: z.string().min(1).optional(),
+    PHONE_TURNSTILE_ENABLED: environmentBoolean(false),
+    PHONE_TURNSTILE_SECRET_KEY: z.string().min(1).optional(),
+    PHONE_TURNSTILE_ALLOWED_HOSTNAMES: z
+        .string()
+        .transform((value) => value.split(",").map((item) => item.trim()))
+        .pipe(turnstileHostnamesSchema)
+        .optional(),
+    PHONE_SMS_BUDGET_ALERT_EMAIL: z.email().optional(),
     TEST_CODE: z.coerce.number().int().min(0).max(999999).default(0),
     SPECIALLY_AUTHORIZED_PHONES: z.string().min(1).optional(),
     THROTTLE_EMAIL_SECONDS_INTERVAL: z.number().int().min(5).default(10),
@@ -259,6 +271,23 @@ const configSchema = baseConfigSchema.superRefine((value, ctx) => {
 
     if (
         value.NODE_ENV === "production" &&
+        value.PHONE_TURNSTILE_ENABLED &&
+        [
+            "1x0000000000000000000000000000000AA",
+            "2x0000000000000000000000000000000AA",
+            "3x0000000000000000000000000000000AA",
+        ].includes(value.PHONE_TURNSTILE_SECRET_KEY ?? "")
+    ) {
+        ctx.addIssue({
+            code: "custom",
+            path: ["PHONE_TURNSTILE_SECRET_KEY"],
+            message:
+                "Cloudflare Turnstile test secrets cannot enforce production SMS",
+        });
+    }
+
+    if (
+        value.NODE_ENV === "production" &&
         (value.SPECIALLY_AUTHORIZED_PHONES !== undefined ||
             value.SPECIALLY_AUTHORIZED_EMAILS !== undefined ||
             value.TEST_CODE !== 0)
@@ -293,6 +322,23 @@ const configSchema = baseConfigSchema.superRefine((value, ctx) => {
 });
 
 export const config = configSchema.parse(process.env);
+const phoneTurnstileConfigSchema = z.discriminatedUnion("enabled", [
+    z.object({ enabled: z.literal(false) }),
+    z.object({
+        enabled: z.literal(true),
+        secretKey: z.string().min(1),
+        allowedHostnames: turnstileHostnamesSchema,
+    }),
+]);
+export const phoneTurnstileConfig = phoneTurnstileConfigSchema.parse(
+    config.PHONE_TURNSTILE_ENABLED
+        ? {
+              enabled: true,
+              secretKey: config.PHONE_TURNSTILE_SECRET_KEY,
+              allowedHostnames: config.PHONE_TURNSTILE_ALLOWED_HOSTNAMES,
+          }
+        : { enabled: false },
+);
 const phoneAuthConfigSchema = z.discriminatedUnion("mode", [
     z.object({ mode: z.literal("disabled") }).strict(),
     z

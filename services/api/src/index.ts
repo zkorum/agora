@@ -60,10 +60,17 @@ import {
     config,
     log,
     phoneAuthConfig,
+    phoneTurnstileConfig,
     server,
     type PhoneAuthConfig,
 } from "./app.js";
 import * as authService from "@/service/auth.js";
+import {
+    createPhoneSmsBudget,
+    type PhoneSmsBudget,
+} from "@/service/phoneSmsBudget.js";
+import { createPhoneTurnstileVerifier } from "@/service/phoneTurnstile.js";
+import { sendEmail } from "@/service/email.js";
 import * as authUtilService from "@/service/authUtil.js";
 import * as csvImportService from "@/service/csvImport.js";
 import * as feedService from "@/service/feed.js";
@@ -117,6 +124,8 @@ import {
     fetchAnalysisFrameOpinionListByFrameKey,
     fetchCommentStatsByConversationSlugId,
     fetchOpinionsByPostSlugId,
+    countUnansweredOpinions,
+    requirePolisConversation,
     fetchOpinionsByOpinionSlugIdList,
     isPersonalNonSeedOpinionAuthoredByUser,
     postNewOpinion,
@@ -410,6 +419,7 @@ const CONTENT_TRANSLATION_USER_RATE_LIMIT_WINDOW_MS = 60 * 1000;
 
 function initializePhoneAuth(
     phoneAuthConfig: PhoneAuthConfig,
+    budget: PhoneSmsBudget,
 ): authService.PhoneAuth {
     if (phoneAuthConfig.mode === "disabled") {
         return phoneAuthConfig;
@@ -419,6 +429,7 @@ function initializePhoneAuth(
             ? phoneAuthConfig.delivery
             : {
                   type: "twilio",
+                  budget,
                   client: twilio(
                       phoneAuthConfig.delivery.accountSid,
                       phoneAuthConfig.delivery.authToken,
@@ -438,8 +449,6 @@ function initializePhoneAuth(
         delivery,
     };
 }
-
-const phoneAuth = initializePhoneAuth(phoneAuthConfig);
 
 // GitHub integration: webhook secret and access token must both be set or both unset
 const hasGitHubWebhookSecret = config.GITHUB_WEBHOOK_SECRET !== undefined;
@@ -530,6 +539,52 @@ const db = await createDb({
     log,
     logQueries: config.API_LOG_SQL_QUERIES,
 });
+const alertRecipient = config.PHONE_SMS_BUDGET_ALERT_EMAIL;
+const phoneSmsBudget = createPhoneSmsBudget({
+    db,
+    log,
+    sendAlert:
+        alertRecipient === undefined
+            ? undefined
+            : async ({ subject, text }) => {
+                  await sendEmail({ to: alertRecipient, subject, text });
+              },
+});
+const phoneAuth = initializePhoneAuth(phoneAuthConfig, phoneSmsBudget);
+const phoneTurnstile =
+    phoneTurnstileConfig.enabled
+        ? createPhoneTurnstileVerifier({
+              secretKey: phoneTurnstileConfig.secretKey,
+              allowedHostnames: phoneTurnstileConfig.allowedHostnames,
+              log,
+          })
+        : undefined;
+if (phoneAuth.mode !== "disabled" && phoneAuth.delivery.type === "twilio") {
+    phoneSmsBudget.start();
+    server.addHook("onClose", () => {
+        phoneSmsBudget.shutdown();
+        return Promise.resolve();
+    });
+}
+
+async function getEffectivePhoneAuth({
+    forVerification = false,
+}: {
+    forVerification?: boolean;
+} = {}): Promise<authService.PhoneAuth> {
+    if (phoneAuth.mode === "disabled" || phoneAuth.delivery.type !== "twilio") {
+        return phoneAuth;
+    }
+    const mode = await phoneSmsBudget.getMode({ forVerification });
+    if (mode === "disabled") return { mode: "disabled" };
+    if (mode === "enabled" || phoneAuth.mode === "login_only") return phoneAuth;
+    return {
+        mode: "login_only",
+        delivery: phoneAuth.delivery,
+        minimumResponseTimeMs: config.PHONE_LOGIN_ONLY_RESPONSE_MIN_MS,
+        responseJitterMs: config.PHONE_LOGIN_ONLY_RESPONSE_JITTER_MS,
+    };
+}
 log.info(
     "AGORA_LOAD_EVENT %s",
     JSON.stringify({
@@ -2072,6 +2127,9 @@ server.after(() => {
         url: `/api/${apiVersion}/auth/authenticate`,
         schema: {
             body: authenticateRequestBody,
+            headers: z.looseObject({
+                "x-turnstile-token": z.string().max(2048).optional(),
+            }),
             response: { 200: authenticate200 },
         },
         handler: async (request) => {
@@ -2084,6 +2142,16 @@ server.after(() => {
                     expectedDeviceStatus: undefined,
                 },
             );
+            if (
+                phoneTurnstile !== undefined &&
+                !(await phoneTurnstile.verify(
+                    request.headers["x-turnstile-token"],
+                ))
+            ) {
+                throw server.httpErrors.forbidden(
+                    "Phone security check failed",
+                );
+            }
             // wrapper function for Typescript to be happy with the zod discriminated union type
             async function doAuthenticate(): Promise<AuthenticateResponse> {
                 if (
@@ -2103,7 +2171,7 @@ server.after(() => {
                 return await authService.authenticateAttempt({
                     db,
                     now,
-                    phoneAuth,
+                    phoneAuth: await getEffectivePhoneAuth(),
                     authenticateRequestBody: request.body,
                     minutesBeforeSmsCodeExpiry:
                         config.MINUTES_BEFORE_SMS_OTP_EXPIRY,
@@ -2157,7 +2225,9 @@ server.after(() => {
                     code: request.body.code,
                     phoneNumber: request.body.phoneNumber,
                     defaultCallingCode: request.body.defaultCallingCode,
-                    phoneAuth,
+                    phoneAuth: await getEffectivePhoneAuth({
+                        forVerification: true,
+                    }),
                     peppers: config.PEPPERS,
                     sessionLifetimeDays: config.SESSION_LIFETIME_DAYS,
                     currentDisplayLanguage: getRequestDisplayLanguage({
@@ -3556,57 +3626,135 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/opinion/fetch-by-conversation`,
+        url: `/api/${apiVersion}/opinion/next-unanswered`,
         schema: {
-            body: Dto.fetchOpinionsRequest,
-            response: {
-                200: Dto.fetchOpinionsResponse,
-            },
+            body: Dto.fetchNextUnansweredOpinionRequest,
+            response: { 200: Dto.fetchNextUnansweredOpinionResponse },
         },
         handler: async (request) => {
             const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
-            const headerDisplayLanguage = getRequestDisplayLanguage({
-                request,
+            const personalizationUserId = deviceStatus.isKnown
+                ? deviceStatus.userId
+                : undefined;
+            const { conversationSlugId, order, excludedOpinionSlugIds } =
+                request.body;
+            await requirePolisConversation({ db, conversationSlugId });
+            const remainingCount = await countUnansweredOpinions({
+                db,
+                conversationSlugId,
+                personalizationUserId,
+                excludedOpinionSlugIds,
             });
+            if (remainingCount === 0) {
+                return Dto.fetchNextUnansweredOpinionResponse.parse({
+                    status: "caught_up",
+                    remainingCount: 0,
+                });
+            }
+
+            const displayLanguage = getRequestDisplayLanguage({ request });
             const languagePreferences = deviceStatus.isKnown
                 ? await getLanguagePreferences({
                       db,
                       userId: deviceStatus.userId,
-                      request: {
-                          currentDisplayLanguage: headerDisplayLanguage,
-                      },
+                      request: { currentDisplayLanguage: displayLanguage },
                   })
                 : {
-                      displayLanguage: headerDisplayLanguage,
-                      spokenLanguages: [headerDisplayLanguage],
+                      displayLanguage,
+                      spokenLanguages: [displayLanguage],
                   };
-            const preferredContentTranslation =
-                await getPreferredContentTranslationAvailabilityForConversation(
-                    {
-                        conversationSlugId: request.body.conversationSlugId,
-                        displayLanguage: languagePreferences.displayLanguage,
-                    },
-                );
-            const opinionItemsPerSlugId = await fetchOpinionsByPostSlugId({
-                db: db,
-                postSlugId: request.body.conversationSlugId,
-                filterTarget: request.body.filter,
+            const translation =
+                await getPreferredContentTranslationAvailabilityForConversation({
+                    conversationSlugId,
+                    displayLanguage: languagePreferences.displayLanguage,
+                });
+            const items = await fetchOpinionsByPostSlugId({
+                db,
+                postSlugId: conversationSlugId,
+                personalizationUserId,
+                filterTarget:
+                    order === "discover"
+                        ? "unanswered_discover"
+                        : "unanswered_new",
+                limit: 1,
+                excludedOpinionSlugIds,
+                cursor: null,
+                displayContentPreferences: {
+                    displayLanguage: languagePreferences.displayLanguage,
+                    targetLanguage: translation.targetLanguageCode,
+                    spokenLanguages: languagePreferences.spokenLanguages,
+                    translationAllowed: translation.isAllowed,
+                    viewerUserId: personalizationUserId,
+                },
+            });
+            const opinion = items.items.values().next().value;
+            if (opinion === undefined) {
+                return Dto.fetchNextUnansweredOpinionResponse.parse({
+                    status: "caught_up",
+                    remainingCount: 0,
+                });
+            }
+            return Dto.fetchNextUnansweredOpinionResponse.parse({
+                status: "ready",
+                opinion,
+                remainingCount,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/opinion/fetch-page`,
+        schema: {
+            body: Dto.fetchOpinionPageRequest,
+            response: { 200: Dto.fetchOpinionPageResponse },
+        },
+        handler: async (request) => {
+            const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
+            const { conversationSlugId, filter, cursor } = request.body;
+            const displayLanguage = getRequestDisplayLanguage({ request });
+            const languagePreferences = deviceStatus.isKnown
+                ? await getLanguagePreferences({
+                      db,
+                      userId: deviceStatus.userId,
+                      request: { currentDisplayLanguage: displayLanguage },
+                  })
+                : { displayLanguage, spokenLanguages: [displayLanguage] };
+            const translation =
+                await getPreferredContentTranslationAvailabilityForConversation({
+                    conversationSlugId,
+                    displayLanguage: languagePreferences.displayLanguage,
+                });
+            const pageSize = 30;
+            const result = await fetchOpinionsByPostSlugId({
+                db,
+                postSlugId: conversationSlugId,
+                filterTarget: filter,
                 personalizationUserId: deviceStatus.isKnown
                     ? deviceStatus.userId
                     : undefined,
-                limit: 3000,
+                limit: pageSize + 1,
+                excludedOpinionSlugIds: [],
+                cursor,
                 displayContentPreferences: {
                     displayLanguage: languagePreferences.displayLanguage,
-                    targetLanguage:
-                        preferredContentTranslation.targetLanguageCode,
+                    targetLanguage: translation.targetLanguageCode,
                     spokenLanguages: languagePreferences.spokenLanguages,
-                    translationAllowed: preferredContentTranslation.isAllowed,
+                    translationAllowed: translation.isAllowed,
                     viewerUserId: deviceStatus.isKnown
                         ? deviceStatus.userId
                         : undefined,
                 },
             });
-            return Array.from(opinionItemsPerSlugId.values());
+            const allItems = Array.from(result.items.values());
+            const items = allItems.slice(0, pageSize);
+            const lastItem = items.at(-1);
+            return {
+                items,
+                nextCursor: allItems.length > pageSize && lastItem !== undefined
+                    ? result.cursorsByOpinionSlugId.get(lastItem.opinionSlugId) ?? null
+                    : null,
+            };
         },
     });
 
@@ -3812,66 +3960,58 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/opinion/fetch-hidden-by-conversation`,
+        url: `/api/${apiVersion}/opinion/fetch-hidden-page`,
         schema: {
-            body: Dto.fetchHiddenOpinionsRequest,
-            response: {
-                200: Dto.fetchHiddenOpinionsResponse,
-            },
+            body: Dto.fetchHiddenOpinionPageRequest,
+            response: { 200: Dto.fetchOpinionPageResponse },
         },
         handler: async (request) => {
             const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
                 db,
                 request,
-                {
-                    expectedKnownDeviceStatus: {
-                        isLoggedIn: true,
-                        isRegistered: true,
-                    },
-                },
+                { expectedKnownDeviceStatus: { isLoggedIn: true, isRegistered: true } },
             );
-            const isMod = await isSiteModeratorAccount({
-                db: db,
-                userId: deviceStatus.userId,
-            });
-
-            if (!isMod) {
-                throw server.httpErrors.unauthorized(
-                    "User is not a site moderator",
-                );
+            if (!await isSiteModeratorAccount({ db, userId: deviceStatus.userId })) {
+                throw server.httpErrors.unauthorized("User is not a site moderator");
             }
-            const headerDisplayLanguage = getRequestDisplayLanguage({
-                request,
-            });
-            const languagePreferences = await getLanguagePreferences({
+            const { conversationSlugId, cursor } = request.body;
+            const displayLanguage = getRequestDisplayLanguage({ request });
+            const preferences = await getLanguagePreferences({
                 db,
                 userId: deviceStatus.userId,
-                request: {
-                    currentDisplayLanguage: headerDisplayLanguage,
-                },
+                request: { currentDisplayLanguage: displayLanguage },
             });
-            const preferredContentTranslation =
-                await getPreferredContentTranslationAvailabilityForConversation(
-                    {
-                        conversationSlugId: request.body.conversationSlugId,
-                        displayLanguage: languagePreferences.displayLanguage,
-                    },
-                );
-            const opinionItemsPerSlugId = await fetchOpinionsByPostSlugId({
-                db: db,
-                postSlugId: request.body.conversationSlugId,
+            const translation =
+                await getPreferredContentTranslationAvailabilityForConversation({
+                    conversationSlugId,
+                    displayLanguage: preferences.displayLanguage,
+                });
+            const pageSize = 30;
+            const result = await fetchOpinionsByPostSlugId({
+                db,
+                postSlugId: conversationSlugId,
+                personalizationUserId: deviceStatus.userId,
                 filterTarget: "hidden",
-                limit: 3000,
+                limit: pageSize + 1,
+                excludedOpinionSlugIds: [],
+                cursor,
                 displayContentPreferences: {
-                    displayLanguage: languagePreferences.displayLanguage,
-                    targetLanguage:
-                        preferredContentTranslation.targetLanguageCode,
-                    spokenLanguages: languagePreferences.spokenLanguages,
-                    translationAllowed: preferredContentTranslation.isAllowed,
+                    displayLanguage: preferences.displayLanguage,
+                    targetLanguage: translation.targetLanguageCode,
+                    spokenLanguages: preferences.spokenLanguages,
+                    translationAllowed: translation.isAllowed,
                     viewerUserId: deviceStatus.userId,
                 },
             });
-            return Array.from(opinionItemsPerSlugId.values());
+            const allItems = Array.from(result.items.values());
+            const items = allItems.slice(0, pageSize);
+            const lastItem = items.at(-1);
+            return {
+                items,
+                nextCursor: allItems.length > pageSize && lastItem !== undefined
+                    ? result.cursorsByOpinionSlugId.get(lastItem.opinionSlugId) ?? null
+                    : null,
+            };
         },
     });
 

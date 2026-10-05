@@ -53,7 +53,9 @@
               @click="goToPhone()"
             />
             <PhoneAuthUnavailableNotice
-              v-else
+              v-else-if="
+                phoneAuthAvailability.reason === 'technical_unavailable'
+              "
               :reason="phoneAuthAvailability.reason"
             />
           </div>
@@ -87,9 +89,7 @@ import {
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useConversationOnboardingStore } from "src/stores/conversationOnboarding";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
-import {
-  usePhoneAuthAvailability,
-} from "src/utils/auth/phoneAuthMode";
+import { usePhoneAuthAvailability } from "src/utils/auth/phoneAuthMode";
 import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
 import {
   getConversationSurveyOnboardingPath,

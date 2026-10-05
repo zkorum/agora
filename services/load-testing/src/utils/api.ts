@@ -5,6 +5,7 @@
  */
 
 import http from "k6/http";
+import { Dto, type FetchOpinionPageResponse } from "../shared/types/dto.js";
 import {
     buildUcan,
     buildAuthorizationHeader,
@@ -423,58 +424,52 @@ export async function saveSurveyAnswer(
 }
 
 /**
- * Fetch all opinions in a conversation (public/unauthenticated endpoint)
- * Uses the fetch-by-conversation endpoint with "new" filter to get all opinions
+ * Fetch all visible opinions in a conversation via bounded public pages.
  */
 export function fetchOpinions(
     params: FetchOpinionsParams,
 ): FetchOpinionsResponse {
     const { conversationSlugId } = params;
 
-    const url = `${API_BASE_URL}/api/v1/opinion/fetch-by-conversation`;
-
-    const requestBody = {
-        conversationSlugId,
-        filter: "new", // Fetch all opinions using the "new" filter
-    };
+    const url = `${API_BASE_URL}/api/v1/opinion/fetch-page`;
 
     try {
         // Make unauthenticated request (no authorization header)
         const startTime = Date.now();
 
-        const response = http.post(url, JSON.stringify(requestBody), {
-            headers: {
-                "Content-Type": "application/json",
-                // No authorization header - this is a public endpoint
-            },
-            timeout: "30s",
-        });
-
-        const responseTime = Date.now() - startTime;
-
-        if (response.status === 200) {
-            const responseData = JSON.parse(response.body as string) as {
-                opinionSlugId: string;
-            }[];
-            return {
-                success: true,
-                opinions: responseData.map((item) => ({
-                    opinionSlugId: item.opinionSlugId,
-                })),
-                responseTime,
-            };
-        } else {
-            return {
-                success: false,
-                opinions: [],
-                responseTime,
-                error: `HTTP ${String(response.status)}: ${
-                    typeof response.body === "string"
-                        ? response.body
-                        : "Unknown body"
-                }`,
-            };
-        }
+        const opinions: FetchOpinionsResponse["opinions"] = [];
+        let cursor: FetchOpinionPageResponse["nextCursor"] = null;
+        const seenCursors = new Set<string>();
+        do {
+            const response = http.post(
+                url,
+                JSON.stringify({ conversationSlugId, filter: "new", cursor }),
+                { headers: { "Content-Type": "application/json" }, timeout: "30s" },
+            );
+            if (response.status !== 200) {
+                return {
+                    success: false,
+                    opinions: [],
+                    responseTime: Date.now() - startTime,
+                    error: `HTTP ${String(response.status)}`,
+                };
+            }
+            const page = Dto.fetchOpinionPageResponse.parse(response.json());
+            opinions.push(...page.items.map((item) => ({ opinionSlugId: item.opinionSlugId })));
+            cursor = page.nextCursor;
+            if (cursor !== null) {
+                if (seenCursors.has(cursor.opinionSlugId)) {
+                    return {
+                        success: false,
+                        opinions: [],
+                        responseTime: Date.now() - startTime,
+                        error: "Repeated opinion page cursor",
+                    };
+                }
+                seenCursors.add(cursor.opinionSlugId);
+            }
+        } while (cursor !== null);
+        return { success: true, opinions, responseTime: Date.now() - startTime };
     } catch (error) {
         return {
             success: false,

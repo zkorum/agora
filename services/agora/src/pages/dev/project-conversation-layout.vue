@@ -99,7 +99,7 @@
             :conversation-title="conversation.title"
             author-username="project-team"
             :on-same-tab-click="scrollToActionBar"
-            :conversation-type-config="{ conversationType: 'polis' }"
+            :conversation-type-config="{ conversationType: 'polis', votingPresentation: 'list' }"
             :enable-route-navigation="false"
           />
         </ConversationStickyActionBar>
@@ -132,6 +132,7 @@
               class="project-conversation-layout-dev__statement-card"
             >
               <TranslatedCommentItem
+                :show-vote-results="true"
                 :comment-item="commentItem"
                 :post-slug-id="conversation.slugId"
                 conversation-author-username="project-team"
@@ -464,6 +465,7 @@ const conversationData = computed<ExtendedConversation>(() => {
       authorUsername: "project-team",
       participationMode: participationMode.value,
       conversationType: "polis",
+      votingPresentation: "list",
       isIndexed: privacyMode.value === "public",
       aiLabelingEnabled: false,
       preferredOpinionGroupCount: null,
@@ -669,10 +671,10 @@ function getRouteTab(): "comment" | "analysis" {
   return route.query.tab === "analysis" ? "analysis" : "comment";
 }
 
-function castVote(
-  opinionSlugId: string,
-  voteAction: VotingAction
-): Promise<CastVoteResponse> {
+function castVote({ opinionSlugId, voteAction }: {
+  opinionSlugId: string;
+  voteAction: VotingAction;
+}): Promise<CastVoteResponse> {
   userVotes.value = userVotes.value.filter(
     (vote) => vote.opinionSlugId !== opinionSlugId
   );

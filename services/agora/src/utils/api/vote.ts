@@ -13,25 +13,31 @@ import { api } from "./client";
 import { useCommonApi } from "./common";
 
 export function useBackendVoteApi() {
-  const { buildEncodedUcan } = useCommonApi();
+  const { buildEncodedUcan, createRawAxiosRequestConfig } = useCommonApi();
   const authStore = useAuthenticationStore();
 
-  async function castVoteForComment(
-    commentSlugId: string,
-    votingAction: VotingAction,
-    options?: {
-      returnIsUserClustered?: boolean;
-    }
-  ): Promise<CastVoteResponse> {
+  async function castVoteForComment({
+    opinionSlugId,
+    votingAction,
+    returnIsUserClustered,
+    isCurrent,
+  }: {
+    opinionSlugId: string;
+    votingAction: VotingAction;
+    returnIsUserClustered: boolean;
+    isCurrent: () => boolean;
+  }): Promise<CastVoteResponse> {
     const params: ApiV1VoteCastPostRequest = {
-      opinionSlugId: commentSlugId,
+      opinionSlugId,
       chosenOption: votingAction,
-      returnIsUserClustered: options?.returnIsUserClustered,
+      returnIsUserClustered,
     };
 
     const { url, options: requestOptions } =
       await DefaultApiAxiosParamCreator().apiV1VoteCastPost(params);
     const encodedUcan = await buildEncodedUcan(url, requestOptions);
+    // Signing can outlive the session during logout or an account switch.
+    if (!isCurrent()) throw new DOMException("Voting session changed", "AbortError");
     const response = await DefaultApiFactory(
       undefined,
       undefined,
@@ -46,16 +52,20 @@ export function useBackendVoteApi() {
     return data;
   }
 
-  async function fetchUserVotesForPostSlugIds(
-    postSlugIdList: string[]
-  ): Promise<FetchUserVotesForPostSlugIdsResponse> {
+  async function fetchUserVotesForPostSlugIds({
+    conversationSlugIdList,
+    signal,
+  }: {
+    conversationSlugIdList: string[];
+    signal?: AbortSignal;
+  }): Promise<FetchUserVotesForPostSlugIdsResponse> {
     // Guard: Never fetch votes for unauthenticated users
     if (!authStore.isGuestOrLoggedIn) {
       return []; // Return empty array for unauthenticated users
     }
 
     const params: ApiV1UserVoteGetByConversationsPostRequest = {
-      conversationSlugIdList: postSlugIdList,
+      conversationSlugIdList,
     };
 
     const { url, options } =
@@ -67,13 +77,9 @@ export function useBackendVoteApi() {
       undefined,
       undefined,
       api
-    ).apiV1UserVoteGetByConversationsPost(params, {
-      headers: {
-        ...buildAuthorizationHeader(encodedUcan),
-      },
-    });
+    ).apiV1UserVoteGetByConversationsPost(params, createRawAxiosRequestConfig({ encodedUcan, signal }));
 
-    return response.data || []; // Return data or empty array
+    return Dto.getUserVotesByConversationsResponse.parse(response.data);
   }
 
   return { fetchUserVotesForPostSlugIds, castVoteForComment };

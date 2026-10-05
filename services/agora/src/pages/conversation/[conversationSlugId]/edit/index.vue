@@ -193,11 +193,11 @@ import type {
   ConversationEmailUpdateConfigurationResponse,
   ConversationLanguageSettingsSource,
   GetConversationForEditResponse,
+  UpdateConversationRequest,
 } from "src/shared/types/dto";
 import type {
   ContentLanguageMetadataOutput,
   ConversationMultilingualSetting,
-  ConversationTypeConfig,
   ParticipationMode,
   PreferredOpinionGroupCount,
   ProjectLanguageSettings,
@@ -281,6 +281,7 @@ const originalState = ref<{
   inheritProjectLanguages: boolean;
   languageSettingsSource: ConversationLanguageSettingsSource;
   aiLabelingEnabled: boolean;
+  votingPresentation: "list" | "one_at_a_time";
   preferredOpinionGroupCount: PreferredOpinionGroupCount;
   surveyConfig: SurveyConfig | null;
 }>({
@@ -297,6 +298,7 @@ const originalState = ref<{
   inheritProjectLanguages: false,
   languageSettingsSource: "conversation_override",
   aiLabelingEnabled: true,
+  votingPresentation: "list",
   preferredOpinionGroupCount: null,
   surveyConfig: null,
 });
@@ -390,6 +392,13 @@ const hasUnsavedChanges = computed(() => {
   }
 
   if (
+    conversationType.value === "polis" &&
+    votingPresentation.value !== originalState.value.votingPresentation
+  ) {
+    return true;
+  }
+
+  if (
     preferredOpinionGroupCount.value !==
     originalState.value.preferredOpinionGroupCount
   ) {
@@ -424,7 +433,8 @@ const {
   importSettings,
   externalSourceConfig,
   conversationType,
-  rankingMode,
+  votingPresentation,
+  conversationTypeConfig,
   validationState,
   validateTitle,
   validateBody,
@@ -546,26 +556,6 @@ function handlePartialEmailReachAction(action: PartialEmailReachAction): void {
   partialEmailReachWarningMode.value = undefined;
 }
 
-function getConversationTypeConfig(): ConversationTypeConfig {
-  if (conversationType.value === "ranking") {
-    return {
-      conversationType: "ranking",
-      rankingMode: rankingMode.value ?? "bws",
-    };
-  }
-
-  return { conversationType: "polis" };
-}
-
-const conversationTypeConfig = computed({
-  get: getConversationTypeConfig,
-  set: (value: ConversationTypeConfig) => {
-    conversationType.value = value.conversationType;
-    rankingMode.value =
-      value.conversationType === "ranking" ? value.rankingMode : undefined;
-  },
-});
-
 const currentProjectLanguageProject = ref<
   CurrentProjectLanguageProject | undefined
 >(undefined);
@@ -668,17 +658,22 @@ async function performSave(): Promise<void> {
       languageSettingsSource: effectiveLanguageSettingsSource.value,
       isIndexed: !isPrivate.value,
       participationMode: participationMode.value,
+      conversationTypeConfig:
+        conversationTypeConfig.value.conversationType === "polis"
+          ? {
+              conversationType: "polis",
+              votingPresentation:
+                conversationTypeConfig.value.votingPresentation,
+              aiLabelingEnabled: aiLabelingEnabled.value,
+              preferredOpinionGroupCount: preferredOpinionGroupCount.value,
+            }
+          : {
+              conversationType: "ranking",
+              rankingMode: conversationTypeConfig.value.rankingMode,
+            },
       requiresEventTicket: requiresEventTicket.value,
-      ...(conversationEmailUpdateEnabledOverride === undefined
-        ? {}
-        : { conversationEmailUpdateEnabledOverride }),
-      ...(conversationType.value === "polis"
-        ? {
-            aiLabelingEnabled: aiLabelingEnabled.value,
-            preferredOpinionGroupCount: preferredOpinionGroupCount.value,
-          }
-        : {}),
-    });
+      conversationEmailUpdateEnabledOverride,
+    } satisfies UpdateConversationRequest);
 
     if (response.success) {
       showNotifyMessage(t("updateSuccess"));
@@ -871,8 +866,8 @@ onMounted(async () => {
       aiLabelingEnabled: response.aiLabelingEnabled,
       preferredOpinionGroupCount: response.preferredOpinionGroupCount,
       surveyConfig: response.surveyConfig ?? null,
+      conversationTypeConfig: response.conversationTypeConfig,
     });
-    conversationTypeConfig.value = response.conversationTypeConfig;
     editPermissions.value = response.editPermissions;
     currentProjectLanguageProject.value =
       response.projectLanguageProject === undefined
@@ -901,6 +896,10 @@ onMounted(async () => {
         response.projectLanguageProject !== undefined,
       languageSettingsSource: response.languageSettingsSource,
       aiLabelingEnabled: response.aiLabelingEnabled,
+      votingPresentation:
+        response.conversationTypeConfig.conversationType === "polis"
+          ? response.conversationTypeConfig.votingPresentation
+          : "list",
       preferredOpinionGroupCount: response.preferredOpinionGroupCount,
       surveyConfig: response.surveyConfig ?? null,
     };

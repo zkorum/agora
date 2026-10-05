@@ -24,7 +24,13 @@ import {
 } from "../languages.js";
 import { projectOrganizationAttributionRoleValues } from "./project.js";
 
-export const zodDateTimeFlexible = z.coerce.date();
+// Date objects are used internally; JSON uses ISO timestamps or epoch milliseconds.
+// Restrict coercion inputs so null/booleans cannot silently become valid dates.
+export const zodDateTimeFlexible = z.union([
+    z.date(),
+    z.iso.datetime({ offset: true }),
+    z.number().int().min(-8_640_000_000_000_000).max(8_640_000_000_000_000),
+]).pipe(z.coerce.date());
 export const zodSlugId = z.string().max(10);
 export const zodOrganizationSlug = z
     .string()
@@ -61,22 +67,23 @@ export const zodParticipationMode = z.enum([
     "guest",
 ]);
 export const zodConversationType = z.enum(["polis", "ranking"]);
+export const zodPolisVotingPresentation = z.enum(["list", "one_at_a_time"]);
 export const zodRankingMode = z.enum(["bws"]);
+export const zodPolisConversationTypeConfig = z
+    .object({
+        conversationType: z.literal("polis"),
+        votingPresentation: zodPolisVotingPresentation,
+    })
+    .strict();
+export const zodRankingConversationTypeConfig = z
+    .object({
+        conversationType: z.literal("ranking"),
+        rankingMode: zodRankingMode,
+    })
+    .strict();
 export const zodConversationTypeConfig = z.discriminatedUnion(
     "conversationType",
-    [
-        z
-            .object({
-                conversationType: z.literal("polis"),
-            })
-            .strict(),
-        z
-            .object({
-                conversationType: z.literal("ranking"),
-                rankingMode: zodRankingMode,
-            })
-            .strict(),
-    ],
+    [zodPolisConversationTypeConfig, zodRankingConversationTypeConfig],
 );
 export const zodProjectOrganizationAttributionRole = z.enum(
     projectOrganizationAttributionRoleValues,
@@ -545,12 +552,6 @@ export const zodConversationDataWithResult = z
     })
     .strict();
 export const zodCount = z.number().int().nonnegative();
-export const zodPublicCommentFeedFilter = z.enum([
-    "moderated",
-    "new",
-    "discover",
-    "my_votes",
-]);
 export const usernameRegex = new RegExp(
     `^[a-z0-9_]*$`, // {${MIN_LENGTH_USERNAME.toString()},${MAX_LENGTH_USERNAME.toString()}
 );
@@ -1333,6 +1334,7 @@ export const zodConversationMetadata = z.discriminatedUnion(
         zodConversationMetadataBase
             .extend({
                 conversationType: z.literal("polis"),
+                votingPresentation: zodPolisVotingPresentation,
             })
             .strict(),
         zodConversationMetadataBase
@@ -1393,6 +1395,7 @@ export const zodConversationMetadataWithId = z.discriminatedUnion(
         zodConversationMetadataWithIdBase
             .extend({
                 conversationType: z.literal("polis"),
+                votingPresentation: zodPolisVotingPresentation,
             })
             .strict(),
         zodConversationMetadataWithIdBase
@@ -2106,6 +2109,9 @@ export type ConversationProjectContext = z.infer<
 export type UserInteraction = z.infer<typeof zodUserInteraction>;
 export type ConversationMetadata = z.infer<typeof zodConversationMetadata>;
 export type RankingMode = z.infer<typeof zodRankingMode>;
+export type PolisVotingPresentation = z.infer<
+    typeof zodPolisVotingPresentation
+>;
 export type ConversationTypeConfig = z.infer<typeof zodConversationTypeConfig>;
 export type ExtendedConversationPayload = z.infer<
     typeof zodConversationDataWithResult
@@ -2225,7 +2231,6 @@ export type ConversationModerationProperties = z.infer<
 export type OpinionModerationProperties = z.infer<
     typeof zodOpinionModerationProperties
 >;
-export type CommentFeedFilter = z.infer<typeof zodPublicCommentFeedFilter>;
 export type UserMuteAction = z.infer<typeof zodUserMuteAction>;
 export type UserMuteItem = z.infer<typeof zodUserMuteItem>;
 export type Username = z.infer<typeof zodUsername>;

@@ -12,6 +12,7 @@ import {
   zodEventSlug,
   zodExternalSourceConfig,
   zodParticipationMode,
+  zodPolisVotingPresentation,
   zodPreferredOpinionGroupCount,
   zodProjectSlug,
   zodRankingMode,
@@ -169,6 +170,7 @@ export const zodSerializableConversationDraft = z.preprocess(
   z.discriminatedUnion("conversationType", [
     zodConversationDraftBase.extend({
       conversationType: z.literal("polis"),
+      votingPresentation: zodPolisVotingPresentation.default("list"),
     }),
     zodConversationDraftBase.extend({
       conversationType: z.literal("ranking"),

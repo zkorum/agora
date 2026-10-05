@@ -150,23 +150,21 @@ export async function requestConversationImport(
         throw error;
     }
 
-    const { createImportNotification } = await import("./notifications.js");
-    try {
-        await createImportNotification({
-            db,
-            userId,
-            importId: createImportResult.importId,
-            importSlugId: createImportResult.importSlugId,
-            conversationId: null,
+    const { createImportStartedNotification } =
+        await import("./notifications.js");
+    await createImportStartedNotification({
+        db,
+        userId,
+        importId: createImportResult.importId,
+        notification: {
             type: "import_started",
-            realtimeSSEManager,
-        });
-    } catch (error) {
-        log.error(
-            error,
-            `[Import] Failed to send start notification for ${createImportResult.importSlugId}`,
-        );
-    }
+            routeTarget: {
+                type: "import",
+                importSlugId: createImportResult.importSlugId,
+            },
+        },
+        realtimeSSEManager,
+    });
 
     return { importSlugId: createImportResult.importSlugId };
 }
@@ -247,23 +245,21 @@ export async function requestUrlImport(
         throw error;
     }
 
-    const { createImportNotification } = await import("./notifications.js");
-    try {
-        await createImportNotification({
-            db,
-            userId,
-            importId: createImportResult.importId,
-            importSlugId: createImportResult.importSlugId,
-            conversationId: null,
+    const { createImportStartedNotification } =
+        await import("./notifications.js");
+    await createImportStartedNotification({
+        db,
+        userId,
+        importId: createImportResult.importId,
+        notification: {
             type: "import_started",
-            realtimeSSEManager,
-        });
-    } catch (error) {
-        log.error(
-            error,
-            `[Import] Failed to send start notification for ${createImportResult.importSlugId}`,
-        );
-    }
+            routeTarget: {
+                type: "import",
+                importSlugId: createImportResult.importSlugId,
+            },
+        },
+        realtimeSSEManager,
+    });
 
     return { importSlugId: createImportResult.importSlugId };
 }

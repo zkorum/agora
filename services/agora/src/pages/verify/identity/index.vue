@@ -34,7 +34,9 @@
               @click="goToPhone()"
             />
             <PhoneAuthUnavailableNotice
-              v-else
+              v-else-if="
+                phoneAuthAvailability.reason === 'technical_unavailable'
+              "
               :reason="phoneAuthAvailability.reason"
             />
           </div>
@@ -57,9 +59,7 @@ import PhoneAuthUnavailableNotice from "src/components/verification/PhoneAuthUna
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
-import {
-  usePhoneAuthAvailability,
-} from "src/utils/auth/phoneAuthMode";
+import { usePhoneAuthAvailability } from "src/utils/auth/phoneAuthMode";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 

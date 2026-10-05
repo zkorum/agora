@@ -478,7 +478,7 @@ main {
   grid-area: stream;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.5rem;
 }
 
 .project-conversation-view__toolbar {

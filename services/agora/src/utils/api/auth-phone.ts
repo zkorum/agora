@@ -25,6 +25,7 @@ interface SendSmsCodeProps {
   phoneNumber: string;
   defaultCallingCode: SupportedCountryCallingCode;
   isRequestingNewCode: boolean;
+  turnstileToken: string | undefined;
   keyAction?: KeyAction;
 }
 
@@ -49,6 +50,7 @@ export function useAuthPhoneApi() {
     phoneNumber,
     defaultCallingCode,
     isRequestingNewCode,
+    turnstileToken,
     keyAction,
   }: SendSmsCodeProps): Promise<SendSmsCodeResponse> {
     try {
@@ -58,7 +60,10 @@ export function useAuthPhoneApi() {
         isRequestingNewCode: isRequestingNewCode,
       };
       const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1AuthAuthenticatePost(params);
+        await DefaultApiAxiosParamCreator().apiV1AuthAuthenticatePost(
+          params,
+          turnstileToken
+        );
       const encodedUcan = await buildEncodedUcan(url, options, keyAction);
       const otpDetails = await DefaultApiFactory(
         undefined,
@@ -66,7 +71,8 @@ export function useAuthPhoneApi() {
         api
       ).apiV1AuthAuthenticatePost(
         params,
-        createRawAxiosRequestConfig({ encodedUcan: encodedUcan })
+        turnstileToken,
+        createRawAxiosRequestConfig({ encodedUcan })
       );
       return {
         status: "success",

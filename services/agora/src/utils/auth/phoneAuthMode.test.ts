@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   getEffectivePhoneAuthMode,
   getPhoneAuthAvailability,
+  pausePhoneRegistration,
+  usePhoneAuthAvailability,
 } from "./phoneAuthMode";
 
 describe("getEffectivePhoneAuthMode", () => {
@@ -15,9 +17,9 @@ describe("getEffectivePhoneAuthMode", () => {
   ] as const)(
     "combines %s configuration with %s backend mode",
     (configuredMode, backendMode, expectedMode) => {
-      expect(
-        getEffectivePhoneAuthMode({ configuredMode, backendMode })
-      ).toBe(expectedMode);
+      expect(getEffectivePhoneAuthMode({ configuredMode, backendMode })).toBe(
+        expectedMode
+      );
     }
   );
 });
@@ -49,5 +51,17 @@ describe("getPhoneAuthAvailability", () => {
         purpose: "registration",
       })
     ).toEqual({ available: false, reason: "registration_unavailable" });
+  });
+});
+
+it("keeps phone login available after registration is paused at runtime", () => {
+  const login = usePhoneAuthAvailability("login");
+  const registration = usePhoneAuthAvailability("registration");
+  pausePhoneRegistration();
+
+  expect(login.value).toEqual({ available: true });
+  expect(registration.value).toEqual({
+    available: false,
+    reason: "registration_unavailable",
   });
 });

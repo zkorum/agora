@@ -1,24 +1,42 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import { storeToRefs } from "pinia";
+import type { OpinionVoteParams } from "src/composables/opinion/types";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type { VotingAction } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
+import type { AnalysisData } from "src/utils/api/comment/analysisData";
+import { getUserVotesQueryKey } from "src/utils/query/conversationQueryKeys";
+import {
+  isQueryForViewerScope,
+  useViewerQueryScope,
+} from "src/utils/query/viewerScope";
 import { computed, type MaybeRefOrGetter, reactive, toValue } from "vue";
 
 import { useNotify } from "../../ui/notify";
 import { useBackendAuthApi } from "../auth";
 import { useInvalidateCommentQueries } from "../comment/useCommentQueries";
-import type { AxiosErrorResponse } from "../common";
 import { useCommonApi } from "../common";
+import { classifyApiError } from "../error";
 import { useBackendVoteApi } from "../vote";
 import {
   type UseVoteQueriesTranslations,
   useVoteQueriesTranslations,
 } from "./useVoteQueries.i18n";
+import {
+  applyOptimisticVote,
+  confirmVoteCache,
+  restoreVoteCache,
+} from "./voteCache";
 
-// Track clustering status across component mounts (session-level persistence)
-// reactive() makes Vue track .get()/.set() so computed properties re-evaluate
-const userClusteredInSession = reactive(new Map<string, boolean>());
+const userClusteredInSession = reactive(new Set<string>());
+function clusterSessionKey({
+  conversationSlugId,
+  voterId,
+}: {
+  conversationSlugId: string;
+  voterId: string | undefined;
+}): string {
+  return JSON.stringify([conversationSlugId, voterId]);
+}
 
 export function useUserVotesQuery({
   postSlugId,
@@ -26,13 +44,22 @@ export function useUserVotesQuery({
   postSlugId: MaybeRefOrGetter<string>;
 }) {
   const { fetchUserVotesForPostSlugIds } = useBackendVoteApi();
-  const { isAuthInitialized, isGuestOrLoggedIn } = storeToRefs(
+  const { isAuthInitialized, isGuestOrLoggedIn, userId } = storeToRefs(
     useAuthenticationStore()
   );
 
   return useQuery({
-    queryKey: ["userVotes", computed(() => toValue(postSlugId))],
-    queryFn: () => fetchUserVotesForPostSlugIds([toValue(postSlugId)]),
+    queryKey: computed(() =>
+      getUserVotesQueryKey({
+        conversationSlugId: toValue(postSlugId),
+        voterId: userId.value,
+      })
+    ),
+    queryFn: ({ signal }) =>
+      fetchUserVotesForPostSlugIds({
+        conversationSlugIdList: [toValue(postSlugId)],
+        signal,
+      }),
     enabled: computed(
       () =>
         isAuthInitialized.value &&
@@ -53,25 +80,31 @@ export function useVoteMutation(postSlugId: string) {
   );
   const { markAnalysisAsStale } = useInvalidateCommentQueries();
   const { getErrorMessage } = useCommonApi();
-  const { updateAuthState } = useBackendAuthApi();
+  const { ensureParticipationAuthState } = useBackendAuthApi();
+  const { userId } = storeToRefs(useAuthenticationStore());
+  const viewerScope = useViewerQueryScope();
+
+  function currentVotesKey() {
+    return getUserVotesQueryKey({
+      conversationSlugId: postSlugId,
+      voterId: userId.value,
+    });
+  }
 
   return useMutation({
-    mutationFn: ({
-      opinionSlugId,
-      voteAction,
-    }: {
-      opinionSlugId: string;
-      voteAction: VotingAction;
-    }) => {
-      // Check BOTH cache AND session to determine if we should request clustering status
-      const analysisQueryData = queryClient.getQueriesData<{
-        polisClusters?: Record<
-          string,
-          { isUserInCluster?: boolean } | undefined
-        >;
-      }>({ queryKey: ["analysis", postSlugId] });
+    mutationFn: (
+      variables: OpinionVoteParams & { isCurrent: () => boolean }
+    ) => {
+      const { opinionSlugId, voteAction } = variables;
+      const analysisQueryData = queryClient.getQueriesData<AnalysisData>({
+        queryKey: ["analysis", postSlugId],
+        predicate: (query) =>
+          isQueryForViewerScope({
+            queryKey: query.queryKey,
+            viewerScope: viewerScope.value,
+          }),
+      });
 
-      // Check if cache knows user is clustered
       const cacheKnowsUserIsClustered = analysisQueryData.some(
         ([, analysisData]) =>
           analysisData?.polisClusters !== undefined &&
@@ -80,166 +113,91 @@ export function useVoteMutation(postSlugId: string) {
           )
       );
 
-      // Check if session knows user is clustered
-      const sessionKnowsUserIsClustered =
-        userClusteredInSession.get(postSlugId) === true;
+      const sessionKnowsUserIsClustered = userClusteredInSession.has(
+        clusterSessionKey({
+          conversationSlugId: postSlugId,
+          voterId: userId.value,
+        })
+      );
 
-      // Request clustering status ONLY if NEITHER knows
       const returnIsUserClustered = !(
         cacheKnowsUserIsClustered || sessionKnowsUserIsClustered
       );
 
-      return castVoteForComment(opinionSlugId, voteAction, {
+      return castVoteForComment({
+        opinionSlugId,
+        votingAction: voteAction,
         returnIsUserClustered,
+        isCurrent: variables.isCurrent,
       });
     },
 
-    // Optimistic update: update cache immediately before server responds
-    onMutate: async ({ opinionSlugId, voteAction }) => {
-      const userVotesKey = ["userVotes", postSlugId];
-      const commentsKey = ["comments", postSlugId];
+    onMutate: async (variables) => {
+      const { opinionSlugId, voteAction } = variables;
+      const { isCurrent } = variables;
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: ["userVotes", postSlugId] }),
+        queryClient.cancelQueries({ queryKey: ["comments", postSlugId] }),
+      ]);
+      if (!isCurrent())
+        throw new DOMException("Voting session changed", "AbortError");
 
-      // Get previous vote from cache BEFORE updating (for vote count delta calculation)
-      const oldUserVotesData =
-        queryClient.getQueryData<
-          Array<{ opinionSlugId: string; votingAction: string }>
-        >(userVotesKey);
-      const previousVote = oldUserVotesData?.find(
-        (v) => v.opinionSlugId === opinionSlugId
-      );
-
-      // Cancel outgoing refetches to prevent them from overwriting optimistic update
-      await queryClient.cancelQueries({ queryKey: userVotesKey });
-      await queryClient.cancelQueries({ queryKey: commentsKey });
-
-      // Snapshot BOTH caches for rollback
-      const previousUserVotes = queryClient.getQueryData(userVotesKey);
-      const previousComments = queryClient.getQueriesData({
-        queryKey: commentsKey,
+      const snapshot = applyOptimisticVote({
+        queryClient,
+        votesKey: currentVotesKey(),
+        params: { opinionSlugId, voteAction },
       });
+      return { snapshot };
+    },
 
-      // Optimistically update userVotes cache (for vote highlighting)
-      queryClient.setQueryData<
-        Array<{ opinionSlugId: string; votingAction: string }>
-      >(userVotesKey, (oldData) => {
-        // Handle empty cache (e.g., right after queryClient.clear() during auth transition)
-        if (!oldData) {
-          return voteAction !== "cancel"
-            ? [{ opinionSlugId, votingAction: voteAction }]
-            : [];
-        }
-
-        // Remove existing vote for this opinion (if any)
-        const filteredVotes = oldData.filter(
-          (vote) => vote.opinionSlugId !== opinionSlugId
-        );
-
-        // If not canceling, add the new vote
-        if (voteAction !== "cancel") {
-          return [
-            ...filteredVotes,
-            { opinionSlugId, votingAction: voteAction },
-          ];
-        }
-
-        return filteredVotes;
-      });
-
-      // Optimistically update ALL comments caches (for vote counts)
-      queryClient.setQueriesData<
-        Array<{
-          opinionSlugId: string;
-          numAgrees: number;
-          numDisagrees: number;
-          numPasses: number;
-        }>
-      >({ queryKey: commentsKey }, (oldComments) => {
-        if (!oldComments) return oldComments;
-
-        return oldComments.map((comment) => {
-          if (comment.opinionSlugId !== opinionSlugId) return comment;
-
-          // Calculate vote count delta based on previous and new votes
-          const delta = { agree: 0, disagree: 0, pass: 0 };
-
-          // Remove old vote count
-          if (previousVote?.votingAction === "agree") delta.agree--;
-          if (previousVote?.votingAction === "disagree") delta.disagree--;
-          if (previousVote?.votingAction === "pass") delta.pass--;
-
-          // Add new vote count
-          if (voteAction === "agree") delta.agree++;
-          if (voteAction === "disagree") delta.disagree++;
-          if (voteAction === "pass") delta.pass++;
-
-          return {
-            ...comment,
-            numAgrees: comment.numAgrees + delta.agree,
-            numDisagrees: comment.numDisagrees + delta.disagree,
-            numPasses: comment.numPasses + delta.pass,
-          };
+    onError: (error: unknown, variables, context) => {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      if (!variables.isCurrent()) return;
+      if (context !== undefined)
+        restoreVoteCache({
+          queryClient,
+          votesKey: currentVotesKey(),
+          snapshot: context.snapshot,
         });
-      });
 
-      // Return context with BOTH previous values for rollback
-      return { previousUserVotes, previousComments };
-    },
-
-    onError: (error: AxiosErrorResponse, _variables, context) => {
-      // Rollback BOTH caches to previous state on error
-      if (context?.previousUserVotes !== undefined) {
-        queryClient.setQueryData(
-          ["userVotes", postSlugId],
-          context.previousUserVotes
-        );
-      }
-      if (context?.previousComments !== undefined) {
-        // Restore all comments cache entries
-        for (const [queryKey, data] of context.previousComments) {
-          queryClient.setQueryData(queryKey, data);
-        }
-      }
-
-      // Handle error notification
-      if (error?.code) {
-        showNotifyMessage(getErrorMessage(error));
+      const apiError = classifyApiError(error);
+      if (apiError.kind === "transport") {
+        showNotifyMessage(getErrorMessage(apiError));
       } else {
         showNotifyMessage(t("failedToCastVote"));
       }
     },
 
     onSuccess: async (data, variables, context) => {
-      // Rollback optimistic updates when backend rejects the vote
+      if (!variables.isCurrent()) return;
       if (!data.success) {
-        if (context?.previousUserVotes !== undefined) {
-          queryClient.setQueryData(
-            ["userVotes", postSlugId],
-            context.previousUserVotes
-          );
-        }
-        if (context?.previousComments !== undefined) {
-          for (const [queryKey, previousData] of context.previousComments) {
-            queryClient.setQueryData(queryKey, previousData);
-          }
-        }
+        if (context !== undefined)
+          restoreVoteCache({
+            queryClient,
+            votesKey: currentVotesKey(),
+            snapshot: context.snapshot,
+          });
         return;
       }
 
-      // If backend confirms user is clustered, track it and mark analysis as stale
-      if (data.success && data.userIsClustered === true) {
-        // Track in session - this STOPS all future clustering requests
-        userClusteredInSession.set(postSlugId, true);
-
-        // Mark analysis as stale WITHOUT immediate refetch
-        // Will refetch ONLY when user clicks "View analysis" or visits analysis tab
-        markAnalysisAsStale(postSlugId);
+      // Guest creation may change the cache key while the vote is in flight.
+      await ensureParticipationAuthState();
+      if (!variables.isCurrent()) return;
+      const votesKey = currentVotesKey();
+      await queryClient.cancelQueries({ queryKey: votesKey });
+      if (!variables.isCurrent()) return;
+      if (context !== undefined) {
+        confirmVoteCache({ queryClient, votesKey, snapshot: context.snapshot });
       }
 
-      // Update auth state if vote succeeded (guest user may have been created)
-      if (data.success) {
-        await updateAuthState({
-          partialLoginStatus: { isKnown: true },
-        });
+      if (data.userIsClustered === true) {
+        userClusteredInSession.add(
+          clusterSessionKey({
+            conversationSlugId: postSlugId,
+            voterId: userId.value,
+          })
+        );
+        markAnalysisAsStale(postSlugId);
       }
 
       // If vote was cancelled, mark My Votes query as stale (no immediate refetch)
@@ -250,9 +208,6 @@ export function useVoteMutation(postSlugId: string) {
           refetchType: "none", // Only mark stale, don't refetch immediately
         });
       }
-
-      // Note: We don't invalidate userVotes here to avoid read replica lag issues
-      // The optimistic update from onMutate will persist until natural cache expiration (staleTime: 5min)
     },
 
     retry: false, // Disable auto-retry
@@ -274,9 +229,15 @@ export function useInvalidateVoteQueries() {
 
 // Composable to check if user was clustered in this session
 export function useUserClusteringSession() {
+  const { userId } = storeToRefs(useAuthenticationStore());
   return {
     isUserClusteredInSession: (postSlugId: string) => {
-      return userClusteredInSession.get(postSlugId) === true;
+      return userClusteredInSession.has(
+        clusterSessionKey({
+          conversationSlugId: postSlugId,
+          voterId: userId.value,
+        })
+      );
     },
   };
 }

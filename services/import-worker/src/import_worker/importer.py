@@ -13,6 +13,7 @@ from sqlalchemy import insert as sqlalchemy_insert
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from import_worker.csv_import import build_import_from_csv
+from import_worker.database import database_timestamp_to_utc
 from import_worker.generated_import_contracts import FailureReason
 from import_worker.generated_models import (
     AnalysisWorkState,
@@ -1166,7 +1167,7 @@ def complete_ready_imports(session: Session) -> list[ImportNotificationEvent]:
                 type="import_notification",
                 userId=str(row.user_id),
                 notificationSlugId=notification_slug_id,
-                notificationCreatedAt=notification_created_at.isoformat(),
+                notificationCreatedAt=notification_created_at,
                 notificationIsRead=notification_is_read,
                 importId=row.id,
                 importSlugId=row.slug_id,
@@ -1276,7 +1277,7 @@ def _create_import_notification(
     return (
         notification_slug_id,
         notification_row.id,
-        notification_row.created_at,
+        database_timestamp_to_utc(notification_row.created_at),
         notification_row.is_read,
     )
 
@@ -1506,7 +1507,7 @@ def mark_import_failed(
         type="import_notification",
         userId=str(row.user_id),
         notificationSlugId=notification_slug_id,
-        notificationCreatedAt=notification_created_at.isoformat(),
+        notificationCreatedAt=notification_created_at,
         notificationIsRead=notification_is_read,
         importId=row.id,
         importSlugId=row.slug_id,
@@ -1571,7 +1572,7 @@ def cleanup_stale_imports(
                 type="import_notification",
                 userId=str(row.user_id),
                 notificationSlugId=notification_slug_id,
-                notificationCreatedAt=notification_created_at.isoformat(),
+                notificationCreatedAt=notification_created_at,
                 notificationIsRead=notification_is_read,
                 importId=row.id,
                 importSlugId=row.slug_id,
