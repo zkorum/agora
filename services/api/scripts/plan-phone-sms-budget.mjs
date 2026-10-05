@@ -12,7 +12,8 @@ const usage = `Usage: node scripts/plan-phone-sms-budget.mjs \\
   [--warning-percent 75]
 
 This is a read-only calculator. It does not inspect Twilio, connect to a database,
-or set production limits. See scripts/PHONE_SMS_BUDGET.md for choosing inputs.`;
+or set production limits. Choose inputs from reviewed legitimate traffic,
+provider prices, and operator-approved spending limits.`;
 
 function integer({ value, name, min = 1, max = MAX_DB_INTEGER }) {
     if (!Number.isSafeInteger(value) || value < min || value > max) {
