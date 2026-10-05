@@ -24,4 +24,12 @@ defineProps<{
   object-fit: contain;
   object-position: center;
 }
+
+@media (min-width: 861px) {
+  .project-banner-image {
+    // Keep project content visible without imposing a fixed pixel height.
+    max-block-size: 30svh;
+    object-fit: cover;
+  }
+}
 </style>

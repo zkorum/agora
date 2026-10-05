@@ -28,13 +28,22 @@ pnpm prepare
 
 Project, conversation, and report pages share `ProjectBannerImage.vue` for banner
 rendering. Images fill the available width and use their **natural aspect ratio**
-so artwork is neither cropped nor surrounded by added empty bands. For X-style
+without a height limit at viewport widths up to **860 px**. At **861 px and above**,
+matching the project page's large-width layout, banners use at most **30% of the
+available viewport height** (`30svh`). For example, the limit is 240 px in an
+800 px-tall viewport and 300 px in a 1000 px-tall viewport. This is an Agora design
+choice to keep project content visible, not an X sizing requirement. For X-style
 banner proportions, use artwork around **1500 × 500 px** (or another 3:1
 resolution).
 
 Images use `height: auto` and `aspect-ratio: auto 3 / 1`: the 3:1 ratio is only a
 loading placeholder, replaced by the image's natural proportions once loaded.
 Artwork with a different ratio can change the placeholder height on load.
+At large widths, `object-fit: cover` crops the image centrally if its natural
+height exceeds the limit, retaining a full-width banner without side gaps or
+stretching. At smaller widths, the complete artwork remains visible. Keep text
+and logos within the crop-safe area for large screens, or use wider banner artwork
+when the entire design must remain visible at those widths.
 Language and consultation-status controls sit below uploaded banners rather than
 covering the artwork.
 
