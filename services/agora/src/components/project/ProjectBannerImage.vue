@@ -19,11 +19,17 @@ defineProps<{
   display: block;
   width: 100%;
   height: auto;
-  // Prevent wide-page banners from pushing the project content too far down.
-  max-block-size: 12.5rem;
   // Use a 3:1 loading placeholder, then follow the artwork's natural proportions.
   aspect-ratio: auto 3 / 1;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
+}
+
+@media (min-width: 861px) {
+  .project-banner-image {
+    // Keep project content visible without imposing a fixed pixel height.
+    max-block-size: 30svh;
+    object-fit: cover;
+  }
 }
 </style>

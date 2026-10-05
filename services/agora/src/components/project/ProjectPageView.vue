@@ -16,11 +16,10 @@
       >
         <ProjectBannerImage
           v-if="selectedBannerImageUrl !== undefined"
-          :key="selectedBannerImageUrl"
           :src="selectedBannerImageUrl"
           :alt="t('bannerImageAlt', { title: displayedProjectContent.title })"
         />
-        <div class="project-page-view__banner-grid"></div>
+        <div v-else class="project-page-view__banner-grid"></div>
         <div
           v-if="hasMultipleLanguageOptions || consultationStatus !== 'none'"
           class="project-page-view__banner-controls"
@@ -378,10 +377,6 @@ main {
 .project-page-view__banner.project-page-view__banner--with-image {
   height: auto;
   background: $app-background-color;
-
-  .project-page-view__banner-grid {
-    display: none;
-  }
 
   .project-page-view__banner-controls {
     padding-block-end: 0.85rem;

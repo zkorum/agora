@@ -20,11 +20,10 @@
       >
         <ProjectBannerImage
           v-if="effectiveBannerImageUrl !== undefined"
-          :key="effectiveBannerImageUrl"
           :src="effectiveBannerImageUrl"
           :alt="t('bannerImageAlt', { title: projectTitle })"
         />
-        <div class="project-conversation-view__banner-grid"></div>
+        <div v-else class="project-conversation-view__banner-grid"></div>
         <div
           class="project-conversation-view__banner-controls"
           :class="{
@@ -392,8 +391,7 @@ main {
   height: auto;
   background: $app-background-color;
 
-  &::after,
-  .project-conversation-view__banner-grid {
+  &::after {
     display: none;
   }
 
