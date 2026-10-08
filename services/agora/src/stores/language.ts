@@ -6,6 +6,7 @@ import type {
   SupportedDisplayLanguageCodes,
   SupportedSpokenLanguageCodes,
 } from "src/shared/languages";
+import { parseSupportedDisplayLanguageOrUndefined } from "src/shared/languages";
 import type { LanguagePreferences } from "src/shared/types/zod";
 import { zodLanguagePreferences } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
@@ -16,7 +17,7 @@ import {
   parseBrowserLanguage,
 } from "src/utils/language";
 import { useNotify } from "src/utils/ui/notify";
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import {
@@ -49,43 +50,66 @@ export const useLanguageStore = defineStore("language", () => {
     languageStoreTranslations
   );
 
-  // Single source of truth: localStorage-backed reactive refs with smart defaults
-  const displayLanguage = useLocalStorage<SupportedDisplayLanguageCodes>(
-    "displayLanguage",
-    getDefaultDisplayLanguage()
+  // Browser detection is a default, not a saved override of future browser preferences.
+  const browserDisplayLanguage = ref(getDefaultDisplayLanguage());
+  const storedDisplayLanguage = useLocalStorage<
+    SupportedDisplayLanguageCodes | undefined
+  >("displayLanguage", undefined, {
+    writeDefaults: false,
+    serializer: {
+      read: parseSupportedDisplayLanguageOrUndefined,
+      write: (languageCode) => languageCode ?? "",
+    },
+  });
+  const displayLanguage = computed(
+    () => storedDisplayLanguage.value ?? browserDisplayLanguage.value
   );
+  // Selecting or clearing a preference can invalidate work even if the language stays the same.
+  let displayLanguageRevision = 0;
 
   const spokenLanguages = useLocalStorage<SupportedSpokenLanguageCodes[]>(
     "spokenLanguages",
     getDefaultSpokenLanguages()
   );
 
-  // Initialize i18n locale to match stored display language
+  // Boot loads messages lazily; only switch directly when this locale is already available.
   if (availableLocales.includes(displayLanguage.value)) {
     locale.value = displayLanguage.value;
   }
 
-  async function updateLocale(
-    localeCode: SupportedDisplayLanguageCodes
-  ): Promise<void> {
-    // Update local state first so settings UI and stale backend loads see the new choice immediately.
-    displayLanguage.value = localeCode;
+  function captureLanguageOperation(): () => boolean {
+    const revision = displayLanguageRevision;
+    const userId = authStore.userId;
+    return () =>
+      displayLanguageRevision === revision && authStore.userId === userId;
+  }
 
-    // Load the locale messages if not already loaded
+  async function applyCurrentLocale(
+    isCurrentOperation: () => boolean
+  ): Promise<boolean> {
+    const localeCode = displayLanguage.value;
     await loadLocaleMessages(localeCode);
+    if (!isCurrentOperation()) {
+      return false;
+    }
 
-    // Set the locale using the boot helper
     setI18nLanguage(localeCode);
+    return true;
   }
 
   async function loadLanguagePreferencesFromBackend(): Promise<LanguagePreferences | null> {
     const requestDisplayLanguage = displayLanguage.value;
-    const requestUserId = authStore.userId;
+    const requestStoredLanguage = storedDisplayLanguage.value;
+    const isCurrentAccountOperation = captureLanguageOperation();
+    const isCurrentOperation = () =>
+      isCurrentAccountOperation() &&
+      displayLanguage.value === requestDisplayLanguage &&
+      storedDisplayLanguage.value === requestStoredLanguage;
     try {
       const response = await getLanguagePreferences({
         currentDisplayLanguage: requestDisplayLanguage,
       });
-      if (authStore.userId !== requestUserId) {
+      if (!isCurrentOperation()) {
         return null;
       }
 
@@ -105,20 +129,14 @@ export const useLanguageStore = defineStore("language", () => {
 
         const validated = validationResult.data;
 
-        if (displayLanguage.value !== requestDisplayLanguage) {
-          return validated;
-        }
-
         await loadLocaleMessages(validated.displayLanguage);
-        if (
-          authStore.userId !== requestUserId ||
-          displayLanguage.value !== requestDisplayLanguage
-        ) {
+        if (!isCurrentOperation()) {
           return null;
         }
 
+        displayLanguageRevision += 1;
         spokenLanguages.value = validated.spokenLanguages;
-        displayLanguage.value = validated.displayLanguage;
+        storedDisplayLanguage.value = validated.displayLanguage;
         setI18nLanguage(validated.displayLanguage);
 
         return validated;
@@ -135,6 +153,9 @@ export const useLanguageStore = defineStore("language", () => {
         return null;
       }
     } catch (err) {
+      if (!isCurrentOperation()) {
+        return null;
+      }
       showNotifyMessage(t("failedToFetchLanguagePreferences"));
       console.error("Error fetching language preferences from backend:", err);
       return null;
@@ -215,45 +236,60 @@ export const useLanguageStore = defineStore("language", () => {
   }: {
     newLanguage: SupportedDisplayLanguageCodes;
   }): Promise<boolean> {
-    const originalLanguage = displayLanguage.value;
+    const previousStoredLanguage = storedDisplayLanguage.value;
+    displayLanguageRevision += 1;
+    const isCurrentOperation = captureLanguageOperation();
+    storedDisplayLanguage.value = newLanguage;
+
     try {
+      if (!(await applyCurrentLocale(isCurrentOperation))) {
+        return false;
+      }
+
       if (authStore.isGuestOrLoggedIn) {
         await saveDisplayLanguageToBackend({
           newDisplayLanguage: newLanguage,
         });
       }
 
-      await updateLocale(newLanguage);
-
-      return true;
+      return isCurrentOperation();
     } catch (err) {
+      if (!isCurrentOperation()) {
+        return false;
+      }
       showNotifyMessage(t("failedToChangeDisplayLanguage"));
       console.error("Error changing display language:", err);
-      // Revert on failure
-      await updateLocale(originalLanguage);
+      storedDisplayLanguage.value = previousStoredLanguage;
+      await applyCurrentLocale(isCurrentOperation);
       return false;
     }
   }
 
   async function clearLanguagePreferences(): Promise<boolean> {
-    // Get browser defaults
     const browserDefaultDisplayLanguage = getDefaultDisplayLanguage();
     const browserDefaultSpokenLanguages = getDefaultSpokenLanguages();
 
-    // Store original values for rollback
-    const originalDisplayLanguage = displayLanguage.value;
-    const originalSpokenLanguages = [...spokenLanguages.value];
+    const previousStoredLanguage = storedDisplayLanguage.value;
+    const previousBrowserLanguage = browserDisplayLanguage.value;
+    displayLanguageRevision += 1;
+    const isCurrentOperation = captureLanguageOperation();
 
     try {
-      // Reset to browser defaults
-      await updateLocale(browserDefaultDisplayLanguage);
+      browserDisplayLanguage.value = browserDefaultDisplayLanguage;
+      storedDisplayLanguage.value = undefined;
+      if (!(await applyCurrentLocale(isCurrentOperation))) {
+        return false;
+      }
       spokenLanguages.value = browserDefaultSpokenLanguages;
 
       return true;
     } catch (err) {
-      // Revert on failure
-      await updateLocale(originalDisplayLanguage);
-      spokenLanguages.value = originalSpokenLanguages;
+      if (!isCurrentOperation()) {
+        return false;
+      }
+      browserDisplayLanguage.value = previousBrowserLanguage;
+      storedDisplayLanguage.value = previousStoredLanguage;
+      await applyCurrentLocale(isCurrentOperation);
 
       showNotifyMessage(t("failedToClearLanguagePreferences"));
       console.error("Error clearing language preferences:", err);
@@ -262,7 +298,7 @@ export const useLanguageStore = defineStore("language", () => {
   }
 
   return {
-    displayLanguage: computed(() => displayLanguage.value),
+    displayLanguage,
     spokenLanguages: computed(() => spokenLanguages.value),
     availableLocales,
     loadLanguagePreferencesFromBackend,

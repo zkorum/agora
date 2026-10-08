@@ -156,7 +156,7 @@ export function getI18nInstance(): I18n<
 }
 
 export default defineBoot(async ({ app }) => {
-  // Stored app preference wins; otherwise prefer the system locale before browser preferences.
+  // Stored app preference wins; otherwise follow the browser's website-language preferences.
   const storedLocale = localStorage.getItem("displayLanguage");
   const defaultLocale = detectInitialDisplayLanguage({
     storedLanguage: storedLocale,
