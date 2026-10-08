@@ -144,14 +144,12 @@ export function parseBrowserLanguage({
 
 export function resolveInitialDisplayLanguage({
   storedLanguage,
-  deviceLanguage,
   browserLanguages,
 }: {
   storedLanguage: string | null | undefined;
-  deviceLanguage: string | undefined;
   browserLanguages: readonly string[];
 }): SupportedDisplayLanguageCodes {
-  const candidates = [storedLanguage, deviceLanguage, ...browserLanguages];
+  const candidates = [storedLanguage, ...browserLanguages];
   for (const candidate of candidates) {
     if (candidate === null || candidate === undefined) {
       continue;
@@ -171,19 +169,11 @@ export function detectInitialDisplayLanguage({
 }: {
   storedLanguage: string | null | undefined;
 }): SupportedDisplayLanguageCodes {
-  let deviceLanguage: string | undefined;
-  try {
-    deviceLanguage = new Intl.DateTimeFormat().resolvedOptions().locale;
-  } catch {
-    deviceLanguage = undefined;
-  }
-
   const browserLanguages =
     navigator.languages.length > 0 ? navigator.languages : [navigator.language];
 
   return resolveInitialDisplayLanguage({
     storedLanguage,
-    deviceLanguage,
     browserLanguages,
   });
 }
