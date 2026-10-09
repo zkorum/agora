@@ -1,6 +1,18 @@
 export interface FaqItem {
   question: string;
   answer: string;
+  comparison?: FaqComparison;
+}
+
+export interface FaqComparison {
+  firstColumnLabel: string;
+  columns: [string, string];
+  rows: FaqComparisonRow[];
+}
+
+export interface FaqComparisonRow {
+  feature: string;
+  values: [string, string];
 }
 
 export interface FaqGroup {
@@ -52,9 +64,9 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
               "Use Conversation Mode when the question is still open and you want to gather perspectives, map disagreement, and find common ground. Use Prioritization Mode when you already have proposals and need a ranked list of what matters most. [Read the Facilitation Guide](/resources/facilitation-guide).",
           },
           {
-            question: "Can I use both modes together?",
+            question: "We've reached consensus. What happens next?",
             answer:
-              "Yes. A common process is to start with Conversation Mode, identify strong or bridging proposals, then use Prioritization Mode to turn them into an actionable ranking.",
+              "Consensus shows what the group can support, but not what to do first. Move the strongest consensus and bridging proposals into Prioritization Mode, which uses [Solidago](https://solidago.tournesol.app/) for ranked voting. Participants rank the options, and Agora produces a shared priority list that can guide a roadmap, budget, action plan, or final decision. [See how a 30-person team used this process to co-write its AI charter](/resources/ai-charter-workshop).",
           },
         ],
       },
@@ -75,6 +87,68 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
             question: "What are opinion groups and bridging statements?",
             answer:
               "Opinion groups are clusters of participants who vote in similar ways. They are inferred from voting behavior, not from demographics or AI labels. Bridging statements are statements that different groups support, even when those same groups disagree on many other things. This is the Pol.is-inspired part of the algorithm that makes hidden common ground visible.",
+          },
+          {
+            question: "How is Agora different from Pol.is?",
+            answer:
+              "Agora builds on the same opinion-mapping approach as Pol.is, but goes further. Pol.is stops at consensus building. Agora also takes a group to decision making: once people agree on what matters, they rank proposals in Prioritization Mode to produce an actionable list of priorities. See the comparison below for Agora's other features.",
+            comparison: {
+              firstColumnLabel: "Feature",
+              columns: ["Agora", "Pol.is"],
+              rows: [
+                {
+                  feature: "Open source",
+                  values: ["✓ AGPL-3.0", "✓ AGPL-3.0"],
+                },
+                {
+                  feature: "Opinion mapping and consensus building",
+                  values: ["✓", "✓"],
+                },
+                {
+                  feature: "LLM labeling of opinion groups",
+                  values: ["✓", "–"],
+                },
+                {
+                  feature: "One-statement-at-a-time (wiki-survey) view",
+                  values: ["✓", "✓"],
+                },
+                {
+                  feature: "List view, forum-style",
+                  values: ["✓", "–"],
+                },
+                {
+                  feature: "Prioritization: rank proposals after consensus",
+                  values: ["✓", "–"],
+                },
+                {
+                  feature: "Facilitator chooses the number of opinion clusters",
+                  values: ["✓", "–"],
+                },
+                {
+                  feature: "Opinion clusters tracked over time",
+                  values: ["✓", "–"],
+                },
+                {
+                  feature: "Participant login",
+                  values: [
+                    "✓ Anonymous and/or verified (email, phone or zero-knowledge proof)",
+                    "Anonymous by default",
+                  ],
+                },
+                {
+                  feature: "Branded project page",
+                  values: ["✓", "–"],
+                },
+                {
+                  feature: "Multilingual translation",
+                  values: ["✓ Built in, in the page", "Via Google Translate"],
+                },
+                {
+                  feature: "Community network",
+                  values: ["✓", "–"],
+                },
+              ],
+            },
           },
           {
             question: "Is AI deciding the results?",
@@ -120,7 +194,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "Is Agora open source?",
             answer:
-              "Yes. Agora's code is available on [GitHub](https://github.com/zkorum/agora) under open-source licenses. We encourage auditing, feedback, and contributions from the community. We uphold the vision that democracy needs digital infrastructure that anyone can use, modify, and improve.",
+              "Yes. Agora's code is available on [GitHub](https://github.com/zkorum/agora) under open-source licenses. We encourage auditing, feedback, and contributions from the community. We uphold the vision that democracy needs digital infrastructure that anyone can use, modify, and improve. Our product roadmap is open too. [Help shape what we build next](https://www.agoracitizen.app/conversation/nRAynpw).",
           },
           {
             question: "Can Agora work with other tools?",
@@ -218,7 +292,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "Agora est-il open source ?",
             answer:
-              "Oui. Le code d'Agora est disponible sur [GitHub](https://github.com/zkorum/agora) sous licences open source. Nous encourageons les audits, les retours et les contributions de la communaute. Nous defendons l'idee que la democratie a besoin d'une infrastructure numerique que chacun peut utiliser, modifier et ameliorer.",
+              "Oui. Le code d'Agora est disponible sur [GitHub](https://github.com/zkorum/agora) sous licences open source. Nous encourageons les audits, les retours et les contributions de la communaute. Nous defendons l'idee que la democratie a besoin d'une infrastructure numerique que chacun peut utiliser, modifier et ameliorer. Notre feuille de route produit est également ouverte. [Contribuez à définir nos prochaines évolutions](https://www.agoracitizen.app/conversation/nRAynpw).",
           },
           {
             question: "Agora peut-il fonctionner avec d'autres outils ?",
@@ -316,7 +390,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "Agora es open source?",
             answer:
-              "Si. El codigo de Agora esta disponible en [GitHub](https://github.com/zkorum/agora) bajo licencias open source. Animamos a la comunidad a auditar, enviar comentarios y contribuir. Defendemos la vision de que la democracia necesita infraestructura digital que cualquiera pueda usar, modificar y mejorar.",
+              "Si. El codigo de Agora esta disponible en [GitHub](https://github.com/zkorum/agora) bajo licencias open source. Animamos a la comunidad a auditar, enviar comentarios y contribuir. Defendemos la vision de que la democracia necesita infraestructura digital que cualquiera pueda usar, modificar y mejorar. Nuestra hoja de ruta de producto también es abierta. [Ayuda a dar forma a lo que construiremos después](https://www.agoracitizen.app/conversation/nRAynpw).",
           },
           {
             question: "Agora puede funcionar con otras herramientas?",
@@ -412,7 +486,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "هل Agora مفتوحة المصدر؟",
             answer:
-              "نعم. كود Agora متاح على [GitHub](https://github.com/zkorum/agora) بموجب تراخيص مفتوحة المصدر. نشجع المجتمع على التدقيق وإرسال الملاحظات والمساهمة. نتمسك برؤية أن الديمقراطية تحتاج إلى بنية تحتية رقمية يستطيع أي شخص استخدامها وتعديلها وتحسينها.",
+              "نعم. كود Agora متاح على [GitHub](https://github.com/zkorum/agora) بموجب تراخيص مفتوحة المصدر. نشجع المجتمع على التدقيق وإرسال الملاحظات والمساهمة. نتمسك برؤية أن الديمقراطية تحتاج إلى بنية تحتية رقمية يستطيع أي شخص استخدامها وتعديلها وتحسينها. خارطة طريق منتجنا مفتوحة أيضًا. [ساهم في تشكيل ما نبنيه لاحقًا](https://www.agoracitizen.app/conversation/nRAynpw).",
           },
           {
             question: "هل يمكن أن تعمل Agora مع أدوات أخرى؟",
@@ -508,7 +582,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "آیا Agora متن‌باز است؟",
             answer:
-              "بله. کد Agora در [GitHub](https://github.com/zkorum/agora) تحت مجوزهای متن‌باز در دسترس است. ما از ممیزی، بازخورد و مشارکت جامعه استقبال می‌کنیم. ما از این دیدگاه پشتیبانی می‌کنیم که دموکراسی به زیرساخت دیجیتالی نیاز دارد که هر کسی بتواند از آن استفاده کند، تغییرش دهد و بهترش کند.",
+              "بله. کد Agora در [GitHub](https://github.com/zkorum/agora) تحت مجوزهای متن‌باز در دسترس است. ما از ممیزی، بازخورد و مشارکت جامعه استقبال می‌کنیم. ما از این دیدگاه پشتیبانی می‌کنیم که دموکراسی به زیرساخت دیجیتالی نیاز دارد که هر کسی بتواند از آن استفاده کند، تغییرش دهد و بهترش کند. نقشه راه محصول ما نیز باز است. [در شکل‌دادن به آنچه در آینده می‌سازیم نقش داشته باشید](https://www.agoracitizen.app/conversation/nRAynpw).",
           },
           {
             question: "آیا Agora با ابزارهای دیگر کار می‌کند؟",
@@ -603,7 +677,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "האם Agora היא קוד פתוח?",
             answer:
-              "כן. הקוד של Agora זמין ב-[GitHub](https://github.com/zkorum/agora) תחת רישיונות קוד פתוח. אנו מעודדים ביקורת, משוב ותרומות מהקהילה. אנו מחזיקים בחזון שלפיו דמוקרטיה צריכה תשתית דיגיטלית שכל אחד יכול להשתמש בה, לשנות ולשפר.",
+              "כן. הקוד של Agora זמין ב-[GitHub](https://github.com/zkorum/agora) תחת רישיונות קוד פתוח. אנו מעודדים ביקורת, משוב ותרומות מהקהילה. אנו מחזיקים בחזון שלפיו דמוקרטיה צריכה תשתית דיגיטלית שכל אחד יכול להשתמש בה, לשנות ולשפר. גם מפת הדרכים של המוצר שלנו פתוחה. [עזרו לעצב את מה שנבנה בהמשך](https://www.agoracitizen.app/conversation/nRAynpw).",
           },
           {
             question: "האם Agora יכולה לעבוד עם כלים אחרים?",
@@ -700,7 +774,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "Agoraはオープンソースですか？",
             answer:
-              "はい。Agoraのコードはオープンソースライセンスのもとで[GitHub](https://github.com/zkorum/agora)に公開されています。私たちはコミュニティからの監査、フィードバック、貢献を歓迎しています。民主主義には、誰もが使い、変更し、改善できるデジタルインフラが必要だというビジョンを大切にしています。",
+              "はい。Agoraのコードはオープンソースライセンスのもとで[GitHub](https://github.com/zkorum/agora)に公開されています。私たちはコミュニティからの監査、フィードバック、貢献を歓迎しています。民主主義には、誰もが使い、変更し、改善できるデジタルインフラが必要だというビジョンを大切にしています。 製品ロードマップも公開されています。[次に何をつくるか、一緒に考えましょう](https://www.agoracitizen.app/conversation/nRAynpw)。",
           },
           {
             question: "Agoraは他のツールと連携できますか？",
@@ -795,7 +869,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "Agora 是开源的吗？",
             answer:
-              "是的。Agora 的代码以开源许可证发布在 [GitHub](https://github.com/zkorum/agora) 上。我们鼓励社区进行审计、反馈和贡献。我们坚持这样的愿景：民主需要任何人都能使用、修改和改进的数字基础设施。",
+              "是的。Agora 的代码以开源许可证发布在 [GitHub](https://github.com/zkorum/agora) 上。我们鼓励社区进行审计、反馈和贡献。我们坚持这样的愿景：民主需要任何人都能使用、修改和改进的数字基础设施。 我们的产品路线图同样是开放的。[参与塑造 Agora 的下一步发展](https://www.agoracitizen.app/conversation/nRAynpw)。",
           },
           {
             question: "Agora 能与其他工具配合使用吗？",
@@ -890,7 +964,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "Agora 是開源的嗎？",
             answer:
-              "是的。Agora 的程式碼以開源授權發布在 [GitHub](https://github.com/zkorum/agora) 上。我們鼓勵社群進行審計、回饋和貢獻。我們堅持這樣的願景：民主需要任何人都能使用、修改和改進的數位基礎設施。",
+              "是的。Agora 的程式碼以開源授權發布在 [GitHub](https://github.com/zkorum/agora) 上。我們鼓勵社群進行審計、回饋和貢獻。我們堅持這樣的願景：民主需要任何人都能使用、修改和改進的數位基礎設施。 我們的產品路線圖同樣是開放的。[參與塑造 Agora 的下一步發展](https://www.agoracitizen.app/conversation/nRAynpw)。",
           },
           {
             question: "Agora 能與其他工具配合使用嗎？",
@@ -987,7 +1061,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "Agora ачык булактуубу?",
             answer:
-              "Ооба. Agoraнын коду [GitHub](https://github.com/zkorum/agora) сайтында ачык булак лицензиялары менен жеткиликтүү. Биз коомчулуктан аудитти, пикирди жана салымдарды кубаттайбыз. Демократияга ар ким колдонуп, өзгөртүп жана жакшырта ала турган санариптик инфраструктура керек деген көз карашты колдойбуз.",
+              "Ооба. Agoraнын коду [GitHub](https://github.com/zkorum/agora) сайтында ачык булак лицензиялары менен жеткиликтүү. Биз коомчулуктан аудитти, пикирди жана салымдарды кубаттайбыз. Демократияга ар ким колдонуп, өзгөртүп жана жакшырта ала турган санариптик инфраструктура керек деген көз карашты колдойбуз. Биздин өнүмдүн жол картасы да ачык. [Кийинки кадамдарыбызды аныктоого салым кошуңуз](https://www.agoracitizen.app/conversation/nRAynpw).",
           },
           {
             question: "Agora башка куралдар менен иштей алабы?",
@@ -1084,7 +1158,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "Agora имеет открытый исходный код?",
             answer:
-              "Да. Код Agora доступен на [GitHub](https://github.com/zkorum/agora) под лицензиями открытого исходного кода. Мы поощряем аудит, обратную связь и вклад сообщества. Мы придерживаемся идеи, что демократии нужна цифровая инфраструктура, которую любой может использовать, изменять и улучшать.",
+              "Да. Код Agora доступен на [GitHub](https://github.com/zkorum/agora) под лицензиями открытого исходного кода. Мы поощряем аудит, обратную связь и вклад сообщества. Мы придерживаемся идеи, что демократии нужна цифровая инфраструктура, которую любой может использовать, изменять и улучшать. Наша дорожная карта продукта тоже открыта. [Помогите определить, что мы создадим дальше](https://www.agoracitizen.app/conversation/nRAynpw).",
           },
           {
             question: "Может ли Agora работать с другими инструментами?",

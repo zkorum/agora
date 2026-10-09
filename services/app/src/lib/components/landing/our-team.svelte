@@ -3,7 +3,6 @@
   import photoNicolas from "$lib/assets/team/nicolas.png?enhanced";
   import photoYuting from "$lib/assets/team/yuting.png?enhanced";
   import * as m from "$lib/paraglide/messages.js";
-  import GradientArrow from "$ui/shared/gradient-arrow.svelte";
   import GradientLink from "$ui/shared/gradient-link.svelte";
   import GradientText from "$ui/shared/gradient-text.svelte";
   import Text from "$ui/shared/text.svelte";
@@ -45,7 +44,7 @@
         md:flex-row md:items-start
       "
     >
-      {#each members as member, index (member.id)}
+      {#each members as member (member.id)}
         <div class="flex w-[320px] flex-col">
           <div class="relative">
             <enhanced:img
@@ -71,16 +70,6 @@
               {member.role()}
             </Text>
           </div>
-          {#if index === 0}
-            <div
-              class="
-                mt-16 hidden justify-center
-                md:flex
-              "
-            >
-              <GradientArrow />
-            </div>
-          {/if}
         </div>
       {/each}
     </div>
