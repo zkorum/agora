@@ -8,7 +8,6 @@
   import { localizeHref } from "$lib/paraglide/runtime";
   import Chip from "$ui/shared/chip.svelte";
   import GradientButton from "$ui/shared/gradient-button.svelte";
-  import GradientLink from "$ui/shared/gradient-link.svelte";
   import GradientText from "$ui/shared/gradient-text.svelte";
   import Text from "$ui/shared/text.svelte";
 
@@ -18,40 +17,30 @@
       img: screenshotPolis,
       chip: () => m.facilitators_chip_polis(),
       text: () => m.facilitators_feature_polis(),
-      source: () => m.facilitators_feature_polis_source(),
-      sourceUrl: "https://pol.is/",
     },
     {
       id: "sensemaker",
       img: screenshotSensemaker,
       chip: () => m.facilitators_chip_sensemaker(),
       text: () => m.facilitators_feature_sensemaker(),
-      source: () => m.facilitators_feature_sensemaker_source(),
-      sourceUrl: "https://jigsaw-code.github.io/sensemaking-tools/",
     },
     {
       id: "plural-voting",
       img: screenshotPluralVoting,
       chip: () => m.facilitators_chip_plural_voting(),
       text: () => m.facilitators_feature_plural_voting(),
-      source: () => m.facilitators_feature_plural_voting_source(),
-      sourceUrl: "https://solidago.tournesol.app/",
     },
     {
       id: "auth",
       img: screenshotAuth,
       chip: () => m.facilitators_chip_auth(),
       text: () => m.facilitators_feature_auth(),
-      source: null,
-      sourceUrl: null,
     },
     {
       id: "demographics",
       img: screenshotDemographics,
       chip: () => m.facilitators_chip_demographics(),
       text: () => m.facilitators_feature_demographics(),
-      source: null,
-      sourceUrl: null,
     },
   ];
 
@@ -197,11 +186,7 @@
           </div>
           <Chip>{feature.chip()}</Chip>
           <Text size="base" class="pl-2 text-secondary-foreground">
-            {feature.text()}{#if feature.source}{#if feature.sourceUrl}<GradientLink
-                  href={feature.sourceUrl}>{feature.source()}</GradientLink
-                >{:else}<GradientText angle={81}
-                  >{feature.source()}</GradientText
-                >{/if}{/if}
+            {feature.text()}
           </Text>
         </div>
       {/each}

@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 
+import { locales } from "$lib/paraglide/runtime";
 import { SITE_ORIGIN } from "$lib/seo";
 
-import { renderResourceMarkdown } from "./resources";
+import { getResourcePost, renderResourceMarkdown } from "./resources";
 
 describe("renderResourceMarkdown", () => {
   it("keeps English resource links on the unprefixed base locale", async () => {
@@ -44,4 +45,20 @@ describe("renderResourceMarkdown", () => {
     expect(html).toContain('href="mailto:hello@zkorum.com"');
     expect(html).toContain('href="/about"');
   });
+});
+
+describe("AI charter translations", () => {
+  it.each(locales)(
+    "renders all bold passages correctly in %s",
+    async (locale) => {
+      const post = await getResourcePost({
+        slug: "ai-charter-workshop",
+        locale,
+      });
+
+      expect(post).not.toBeNull();
+      expect(post?.content.includes("**")).toBe(false);
+      expect(post?.content.match(/<strong>/g)).toHaveLength(17);
+    },
+  );
 });

@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc" lang="ar" xml:lang="ar">
+  <title id="title">من مساهمات الفريق إلى ميثاق متجدد للذكاء الاصطناعي</title>
+  <desc id="desc">أربع خطوات: استبيان مسبق، ووضع المحادثة، ووضع تحديد الأولويات، وميثاق متجدد.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f8f6ff"/>
+      <stop offset="0.55" stop-color="#eef5ff"/>
+      <stop offset="1" stop-color="#e9fbff"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8f6cff"/>
+      <stop offset="1" stop-color="#4d9cff"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#2d226c" flood-opacity="0.12"/>
+    </filter>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#8478bd"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="675" rx="40" fill="url(#background)"/>
+  <circle cx="1080" cy="80" r="180" fill="#a391ff" opacity="0.09"/>
+  <circle cx="95" cy="620" r="190" fill="#74c8ff" opacity="0.1"/>
+  <g font-family="Arial, sans-serif" direction="rtl" unicode-bidi="plaintext">
+    <text x="600" y="105" text-anchor="middle" fill="#2d226c" font-size="36.00" font-weight="700">ميثاق للذكاء الاصطناعي يكتبه الفريق في يوم واحد</text>
+    <text x="600" y="150" text-anchor="middle" fill="#5f5a78" font-size="22.00" font-weight="400">من التجربة الفعلية إلى التوافق والأولويات وقواعد قابلة للتطوير</text>
+    <g filter="url(#shadow)">
+  <g data-step="1">
+    <rect x="900" y="245" width="230" height="210" rx="22" fill="#fff" stroke="#d8d2ec" stroke-width="2"/>
+    <text x="1015" y="290" text-anchor="middle" fill="#756f8e" font-size="16.00" font-weight="600">قبل الورشة</text>
+    <text x="1015" y="335" text-anchor="middle" fill="#2d226c" font-size="24.00" font-weight="700">استبيان الفريق</text>
+    <text x="1015" y="375" text-anchor="middle" fill="#55506d" font-size="18.00" font-weight="400">3 أسئلة عن الاستخدام</text>
+    <text x="1015" y="403" text-anchor="middle" fill="#55506d" font-size="15.48" font-weight="400">الفعلي للذكاء الاصطناعي</text>
+    <text x="1015" y="431" text-anchor="middle" fill="#55506d" font-size="18.00" font-weight="400">تصبح 6 عبارات أولية</text>
+  </g>
+  <g data-step="2">
+    <rect x="625" y="245" width="230" height="210" rx="22" fill="#fff" stroke="#d8d2ec" stroke-width="2"/>
+    <text x="740" y="290" text-anchor="middle" fill="#756f8e" font-size="16.00" font-weight="600">طوال اليوم</text>
+    <text x="740" y="335" text-anchor="middle" fill="#2d226c" font-size="24.00" font-weight="700">المحادثة</text>
+    <text x="740" y="375" text-anchor="middle" fill="#55506d" font-size="18.00" font-weight="400">25 مشاركًا</text>
+    <text x="740" y="403" text-anchor="middle" fill="#55506d" font-size="18.00" font-weight="400">730 صوتًا</text>
+    <text x="740" y="431" text-anchor="middle" fill="#55506d" font-size="18.00" font-weight="400">10 عبارات مشتركة</text>
+  </g>
+  <g data-step="3">
+    <rect x="350" y="245" width="230" height="210" rx="22" fill="#fff" stroke="url(#accent)" stroke-width="4"/>
+    <text x="465" y="290" text-anchor="middle" fill="#756f8e" font-size="16.00" font-weight="600">في نهاية اليوم</text>
+    <text x="465" y="335" text-anchor="middle" fill="#2d226c" font-size="23.49" font-weight="700">تحديد الأولويات</text>
+    <text x="465" y="375" text-anchor="middle" fill="#55506d" font-size="18.00" font-weight="400">تُرتَّب العبارات</text>
+    <text x="465" y="403" text-anchor="middle" fill="#55506d" font-size="17.93" font-weight="400">المتوافق عليها لتصبح</text>
+    <text x="465" y="431" text-anchor="middle" fill="#55506d" font-size="17.03" font-weight="400">أولويات مشتركة للفريق</text>
+  </g>
+  <g data-step="4">
+    <rect x="75" y="245" width="230" height="210" rx="22" fill="url(#accent)"/>
+    <text x="190" y="290" text-anchor="middle" fill="#fff" font-size="16.00" font-weight="600">كل 3 أشهر</text>
+    <text x="190" y="335" text-anchor="middle" fill="#fff" font-size="24.00" font-weight="700">ميثاق متجدد</text>
+    <text x="190" y="375" text-anchor="middle" fill="#fff" font-size="18.00" font-weight="400">لجنة تُختار بالقرعة</text>
+    <text x="190" y="403" text-anchor="middle" fill="#fff" font-size="18.00" font-weight="400">تراجع القواعد</text>
+    <text x="190" y="431" text-anchor="middle" fill="#fff" font-size="18.00" font-weight="400">وتحدّثها</text>
+  </g>
+    </g>
+    <text x="600" y="565" text-anchor="middle" fill="#2d226c" font-size="27.00" font-weight="700">المحادثة تكشف الأرضية المشتركة. وتحديد الأولويات يقرر ما يأتي أولًا.</text>
+    <text x="600" y="610" text-anchor="middle" fill="#5f5a78" font-size="20.00" font-weight="400">باستخدام أغورا وبتيسير من Lyfe Catalyst</text>
+  </g>
+  <g fill="none" stroke="#8478bd" stroke-width="3" marker-end="url(#arrow)">
+    <path d="M338 350 H320"/>
+    <path d="M613 350 H595"/>
+    <path d="M888 350 H870"/>
+  </g>
+</svg>
