@@ -1,5 +1,5 @@
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
-import { and, desc, eq, isNotNull, isNull } from "drizzle-orm";
+import { and, desc, eq, isNotNull, isNull, or } from "drizzle-orm";
 import { httpErrors } from "@fastify/sensible";
 import {
     conversationExportRequestTable,
@@ -29,105 +29,95 @@ export async function getExportReadinessForConversation({
     userId,
     cooldownSeconds = 300,
 }: GetExportReadinessForConversationParams): Promise<GetExportReadinessResponse> {
-    // Find conversation ID from slug
-    const conversation = await db
-        .select({
-            id: conversationTable.id,
-            conversationType: conversationTable.conversationType,
-        })
-        .from(conversationTable)
-        .where(
-            and(
-                eq(conversationTable.slugId, conversationSlugId),
-                eq(conversationTable.isImporting, false),
-                isNotNull(conversationTable.currentContentId),
-            ),
-        )
-        .limit(1);
-
-    if (conversation.length === 0) {
-        throw httpErrors.notFound("Conversation not found");
-    }
-
-    const conversationRecord = conversation[0];
-    if (conversationRecord.conversationType === "ranking") {
-        throw httpErrors.badRequest(
-            "Conversation export is not supported for prioritization conversations",
-        );
-    }
-
-    const conversationId = conversationRecord.id;
-
-    // Step 1: Check for active (processing) export for this user+conversation
-    const activeExportList = await db
-        .select({
-            exportSlugId: conversationExportRequestTable.slugId,
-            createdAt: conversationExportRequestTable.createdAt,
-        })
-        .from(conversationExportRequestTable)
-        .where(
-            and(
-                eq(
-                    conversationExportRequestTable.conversationId,
-                    conversationId,
+    // Readiness is a separate request: resolve conversation and export state
+    // together in a fresh writer-side transaction rather than a replica snapshot.
+    return await db.transaction(async (tx) => {
+        const conversation = await tx
+            .select({
+                id: conversationTable.id,
+                conversationType: conversationTable.conversationType,
+            })
+            .from(conversationTable)
+            .where(
+                and(
+                    eq(conversationTable.slugId, conversationSlugId),
+                    eq(conversationTable.isImporting, false),
+                    isNotNull(conversationTable.currentContentId),
                 ),
-                eq(conversationExportRequestTable.userId, userId),
-                eq(conversationExportRequestTable.status, "processing"),
-                isNull(conversationExportRequestTable.deletedAt),
-            ),
-        )
-        .orderBy(desc(conversationExportRequestTable.createdAt))
-        .limit(1);
+            )
+            .limit(1);
 
-    if (activeExportList.length > 0) {
-        return {
-            status: "active",
-            exportSlugId: activeExportList[0].exportSlugId,
-            createdAt: activeExportList[0].createdAt,
-        };
-    }
+        if (conversation.length === 0) {
+            throw httpErrors.notFound("Conversation not found");
+        }
 
-    // Step 2: Check for this user's recent completed exports (cooldown check)
-    const now = new Date();
-    const cooldownTime = new Date(now.getTime() - cooldownSeconds * 1000);
+        const conversationRecord = conversation[0];
+        if (conversationRecord.conversationType === "ranking") {
+            throw httpErrors.badRequest(
+                "Conversation export is not supported for prioritization conversations",
+            );
+        }
 
-    const recentExportList = await db
-        .select({
-            exportSlugId: conversationExportRequestTable.slugId,
-            createdAt: conversationExportRequestTable.createdAt,
-        })
-        .from(conversationExportRequestTable)
-        .where(
-            and(
-                eq(
-                    conversationExportRequestTable.conversationId,
-                    conversationId,
+        const conversationId = conversationRecord.id;
+
+        // Resolve active and completed requests in one read so a completion
+        // between two queries cannot produce contradictory readiness state.
+        const recentExports = await tx
+            .select({
+                exportSlugId: conversationExportRequestTable.slugId,
+                createdAt: conversationExportRequestTable.createdAt,
+                status: conversationExportRequestTable.status,
+            })
+            .from(conversationExportRequestTable)
+            .where(
+                and(
+                    eq(
+                        conversationExportRequestTable.conversationId,
+                        conversationId,
+                    ),
+                    eq(conversationExportRequestTable.userId, userId),
+                    or(
+                        eq(conversationExportRequestTable.status, "processing"),
+                        eq(conversationExportRequestTable.status, "completed"),
+                    ),
+                    isNull(conversationExportRequestTable.deletedAt),
                 ),
-                eq(conversationExportRequestTable.userId, userId),
-                eq(conversationExportRequestTable.status, "completed"),
-                isNull(conversationExportRequestTable.deletedAt),
-            ),
-        )
-        .orderBy(desc(conversationExportRequestTable.createdAt))
-        .limit(1);
+            )
+            .orderBy(
+                desc(eq(conversationExportRequestTable.status, "processing")),
+                desc(conversationExportRequestTable.createdAt),
+            )
+            .limit(1);
+        const latestExport = recentExports.at(0);
 
-    if (
-        recentExportList.length > 0 &&
-        recentExportList[0].createdAt > cooldownTime
-    ) {
-        const cooldownEndsAt = new Date(
-            recentExportList[0].createdAt.getTime() + cooldownSeconds * 1000,
-        );
+        if (latestExport?.status === "processing") {
+            return {
+                status: "active",
+                exportSlugId: latestExport.exportSlugId,
+                createdAt: latestExport.createdAt,
+            };
+        }
+
+        const now = new Date();
+        const cooldownTime = new Date(now.getTime() - cooldownSeconds * 1000);
+        if (
+            cooldownSeconds > 0 &&
+            latestExport?.status === "completed" &&
+            latestExport.createdAt > cooldownTime
+        ) {
+            const cooldownEndsAt = new Date(
+                latestExport.createdAt.getTime() + cooldownSeconds * 1000,
+            );
+
+            return {
+                status: "cooldown",
+                cooldownEndsAt,
+                lastExportSlugId: latestExport.exportSlugId,
+            };
+        }
 
         return {
-            status: "cooldown",
-            cooldownEndsAt,
-            lastExportSlugId: recentExportList[0].exportSlugId,
+            status: "ready",
         };
-    }
-
-    // Step 3: No active export, no cooldown - ready to export
-    return {
-        status: "ready",
-    };
+    });
 }

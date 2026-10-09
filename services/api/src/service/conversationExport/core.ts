@@ -26,7 +26,12 @@ import {
     opinionModerationTable,
     opinionTable,
 } from "@/shared-backend/schema.js";
-import { deleteFromS3, generatePresignedUrl, uploadToS3 } from "../s3.js";
+import {
+    deleteFromS3,
+    downloadFromS3,
+    generatePresignedUrl,
+    uploadToS3,
+} from "../s3.js";
 import type {
     GetConversationExportHistoryResponse,
     GetConversationExportStatusResponse,
@@ -67,8 +72,6 @@ const EXPORT_WORKER_MAX_ATTEMPTS = 3;
 
 type ExportRequestStatus =
     (typeof conversationExportRequestTable.$inferSelect)["status"];
-type ExportGenerationStatus =
-    (typeof conversationExportGenerationTable.$inferSelect)["status"];
 type ExportArtifactStatus =
     (typeof conversationExportArtifactTable.$inferSelect)["status"];
 type ExportCancellationReason = NonNullable<
@@ -97,44 +100,33 @@ interface ArtifactRecord {
     s3Key: string | null;
 }
 
-interface GenerationRecord {
-    id: number;
-    slugId: string;
-    conversationId: number;
-    conversationSlugId: string;
-    status: ExportGenerationStatus;
-    attempts: number;
-    createdAt: Date;
-}
-
-interface ExportFileRecord {
-    fileType: ExportFileInfo["fileType"];
-    fileName: string;
+interface CompletedArtifactRecord extends ArtifactRecord {
+    status: "completed";
     fileSize: number;
     recordCount: number;
     s3Key: string;
 }
 
-export function getVisibleExportFiles({
-    fileRecords,
-    exportAccessLevel,
-}: {
-    fileRecords: ExportFileRecord[];
-    exportAccessLevel: ExportAccessLevel;
-}): ExportFileRecord[] {
-    return fileRecords.filter((file) => {
-        const audience = getExportFileAudience({ fileType: file.fileType });
-        if (audience === undefined) {
-            return false;
-        }
+interface CsvFile {
+    fileName: string;
+    csvBuffer: Buffer;
+}
 
-        return canAccessArtifactAudience({
-            audience,
-            subjectUserId: null,
-            userId: "",
-            exportAccessLevel,
-        });
-    });
+type CsvArtifactRecord = ArtifactRecord & {
+    fileType: Exclude<ExportFileType, "bundle">;
+};
+type BundleArtifactRecord = ArtifactRecord & { fileType: "bundle" };
+
+function isCsvArtifact(
+    artifact: ArtifactRecord,
+): artifact is CsvArtifactRecord {
+    return artifact.fileType !== "bundle";
+}
+
+function isBundleArtifact(
+    artifact: ArtifactRecord,
+): artifact is BundleArtifactRecord {
+    return artifact.fileType === "bundle";
 }
 
 function getBundleAudience({
@@ -240,25 +232,6 @@ async function findConversationRecord({
         .limit(1);
 
     return conversations[0];
-}
-
-async function getConversationRecord({
-    db,
-    conversationSlugId,
-}: {
-    db: PostgresDatabase;
-    conversationSlugId: string;
-}): Promise<ConversationExportConversationRecord> {
-    const conversation = await findConversationRecord({
-        db,
-        conversationSlugId,
-    });
-
-    if (conversation === undefined) {
-        throw httpErrors.notFound("Conversation not found");
-    }
-
-    return conversation;
 }
 
 function isConversationExportSupported({
@@ -902,7 +875,11 @@ export async function requestConversationExport({
         notification: {
             type: "export_started",
             conversationTitle: conversation.title,
-            routeTarget: { type: "export", conversationSlugId: conversation.slugId, exportSlugId: creationResult.exportSlugId },
+            routeTarget: {
+                type: "export",
+                conversationSlugId: conversation.slugId,
+                exportSlugId: creationResult.exportSlugId,
+            },
         },
         realtimeSSEManager,
     });
@@ -1011,11 +988,9 @@ async function getRequestArtifacts({
         .orderBy(asc(conversationExportRequestFileTable.id));
 }
 
-function assertCompletedArtifactMetadata({
-    artifact,
-}: {
-    artifact: ArtifactRecord;
-}): { fileSize: number; recordCount: number; s3Key: string } {
+function parseCompletedArtifact(
+    artifact: ArtifactRecord,
+): CompletedArtifactRecord {
     if (
         artifact.status !== "completed" ||
         artifact.fileSize === null ||
@@ -1028,6 +1003,8 @@ function assertCompletedArtifactMetadata({
     }
 
     return {
+        ...artifact,
+        status: "completed",
         fileSize: artifact.fileSize,
         recordCount: artifact.recordCount,
         s3Key: artifact.s3Key,
@@ -1038,12 +1015,11 @@ async function buildFileInfo({
     artifact,
     bucketName,
 }: {
-    artifact: ArtifactRecord;
+    artifact: CompletedArtifactRecord;
     bucketName: string;
 }): Promise<ExportFileInfo> {
-    const metadata = assertCompletedArtifactMetadata({ artifact });
     const { url, expiresAt } = await generatePresignedUrl({
-        s3Key: metadata.s3Key,
+        s3Key: artifact.s3Key,
         bucketName,
         expiresIn: config.EXPORT_CONVOS_S3_PRESIGNED_URL_EXPIRY_SECONDS,
     });
@@ -1051,8 +1027,8 @@ async function buildFileInfo({
     return {
         fileType: artifact.fileType,
         fileName: artifact.fileName,
-        fileSize: metadata.fileSize,
-        recordCount: metadata.recordCount,
+        fileSize: artifact.fileSize,
+        recordCount: artifact.recordCount,
         downloadUrl: url,
         urlExpiresAt: expiresAt,
     };
@@ -1062,103 +1038,128 @@ async function buildBundleInfo({
     artifact,
     bucketName,
 }: {
-    artifact: ArtifactRecord;
+    artifact: CompletedArtifactRecord;
     bucketName: string;
 }): Promise<ExportBundleInfo> {
-    const metadata = assertCompletedArtifactMetadata({ artifact });
     const { url, expiresAt } = await generatePresignedUrl({
-        s3Key: metadata.s3Key,
+        s3Key: artifact.s3Key,
         bucketName,
         expiresIn: config.EXPORT_CONVOS_S3_PRESIGNED_URL_EXPIRY_SECONDS,
     });
 
     return {
         fileName: artifact.fileName,
-        fileSize: metadata.fileSize,
+        fileSize: artifact.fileSize,
         downloadUrl: url,
         urlExpiresAt: expiresAt,
     };
 }
 
-export async function getConversationExportStatus({
+type ExportStatusSnapshot =
+    | Exclude<GetConversationExportStatusResponse, { status: "completed" }>
+    | (Omit<
+          Extract<GetConversationExportStatusResponse, { status: "completed" }>,
+          "files" | "bundle"
+      > & {
+          artifacts: CompletedArtifactRecord[];
+      });
+
+async function loadExportStatusSnapshot({
     db,
     exportSlugId,
     userId,
-}: GetConversationExportStatusParams): Promise<GetConversationExportStatusResponse> {
-    const request = await getRequestStatusRecord({ db, exportSlugId, userId });
-    const exportAccessLevel =
-        await getConversationViewAccessLevelForConversation({
-            db,
+}: GetConversationExportStatusParams): Promise<ExportStatusSnapshot> {
+    // A separate polling request cannot carry the worker's returned state.
+    // Load request, access, and artifact metadata together in a fresh writer-side view.
+    return await db.transaction(async (tx): Promise<ExportStatusSnapshot> => {
+        const request = await getRequestStatusRecord({
+            db: tx,
+            exportSlugId,
             userId,
-            projectId: request.conversationProjectId,
         });
-
-    if (request.deletedAt !== null || request.expiresAt < new Date()) {
-        return {
-            status: "expired",
+        const exportAccessLevel =
+            await getConversationViewAccessLevelForConversation({
+                db: tx,
+                userId,
+                projectId: request.conversationProjectId,
+            });
+        const baseResponse = {
             exportSlugId: request.exportSlugId,
             conversationSlugId: request.conversationSlugId,
-            failureReason: request.failureReason ?? undefined,
-            cancellationReason: request.cancellationReason ?? undefined,
             createdAt: request.createdAt,
             expiresAt: request.expiresAt,
-            deletedAt: request.deletedAt ?? request.expiresAt,
         };
-    }
+        if (request.deletedAt !== null || request.expiresAt < new Date()) {
+            return {
+                ...baseResponse,
+                status: "expired",
+                failureReason: request.failureReason ?? undefined,
+                cancellationReason: request.cancellationReason ?? undefined,
+                deletedAt: request.deletedAt ?? request.expiresAt,
+            };
+        }
+        switch (request.status) {
+            case "processing":
+                return { ...baseResponse, status: "processing" };
+            case "failed":
+                return {
+                    ...baseResponse,
+                    status: "failed",
+                    failureReason: request.failureReason ?? undefined,
+                };
+            case "cancelled":
+                return {
+                    ...baseResponse,
+                    status: "cancelled",
+                    cancellationReason: request.cancellationReason ?? "",
+                };
+            case "completed": {
+                const artifacts = await getRequestArtifacts({
+                    db: tx,
+                    requestId: request.id,
+                });
+                return {
+                    ...baseResponse,
+                    status: "completed",
+                    artifacts: artifacts
+                        .filter((artifact) =>
+                            canAccessArtifactAudience({
+                                audience: artifact.audience,
+                                subjectUserId: artifact.subjectUserId,
+                                userId,
+                                exportAccessLevel,
+                            }),
+                        )
+                        .map(parseCompletedArtifact),
+                };
+            }
+        }
+    });
+}
 
-    const baseResponse = {
-        exportSlugId: request.exportSlugId,
-        conversationSlugId: request.conversationSlugId,
-        createdAt: request.createdAt,
-        expiresAt: request.expiresAt,
-    };
-
-    if (request.status === "processing") {
-        return {
-            ...baseResponse,
-            status: "processing",
-        };
+export async function getConversationExportStatus(
+    params: GetConversationExportStatusParams,
+): Promise<GetConversationExportStatusResponse> {
+    const snapshot = await loadExportStatusSnapshot(params);
+    if (snapshot.status !== "completed") {
+        return snapshot;
     }
-
-    if (request.status === "failed") {
-        return {
-            ...baseResponse,
-            status: "failed",
-            failureReason: request.failureReason ?? undefined,
-        };
-    }
-
-    if (request.status === "cancelled") {
-        return {
-            ...baseResponse,
-            status: "cancelled",
-            cancellationReason: request.cancellationReason ?? "",
-        };
-    }
+    const { artifacts, ...baseResponse } = snapshot;
 
     if (!config.EXPORT_CONVOS_AWS_S3_BUCKET_NAME) {
         throw new Error("S3 configuration is missing");
     }
 
-    const artifacts = await getRequestArtifacts({ db, requestId: request.id });
-    const visibleArtifacts = artifacts.filter((artifact) =>
-        canAccessArtifactAudience({
-            audience: artifact.audience,
-            subjectUserId: artifact.subjectUserId,
-            userId,
-            exportAccessLevel,
-        }),
-    );
     const bucketName = config.EXPORT_CONVOS_AWS_S3_BUCKET_NAME;
     const files = await Promise.all(
-        visibleArtifacts
+        artifacts
             .filter((artifact) => artifact.fileType !== "bundle")
             .map(
                 async (artifact) =>
                     await buildFileInfo({ artifact, bucketName }),
             ),
     );
-    const bundleArtifact = visibleArtifacts.find(
+    const bundleArtifact = artifacts.find(
         (artifact) => artifact.fileType === "bundle",
     );
     const bundle = bundleArtifact
@@ -1173,48 +1174,6 @@ export async function getConversationExportStatus({
     };
 }
 
-interface GetActiveExportForConversationParams {
-    db: PostgresDatabase;
-    conversationSlugId: string;
-    userId: string;
-}
-
-type GetActiveExportResponse =
-    | {
-          hasActiveExport: true;
-          exportSlugId: string;
-          createdAt: Date;
-      }
-    | {
-          hasActiveExport: false;
-      };
-
-export async function getActiveExportForConversation({
-    db,
-    conversationSlugId,
-    userId,
-}: GetActiveExportForConversationParams): Promise<GetActiveExportResponse> {
-    const conversation = await getConversationRecord({
-        db,
-        conversationSlugId,
-    });
-    const activeRequest = await findActiveRequest({
-        db,
-        conversationId: conversation.id,
-        userId,
-    });
-
-    if (activeRequest === undefined) {
-        return { hasActiveExport: false };
-    }
-
-    return {
-        hasActiveExport: true,
-        exportSlugId: activeRequest.exportSlugId,
-        createdAt: activeRequest.createdAt,
-    };
-}
-
 interface GetConversationExportHistoryParams {
     db: PostgresDatabase;
     conversationSlugId: string;
@@ -1226,49 +1185,54 @@ export async function getConversationExportHistory({
     conversationSlugId,
     userId,
 }: GetConversationExportHistoryParams): Promise<GetConversationExportHistoryResponse> {
-    const conversation = await findConversationRecord({
-        db,
-        conversationSlugId,
+    return await db.transaction(async (tx) => {
+        const conversation = await findConversationRecord({
+            db: tx,
+            conversationSlugId,
+        });
+        if (conversation === undefined) {
+            return [];
+        }
+
+        assertConversationExportSupported({ conversation });
+
+        const exports = await tx
+            .select({
+                exportSlugId: conversationExportRequestTable.slugId,
+                status: conversationExportRequestTable.status,
+                createdAt: conversationExportRequestTable.createdAt,
+            })
+            .from(conversationExportRequestTable)
+            .where(
+                and(
+                    eq(
+                        conversationExportRequestTable.conversationId,
+                        conversation.id,
+                    ),
+                    eq(conversationExportRequestTable.userId, userId),
+                    isNull(conversationExportRequestTable.deletedAt),
+                ),
+            )
+            .orderBy(desc(conversationExportRequestTable.createdAt))
+            .limit(MAX_EXPORTS_PER_CONVERSATION);
+
+        return exports.map((exportRecord) => ({
+            exportSlugId: exportRecord.exportSlugId,
+            status: exportRecord.status,
+            createdAt: exportRecord.createdAt,
+        }));
     });
-    if (conversation === undefined) {
-        return [];
-    }
-
-    assertConversationExportSupported({ conversation });
-
-    const exports = await db
-        .select({
-            exportSlugId: conversationExportRequestTable.slugId,
-            status: conversationExportRequestTable.status,
-            createdAt: conversationExportRequestTable.createdAt,
-        })
-        .from(conversationExportRequestTable)
-        .innerJoin(
-            conversationTable,
-            eq(
-                conversationExportRequestTable.conversationId,
-                conversationTable.id,
-            ),
-        )
-        .where(
-            and(
-                eq(conversationTable.slugId, conversationSlugId),
-                eq(conversationExportRequestTable.userId, userId),
-                isNull(conversationExportRequestTable.deletedAt),
-            ),
-        )
-        .orderBy(desc(conversationExportRequestTable.createdAt))
-        .limit(MAX_EXPORTS_PER_CONVERSATION);
-
-    return exports.map((exportRecord) => ({
-        exportSlugId: exportRecord.exportSlugId,
-        status: exportRecord.status,
-        createdAt: exportRecord.createdAt,
-    }));
 }
 
-interface ClaimedGenerationRecord extends GenerationRecord {
+interface ClaimedGenerationRecord {
+    id: number;
+    slugId: string;
+    conversationId: number;
+    conversationSlugId: string;
     conversationTitle: string;
+    attempts: number;
+    createdAt: Date;
+    artifacts: readonly ArtifactRecord[];
 }
 
 async function claimNextGeneration({
@@ -1286,8 +1250,6 @@ async function claimNextGeneration({
                     conversationExportGenerationTable.conversationId,
                 conversationSlugId: conversationTable.slugId,
                 conversationTitle: conversationContentTable.title,
-                status: conversationExportGenerationTable.status,
-                attempts: conversationExportGenerationTable.attempts,
                 createdAt: conversationExportGenerationTable.createdAt,
             })
             .from(conversationExportGenerationTable)
@@ -1344,7 +1306,8 @@ async function claimNextGeneration({
                 .update(conversationExportGenerationTable)
                 .set({
                     status: "processing",
-                    attempts: candidate.attempts + 1,
+                    // Increment the locked row, not the pre-lock candidate snapshot.
+                    attempts: sql`${conversationExportGenerationTable.attempts} + 1`,
                     startedAt: now,
                     heartbeatAt: now,
                     nextAttemptAt: null,
@@ -1382,13 +1345,19 @@ async function claimNextGeneration({
                         ),
                     ),
                 )
-                .returning({ id: conversationExportGenerationTable.id });
+                .returning({
+                    attempts: conversationExportGenerationTable.attempts,
+                });
 
             if (updated.length === 1) {
                 return {
                     ...candidate,
-                    status: "processing",
-                    attempts: candidate.attempts + 1,
+                    attempts: updated[0].attempts,
+                    // The conversation lock freezes this list before processing begins.
+                    artifacts: await getGenerationArtifacts({
+                        db: tx,
+                        generationId: candidate.id,
+                    }),
                 };
             }
         }
@@ -1425,13 +1394,9 @@ function isArtifactIncludedInBundle({
     artifact,
     bundleArtifact,
 }: {
-    artifact: ArtifactRecord;
-    bundleArtifact: ArtifactRecord;
+    artifact: CsvArtifactRecord;
+    bundleArtifact: BundleArtifactRecord;
 }): boolean {
-    if (artifact.fileType === "bundle") {
-        return false;
-    }
-
     if (bundleArtifact.audience === "redacted") {
         return artifact.audience === "redacted";
     }
@@ -1457,7 +1422,7 @@ async function generateCsvForArtifact({
 }: {
     db: PostgresDatabase;
     generation: ClaimedGenerationRecord;
-    artifact: ArtifactRecord;
+    artifact: CsvArtifactRecord;
     participantMap: ReturnType<typeof createExportParticipantMap>;
 }): Promise<{ fileName: string; csvBuffer: Buffer; recordCount: number }> {
     const generator = getExportGeneratorByFileType({
@@ -1493,10 +1458,10 @@ async function processCsvArtifact({
 }: {
     db: PostgresDatabase;
     generation: ClaimedGenerationRecord;
-    artifact: ArtifactRecord;
+    artifact: CsvArtifactRecord;
     participantMap: ReturnType<typeof createExportParticipantMap>;
     bucketName: string;
-}): Promise<{ fileName: string; csvBuffer: Buffer }> {
+}): Promise<CsvFile> {
     const now = new Date();
     await db
         .update(conversationExportArtifactTable)
@@ -1567,20 +1532,13 @@ async function processBundleArtifact({
     db,
     generation,
     artifact,
-    allArtifacts,
-    generatedCsvByArtifactId,
-    participantMap,
+    loadCsv,
     bucketName,
 }: {
     db: PostgresDatabase;
     generation: ClaimedGenerationRecord;
-    artifact: ArtifactRecord;
-    allArtifacts: ArtifactRecord[];
-    generatedCsvByArtifactId: Map<
-        number,
-        { fileName: string; csvBuffer: Buffer }
-    >;
-    participantMap: ReturnType<typeof createExportParticipantMap>;
+    artifact: BundleArtifactRecord;
+    loadCsv: (artifact: CsvArtifactRecord) => Promise<CsvFile>;
     bucketName: string;
 }): Promise<void> {
     await db
@@ -1589,35 +1547,18 @@ async function processBundleArtifact({
         .where(eq(conversationExportArtifactTable.id, artifact.id));
 
     try {
-        const bundleCsvFiles: { fileName: string; csvBuffer: Buffer }[] = [];
-        const includedArtifacts = allArtifacts.filter((candidate) =>
-            isArtifactIncludedInBundle({
-                artifact: candidate,
-                bundleArtifact: artifact,
-            }),
-        );
+        const bundleCsvFiles: CsvFile[] = [];
+        const includedArtifacts = generation.artifacts
+            .filter(isCsvArtifact)
+            .filter((candidate) =>
+                isArtifactIncludedInBundle({
+                    artifact: candidate,
+                    bundleArtifact: artifact,
+                }),
+            );
 
         for (const includedArtifact of includedArtifacts) {
-            const existingCsv = generatedCsvByArtifactId.get(
-                includedArtifact.id,
-            );
-            if (existingCsv !== undefined) {
-                bundleCsvFiles.push(existingCsv);
-                continue;
-            }
-
-            const generatedCsv = await generateCsvForArtifact({
-                db,
-                generation,
-                artifact: includedArtifact,
-                participantMap,
-            });
-            const csvForBundle = {
-                fileName: generatedCsv.fileName,
-                csvBuffer: generatedCsv.csvBuffer,
-            };
-            generatedCsvByArtifactId.set(includedArtifact.id, csvForBundle);
-            bundleCsvFiles.push(csvForBundle);
+            bundleCsvFiles.push(await loadCsv(includedArtifact));
         }
 
         const zipBuffer = await generateExportBundleZip({
@@ -1690,7 +1631,10 @@ async function getProcessingRequestsForGeneration({
         .from(conversationExportRequestTable)
         .innerJoin(
             conversationTable,
-            eq(conversationTable.id, conversationExportRequestTable.conversationId),
+            eq(
+                conversationTable.id,
+                conversationExportRequestTable.conversationId,
+            ),
         )
         .innerJoin(
             conversationContentTable,
@@ -1711,7 +1655,10 @@ async function markGenerationCompletedAndRequests({
 }: {
     db: PostgresDatabase;
     generation: ClaimedGenerationRecord;
-}): Promise<ExportRequestNotificationRecord[]> {
+}): Promise<
+    | { status: "completed"; requests: ExportRequestNotificationRecord[] }
+    | { status: "superseded" }
+> {
     return await db.transaction(async (tx) => {
         await lockConversationForExport({
             db: tx,
@@ -1719,45 +1666,56 @@ async function markGenerationCompletedAndRequests({
         });
 
         const now = new Date();
-        await tx
+        const completedGenerations = await tx
             .update(conversationExportGenerationTable)
             .set({
                 status: "completed",
                 completedAt: now,
+                failureReason: null,
+                failedAt: null,
                 updatedAt: now,
             })
-            .where(eq(conversationExportGenerationTable.id, generation.id));
+            .where(currentGenerationAttempt(generation))
+            .returning({ id: conversationExportGenerationTable.id });
 
-        const requests = await getProcessingRequestsForGeneration({
-            db: tx,
-            generationId: generation.id,
-        });
-
-        if (requests.length > 0) {
-            await tx
-                .update(conversationExportRequestTable)
-                .set({
-                    status: "completed",
-                    completedNotifiedAt: now,
-                    updatedAt: now,
-                })
-                .where(
-                    and(
-                        eq(
-                            conversationExportRequestTable.generationId,
-                            generation.id,
-                        ),
-                        eq(conversationExportRequestTable.status, "processing"),
-                        isNull(conversationExportRequestTable.deletedAt),
-                    ),
-                );
+        if (completedGenerations.length === 0) {
+            return { status: "superseded" };
         }
 
-        return requests.map((request) => ({
-            ...request,
-            failureReason: null,
-            cancellationReason: null,
-        }));
+        const requests = await tx
+            .update(conversationExportRequestTable)
+            .set({
+                status: "completed",
+                completedNotifiedAt: now,
+                updatedAt: now,
+            })
+            .where(
+                and(
+                    eq(
+                        conversationExportRequestTable.generationId,
+                        generation.id,
+                    ),
+                    eq(conversationExportRequestTable.status, "processing"),
+                    isNull(conversationExportRequestTable.deletedAt),
+                ),
+            )
+            .returning({
+                id: conversationExportRequestTable.id,
+                slugId: conversationExportRequestTable.slugId,
+                userId: conversationExportRequestTable.userId,
+                conversationId: conversationExportRequestTable.conversationId,
+            });
+
+        return {
+            status: "completed",
+            requests: requests.map((request) => ({
+                ...request,
+                conversationSlugId: generation.conversationSlugId,
+                conversationTitle: generation.conversationTitle,
+                failureReason: null,
+                cancellationReason: null,
+            })),
+        };
     });
 }
 
@@ -1765,26 +1723,45 @@ async function markGenerationFailedAndRequests({
     db,
     generationId,
     conversationId,
-    reason,
+    failure,
 }: {
     db: PostgresDatabase;
     generationId: number;
     conversationId: number;
-    reason: ExportFailureReason;
+    failure:
+        | { reason: "processing_error"; attempts: number }
+        | { reason: "timeout"; staleBefore: Date };
 }): Promise<ExportRequestNotificationRecord[]> {
     return await db.transaction(async (tx) => {
         await lockConversationForExport({ db: tx, conversationId });
 
         const now = new Date();
-        await tx
+        const failedGenerations = await tx
             .update(conversationExportGenerationTable)
             .set({
                 status: "failed",
                 failedAt: now,
-                failureReason: reason,
+                failureReason: failure.reason,
                 updatedAt: now,
             })
-            .where(eq(conversationExportGenerationTable.id, generationId));
+            .where(
+                and(
+                    eq(conversationExportGenerationTable.id, generationId),
+                    eq(conversationExportGenerationTable.status, "processing"),
+                    failure.reason === "timeout"
+                        ? staleGenerationCondition(failure.staleBefore)
+                        : eq(
+                              conversationExportGenerationTable.attempts,
+                              failure.attempts,
+                          ),
+                ),
+            )
+            .returning({ id: conversationExportGenerationTable.id });
+
+        // A stale cleanup candidate must not overwrite a committed terminal state.
+        if (failedGenerations.length === 0) {
+            return [];
+        }
 
         const requests = await getProcessingRequestsForGeneration({
             db: tx,
@@ -1796,7 +1773,7 @@ async function markGenerationFailedAndRequests({
                 .update(conversationExportRequestTable)
                 .set({
                     status: "failed",
-                    failureReason: reason,
+                    failureReason: failure.reason,
                     failedNotifiedAt: now,
                     updatedAt: now,
                 })
@@ -1814,7 +1791,7 @@ async function markGenerationFailedAndRequests({
 
         return requests.map((request) => ({
             ...request,
-            failureReason: reason,
+            failureReason: failure.reason,
             cancellationReason: null,
         }));
     });
@@ -1837,16 +1814,27 @@ async function notifyRequests({
             userId: request.userId,
             exportRequestId: request.id,
             conversationId: request.conversationId,
-            notification: type === "export_failed" ? {
-                type,
-                conversationTitle: request.conversationTitle,
-                routeTarget: { type: "export", conversationSlugId: request.conversationSlugId, exportSlugId: request.slugId },
-                failureReason: request.failureReason ?? undefined,
-            } : {
-                type,
-                conversationTitle: request.conversationTitle,
-                routeTarget: { type: "export", conversationSlugId: request.conversationSlugId, exportSlugId: request.slugId },
-            },
+            notification:
+                type === "export_failed"
+                    ? {
+                          type,
+                          conversationTitle: request.conversationTitle,
+                          routeTarget: {
+                              type: "export",
+                              conversationSlugId: request.conversationSlugId,
+                              exportSlugId: request.slugId,
+                          },
+                          failureReason: request.failureReason ?? undefined,
+                      }
+                    : {
+                          type,
+                          conversationTitle: request.conversationTitle,
+                          routeTarget: {
+                              type: "export",
+                              conversationSlugId: request.conversationSlugId,
+                              exportSlugId: request.slugId,
+                          },
+                      },
             realtimeSSEManager,
         });
     }
@@ -1868,40 +1856,55 @@ async function processGeneration({
 
     const bucketName = config.EXPORT_CONVOS_AWS_S3_BUCKET_NAME;
     const participantMap = createExportParticipantMap();
-    const generatedCsvByArtifactId = new Map<
-        number,
-        { fileName: string; csvBuffer: Buffer }
-    >();
-    const artifacts = await getGenerationArtifacts({
-        db,
-        generationId: generation.id,
-    });
+    const artifacts = generation.artifacts;
+    // CSVs share participant IDs. A partially failed CSV pass must be rerun
+    // together; a ZIP-only retry can safely reuse all published CSV bytes.
+    const regenerateCsv = artifacts.some(
+        (artifact) =>
+            artifact.fileType !== "bundle" && artifact.status !== "completed",
+    );
+    const csvByArtifactId = new Map<number, CsvFile>();
+    const loadCsv = async (artifact: CsvArtifactRecord): Promise<CsvFile> => {
+        const cached = csvByArtifactId.get(artifact.id);
+        if (cached !== undefined) {
+            return cached;
+        }
+        let csv: CsvFile;
+        if (artifact.status === "completed" && !regenerateCsv) {
+            // Reuse the exact published bytes, not a new database snapshot.
+            const completed = parseCompletedArtifact(artifact);
+            csv = {
+                fileName: completed.fileName,
+                csvBuffer: await downloadFromS3({
+                    s3Key: completed.s3Key,
+                    bucketName,
+                }),
+            };
+        } else {
+            csv = await processCsvArtifact({
+                db,
+                generation,
+                artifact,
+                participantMap,
+                bucketName,
+            });
+        }
+        csvByArtifactId.set(artifact.id, csv);
+        return csv;
+    };
 
-    for (const artifact of artifacts.filter(
-        (candidate) => candidate.fileType !== "bundle",
-    )) {
-        if (artifact.status === "completed") {
+    for (const artifact of artifacts.filter(isCsvArtifact)) {
+        if (!regenerateCsv) {
             continue;
         }
 
-        const generated = await processCsvArtifact({
-            db,
-            generation,
-            artifact,
-            participantMap,
-            bucketName,
-        });
-        generatedCsvByArtifactId.set(artifact.id, generated);
+        await loadCsv(artifact);
     }
 
-    const refreshedArtifacts = await getGenerationArtifacts({
-        db,
-        generationId: generation.id,
-    });
-    for (const artifact of refreshedArtifacts.filter(
-        (candidate) => candidate.fileType === "bundle",
-    )) {
-        if (artifact.status === "completed") {
+    // Claiming freezes the artifact list. Successful processing calls are the
+    // completion evidence; rereading their statuses can only introduce replica lag.
+    for (const artifact of artifacts.filter(isBundleArtifact)) {
+        if (artifact.status === "completed" && !regenerateCsv) {
             continue;
         }
 
@@ -1909,24 +1912,9 @@ async function processGeneration({
             db,
             generation,
             artifact,
-            allArtifacts: refreshedArtifacts,
-            generatedCsvByArtifactId,
-            participantMap,
+            loadCsv,
             bucketName,
         });
-    }
-
-    const finalArtifacts = await getGenerationArtifacts({
-        db,
-        generationId: generation.id,
-    });
-    const hasIncompleteArtifact = finalArtifacts.some(
-        (artifact) => artifact.status !== "completed",
-    );
-    if (hasIncompleteArtifact) {
-        throw new Error(
-            `Export generation ${generation.slugId} still has incomplete artifacts`,
-        );
     }
 }
 
@@ -1944,7 +1932,7 @@ async function handleGenerationFailure({
         const nextAttemptAt = new Date(
             now.getTime() + getBackoffMs({ attempts: generation.attempts }),
         );
-        await db
+        const queuedGenerations = await db
             .update(conversationExportGenerationTable)
             .set({
                 status: "queued",
@@ -1953,7 +1941,11 @@ async function handleGenerationFailure({
                 failureReason: "processing_error",
                 updatedAt: now,
             })
-            .where(eq(conversationExportGenerationTable.id, generation.id));
+            .where(currentGenerationAttempt(generation))
+            .returning({ id: conversationExportGenerationTable.id });
+        if (queuedGenerations.length === 0) {
+            return;
+        }
         log.warn(
             `Export generation ${generation.slugId} failed; retry scheduled at ${nextAttemptAt.toISOString()}`,
         );
@@ -1964,7 +1956,7 @@ async function handleGenerationFailure({
         db,
         generationId: generation.id,
         conversationId: generation.conversationId,
-        reason: "processing_error",
+        failure: { reason: "processing_error", attempts: generation.attempts },
     });
     await notifyRequests({
         db,
@@ -1985,13 +1977,16 @@ async function processClaimedGeneration({
 }): Promise<void> {
     try {
         await processGeneration({ db, generation });
-        const completedRequests = await markGenerationCompletedAndRequests({
+        const completion = await markGenerationCompletedAndRequests({
             db,
             generation,
         });
+        if (completion.status === "superseded") {
+            return;
+        }
         await notifyRequests({
             db,
-            requests: completedRequests,
+            requests: completion.requests,
             type: "export_completed",
             realtimeSSEManager,
         });
@@ -2092,32 +2087,41 @@ async function deleteUnreferencedArtifactsForGenerations({
 
     const uniqueGenerationIds = Array.from(new Set(generationIds));
     for (const generationId of uniqueGenerationIds) {
-        const [{ count: activeRequestCount }] = await db
-            .select({ count: count() })
-            .from(conversationExportRequestTable)
-            .where(
-                and(
+        const artifacts = await db.transaction(async (tx) => {
+            const [{ count: activeRequestCount }] = await tx
+                .select({ count: count() })
+                .from(conversationExportRequestTable)
+                .where(
+                    and(
+                        eq(
+                            conversationExportRequestTable.generationId,
+                            generationId,
+                        ),
+                        isNull(conversationExportRequestTable.deletedAt),
+                    ),
+                );
+
+            if (activeRequestCount > 0) {
+                return [];
+            }
+
+            return await tx
+                .select({
+                    id: conversationExportArtifactTable.id,
+                    s3Key: conversationExportArtifactTable.s3Key,
+                })
+                .from(conversationExportArtifactTable)
+                .where(
                     eq(
-                        conversationExportRequestTable.generationId,
+                        conversationExportArtifactTable.generationId,
                         generationId,
                     ),
-                    isNull(conversationExportRequestTable.deletedAt),
-                ),
-            );
+                );
+        });
 
-        if (activeRequestCount > 0) {
+        if (artifacts.length === 0) {
             continue;
         }
-
-        const artifacts = await db
-            .select({
-                id: conversationExportArtifactTable.id,
-                s3Key: conversationExportArtifactTable.s3Key,
-            })
-            .from(conversationExportArtifactTable)
-            .where(
-                eq(conversationExportArtifactTable.generationId, generationId),
-            );
 
         for (const artifact of artifacts) {
             if (artifact.s3Key === null) {
@@ -2150,46 +2154,67 @@ export async function deleteConversationExport({
     db,
     exportSlugId,
 }: DeleteConversationExportParams): Promise<void> {
-    const requests = await db
-        .select({
-            id: conversationExportRequestTable.id,
-            generationId: conversationExportRequestTable.generationId,
-            status: conversationExportRequestTable.status,
-            deletedAt: conversationExportRequestTable.deletedAt,
-        })
-        .from(conversationExportRequestTable)
-        .where(eq(conversationExportRequestTable.slugId, exportSlugId))
-        .limit(1);
+    const generationId = await db.transaction(async (tx) => {
+        const requests = await tx
+            .select({
+                id: conversationExportRequestTable.id,
+                generationId: conversationExportRequestTable.generationId,
+                status: conversationExportRequestTable.status,
+                deletedAt: conversationExportRequestTable.deletedAt,
+            })
+            .from(conversationExportRequestTable)
+            .where(eq(conversationExportRequestTable.slugId, exportSlugId))
+            .limit(1);
 
-    if (requests.length === 0) {
-        throw httpErrors.notFound("Export not found");
-    }
+        if (requests.length === 0) {
+            throw httpErrors.notFound("Export not found");
+        }
 
-    const request = requests[0];
-    if (request.deletedAt !== null) {
-        throw httpErrors.badRequest("Export already deleted");
-    }
+        const request = requests[0];
+        if (request.deletedAt !== null) {
+            throw httpErrors.badRequest("Export already deleted");
+        }
 
-    if (request.status === "processing") {
-        throw httpErrors.badRequest(
-            "Cannot delete export while it is still processing",
-        );
-    }
+        if (request.status === "processing") {
+            throw httpErrors.badRequest(
+                "Cannot delete export while it is still processing",
+            );
+        }
 
-    await db
-        .update(conversationExportRequestTable)
-        .set({ deletedAt: new Date(), updatedAt: new Date() })
-        .where(eq(conversationExportRequestTable.id, request.id));
+        await tx
+            .update(conversationExportRequestTable)
+            .set({ deletedAt: new Date(), updatedAt: new Date() })
+            .where(eq(conversationExportRequestTable.id, request.id));
+        return request.generationId;
+    });
 
     await deleteUnreferencedArtifactsForGenerations({
         db,
-        generationIds: [request.generationId],
+        generationIds: [generationId],
     });
 }
 
 interface CleanupStaleExportsParams {
     db: PostgresDatabase;
     staleThresholdMs: number;
+}
+
+function currentGenerationAttempt(generation: ClaimedGenerationRecord) {
+    return and(
+        eq(conversationExportGenerationTable.id, generation.id),
+        eq(conversationExportGenerationTable.status, "processing"),
+        eq(conversationExportGenerationTable.attempts, generation.attempts),
+    );
+}
+
+function staleGenerationCondition(staleBefore: Date) {
+    return or(
+        lt(conversationExportGenerationTable.heartbeatAt, staleBefore),
+        and(
+            isNull(conversationExportGenerationTable.heartbeatAt),
+            lt(conversationExportGenerationTable.updatedAt, staleBefore),
+        ),
+    );
 }
 
 export async function cleanupStaleExports({
@@ -2206,19 +2231,7 @@ export async function cleanupStaleExports({
         .where(
             and(
                 eq(conversationExportGenerationTable.status, "processing"),
-                or(
-                    lt(
-                        conversationExportGenerationTable.heartbeatAt,
-                        staleTimestamp,
-                    ),
-                    and(
-                        isNull(conversationExportGenerationTable.heartbeatAt),
-                        lt(
-                            conversationExportGenerationTable.updatedAt,
-                            staleTimestamp,
-                        ),
-                    ),
-                ),
+                staleGenerationCondition(staleTimestamp),
             ),
         );
 
@@ -2228,7 +2241,7 @@ export async function cleanupStaleExports({
             db,
             generationId: generation.id,
             conversationId: generation.conversationId,
-            reason: "timeout",
+            failure: { reason: "timeout", staleBefore: staleTimestamp },
         });
         failedRequestCount += failedRequests.length;
     }
@@ -2245,23 +2258,6 @@ export async function cleanupExpiredExports({
 }: CleanupExpiredExportsParams): Promise<void> {
     const now = new Date();
     const expiredRequests = await db
-        .select({
-            id: conversationExportRequestTable.id,
-            generationId: conversationExportRequestTable.generationId,
-        })
-        .from(conversationExportRequestTable)
-        .where(
-            and(
-                lt(conversationExportRequestTable.expiresAt, now),
-                isNull(conversationExportRequestTable.deletedAt),
-            ),
-        );
-
-    if (expiredRequests.length === 0) {
-        return;
-    }
-
-    await db
         .update(conversationExportRequestTable)
         .set({ deletedAt: now, updatedAt: now })
         .where(
@@ -2269,7 +2265,10 @@ export async function cleanupExpiredExports({
                 lt(conversationExportRequestTable.expiresAt, now),
                 isNull(conversationExportRequestTable.deletedAt),
             ),
-        );
+        )
+        .returning({
+            generationId: conversationExportRequestTable.generationId,
+        });
 
     await deleteUnreferencedArtifactsForGenerations({
         db,
@@ -2288,26 +2287,6 @@ export async function deleteAllConversationExports({
 }: DeleteAllConversationExportsParams): Promise<number> {
     const now = new Date();
     const requests = await db
-        .select({
-            id: conversationExportRequestTable.id,
-            generationId: conversationExportRequestTable.generationId,
-        })
-        .from(conversationExportRequestTable)
-        .where(
-            and(
-                eq(
-                    conversationExportRequestTable.conversationId,
-                    conversationId,
-                ),
-                isNull(conversationExportRequestTable.deletedAt),
-            ),
-        );
-
-    if (requests.length === 0) {
-        return 0;
-    }
-
-    await db
         .update(conversationExportRequestTable)
         .set({ deletedAt: now, updatedAt: now })
         .where(
@@ -2318,7 +2297,14 @@ export async function deleteAllConversationExports({
                 ),
                 isNull(conversationExportRequestTable.deletedAt),
             ),
-        );
+        )
+        .returning({
+            generationId: conversationExportRequestTable.generationId,
+        });
+
+    if (requests.length === 0) {
+        return 0;
+    }
 
     await db
         .update(conversationExportGenerationTable)

@@ -1,5 +1,4 @@
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { getPrimaryDatabase } from "@/shared-backend/db.js";
 import {
     notificationTable,
     notificationExportTable,
@@ -43,7 +42,7 @@ export async function createExportNotification({
 }): Promise<void> {
     try {
         const slugId = generateRandomSlugId();
-        const content = await getPrimaryDatabase(db).transaction(async (tx) => {
+        const content = await db.transaction(async (tx) => {
             const [record] = await tx
                 .insert(notificationTable)
                 .values({
