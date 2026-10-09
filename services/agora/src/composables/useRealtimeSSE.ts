@@ -35,6 +35,7 @@ import {
 import { invalidateConversationContentQueries } from "src/utils/api/contentTranslation/conversationContentQuery";
 import { isProjectTranslatedContentQueryKey } from "src/utils/api/contentTranslation/projectContentQuery";
 import { getContentTranslationQueryKey } from "src/utils/api/contentTranslation/useContentTranslationQueries";
+import { useInvalidateExportQueries } from "src/utils/api/conversationExport/useConversationExportQueries";
 import { getErrorLogContext } from "src/utils/api/errorLog";
 import { retainConversationRankingStatsUpdate } from "src/utils/api/post/rankingStatsUpdate";
 import {
@@ -293,6 +294,7 @@ export function useRealtimeSSE({
   const authStore = useAuthenticationStore();
   const languageStore = useLanguageStore();
   const queryClient = useQueryClient();
+  const exportQueries = useInvalidateExportQueries();
   const viewerScope = useViewerQueryScope();
   const {
     fetchAnalysisFrameManifest,
@@ -1051,6 +1053,23 @@ export function useRealtimeSSE({
         case "notification": {
           const data = sseEvent.data;
           notificationStore.addNewNotification(data.notification);
+          const notification = data.notification;
+          if (
+            notification.type === "export_started" ||
+            notification.type === "export_completed" ||
+            notification.type === "export_failed" ||
+            notification.type === "export_cancelled"
+          ) {
+            exportQueries.invalidateExportStatus(
+              notification.routeTarget.exportSlugId
+            );
+            exportQueries.invalidateExportHistory(
+              notification.routeTarget.conversationSlugId
+            );
+            exportQueries.invalidateExportReadiness(
+              notification.routeTarget.conversationSlugId
+            );
+          }
           break;
         }
         case "new_conversation": {

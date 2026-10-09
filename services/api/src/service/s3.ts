@@ -80,6 +80,27 @@ export async function uploadToS3({
 }
 
 /**
+ * Download a stored artifact without regenerating its contents.
+ */
+export async function downloadFromS3({
+    s3Key,
+    bucketName,
+    region = config.EXPORT_CONVOS_AWS_S3_REGION,
+}: {
+    s3Key: string;
+    bucketName: string;
+    region?: string;
+}): Promise<Buffer> {
+    const response = await getS3Client({ region }).send(
+        new GetObjectCommand({ Bucket: bucketName, Key: s3Key }),
+    );
+    if (response.Body === undefined) {
+        throw new Error(`S3 object ${s3Key} has no body`);
+    }
+    return Buffer.from(await response.Body.transformToByteArray());
+}
+
+/**
  * Generate pre-signed URL for S3 object.
  */
 export async function generatePresignedUrl({
