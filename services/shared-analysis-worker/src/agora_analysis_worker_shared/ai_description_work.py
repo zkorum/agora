@@ -12,6 +12,7 @@ from sqlalchemy import (
     Boolean,
     DateTime,
     Integer,
+    String,
     and_,
     case,
     false,
@@ -118,6 +119,7 @@ def _iter_chunks[T](values: list[T], *, chunk_size: int) -> Iterator[list[T]]:
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping, Sequence
+    from typing import Literal
 
     from sqlalchemy import Engine, Select
     from sqlalchemy.orm.attributes import InstrumentedAttribute
@@ -296,14 +298,6 @@ def lineage_description_work_claim_batches(
     for claim in claims:
         claims_by_candidate_id.setdefault(claim.source_candidate_id, []).append(claim)
     return list(claims_by_candidate_id.values())
-
-
-@dataclass(frozen=True)
-class CandidateLocaleRequestRow:
-    id: int
-    conversation_id: int
-    candidate_id: int
-    locale: str
 
 
 @dataclass(frozen=True)
@@ -1148,19 +1142,36 @@ def recover_expired_ai_description_work(
         if unique_conversation_ids is not None
         else true()
     )
+    expired_lineage_filter = and_(
+        lineage_conversation_filter,
+        OpinionGroupLineageDescriptionWork.lease_token.is_not(None),
+        OpinionGroupLineageDescriptionWork.lease_expires_at < func.now(),
+    )
+    expired_translation_filter = and_(
+        translation_conversation_filter,
+        OpinionGroupDescriptionTranslationWork.lease_token.is_not(None),
+        OpinionGroupDescriptionTranslationWork.lease_expires_at < func.now(),
+    )
 
     with Session(engine) as session:
         recovered_conversation_ids: list[int] = []
-        if include_lineage_descriptions:
+        expired_lineage = (
+            session.execute(
+                select(OpinionGroupLineageDescriptionWork.id).where(expired_lineage_filter).limit(1)
+            ).first()
+            if include_lineage_descriptions
+            else None
+        )
+        # Idle recovery should only probe the partial lease-expiry index, not
+        # repeatedly plan the latest-view/candidate relevance graph.
+        if expired_lineage is not None:
             recovered_conversation_ids.extend(
                 row.conversation_id
                 for row in session.execute(
                     update(OpinionGroupLineageDescriptionWork)
                     .where(
                         and_(
-                            lineage_conversation_filter,
-                            OpinionGroupLineageDescriptionWork.lease_expires_at.is_not(None),
-                            OpinionGroupLineageDescriptionWork.lease_expires_at < func.now(),
+                            expired_lineage_filter,
                             _lineage_work_relevant_candidate_filter(
                                 conversation_view_snapshot_ids=conversation_view_snapshot_ids,
                                 require_activated_view_snapshot=require_activated_view_snapshot,
@@ -1177,16 +1188,23 @@ def recover_expired_ai_description_work(
                     .returning(OpinionGroupLineageDescriptionWork.conversation_id)
                 )
             )
-        if translation_enabled and include_translations:
+        expired_translation = (
+            session.execute(
+                select(OpinionGroupDescriptionTranslationWork.id)
+                .where(expired_translation_filter)
+                .limit(1)
+            ).first()
+            if translation_enabled and include_translations
+            else None
+        )
+        if expired_translation is not None:
             recovered_conversation_ids.extend(
                 row.conversation_id
                 for row in session.execute(
                     update(OpinionGroupDescriptionTranslationWork)
                     .where(
                         and_(
-                            translation_conversation_filter,
-                            OpinionGroupDescriptionTranslationWork.lease_expires_at.is_not(None),
-                            OpinionGroupDescriptionTranslationWork.lease_expires_at < func.now(),
+                            expired_translation_filter,
                             _translation_work_relevant_candidate_filter(
                                 conversation_view_snapshot_ids=conversation_view_snapshot_ids,
                                 require_activated_view_snapshot=require_activated_view_snapshot,
@@ -1907,18 +1925,6 @@ def schedule_repaired_description_updates(
     )
 
 
-def _fetch_required_lineage_description_rows_for_candidate(
-    session: Session,
-    *,
-    candidate_id: int,
-) -> list[RequiredLineageDescriptionRow]:
-    rows_by_candidate_id = _fetch_required_lineage_description_rows_by_candidate(
-        session,
-        candidate_ids=[candidate_id],
-    )
-    return rows_by_candidate_id.get(candidate_id, [])
-
-
 def _fetch_required_lineage_description_rows_by_candidate(
     session: Session,
     *,
@@ -1955,52 +1961,6 @@ def _fetch_required_lineage_description_rows_by_candidate(
             )
         )
     return rows_by_candidate_id
-
-
-def _required_system_description_ids_for_candidate(
-    session: Session,
-    *,
-    candidate_id: int,
-) -> tuple[set[int], bool]:
-    lineage_rows = _fetch_required_lineage_description_rows_for_candidate(
-        session,
-        candidate_id=candidate_id,
-    )
-    description_ids = {
-        row.system_description_id for row in lineage_rows if row.system_description_id is not None
-    }
-    all_lineages_have_descriptions = bool(lineage_rows) and all(
-        row.system_description_id is not None for row in lineage_rows
-    )
-    return description_ids, all_lineages_have_descriptions
-
-
-def translation_work_demands_for_candidate_requests(
-    *,
-    requests: Sequence[CandidateLocaleRequestRow],
-    description_ids_by_request_id: Mapping[int, set[int]],
-    translated_description_ids_by_request_id: Mapping[int, set[int]],
-) -> list[TranslationWorkDemand]:
-    demands_by_description_locale: dict[tuple[int, str], TranslationWorkDemand] = {}
-    for request in requests:
-        description_ids = description_ids_by_request_id.get(request.id, set())
-        if not description_ids:
-            continue
-        translated_description_ids = translated_description_ids_by_request_id.get(
-            request.id,
-            set(),
-        )
-        for description_id in sorted(description_ids - translated_description_ids):
-            key = (description_id, request.locale)
-            if key in demands_by_description_locale:
-                continue
-            demands_by_description_locale[key] = TranslationWorkDemand(
-                description_id=description_id,
-                conversation_id=request.conversation_id,
-                locale=request.locale,
-            )
-
-    return list(demands_by_description_locale.values())
 
 
 def lineage_description_work_demands_for_eager_candidates(
@@ -2460,6 +2420,34 @@ def _materialize_lineage_description_work_for_candidate_locale_requests(
     return _insert_or_reactivate_lineage_description_work(session, demands=demands)
 
 
+def _eager_candidate_missing_lineage_work_filter() -> ColumnElement[bool]:
+    return (
+        select(OpinionGroup.id)
+        .join(OpinionGroupLineage, OpinionGroupLineage.id == OpinionGroup.lineage_id)
+        .outerjoin(
+            OpinionGroupLineageDescriptionWork,
+            OpinionGroupLineageDescriptionWork.lineage_id == OpinionGroupLineage.id,
+        )
+        .where(
+            OpinionGroup.candidate_id == OpinionGroupCandidate.id,
+            OpinionGroupLineage.system_description_id.is_(None),
+            or_(
+                OpinionGroupLineageDescriptionWork.id.is_(None),
+                and_(
+                    _lineage_work_lease_available(),
+                    or_(
+                        OpinionGroupLineageDescriptionWork.conversation_id != Conversation.id,
+                        OpinionGroupLineageDescriptionWork.source_candidate_id
+                        != OpinionGroupCandidate.id,
+                    ),
+                ),
+            ),
+        )
+        .correlate(OpinionGroupCandidate, Conversation)
+        .exists()
+    )
+
+
 def _eager_candidate_missing_translation_work_filter() -> ColumnElement[bool]:
     undescribed_group = aliased(OpinionGroup)
     undescribed_lineage = aliased(OpinionGroupLineage)
@@ -2530,7 +2518,7 @@ def _fetch_eager_description_candidates(
     conversation_view_snapshot_ids: list[int] | None = None,
     require_activated_view_snapshot: bool = False,
     require_unactivated_view_snapshot: bool = False,
-    require_missing_translation_work: bool = False,
+    missing_work: Literal["lineage", "translation"] | None = None,
     limit: int | None = None,
 ) -> list[EagerDescriptionCandidateRow]:
     if conversation_ids is not None and not conversation_ids:
@@ -2575,6 +2563,12 @@ def _fetch_eager_description_candidates(
         .cte("eager_description_eligible_views")
         .prefix_with("MATERIALIZED", dialect="postgresql")
     )
+    missing_work_filter: ColumnElement[bool] = true()
+    if missing_work == "lineage":
+        missing_work_filter = _eager_candidate_missing_lineage_work_filter()
+    elif missing_work == "translation":
+        missing_work_filter = _eager_candidate_missing_translation_work_filter()
+
     query = (
         select(
             AnalysisSnapshotResult.conversation_id,
@@ -2612,11 +2606,7 @@ def _fetch_eager_description_candidates(
                 _processable_conversation_condition(),
                 AnalysisSnapshotResult.outcome == AnalysisResultOutcomeEnum.success,
                 _effective_preferred_candidate_filter(),
-                (
-                    _eager_candidate_missing_translation_work_filter()
-                    if require_missing_translation_work
-                    else true()
-                ),
+                missing_work_filter,
             )
         )
         .order_by(
@@ -2689,6 +2679,7 @@ def _materialize_eager_lineage_description_work(
         conversation_view_snapshot_ids=conversation_view_snapshot_ids,
         require_activated_view_snapshot=require_activated_view_snapshot,
         require_unactivated_view_snapshot=require_unactivated_view_snapshot,
+        missing_work="lineage",
         limit=limit,
     )
     lineage_rows_by_candidate_id = _fetch_required_lineage_description_rows_by_candidate(
@@ -2717,7 +2708,7 @@ def _materialize_eager_translation_work(
         conversation_view_snapshot_ids=conversation_view_snapshot_ids,
         require_activated_view_snapshot=require_activated_view_snapshot,
         require_unactivated_view_snapshot=require_unactivated_view_snapshot,
-        require_missing_translation_work=True,
+        missing_work="translation",
         limit=limit,
     )
     lineage_rows_by_candidate_id = _fetch_required_lineage_description_rows_by_candidate(
@@ -2778,51 +2769,105 @@ def _materialize_translation_work_for_candidate_locale_requests(
     require_processable_conversation: bool = True,
     include_checkpoints: bool = True,
 ) -> list[int]:
-    request_query = _candidate_locale_requests_query(
-        conversation_ids=conversation_ids,
-        conversation_view_snapshot_ids=conversation_view_snapshot_ids,
-        non_english_only=True,
-        require_activated_view_snapshot=require_activated_view_snapshot,
-        require_processable_conversation=require_processable_conversation,
-        include_checkpoints=include_checkpoints,
+    requests = (
+        _candidate_locale_requests_query(
+            conversation_ids=conversation_ids,
+            conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+            non_english_only=True,
+            require_activated_view_snapshot=require_activated_view_snapshot,
+            require_processable_conversation=require_processable_conversation,
+            include_checkpoints=include_checkpoints,
+        )
+        .order_by(None)
+        .cte("requested_translation_candidates")
+        .prefix_with("MATERIALIZED", dialect="postgresql")
     )
-    requests = [
-        CandidateLocaleRequestRow(
-            id=request_id,
+    undescribed_group = aliased(OpinionGroup)
+    undescribed_lineage = aliased(OpinionGroupLineage)
+    missing_description = (
+        select(undescribed_group.id)
+        .join(undescribed_lineage, undescribed_lineage.id == undescribed_group.lineage_id)
+        .where(
+            undescribed_group.candidate_id == requests.c.candidate_id,
+            undescribed_lineage.system_description_id.is_(None),
+        )
+        .correlate(requests)
+        .exists()
+    )
+    translated = (
+        select(OpinionGroupDescriptionTranslation.id)
+        .where(
+            OpinionGroupDescriptionTranslation.description_id
+            == OpinionGroupLineage.system_description_id,
+            OpinionGroupDescriptionTranslation.locale == requests.c.locale,
+        )
+        .correlate(OpinionGroupLineage, requests)
+        .exists()
+    )
+    ranked_demands = (
+        select(
+            OpinionGroupLineage.system_description_id.label("description_id"),
+            requests.c.locale,
+            requests.c.conversation_id,
+            requests.c.updated_at,
+            requests.c.id.label("request_id"),
+            func.row_number()
+            .over(
+                partition_by=(OpinionGroupLineage.system_description_id, requests.c.locale),
+                order_by=(requests.c.updated_at, requests.c.id, OpinionGroup.id),
+            )
+            .label("source_rank"),
+        )
+        .select_from(requests)
+        .join(OpinionGroup, OpinionGroup.candidate_id == requests.c.candidate_id)
+        .join(OpinionGroupLineage, OpinionGroupLineage.id == OpinionGroup.lineage_id)
+        .where(
+            OpinionGroupLineage.system_description_id.is_not(None),
+            ~missing_description,
+            ~translated,
+        )
+        .subquery()
+    )
+    # Pick the original request owner before filtering existing work. Otherwise
+    # later requests for a shared description can repeatedly reassign its work.
+    existing_work = (
+        select(OpinionGroupDescriptionTranslationWork.id)
+        .where(
+            OpinionGroupDescriptionTranslationWork.description_id
+            == ranked_demands.c.description_id,
+            OpinionGroupDescriptionTranslationWork.locale == ranked_demands.c.locale,
+            or_(
+                OpinionGroupDescriptionTranslationWork.conversation_id
+                == ranked_demands.c.conversation_id,
+                OpinionGroupDescriptionTranslationWork.lease_token.is_not(None),
+            ),
+        )
+        .correlate(ranked_demands)
+        .exists()
+    )
+    query = (
+        select(
+            type_coerce(ranked_demands.c.description_id, Integer),
+            type_coerce(ranked_demands.c.locale, String),
+            type_coerce(ranked_demands.c.conversation_id, Integer),
+        )
+        .where(ranked_demands.c.source_rank == 1, ~existing_work)
+        .order_by(
+            ranked_demands.c.updated_at,
+            ranked_demands.c.request_id,
+            ranked_demands.c.description_id,
+        )
+    )
+    if limit is not None:
+        query = query.limit(limit)
+    demands = [
+        TranslationWorkDemand(
+            description_id=description_id,
             conversation_id=conversation_id,
-            candidate_id=candidate_id,
             locale=locale,
         )
-        for request_id, conversation_id, candidate_id, locale, _ in session.execute(request_query)
+        for description_id, locale, conversation_id in session.execute(query)
     ]
-    description_ids_by_request_id: dict[int, set[int]] = {}
-    translated_description_ids_by_request_id: dict[int, set[int]] = {}
-    for request in requests:
-        description_ids, all_lineages_have_descriptions = (
-            _required_system_description_ids_for_candidate(
-                session,
-                candidate_id=request.candidate_id,
-            )
-        )
-        if not all_lineages_have_descriptions or not description_ids:
-            continue
-        description_ids_by_request_id[request.id] = description_ids
-        existing_translation_rows = session.execute(
-            select(OpinionGroupDescriptionTranslation.description_id).where(
-                and_(
-                    OpinionGroupDescriptionTranslation.description_id.in_(sorted(description_ids)),
-                    OpinionGroupDescriptionTranslation.locale == request.locale,
-                )
-            )
-        ).all()
-        translated_description_ids_by_request_id[request.id] = {
-            row.description_id for row in existing_translation_rows
-        }
-    demands = translation_work_demands_for_candidate_requests(
-        requests=requests,
-        description_ids_by_request_id=description_ids_by_request_id,
-        translated_description_ids_by_request_id=translated_description_ids_by_request_id,
-    )
     return _insert_or_reactivate_translation_work(session, demands=demands, limit=limit)
 
 

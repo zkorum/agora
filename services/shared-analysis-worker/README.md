@@ -58,6 +58,57 @@ server-side timeout policy.
 Because this package is baked into worker images, connection-policy changes take
 effect when each consuming service is rebuilt and redeployed.
 
+## Database reconciliation
+
+Latest-lineage matching uses one ordered candidate lookup per requested lineage
+scope before loading representative statements. It requires the canonical
+`opinion_group_scope_latest_lineage_idx` partial index from
+`services/shared-backend/src/schema.ts`. Generate and apply its migration before
+deploying the updated math updater. The query explicitly matches the descending
+index's `NULLS LAST` ordering; PostgreSQL can otherwise prefer a backward scan of
+an unrelated candidate index even though the candidate ID is non-null.
+
+Requested translation materialization selects missing `(description_id, locale)`
+pairs in SQL instead of issuing lineage and translation queries per request.
+It waits for all required base descriptions, preserves the earliest eligible
+request's ownership of shared descriptions, and excludes satisfied or already
+correctly assigned work before applying the batch limit. The writer still
+rechecks insertion and reassignment against concurrent claims. Eager lineage
+materialization also excludes ready, already-assigned, and actively leased work
+before limiting candidates, allowing later missing work to progress.
+
+Lease recovery first probes the partial lease-expiry indexes. When nothing is
+expired, it skips planning and executing the candidate/view relevance updates.
+Existing polling intervals, retry cooldowns, and checkpoint eligibility continue
+to govern when work becomes runnable.
+
+Run database regressions against a disposable local PostgreSQL database:
+
+```bash
+AGORA_TEST_POSTGRES_DSN=postgresql://postgres:test-only@localhost:5432/postgres \
+  uv run --extra dev pytest tests/test_previous_lineage_selection.py tests/test_ai_description_work.py
+```
+
+The tests use isolated schemas and exercise shared descriptions, small-batch
+fairness, leases, retry state, checkpoints, and idle-query counts. Without that
+environment variable, the functional tests use SQLite and PostgreSQL-specific
+concurrency cases are skipped.
+
+Local synthetic measurements during this change found:
+
+- With 150,000 group rows across 1,000 scopes, selecting five scopes took about
+  8 ms with the original query/indexes, 0.24 ms with the new index alone, and
+  0.12 ms with the indexed lookup rewrite. The results were identical.
+- With 200 locale requests sharing correctly assigned translation work, one
+  reconciliation cycle dropped from 403 statements to 2. Five-run median elapsed
+  time dropped from about 152 ms to 9.4 ms.
+- Idle description lease recovery kept two statements but reduced five-run median
+  time from about 8.7 ms to 1.2 ms by using simple expiry probes.
+
+These are synthetic local PostgreSQL 16 measurements, not production capacity
+estimates or evidence of the cause of a historical RDS failover. Compare plans,
+buffer reads, query rates, and CPU-credit trends after deployment.
+
 ## English AI descriptions
 
 Base descriptions use English as their canonical language. A fixed system

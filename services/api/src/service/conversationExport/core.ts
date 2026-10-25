@@ -63,6 +63,7 @@ import type { ExportAccessLevel } from "./generators/base.js";
 import { getConversationViewAccessLevelForConversation } from "@/service/conversationAccess.js";
 import { generateRandomSlugId } from "@/crypto.js";
 import type { RealtimeSSEManager } from "../realtimeSSE.js";
+import { getPrimaryDatabase } from "@/shared-backend/db.js";
 
 const MAX_EXPORTS_PER_CONVERSATION = 7;
 const EXPORT_COLLECTION_WINDOW_MS = 2_000;
@@ -1235,12 +1236,38 @@ interface ClaimedGenerationRecord {
     artifacts: readonly ArtifactRecord[];
 }
 
+function readyGenerationCondition(now: Date) {
+    return or(
+        and(
+            eq(conversationExportGenerationTable.status, "collecting"),
+            lte(conversationExportGenerationTable.collectingEndsAt, now),
+        ),
+        and(
+            eq(conversationExportGenerationTable.status, "queued"),
+            or(
+                isNull(conversationExportGenerationTable.nextAttemptAt),
+                lte(conversationExportGenerationTable.nextAttemptAt, now),
+            ),
+        ),
+    );
+}
+
 async function claimNextGeneration({
     db,
 }: {
     db: PostgresDatabase;
 }): Promise<ClaimedGenerationRecord | undefined> {
-    return await db.transaction(async (tx) => {
+    const primaryDb = getPrimaryDatabase(db);
+    // Most ticks are idle. Probe the indexed work table without opening a
+    // transaction or joining conversation metadata; claims still recheck below.
+    const pending = await primaryDb
+        .select({ id: conversationExportGenerationTable.id })
+        .from(conversationExportGenerationTable)
+        .where(readyGenerationCondition(new Date()))
+        .limit(1);
+    if (pending.length === 0) return undefined;
+
+    return await primaryDb.transaction(async (tx) => {
         const now = new Date();
         const candidates = await tx
             .select({
@@ -1267,32 +1294,7 @@ async function claimNextGeneration({
                     conversationContentTable.id,
                 ),
             )
-            .where(
-                or(
-                    and(
-                        eq(
-                            conversationExportGenerationTable.status,
-                            "collecting",
-                        ),
-                        lte(
-                            conversationExportGenerationTable.collectingEndsAt,
-                            now,
-                        ),
-                    ),
-                    and(
-                        eq(conversationExportGenerationTable.status, "queued"),
-                        or(
-                            isNull(
-                                conversationExportGenerationTable.nextAttemptAt,
-                            ),
-                            lte(
-                                conversationExportGenerationTable.nextAttemptAt,
-                                now,
-                            ),
-                        ),
-                    ),
-                ),
-            )
+            .where(readyGenerationCondition(now))
             .orderBy(asc(conversationExportGenerationTable.createdAt))
             .limit(EXPORT_WORKER_MAX_GENERATIONS_PER_TICK);
 
@@ -1316,33 +1318,7 @@ async function claimNextGeneration({
                 .where(
                     and(
                         eq(conversationExportGenerationTable.id, candidate.id),
-                        or(
-                            and(
-                                eq(
-                                    conversationExportGenerationTable.status,
-                                    "collecting",
-                                ),
-                                lte(
-                                    conversationExportGenerationTable.collectingEndsAt,
-                                    now,
-                                ),
-                            ),
-                            and(
-                                eq(
-                                    conversationExportGenerationTable.status,
-                                    "queued",
-                                ),
-                                or(
-                                    isNull(
-                                        conversationExportGenerationTable.nextAttemptAt,
-                                    ),
-                                    lte(
-                                        conversationExportGenerationTable.nextAttemptAt,
-                                        now,
-                                    ),
-                                ),
-                            ),
-                        ),
+                        readyGenerationCondition(now),
                     ),
                 )
                 .returning({

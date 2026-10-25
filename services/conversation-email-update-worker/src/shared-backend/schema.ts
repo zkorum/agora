@@ -5419,6 +5419,9 @@ export const opinionGroupTable = pgTable(
             t.candidateId,
             t.lineageId,
         ),
+        index("opinion_group_scope_latest_lineage_idx")
+            .on(t.scopeId, t.candidateId.desc())
+            .where(isNotNull(t.lineageId)),
     ],
 );
 

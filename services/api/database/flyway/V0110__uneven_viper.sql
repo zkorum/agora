@@ -1,0 +1,1 @@
+CREATE INDEX "opinion_group_scope_latest_lineage_idx" ON "opinion_group" USING btree ("scope_id","candidate_id" DESC NULLS LAST) WHERE "opinion_group"."lineage_id" is not null;
