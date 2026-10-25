@@ -2,7 +2,8 @@ FROM python:3.13-slim-trixie AS build
 
 WORKDIR /app/services/import-worker
 # Builds have no TTY; noninteractive debconf avoids prompts and frontend fallback warnings.
-RUN apt-get update && \
+RUN printf 'Acquire::Retries "3";\nAPT::Update::Error-Mode "any";\n' > /etc/apt/apt.conf.d/80-build-network && \
+    apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get upgrade -y && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates git && \
     dpkg --compare-versions "$(dpkg-query -W -f='${Version}' ca-certificates)" ge 20250419+deb13u1 && \
@@ -18,7 +19,8 @@ RUN uv sync --frozen --no-dev --no-editable
 FROM python:3.13-slim-trixie
 
 # Builds have no TTY; noninteractive debconf avoids prompts and frontend fallback warnings.
-RUN apt-get update && \
+RUN printf 'Acquire::Retries "3";\nAPT::Update::Error-Mode "any";\n' > /etc/apt/apt.conf.d/80-build-network && \
+    apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get upgrade -y && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates tini && \
     dpkg --compare-versions "$(dpkg-query -W -f='${Version}' ca-certificates)" ge 20250419+deb13u1 && \

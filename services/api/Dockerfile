@@ -7,7 +7,9 @@ FROM --platform=$TARGETPLATFORM node:24.22.1-trixie-slim AS runtime-base
 FROM --platform=$TARGETPLATFORM runtime-base AS deps
 WORKDIR /app
 # Builds have no TTY; noninteractive debconf avoids prompts and frontend fallback warnings.
-RUN apt-get update && \
+# APT otherwise accepts partial index downloads, hiding transient mirror failures.
+RUN printf 'Acquire::Retries "3";\nAPT::Update::Error-Mode "any";\n' > /etc/apt/apt.conf.d/80-build-network && \
+    apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates python3 make g++ && \
     dpkg --compare-versions "$(dpkg-query -W -f='${Version}' ca-certificates)" ge 20250419+deb13u1 && \
     rm -rf /var/lib/apt/lists/*
@@ -23,7 +25,8 @@ RUN pnpm install --frozen-lockfile --prod
 FROM --platform=$BUILDPLATFORM node:24.22.1-trixie-slim AS build
 WORKDIR /app
 # Builds have no TTY; noninteractive debconf avoids prompts and frontend fallback warnings.
-RUN apt-get update && \
+RUN printf 'Acquire::Retries "3";\nAPT::Update::Error-Mode "any";\n' > /etc/apt/apt.conf.d/80-build-network && \
+    apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates python3 make g++ && \
     dpkg --compare-versions "$(dpkg-query -W -f='${Version}' ca-certificates)" ge 20250419+deb13u1 && \
     rm -rf /var/lib/apt/lists/*
@@ -43,6 +46,7 @@ FROM --platform=$TARGETPLATFORM runtime-base AS production
 ARG TARGETARCH
 # Builds have no TTY; noninteractive debconf avoids prompts and frontend fallback warnings.
 RUN test "$(dpkg --print-architecture)" = "$TARGETARCH" && \
+    printf 'Acquire::Retries "3";\nAPT::Update::Error-Mode "any";\n' > /etc/apt/apt.conf.d/80-build-network && \
     apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates tini && \
     dpkg --compare-versions "$(dpkg-query -W -f='${Version}' ca-certificates)" ge 20250419+deb13u1 && \

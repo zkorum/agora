@@ -5,7 +5,8 @@ WORKDIR /app
 ARG PIP_INSTALL_TARGET=.
 
 # Builds have no TTY; noninteractive debconf avoids prompts and frontend fallback warnings.
-RUN apt-get update && \
+RUN printf 'Acquire::Retries "3";\nAPT::Update::Error-Mode "any";\n' > /etc/apt/apt.conf.d/80-build-network && \
+    apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get upgrade -y && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates git build-essential python3-dev && \
     dpkg --compare-versions "$(dpkg-query -W -f='${Version}' ca-certificates)" ge 20250419~deb12u2 && \
@@ -31,7 +32,8 @@ RUN pip install --no-cache-dir --no-deps "$PIP_INSTALL_TARGET"
 FROM python:3.13-slim-bookworm
 
 # Builds have no TTY; noninteractive debconf avoids prompts and frontend fallback warnings.
-RUN apt-get update && \
+RUN printf 'Acquire::Retries "3";\nAPT::Update::Error-Mode "any";\n' > /etc/apt/apt.conf.d/80-build-network && \
+    apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get upgrade -y && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates tini libgomp1 && \
     dpkg --compare-versions "$(dpkg-query -W -f='${Version}' ca-certificates)" ge 20250419~deb12u2 && \
