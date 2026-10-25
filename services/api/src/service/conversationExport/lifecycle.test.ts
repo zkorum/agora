@@ -103,6 +103,7 @@ describe("export lifecycle with a stale replica", () => {
     let replica: PostgresJsDatabase;
     let db: PostgresJsDatabase;
     const storedObjects = new Map<string, Buffer>();
+    const statements: string[] = [];
 
     beforeAll(async () => {
         const createDatabase = async (): Promise<PostgresJsDatabase> => {
@@ -122,7 +123,12 @@ describe("export lifecycle with a stale replica", () => {
                 username: "postgres",
                 password: "postgres",
             };
-            const client = postgres(connection);
+            const client = postgres({
+                ...connection,
+                debug: (_connection, query) => {
+                    statements.push(query);
+                },
+            });
             clients.push(client);
             const database = drizzle(client);
             // Generate the real schema in a disposable database, including its constraints.
@@ -305,6 +311,29 @@ describe("export lifecycle with a stale replica", () => {
             .from(conversationExportGenerationTable);
         return generation;
     }
+
+    it.each(["collecting", "queued"] satisfies ("collecting" | "queued")[])(
+        "checks a future %s generation without transactions or metadata joins despite a stale replica",
+        async (status) => {
+            await primary.update(conversationExportGenerationTable).set({
+                status,
+                collectingEndsAt: new Date(Date.now() + 60_000),
+                nextAttemptAt: new Date(Date.now() + 60_000),
+            });
+            // Warm the connections so driver initialization is outside the capture.
+            await getGeneration();
+            statements.length = 0;
+
+            await runWorker();
+
+            expect(statements).toHaveLength(1);
+            expect(statements[0]).toContain(
+                'from "conversation_export_generation"',
+            );
+            expect(statements[0]).not.toMatch(/\bjoin\b|\bbegin\b|\bcommit\b/i);
+            expect(mocks.generate).not.toHaveBeenCalled();
+        },
+    );
 
     it("completes in one attempt and serves completion while replica rows remain queued", async () => {
         await runWorker();

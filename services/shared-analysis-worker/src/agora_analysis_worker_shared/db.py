@@ -1313,7 +1313,7 @@ def _assign_lineages_for_groups(
                     )
                 )
 
-    previous_groups_by_scope = _fetch_latest_lineage_groups_by_scope(
+    previous_groups_by_scope = fetch_latest_lineage_groups_by_scope(
         session,
         scope_ids=list(new_groups_by_scope),
     )
@@ -1530,7 +1530,7 @@ def _create_lineages(
     return [row.id for row in session.execute(insert_query).all()]
 
 
-def _fetch_latest_lineage_groups_by_scope(
+def fetch_latest_lineage_groups_by_scope(
     session: Session,
     *,
     scope_ids: list[int],
@@ -1538,19 +1538,29 @@ def _fetch_latest_lineage_groups_by_scope(
     if not scope_ids:
         return {}
 
+    # Drizzle's descending index uses NULLS LAST, even for this non-null key.
+    # Match it explicitly so PostgreSQL can stop at the first row of each scope.
+    latest_candidate_id = (
+        select(OpinionGroup.candidate_id)
+        .where(
+            OpinionGroup.scope_id == OpinionGroupLineageScope.id,
+            OpinionGroup.lineage_id.is_not(None),
+        )
+        .order_by(OpinionGroup.candidate_id.desc().nulls_last())
+        .limit(1)
+        .correlate(OpinionGroupLineageScope)
+        .scalar_subquery()
+    )
+    # Materialize one indexed lookup per requested scope before joining groups.
+    # Inlining this lookup can otherwise evaluate it for historical group rows.
     latest_candidate = (
         select(
-            OpinionGroup.scope_id.label("scope_id"),
-            func.max(OpinionGroup.candidate_id).label("candidate_id"),
+            OpinionGroupLineageScope.id.label("scope_id"),
+            latest_candidate_id.label("candidate_id"),
         )
-        .where(
-            and_(
-                OpinionGroup.scope_id.in_(scope_ids),
-                OpinionGroup.lineage_id.is_not(None),
-            )
-        )
-        .group_by(OpinionGroup.scope_id)
-        .subquery()
+        .where(OpinionGroupLineageScope.id.in_(sorted(set(scope_ids))))
+        .cte("latest_lineage_candidates")
+        .prefix_with("MATERIALIZED", dialect="postgresql")
     )
     lineage_rows = session.execute(
         select(
@@ -1579,6 +1589,7 @@ def _fetch_latest_lineage_groups_by_scope(
             and_(
                 OpinionGroup.lineage_id.is_not(None),
                 OpinionGroupOpinionStats.representative_agreement_type.is_not(None),
+                OpinionGroupOpinionStats.representative_probability_agreement.is_not(None),
             )
         )
     ).all()
