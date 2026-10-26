@@ -22,7 +22,10 @@ import {
     getOrCreateDefaultProjectForOrganization,
     getOrCreatePersonalOrganization,
 } from "./projectAccess.js";
-import type { AllProjectCapability } from "./projectAccessLogic.js";
+import {
+    type AllProjectCapability,
+    isAllProjectCapability,
+} from "./projectAccessLogic.js";
 import { getImplicitDefaultDisplayLanguage } from "./projectLanguage.js";
 import { sourceLanguageToDisplayLanguage } from "./translationLanguageSetting.js";
 
@@ -116,7 +119,8 @@ async function getDestinationOrganizations({
             ...row,
             capabilities: new Set<AllProjectCapability>(),
         };
-        if (capability !== null) organization.capabilities.add(capability);
+        if (capability !== null && isAllProjectCapability(capability))
+            organization.capabilities.add(capability);
         organizations.set(row.id, organization);
     }
     return organizations;

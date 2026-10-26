@@ -4,6 +4,38 @@ import { createExportParticipantMap } from "./participantMap.js";
 import { buildCommentRows, commentHeaders } from "./comments.js";
 
 describe("buildCommentRows", () => {
+    it("keeps a surviving seed's text and counts without linking its deleted administrator", () => {
+        const participantMap = createExportParticipantMap();
+        const rows = buildCommentRows({
+            opinions: [
+                {
+                    authorId: undefined,
+                    content: "Project seed",
+                    contentPlainText: "Project seed",
+                    createdAt: new Date("2026-01-02T03:04:05.000Z"),
+                    numAgrees: 2,
+                    numDisagrees: 1,
+                    numPasses: 0,
+                    moderationId: null,
+                    moderationAction: null,
+                },
+            ],
+            participantMap,
+        });
+        expect(rows).toMatchObject([
+            {
+                "author-id": null,
+                comment_text: "Project seed",
+                agrees: 2,
+                disagrees: 1,
+                votes: 3,
+            },
+        ]);
+        expect(
+            participantMap.getOrCreateExportParticipantId({ userId: "active" }),
+        ).toBe(0);
+    });
+
     it("exports Sensemaker-compatible comment rows", async () => {
         const rows = buildCommentRows({
             opinions: [

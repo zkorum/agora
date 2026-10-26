@@ -142,6 +142,7 @@ export async function assertPostgresVoteFlushRecovery({
         valkeyBatchLimit: 100,
     });
     let activeFlush: Promise<void> | undefined;
+    let bufferStopped = false;
     try {
         // Keep the API's pool size of ten, with nine healthy connections busy,
         // so the flush must reuse the connection that experienced the reset.
@@ -296,6 +297,11 @@ export async function assertPostgresVoteFlushRecovery({
             ]),
         ]);
 
+        // Stop the buffer while its durable admission database is still open.
+        valkeyRef.current = undefined;
+        await buffer.shutdown();
+        bufferStopped = true;
+
         // A reset followed directly by shutdown also needs to clear query.
         // Otherwise end() waits forever even without a queued ROLLBACK.
         const interruptedAgain = observe(writer`select pg_sleep(2)`.execute());
@@ -321,15 +327,16 @@ export async function assertPostgresVoteFlushRecovery({
     } finally {
         try {
             for (const reservation of reservations) reservation.release();
-            await writer.end({ timeout: 0 });
-            await proxy.close();
-            // A failed assertion must dispose of the real writer before normal
-            // shutdown joins it. The observation deadline never unlocks it.
             if (activeFlush !== undefined) {
                 expect(await observe(activeFlush)).not.toBe("pending");
             }
             valkeyRef.current = undefined;
-            await buffer.shutdown();
+            try {
+                if (!bufferStopped) await buffer.shutdown();
+            } finally {
+                await writer.end({ timeout: 0 });
+                await proxy.close();
+            }
         } finally {
             valkey.close();
             await cache.stop();

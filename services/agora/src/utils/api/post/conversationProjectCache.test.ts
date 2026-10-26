@@ -77,7 +77,6 @@ function freshConversation(currentProjectSlug: string): ConversationDetailData {
       conversationCapabilities: {
         canEdit: true,
         canDelete: false,
-        canManageIntegrations: false,
       },
     },
   };
@@ -227,7 +226,6 @@ describe("conversation project cache updates", () => {
                   conversationCapabilities: {
                     canEdit: false,
                     canDelete: false,
-                    canManageIntegrations: false,
                   },
                 },
               },

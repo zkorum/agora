@@ -1,6 +1,6 @@
 import { eq, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { Decoder, GlideClient, TimeoutError } from "@valkey/valkey-glide";
+import { Decoder, GlideClient } from "@valkey/valkey-glide";
 import { GenericContainer } from "testcontainers";
 import { expect, vi } from "vitest";
 import { z } from "zod";
@@ -59,11 +59,12 @@ export async function assertVoteReadSerialization({
     const release = new Promise<void>((resolve) => {
         releaseRead = resolve;
     });
-    const originalHmget = valkey.hmget.bind(valkey);
+    const originalInvoke = valkey.invokeScript.bind(valkey);
     const recheck = vi
-        .spyOn(valkey, "hmget")
+        .spyOn(valkey, "invokeScript")
+        .mockImplementationOnce(originalInvoke)
         .mockImplementationOnce(async (...args) => {
-            const captured = await originalHmget(...args);
+            const captured = await originalInvoke(...args);
             await release;
             return captured;
         });
@@ -91,7 +92,7 @@ export async function assertVoteReadSerialization({
                 observation.unref();
             }),
         ]);
-        expect(recheck).toHaveBeenCalledTimes(1);
+        expect(recheck).toHaveBeenCalledTimes(2);
         expect(await valkey.hlen(VALKEY_QUEUE_KEYS.VOTE_BUFFER_DATA)).toBe(1);
         expect(
             await db
@@ -103,15 +104,17 @@ export async function assertVoteReadSerialization({
 
         // A warning or elapsed observation deadline must never release the
         // writer guard while its transaction can still commit.
-        await buffer.add({ vote: { ...vote, vote: "disagree" } });
+        await buffer.add({
+            vote: { ...vote, vote: "disagree" },
+        });
         expect(buffer.flush()).toBe(flushing);
         releaseRead?.();
         await flushing;
         await vi.waitFor(() => {
-            expect(recheck.mock.settledResults.at(0)?.type).toBe("fulfilled");
+            expect(recheck.mock.settledResults.at(1)?.type).toBe("fulfilled");
         });
-        // The older flush may commit its captured choice, but its cleanup
-        // must retain the newer payload for the next serialized flush.
+        // PostgreSQL owns the newer action even though the cache read captured
+        // the old payload. Cache cleanup must not remove that newer wakeup.
         expect(await valkey.hlen(VALKEY_QUEUE_KEYS.VOTE_BUFFER_DATA)).toBe(1);
         await buffer.flush();
         expect(
@@ -138,7 +141,7 @@ export async function assertVoteReadSerialization({
                 .select()
                 .from(voteContentTable)
                 .where(eq(voteContentTable.opinionContentId, opinionContentId)),
-        ).toHaveLength(2);
+        ).toHaveLength(1);
         expect(await valkey.hlen(VALKEY_QUEUE_KEYS.VOTE_BUFFER_DATA)).toBe(0);
     } finally {
         if (observation !== undefined) clearTimeout(observation);
@@ -221,9 +224,9 @@ export async function assertNativeValkeyTimeoutRecovery({
         });
         await locked;
         const flushing = buffer.flush();
-        const rejection = expect(flushing).rejects.toBeInstanceOf(TimeoutError);
+        const completion = expect(flushing).resolves.toBeUndefined();
         // Synchronize on the real database lock wait: the initial queue read
-        // has finished, but the in-transaction HMGET has not been sent yet.
+        // has finished. A subsequent cache outage must not abort persistence.
         await vi.waitFor(async () => {
             const counts = z.array(z.object({ count: z.number() })).parse(
                 await db.execute(sql`
@@ -237,7 +240,7 @@ export async function assertNativeValkeyTimeoutRecovery({
         await control.customCommand(["CLIENT", "PAUSE", "500", "ALL"]);
         releaseLock();
         await blocker;
-        await rejection;
+        await completion;
         // This command completes when the pause ends, without a guessed sleep.
         await control.ping();
         expect(await valkey.hlen(VALKEY_QUEUE_KEYS.VOTE_BUFFER_DATA)).toBe(1);
@@ -246,7 +249,7 @@ export async function assertNativeValkeyTimeoutRecovery({
                 .select()
                 .from(voteTable)
                 .where(eq(voteTable.opinionId, opinionId)),
-        ).toEqual([]);
+        ).toHaveLength(1);
         await buffer.flush();
         expect(
             await db
@@ -305,11 +308,12 @@ export async function assertValkeyStallSessionState({
     const reachedRead = new Promise<void>((resolve) => {
         reportRead = resolve;
     });
-    const originalHmget = valkey.hmget.bind(valkey);
+    const originalInvoke = valkey.invokeScript.bind(valkey);
     const recheck = vi
-        .spyOn(valkey, "hmget")
+        .spyOn(valkey, "invokeScript")
+        .mockImplementationOnce(originalInvoke)
         .mockImplementationOnce(async (...args) => {
-            const captured = await originalHmget(...args);
+            const captured = await originalInvoke(...args);
             reportRead();
             await release;
             return captured;
@@ -344,14 +348,14 @@ export async function assertValkeyStallSessionState({
               AND query LIKE 'select%from "conversation"%for no key update'
         `),
             );
-        expect(sessions).toHaveLength(1);
-        expect(sessions).toEqual([
-            expect.objectContaining({
-                state: "idle in transaction",
-                wait_event_type: "Client",
-                wait_event: "ClientRead",
-            }),
-        ]);
+        expect(sessions).toEqual([]);
+        await db.transaction(async (tx) => {
+            await tx
+                .select({ id: conversationTable.id })
+                .from(conversationTable)
+                .where(eq(conversationTable.id, conversationId))
+                .for("no key update");
+        });
     } finally {
         releaseRead();
         try {

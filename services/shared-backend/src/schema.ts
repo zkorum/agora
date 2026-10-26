@@ -682,6 +682,19 @@ export const organizationMembershipCapabilityEnum = pgEnum(
     ],
 );
 
+export const projectCapabilityValues = [
+    "project_update",
+    "project_delete",
+    "project_manage_owner_organizations",
+    "conversation_create",
+    "conversation_edit",
+    "conversation_delete",
+    "conversation_moderate",
+    "conversation_email_update",
+] as const;
+
+// Historical grant rows retain their enum labels. Only projectCapabilityValues
+// are supported by application authorization and new grants.
 export const organizationMembershipAllProjectCapabilityEnum = pgEnum(
     "organization_membership_all_project_capability_enum",
     [
@@ -2662,6 +2675,13 @@ export const conversationTable = pgTable(
             .default("polis"), // "polis" = standard agree/disagree/unsure voting with clustering, "ranking" = ranked-choice prioritization family
         isImporting: boolean("is_importing").notNull().default(false), // if true, the conversation is being imported from CSV and should not be visible in feed until import completes
         isClosed: boolean("is_closed").notNull().default(false), // if true, the conversation was closed by owner and users cannot post opinions or vote
+        closingTargetRevision: bigint("closing_target_revision", {
+            mode: "number",
+        }),
+        closedFinalizedAt: timestamp("closed_finalized_at", {
+            mode: "date",
+            precision: 0,
+        }),
         isEdited: boolean("is_edited").notNull().default(false), // if true, the conversation content was edited after creation. Used for "Edited" badge in UI. Use this field (not updatedAt) to determine if a conversation was edited — updatedAt can be accidentally bumped by migration scripts.
         requiresEventTicket: eventSlugEnum("requires_event_ticket"), // if set, only users with verified ticket for this event can participate (vote/post opinions)
         createdAt: timestamp("created_at", {
@@ -2712,6 +2732,10 @@ export const conversationTable = pgTable(
                 sql`${table.id} DESC`,
             )
             .where(isNotNull(table.currentContentId)),
+        check(
+            "conversation_closing_state_check",
+            sql`(${table.isClosed} OR (${table.closingTargetRevision} IS NULL AND ${table.closedFinalizedAt} IS NULL)) AND (${table.closedFinalizedAt} IS NULL OR ${table.closingTargetRevision} IS NOT NULL)`,
+        ),
         check(
             "conversation_subtype_config_check",
             sql`((${table.conversationType} = 'polis' AND ${table.polisConfigId} IS NOT NULL AND ${table.rankingConfigId} IS NULL) OR (${table.conversationType} = 'ranking' AND ${table.rankingConfigId} IS NOT NULL AND ${table.polisConfigId} IS NULL))`,
@@ -3933,6 +3957,76 @@ export const contentTranslationWorkTable = pgTable(
     ],
 );
 
+/**
+ * Stable conversation-local identity. Account association is separately removable;
+ * different detached participants must never share a placeholder account.
+ */
+/** @service api, shared-analysis-worker, import-worker */
+export const conversationParticipantTable = pgTable(
+    "conversation_participant",
+    {
+        id: uuid("id").primaryKey().defaultRandom(),
+        conversationId: integer("conversation_id")
+            .notNull()
+            .references(() => conversationTable.id),
+        userId: uuid("user_id").references(() => userTable.id),
+        createdAt: timestamp("created_at", { mode: "date", precision: 0 })
+            .notNull()
+            .defaultNow(),
+    },
+    (table) => [
+        unique("conversation_participant_account_unique").on(
+            table.conversationId,
+            table.userId,
+        ),
+        index("conversation_participant_user_idx").on(table.userId),
+    ],
+);
+
+/** @service api, shared-analysis-worker */
+export const voteSubmissionTable = pgTable(
+    "vote_submission",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        conversationId: integer("conversation_id")
+            .notNull()
+            .references(() => conversationTable.id),
+        userId: uuid("user_id")
+            .notNull()
+            .references(() => userTable.id),
+        opinionId: integer("opinion_id")
+            .notNull()
+            .references(() => opinionTable.id),
+        opinionContentId: integer("opinion_content_id")
+            .notNull()
+            .references(() => opinionContentTable.id),
+        action: varchar("action", { length: 8 })
+            .$type<"agree" | "disagree" | "pass" | "cancel">()
+            .notNull(),
+        submittedAt: timestamp("submitted_at", {
+            mode: "date",
+            precision: 3,
+        }).notNull(),
+        pending: boolean("pending").notNull().default(true),
+    },
+    (table) => [
+        unique("vote_submission_account_opinion_unique").on(
+            table.userId,
+            table.opinionId,
+        ),
+        index("vote_submission_pending_idx")
+            .on(table.submittedAt, table.id)
+            .where(sql`${table.pending} = true`),
+        index("vote_submission_conversation_pending_idx")
+            .on(table.conversationId)
+            .where(sql`${table.pending} = true`),
+        check(
+            "vote_submission_action_check",
+            sql`${table.action} IN ('agree', 'disagree', 'pass', 'cancel')`,
+        ),
+    ],
+);
+
 // like or dislike on opinions for each user
 /** @service shared-analysis-worker, import-worker */
 export const voteTable = pgTable(
@@ -3942,6 +4036,9 @@ export const voteTable = pgTable(
         authorId: uuid("author_id")
             .notNull()
             .references(() => userTable.id),
+        participantId: uuid("participant_id").references(
+            () => conversationParticipantTable.id,
+        ),
         opinionId: integer("opinion_id")
             .notNull()
             .references(() => opinionTable.id),
@@ -3964,6 +4061,10 @@ export const voteTable = pgTable(
     },
     (t) => [
         unique().on(t.authorId, t.opinionId),
+        unique("vote_participant_opinion_unique").on(
+            t.participantId,
+            t.opinionId,
+        ),
         index("vote_authorId_idx").on(t.authorId),
         index("vote_author_active_updated_id_idx")
             .using(
@@ -5033,6 +5134,7 @@ export const opinionGroupLineageDescriptionWorkTable = pgTable(
         sourceCandidateId: integer("source_candidate_id")
             .notNull()
             .references(() => opinionGroupCandidateTable.id),
+        sourcesBlocked: boolean("sources_blocked").notNull().default(false),
         attemptCount: integer("attempt_count").notNull().default(0),
         leaseOwner: varchar("lease_owner", { length: 100 }),
         leaseToken: varchar("lease_token", { length: 100 }),
@@ -5438,6 +5540,9 @@ export const opinionGroupUserTable = pgTable(
         userId: uuid("user_id")
             .notNull()
             .references(() => userTable.id),
+        participantId: uuid("participant_id").references(
+            () => conversationParticipantTable.id,
+        ),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -5451,6 +5556,10 @@ export const opinionGroupUserTable = pgTable(
             t.userId,
         ),
         unique("opinion_group_user_group_unique").on(t.groupId, t.userId),
+        unique("opinion_group_participant_candidate_unique").on(
+            t.candidateId,
+            t.participantId,
+        ),
     ],
 );
 

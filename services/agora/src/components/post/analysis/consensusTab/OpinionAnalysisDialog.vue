@@ -14,6 +14,10 @@
 
         <div class="dialog-content">
           <OpinionIdentityCard
+            v-if="
+              opinionItem.createdAt !== undefined &&
+              opinionItem.username !== undefined
+            "
             :author-verified="false"
             :created-at="opinionItem.createdAt"
             :user-identity="opinionItem.username"

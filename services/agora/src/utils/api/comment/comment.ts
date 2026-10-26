@@ -25,6 +25,7 @@ import type {
 import { Dto } from "src/shared/types/dto";
 import type { AnalysisView } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { useOpinionRedactionStore } from "src/stores/opinionRedaction";
 import type { ParticipationRequestResult } from "src/utils/api/participation/requestResult";
 import { waitForAuthInitialization } from "src/utils/auth/waitForAuthInitialization";
 import type { z } from "zod";
@@ -54,6 +55,7 @@ type CreateNewCommentResult =
   | Extract<CreateCommentResponse, { success: false }>;
 
 export function useBackendCommentApi() {
+  const redactions = useOpinionRedactionStore();
   const { buildEncodedUcan, createRawAxiosRequestConfig } = useCommonApi();
   const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
   const { ensureParticipationAuthState } = useBackendAuthApi();
@@ -365,7 +367,9 @@ export function useBackendCommentApi() {
           timeoutProfile: "extended",
         })
       );
-      return Dto.analysisFrameGroups.parse(response.data);
+      return redactions.projectGroups(
+        Dto.analysisFrameGroups.parse(response.data)
+      );
     }
 
     const response = await DefaultApiFactory(
@@ -376,7 +380,9 @@ export function useBackendCommentApi() {
       requestParams,
       createRawAxiosRequestConfig({ timeoutProfile: "extended" })
     );
-    return Dto.analysisFrameGroups.parse(response.data);
+    return redactions.projectGroups(
+      Dto.analysisFrameGroups.parse(response.data)
+    );
   }
 
   async function fetchAnalysisFrameGroupLabels(params: {
@@ -457,7 +463,8 @@ export function useBackendCommentApi() {
           timeoutProfile: "extended",
         })
       );
-      return Dto.analysisFrameOpinionList.parse(response.data);
+      const list = Dto.analysisFrameOpinionList.parse(response.data);
+      return { ...list, items: list.items.map(redactions.projectOpinion) };
     }
 
     const response = await DefaultApiFactory(
@@ -468,7 +475,8 @@ export function useBackendCommentApi() {
       requestParams,
       createRawAxiosRequestConfig({ timeoutProfile: "extended" })
     );
-    return Dto.analysisFrameOpinionList.parse(response.data);
+    const list = Dto.analysisFrameOpinionList.parse(response.data);
+    return { ...list, items: list.items.map(redactions.projectOpinion) };
   }
 
   async function fetchAnalysisCheckpoints(params: {

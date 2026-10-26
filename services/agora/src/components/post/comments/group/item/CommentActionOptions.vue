@@ -50,6 +50,7 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import { copyToClipboard } from "quasar";
+import { opinionEditingTranslations } from "src/components/post/comments/opinionEditing.i18n";
 import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
 import ZKActionDialog from "src/components/ui-library/ZKActionDialog.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
@@ -111,6 +112,7 @@ const deleteCommentMutation = useDeleteCommentMutation();
 const { t } = useComponentI18n<CommentActionOptionsTranslations>(
   commentActionOptionsTranslations
 );
+const { t: editT } = useComponentI18n(opinionEditingTranslations);
 
 async function reportContentCallback() {
   if (isLoggedIn.value) {
@@ -188,6 +190,25 @@ function deleteCommentCallback() {
 }
 
 function optionButtonClicked() {
+  const editableOpinion = props.editableOpinion;
+  const editing = editableOpinion?.management?.editing;
+  const edit =
+    editableOpinion !== undefined &&
+    (editing?.allowed === true ||
+      editableOpinion.management?.canDelete === true)
+      ? {
+          disabled:
+            editing?.allowed !== true ||
+            props.editingOpinionSlugId !== undefined,
+          description:
+            editing?.allowed === false
+              ? editT(
+                  editing.reason === "has_votes" ? "hasVotes" : "unavailable"
+                )
+              : undefined,
+          handler: () => emit("editOpinion", editableOpinion),
+        }
+      : undefined;
   // Show comment actions using the new system
   commentActions.showCommentActions({
     targetId: props.commentItem.opinionSlugId,
@@ -203,14 +224,8 @@ function optionButtonClicked() {
       muteUserCallback,
       moderateCommentCallback,
       shareOpinionCallback,
-      canEdit:
-        props.editableOpinion?.management?.canEdit === true &&
-        props.editingOpinionSlugId === undefined,
+      edit,
       canDelete: props.commentItem.management?.canDelete === true,
-      editCommentCallback: () => {
-        if (props.editableOpinion !== undefined)
-          emit("editOpinion", props.editableOpinion);
-      },
     },
   });
 }
@@ -221,7 +236,8 @@ function optionButtonClicked() {
 async function handleActionSelected(action: ContentAction) {
   if (
     action.id === "edit" &&
-    props.editableOpinion?.management?.canEdit !== true
+    (props.editableOpinion?.management?.editing.allowed !== true ||
+      props.editingOpinionSlugId !== undefined)
   ) {
     commentActions.closeDialog();
     return;
@@ -230,7 +246,11 @@ async function handleActionSelected(action: ContentAction) {
 }
 
 watch(
-  () => props.commentItem.management,
+  [
+    () => props.commentItem.management,
+    () => props.editableOpinion?.management,
+    () => props.editingOpinionSlugId,
+  ],
   () => {
     if (commentActions.dialogState.value.isVisible) optionButtonClicked();
   }

@@ -1,5 +1,6 @@
 import {
     and,
+    count,
     desc,
     eq,
     gt,
@@ -29,6 +30,7 @@ import {
     realtimeEventOutboxTable,
     realtimeEventOutboxTopicTable,
 } from "@/shared-backend/schema.js";
+import { getAnalysisEligibleOpinionVotes } from "./opinionVoteEligibility.js";
 import type { SSEEventDataByType } from "@/shared/types/dto.js";
 import {
     zodSSEEventDataByType,
@@ -178,6 +180,11 @@ function parseContentTranslationUpdatedData(payload: unknown) {
 }
 
 type RealtimeReplayEvent =
+    | {
+          id: number;
+          event: "opinion_redacted";
+          data: SSEEventDataByType["opinion_redacted"];
+      }
     | {
           id: number;
           event: "opinion_vote_counts_updated";
@@ -349,11 +356,13 @@ interface QueueConversationSurveyUpdatedEventProps {
 type LiveOpinionVoteCount =
     SSEEventDataByType["conversation_comment_stats_updated"]["opinionVoteCounts"][number];
 
-async function fetchLiveOpinionVoteCounts({
+async function fetchEligibleOpinionVoteCounts({
     db,
+    conversationSlugId,
     opinionIds,
 }: {
     db: PostgresJsDatabase;
+    conversationSlugId: string;
     opinionIds: number[];
 }): Promise<LiveOpinionVoteCount[]> {
     const uniqueOpinionIds = Array.from(new Set(opinionIds));
@@ -361,23 +370,68 @@ async function fetchLiveOpinionVoteCounts({
         return [];
     }
 
-    const rows = await db
+    const opinions = await db
         .select({
+            id: opinionTable.id,
             opinionSlugId: opinionTable.slugId,
-            numAgrees: opinionTable.numAgrees,
-            numDisagrees: opinionTable.numDisagrees,
-            numPasses: opinionTable.numPasses,
+            conversationId: opinionTable.conversationId,
         })
         .from(opinionTable)
-        .where(inArray(opinionTable.id, uniqueOpinionIds));
-
-    return rows.map((row) => ({
-        opinionSlugId: row.opinionSlugId,
-        numParticipants: row.numAgrees + row.numDisagrees + row.numPasses,
-        numAgrees: row.numAgrees,
-        numDisagrees: row.numDisagrees,
-        numPasses: row.numPasses,
-    }));
+        .innerJoin(
+            conversationTable,
+            eq(conversationTable.id, opinionTable.conversationId),
+        )
+        .where(
+            and(
+                eq(conversationTable.slugId, conversationSlugId),
+                inArray(opinionTable.id, uniqueOpinionIds),
+                isNotNull(opinionTable.currentContentId),
+            ),
+        );
+    const firstOpinion = opinions.at(0);
+    if (firstOpinion === undefined) return [];
+    const countsByOpinionId = new Map(
+        opinions.map((opinion) => [
+            opinion.id,
+            {
+                opinionSlugId: opinion.opinionSlugId,
+                numParticipants: 0,
+                numAgrees: 0,
+                numDisagrees: 0,
+                numPasses: 0,
+            },
+        ]),
+    );
+    const eligibleVotes = await getAnalysisEligibleOpinionVotes({
+        db,
+        conversationId: firstOpinion.conversationId,
+        opinionIds: opinions.map((opinion) => opinion.id),
+    });
+    const votes = await db
+        .select({
+            opinionId: eligibleVotes.opinionId,
+            vote: eligibleVotes.vote,
+            count: count(),
+        })
+        .from(eligibleVotes)
+        .groupBy(eligibleVotes.opinionId, eligibleVotes.vote);
+    for (const vote of votes) {
+        const counts = countsByOpinionId.get(vote.opinionId);
+        if (counts === undefined) continue;
+        counts.numParticipants += vote.count;
+        switch (vote.vote) {
+            case "agree":
+                counts.numAgrees += vote.count;
+                break;
+            case "disagree":
+                counts.numDisagrees += vote.count;
+                break;
+            case "pass":
+                counts.numPasses += vote.count;
+                break;
+        }
+    }
+    return [...countsByOpinionId.values()];
 }
 
 export async function queueConversationSettingsUpdatedEvent({
@@ -407,8 +461,9 @@ export async function queueOpinionVoteCountsUpdatedEvent({
     conversationSlugId: string;
     opinionIds: number[];
 }): Promise<void> {
-    const opinionVoteCounts = await fetchLiveOpinionVoteCounts({
+    const opinionVoteCounts = await fetchEligibleOpinionVoteCounts({
         db,
+        conversationSlugId,
         opinionIds,
     });
     if (opinionVoteCounts.length === 0) return;
@@ -438,6 +493,27 @@ export async function queueConversationSurveyUpdatedEvent({
         eventType: "conversation_survey_updated",
         payload,
     });
+}
+
+export async function queueOpinionRedactedEvent({
+    db,
+    conversationSlugId,
+    opinions,
+}: {
+    db: PostgresJsDatabase;
+    conversationSlugId: string;
+    opinions: SSEEventDataByType["opinion_redacted"]["opinions"];
+}): Promise<void> {
+    for (let offset = 0; offset < opinions.length; offset += 100) {
+        const payload: SSEEventDataByType["opinion_redacted"] = {
+            conversationSlugId,
+            opinions: opinions.slice(offset, offset + 100),
+            timestamp: Date.now(),
+        };
+        await db
+            .insert(realtimeEventOutboxTable)
+            .values({ eventType: "opinion_redacted", payload });
+    }
 }
 
 export async function queueOpinionUpdatedEvent({
@@ -569,10 +645,6 @@ export async function queueConversationCommentStatsUpdatedEventsForViewSnapshots
     }
 
     const primaryDb = getPrimaryDatabase(db);
-    const opinionVoteCounts = await fetchLiveOpinionVoteCounts({
-        db: primaryDb,
-        opinionIds: changedOpinionIds,
-    });
     const rows = await primaryDb
         .select({
             conversationSlugId: conversationTable.slugId,
@@ -606,7 +678,20 @@ export async function queueConversationCommentStatsUpdatedEventsForViewSnapshots
         );
 
     const timestamp = Date.now();
-    const values = rows.map((row) => {
+    const values: (typeof realtimeEventOutboxTable.$inferInsert)[] = [];
+    const countsByConversation = new Map<string, LiveOpinionVoteCount[]>();
+    for (const row of rows) {
+        let opinionVoteCounts = countsByConversation.get(
+            row.conversationSlugId,
+        );
+        if (opinionVoteCounts === undefined) {
+            opinionVoteCounts = await fetchEligibleOpinionVoteCounts({
+                db: primaryDb,
+                conversationSlugId: row.conversationSlugId,
+                opinionIds: changedOpinionIds,
+            });
+            countsByConversation.set(row.conversationSlugId, opinionVoteCounts);
+        }
         const payload: SSEEventDataByType["conversation_comment_stats_updated"] =
             {
                 conversationSlugId: row.conversationSlugId,
@@ -623,8 +708,11 @@ export async function queueConversationCommentStatsUpdatedEventsForViewSnapshots
                 opinionVoteCounts,
                 timestamp,
             };
-        return { eventType: "conversation_comment_stats_updated", payload };
-    });
+        values.push({
+            eventType: "conversation_comment_stats_updated",
+            payload,
+        });
+    }
 
     if (values.length === 0) {
         return;
@@ -858,6 +946,13 @@ function parseRealtimeEventOutboxRow({
                 ? { id, event: eventType, data: result.data }
                 : undefined;
         }
+        case "opinion_redacted": {
+            const parsed =
+                zodSSEEventDataByType.opinion_redacted.safeParse(payload);
+            return parsed.success
+                ? { id, event: eventType, data: parsed.data }
+                : undefined;
+        }
         case "conversation_analysis_updated": {
             try {
                 return {
@@ -974,6 +1069,7 @@ export async function fetchConversationRealtimeEventsAfterId({
                     "conversation_settings_updated",
                     "conversation_survey_updated",
                     "opinion_updated",
+                    "opinion_redacted",
                 ]),
                 sql`${realtimeEventOutboxTable.payload}->>'conversationSlugId' = ${conversationSlugId}`,
             ),
@@ -1135,6 +1231,7 @@ export function createRealtimeEventOutboxBridge({
                 break;
             }
             case "opinion_updated":
+            case "opinion_redacted":
             case "conversation_survey_updated": {
                 realtimeSSEManager.broadcastToConversationSubscribers({
                     ...realtimeEvent,

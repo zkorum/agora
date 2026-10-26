@@ -23,6 +23,7 @@ import type { Dto } from "src/shared/types/dto";
 import type {
   AnalysisView,
   DisplayedOpinionItem,
+  OpinionEditingAvailability,
   OpinionItem,
 } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
@@ -1066,6 +1067,10 @@ export function useEditOpinionMutation(conversationSlugId: string) {
           result.reason === "not_allowed" ||
           result.reason === "conversation_locked"
         ) {
+          const editing: OpinionEditingAvailability = {
+            allowed: false,
+            reason: result.reason,
+          };
           queryClient.setQueriesData<OpinionCache>(
             { queryKey: ["comments", conversationSlugId], predicate },
             (cache) =>
@@ -1077,7 +1082,7 @@ export function useEditOpinionMutation(conversationSlugId: string) {
                     ? opinion
                     : {
                         ...opinion,
-                        management: { ...opinion.management, canEdit: false },
+                        management: { ...opinion.management, editing },
                       },
               })
           );
@@ -1088,11 +1093,14 @@ export function useEditOpinionMutation(conversationSlugId: string) {
                 ? opinion
                 : {
                     ...opinion,
-                    management: { ...opinion.management, canEdit: false },
+                    management: { ...opinion.management, editing },
                   }
           );
         }
-        if (result.reason === "version_conflict") {
+        if (
+          result.reason === "version_conflict" ||
+          result.reason === "not_allowed"
+        ) {
           void queryClient.invalidateQueries({
             queryKey: ["opinionTarget", request.opinionSlugId],
             predicate,

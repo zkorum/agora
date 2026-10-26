@@ -3,7 +3,7 @@ import {
     arrayContains,
     eq,
     exists,
-    isNotNull,
+    inArray,
     isNull,
     sql,
     type SQL,
@@ -12,32 +12,12 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
     maxdiffComparisonTable,
     maxdiffResultTable,
-    opinionTable,
     rankingItemTable,
-    voteTable,
+    userTable,
 } from "@/shared-backend/schema.js";
+import { getEligibleParticipantIdsForAnalysis } from "@/shared-backend/surveyAnalysis.js";
 
-export function seedOpinionHasVotes({
-    db,
-    opinionId,
-}: {
-    db: PostgresJsDatabase;
-    opinionId: typeof opinionTable.id;
-}): SQL<boolean> {
-    return exists(
-        db
-            .select({ id: voteTable.id })
-            .from(voteTable)
-            .where(
-                and(
-                    eq(voteTable.opinionId, opinionId),
-                    isNotNull(voteTable.currentContentId),
-                ),
-            ),
-    ).mapWith(Boolean);
-}
-
-export function rankingSeedHasVotes({
+export async function rankingSeedHasVotes({
     db,
     conversationId,
     slugId,
@@ -45,7 +25,37 @@ export function rankingSeedHasVotes({
     db: PostgresJsDatabase;
     conversationId: number;
     slugId: typeof rankingItemTable.slugId;
-}): SQL<boolean> {
+}): Promise<SQL<boolean>> {
+    const eligibleParticipantIds = await getEligibleParticipantIdsForAnalysis({
+        db,
+        conversationId,
+        candidateParticipantIds: async () => {
+            const voters = await db
+                .selectDistinct({
+                    participantId: maxdiffResultTable.participantId,
+                })
+                .from(maxdiffResultTable)
+                .innerJoin(
+                    maxdiffComparisonTable,
+                    eq(
+                        maxdiffComparisonTable.maxdiffResultId,
+                        maxdiffResultTable.id,
+                    ),
+                )
+                .innerJoin(
+                    userTable,
+                    eq(userTable.id, maxdiffResultTable.participantId),
+                )
+                .where(
+                    and(
+                        eq(maxdiffResultTable.conversationId, conversationId),
+                        isNull(maxdiffComparisonTable.deletedAt),
+                        eq(userTable.isDeleted, false),
+                    ),
+                );
+            return voters.map((voter) => voter.participantId);
+        },
+    });
     // Drizzle needs a PostgreSQL array expression to correlate the candidate set
     // with the outer item row, including items that were neither best nor worst.
     const candidate = sql`ARRAY[${slugId}::text]`;
@@ -60,10 +70,20 @@ export function rankingSeedHasVotes({
                     maxdiffComparisonTable.maxdiffResultId,
                 ),
             )
+            .innerJoin(
+                userTable,
+                eq(userTable.id, maxdiffResultTable.participantId),
+            )
             .where(
                 and(
                     eq(maxdiffResultTable.conversationId, conversationId),
                     isNull(maxdiffComparisonTable.deletedAt),
+                    eq(userTable.isDeleted, false),
+                    eligibleParticipantIds === undefined
+                        ? undefined
+                        : inArray(maxdiffResultTable.participantId, [
+                              ...eligibleParticipantIds,
+                          ]),
                     arrayContains(
                         maxdiffComparisonTable.candidateSet,
                         candidate,

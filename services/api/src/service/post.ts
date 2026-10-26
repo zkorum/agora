@@ -39,7 +39,12 @@ import {
     setSurveyConfigForConversation,
 } from "@/service/survey.js";
 import { scheduleConversationAnalysisRefresh } from "@/shared-backend/conversationCounters.js";
-import { createConversationViewSnapshotsFromCurrentState } from "@/service/conversationViewSnapshot.js";
+import {
+    finalizeCurrentPolisConversation,
+    finalizeCurrentRankingConversation,
+} from "./conversationFinalization.js";
+import { createConversationViewSnapshotsFromCurrentState } from "./conversationViewSnapshot.js";
+import { scheduleAnalysisUpdate } from "@/shared-backend/analysisScheduler.js";
 import { queueConversationSettingsUpdatedEvent } from "@/service/realtimeEventOutbox.js";
 import {
     hasProjectCapability,
@@ -794,6 +799,7 @@ export async function closeConversation({
             preferredOpinionGroupCount:
                 polisConversationConfigTable.preferredOpinionGroupCount,
             conversationType: conversationTable.conversationType,
+            isImporting: conversationTable.isImporting,
         })
         .from(conversationTable)
         .leftJoin(
@@ -827,59 +833,83 @@ export async function closeConversation({
     if (!canUpdateConversation) {
         return { success: false, reason: "not_allowed" };
     }
+    if (conversation[0].isImporting)
+        return { success: false, reason: "not_allowed" };
 
-    const transitioned = await db.transaction(async (tx) => {
-        const updatedRows = await tx
-            .update(conversationTable)
-            .set({ isClosed: true })
-            .where(
-                and(
-                    eq(conversationTable.id, conversation[0].conversationId),
-                    eq(conversationTable.isClosed, false),
-                ),
-            )
-            .returning({ id: conversationTable.id });
-        if (updatedRows.length === 0) {
-            return false;
-        }
+    const transitioned = await db.transaction(
+        async (
+            tx,
+        ): Promise<
+            { transitioned: false } | { transitioned: true; finalized: boolean }
+        > => {
+            const updatedRows = await tx
+                .update(conversationTable)
+                .set({
+                    isClosed: true,
+                    closedFinalizedAt: null,
+                })
+                .where(
+                    and(
+                        eq(
+                            conversationTable.id,
+                            conversation[0].conversationId,
+                        ),
+                        eq(conversationTable.isClosed, false),
+                    ),
+                )
+                .returning({ id: conversationTable.id });
+            if (updatedRows.length === 0) {
+                return { transitioned: false };
+            }
 
-        if (conversation[0].conversationType === "polis") {
-            await createConversationViewSnapshotsFromCurrentState({
+            let finalized: boolean;
+            if (conversation[0].conversationType === "polis") {
+                finalized = await finalizeCurrentPolisConversation({
+                    db: tx,
+                    conversationId: conversation[0].conversationId,
+                });
+                if (!finalized) {
+                    await scheduleAnalysisUpdate({
+                        db: tx,
+                        conversationId: conversation[0].conversationId,
+                        log,
+                        advanceGeneration: false,
+                    });
+                }
+            } else {
+                finalized = await finalizeCurrentRankingConversation({
+                    db: tx,
+                    conversationId: conversation[0].conversationId,
+                });
+            }
+
+            await queueConversationSettingsUpdatedEvent({
                 db: tx,
-                conversationId: conversation[0].conversationId,
-                viewReason: "conversation_lifecycle_updated",
-                lifecycleCheckpointReason: "conversation_closed",
-                emitRealtimeEvent: true,
+                conversationSlugId,
+                settings: {
+                    isIndexed: conversation[0].isIndexed,
+                    participationMode: conversation[0].participationMode,
+                    requiresEventTicket: conversation[0].requiresEventTicket,
+                    aiLabelingEnabled:
+                        conversation[0].aiLabelingEnabled ?? false,
+                    presentation: getVotingPresentationConfig(conversation[0]),
+                    preferredOpinionGroupCount:
+                        conversation[0].preferredOpinionGroupCount ?? null,
+                    isClosed: true,
+                    isFinalizing: !finalized,
+                },
             });
+            return { transitioned: true, finalized };
+        },
+    );
 
-            await scheduleConversationAnalysisRefresh({
-                db: tx,
-                conversationId: conversation[0].conversationId,
-                log,
-            });
-        }
-
-        await queueConversationSettingsUpdatedEvent({
-            db: tx,
-            conversationSlugId,
-            settings: {
-                isIndexed: conversation[0].isIndexed,
-                participationMode: conversation[0].participationMode,
-                requiresEventTicket: conversation[0].requiresEventTicket,
-                aiLabelingEnabled: conversation[0].aiLabelingEnabled ?? false,
-                presentation: getVotingPresentationConfig(conversation[0]),
-                preferredOpinionGroupCount:
-                    conversation[0].preferredOpinionGroupCount ?? null,
-                isClosed: true,
-            },
-        });
-        return true;
-    });
-
-    if (!transitioned) {
+    if (!transitioned.transitioned) {
         return { success: false, reason: "already_closed" };
     }
-    if (conversation[0].conversationType === "ranking") {
+    if (
+        conversation[0].conversationType === "ranking" &&
+        !transitioned.finalized
+    ) {
         await scheduleRankingStatsRefresh({
             valkey,
             conversationId: conversation[0].conversationId,
@@ -954,7 +984,11 @@ export async function openConversation({
     const transitioned = await db.transaction(async (tx) => {
         const updatedRows = await tx
             .update(conversationTable)
-            .set({ isClosed: false })
+            .set({
+                isClosed: false,
+                closingTargetRevision: null,
+                closedFinalizedAt: null,
+            })
             .where(
                 and(
                     eq(conversationTable.id, conversation[0].conversationId),
@@ -986,6 +1020,7 @@ export async function openConversation({
                 preferredOpinionGroupCount:
                     conversation[0].preferredOpinionGroupCount ?? null,
                 isClosed: false,
+                isFinalizing: false,
             },
         });
         return true;

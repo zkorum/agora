@@ -34,6 +34,7 @@ import { getConversationMultilingualSetting } from "./conversationMultilingual.j
 import { createConversationViewSnapshotsFromCurrentState } from "./conversationViewSnapshot.js";
 import {
     canManageOpinion,
+    getOpinionEditingAvailability,
     hasBlockingOpinionVotes,
 } from "./opinionPermissions.js";
 import { queueOpinionUpdatedEvent } from "./realtimeEventOutbox.js";
@@ -129,25 +130,33 @@ async function validateEdit({
         return { success: false, reason: "not_allowed" };
     if (opinion.sourceVersion !== sourceVersion)
         return { success: false, reason: "version_conflict" };
-    if (opinion.conversationLocked !== null)
-        return { success: false, reason: "conversation_locked" };
-    if (opinion.moderationAction === "hide")
-        return { success: false, reason: "not_allowed" };
-    if (
+    const hasVotes =
         (await hasBlockingOpinionVotes({
+            db,
+            opinionId: opinion.id,
+            conversationId: opinion.conversationId,
+        })) ||
+        (await voteBuffer.hasBlockingVotes({
             db,
             opinionId: opinion.id,
             authorId: opinion.authorId,
             isSeed: opinion.isSeed,
-        })) ||
-        (await voteBuffer.hasBlockingVotes({
-            opinionId: opinion.id,
-            authorId: opinion.authorId,
-            isSeed: opinion.isSeed,
-        }))
-    )
-        return { success: false, reason: "has_votes" };
-    return undefined;
+        }));
+    const editing = getOpinionEditingAvailability({
+        canManage: true,
+        isImporting: opinion.isImporting,
+        isLocked: opinion.conversationLocked !== null,
+        isHidden: opinion.moderationAction === "hide",
+        hasVotes,
+    });
+    if (editing.allowed) return undefined;
+    return {
+        success: false,
+        reason:
+            editing.reason === "import_in_progress"
+                ? "not_found"
+                : editing.reason,
+    };
 }
 
 type PreparedChange =
@@ -362,10 +371,10 @@ export async function editOpinion({
                 ((await hasBlockingOpinionVotes({
                     db: tx,
                     opinionId: opinion.id,
-                    authorId: opinion.authorId,
-                    isSeed: opinion.isSeed,
+                    conversationId: opinion.conversationId,
                 })) ||
                     (await voteBuffer.hasBlockingVotes({
+                        db: tx,
                         opinionId: opinion.id,
                         authorId: opinion.authorId,
                         isSeed: opinion.isSeed,

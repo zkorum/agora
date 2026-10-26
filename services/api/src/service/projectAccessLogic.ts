@@ -1,17 +1,12 @@
-import { organizationMembershipAllProjectCapabilityEnum } from "@/shared-backend/schema.js";
+import { projectCapabilityValues } from "@/shared-backend/schema.js";
 import type { PremiumFeature } from "@/shared/types/zod.js";
 
-export type AllProjectCapability =
-    (typeof organizationMembershipAllProjectCapabilityEnum.enumValues)[number];
+export type AllProjectCapability = (typeof projectCapabilityValues)[number];
 
-export interface OrganizationCapabilityGrant {
-    organizationId: number;
-    capability: AllProjectCapability;
-}
-
-export interface ProjectOrganizationOwnershipGrant {
-    projectId: number;
-    organizationId: number;
+export function isAllProjectCapability(
+    value: string,
+): value is AllProjectCapability {
+    return projectCapabilityValues.some((capability) => capability === value);
 }
 
 export interface PremiumEntitlementGrant {
@@ -40,32 +35,6 @@ export function getConversationCreateEmailUpdateConfiguration({
     };
 }
 
-export function getProjectIdsWithCapabilityFromGrants({
-    capabilityGrants,
-    projectOwnerships,
-    capability,
-}: {
-    capabilityGrants: readonly OrganizationCapabilityGrant[];
-    projectOwnerships: readonly ProjectOrganizationOwnershipGrant[];
-    capability: AllProjectCapability;
-}): number[] {
-    const organizationIdsWithCapability = new Set<number>();
-    for (const grant of capabilityGrants) {
-        if (grant.capability === capability) {
-            organizationIdsWithCapability.add(grant.organizationId);
-        }
-    }
-
-    const projectIds = new Set<number>();
-    for (const ownership of projectOwnerships) {
-        if (organizationIdsWithCapability.has(ownership.organizationId)) {
-            projectIds.add(ownership.projectId);
-        }
-    }
-
-    return Array.from(projectIds);
-}
-
 export function hasActivePremiumFeatureEntitlement({
     grants,
     feature,
@@ -78,7 +47,8 @@ export function hasActivePremiumFeatureEntitlement({
     for (const grant of grants) {
         if (
             grant.feature === feature &&
-            (grant.expiresAt === null || grant.expiresAt.getTime() > now.getTime())
+            (grant.expiresAt === null ||
+                grant.expiresAt.getTime() > now.getTime())
         ) {
             return true;
         }

@@ -174,6 +174,7 @@
             }"
             :is-live-analysis-paused="false"
             :is-conversation-closed="conversation.isClosed"
+            :is-finalizing="false"
             :navigate-to-discover-tab="showStatementsTab"
             :conversation-scroll-context="conversationScrollContext"
           />
@@ -513,7 +514,6 @@ const conversationData = computed<ExtendedConversation>(() => {
       conversationCapabilities: {
         canEdit: false,
         canDelete: false,
-        canManageIntegrations: false,
       },
     },
   };

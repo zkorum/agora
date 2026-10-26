@@ -575,7 +575,7 @@ describe("generateSqlAlchemyModels", () => {
             service: "test",
         });
 
-        expect(output).toContain('server_default="false"');
+        expect(output).toContain('server_default=text("false")');
         expect(output).toContain('server_default="0"');
     });
 

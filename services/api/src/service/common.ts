@@ -62,9 +62,6 @@ function getConversationCapabilities(
     return {
         canEdit: projectCapabilities?.has("conversation_edit") ?? false,
         canDelete: projectCapabilities?.has("conversation_delete") ?? false,
-        canManageIntegrations:
-            projectCapabilities?.has("conversation_manage_integrations") ??
-            false,
     };
 }
 
@@ -251,6 +248,7 @@ export function useCommonPost() {
                 conversationType: conversationTable.conversationType,
                 rankingMode: rankingConversationConfigTable.rankingMode,
                 isClosed: conversationTable.isClosed,
+                closedFinalizedAt: conversationTable.closedFinalizedAt,
                 isEdited: conversationTable.isEdited,
                 requiresEventTicket: conversationTable.requiresEventTicket,
                 externalSourceConfig:
@@ -399,7 +397,6 @@ export function useCommonPost() {
                 requestedCapabilities: [
                     "conversation_edit",
                     "conversation_delete",
-                    "conversation_manage_integrations",
                 ],
             }),
         ]);
@@ -466,6 +463,8 @@ export function useCommonPost() {
                     ) ?? DEFAULT_CONVERSATION_MULTILINGUAL_SETTING,
                 participationMode: postItem.participationMode,
                 isClosed: postItem.isClosed,
+                isFinalizing:
+                    postItem.isClosed && postItem.closedFinalizedAt === null,
                 isEdited: postItem.isEdited,
                 requiresEventTicket: postItem.requiresEventTicket ?? undefined,
                 organization:

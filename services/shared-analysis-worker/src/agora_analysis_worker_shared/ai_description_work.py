@@ -29,6 +29,10 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session, aliased
 
+from agora_analysis_worker_shared.analysis_lifecycle import (
+    activatable_analysis_view_ids,
+    finalize_closed_analysis,
+)
 from agora_analysis_worker_shared.db import (
     CheckpointActivationContext,
     materialize_checkpoint_reasons_for_activated_view_snapshots,
@@ -51,7 +55,6 @@ from agora_analysis_worker_shared.description_language import (
 from agora_analysis_worker_shared.description_translation import (
     DescriptionForTranslation,
     TranslationFailure,
-    TranslationRepresentativeOpinion,
     TranslationResult,
     description_translation_output_locales,
     description_translation_provider_targets,
@@ -70,6 +73,7 @@ from agora_analysis_worker_shared.generated_models import (
     ConversationViewSnapshotCheckpointReason,
     ConversationViewSnapshotReasonEnum,
     DisplayLanguageCode,
+    Opinion,
     OpinionContent,
     OpinionGroup,
     OpinionGroupCandidate,
@@ -82,12 +86,16 @@ from agora_analysis_worker_shared.generated_models import (
     OpinionGroupLineageDescriptionWork,
     OpinionGroupOpinionStats,
     OpinionGroupVariant,
+    OpinionModeration,
+    OpinionModerationAction,
     PolisConversationConfig,
     RealtimeEventOutbox,
+    User,
 )
 from agora_analysis_worker_shared.generated_shared_types import (
     SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES,
 )
+from agora_analysis_worker_shared.opinion_eligibility import current_opinion_source_condition
 
 log = logging.getLogger(__name__)
 POSTGRES_INSERT_BIND_PARAM_LIMIT = 60_000
@@ -1493,6 +1501,11 @@ def _activate_first_pass_display_safe_view_snapshots(
     if not conversation_ids or not conversation_view_snapshot_ids:
         return []
 
+    conversation_view_snapshot_ids = activatable_analysis_view_ids(
+        session, view_ids=conversation_view_snapshot_ids, conversation_ids=conversation_ids
+    )
+    if not conversation_view_snapshot_ids:
+        return []
     candidate_filters: list[ColumnElement[bool]] = [
         ConversationViewSnapshot.conversation_id.in_(sorted(set(conversation_ids))),
         ConversationViewSnapshot.id.in_(sorted(set(conversation_view_snapshot_ids))),
@@ -1508,7 +1521,12 @@ def _activate_first_pass_display_safe_view_snapshots(
     rows = session.execute(
         update(ConversationViewSnapshot)
         .where(and_(*candidate_filters))
-        .values(activated_at=func.now())
+        .values(
+            activated_at=func.now(),
+            is_closed=select(Conversation.is_closed)
+            .where(Conversation.id == ConversationViewSnapshot.conversation_id)
+            .scalar_subquery(),
+        )
         .returning(ConversationViewSnapshot.id)
     ).all()
     activated_view_snapshot_ids = [row.id for row in rows]
@@ -1517,6 +1535,7 @@ def _activate_first_pass_display_safe_view_snapshots(
         conversation_view_snapshot_ids=activated_view_snapshot_ids,
         checkpoint_activation_context=checkpoint_activation_context,
     )
+    finalize_closed_analysis(session, conversation_ids=conversation_ids)
     if candidate_count > 0 or activated_view_snapshot_ids:
         log.info(
             "[MathUpdaterDB] Checked first-pass snapshot activation "
@@ -2905,6 +2924,10 @@ def _lineage_work_relevant_candidate_filter(
                 == OpinionGroupLineageDescriptionWork.conversation_id,
                 AnalysisSnapshotResult.outcome == AnalysisResultOutcomeEnum.success,
                 OpinionGroupCandidate.id == OpinionGroupLineageDescriptionWork.source_candidate_id,
+                or_(
+                    OpinionGroupLineageDescriptionWork.sources_blocked.is_(False),
+                    _candidate_has_permitted_representatives(),
+                ),
                 OpinionGroupCandidate.outcome == AnalysisResultOutcomeEnum.success,
                 OpinionGroupCandidateAssessment.hidden_reason.is_(None),
                 OpinionGroup.lineage_id == OpinionGroupLineageDescriptionWork.lineage_id,
@@ -3377,6 +3400,7 @@ def _claim_ai_description_locale_work_items_batch(
                             )
                             .values(
                                 attempt_count=attempt_count,
+                                sources_blocked=False,
                                 lease_owner=worker_id,
                                 lease_token=lease_token,
                                 lease_expires_at=lease_expires_at,
@@ -3749,6 +3773,7 @@ def process_ai_description_locale_work_item(
                 )
                 session.commit()
                 return schedule
+            _lock_description_sources(session, candidate_ids=[claim.source_candidate_id])
             lineage_request = _fetch_base_description_request_for_lineage_work(
                 session,
                 claim=claim,
@@ -3788,6 +3813,14 @@ def process_ai_description_locale_work_item(
                 session.commit()
                 return schedule
             if generated_descriptions is not None and lineage_request is not None:
+                _lock_description_sources(session, candidate_ids=[claim.source_candidate_id])
+                current_request = _fetch_base_description_request_for_lineage_work(
+                    session, claim=claim
+                )
+                if current_request != lineage_request:
+                    _mark_lineage_description_work_complete(session, claim=claim)
+                    session.commit()
+                    return AiDescriptionWorkResult(conversation_id=claim.conversation_id)
                 description = generated_descriptions.groups.get(
                     lineage_request.group_key, MissingDescription()
                 )
@@ -3986,6 +4019,9 @@ def _process_lineage_description_work_items_batch(
                 continue
             active_claims.append(claim)
 
+        _lock_description_sources(
+            session, candidate_ids=sorted({claim.source_candidate_id for claim in active_claims})
+        )
         request_by_claim_id = _fetch_base_description_requests_for_lineage_work_batch(
             session,
             claims=active_claims,
@@ -4024,6 +4060,13 @@ def _process_lineage_description_work_items_batch(
     with Session(engine) as session:
         completed_claims: list[ClaimedLineageDescriptionWorkItem] = []
         generated_lineage_ids: set[int] = set()
+        _lock_description_sources(
+            session,
+            candidate_ids=sorted({claim.source_candidate_id for claim in processable_claims}),
+        )
+        current_requests = _fetch_base_description_requests_for_lineage_work_batch(
+            session, claims=processable_claims
+        )
         for claim in processable_claims:
             if not _ai_description_claim_is_active(session, claim=claim):
                 log.info(
@@ -4052,6 +4095,10 @@ def _process_lineage_description_work_items_batch(
                 continue
             request = request_by_claim_id.get(claim.id)
             outcome = outcomes_by_claim_id.get(claim.id)
+            if request is not None and current_requests.get(claim.id) != request:
+                _mark_lineage_description_work_complete(session, claim=claim)
+                completed_claims.append(claim)
+                continue
             if request is not None and isinstance(outcome, EnglishDescription):
                 _persist_generated_base_description_for_lineage_work(
                     session,
@@ -4527,6 +4574,21 @@ def _mark_lineage_description_work_complete(
     *,
     claim: ClaimedLineageDescriptionWorkItem,
 ) -> None:
+    description_id = session.scalar(
+        select(OpinionGroupLineage.system_description_id).where(
+            OpinionGroupLineage.id == claim.lineage_id
+        )
+    )
+    sources_blocked = (
+        description_id is None
+        and session.scalar(
+            select(OpinionGroupCandidate.id).where(
+                OpinionGroupCandidate.id == claim.source_candidate_id,
+                _candidate_has_permitted_representatives(),
+            )
+        )
+        is None
+    )
     session.execute(
         update(OpinionGroupLineageDescriptionWork)
         .where(
@@ -4540,6 +4602,7 @@ def _mark_lineage_description_work_complete(
             lease_token=None,
             lease_expires_at=None,
             non_retryable_ai_description_epoch=None,
+            sources_blocked=sources_blocked,
             last_error_at=None,
             last_error_code=None,
             last_error_message=None,
@@ -4584,6 +4647,82 @@ def _get_conversation_work_result(
     return AiDescriptionWorkResult(conversation_id=conversation_id)
 
 
+def _candidate_has_permitted_representatives() -> ColumnElement[bool]:
+    source_group = aliased(OpinionGroup)
+    permitted_representative = (
+        select(OpinionGroupOpinionStats.group_id)
+        .join(
+            AnalysisSnapshotOpinion,
+            AnalysisSnapshotOpinion.id == OpinionGroupOpinionStats.analysis_snapshot_opinion_id,
+        )
+        .join(Opinion, Opinion.id == AnalysisSnapshotOpinion.opinion_id)
+        .join(OpinionContent, OpinionContent.id == AnalysisSnapshotOpinion.opinion_content_id)
+        .outerjoin(User, User.id == Opinion.author_id)
+        .outerjoin(
+            OpinionModeration,
+            and_(
+                OpinionModeration.opinion_id == Opinion.id, OpinionModeration.deleted_at.is_(None)
+            ),
+        )
+        .where(
+            OpinionGroupOpinionStats.group_id == source_group.id,
+            OpinionGroupOpinionStats.representative_agreement_type.is_not(None),
+            current_opinion_source_condition(),
+            or_(
+                OpinionModeration.id.is_(None),
+                OpinionModeration.moderation_action != OpinionModerationAction.hide,
+            ),
+        )
+        .correlate(source_group)
+        .exists()
+    )
+    return and_(
+        select(AnalysisSnapshotResult.id)
+        .join(Conversation, Conversation.id == AnalysisSnapshotResult.conversation_id)
+        .where(
+            AnalysisSnapshotResult.id == OpinionGroupCandidate.snapshot_result_id,
+            _processable_conversation_condition(),
+        )
+        .correlate(OpinionGroupCandidate)
+        .exists(),
+        select(source_group.id)
+        .where(source_group.candidate_id == OpinionGroupCandidate.id)
+        .correlate(OpinionGroupCandidate)
+        .exists(),
+        ~select(source_group.id)
+        .where(
+            source_group.candidate_id == OpinionGroupCandidate.id,
+            ~permitted_representative,
+        )
+        .correlate(OpinionGroupCandidate)
+        .exists(),
+    )
+
+
+def _lock_description_sources(session: Session, *, candidate_ids: list[int]) -> None:
+    if not candidate_ids or session.get_bind().dialect.name != "postgresql":
+        return
+    conversation_ids = session.scalars(
+        select(AnalysisSnapshotResult.conversation_id)
+        .join(
+            OpinionGroupCandidate,
+            OpinionGroupCandidate.snapshot_result_id == AnalysisSnapshotResult.id,
+        )
+        .where(OpinionGroupCandidate.id.in_(candidate_ids))
+        .distinct()
+        .order_by(AnalysisSnapshotResult.conversation_id)
+    ).all()
+    # Match the source-mutation triggers in the final backfill migration. These
+    # short publication-only locks avoid reversing account/statement row locks;
+    # ordinary MVCC reads then see the source state ordered before publication.
+    for conversation_id in conversation_ids:
+        session.execute(
+            select(func.pg_advisory_xact_lock(1_097_617_445, Conversation.id)).where(
+                Conversation.id == conversation_id
+            )
+        ).all()
+
+
 def _fetch_base_description_request_for_lineage_work(
     session: Session,
     *,
@@ -4595,6 +4734,17 @@ def _fetch_base_description_request_for_lineage_work(
         )
     ).scalar_one_or_none()
     if existing_description_id is not None:
+        return None
+
+    if (
+        session.scalar(
+            select(OpinionGroupCandidate.id).where(
+                OpinionGroupCandidate.id == claim.source_candidate_id,
+                _candidate_has_permitted_representatives(),
+            )
+        )
+        is None
+    ):
         return None
 
     conversation_content = session.execute(
@@ -4645,11 +4795,24 @@ def _fetch_base_description_request_for_lineage_work(
             AnalysisSnapshotOpinion.id == OpinionGroupOpinionStats.analysis_snapshot_opinion_id,
         )
         .join(OpinionContent, OpinionContent.id == AnalysisSnapshotOpinion.opinion_content_id)
+        .join(Opinion, Opinion.id == AnalysisSnapshotOpinion.opinion_id)
+        .outerjoin(User, User.id == Opinion.author_id)
+        .outerjoin(
+            OpinionModeration,
+            and_(
+                OpinionModeration.opinion_id == Opinion.id, OpinionModeration.deleted_at.is_(None)
+            ),
+        )
         .where(
             and_(
                 OpinionGroup.candidate_id == claim.source_candidate_id,
                 OpinionGroup.lineage_id == claim.lineage_id,
                 OpinionGroupOpinionStats.representative_agreement_type.is_not(None),
+                current_opinion_source_condition(),
+                or_(
+                    OpinionModeration.id.is_(None),
+                    OpinionModeration.moderation_action != OpinionModerationAction.hide,
+                ),
             )
         )
         .order_by(AnalysisSnapshotOpinion.opinion_id)
@@ -4708,6 +4871,20 @@ def _fetch_base_description_requests_for_lineage_work_batch(
         return {}
 
     source_candidate_ids = sorted({claim.source_candidate_id for claim in pending_claims})
+    eligible_candidate_ids = set(
+        session.scalars(
+            select(OpinionGroupCandidate.id).where(
+                OpinionGroupCandidate.id.in_(source_candidate_ids),
+                _candidate_has_permitted_representatives(),
+            )
+        )
+    )
+    pending_claims = [
+        claim for claim in pending_claims if claim.source_candidate_id in eligible_candidate_ids
+    ]
+    if not pending_claims:
+        return {}
+    source_candidate_ids = sorted(eligible_candidate_ids)
     conversation_content_rows = session.execute(
         select(
             OpinionGroupCandidate.id.label("candidate_id"),
@@ -4758,10 +4935,23 @@ def _fetch_base_description_requests_for_lineage_work_batch(
             AnalysisSnapshotOpinion.id == OpinionGroupOpinionStats.analysis_snapshot_opinion_id,
         )
         .join(OpinionContent, OpinionContent.id == AnalysisSnapshotOpinion.opinion_content_id)
+        .join(Opinion, Opinion.id == AnalysisSnapshotOpinion.opinion_id)
+        .outerjoin(User, User.id == Opinion.author_id)
+        .outerjoin(
+            OpinionModeration,
+            and_(
+                OpinionModeration.opinion_id == Opinion.id, OpinionModeration.deleted_at.is_(None)
+            ),
+        )
         .where(
             and_(
                 tuple_(OpinionGroup.candidate_id, OpinionGroup.lineage_id).in_(group_pairs),
                 OpinionGroupOpinionStats.representative_agreement_type.is_not(None),
+                current_opinion_source_condition(),
+                or_(
+                    OpinionModeration.id.is_(None),
+                    OpinionModeration.moderation_action != OpinionModerationAction.hide,
+                ),
             )
         )
         .order_by(
@@ -4840,6 +5030,7 @@ def _persist_generated_base_description_for_lineage_work(
                 "locale": AI_DESCRIPTION_SOURCE_LOCALE,
                 "label": description.label,
                 "summary": description.summary,
+                "created_at": datetime.now(UTC),
             }
         )
         .returning(OpinionGroupDescription.id)
@@ -5061,59 +5252,6 @@ def _fetch_descriptions_for_translation_work_batch(
             conversation_title=row.conversation_title,
         )
 
-    context_pairs = sorted(
-        {
-            (context.source_candidate_id, context.lineage_id)
-            for context in context_by_description_id.values()
-        }
-    )
-    representative_opinions_by_description_id: dict[int, list[TranslationRepresentativeOpinion]] = {
-        description_id: [] for description_id in pending_description_ids
-    }
-    if context_pairs:
-        representative_rows = session.execute(
-            select(
-                OpinionGroup.candidate_id,
-                OpinionGroup.lineage_id,
-                AnalysisSnapshotOpinion.opinion_id,
-                OpinionContent.content,
-                OpinionGroupOpinionStats.representative_agreement_type,
-            )
-            .select_from(OpinionGroup)
-            .join(OpinionGroupOpinionStats, OpinionGroupOpinionStats.group_id == OpinionGroup.id)
-            .join(
-                AnalysisSnapshotOpinion,
-                AnalysisSnapshotOpinion.id == OpinionGroupOpinionStats.analysis_snapshot_opinion_id,
-            )
-            .join(OpinionContent, OpinionContent.id == AnalysisSnapshotOpinion.opinion_content_id)
-            .where(
-                and_(
-                    tuple_(OpinionGroup.candidate_id, OpinionGroup.lineage_id).in_(context_pairs),
-                    OpinionGroupOpinionStats.representative_agreement_type.is_not(None),
-                )
-            )
-            .order_by(
-                OpinionGroup.candidate_id,
-                OpinionGroup.lineage_id,
-                AnalysisSnapshotOpinion.opinion_id,
-            )
-        ).all()
-        description_id_by_context_pair = {
-            (context.source_candidate_id, context.lineage_id): context.description_id
-            for context in context_by_description_id.values()
-        }
-        for row in representative_rows:
-            description_id = description_id_by_context_pair.get((row.candidate_id, row.lineage_id))
-            if description_id is None or row.representative_agreement_type is None:
-                continue
-            representative_opinions_by_description_id.setdefault(description_id, []).append(
-                TranslationRepresentativeOpinion(
-                    opinion_id=row.opinion_id,
-                    stance=row.representative_agreement_type.value,
-                    content=row.content,
-                )
-            )
-
     descriptions_by_id: dict[int, DescriptionForTranslation] = {}
     for description_id in pending_description_ids:
         description_row = description_row_by_id[description_id]
@@ -5123,10 +5261,6 @@ def _fetch_descriptions_for_translation_work_batch(
             label=description_row.label,
             summary=description_row.summary,
             conversation_title=context.conversation_title if context is not None else None,
-            representative_opinions=sorted(
-                representative_opinions_by_description_id.get(description_id, []),
-                key=lambda opinion: (opinion.stance, opinion.opinion_id),
-            ),
         )
     return descriptions_by_id
 
@@ -5179,7 +5313,6 @@ def _fetch_description_for_translation_work(
     ).first()
 
     conversation_title: str | None = None
-    representative_opinions: list[TranslationRepresentativeOpinion] = []
     if lineage_context is not None:
         conversation_content = session.execute(
             select(ConversationContent.title)
@@ -5202,45 +5335,10 @@ def _fetch_description_for_translation_work(
         conversation_title = (
             conversation_content.title if conversation_content is not None else None
         )
-        representative_rows = session.execute(
-            select(
-                AnalysisSnapshotOpinion.opinion_id,
-                OpinionContent.content,
-                OpinionGroupOpinionStats.representative_agreement_type,
-            )
-            .select_from(OpinionGroup)
-            .join(OpinionGroupOpinionStats, OpinionGroupOpinionStats.group_id == OpinionGroup.id)
-            .join(
-                AnalysisSnapshotOpinion,
-                AnalysisSnapshotOpinion.id == OpinionGroupOpinionStats.analysis_snapshot_opinion_id,
-            )
-            .join(OpinionContent, OpinionContent.id == AnalysisSnapshotOpinion.opinion_content_id)
-            .where(
-                and_(
-                    OpinionGroup.candidate_id == lineage_context.source_candidate_id,
-                    OpinionGroup.lineage_id == lineage_context.lineage_id,
-                    OpinionGroupOpinionStats.representative_agreement_type.is_not(None),
-                )
-            )
-            .order_by(AnalysisSnapshotOpinion.opinion_id)
-        ).all()
-        representative_opinions = sorted(
-            [
-                TranslationRepresentativeOpinion(
-                    opinion_id=row.opinion_id,
-                    stance=row.representative_agreement_type.value,
-                    content=row.content,
-                )
-                for row in representative_rows
-                if row.representative_agreement_type is not None
-            ],
-            key=lambda opinion: (opinion.stance, opinion.opinion_id),
-        )
 
     return DescriptionForTranslation(
         description_id=description_row.id,
         label=description_row.label,
         summary=description_row.summary,
         conversation_title=conversation_title,
-        representative_opinions=representative_opinions,
     )

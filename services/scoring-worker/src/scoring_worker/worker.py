@@ -37,6 +37,7 @@ from scoring_worker.db import (
     ScoringPublication,
     UserScoreEntry,
     acquire_conversation_locks,
+    fetch_processable_scoring_conversation_ids,
     fetch_scoring_inputs,
     persist_scoring_batch,
     reconcile_unscored_conversations,
@@ -418,6 +419,13 @@ def _run_worker_once() -> None:
 
         try:
             # Step 2: Capture one coherent MVCC snapshot, then release it.
+            processable_ids = fetch_processable_scoring_conversation_ids(
+                processing_connection, conversation_ids=conv_ids
+            )
+            to_process = [item for item in to_process if item.conversation_id in processable_ids]
+            conv_ids = [item.conversation_id for item in to_process]
+            if not to_process:
+                continue
             inputs = fetch_scoring_inputs(
                 processing_connection,
                 conversation_ids=conv_ids,

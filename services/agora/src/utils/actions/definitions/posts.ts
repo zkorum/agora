@@ -108,8 +108,7 @@ export function getPostActions({
       icon: "mdi-sync",
       handler: syncGitHubCallback,
       isVisible: (context: ContentActionContext) =>
-        conversationCapabilities.canManageIntegrations &&
-        !context.isEmbeddedMode,
+        conversationCapabilities.canEdit && !context.isEmbeddedMode,
     });
   }
 

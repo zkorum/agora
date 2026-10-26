@@ -338,6 +338,11 @@ export function generateSqlAlchemyModels({
             if (pyType === "datetime") needsDatetime = true;
             if (pyType.includes("uuid_pkg")) needsUuid = true;
             if (pyType === "Any") needsAny = true;
+            if (
+                col.hasDefault &&
+                (col.defaultValue === "true" || col.defaultValue === "false")
+            )
+                usedSaTypes.add("text");
             const lower = col.sqlType
                 .replace(/^"|"$/g, "")
                 .toLowerCase()
@@ -365,12 +370,11 @@ export function generateSqlAlchemyModels({
     out += stdlib.join("\n") + "\n\n";
 
     // SQLAlchemy -- separate `Enum as SaEnum` from other imports (ruff isort)
-    // Sort: all-uppercase first, then PascalCase (matches ruff isort)
+    // Sort constants, classes, then functions (matches ruff isort).
     const saList = Array.from(usedSaTypes).sort((a, b) => {
-        const aUpper = a === a.toUpperCase();
-        const bUpper = b === b.toUpperCase();
-        if (aUpper && !bUpper) return -1;
-        if (!aUpper && bUpper) return 1;
+        const aKind = a === a.toUpperCase() ? 0 : /^[A-Z]/.test(a) ? 1 : 2;
+        const bKind = b === b.toUpperCase() ? 0 : /^[A-Z]/.test(b) ? 1 : 2;
+        if (aKind !== bKind) return aKind - bKind;
         return a.localeCompare(b);
     });
     if (saList.join(", ").length > 70) {
@@ -427,7 +431,7 @@ export function generateSqlAlchemyModels({
                     col.defaultValue === "true" ||
                     col.defaultValue === "false"
                 ) {
-                    mcArgs.push(`server_default="${col.defaultValue}"`);
+                    mcArgs.push(`server_default=text("${col.defaultValue}")`);
                 } else if (/^-?\d+$/.test(col.defaultValue)) {
                     mcArgs.push(`server_default="${col.defaultValue}"`);
                 }

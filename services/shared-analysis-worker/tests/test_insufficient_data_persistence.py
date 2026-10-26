@@ -141,7 +141,7 @@ def test_empty_vote_matrix_publishes_activated_zero_count_snapshot(
                 id=10,
                 slug_id="abc12345",
                 project_id=1,
-                current_content_id=None,
+                current_content_id=40,
                 polis_config_id=10,
                 ranking_config_id=None,
                 dynamic_translation_enabled=False,

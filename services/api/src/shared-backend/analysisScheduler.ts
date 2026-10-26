@@ -27,6 +27,7 @@ interface ScheduleAnalysisUpdateParams {
     db: PostgresJsDatabase;
     conversationId: number;
     log: AnalysisSchedulerLogger;
+    advanceGeneration?: boolean;
 }
 
 interface HasActiveVotesForMathWorkParams {
@@ -117,6 +118,7 @@ export async function scheduleAnalysisUpdate({
     db,
     conversationId,
     log,
+    advanceGeneration = true,
 }: ScheduleAnalysisUpdateParams): Promise<AnalysisSchedule> {
     return await db.transaction(async (tx) => {
         const now = nowZeroMs();
@@ -129,6 +131,8 @@ export async function scheduleAnalysisUpdate({
                 conversationSlugId: conversationTable.slugId,
                 conversationType: conversationTable.conversationType,
                 currentContentId: conversationTable.currentContentId,
+                isClosed: conversationTable.isClosed,
+                closedFinalizedAt: conversationTable.closedFinalizedAt,
             })
             .from(conversationTable)
             .leftJoin(
@@ -138,7 +142,8 @@ export async function scheduleAnalysisUpdate({
                     conversationTable.polisConfigId,
                 ),
             )
-            .where(eq(conversationTable.id, conversationId));
+            .where(eq(conversationTable.id, conversationId))
+            .for("no key update", { of: conversationTable });
 
         if (conversations.length === 0) {
             throw new Error(
@@ -158,6 +163,8 @@ export async function scheduleAnalysisUpdate({
 
         if (
             conversation.currentContentId === null ||
+            (conversation.isClosed &&
+                conversation.closedFinalizedAt !== null) ||
             conversation.conversationType !== "polis"
         ) {
             log.info(
@@ -187,7 +194,11 @@ export async function scheduleAnalysisUpdate({
         const updatedConfigs = await tx
             .update(polisConversationConfigTable)
             .set({
-                analysisDataGeneration: sql`${polisConversationConfigTable.analysisDataGeneration} + 1`,
+                analysisDataGeneration:
+                    advanceGeneration ||
+                    conversation.analysisDataGeneration === 0
+                        ? sql`${polisConversationConfigTable.analysisDataGeneration} + 1`
+                        : conversation.analysisDataGeneration,
             })
             .where(
                 eq(polisConversationConfigTable.id, conversation.polisConfigId),
@@ -203,6 +214,12 @@ export async function scheduleAnalysisUpdate({
             );
         }
         const { dataGeneration } = updatedConfig;
+        if (conversation.isClosed) {
+            await tx
+                .update(conversationTable)
+                .set({ closingTargetRevision: dataGeneration })
+                .where(eq(conversationTable.id, conversationId));
+        }
         log.info(
             {
                 event: "analysis_schedule",

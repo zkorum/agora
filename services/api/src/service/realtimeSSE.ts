@@ -124,6 +124,11 @@ type ConversationSubscriptionEvent =
       }
     | {
           id: number | undefined;
+          event: "opinion_redacted";
+          data: SSEEventDataByType["opinion_redacted"];
+      }
+    | {
+          id: number | undefined;
           event: "conversation_analysis_updated";
           data: SSEEventDataByType["conversation_analysis_updated"];
       }

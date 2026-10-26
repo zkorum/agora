@@ -7,11 +7,11 @@
  * - participantCount / totalParticipantCount: Unique voters (unmoderated / all)
  * - moderatedOpinionCount / hiddenOpinionCount: Opinions by moderation action
  *
- * Uses PostgreSQL FILTER clauses to compute unmoderated and total counts
- * in the same query (3 queries total, same as before).
+ * Aggregates votes once per participant and statements once per conversation;
+ * survey eligibility is applied to those participant aggregates.
  */
 
-import { eq, inArray, isNotNull, isNull, and, count, sql } from "drizzle-orm";
+import { eq, isNotNull, isNull, and, count, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
     conversationTable,
@@ -24,6 +24,7 @@ import { scheduleAnalysisUpdate } from "./analysisScheduler.js";
 import type { BaseLogger } from "pino";
 import { getEligibleParticipantIdsForAnalysis } from "./surveyAnalysis.js";
 import { nowZeroMs } from "./util.js";
+import { currentOpinionSourceCondition } from "./opinionEligibility.js";
 
 interface AllConversationCounters {
     opinionCount: number;
@@ -50,16 +51,31 @@ export async function calculateConversationCounters({
     conversationId: number;
 }): Promise<AllConversationCounters> {
     const activeVoteParticipantRows = await db
-        .select({ authorId: voteTable.authorId })
+        .select({
+            authorId: voteTable.authorId,
+            voteCount: count(),
+            // Drizzle has no FILTER aggregate helper; aggregate once per voter
+            // instead of repeating the same joins for counts and eligibility.
+            unmoderatedVoteCount:
+                sql<number>`count(*) FILTER (WHERE ${opinionModerationTable.id} IS NULL)`.mapWith(
+                    Number,
+                ),
+        })
         .from(voteTable)
         .innerJoin(opinionTable, eq(voteTable.opinionId, opinionTable.id))
-        .innerJoin(userTable, eq(voteTable.authorId, userTable.id))
+        .innerJoin(userTable, eq(opinionTable.authorId, userTable.id))
+        .leftJoin(
+            opinionModerationTable,
+            and(
+                eq(opinionModerationTable.opinionId, opinionTable.id),
+                isNull(opinionModerationTable.deletedAt),
+            ),
+        )
         .where(
             and(
                 eq(opinionTable.conversationId, conversationId),
-                isNotNull(opinionTable.currentContentId),
+                currentOpinionSourceCondition(),
                 isNotNull(voteTable.currentContentId),
-                eq(userTable.isDeleted, false),
             ),
         )
         .groupBy(voteTable.authorId);
@@ -72,145 +88,63 @@ export async function calculateConversationCounters({
                 (row) => row.authorId,
             ),
         });
-    const shouldFilterAnalysisVotes =
-        eligibleParticipantIdsForAnalysis !== undefined;
-    const analysisEligibleParticipantIds = shouldFilterAnalysisVotes
-        ? Array.from(eligibleParticipantIdsForAnalysis)
-        : [];
-
-    // Vote counts: total (COUNT) across all active votes
-    const voteCountResult = await db
-        .select({
-            totalVoteCount: count(),
-        })
-        .from(voteTable)
-        .innerJoin(opinionTable, eq(voteTable.opinionId, opinionTable.id))
-        .innerJoin(userTable, eq(voteTable.authorId, userTable.id))
-        .leftJoin(
-            opinionModerationTable,
-            eq(opinionModerationTable.opinionId, opinionTable.id),
-        )
-        .where(
-            and(
-                eq(opinionTable.conversationId, conversationId),
-                isNotNull(opinionTable.currentContentId),
-                isNotNull(voteTable.currentContentId),
-                eq(userTable.isDeleted, false),
-            ),
-        );
-
-    const voteCount =
-        shouldFilterAnalysisVotes && analysisEligibleParticipantIds.length === 0
-            ? 0
-            : ((
-                  await db
-                      .select({ voteCount: count() })
-                      .from(voteTable)
-                      .innerJoin(
-                          opinionTable,
-                          eq(voteTable.opinionId, opinionTable.id),
-                      )
-                      .innerJoin(
-                          userTable,
-                          eq(voteTable.authorId, userTable.id),
-                      )
-                      .leftJoin(
-                          opinionModerationTable,
-                          eq(opinionModerationTable.opinionId, opinionTable.id),
-                      )
-                      .where(
-                          and(
-                              eq(opinionTable.conversationId, conversationId),
-                              isNotNull(opinionTable.currentContentId),
-                              isNotNull(voteTable.currentContentId),
-                              eq(userTable.isDeleted, false),
-                              isNull(opinionModerationTable.id),
-                              shouldFilterAnalysisVotes
-                                  ? inArray(
-                                        voteTable.authorId,
-                                        analysisEligibleParticipantIds,
-                                    )
-                                  : undefined,
-                          ),
-                      )
-              )[0]?.voteCount ?? 0);
+    const eligibleParticipants = activeVoteParticipantRows.filter(
+        (row) =>
+            eligibleParticipantIdsForAnalysis === undefined ||
+            eligibleParticipantIdsForAnalysis.has(row.authorId),
+    );
+    const totalVoteCount = activeVoteParticipantRows.reduce(
+        (total, row) => total + row.voteCount,
+        0,
+    );
+    const voteCount = eligibleParticipants.reduce(
+        (total, row) => total + row.unmoderatedVoteCount,
+        0,
+    );
 
     // Opinion counts: unmoderated + total + moderated + hidden in one query
     const opinionCountResult = await db
         .select({
             opinionCount:
-                sql<number>`count(*) FILTER (WHERE ${opinionModerationTable.id} IS NULL)`.as(
-                    "opinion_count",
-                ),
+                sql<number>`count(*) FILTER (WHERE ${opinionModerationTable.id} IS NULL)`
+                    .mapWith(Number)
+                    .as("opinion_count"),
             totalOpinionCount: count(),
             moderatedOpinionCount:
-                sql<number>`count(*) FILTER (WHERE ${opinionModerationTable.moderationAction} = 'move')`.as(
-                    "moderated_opinion_count",
-                ),
+                sql<number>`count(*) FILTER (WHERE ${opinionModerationTable.moderationAction} = 'move')`
+                    .mapWith(Number)
+                    .as("moderated_opinion_count"),
             hiddenOpinionCount:
-                sql<number>`count(*) FILTER (WHERE ${opinionModerationTable.moderationAction} = 'hide')`.as(
-                    "hidden_opinion_count",
-                ),
+                sql<number>`count(*) FILTER (WHERE ${opinionModerationTable.moderationAction} = 'hide')`
+                    .mapWith(Number)
+                    .as("hidden_opinion_count"),
         })
         .from(opinionTable)
         .innerJoin(userTable, eq(opinionTable.authorId, userTable.id))
         .leftJoin(
             opinionModerationTable,
-            eq(opinionModerationTable.opinionId, opinionTable.id),
+            and(
+                eq(opinionModerationTable.opinionId, opinionTable.id),
+                isNull(opinionModerationTable.deletedAt),
+            ),
         )
         .where(
             and(
                 eq(opinionTable.conversationId, conversationId),
-                isNotNull(opinionTable.currentContentId),
-                eq(userTable.isDeleted, false),
+                currentOpinionSourceCondition(),
             ),
         );
 
-    // Participant counts: GROUP BY authorId, then split by moderation status
-    const participantResults = await db
-        .select({
-            authorId: voteTable.authorId,
-            hasUnmoderatedVote:
-                sql<boolean>`bool_or(${opinionModerationTable.id} IS NULL)`.as(
-                    "has_unmoderated_vote",
-                ),
-        })
-        .from(voteTable)
-        .innerJoin(opinionTable, eq(voteTable.opinionId, opinionTable.id))
-        .innerJoin(userTable, eq(voteTable.authorId, userTable.id))
-        .leftJoin(
-            opinionModerationTable,
-            eq(opinionModerationTable.opinionId, opinionTable.id),
-        )
-        .where(
-            and(
-                eq(opinionTable.conversationId, conversationId),
-                isNotNull(opinionTable.currentContentId),
-                isNotNull(voteTable.currentContentId),
-                eq(userTable.isDeleted, false),
-                shouldFilterAnalysisVotes
-                    ? inArray(
-                          voteTable.authorId,
-                          analysisEligibleParticipantIds,
-                      )
-                    : undefined,
-            ),
-        )
-        .groupBy(voteTable.authorId);
-
     const totalParticipantCount = activeVoteParticipantRows.length;
-    const participantCount = participantResults.filter(
-        (row) => row.hasUnmoderatedVote,
+    const participantCount = eligibleParticipants.filter(
+        (row) => row.unmoderatedVoteCount > 0,
     ).length;
-
-    const voteRow =
-        voteCountResult.length === 0 ? undefined : voteCountResult[0];
     const opinionRow =
         opinionCountResult.length === 0 ? undefined : opinionCountResult[0];
 
     return {
         voteCount,
-        totalVoteCount: voteRow?.totalVoteCount ?? 0,
+        totalVoteCount,
         opinionCount: opinionRow?.opinionCount ?? 0,
         totalOpinionCount: opinionRow?.totalOpinionCount ?? 0,
         moderatedOpinionCount: opinionRow?.moderatedOpinionCount ?? 0,

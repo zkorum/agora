@@ -340,14 +340,15 @@ async function lockConversationForExport({
 async function findJoinableGeneration({
     db,
     conversationId,
-    requirements,
 }: {
     db: PostgresDatabase;
     conversationId: number;
-    requirements: FileRequirement[];
-}): Promise<{ generationId: number; canAddArtifacts: boolean } | undefined> {
+}): Promise<{ generationId: number; createdAt: Date } | undefined> {
     const collectingGenerations = await db
-        .select({ id: conversationExportGenerationTable.id })
+        .select({
+            id: conversationExportGenerationTable.id,
+            createdAt: conversationExportGenerationTable.createdAt,
+        })
         .from(conversationExportGenerationTable)
         .where(
             and(
@@ -364,53 +365,12 @@ async function findJoinableGeneration({
     if (collectingGenerations.length > 0) {
         return {
             generationId: collectingGenerations[0].id,
-            canAddArtifacts: true,
+            createdAt: collectingGenerations[0].createdAt,
         };
     }
-
-    const processingGenerations = await db
-        .select({ id: conversationExportGenerationTable.id })
-        .from(conversationExportGenerationTable)
-        .where(
-            and(
-                eq(
-                    conversationExportGenerationTable.conversationId,
-                    conversationId,
-                ),
-                eq(conversationExportGenerationTable.status, "processing"),
-            ),
-        )
-        .orderBy(desc(conversationExportGenerationTable.startedAt))
-        .limit(1);
-
-    if (processingGenerations.length === 0) {
-        return undefined;
-    }
-
-    const generationId = processingGenerations[0].id;
-    const artifacts = await db
-        .select({
-            fileType: conversationExportArtifactTable.fileType,
-            audience: conversationExportArtifactTable.audience,
-            subjectUserId: conversationExportArtifactTable.subjectUserId,
-        })
-        .from(conversationExportArtifactTable)
-        .where(eq(conversationExportArtifactTable.generationId, generationId));
-
-    const hasAllArtifacts = requirements.every((requirement) =>
-        artifacts.some(
-            (artifact) =>
-                artifact.fileType === requirement.fileType &&
-                artifact.audience === requirement.audience &&
-                artifact.subjectUserId === requirement.subjectUserId,
-        ),
-    );
-
-    if (!hasAllArtifacts) {
-        return undefined;
-    }
-
-    return { generationId, canAddArtifacts: false };
+    // Processing work may already have captured a pre-deletion view. Only
+    // collecting work, serialized by the generation lock, can accept new requests.
+    return undefined;
 }
 
 async function createGeneration({
@@ -665,16 +625,18 @@ async function createRequest({
     generationId,
     userId,
     now,
+    generationCreatedAt,
 }: {
     db: PostgresDatabase;
     conversationId: number;
     generationId: number;
     userId: string;
     now: Date;
+    generationCreatedAt: Date;
 }): Promise<CreateRequestResult | undefined> {
     for (let attempt = 0; attempt < 5; attempt += 1) {
         const slugId = generateRandomSlugId();
-        const expiresAt = getExpiresAt({ now });
+        const expiresAt = getExpiresAt({ now: generationCreatedAt });
         const inserted = await db
             .insert(conversationExportRequestTable)
             .values({
@@ -807,7 +769,6 @@ export async function requestConversationExport({
             const joinableGeneration = await findJoinableGeneration({
                 db: tx,
                 conversationId: conversation.id,
-                requirements,
             });
             const generationId =
                 joinableGeneration?.generationId ??
@@ -816,18 +777,11 @@ export async function requestConversationExport({
                     conversationId: conversation.id,
                     now,
                 }));
-            const artifacts =
-                joinableGeneration?.canAddArtifacts === false
-                    ? await getArtifactsForRequirements({
-                          db: tx,
-                          generationId,
-                          requirements,
-                      })
-                    : await ensureArtifacts({
-                          db: tx,
-                          generationId,
-                          requirements,
-                      });
+            const artifacts = await ensureArtifacts({
+                db: tx,
+                generationId,
+                requirements,
+            });
 
             const request = await createRequest({
                 db: tx,
@@ -835,6 +789,7 @@ export async function requestConversationExport({
                 generationId,
                 userId,
                 now,
+                generationCreatedAt: joinableGeneration?.createdAt ?? now,
             });
             if (request === undefined) {
                 return { status: "active_export_in_progress" };
@@ -931,10 +886,18 @@ async function getRequestStatusRecord({
             cancellationReason:
                 conversationExportRequestTable.cancellationReason,
             createdAt: conversationExportRequestTable.createdAt,
+            generationCreatedAt: conversationExportGenerationTable.createdAt,
             expiresAt: conversationExportRequestTable.expiresAt,
             deletedAt: conversationExportRequestTable.deletedAt,
         })
         .from(conversationExportRequestTable)
+        .innerJoin(
+            conversationExportGenerationTable,
+            eq(
+                conversationExportGenerationTable.id,
+                conversationExportRequestTable.generationId,
+            ),
+        )
         .innerJoin(
             conversationTable,
             eq(
@@ -955,7 +918,16 @@ async function getRequestStatusRecord({
     }
 
     const request = requests[0];
-    return request;
+    return {
+        ...request,
+        expiresAt: new Date(
+            Math.min(
+                request.expiresAt.getTime(),
+                request.generationCreatedAt.getTime() +
+                    30 * 24 * 60 * 60 * 1000,
+            ),
+        ),
+    };
 }
 
 async function getRequestArtifacts({
@@ -1015,14 +987,22 @@ function parseCompletedArtifact(
 async function buildFileInfo({
     artifact,
     bucketName,
+    requestExpiresAt,
 }: {
     artifact: CompletedArtifactRecord;
     bucketName: string;
+    requestExpiresAt: Date;
 }): Promise<ExportFileInfo> {
     const { url, expiresAt } = await generatePresignedUrl({
         s3Key: artifact.s3Key,
         bucketName,
-        expiresIn: config.EXPORT_CONVOS_S3_PRESIGNED_URL_EXPIRY_SECONDS,
+        expiresIn: Math.max(
+            0,
+            Math.min(
+                config.EXPORT_CONVOS_S3_PRESIGNED_URL_EXPIRY_SECONDS,
+                Math.floor((requestExpiresAt.getTime() - Date.now()) / 1000),
+            ),
+        ),
     });
 
     return {
@@ -1038,14 +1018,22 @@ async function buildFileInfo({
 async function buildBundleInfo({
     artifact,
     bucketName,
+    requestExpiresAt,
 }: {
     artifact: CompletedArtifactRecord;
     bucketName: string;
+    requestExpiresAt: Date;
 }): Promise<ExportBundleInfo> {
     const { url, expiresAt } = await generatePresignedUrl({
         s3Key: artifact.s3Key,
         bucketName,
-        expiresIn: config.EXPORT_CONVOS_S3_PRESIGNED_URL_EXPIRY_SECONDS,
+        expiresIn: Math.max(
+            0,
+            Math.min(
+                config.EXPORT_CONVOS_S3_PRESIGNED_URL_EXPIRY_SECONDS,
+                Math.floor((requestExpiresAt.getTime() - Date.now()) / 1000),
+            ),
+        ),
     });
 
     return {
@@ -1146,6 +1134,12 @@ export async function getConversationExportStatus(
         return snapshot;
     }
     const { artifacts, ...baseResponse } = snapshot;
+    if (snapshot.expiresAt.getTime() <= Date.now())
+        return {
+            ...baseResponse,
+            status: "expired",
+            deletedAt: snapshot.expiresAt,
+        };
 
     if (!config.EXPORT_CONVOS_AWS_S3_BUCKET_NAME) {
         throw new Error("S3 configuration is missing");
@@ -1157,14 +1151,22 @@ export async function getConversationExportStatus(
             .filter((artifact) => artifact.fileType !== "bundle")
             .map(
                 async (artifact) =>
-                    await buildFileInfo({ artifact, bucketName }),
+                    await buildFileInfo({
+                        artifact,
+                        bucketName,
+                        requestExpiresAt: snapshot.expiresAt,
+                    }),
             ),
     );
     const bundleArtifact = artifacts.find(
         (artifact) => artifact.fileType === "bundle",
     );
     const bundle = bundleArtifact
-        ? await buildBundleInfo({ artifact: bundleArtifact, bucketName })
+        ? await buildBundleInfo({
+              artifact: bundleArtifact,
+              bucketName,
+              requestExpiresAt: snapshot.expiresAt,
+          })
         : undefined;
 
     return {

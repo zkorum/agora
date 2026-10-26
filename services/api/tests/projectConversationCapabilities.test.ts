@@ -13,6 +13,7 @@ import {
 } from "../src/shared-backend/schema.js";
 import {
     getProjectCapabilitiesById,
+    getProjectIdsWithCapability,
     hasProjectCapability,
 } from "../src/service/projectAccess.js";
 import { readDbFixtureSql } from "./dbFixture.js";
@@ -159,7 +160,7 @@ describe("conversation project capabilities", () => {
                 },
                 {
                     organizationMembershipId: privateMember.id,
-                    capability: "conversation_manage_integrations",
+                    capability: "conversation_edit",
                 },
             ]);
     });
@@ -169,11 +170,7 @@ describe("conversation project capabilities", () => {
             db,
             userId,
             projectIds: [sharedProjectId, privateProjectId],
-            requestedCapabilities: [
-                "conversation_edit",
-                "conversation_delete",
-                "conversation_manage_integrations",
-            ],
+            requestedCapabilities: ["conversation_edit", "conversation_delete"],
         });
 
         expect([...(capabilities.get(sharedProjectId) ?? [])].sort()).toEqual([
@@ -181,7 +178,7 @@ describe("conversation project capabilities", () => {
             "conversation_edit",
         ]);
         expect([...(capabilities.get(privateProjectId) ?? [])]).toEqual([
-            "conversation_manage_integrations",
+            "conversation_edit",
         ]);
         expect(
             await hasProjectCapability({
@@ -237,6 +234,90 @@ describe("conversation project capabilities", () => {
                 requestedCapabilities: ["conversation_edit"],
             }),
         ).toEqual(new Map());
+    });
+
+    it("ignores historical capabilities instead of treating integration grants as editor access", async () => {
+        await db
+            .update(organizationMembershipAllProjectCapabilityTable)
+            .set({ deletedAt: new Date(), revokedByUserId: userId })
+            .where(
+                and(
+                    eq(
+                        organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
+                        memberId,
+                    ),
+                    eq(
+                        organizationMembershipAllProjectCapabilityTable.capability,
+                        "conversation_edit",
+                    ),
+                ),
+            );
+        await db
+            .insert(organizationMembershipAllProjectCapabilityTable)
+            .values([
+                {
+                    organizationMembershipId: memberId,
+                    capability: "conversation_manage_integrations",
+                },
+                {
+                    organizationMembershipId: memberId,
+                    capability: "conversation_view_private_results",
+                },
+                {
+                    organizationMembershipId: memberId,
+                    capability: "conversation_export_owner_data",
+                },
+            ]);
+        const capabilities = await getProjectCapabilitiesById({
+            db,
+            userId,
+            projectIds: [sharedProjectId],
+            requestedCapabilities: ["conversation_edit", "conversation_delete"],
+        });
+        expect([...(capabilities.get(sharedProjectId) ?? [])]).toEqual([
+            "conversation_delete",
+        ]);
+        expect(
+            await getProjectIdsWithCapability({
+                db,
+                userId,
+                capability: "conversation_edit",
+            }),
+        ).toEqual([privateProjectId]);
+    });
+
+    it("lists each authorized project once even when multiple owners grant access", async () => {
+        const [owner] = await db
+            .select({
+                organizationId:
+                    projectOrganizationOwnershipTable.organizationId,
+            })
+            .from(projectOrganizationOwnershipTable)
+            .where(
+                eq(
+                    projectOrganizationOwnershipTable.projectId,
+                    privateProjectId,
+                ),
+            );
+        if (owner === undefined)
+            throw new Error("Missing project owner fixture");
+        await db.insert(projectOrganizationOwnershipTable).values({
+            projectId: sharedProjectId,
+            organizationId: owner.organizationId,
+        });
+        expect(
+            (
+                await getProjectIdsWithCapability({
+                    db,
+                    userId,
+                    capability: "conversation_edit",
+                })
+            ).sort((left, right) => left - right),
+        ).toEqual(
+            [sharedProjectId, privateProjectId].sort(
+                (left, right) => left - right,
+            ),
+        );
     });
 
     it("does not grant access after an organization stops owning the project", async () => {

@@ -16,6 +16,7 @@ import {
     projectOrganizationOwnershipTable,
     projectTable,
     projectTranslationTargetLanguageTable,
+    projectCapabilityValues,
     userTable,
 } from "@/shared-backend/schema.js";
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
@@ -25,8 +26,8 @@ import type { InheritableProjectLanguageSettingsInput } from "@/service/translat
 import {
     type AllProjectCapability,
     getConversationCreateEmailUpdateConfiguration,
-    getProjectIdsWithCapabilityFromGrants,
     hasActivePremiumFeatureEntitlement,
+    isAllProjectCapability,
 } from "@/service/projectAccessLogic.js";
 import { getImplicitDefaultDisplayLanguage } from "./projectLanguage.js";
 import { sourceLanguageToDisplayLanguage } from "./translationLanguageSetting.js";
@@ -54,19 +55,7 @@ const baselineOrganizationCapabilities = [
     "project_create",
 ] satisfies readonly OrganizationCapability[];
 
-const baselineAllProjectCapabilities = [
-    "project_update",
-    "project_delete",
-    "project_manage_owner_organizations",
-    "conversation_create",
-    "conversation_edit",
-    "conversation_delete",
-    "conversation_view_private_results",
-    "conversation_export_owner_data",
-    "conversation_moderate",
-    "conversation_manage_integrations",
-    "conversation_email_update",
-] satisfies readonly AllProjectCapability[];
+const baselineAllProjectCapabilities = projectCapabilityValues;
 
 function personalOrganizationSlug(userId: string): string {
     return `user-${userId.replaceAll("-", "")}`;
@@ -1227,6 +1216,7 @@ export async function getProjectCapabilitiesById({
             : await query;
 
     for (const row of rows) {
+        if (!isAllProjectCapability(row.capability)) continue;
         let capabilities = capabilitiesByProjectId.get(row.projectId);
         if (capabilities === undefined) {
             capabilities = new Set<AllProjectCapability>();
@@ -1292,11 +1282,8 @@ export async function getProjectIdsWithCapability({
     capability: AllProjectCapability;
 }): Promise<number[]> {
     const rows = await db
-        .select({
+        .selectDistinct({
             projectId: projectOrganizationOwnershipTable.projectId,
-            organizationId: organizationMembershipTable.organizationId,
-            capability:
-                organizationMembershipAllProjectCapabilityTable.capability,
         })
         .from(organizationMembershipTable)
         .innerJoin(
@@ -1338,11 +1325,7 @@ export async function getProjectIdsWithCapability({
             ),
         );
 
-    return getProjectIdsWithCapabilityFromGrants({
-        capabilityGrants: rows,
-        projectOwnerships: rows,
-        capability,
-    });
+    return rows.map((row) => row.projectId);
 }
 
 export async function hasConversationCapability({

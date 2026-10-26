@@ -322,8 +322,6 @@ describe("admin organization management and membership capabilities", () => {
         const requestedCapabilities = [
             "conversation_edit",
             "conversation_delete",
-            "conversation_view_private_results",
-            "conversation_export_owner_data",
             "conversation_email_update",
         ] satisfies [AllProjectCapability, ...AllProjectCapability[]];
         async function getPersonalConversationCapabilities(): Promise<

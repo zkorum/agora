@@ -21,6 +21,7 @@
         :is-live-paused="isLivePaused"
         :is-latest-checkpoint-live="isLatestCheckpointLive"
         :is-live-closed="props.isConversationClosed"
+        :is-finalizing="props.isFinalizing"
         :title="t('checkpointTimelineLabel')"
         :start-label="t('checkpointTimelineStart')"
         :now-label="timelineLiveLabel"
@@ -383,6 +384,7 @@ import type {
   PolisKey,
   SurveyGateSummary,
 } from "src/shared/types/zod";
+import { useOpinionRedactionStore } from "src/stores/opinionRedaction";
 import {
   getUpdatedAnalysisRouteQuery,
   parseAnalysisViewQuery,
@@ -451,6 +453,7 @@ const props = withDefaults(
     reportRouteOverride?: RouteLocationRaw;
     isLiveAnalysisPaused: boolean;
     isConversationClosed: boolean;
+    isFinalizing: boolean;
     navigateToDiscoverTab: () => void;
     conversationScrollContext: ConversationScrollContext;
     conversationRouteContext?: ConversationRouteContext;
@@ -482,6 +485,17 @@ const router = useRouter();
 const showAnalysisViewDrawer = ref(false);
 const showAnalysisViewLearnMoreDrawer = ref(false);
 const pausedLiveAnalysisData = ref<AnalysisData | undefined>();
+const sourceRedactions = useOpinionRedactionStore();
+watch(
+  () => sourceRedactions.version,
+  () => {
+    if (pausedLiveAnalysisData.value !== undefined)
+      pausedLiveAnalysisData.value = sourceRedactions.projectAnalysis(
+        pausedLiveAnalysisData.value
+      );
+  },
+  { flush: "sync" }
+);
 const pausedLiveCheckpoints = ref<AnalysisCheckpoint[] | undefined>();
 const pausedLiveSurveyResults = ref<
   SurveyResultsAggregatedResponse | undefined
@@ -564,10 +578,14 @@ const showAnalysisPlaybackButton = computed(() => !props.isConversationClosed);
 
 const activeAnalysisData = computed<AnalysisData | undefined>(() => {
   if (isLivePaused.value) {
-    return pausedLiveAnalysisData.value;
+    return pausedLiveAnalysisData.value === undefined
+      ? undefined
+      : sourceRedactions.projectAnalysis(pausedLiveAnalysisData.value);
   }
 
-  return analysisQuery.data.value;
+  return analysisQuery.data.value === undefined
+    ? undefined
+    : sourceRedactions.projectAnalysis(analysisQuery.data.value);
 });
 
 const analysisParticipantCount = computed(
@@ -647,6 +665,7 @@ const isLiveAnalysis = computed(
 );
 
 const isLatestCheckpointLive = computed(() => {
+  if (props.isFinalizing) return false;
   const checkpoint = latestCheckpoint.value;
   const liveViewSnapshotId = props.liveConversationViewSnapshotId;
   if (checkpoint === undefined) {
@@ -665,9 +684,11 @@ const isLatestCheckpointLive = computed(() => {
 });
 
 const timelineLiveLabel = computed(() =>
-  props.isConversationClosed
-    ? t("checkpointReasonConversationClosed")
-    : t("checkpointTimelineNow")
+  props.isFinalizing
+    ? t("checkpointTimelineFinalizing")
+    : props.isConversationClosed
+      ? t("checkpointReasonConversationClosed")
+      : t("checkpointTimelineNow")
 );
 
 const analysisViewState = computed(

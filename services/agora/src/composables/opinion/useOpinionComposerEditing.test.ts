@@ -18,7 +18,7 @@ const opinion = zodDisplayedOpinionItem.parse({
   numDisagrees: 0,
   numPasses: 0,
   moderation: { status: "unmoderated" },
-  management: { canEdit: true, canDelete: true },
+  management: { editing: { allowed: true }, canDelete: true },
   displayContent: {
     sourceVersion: "00000000-0000-4000-8000-000000000001",
     status: "available",
@@ -73,7 +73,10 @@ describe("composer edit sessions", () => {
     target.value = {
       ...opinion,
       numAgrees: 1,
-      management: { canEdit: false, canDelete: true },
+      management: {
+        editing: { allowed: false, reason: "has_votes" },
+        canDelete: true,
+      },
     };
     await nextTick();
     expect(body.value).toBe("<p>Working draft</p>");

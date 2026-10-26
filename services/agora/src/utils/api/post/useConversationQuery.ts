@@ -22,7 +22,14 @@ import {
   useViewerQueryScope,
   type ViewerQueryScope,
 } from "src/utils/query/viewerScope";
-import { computed, type MaybeRefOrGetter, toValue } from "vue";
+import {
+  computed,
+  type MaybeRefOrGetter,
+  onActivated,
+  onDeactivated,
+  ref,
+  toValue,
+} from "vue";
 
 import { useBackendPostApi } from "./post";
 import {
@@ -86,6 +93,7 @@ export function applyConversationRankingStatsUpdate({
       moderatedOpinionCount: data.moderatedOpinionCount,
       hiddenOpinionCount: data.hiddenOpinionCount,
       isClosed: data.isClosed,
+      isFinalizing: false,
     },
   };
 }
@@ -143,6 +151,7 @@ function preserveNewerSnapshotMetadata({
           moderatedOpinionCount: cachedMetadata.moderatedOpinionCount,
           hiddenOpinionCount: cachedMetadata.hiddenOpinionCount,
           isClosed: cachedMetadata.isClosed,
+          isFinalizing: cachedMetadata.isFinalizing,
         },
       },
     };
@@ -181,6 +190,8 @@ function preserveNewerSnapshotMetadata({
         totalParticipantCount: cachedMetadata.totalParticipantCount,
         moderatedOpinionCount: cachedMetadata.moderatedOpinionCount,
         hiddenOpinionCount: cachedMetadata.hiddenOpinionCount,
+        isClosed: cachedMetadata.isClosed,
+        isFinalizing: cachedMetadata.isFinalizing,
       },
     },
   };
@@ -292,6 +303,13 @@ export function useConversationQuery({
   const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
   const queryClient = useQueryClient();
   const viewerScope = useViewerQueryScope();
+  const isActive = ref(true);
+  onActivated(() => {
+    isActive.value = true;
+  });
+  onDeactivated(() => {
+    isActive.value = false;
+  });
   const sortedSpokenLanguages = computed(() =>
     [...spokenLanguages.value].sort()
   );
@@ -364,7 +382,7 @@ export function useConversationQuery({
         }),
       });
     },
-    enabled: computed(() => toValue(enabled)),
+    enabled: computed(() => toValue(enabled) && isActive.value),
     placeholderData: (previousData, previousQuery) =>
       previousQuery?.queryKey[1] === toValue(conversationSlugId) &&
       isQueryForViewerScope({
@@ -374,6 +392,11 @@ export function useConversationQuery({
         ? previousData
         : undefined,
     staleTime: 60 * 1000,
+    refetchInterval: (query) =>
+      query.state.data?.conversationData.metadata.isFinalizing === true
+        ? 3000
+        : false,
+    refetchIntervalInBackground: false,
     retry: false,
   });
 }

@@ -101,7 +101,14 @@
             }"
             @click="emit('selectLive')"
           >
+            <span
+              v-if="props.isFinalizing"
+              class="checkpoint-timeline__pending"
+              aria-busy="true"
+              ><q-spinner size="var(--checkpoint-dot-size)"
+            /></span>
             <ZKLiveStatusDot
+              v-else
               class="checkpoint-timeline__dot"
               :active="isLivePulseActive"
             />
@@ -164,6 +171,7 @@ const props = withDefaults(
     isLivePaused: boolean;
     isLatestCheckpointLive: boolean;
     isLiveClosed: boolean;
+    isFinalizing: boolean;
     title: string;
     startLabel: string;
     nowLabel: string;
@@ -729,6 +737,14 @@ $checkpoint-live-color: #24966d;
   height: var(--checkpoint-dot-size);
   border: 2px solid #d8d6de;
   border-radius: 999px;
+  background: white;
+}
+
+.checkpoint-timeline__pending {
+  display: grid;
+  place-items: center;
+  inline-size: var(--checkpoint-dot-size);
+  block-size: var(--checkpoint-dot-size);
   background: white;
 }
 

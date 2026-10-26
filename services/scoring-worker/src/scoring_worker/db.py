@@ -583,6 +583,21 @@ def fetch_ranking_items_batch(
     return result
 
 
+def fetch_processable_scoring_conversation_ids(
+    engine: Engine | Connection, *, conversation_ids: list[int]
+) -> set[int]:
+    with Session(engine) as session:
+        return set(
+            session.scalars(
+                select(Conversation.id).where(
+                    Conversation.id.in_(conversation_ids),
+                    Conversation.current_content_id.is_not(None),
+                    Conversation.closed_finalized_at.is_(None),
+                )
+            )
+        )
+
+
 def fetch_scoring_input_revisions(
     engine: Engine | Connection,
     *,
@@ -1118,6 +1133,13 @@ def _update_ranking_stats_batch(
             session.add(snapshot)
             session.flush()
 
+            if conversation.is_closed:
+                session.execute(
+                    update(Conversation)
+                    .where(Conversation.id == conversation_id)
+                    .values(closed_finalized_at=datetime.now(UTC))
+                )
+
             scored_entities = scored_entities_by_conv.get(conversation_id, [])
             display_scores_by_slug = {
                 item.entity_slug_id: (item.display_score, rank, item.participant_count)
@@ -1276,11 +1298,23 @@ def _persist_scoring_conversation(
 ) -> ScoringPublication:
     input_revision = inputs.revisions[conversation_id]
     with Session(connection, join_transaction_mode="create_savepoint") as session:
+        # Lifecycle writers lock the conversation before its ranking config.
+        # Locking both through the join lets PostgreSQL take the reverse order
+        # and deadlock a concurrent close/reopen revision update.
+        session.execute(
+            select(Conversation.id)
+            .where(Conversation.id == conversation_id)
+            .with_for_update(key_share=True)
+        ).all()
         revision = session.execute(
             select(
                 RankingConversationConfig.scoring_input_revision,
                 RankingConversationConfig.scoring_invalidation_revision,
                 RankingConversationConfig.processed_scoring_input_revision,
+                Conversation.is_closed,
+                Conversation.closed_finalized_at,
+                Conversation.closing_target_revision,
+                Conversation.current_content_id,
             )
             .join(Conversation, Conversation.ranking_config_id == RankingConversationConfig.id)
             .where(Conversation.id == conversation_id)
@@ -1288,6 +1322,18 @@ def _persist_scoring_conversation(
         ).one_or_none()
         if revision is None:
             return ScoringPublication(status="missing", needs_requeue=False, observed_revision=None)
+        if revision.current_content_id is None or revision.closed_finalized_at is not None:
+            return ScoringPublication(
+                status="superseded",
+                needs_requeue=False,
+                observed_revision=revision.scoring_input_revision,
+            )
+        if revision.is_closed and input_revision != revision.closing_target_revision:
+            return ScoringPublication(
+                status="invalidated",
+                needs_requeue=True,
+                observed_revision=revision.scoring_input_revision,
+            )
         if input_revision < revision.scoring_invalidation_revision:
             return ScoringPublication(
                 status="invalidated",
@@ -1357,6 +1403,7 @@ def reconcile_unscored_conversations(engine: Engine) -> list[tuple[int, str]]:
         .where(
             and_(
                 Conversation.conversation_type == "ranking",
+                Conversation.closed_finalized_at.is_(None),
                 RankingConversationConfig.ranking_mode == "bws",
                 or_(
                     ~select(RankingConversationStatsSnapshot.id)

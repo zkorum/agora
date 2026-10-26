@@ -251,6 +251,14 @@ CREATE TABLE "conversation_moderation" (
 	"deleted_at" timestamp (0)
 );
 
+CREATE TABLE "conversation_participant" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"conversation_id" integer NOT NULL,
+	"user_id" uuid,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "conversation_participant_account_unique" UNIQUE("conversation_id","user_id")
+);
+
 CREATE TABLE "conversation_project_assignment" (
 	"conversation_id" integer NOT NULL,
 	"project_id" integer NOT NULL,
@@ -275,6 +283,8 @@ CREATE TABLE "conversation" (
 	"conversation_type" "conversation_type" DEFAULT 'polis' NOT NULL,
 	"is_importing" boolean DEFAULT false NOT NULL,
 	"is_closed" boolean DEFAULT false NOT NULL,
+	"closing_target_revision" bigint,
+	"closed_finalized_at" timestamp (0),
 	"is_edited" boolean DEFAULT false NOT NULL,
 	"requires_event_ticket" "event_slug",
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
@@ -285,6 +295,7 @@ CREATE TABLE "conversation" (
 	CONSTRAINT "conversation_polis_config_id_unique" UNIQUE("polis_config_id"),
 	CONSTRAINT "conversation_ranking_config_id_unique" UNIQUE("ranking_config_id"),
 	CONSTRAINT "conversation_project_id_id_unique" UNIQUE("project_id","id"),
+	CONSTRAINT "conversation_closing_state_check" CHECK (("conversation"."is_closed" OR ("conversation"."closing_target_revision" IS NULL AND "conversation"."closed_finalized_at" IS NULL)) AND ("conversation"."closed_finalized_at" IS NULL OR "conversation"."closing_target_revision" IS NOT NULL)),
 	CONSTRAINT "conversation_subtype_config_check" CHECK ((("conversation"."conversation_type" = 'polis' AND "conversation"."polis_config_id" IS NOT NULL AND "conversation"."ranking_config_id" IS NULL) OR ("conversation"."conversation_type" = 'ranking' AND "conversation"."ranking_config_id" IS NOT NULL AND "conversation"."polis_config_id" IS NULL))),
 	CONSTRAINT "conversation_email_update_override_audit_check" CHECK (("conversation"."conversation_email_update_override_updated_at" IS NULL) = ("conversation"."conversation_email_update_override_updated_by_user_id" IS NULL))
 );
@@ -788,15 +799,30 @@ CREATE TABLE "vote_content" (
 	"created_at" timestamp (0) DEFAULT now() NOT NULL
 );
 
+CREATE TABLE "vote_submission" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "vote_submission_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"conversation_id" integer NOT NULL,
+	"user_id" uuid NOT NULL,
+	"opinion_id" integer NOT NULL,
+	"opinion_content_id" integer NOT NULL,
+	"action" varchar(8) NOT NULL,
+	"submitted_at" timestamp (3) NOT NULL,
+	"pending" boolean DEFAULT true NOT NULL,
+	CONSTRAINT "vote_submission_account_opinion_unique" UNIQUE("user_id","opinion_id"),
+	CONSTRAINT "vote_submission_action_check" CHECK ("vote_submission"."action" IN ('agree', 'disagree', 'pass', 'cancel'))
+);
+
 CREATE TABLE "vote" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "vote_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"author_id" uuid NOT NULL,
+	"participant_id" uuid,
 	"opinion_id" integer NOT NULL,
 	"polis_vote_id" integer,
 	"current_content_id" integer,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
-	CONSTRAINT "vote_author_id_opinion_id_unique" UNIQUE("author_id","opinion_id")
+	CONSTRAINT "vote_author_id_opinion_id_unique" UNIQUE("author_id","opinion_id"),
+	CONSTRAINT "vote_participant_opinion_unique" UNIQUE("participant_id","opinion_id")
 );
 
 CREATE INDEX "analysis_work_state_lease_expiry_idx" ON "analysis_work_state" USING btree ("lease_expires_at") WHERE "analysis_work_state"."running_data_generation" is not null;
@@ -830,6 +856,8 @@ CREATE INDEX "conversation_email_update_delivery_history_idx" ON "conversation_e
 CREATE INDEX "conversation_email_update_creator_created_idx" ON "conversation_email_update" USING btree ("created_by_user_id","created_at");
 
 CREATE UNIQUE INDEX "conversation_moderation_active_conversation_unique" ON "conversation_moderation" USING btree ("conversation_id") WHERE "conversation_moderation"."deleted_at" is null;
+
+CREATE INDEX "conversation_participant_user_idx" ON "conversation_participant" USING btree ("user_id");
 
 CREATE INDEX "conversation_feed_idx" ON "conversation" USING btree ("created_at" DESC,"id" DESC) WHERE "conversation"."is_indexed" = true AND "conversation"."is_importing" = false;
 
@@ -916,6 +944,10 @@ CREATE UNIQUE INDEX "survey_question_active_config_display_order_uidx" ON "surve
 CREATE INDEX "survey_question_config_idx" ON "survey_question" USING btree ("survey_config_id");
 
 CREATE INDEX "survey_response_conversation_created_idx" ON "survey_response" USING btree ("conversation_id","created_at");
+
+CREATE INDEX "vote_submission_pending_idx" ON "vote_submission" USING btree ("submitted_at","id") WHERE "vote_submission"."pending" = true;
+
+CREATE INDEX "vote_submission_conversation_pending_idx" ON "vote_submission" USING btree ("conversation_id") WHERE "vote_submission"."pending" = true;
 
 CREATE INDEX "vote_authorId_idx" ON "vote" USING btree ("author_id");
 

@@ -10,15 +10,22 @@
       <h2 class="section-title">
         <span class="group-name">
           <template v-if="useLetterCodes">
-            {{ formatClusterLabel(entry.key, false) }}<template v-if="entry.cluster.aiLabel"> · {{ entry.cluster.aiLabel }}</template>
+            {{ formatClusterLabel(entry.key, false)
+            }}<template v-if="entry.cluster.aiLabel">
+              · {{ entry.cluster.aiLabel }}</template
+            >
           </template>
           <template v-else>
             {{ entry.cluster.aiLabel || formatClusterLabel(entry.key, true) }}
           </template>
         </span>
         <span class="group-meta">
-          — {{ formatAmount(entry.cluster.numUsers) }} {{ t("participants") }}
-          ({{ formatPercentage(calculatePercentage(entry.cluster.numUsers, totalParticipantCount)) }})
+          — {{ formatAmount(entry.cluster.numUsers) }}
+          {{ t("participants") }} ({{
+            formatPercentage(
+              calculatePercentage(entry.cluster.numUsers, totalParticipantCount)
+            )
+          }})
         </span>
       </h2>
       <p class="group-subtitle">{{ t("groupSubtitle") }}</p>
@@ -30,18 +37,27 @@
           <tr>
             <th class="col-rank">#</th>
             <th class="col-statement">{{ t("statement") }}</th>
-            <th class="col-vote">{{ t("overall") }} ({{ formatAmount(totalParticipantCount) }})</th>
+            <th class="col-vote">
+              {{ t("overall") }} ({{ formatAmount(totalParticipantCount) }})
+            </th>
             <th
               v-for="clusterEntry in allClusterEntries"
               :key="clusterEntry.key"
               class="col-vote"
-              :class="{ 'col-vote--highlighted': clusterEntry.key === entry.key }"
+              :class="{
+                'col-vote--highlighted': clusterEntry.key === entry.key,
+              }"
             >
               <template v-if="useLetterCodes">
-                {{ formatClusterLabel(clusterEntry.key, false) }} ({{ formatAmount(clusterEntry.cluster.numUsers) }})
+                {{ formatClusterLabel(clusterEntry.key, false) }} ({{
+                  formatAmount(clusterEntry.cluster.numUsers)
+                }})
               </template>
               <template v-else>
-                {{ clusterEntry.cluster.aiLabel || formatClusterLabel(clusterEntry.key, true) }}
+                {{
+                  clusterEntry.cluster.aiLabel ||
+                  formatClusterLabel(clusterEntry.key, true)
+                }}
                 ({{ formatAmount(clusterEntry.cluster.numUsers) }})
               </template>
             </th>
@@ -58,8 +74,12 @@
                 <AnalysisOpinionText
                   :opinion-item="item"
                   :post-slug-id="props.conversationSlugId"
-                  :conversation-author-username="props.conversationAuthorUsername"
-                  :conversation-organization-name="props.conversationOrganizationName"
+                  :conversation-author-username="
+                    props.conversationAuthorUsername
+                  "
+                  :conversation-organization-name="
+                    props.conversationOrganizationName
+                  "
                   :compact-mode="false"
                   :enable-links="false"
                   :translation-interactive="translationInteractive"
@@ -78,14 +98,28 @@
               v-for="clusterEntry in allClusterEntries"
               :key="clusterEntry.key"
               class="col-vote"
-              :class="{ 'col-vote--highlighted': clusterEntry.key === entry.key }"
+              :class="{
+                'col-vote--highlighted': clusterEntry.key === entry.key,
+              }"
             >
               <ReportVoteCell
                 v-if="getClusterStats({ item, clusterKey: clusterEntry.key })"
-                :num-agrees="getClusterStats({ item, clusterKey: clusterEntry.key })!.numAgrees"
-                :num-disagrees="getClusterStats({ item, clusterKey: clusterEntry.key })!.numDisagrees"
-                :num-passes="getClusterStats({ item, clusterKey: clusterEntry.key })!.numPasses"
-                :num-users="getClusterStats({ item, clusterKey: clusterEntry.key })!.numUsers"
+                :num-agrees="
+                  getClusterStats({ item, clusterKey: clusterEntry.key })!
+                    .numAgrees
+                "
+                :num-disagrees="
+                  getClusterStats({ item, clusterKey: clusterEntry.key })!
+                    .numDisagrees
+                "
+                :num-passes="
+                  getClusterStats({ item, clusterKey: clusterEntry.key })!
+                    .numPasses
+                "
+                :num-users="
+                  getClusterStats({ item, clusterKey: clusterEntry.key })!
+                    .numUsers
+                "
               />
               <ReportVoteCell
                 v-else
@@ -100,7 +134,10 @@
       </table>
     </div>
 
-    <div v-if="clusterEntriesWithRepresentative.length === 0" class="empty-state">
+    <div
+      v-if="clusterEntriesWithRepresentative.length === 0"
+      class="empty-state"
+    >
       {{ t("noStatements") }}
     </div>
   </div>
@@ -111,7 +148,6 @@ import AnalysisOpinionText from "src/components/post/analysis/common/AnalysisOpi
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
   AnalysisOpinionItem,
-  ClusterStats,
   PolisClusters,
   PolisKey,
 } from "src/shared/types/zod";
@@ -144,7 +180,7 @@ const props = withDefaults(
 );
 
 const { t } = useComponentI18n<ReportRepresentativeOpinionsTranslations>(
-  reportRepresentativeOpinionsTranslations,
+  reportRepresentativeOpinionsTranslations
 );
 
 type ClusterValue = NonNullable<PolisClusters[PolisKey]>;
@@ -171,7 +207,7 @@ const clusterEntriesWithRepresentative = computed(() => {
       ...entry,
       representativeItems: entry.cluster.representative.slice(
         0,
-        REPORT_MAX_REPRESENTATIVE_ITEMS,
+        REPORT_MAX_REPRESENTATIVE_ITEMS
       ),
     }))
     .filter((entry) => entry.representativeItems.length > 0);
@@ -183,7 +219,7 @@ function getClusterStats({
 }: {
   item: AnalysisOpinionItem;
   clusterKey: PolisKey;
-}): ClusterStats | undefined {
+}): AnalysisOpinionItem["clustersStats"][number] | undefined {
   return item.clustersStats.find((s) => s.key === clusterKey);
 }
 </script>
@@ -252,7 +288,6 @@ function getClusterStats({
     border-bottom: 1px solid #e9e9f1;
     word-break: break-word;
   }
-
 }
 
 .col-rank {

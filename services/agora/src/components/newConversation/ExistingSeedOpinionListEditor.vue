@@ -150,6 +150,7 @@ import type {
   SeedOpinionValidationFailure,
   UpdateConversationResponse,
 } from "src/shared/types/dto";
+import type { OpinionEditingAvailability } from "src/shared/types/zod";
 import { validateSeedOpinionAdditions } from "src/shared/utils/seedOpinions";
 import type { ExistingSeedOpinionDraft } from "src/stores/editConversation";
 import { defineAsyncComponent, ref, watch } from "vue";
@@ -265,7 +266,9 @@ function showChangeFailure(
   }
 }
 
-function restrictionMessage(reason: "has_votes" | "not_allowed"): string {
+function restrictionMessage(
+  reason: Extract<OpinionEditingAvailability, { allowed: false }>["reason"]
+): string {
   return reason === "has_votes" ? editT("hasVotes") : t("editingUnavailable");
 }
 

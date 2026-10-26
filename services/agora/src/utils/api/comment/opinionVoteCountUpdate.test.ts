@@ -17,7 +17,7 @@ const opinion = zodDisplayedOpinionItem.parse({
   numDisagrees: 0,
   numPasses: 0,
   moderation: { status: "unmoderated" },
-  management: { canEdit: true, canDelete: true },
+  management: { editing: { allowed: true }, canDelete: true },
   displayContent: {
     sourceVersion: "00000000-0000-4000-8000-000000000001",
     status: "available",
@@ -35,28 +35,39 @@ const counts = {
 };
 
 describe("live edit availability", () => {
-  it("revokes seed edit availability immediately when a vote arrives", () => {
+  it("refreshes edit availability independently of the eligible vote count", () => {
     const result = applyOpinionVoteCountUpdate({
       opinion,
       counts: { ...counts, numAgrees: 1 },
-      authorHasVote: true,
     });
-    expect(result.opinion.management?.canEdit).toBe(false);
+    expect(result.opinion.management?.editing).toEqual({ allowed: true });
+    expect(result.needsPermissionRefresh).toBe(true);
   });
   it("refreshes authoritative permissions instead of granting edit rights from zero counts", () => {
     const result = applyOpinionVoteCountUpdate({
-      opinion: { ...opinion, management: { canEdit: false, canDelete: true } },
+      opinion: {
+        ...opinion,
+        management: {
+          editing: { allowed: false, reason: "has_votes" },
+          canDelete: true,
+        },
+      },
       counts,
-      authorHasVote: false,
     });
-    expect(result.opinion.management?.canEdit).toBe(false);
+    expect(result.opinion.management?.editing).toEqual({
+      allowed: false,
+      reason: "has_votes",
+    });
     expect(result.needsPermissionRefresh).toBe(true);
   });
   it("keeps hidden statements unavailable even if their author can delete them", () => {
     const result = applyOpinionVoteCountUpdate({
       opinion: {
         ...opinion,
-        management: { canEdit: false, canDelete: true },
+        management: {
+          editing: { allowed: false, reason: "not_allowed" },
+          canDelete: true,
+        },
         moderation: {
           status: "moderated",
           action: "hide",
@@ -67,9 +78,11 @@ describe("live edit availability", () => {
         },
       },
       counts,
-      authorHasVote: false,
     });
-    expect(result.opinion.management?.canEdit).toBe(false);
-    expect(result.needsPermissionRefresh).toBe(false);
+    expect(result.opinion.management?.editing).toEqual({
+      allowed: false,
+      reason: "not_allowed",
+    });
+    expect(result.needsPermissionRefresh).toBe(true);
   });
 });

@@ -1209,7 +1209,7 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              "Explicitly deleted content is hidden immediately and becomes eligible for permanent cleanup without the account's recovery delay. Cleanup normally runs hourly; we target eligible automated live-system deletion within 24 hours, with monitored retries for failed or blocked work. This is an operational target, not a guarantee that all physical work finishes at an exact moment.",
+              "Explicitly deleted content is hidden immediately and becomes eligible for permanent cleanup without the account's recovery delay. Cleanup runs hourly and proceeds without undue delay, normally completing within seven days after data becomes eligible for permanent deletion from live systems. We monitor failures and retry and escalate delayed or blocked work. Technical failures and retries do not restart that period or extend the recovery period or applicable legal deadlines.",
             ],
           },
           {
@@ -1596,7 +1596,7 @@ export const privacyPolicyContent = {
                 tag: "li",
                 children: [
                   { tag: "strong", children: ["At the 15-day deadline:"] },
-                  " Recovery ends and permanent purge becomes due. Cleanup starts through the next scheduled hourly sweep, with processing/retries as needed. A delayed sweep does not extend the recovery window. We target completion of eligible automated live-system cleanup within 24 hours; necessary exceptions are limited as described above. ",
+                  " Recovery ends and permanent purge becomes due. Cleanup starts through the next scheduled hourly sweep and proceeds without undue delay, normally completing within seven days of that deadline. We monitor failures and retry and escalate delayed or blocked work. Delayed sweeps and retries do not restart that period or extend recovery or applicable legal deadlines; necessary retention exceptions remain limited as described above. ",
                 ],
               },
               {
@@ -2978,7 +2978,7 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              "يُخفى المحتوى المحذوف صراحة فورًا، ويصبح مستوفيًا لشروط التنظيف النهائي دون تأخير الاسترداد الخاص بالحساب. ويُجرى التنظيف عادة كل ساعة؛ ونستهدف إتمام الحذف الآلي المستوفي للشروط من الأنظمة الحية خلال 24 ساعة، مع مراقبة إعادة المحاولات للأعمال التي فشلت أو تعذّر تنفيذها. وهذا هدف تشغيلي، وليس ضمانًا لإتمام جميع الأعمال الفعلية في لحظة محدّدة بدقة.",
+              "يُخفى المحتوى المحذوف صراحة فورًا، ويصبح مستوفيًا لشروط التنظيف النهائي دون تأخير الاسترداد الخاص بالحساب. ويُجرى التنظيف كل ساعة ودون تأخير غير مبرر، ويكتمل عادة خلال سبعة أيام من استيفاء البيانات لشروط الحذف النهائي من الأنظمة الحية. نراقب حالات الفشل ونعيد المحاولة ونصعّد معالجة الأعمال المتأخرة أو المتعذرة. ولا تعيد الأعطال التقنية والمحاولات المتكررة بدء هذه المدة ولا تمدّد فترة الاسترداد أو المهل القانونية السارية.",
             ],
           },
           {
@@ -3368,7 +3368,7 @@ export const privacyPolicyContent = {
                     tag: "strong",
                     children: ["عند حلول الموعد النهائي بعد 15 يومًا:"],
                   },
-                  " ينتهي الاسترداد ويصبح المحو النهائي واجب التنفيذ. ويبدأ التنظيف خلال دورة التنظيف المجدولة التالية التي تُجرى كل ساعة، مع المعالجة وإعادة المحاولات حسب الحاجة. ولا يؤدي تأخر الدورة إلى تمديد مهلة الاسترداد. ونستهدف إتمام التنظيف الآلي المستوفي للشروط من الأنظمة الحية خلال 24 ساعة؛ وتكون الاستثناءات الضرورية محدودة على النحو الموضّح أعلاه. ",
+                  " ينتهي الاسترداد ويصبح المحو النهائي واجب التنفيذ. ويبدأ التنظيف خلال دورة التنظيف المجدولة التالية التي تُجرى كل ساعة ويستمر دون تأخير غير مبرر، ويكتمل عادة خلال سبعة أيام من ذلك الموعد النهائي. نراقب حالات الفشل ونعيد المحاولة ونصعّد معالجة الأعمال المتأخرة أو المتعذرة. ولا تعيد دورات التنظيف المتأخرة والمحاولات المتكررة بدء هذه المدة ولا تمدّد الاسترداد أو المهل القانونية السارية؛ وتظل استثناءات الاحتفاظ الضرورية محدودة على النحو الموضّح أعلاه. ",
                 ],
               },
               {
@@ -4778,7 +4778,7 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              "El contenido eliminado explícitamente se oculta de inmediato y pasa a poder someterse a limpieza permanente sin la demora de recuperación de la cuenta. La limpieza se ejecuta normalmente cada hora; nuestro objetivo es completar en un plazo de 24 horas la eliminación automatizada de los datos aptos para ello en los sistemas en producción, con reintentos supervisados para tareas fallidas o bloqueadas. Se trata de un objetivo operativo, no de una garantía de que todas las operaciones materiales finalicen en un instante exacto.",
+              "El contenido eliminado explícitamente se oculta de inmediato y pasa a poder someterse a limpieza permanente sin la demora de recuperación de la cuenta. La limpieza se ejecuta cada hora y se realiza sin dilación indebida, normalmente en un plazo de siete días desde que los datos reúnen las condiciones para su eliminación permanente de los sistemas en producción. Supervisamos los fallos, reintentamos las tareas y escalamos las que se retrasan o bloquean. Los fallos técnicos y los reintentos no reinician ese plazo ni amplían el período de recuperación o los plazos legales aplicables.",
             ],
           },
           {
@@ -5178,7 +5178,7 @@ export const privacyPolicyContent = {
                     tag: "strong",
                     children: ["Al cumplirse el plazo de 15 días:"],
                   },
-                  " Finaliza la recuperación y debe procederse a la supresión permanente. La limpieza comienza con el siguiente ciclo programado de limpieza horaria, con el tratamiento y los reintentos que sean necesarios. Un ciclo retrasado no amplía el plazo de recuperación. Nuestro objetivo es completar en un plazo de 24 horas la limpieza automatizada de los datos aptos para ello en los sistemas en producción; las excepciones necesarias se limitan conforme a lo descrito anteriormente. ",
+                  " Finaliza la recuperación y debe procederse a la supresión permanente. La limpieza comienza con el siguiente ciclo horario programado y se realiza sin dilación indebida, normalmente en un plazo de siete días desde ese vencimiento. Supervisamos los fallos, reintentamos las tareas y escalamos las que se retrasan o bloquean. Los ciclos retrasados y los reintentos no reinician ese plazo ni amplían la recuperación o los plazos legales aplicables; las excepciones de conservación necesarias siguen limitadas conforme a lo descrito anteriormente. ",
                 ],
               },
               {
@@ -6566,7 +6566,7 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              "محتوایی که صریحاً حذف شده است بلافاصله پنهان می‌شود و بدون تأخیر ناشی از بازیابی حساب، واجد شرایط پاک‌سازی دائمی می‌شود. پاک‌سازی معمولاً هر ساعت اجرا می‌شود؛ هدف ما انجام حذف خودکارِ واجد شرایط از سامانه‌های فعال ظرف 24 ساعت است، همراه با تلاش‌های مجددِ تحت پایش برای کارهای ناموفق یا مسدودشده. این یک هدف عملیاتی است، نه تضمین پایان یافتن همهٔ کارهای فیزیکی در لحظه‌ای دقیق.",
+              "محتوایی که صریحاً حذف شده است بلافاصله پنهان می‌شود و بدون تأخیر ناشی از بازیابی حساب، واجد شرایط پاک‌سازی دائمی می‌شود. پاک‌سازی هر ساعت و بدون تأخیر ناموجه انجام می‌شود و معمولاً ظرف هفت روز پس از واجد شرایط شدن داده‌ها برای حذف دائمی از سامانه‌های فعال تکمیل می‌شود. خطاها را پایش می‌کنیم، دوباره تلاش می‌کنیم و کارهای به‌تأخیرافتاده یا مسدودشده را برای رسیدگی بیشتر ارجاع می‌دهیم. خطاهای فنی و تلاش‌های مجدد این مهلت را از نو آغاز نمی‌کنند و دورهٔ بازیابی یا مهلت‌های قانونی قابل‌اعمال را تمدید نمی‌کنند.",
             ],
           },
           {
@@ -6954,7 +6954,7 @@ export const privacyPolicyContent = {
                     tag: "strong",
                     children: ["در پایان مهلت 15 روزه:"],
                   },
-                  " بازیابی پایان می‌یابد و زمان اجرای پاک‌سازی دائمی فرامی‌رسد. پاک‌سازی از طریق نوبت زمان‌بندی‌شدهٔ بعدیِ ساعتی آغاز می‌شود و پردازش/تلاش مجدد حسب نیاز انجام می‌گیرد. تأخیر در نوبت پاک‌سازی، مهلت بازیابی را تمدید نمی‌کند. هدف ما تکمیل پاک‌سازی خودکارِ واجد شرایط در سامانه‌های فعال ظرف 24 ساعت است؛ استثناهای ضروری به موارد توضیح‌داده‌شده در بالا محدودند. ",
+                  " بازیابی پایان می‌یابد و زمان اجرای پاک‌سازی دائمی فرامی‌رسد. پاک‌سازی در نوبت ساعتیِ برنامه‌ریزی‌شدهٔ بعدی آغاز می‌شود و بدون تأخیر ناموجه ادامه می‌یابد و معمولاً ظرف هفت روز پس از آن موعد تکمیل می‌شود. خطاها را پایش می‌کنیم، دوباره تلاش می‌کنیم و کارهای به‌تأخیرافتاده یا مسدودشده را برای رسیدگی بیشتر ارجاع می‌دهیم. تأخیر نوبت‌ها و تلاش‌های مجدد این مهلت را از نو آغاز نمی‌کنند و بازیابی یا مهلت‌های قانونی قابل‌اعمال را تمدید نمی‌کنند؛ استثناهای ضروری نگهداری همچنان به موارد توضیح‌داده‌شده در بالا محدودند. ",
                 ],
               },
               {
@@ -8372,7 +8372,7 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              "Les contenus explicitement supprimés sont immédiatement masqués et deviennent admissibles au nettoyage définitif sans le délai de récupération du compte. Le nettoyage s’exécute normalement toutes les heures ; nous visons la suppression automatisée des données admissibles dans les systèmes en production dans un délai de 24 heures, avec des tentatives répétées et surveillées en cas d’échec ou de blocage. Il s’agit d’un objectif opérationnel, et non d’une garantie que toutes les opérations matérielles s’achèvent à un instant précis.",
+              "Les contenus explicitement supprimés sont immédiatement masqués et deviennent admissibles au nettoyage définitif sans le délai de récupération du compte. Le nettoyage s’exécute toutes les heures et s’effectue dans les meilleurs délais, normalement dans les sept jours suivant la date à laquelle les données deviennent admissibles à la suppression définitive des systèmes en production. Nous surveillons les échecs, réessayons et faisons remonter les opérations retardées ou bloquées pour intervention. Les défaillances techniques et les nouvelles tentatives ne font pas repartir ce délai et ne prolongent ni la période de récupération ni les délais légaux applicables.",
             ],
           },
           {
@@ -8778,7 +8778,7 @@ export const privacyPolicyContent = {
                     tag: "strong",
                     children: ["À l’échéance des 15 jours :"],
                   },
-                  " La possibilité de récupération prend fin et la purge définitive devient exigible. Le nettoyage commence lors du prochain passage horaire planifié, avec les traitements et nouvelles tentatives nécessaires. Un passage retardé ne prolonge pas le délai de récupération. Nous visons l’achèvement du nettoyage automatisé des données admissibles dans les systèmes en production dans un délai de 24 heures ; les exceptions nécessaires sont limitées comme indiqué ci-dessus. ",
+                  " La possibilité de récupération prend fin et la purge définitive devient exigible. Le nettoyage commence lors du prochain passage horaire planifié et s’effectue dans les meilleurs délais, normalement dans les sept jours suivant cette échéance. Nous surveillons les échecs, réessayons et faisons remonter les opérations retardées ou bloquées pour intervention. Les passages retardés et les nouvelles tentatives ne font pas repartir ce délai et ne prolongent ni la récupération ni les délais légaux applicables ; les exceptions de conservation nécessaires restent limitées comme indiqué ci-dessus. ",
                 ],
               },
               {
@@ -10164,7 +10164,7 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              "תוכן שנמחק במפורש מוסתר מיד והופך לבר־מחיקה במסגרת הניקוי הסופי ללא תקופת ההמתנה לשחזור חשבון. הניקוי מתבצע בדרך כלל מדי שעה; יעדנו הוא להשלים מחיקה אוטומטית של נתונים העומדים בתנאים מהמערכות הפעילות בתוך 24 שעות, תוך ניטור ניסיונות חוזרים לטיפול במשימות שנכשלו או נחסמו. זהו יעד תפעולי, ולא התחייבות שכל הפעולות הפיזיות יסתיימו ברגע מדויק.",
+              "תוכן שנמחק במפורש מוסתר מיד והופך לבר־מחיקה במסגרת הניקוי הסופי ללא תקופת ההמתנה לשחזור חשבון. הניקוי מתבצע מדי שעה וללא עיכוב בלתי מוצדק, ובדרך כלל מסתיים בתוך שבעה ימים מהמועד שבו הנתונים עומדים בתנאים למחיקה סופית מהמערכות הפעילות. אנו מנטרים כשלים, מנסים שוב ומעבירים משימות מעוכבות או חסומות לטיפול מוגבר. כשלים טכניים וניסיונות חוזרים אינם מתחילים תקופה זו מחדש ואינם מאריכים את תקופת השחזור או את המועדים החוקיים החלים.",
             ],
           },
           {
@@ -10552,7 +10552,7 @@ export const privacyPolicyContent = {
                     tag: "strong",
                     children: ["במועד האחרון, בתום 15 ימים:"],
                   },
-                  " אפשרות השחזור מסתיימת ומגיע מועד המחיקה הסופית. הניקוי מתחיל בסריקת הניקוי השעתית המתוכננת הבאה, עם עיבוד וניסיונות חוזרים לפי הצורך. עיכוב בסריקה אינו מאריך את חלון השחזור. יעדנו הוא להשלים בתוך 24 שעות ניקוי אוטומטי מהמערכות הפעילות של הנתונים העומדים בתנאים; חריגים נחוצים מוגבלים כפי שתואר לעיל. ",
+                  " אפשרות השחזור מסתיימת ומגיע מועד המחיקה הסופית. הניקוי מתחיל בסריקת הניקוי השעתית המתוכננת הבאה ומתבצע ללא עיכוב בלתי מוצדק, ובדרך כלל מסתיים בתוך שבעה ימים ממועד זה. אנו מנטרים כשלים, מנסים שוב ומעבירים משימות מעוכבות או חסומות לטיפול מוגבר. סריקות שהתעכבו וניסיונות חוזרים אינם מתחילים תקופה זו מחדש ואינם מאריכים את השחזור או את המועדים החוקיים החלים; חריגי השמירה הנחוצים נשארים מוגבלים כפי שתואר לעיל. ",
                 ],
               },
               {
@@ -11936,7 +11936,7 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              "明示的に削除されたコンテンツは直ちに非表示となり、アカウントの復旧に伴う待機期間を設けずに、恒久的な消去処理の対象となります。消去処理は通常1時間ごとに実行します。対象となる現用システム上の自動削除は24時間以内を目標とし、失敗した処理や阻害された処理については、監視の下で再試行します。これは運用上の目標であり、すべての物理的な処理が正確な時点で完了することを保証するものではありません。",
+              "明示的に削除されたコンテンツは直ちに非表示となり、アカウントの復旧に伴う待機期間を設けずに、恒久的な消去処理の対象となります。消去処理は1時間ごとに実行し、不当に遅滞することなく、通常はデータが現用システムからの恒久的な削除の対象となった日から7日以内に完了します。失敗を監視して再試行し、遅延または停止した処理は追加対応のためにエスカレーションします。技術的な障害や再試行によって、この期間が最初から数え直されたり、復旧期間や適用される法定期限が延長されたりすることはありません。",
             ],
           },
           {
@@ -12326,7 +12326,7 @@ export const privacyPolicyContent = {
                     tag: "strong",
                     children: ["15日間の期限到来時："],
                   },
-                  " 復旧ができなくなり、恒久的な消去を行う時点となります。消去処理は、次に予定された1時間ごとの巡回処理で開始し、必要に応じて処理・再試行を行います。巡回処理が遅れても、復旧期間は延長されません。対象となる現用システム上の自動消去処理は、24時間以内の完了を目標とします。必要な例外は、上記の説明のとおり限定されます。 ",
+                  " 復旧ができなくなり、恒久的な消去を行う時点となります。消去処理は、次に予定された1時間ごとの巡回処理で開始し、不当に遅滞することなく、通常はその期限から7日以内に完了します。失敗を監視して再試行し、遅延または停止した処理は追加対応のためにエスカレーションします。巡回処理の遅延や再試行によって、この期間が最初から数え直されたり、復旧や適用される法定期限が延長されたりすることはありません。必要な保管上の例外は、上記の説明のとおり限定されます。 ",
                 ],
               },
               {
@@ -13734,7 +13734,7 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              "Атайын өчүрүлгөн мазмун дароо жашырылат жана аккаунттун калыбына келтирүү мөөнөтүн күтпөстөн биротоло тазалоого жарамдуу болот. Тазалоо адатта саат сайын жүргүзүлөт; биз жарамдуу маалыматтарды иштеп турган тутумдардан автоматтык түрдө 24 сааттын ичинде өчүрүүнү көздөйбүз жана ийгиликсиз же бөгөттөлгөн иштерди көзөмөлдөнгөн түрдө кайталап аткарабыз. Бул бардык физикалык иштер так бир учурда аяктайт деген кепилдик эмес, иштөө максаты.",
+              "Атайын өчүрүлгөн мазмун дароо жашырылат жана аккаунттун калыбына келтирүү мөөнөтүн күтпөстөн биротоло тазалоого жарамдуу болот. Тазалоо саат сайын, негизсиз кечиктирбестен жүргүзүлөт жана адатта маалыматтар иштеп турган тутумдардан биротоло өчүрүүгө жарамдуу болгондон кийин жети күндүн ичинде аяктайт. Биз каталарды көзөмөлдөп, кайра аракет кылабыз жана кечиккен же бөгөттөлгөн иштерди кошумча чара көрүү үчүн жооптуу тарапка өткөрөбүз. Техникалык каталар жана кайра аракеттер бул мөөнөттү кайра баштабайт жана калыбына келтирүү мөөнөтүн же колдонулуучу мыйзамдык мөөнөттөрдү узартпайт.",
             ],
           },
           {
@@ -14136,7 +14136,7 @@ export const privacyPolicyContent = {
                     tag: "strong",
                     children: ["15 күндүк мөөнөт аяктаганда:"],
                   },
-                  " Калыбына келтирүү мүмкүнчүлүгү аяктайт жана биротоло тазалоону жүргүзүү убактысы келет. Тазалоо кийинки пландалган сааттык текшерүүдө башталып, зарылдыгына жараша иштетилет/кайталанат. Кечиккен текшерүү калыбына келтирүү мөөнөтүн узартпайт. Биз жарамдуу маалыматтарды иштеп турган тутумдардан автоматтык тазалоону 24 сааттын ичинде аяктоону көздөйбүз; зарыл өзгөчөлүктөр жогоруда сүрөттөлгөндөй чектелет. ",
+                  " Калыбына келтирүү мүмкүнчүлүгү аяктайт жана биротоло тазалоону жүргүзүү убактысы келет. Тазалоо кийинки пландалган сааттык текшерүүдө башталып, негизсиз кечиктирбестен жүргүзүлөт жана адатта ошол акыркы мөөнөттөн тартып жети күндүн ичинде аяктайт. Биз каталарды көзөмөлдөп, кайра аракет кылабыз жана кечиккен же бөгөттөлгөн иштерди кошумча чара көрүү үчүн жооптуу тарапка өткөрөбүз. Кечиккен текшерүүлөр жана кайра аракеттер бул мөөнөттү кайра баштабайт жана калыбына келтирүүнү же колдонулуучу мыйзамдык мөөнөттөрдү узартпайт; зарыл сактоо өзгөчөлүктөрү жогоруда сүрөттөлгөндөй чектелүү бойдон калат. ",
                 ],
               },
               {
@@ -15532,7 +15532,7 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              "Явно удалённый контент скрывается немедленно и становится доступным для окончательной очистки без задержки на восстановление учётной записи. Очистка обычно запускается каждый час; наш целевой срок автоматического удаления из действующих систем данных, подлежащих такой очистке, составляет 24 часа, с контролируемыми повторными попытками при сбоях или блокировании работ. Это эксплуатационный ориентир, а не гарантия завершения всех физических операций в точно определённый момент.",
+              "Явно удалённый контент скрывается немедленно и подлежит окончательной очистке без ожидания периода восстановления учётной записи. Очистка запускается каждый час и проводится без неоправданной задержки, обычно завершаясь в течение семи дней с момента, когда данные подлежат окончательному удалению из действующих систем. Мы отслеживаем сбои, повторяем попытки и передаём задержанные или заблокированные задачи на дополнительное рассмотрение. Технические сбои и повторные попытки не начинают этот срок заново и не продлевают период восстановления или применимые законные сроки.",
             ],
           },
           {
@@ -15932,7 +15932,7 @@ export const privacyPolicyContent = {
                     tag: "strong",
                     children: ["По истечении 15-дневного срока:"],
                   },
-                  " Возможность восстановления прекращается, и наступает срок окончательной очистки. Очистка начинается при следующем запланированном ежечасном проходе с обработкой и повторными попытками по мере необходимости. Задержка прохода не продлевает срок восстановления. Наш целевой срок завершения автоматической очистки действующих систем для данных, подлежащих очистке, составляет 24 часа; необходимые исключения ограничены описанным выше. ",
+                  " Возможность восстановления прекращается, и наступает срок окончательной очистки. Очистка начинается при следующем запланированном ежечасном проходе и проводится без неоправданной задержки, обычно завершаясь в течение семи дней после этого срока. Мы отслеживаем сбои, повторяем попытки и передаём задержанные или заблокированные задачи на дополнительное рассмотрение. Задержанные проходы и повторные попытки не начинают этот период заново и не продлевают восстановление или применимые законные сроки; необходимые исключения для хранения остаются ограниченными описанным выше. ",
                 ],
               },
               {
@@ -17298,7 +17298,7 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              "主动删除的内容会立即隐藏，并无须等待账户恢复期即可进入永久清理流程。清理通常每小时运行一次；我们的目标是在24小时内完成符合条件的线上系统自动删除，并对失败或受阻的任务进行受监测的重试。这是运营目标，并非保证所有实际清理操作都在某个精确时刻完成。",
+              "主动删除的内容会立即隐藏，并无须等待账户恢复期即可进入永久清理流程。清理每小时运行一次，并在无不当延误的情况下进行，通常在数据符合从线上系统永久删除的条件之日起七天内完成。我们会监测失败情况、重试，并将延迟或受阻的任务升级处理。技术故障和重试不会重新计算该期限，也不会延长恢复期或适用的法定期限。",
             ],
           },
           {
@@ -17684,7 +17684,7 @@ export const privacyPolicyContent = {
                     tag: "strong",
                     children: ["15天截止时间到达时："],
                   },
-                  " 恢复期结束，并应执行永久清除。清理从下一次计划的每小时清理扫描开始，按需进行处理/重试。扫描延迟不会延长恢复期。我们的目标是在24小时内完成符合条件的线上系统自动清理；必要例外仅限于上文所述范围。 ",
+                  " 恢复期结束，并应执行永久清除。清理从下一次计划的每小时清理扫描开始，并在无不当延误的情况下进行，通常在该截止时间起七天内完成。我们会监测失败情况、重试，并将延迟或受阻的任务升级处理。扫描延迟和重试不会重新计算该期限，也不会延长恢复期或适用的法定期限；必要的保留例外仍仅限于上文所述范围。 ",
                 ],
               },
               {
@@ -19044,7 +19044,7 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              "明確刪除的內容會立即隱藏，並可進行永久清理，不必等待帳戶復原期間。清理通常每小時執行；我們的目標是在 24 小時內，完成符合條件的運作中系統自動刪除，並對失敗或受阻作業進行受監控的重試。這是營運目標，並非保證所有實際作業均於某個確切時點完成。",
+              "明確刪除的內容會立即隱藏，並可進行永久清理，不必等待帳戶復原期間。清理每小時執行，並在無不當延誤的情況下進行，通常於資料符合從運作中系統永久刪除的條件之日起七天內完成。我們會監控失敗情況、重試，並將延遲或受阻作業升級處理。技術故障和重試不會重新計算該期限，也不會延長復原期間或適用的法定期限。",
             ],
           },
           {
@@ -19430,7 +19430,7 @@ export const privacyPolicyContent = {
                     tag: "strong",
                     children: ["15 天期限屆滿時："],
                   },
-                  " 復原期間結束，並應開始永久清除。清理會透過下一次排定的每小時掃描啟動，並視需要處理／重試。掃描延遲不會延長復原期間。我們的目標是在 24 小時內完成符合條件的運作中系統自動清理；必要例外限於上述範圍。 ",
+                  " 復原期間結束，並應開始永久清除。清理會透過下一次排定的每小時掃描啟動，並在無不當延誤的情況下進行，通常於該截止時間起七天內完成。我們會監控失敗情況、重試，並將延遲或受阻作業升級處理。掃描延遲和重試不會重新計算該期限，也不會延長復原期間或適用的法定期限；必要的保留例外仍限於上述範圍。 ",
                 ],
               },
               {

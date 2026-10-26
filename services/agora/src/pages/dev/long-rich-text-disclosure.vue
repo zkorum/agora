@@ -349,7 +349,6 @@ function createConversation({ body }: { body: string }): ExtendedConversation {
       conversationCapabilities: {
         canEdit: false,
         canDelete: false,
-        canManageIntegrations: false,
       },
     },
   };

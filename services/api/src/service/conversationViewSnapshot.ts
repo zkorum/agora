@@ -215,6 +215,8 @@ export async function createConversationViewSnapshotsFromCurrentState({
     }
 
     const conversation = conversationRows[0];
+    if (conversation.isClosed && lifecycleCheckpointReason === undefined)
+        return 0;
     const counters = await calculateConversationCounters({
         db,
         conversationId,
@@ -226,6 +228,8 @@ export async function createConversationViewSnapshotsFromCurrentState({
                 conversationViewSnapshotTable.opinionGroupSpecId,
             analysisSnapshotId:
                 conversationViewSnapshotTable.analysisSnapshotId,
+            surveyAggregateSnapshotId:
+                conversationViewSnapshotTable.surveyAggregateSnapshotId,
             variantsEnabled: analysisSnapshotResultTable.variantsEnabled,
         })
         .from(conversationViewSnapshotTable)
@@ -269,52 +273,9 @@ export async function createConversationViewSnapshotsFromCurrentState({
         }
         latestSnapshotRefsBySpecId.set(row.opinionGroupSpecId, {
             analysisSnapshotId: row.analysisSnapshotId,
-            surveyAggregateSnapshotId: null,
+            surveyAggregateSnapshotId: row.surveyAggregateSnapshotId,
             variantsEnabled: row.variantsEnabled,
         });
-    }
-
-    const previousSurveyRows = await db
-        .selectDistinctOn([conversationViewSnapshotTable.opinionGroupSpecId], {
-            opinionGroupSpecId:
-                conversationViewSnapshotTable.opinionGroupSpecId,
-            surveyAggregateSnapshotId:
-                conversationViewSnapshotTable.surveyAggregateSnapshotId,
-        })
-        .from(conversationViewSnapshotTable)
-        .where(
-            and(
-                eq(
-                    conversationViewSnapshotTable.conversationId,
-                    conversationId,
-                ),
-                inArray(
-                    conversationViewSnapshotTable.opinionGroupSpecId,
-                    currentOpinionGroupSpecIds,
-                ),
-                isNotNull(conversationViewSnapshotTable.activatedAt),
-                isNotNull(
-                    conversationViewSnapshotTable.surveyAggregateSnapshotId,
-                ),
-            ),
-        )
-        .orderBy(
-            conversationViewSnapshotTable.opinionGroupSpecId,
-            desc(conversationViewSnapshotTable.createdAt),
-            desc(conversationViewSnapshotTable.id),
-        );
-
-    for (const row of previousSurveyRows) {
-        if (row.surveyAggregateSnapshotId === null) {
-            continue;
-        }
-        const refs = latestSnapshotRefsBySpecId.get(row.opinionGroupSpecId) ?? {
-            analysisSnapshotId: null,
-            surveyAggregateSnapshotId: null,
-            variantsEnabled: false,
-        };
-        refs.surveyAggregateSnapshotId = row.surveyAggregateSnapshotId;
-        latestSnapshotRefsBySpecId.set(row.opinionGroupSpecId, refs);
     }
 
     const activatedAt = new Date();

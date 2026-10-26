@@ -68,7 +68,6 @@ describe("conversation action capabilities", () => {
       conversationCapabilities: {
         canEdit: true,
         canDelete: true,
-        canManageIntegrations: true,
       },
     });
 
@@ -82,19 +81,18 @@ describe("conversation action capabilities", () => {
     );
   });
 
-  it("keeps edit, delete and integrations permissions independent", () => {
+  it("lets editors sync sources without granting delete access", () => {
     const actions = visibleActionIds({
       conversationCapabilities: {
         canEdit: true,
         canDelete: false,
-        canManageIntegrations: false,
       },
     });
 
     expect(actions).toContain("edit");
     expect(actions).toContain("closeConversation");
     expect(actions).not.toContain("delete");
-    expect(actions).not.toContain("syncGitHub");
+    expect(actions).toContain("syncGitHub");
   });
 
   it("does not infer management rights from authorship", () => {
@@ -102,7 +100,6 @@ describe("conversation action capabilities", () => {
       conversationCapabilities: {
         canEdit: false,
         canDelete: false,
-        canManageIntegrations: false,
       },
       actionContext: { ...context, isOwner: true },
     });

@@ -134,7 +134,6 @@ function conversation(config: ConversationTypeConfig): ConversationDetail {
         conversationCapabilities: {
           canEdit: true,
           canDelete: true,
-          canManageIntegrations: false,
         },
       },
     },
@@ -227,6 +226,43 @@ function request(
     conversationTypeConfig,
   };
 }
+
+describe("conversation lifecycle freshness", () => {
+  it.each([
+    { conversationType: "polis", votingPresentation: "list" },
+    { conversationType: "ranking", rankingMode: "bws" },
+  ] satisfies ConversationTypeConfig[])(
+    "does not restore finalizing state from an older $conversationType frame",
+    async (config) => {
+      const { queryClient } = mountMutation(config);
+      const current = conversation(config);
+      const stale = conversation(config);
+      for (const { value, id } of [
+        { value: current, id: 2 },
+        { value: stale, id: 1 },
+      ]) {
+        const metadata = value.conversationData.metadata;
+        if (metadata.conversationType === "polis")
+          metadata.conversationViewSnapshotId = id;
+        else metadata.rankingStatsSnapshotId = id;
+      }
+      current.conversationData.metadata.isClosed = true;
+      current.conversationData.metadata.isFinalizing = false;
+      stale.conversationData.metadata.isClosed = true;
+      stale.conversationData.metadata.isFinalizing = true;
+      queryClient.setQueryData(key, current);
+      mocks.fetch.mockResolvedValue(stale);
+      await queryClient.refetchQueries({ queryKey: key, exact: true });
+      expect(
+        queryClient.getQueryData<ConversationDetail>(key)?.conversationData
+          .metadata
+      ).toMatchObject({
+        isClosed: true,
+        isFinalizing: false,
+      });
+    }
+  );
+});
 
 describe("conversation presentation edits", () => {
   it.each([

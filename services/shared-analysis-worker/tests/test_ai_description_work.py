@@ -59,6 +59,10 @@ from agora_analysis_worker_shared.ai_description_work import (
     retry_ai_description_locale_work_item,
     translation_work_demands_for_eager_candidates,
 )
+from agora_analysis_worker_shared.analysis_lifecycle import (
+    activatable_analysis_view_ids,
+    finalize_closed_analysis,
+)
 from agora_analysis_worker_shared.bedrock_label_summary import (
     LabelSummary,
     ParsedLabelSummaryOutput,
@@ -69,6 +73,7 @@ from agora_analysis_worker_shared.db import (
     complete_computed_analysis_work_items_batch,
     extend_postgres_leases,
     fetch_claimable_work_conversation_ids,
+    mark_non_retryable_work_items_batch,
     recover_expired_running_work,
 )
 from agora_analysis_worker_shared.description_generation import (
@@ -103,6 +108,7 @@ from agora_analysis_worker_shared.generated_models import (
     AnalysisFamilyEnum,
     AnalysisResultOutcomeEnum,
     AnalysisSnapshot,
+    AnalysisSnapshotOpinion,
     AnalysisSnapshotResult,
     AnalysisSpec,
     AnalysisWorkState,
@@ -117,6 +123,8 @@ from agora_analysis_worker_shared.generated_models import (
     ConversationViewSnapshotCheckpointReasonEnum,
     ConversationViewSnapshotReasonEnum,
     DisplayLanguageCode,
+    Opinion,
+    OpinionContent,
     OpinionGroup,
     OpinionGroupCandidate,
     OpinionGroupCandidateAssessment,
@@ -128,6 +136,7 @@ from agora_analysis_worker_shared.generated_models import (
     OpinionGroupDescriptionTranslationWork,
     OpinionGroupLineage,
     OpinionGroupLineageDescriptionWork,
+    OpinionGroupOpinionStats,
     OpinionGroupReducerEnum,
     OpinionGroupSelectionPolicyEnum,
     OpinionGroupSpec,
@@ -137,6 +146,7 @@ from agora_analysis_worker_shared.generated_models import (
     PolisVotingPresentation,
     RealtimeEventOutbox,
     SpokenLanguageCode,
+    User,
     VoteEnumSimple,
 )
 from agora_analysis_worker_shared.generated_shared_types import (
@@ -4610,6 +4620,77 @@ def test_completion_releases_stale_unactivated_first_pass_after_new_votes() -> N
     assert stale_persisted_snapshot_id is None
 
 
+@pytest.mark.parametrize("attempt_count, delay_seconds", [(1, 5), (2, 15), (3, 60), (20, 300)])
+def test_closing_work_retries_after_durable_bounded_backoff(
+    lineage_scan_engine: Engine, attempt_count: int, delay_seconds: int
+) -> None:
+    engine = lineage_scan_engine
+    if engine.dialect.name != "postgresql":
+        pytest.skip("Closing retries exercise PostgreSQL correlated UPDATE RETURNING")
+    with Session(engine) as session:
+        _insert_non_processable_ai_work_state(session)
+        conversation = session.execute(select(Conversation)).scalar_one()
+        conversation.current_content_id = 40
+        conversation.is_closed = True
+        conversation.closing_target_revision = 1
+        session.add(
+            AnalysisWorkState(
+                id=901,
+                conversation_id=10,
+                opinion_group_spec_id=1,
+                last_completed_data_generation=0,
+                running_data_generation=1,
+                attempt_generation=1,
+                attempt_count=attempt_count,
+                lease_owner="math-updater",
+                lease_token="failed-token",
+                lease_expires_at=datetime.now(UTC) + timedelta(seconds=60),
+                created_at=NOW,
+                updated_at=NOW,
+            )
+        )
+        session.commit()
+    mark_non_retryable_work_items_batch(
+        engine,
+        claims=[
+            ClaimedWorkItem(
+                id=901,
+                conversation_id=10,
+                conversation_slug_id="conv1234",
+                opinion_group_spec_id=1,
+                data_generation=1,
+                attempt_count=attempt_count,
+                lease_token="failed-token",
+                persisted_analysis_snapshot_id=None,
+            )
+        ],
+        analysis_engine_epoch=1,
+        error_code="bad_result",
+        error_message="Failed computation",
+    )
+
+    def claim_work() -> list[ClaimedWorkItem]:
+        return claim_work_items_batch(
+            engine,
+            worker_id="restarted-worker",
+            conversation_ids=[10],
+            lease_ttl_seconds=60,
+            limit=10,
+            analysis_engine_epoch=1,
+        )
+
+    assert fetch_claimable_work_conversation_ids(engine, limit=10, analysis_engine_epoch=1) == []
+    assert claim_work() == []
+    with Session(engine) as session:
+        state = session.get_one(AnalysisWorkState, 901)
+        state.updated_at = datetime.now(UTC) - timedelta(seconds=delay_seconds + 1)
+        session.commit()
+    assert fetch_claimable_work_conversation_ids(engine, limit=10, analysis_engine_epoch=1) == [10]
+    claims = claim_work()
+    assert len(claims) == 1
+    assert claims[0].attempt_count == attempt_count + 1
+
+
 def test_expired_unpersisted_analysis_work_is_claimable_immediately() -> None:
     engine = _create_engine()
     with Session(engine) as session:
@@ -5167,6 +5248,229 @@ def test_recover_expired_persisted_analysis_work_keeps_resume_state() -> None:
     assert recovered_state.running_data_generation == 1
     assert recovered_state.persisted_analysis_snapshot_id == 30
     assert recovered_state.lease_token == "analysis-token"
+
+
+@pytest.mark.parametrize(
+    "source_state", ["visible", "deleted", "account_hidden", "deleted_in_flight"]
+)
+def test_generation_requires_permitted_representatives_in_every_group(source_state: str) -> None:
+    engine = _create_engine()
+    with Session(engine) as session:
+        _insert_non_processable_ai_work_state(session, leased_lineage_work=True)
+        session.execute(update(OpinionGroupLineage).values(system_description_id=None))
+        session.execute(update(ConversationViewSnapshot).values(activated_at=NOW))
+        session.add(
+            OpinionGroup(
+                id=802,
+                candidate_id=401,
+                scope_id=701,
+                lineage_id=302,
+                key="1",
+                external_id=1,
+                num_users=1,
+                created_at=NOW,
+            )
+        )
+        for opinion_id, group_id in ((1, 801), (2, 802)):
+            session.add(
+                User(
+                    id=uuid.UUID(int=opinion_id),
+                    username=f"author-{opinion_id}",
+                    polis_participant_id=opinion_id,
+                    is_deleted=source_state == "account_hidden" and opinion_id == 2,
+                    created_at=NOW,
+                    updated_at=NOW,
+                )
+            )
+            session.add(
+                Opinion(
+                    id=opinion_id,
+                    slug_id=f"source0{opinion_id}",
+                    author_id=uuid.UUID(int=opinion_id),
+                    conversation_id=10,
+                    current_content_id=None
+                    if source_state == "deleted" and opinion_id == 2
+                    else opinion_id,
+                    created_at=NOW,
+                    updated_at=NOW,
+                    last_reacted_at=NOW,
+                )
+            )
+            session.add(
+                OpinionContent(
+                    id=opinion_id,
+                    public_id=uuid.UUID(int=opinion_id + 100),
+                    opinion_id=opinion_id,
+                    conversation_content_id=40,
+                    content=f"Representative {opinion_id}",
+                    created_at=NOW,
+                )
+            )
+            session.add(
+                AnalysisSnapshotOpinion(
+                    id=opinion_id,
+                    analysis_snapshot_id=30,
+                    opinion_id=opinion_id,
+                    opinion_content_id=opinion_id,
+                    local_opinion_index=opinion_id - 1,
+                    created_at=NOW,
+                )
+            )
+            session.add(
+                OpinionGroupOpinionStats(
+                    id=opinion_id,
+                    group_id=group_id,
+                    analysis_snapshot_opinion_id=opinion_id,
+                    representative_agreement_type=VoteEnumSimple.agree,
+                    representative_probability_agreement=0.8,
+                    representative_number_agreement=1,
+                    created_at=NOW,
+                )
+            )
+        session.commit()
+    calls: list[ConversationDescriptionInput] = []
+
+    def generate(conversation: ConversationDescriptionInput) -> DescriptionGenerationResult:
+        calls.append(conversation)
+        if source_state == "deleted_in_flight":
+            with Session(engine) as deleting:
+                deleting.execute(
+                    update(Opinion).where(Opinion.id == 2).values(current_content_id=None)
+                )
+                deleting.commit()
+        return DescriptionGenerationResult(
+            groups={"0": EnglishDescription(label="Transit", summary="Supports transit.")}
+        )
+
+    process_ai_description_locale_work_item(
+        engine,
+        claim=ClaimedLineageDescriptionWorkItem(
+            id=201,
+            conversation_id=10,
+            conversation_slug_id="abc12345",
+            lineage_id=301,
+            source_candidate_id=401,
+            locale="en",
+            attempt_count=1,
+            lease_token="token-1",
+        ),
+        generate_descriptions=generate,
+        translate_descriptions=None,
+    )
+    assert len(calls) == (1 if source_state in {"visible", "deleted_in_flight"} else 0)
+    with Session(engine) as session:
+        description_id = session.scalar(
+            select(OpinionGroupLineage.system_description_id).where(OpinionGroupLineage.id == 301)
+        )
+    assert (description_id is not None) == (source_state == "visible")
+    if source_state != "visible":
+        with Session(engine) as session:
+            work = session.get(OpinionGroupLineageDescriptionWork, 201)
+            assert work is not None and work.sources_blocked
+        assert (
+            fetch_claimable_ai_description_work_conversation_ids(
+                engine,
+                limit=10,
+                ai_description_epoch=1,
+                translation_enabled=False,
+            )
+            == []
+        )
+    if source_state == "account_hidden":
+        with Session(engine) as session:
+            session.execute(
+                update(User).where(User.id == uuid.UUID(int=2)).values(is_deleted=False)
+            )
+            session.commit()
+        assert fetch_claimable_ai_description_work_conversation_ids(
+            engine,
+            limit=10,
+            ai_description_epoch=1,
+            translation_enabled=False,
+        ) == [10]
+    engine.dispose()
+
+
+def test_closing_accepts_only_current_complete_frames(lineage_scan_engine: Engine) -> None:
+    with Session(lineage_scan_engine) as session:
+        _seed_live_description_repair(session)
+        conversation = session.get(Conversation, 10)
+        config = session.get(PolisConversationConfig, 10)
+        view = session.get(ConversationViewSnapshot, 20)
+        assert conversation is not None and config is not None and view is not None
+        conversation.is_closed = True
+        conversation.closing_target_revision = 2
+        config.analysis_data_generation = 2
+        view.is_closed = True
+        session.flush()
+        finalize_closed_analysis(session, conversation_ids=[10])
+        session.refresh(conversation)
+        assert conversation.closed_finalized_at is None
+        assert activatable_analysis_view_ids(session, view_ids=[20], conversation_ids=[10]) == []
+        session.add(
+            AnalysisSnapshot(
+                id=31,
+                conversation_id=10,
+                conversation_content_id=40,
+                input_snapshot_id=1,
+                data_generation=2,
+                computed_at=NOW,
+                created_at=NOW,
+            )
+        )
+        session.add(
+            ConversationViewSnapshot(
+                id=21,
+                conversation_id=10,
+                opinion_group_spec_id=1,
+                analysis_snapshot_id=31,
+                conversation_content_id=40,
+                view_reason=ConversationViewSnapshotReasonEnum.analysis_completed,
+                is_closed=True,
+                opinion_count=2,
+                total_opinion_count=2,
+                vote_count=12,
+                total_vote_count=12,
+                participant_count=6,
+                total_participant_count=6,
+                moderated_opinion_count=0,
+                hidden_opinion_count=0,
+                activated_at=NOW,
+                created_at=NOW,
+            )
+        )
+        session.flush()
+        finalize_closed_analysis(session, conversation_ids=[10])
+        session.refresh(conversation)
+        assert conversation.closed_finalized_at is not None
+        reasons = session.scalars(
+            select(ConversationViewSnapshotCheckpointReason).where(
+                ConversationViewSnapshotCheckpointReason.reason
+                == ConversationViewSnapshotCheckpointReasonEnum.conversation_closed,
+            )
+        ).all()
+        assert [reason.conversation_view_snapshot_id for reason in reasons] == [21]
+        assert session.get(OpinionGroupDescription, 501) is not None
+        assert (
+            activatable_analysis_view_ids(session, view_ids=[20, 21], conversation_ids=[10]) == []
+        )
+        # Reopening advances the durable input generation. A second close must
+        # not accept either frame from the previous lifecycle, even after restart.
+        conversation.is_closed = False
+        conversation.closed_finalized_at = None
+        conversation.closing_target_revision = None
+        config.analysis_data_generation = 3
+        session.flush()
+        conversation.is_closed = True
+        conversation.closing_target_revision = 3
+        session.flush()
+        finalize_closed_analysis(session, conversation_ids=[10])
+        session.refresh(conversation)
+        assert conversation.closed_finalized_at is None
+        assert (
+            activatable_analysis_view_ids(session, view_ids=[20, 21], conversation_ids=[10]) == []
+        )
+        session.commit()
 
 
 def test_claimed_non_processable_lineage_work_does_not_call_generator() -> None:

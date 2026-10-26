@@ -1,17 +1,41 @@
-import { and, eq, inArray, isNotNull, isNull, ne, or } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
     conversationTable,
     conversationModerationTable,
     opinionModerationTable,
     opinionTable,
-    voteTable,
 } from "@/shared-backend/schema.js";
 import { getProjectCapabilitiesById } from "./projectAccess.js";
+import type {
+    OpinionEditingAvailability,
+    OpinionItem,
+} from "@/shared/types/zod.js";
+import { getOpinionIdsWithBlockingVotes } from "./opinionVoteEligibility.js";
 
-export interface OpinionManagementCapabilities {
-    readonly canEdit: boolean;
-    readonly canDelete: boolean;
+export type OpinionManagementCapabilities = Readonly<
+    NonNullable<OpinionItem["management"]>
+>;
+
+export function getOpinionEditingAvailability({
+    canManage,
+    isImporting,
+    isLocked,
+    isHidden,
+    hasVotes,
+}: {
+    canManage: boolean;
+    isImporting: boolean;
+    isLocked: boolean;
+    isHidden: boolean;
+    hasVotes: boolean;
+}): OpinionEditingAvailability {
+    if (!canManage || isHidden)
+        return { allowed: false, reason: "not_allowed" };
+    if (isImporting) return { allowed: false, reason: "import_in_progress" };
+    if (isLocked) return { allowed: false, reason: "conversation_locked" };
+    if (hasVotes) return { allowed: false, reason: "has_votes" };
+    return { allowed: true };
 }
 
 export async function canManageOpinion({
@@ -45,26 +69,18 @@ export async function canManageOpinion({
 export async function hasBlockingOpinionVotes({
     db,
     opinionId,
-    authorId,
-    isSeed,
+    conversationId,
 }: {
     db: PostgresJsDatabase;
     opinionId: number;
-    authorId: string;
-    isSeed: boolean;
+    conversationId: number;
 }): Promise<boolean> {
-    const rows = await db
-        .select({ id: voteTable.id })
-        .from(voteTable)
-        .where(
-            and(
-                eq(voteTable.opinionId, opinionId),
-                isNotNull(voteTable.currentContentId),
-                isSeed ? undefined : ne(voteTable.authorId, authorId),
-            ),
-        )
-        .limit(1);
-    return rows.length > 0;
+    const blocked = await getOpinionIdsWithBlockingVotes({
+        db,
+        conversationId,
+        opinionIds: [opinionId],
+    });
+    return blocked.has(opinionId);
 }
 
 export async function getOpinionManagementCapabilities({
@@ -87,6 +103,7 @@ export async function getOpinionManagementCapabilities({
             slugId: opinionTable.slugId,
             authorId: opinionTable.authorId,
             isSeed: opinionTable.isSeed,
+            conversationId: opinionTable.conversationId,
             projectId: conversationTable.projectId,
             conversationLocked: conversationModerationTable.id,
             moderationAction: opinionModerationTable.moderationAction,
@@ -141,42 +158,42 @@ export async function getOpinionManagementCapabilities({
                   .get(opinion.projectId)
                   ?.has("conversation_edit") === true
             : opinion.authorId === userId;
-    const managedOpinions = opinions.filter(canManage);
-    const blockingVotes =
-        managedOpinions.length === 0
-            ? []
-            : await db
-                  .select({ opinionId: voteTable.opinionId })
-                  .from(voteTable)
-                  .innerJoin(
-                      opinionTable,
-                      eq(opinionTable.id, voteTable.opinionId),
-                  )
-                  .where(
-                      and(
-                          inArray(
-                              voteTable.opinionId,
-                              managedOpinions.map((opinion) => opinion.id),
-                          ),
-                          isNotNull(voteTable.currentContentId),
-                          or(
-                              eq(opinionTable.isSeed, true),
-                              ne(voteTable.authorId, opinionTable.authorId),
-                          ),
-                      ),
-                  )
-                  .groupBy(voteTable.opinionId);
-    const blockedIds = new Set(blockingVotes.map((vote) => vote.opinionId));
-    for (const opinion of opinions) {
+    const availability = opinions.map((opinion) => {
         const canManageThisOpinion = canManage(opinion);
-        capabilities.set(opinion.slugId, {
-            canEdit:
-                canManageThisOpinion &&
-                !opinion.isImporting &&
-                opinion.conversationLocked === null &&
-                opinion.moderationAction !== "hide" &&
-                !blockedIds.has(opinion.id),
+        return {
+            ...opinion,
             canDelete: canManageThisOpinion,
+            editing: getOpinionEditingAvailability({
+                canManage: canManageThisOpinion,
+                isImporting: opinion.isImporting,
+                isLocked: opinion.conversationLocked !== null,
+                isHidden: opinion.moderationAction === "hide",
+                hasVotes: false,
+            }),
+        };
+    });
+    const opinionIdsByConversation = new Map<number, number[]>();
+    for (const opinion of availability) {
+        if (!opinion.editing.allowed) continue;
+        const ids = opinionIdsByConversation.get(opinion.conversationId) ?? [];
+        ids.push(opinion.id);
+        opinionIdsByConversation.set(opinion.conversationId, ids);
+    }
+    const blockedIds = new Set<number>();
+    for (const [conversationId, opinionIds] of opinionIdsByConversation) {
+        for (const id of await getOpinionIdsWithBlockingVotes({
+            db,
+            conversationId,
+            opinionIds,
+        }))
+            blockedIds.add(id);
+    }
+    for (const opinion of availability) {
+        capabilities.set(opinion.slugId, {
+            editing: blockedIds.has(opinion.id)
+                ? { allowed: false, reason: "has_votes" }
+                : opinion.editing,
+            canDelete: opinion.canDelete,
         });
     }
     return capabilities;

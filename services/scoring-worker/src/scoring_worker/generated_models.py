@@ -20,6 +20,7 @@ from sqlalchemy import (
     String,
     Text,
     Uuid,
+    text,
 )
 from sqlalchemy import Enum as SaEnum
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -276,7 +277,7 @@ class Conversation(Base):
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     polis_config_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     ranking_config_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    dynamic_translation_enabled: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    dynamic_translation_enabled: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     conversation_email_update_enabled_override: Mapped[bool | None] = mapped_column(
         Boolean,
         nullable=True,
@@ -299,7 +300,7 @@ class Conversation(Base):
             native_enum=True,
         ),
     )
-    is_indexed: Mapped[bool] = mapped_column(Boolean, server_default="true")
+    is_indexed: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
     participation_mode: Mapped[ParticipationMode] = mapped_column(
         SaEnum(
             ParticipationMode,
@@ -316,9 +317,11 @@ class Conversation(Base):
             native_enum=True,
         ),
     )
-    is_importing: Mapped[bool] = mapped_column(Boolean, server_default="false")
-    is_closed: Mapped[bool] = mapped_column(Boolean, server_default="false")
-    is_edited: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    is_importing: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
+    is_closed: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
+    closing_target_revision: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    closed_finalized_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    is_edited: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     requires_event_ticket: Mapped[EventSlug | None] = mapped_column(
         SaEnum(EventSlug, name="event_slug", values_callable=_enum_values, native_enum=True),
         nullable=True,
@@ -349,7 +352,7 @@ class MaxdiffResult(Base):
     conversation_id: Mapped[int] = mapped_column(Integer)
     ranking: Mapped[Any | None] = mapped_column(JSON(none_as_null=True), nullable=True)
     comparisons: Mapped[Any] = mapped_column(JSON(none_as_null=True))
-    is_complete: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    is_complete: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
 
@@ -393,10 +396,10 @@ class Project(Base):
     )
     auto_provisioned_for_organization_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    dynamic_translation_enabled: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    dynamic_translation_enabled: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     conversation_email_update_default_enabled: Mapped[bool] = mapped_column(
         Boolean,
-        server_default="false",
+        server_default=text("false"),
     )
     conversation_email_update_default_updated_at: Mapped[datetime | None] = mapped_column(
         DateTime,
@@ -560,7 +563,7 @@ class RankingItem(Base):
     author_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
     conversation_id: Mapped[int] = mapped_column(Integer)
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    is_seed: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    is_seed: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     lifecycle_status: Mapped[RankingItemLifecycleStatus] = mapped_column(
         SaEnum(
             RankingItemLifecycleStatus,
@@ -656,7 +659,7 @@ class SurveyConfig(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     conversation_id: Mapped[int] = mapped_column(Integer)
     current_revision: Mapped[int] = mapped_column(Integer, server_default="1")
-    is_optional: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    is_optional: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
@@ -731,7 +734,7 @@ class SurveyQuestionOption(Base):
     survey_question_id: Mapped[int] = mapped_column(Integer)
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     display_order: Mapped[int] = mapped_column(Integer)
-    allows_text: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    allows_text: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
 
@@ -762,10 +765,10 @@ class SurveyQuestion(Base):
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     current_semantic_version: Mapped[int] = mapped_column(Integer, server_default="1")
     display_order: Mapped[int] = mapped_column(Integer)
-    is_required: Mapped[bool] = mapped_column(Boolean, server_default="true")
+    is_required: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
     is_public_aggregate_suppression_enabled: Mapped[bool] = mapped_column(
         Boolean,
-        server_default="false",
+        server_default=text("false"),
     )
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
@@ -789,10 +792,10 @@ class User(Base):
     id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid, primary_key=True)
     polis_participant_id: Mapped[int] = mapped_column(Integer)
     username: Mapped[str] = mapped_column(String(20))
-    is_site_moderator: Mapped[bool] = mapped_column(Boolean, server_default="false")
-    is_site_org_admin: Mapped[bool] = mapped_column(Boolean, server_default="false")
-    is_imported: Mapped[bool] = mapped_column(Boolean, server_default="false")
-    is_deleted: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    is_site_moderator: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
+    is_site_org_admin: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
+    is_imported: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
+    is_deleted: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     auth_restricted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     auth_restriction_reason: Mapped[str | None] = mapped_column(Text, nullable=True)

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
     getConversationCreateEmailUpdateConfiguration,
-    getProjectIdsWithCapabilityFromGrants,
     hasActivePremiumFeatureEntitlement,
 } from "@/service/projectAccessLogic.js";
 
@@ -32,44 +31,6 @@ describe("getConversationCreateEmailUpdateConfiguration", () => {
             hasParticipantContactEmail: true,
             scopeDefaultEnabled: true,
         });
-    });
-});
-
-describe("getProjectIdsWithCapabilityFromGrants", () => {
-    it("returns unique project IDs where the requested capability is effective", () => {
-        expect(
-            getProjectIdsWithCapabilityFromGrants({
-                capabilityGrants: [
-                    {
-                        organizationId: 10,
-                        capability: "conversation_edit",
-                    },
-                    {
-                        organizationId: 11,
-                        capability: "conversation_edit",
-                    },
-                    {
-                        organizationId: 12,
-                        capability: "conversation_delete",
-                    },
-                    {
-                        organizationId: 13,
-                        capability: "conversation_edit",
-                    },
-                    {
-                        organizationId: 14,
-                        capability: "conversation_edit",
-                    },
-                ],
-                projectOwnerships: [
-                    { projectId: 1, organizationId: 10 },
-                    { projectId: 1, organizationId: 11 },
-                    { projectId: 2, organizationId: 12 },
-                    { projectId: 3, organizationId: 13 },
-                ],
-                capability: "conversation_edit",
-            }),
-        ).toEqual([1, 3]);
     });
 });
 

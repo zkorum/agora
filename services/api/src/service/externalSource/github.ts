@@ -693,8 +693,7 @@ export async function syncGitHubIssues({
         db,
         userId: requestingUserId,
         projectId: conversation.projectId,
-        capability: "conversation_manage_integrations",
-        message: "Missing conversation_manage_integrations capability",
+        capability: "conversation_edit",
     });
 
     if (

@@ -5,20 +5,18 @@ import {
     eventTicketTable,
     phoneTable,
     emailTable,
-    voteTable,
     opinionTable,
     conversationTable,
-    organizationMembershipTable,
-    projectOrganizationOwnershipTable,
 } from "@/shared-backend/schema.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { nowZeroMs } from "@/shared/util.js";
 import { revokeAllSessionsWithinTransaction } from "./authSession.js";
 import { httpErrors } from "@fastify/sensible";
 import { MAX_LENGTH_USERNAME } from "@/shared/shared.js";
 import { scheduleConversationAnalysisRefresh } from "@/shared-backend/conversationCounters.js";
 import { cancelPendingOpinionTranslationWorkForUser } from "@/shared-backend/contentTranslationWork.js";
+import { queueOpinionRedactedEvent } from "./realtimeEventOutbox.js";
 
 interface CheckUserNameExistProps {
     db: PostgresJsDatabase;
@@ -618,6 +616,12 @@ interface DeleteAccountProps {
     userId: string;
 }
 
+interface ConversationSourceChanges {
+    slugId: string;
+    inputsChanged: boolean;
+    opinions: Parameters<typeof queueOpinionRedactedEvent>[0]["opinions"];
+}
+
 export async function deleteUserAccount({ db, userId }: DeleteAccountProps) {
     // TODO: 1. confirmation should be requested upon account deletion request (phone number or ZKP)
     // delay should be given for people to recover their account - so data should not be set to be deleted immediately even though it should immediately not show on the client anymore
@@ -632,16 +636,14 @@ export async function deleteUserAccount({ db, userId }: DeleteAccountProps) {
                 deletedAt: now,
                 updatedAt: now,
             })
-            .where(eq(userTable.id, userId))
+            .where(
+                and(eq(userTable.id, userId), eq(userTable.isDeleted, false)),
+            )
             .returning({ id: userTable.id });
 
-        if (updatedUserTableResponse.length != 1) {
-            log.error(
-                "User table update has an invalid number of affected rows: " +
-                    userId,
-            );
-            tx.rollback();
-        }
+        // Repeated requests must not restart recovery time or enqueue the same
+        // input change twice. Credential/session changes commit with this row.
+        if (updatedUserTableResponse.length === 0) return;
 
         // Update denormalized isDeleted flag in credential tables
         await tx
@@ -670,94 +672,56 @@ export async function deleteUserAccount({ db, userId }: DeleteAccountProps) {
             now,
         });
 
-        // Don't delete votes/opinions/conversations - use soft-delete pattern
-        // Queries already filter by user.isDeleted, so content will be hidden automatically
-
-        // Get all conversations where user participated (voted, commented, or posted)
-        const conversationIdsSet = new Set<number>();
-
-        log.info(
-            `[Account] Finding affected conversations for deleted user: ${userId}`,
-        );
-
-        // From votes - get opinions they voted on, then extract conversationId
-        log.info(`[Account] Querying votes for user: ${userId}`);
-        const votedOpinions = await tx
-            .select()
-            .from(voteTable)
-            .innerJoin(opinionTable, eq(voteTable.opinionId, opinionTable.id))
-            .where(eq(voteTable.authorId, userId));
-        log.info(`[Account] Found ${String(votedOpinions.length)} votes`);
-        votedOpinions.forEach((row) =>
-            conversationIdsSet.add(row.opinion.conversationId),
-        );
-
-        // From opinions
-        log.info(`[Account] Querying opinions for user: ${userId}`);
+        // Account hiding affects personal statement columns and attribution,
+        // not retained votes or project/organization-owned conversations.
         const userOpinions = await tx
-            .select()
+            .select({
+                conversationId: opinionTable.conversationId,
+                conversationSlugId: conversationTable.slugId,
+                slugId: opinionTable.slugId,
+                isSeed: opinionTable.isSeed,
+                currentContentId: opinionTable.currentContentId,
+            })
             .from(opinionTable)
-            .where(eq(opinionTable.authorId, userId));
-        log.info(`[Account] Found ${String(userOpinions.length)} opinions`);
-        userOpinions.forEach((opinion) =>
-            conversationIdsSet.add(opinion.conversationId),
-        );
-
-        // From conversations owned through organization/project membership
-        log.info(`[Account] Querying conversations for user: ${userId}`);
-        const userConversations = await tx
-            .select({ conversationId: conversationTable.id })
-            .from(conversationTable)
             .innerJoin(
-                projectOrganizationOwnershipTable,
-                and(
-                    eq(
-                        projectOrganizationOwnershipTable.projectId,
-                        conversationTable.projectId,
-                    ),
-                    isNull(projectOrganizationOwnershipTable.deletedAt),
-                ),
+                conversationTable,
+                eq(conversationTable.id, opinionTable.conversationId),
             )
-            .innerJoin(
-                organizationMembershipTable,
-                eq(
-                    organizationMembershipTable.organizationId,
-                    projectOrganizationOwnershipTable.organizationId,
-                ),
-            )
-            .where(
-                and(
-                    eq(organizationMembershipTable.userId, userId),
-                    isNull(organizationMembershipTable.deletedAt),
-                ),
-            );
-        log.info(
-            `[Account] Found ${String(userConversations.length)} conversations`,
-        );
-        userConversations.forEach((conversation) =>
-            conversationIdsSet.add(conversation.conversationId),
-        );
-
-        log.info(
-            `[Account] Total affected conversations: ${String(conversationIdsSet.size)}`,
-        );
-
-        // Reconcile counters for each affected conversation
-        // This recalculates counts (excluding deleted user) and enqueues math updates
-        for (const conversationId of conversationIdsSet) {
-            log.info(
-                `[Account] Reconciling counters for conversation: ${String(conversationId)}`,
-            );
-            await scheduleConversationAnalysisRefresh({
-                db: tx,
-                conversationId,
-                log,
+            .where(eq(opinionTable.authorId, userId))
+            .orderBy(opinionTable.conversationId, opinionTable.id);
+        const changesByConversation = new Map<
+            number,
+            ConversationSourceChanges
+        >();
+        for (const opinion of userOpinions) {
+            const changes: ConversationSourceChanges =
+                changesByConversation.get(opinion.conversationId) ?? {
+                    slugId: opinion.conversationSlugId,
+                    inputsChanged: false,
+                    opinions: [],
+                };
+            changes.opinions.push({
+                opinionSlugId: opinion.slugId,
+                action: opinion.isSeed ? "unlink_author" : "redact",
             });
+            changes.inputsChanged ||=
+                !opinion.isSeed && opinion.currentContentId !== null;
+            changesByConversation.set(opinion.conversationId, changes);
         }
-
-        log.info(
-            `[Account] Completed counter reconciliation for user: ${userId}`,
-        );
+        for (const [conversationId, changes] of changesByConversation) {
+            await queueOpinionRedactedEvent({
+                db: tx,
+                conversationSlugId: changes.slugId,
+                opinions: changes.opinions,
+            });
+            if (changes.inputsChanged) {
+                await scheduleConversationAnalysisRefresh({
+                    db: tx,
+                    conversationId,
+                    log,
+                });
+            }
+        }
 
         await revokeAllSessionsWithinTransaction({
             db: tx,
