@@ -329,7 +329,6 @@ const conversationData = computed<ExtendedConversation>(() => ({
     conversationCapabilities: {
       canEdit: false,
       canDelete: false,
-      canManageIntegrations: false,
     },
   },
 }));

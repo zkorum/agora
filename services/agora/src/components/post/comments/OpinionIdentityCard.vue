@@ -1,8 +1,13 @@
 <template>
   <div v-if="isSeed" class="seed-identity-container">
     <UserAvatar user-identity="seed" :size="36" />
-    <div class="seed-label">{{ t("seedOpinion") }}</div>
-    <span v-if="isEdited">• {{ identityT("edited") }}</span>
+    <InlineMetadataLine class="seed-metadata">
+      <span class="seed-label">{{ t("seedOpinion") }}</span>
+      <template v-if="isEdited">
+        <span class="seed-separator" aria-hidden="true" />
+        <span>{{ identityT("edited") }}</span>
+      </template>
+    </InlineMetadataLine>
   </div>
   <UserIdentityCard
     v-else
@@ -20,6 +25,7 @@
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import { userIdentityCardTranslations } from "src/components/features/user/UserIdentityCard.i18n";
 import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue";
+import InlineMetadataLine from "src/components/ui-library/InlineMetadataLine.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 
 import {
@@ -51,8 +57,20 @@ const { t: identityT } = useComponentI18n(userIdentityCardTranslations);
   color: $color-text-weak;
 }
 
-.seed-label {
+.seed-metadata {
   font-size: 0.875rem;
+}
+
+.seed-label {
   font-weight: var(--font-weight-medium);
+}
+
+.seed-separator {
+  flex-shrink: 0;
+  inline-size: 0.1875rem;
+  block-size: 0.1875rem;
+  border-radius: 50%;
+  background-color: currentColor;
+  opacity: 0.6;
 }
 </style>

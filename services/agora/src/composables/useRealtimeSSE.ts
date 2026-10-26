@@ -30,6 +30,7 @@ import {
   type OpinionCache,
 } from "src/utils/api/comment/opinionCache";
 import { applyOpinionContentUpdate } from "src/utils/api/comment/opinionContentUpdate";
+import { createOpinionManagementRefresher } from "src/utils/api/comment/opinionManagementRefresh";
 import { applyOpinionVoteCountUpdate } from "src/utils/api/comment/opinionVoteCountUpdate";
 import { fetchAnalysisDataWithCache } from "src/utils/api/comment/useCommentQueries";
 import { useCommonApi } from "src/utils/api/common";
@@ -314,7 +315,21 @@ export function useRealtimeSSE({
     fetchAnalysisFrameGroups,
     fetchAnalysisFrameGroupLabels,
     fetchAnalysisFrameOpinionList,
+    fetchOpinionsBySlugIdList,
   } = useBackendCommentApi();
+  const opinionManagementRefresher = createOpinionManagementRefresher({
+    queryClient,
+    fetchOpinions: fetchOpinionsBySlugIdList,
+    onError: (error) => {
+      console.error(
+        "[SSE] Failed to refresh statement actions",
+        getErrorLogContext(error)
+      );
+    },
+  });
+  watch(viewerScope, () => opinionManagementRefresher.clear(), {
+    flush: "sync",
+  });
   const liveAnalysisCatchUpController = createLiveAnalysisCatchUpController({
     queryClient,
     fetchLiveAnalysis: (params) =>
@@ -1841,19 +1856,10 @@ export function useRealtimeSSE({
       return;
     }
 
-    const userVotes =
-      queryClient.getQueryData<Array<{ opinionSlugId: string }>>([
-        "userVotes",
-        data.conversationSlugId,
-        authStore.userId,
-      ]) ?? [];
-    const votedOpinionSlugIds = new Set(
-      userVotes.map((vote) => vote.opinionSlugId)
-    );
     const liveCountsByOpinionSlugId = new Map(
       data.opinionVoteCounts.map((counts) => [counts.opinionSlugId, counts])
     );
-    let needsPermissionRefresh = false;
+    const permissionRefreshSlugIds = new Set<string>();
     for (const counts of liveCountsByOpinionSlugId.values()) {
       queryClient.setQueriesData<DisplayedOpinionItem>(
         { queryKey: ["opinionTarget", counts.opinionSlugId, authStore.userId] },
@@ -1862,17 +1868,13 @@ export function useRealtimeSSE({
           const updated = applyOpinionVoteCountUpdate({
             opinion,
             counts,
-            authorHasVote: votedOpinionSlugIds.has(opinion.opinionSlugId),
           });
-          needsPermissionRefresh ||= updated.needsPermissionRefresh;
+          if (updated.needsPermissionRefresh)
+            permissionRefreshSlugIds.add(opinion.opinionSlugId);
           return updated.opinion;
         }
       );
     }
-    if (liveCountsByOpinionSlugId.size === 0) {
-      return;
-    }
-
     queryClient.setQueriesData<OpinionCache>(
       {
         predicate: (query) =>
@@ -1900,24 +1902,19 @@ export function useRealtimeSSE({
             const updated = applyOpinionVoteCountUpdate({
               opinion,
               counts: liveCounts,
-              authorHasVote: votedOpinionSlugIds.has(opinion.opinionSlugId),
             });
-            needsPermissionRefresh ||= updated.needsPermissionRefresh;
+            if (updated.needsPermissionRefresh)
+              permissionRefreshSlugIds.add(opinion.opinionSlugId);
             return updated.opinion;
           },
         });
       }
     );
-    if (needsPermissionRefresh) {
-      void queryClient.invalidateQueries({
-        queryKey: ["comments", data.conversationSlugId],
-        predicate: (query) => query.queryKey[3] === authStore.userId,
-      });
-      void queryClient.invalidateQueries({
-        queryKey: ["opinionTarget"],
-        predicate: (query) =>
-          query.queryKey[2] === authStore.userId &&
-          liveCountsByOpinionSlugId.has(String(query.queryKey[1])),
+    if (permissionRefreshSlugIds.size > 0 && authStore.userId !== undefined) {
+      opinionManagementRefresher.schedule({
+        conversationSlugId: data.conversationSlugId,
+        userId: authStore.userId,
+        opinionSlugIds: [...permissionRefreshSlugIds],
       });
     }
   }
@@ -2078,6 +2075,7 @@ export function useRealtimeSSE({
     didCleanup = true;
     document.removeEventListener("visibilitychange", onVisibilityChange);
     liveAnalysisCatchUpController.clearAll();
+    opinionManagementRefresher.clear();
     disconnect();
     realtimeSSEHotDisposeHandlers.delete(cleanupRealtimeSSE);
   }

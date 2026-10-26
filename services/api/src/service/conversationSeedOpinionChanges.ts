@@ -27,10 +27,8 @@ import {
     normalizeUserRichTextInput,
     type NormalizedUserRichText,
 } from "./richText.js";
-import {
-    rankingSeedHasVotes,
-    seedOpinionHasVotes,
-} from "./seedOpinionEditability.js";
+import { rankingSeedHasVotes } from "./seedOpinionEditability.js";
+import { getOpinionIdsWithBlockingVotes } from "./opinionVoteEligibility.js";
 import type { VoteBuffer } from "./voteBuffer.js";
 
 type Change = NonNullable<
@@ -117,6 +115,11 @@ async function loadTargets({
 }): Promise<ReadonlyMap<string, Target>> {
     if (conversationType === "ranking") {
         if (lockTargets) await lockRankingScoringConfig({ db, conversationId });
+        const hasVotes = await rankingSeedHasVotes({
+            db,
+            conversationId,
+            slugId: rankingItemTable.slugId,
+        });
         const query = db
             .select({
                 id: rankingItemTable.id,
@@ -126,11 +129,7 @@ async function loadTargets({
                 body: rankingItemContentTable.body,
                 bodyPlainText: rankingItemContentTable.bodyPlainText,
                 lifecycle: rankingItemTable.lifecycleStatus,
-                hasVotes: rankingSeedHasVotes({
-                    db,
-                    conversationId,
-                    slugId: rankingItemTable.slugId,
-                }),
+                hasVotes,
             })
             .from(rankingItemTable)
             .innerJoin(
@@ -170,7 +169,6 @@ async function loadTargets({
             authorId: opinionTable.authorId,
             sourceVersion: opinionContentTable.publicId,
             content: opinionContentTable.content,
-            hasVotes: seedOpinionHasVotes({ db, opinionId: opinionTable.id }),
             isHidden: exists(
                 db
                     .select({ id: opinionModerationTable.id })
@@ -205,18 +203,29 @@ async function loadTargets({
     const rows = await (lockTargets
         ? query.for("update", { of: opinionTable })
         : query);
+    const blockedIds = await getOpinionIdsWithBlockingVotes({
+        db,
+        conversationId,
+        opinionIds: rows.map((row) => row.id),
+    });
     return new Map(
         rows.map((row) => [
             row.slugId,
-            { ...row, kind: "polis" } satisfies Target,
+            {
+                ...row,
+                hasVotes: blockedIds.has(row.id),
+                kind: "polis",
+            } satisfies Target,
         ]),
     );
 }
 
 async function assertNoBufferedVotes({
+    db,
     changes,
     voteBuffer,
 }: {
+    db: PostgresJsDatabase;
     changes: readonly PreparedChange[];
     voteBuffer: SeedVoteGuard | undefined;
 }): Promise<void> {
@@ -237,6 +246,7 @@ async function assertNoBufferedVotes({
                 .map(async (target) => ({
                     target,
                     blocked: await voteBuffer.hasBlockingVotes({
+                        db,
                         opinionId: target.id,
                         authorId: target.authorId,
                         isSeed: true,
@@ -272,21 +282,18 @@ export async function assertSeedOpinionEditsHaveNoVotes({
     const rankingIds = edits
         .filter((change) => change.target.kind === "ranking")
         .map((change) => change.target.id);
-    const blocked =
-        polisIds.length === 0
-            ? []
-            : await db
-                  .select({ slugId: opinionTable.slugId })
-                  .from(opinionTable)
-                  .where(
-                      and(
-                          inArray(opinionTable.id, polisIds),
-                          seedOpinionHasVotes({
-                              db,
-                              opinionId: opinionTable.id,
-                          }),
-                      ),
-                  );
+    const blockedPolisIds = await getOpinionIdsWithBlockingVotes({
+        db,
+        conversationId,
+        opinionIds: polisIds,
+    });
+    const blocked = edits
+        .filter(
+            (change) =>
+                change.target.kind === "polis" &&
+                blockedPolisIds.has(change.target.id),
+        )
+        .map((change) => ({ slugId: change.target.slugId }));
     if (rankingIds.length > 0)
         blocked.push(
             ...(await db
@@ -295,7 +302,7 @@ export async function assertSeedOpinionEditsHaveNoVotes({
                 .where(
                     and(
                         inArray(rankingItemTable.id, rankingIds),
-                        rankingSeedHasVotes({
+                        await rankingSeedHasVotes({
                             db,
                             conversationId,
                             slugId: rankingItemTable.slugId,
@@ -308,7 +315,7 @@ export async function assertSeedOpinionEditsHaveNoVotes({
         throw new SeedOpinionChangeRejection(
             rejection({ slugId: first.slugId, changeFailure: "has_votes" }),
         );
-    await assertNoBufferedVotes({ changes: edits, voteBuffer });
+    await assertNoBufferedVotes({ db, changes: edits, voteBuffer });
 }
 
 export async function prepareSeedOpinionChanges({
@@ -394,7 +401,7 @@ export async function prepareSeedOpinionChanges({
                 content: normalized.content,
             });
     }
-    await assertNoBufferedVotes({ changes: prepared, voteBuffer });
+    await assertNoBufferedVotes({ db, changes: prepared, voteBuffer });
     return { success: true, changes: prepared };
 }
 

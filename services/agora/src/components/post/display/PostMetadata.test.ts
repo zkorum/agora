@@ -540,7 +540,6 @@ function mountMetadata(postSlugId = ref("conversation-one")): HTMLElement {
         conversationCapabilities: {
           canEdit: false,
           canDelete: false,
-          canManageIntegrations: false,
         },
         showIdentityCard: false,
       })

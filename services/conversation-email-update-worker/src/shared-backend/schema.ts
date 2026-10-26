@@ -683,6 +683,19 @@ export const organizationMembershipCapabilityEnum = pgEnum(
     ],
 );
 
+export const projectCapabilityValues = [
+    "project_update",
+    "project_delete",
+    "project_manage_owner_organizations",
+    "conversation_create",
+    "conversation_edit",
+    "conversation_delete",
+    "conversation_moderate",
+    "conversation_email_update",
+] as const;
+
+// Historical grant rows retain their enum labels. Only projectCapabilityValues
+// are supported by application authorization and new grants.
 export const organizationMembershipAllProjectCapabilityEnum = pgEnum(
     "organization_membership_all_project_capability_enum",
     [

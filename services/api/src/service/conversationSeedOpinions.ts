@@ -28,13 +28,12 @@ import {
     type ContentLanguageMetadataResolver,
 } from "./contentLanguageMetadata.js";
 import { postNewOpinion } from "./comment.js";
+import { getOpinionEditingAvailability } from "./opinionPermissions.js";
+import { getOpinionIdsWithBlockingVotes } from "./opinionVoteEligibility.js";
 import { createRankingItem } from "./rankingItem.js";
 import { lockRankingScoringConfig } from "./maxdiff.js";
 import type { RankingItemContentSource } from "./contentTranslation.js";
-import {
-    rankingSeedHasVotes,
-    seedOpinionHasVotes,
-} from "./seedOpinionEditability.js";
+import { rankingSeedHasVotes } from "./seedOpinionEditability.js";
 const LANGUAGE_DETECTION_BATCH_SIZE = 5;
 
 export function normalizeSeedOpinionList(
@@ -226,16 +225,17 @@ export async function fetchConversationSeedOpinions({
     externalSourceManaged?: boolean;
 }): Promise<EditableSeedOpinion[]> {
     if (conversationType === "ranking") {
+        const hasVotes = await rankingSeedHasVotes({
+            db,
+            conversationId,
+            slugId: rankingItemTable.slugId,
+        });
         const opinions = await db
             .select({
                 slugId: rankingItemTable.slugId,
                 content: rankingItemContentTable.title,
                 sourceVersion: rankingItemContentTable.publicId,
-                hasVotes: rankingSeedHasVotes({
-                    db,
-                    conversationId,
-                    slugId: rankingItemTable.slugId,
-                }),
+                hasVotes,
             })
             .from(rankingItemTable)
             .innerJoin(
@@ -257,19 +257,21 @@ export async function fetchConversationSeedOpinions({
             .orderBy(asc(rankingItemTable.id));
         return opinions.map(({ hasVotes, ...opinion }) => ({
             ...opinion,
-            editing: hasVotes
-                ? { allowed: false, reason: "has_votes" }
-                : externalSourceManaged
-                  ? { allowed: false, reason: "not_allowed" }
-                  : { allowed: true },
+            editing: getOpinionEditingAvailability({
+                canManage: !externalSourceManaged,
+                isImporting: false,
+                isLocked: false,
+                isHidden: false,
+                hasVotes,
+            }),
         }));
     }
     const opinions = await db
         .select({
+            id: opinionTable.id,
             slugId: opinionTable.slugId,
             content: opinionContentTable.content,
             sourceVersion: opinionContentTable.publicId,
-            hasVotes: seedOpinionHasVotes({ db, opinionId: opinionTable.id }),
             isHidden: exists(
                 db
                     .select({ id: opinionModerationTable.id })
@@ -301,12 +303,19 @@ export async function fetchConversationSeedOpinions({
             ),
         )
         .orderBy(asc(opinionTable.id));
-    return opinions.map(({ hasVotes, isHidden, ...opinion }) => ({
+    const blockedIds = await getOpinionIdsWithBlockingVotes({
+        db,
+        conversationId,
+        opinionIds: opinions.map((opinion) => opinion.id),
+    });
+    return opinions.map(({ id, isHidden, ...opinion }) => ({
         ...opinion,
-        editing: hasVotes
-            ? { allowed: false, reason: "has_votes" }
-            : isHidden
-              ? { allowed: false, reason: "not_allowed" }
-              : { allowed: true },
+        editing: getOpinionEditingAvailability({
+            canManage: true,
+            isImporting: false,
+            isLocked: false,
+            isHidden,
+            hasVotes: blockedIds.has(id),
+        }),
     }));
 }

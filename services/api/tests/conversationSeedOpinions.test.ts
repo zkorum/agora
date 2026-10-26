@@ -1270,7 +1270,7 @@ describe("conversation seed statements", () => {
         ).toEqual(["First seed", "Second seed"]);
     });
 
-    it("blocks editing ranked statements that have participated in a vote", async () => {
+    it("blocks ranked edits for valid votes but allows them after the voter deletes their account", async () => {
         const fixture = await seedFixture({ ranking: true });
         const result = firstRow(
             await db
@@ -1315,6 +1315,43 @@ describe("conversation seed statements", () => {
             reason: "seed_opinion_change_rejected",
             changeFailure: "has_votes",
         });
+        await db
+            .update(userTable)
+            .set({ isDeleted: true })
+            .where(eq(userTable.id, STRANGER));
+        try {
+            const afterDeletion = await getConversationForEdit({
+                db,
+                userId: OWNER,
+                conversationSlugId: fixture.conversation.slugId,
+            });
+            expect(
+                afterDeletion.success &&
+                    afterDeletion.seedOpinions.every(
+                        (seed) => seed.editing.allowed,
+                    ),
+            ).toBe(true);
+            expect(
+                (
+                    await save({
+                        ...fixture.request,
+                        seedOpinionChanges: [
+                            {
+                                action: "edit",
+                                slugId: fixture.first.slugId,
+                                sourceVersion: fixture.first.sourceVersion,
+                                content: "Rewritten ranked seed",
+                            },
+                        ],
+                    })
+                ).success,
+            ).toBe(true);
+        } finally {
+            await db
+                .update(userTable)
+                .set({ isDeleted: false })
+                .where(eq(userTable.id, STRANGER));
+        }
     });
 
     it("keeps the content version unchanged when adding seeds to a conversation without a body", async () => {

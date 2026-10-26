@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, count, eq, sql } from "drizzle-orm";
+import { and, count, desc, eq, sql } from "drizzle-orm";
 import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { Decoder, GlideClient, Script } from "@valkey/valkey-glide";
@@ -32,6 +32,11 @@ import {
     userTable,
     voteContentTable,
     voteTable,
+    surveyConfigTable,
+    surveyQuestionTable,
+    surveyQuestionContentTable,
+    surveyResponseTable,
+    surveyAnswerTable,
 } from "../src/shared-backend/schema.js";
 import { getOpinionManagementCapabilities } from "../src/service/opinionPermissions.js";
 import { editOpinion } from "../src/service/opinionEdit.js";
@@ -44,6 +49,7 @@ import {
 import { readDbFixtureSql } from "./dbFixture.js";
 import { VALKEY_QUEUE_KEYS } from "../src/shared-backend/valkeyQueues.js";
 import { Dto } from "../src/shared/types/dto.js";
+import { zodSSEEventDataByType } from "../src/shared/types/sse.js";
 import {
     resolveContentLanguageMetadata,
     UNKNOWN_CONTENT_LANGUAGE_METADATA,
@@ -57,6 +63,12 @@ import {
 import { assertPostgresVoteFlushRecovery } from "./postgresVoteFlushRecoveryCase.js";
 import { scheduleAnalysisUpdate } from "../src/shared-backend/analysisScheduler.js";
 import { createConversationViewSnapshotsFromCurrentState } from "../src/service/conversationViewSnapshot.js";
+import {
+    queueConversationCommentStatsUpdatedEventsForViewSnapshots,
+    queueOpinionVoteCountsUpdatedEvent,
+} from "../src/service/realtimeEventOutbox.js";
+import { fetchConversationSeedOpinions } from "../src/service/conversationSeedOpinions.js";
+import { getEligibleParticipantIdsForAnalysis } from "../src/shared-backend/surveyAnalysis.js";
 
 vi.mock("../src/shared-backend/conversationCounters.js", async () => ({
     ...(await vi.importActual("../src/shared-backend/conversationCounters.js")),
@@ -158,7 +170,7 @@ describe("statement editing and seed deletion", () => {
         blockingVotes.mockReset().mockResolvedValue(false);
         vi.mocked(createEagerContentTranslationWorkForOpinion).mockClear();
         await db.execute(
-            sql`TRUNCATE TABLE "user", project, organization, conversation, conversation_content, opinion, opinion_content, vote, vote_content, analysis_snapshot_opinion, organization_membership, organization_membership_all_project_capability, project_organization_ownership, realtime_event_outbox CASCADE`,
+            sql`TRUNCATE TABLE "user", project, organization, conversation, conversation_content, conversation_view_snapshot, opinion, opinion_content, vote, vote_content, analysis_snapshot_opinion, organization_membership, organization_membership_all_project_capability, project_organization_ownership, realtime_event_outbox, survey_config, survey_question, survey_question_content, survey_response, survey_answer CASCADE`,
         );
         await db.insert(userTable).values([
             {
@@ -254,6 +266,22 @@ describe("statement editing and seed deletion", () => {
     });
 
     async function statement(isSeed = false) {
+        return await statementForConversation({
+            isSeed,
+            conversationId,
+            conversationContentId,
+        });
+    }
+
+    async function statementForConversation({
+        isSeed,
+        conversationId,
+        conversationContentId,
+    }: {
+        isSeed: boolean;
+        conversationId: number;
+        conversationContentId: number;
+    }) {
         const opinion = first(
             await db
                 .insert(opinionTable)
@@ -281,6 +309,47 @@ describe("statement editing and seed deletion", () => {
             .set({ currentContentId: content.id })
             .where(eq(opinionTable.id, opinion.id));
         return { opinion, content };
+    }
+
+    async function requiredSurvey() {
+        const survey = first(
+            await db
+                .insert(surveyConfigTable)
+                .values({ conversationId })
+                .returning(),
+        );
+        const question = first(
+            await db
+                .insert(surveyQuestionTable)
+                .values({
+                    slugId: "required",
+                    surveyConfigId: survey.id,
+                    conversationId,
+                    questionType: "free_text",
+                    displayOrder: 0,
+                    isRequired: true,
+                })
+                .returning(),
+        );
+        const content = first(
+            await db
+                .insert(surveyQuestionContentTable)
+                .values({
+                    surveyQuestionId: question.id,
+                    questionText: "Required answer",
+                    constraints: {
+                        type: "free_text",
+                        maxPlainTextLength: 100,
+                        maxHtmlLength: 200,
+                    },
+                })
+                .returning(),
+        );
+        await db
+            .update(surveyQuestionTable)
+            .set({ currentContentId: content.id })
+            .where(eq(surveyQuestionTable.id, question.id));
+        return { survey, question };
     }
 
     it("persists votes and live feedback without constructing an analysis frame", async () => {
@@ -334,6 +403,400 @@ describe("statement editing and seed deletion", () => {
                         ),
                     ),
             ).toHaveLength(1);
+        } finally {
+            await buffer.shutdown();
+        }
+    });
+
+    it.each(["no_survey", "optional_survey", "no_required_questions"])(
+        "does not load or enumerate voters for %s",
+        async (mode) => {
+            if (mode !== "no_survey") {
+                const { survey, question } = await requiredSurvey();
+                if (mode === "optional_survey")
+                    await db
+                        .update(surveyConfigTable)
+                        .set({ isOptional: true })
+                        .where(eq(surveyConfigTable.id, survey.id));
+                else
+                    await db
+                        .update(surveyQuestionTable)
+                        .set({ isRequired: false })
+                        .where(eq(surveyQuestionTable.id, question.id));
+            }
+            const candidates = vi
+                .fn<() => Promise<readonly string[]>>()
+                .mockResolvedValue([voterId]);
+            expect(
+                await getEligibleParticipantIdsForAnalysis({
+                    db,
+                    conversationId,
+                    candidateParticipantIds: candidates,
+                }),
+            ).toBeUndefined();
+            expect(candidates).not.toHaveBeenCalled();
+        },
+    );
+
+    it("keeps excluded survey votes out of live statement breakdowns as eligibility changes", async () => {
+        const { opinion, content } = await statement(true);
+        await vote({
+            opinionId: opinion.id,
+            contentId: content.id,
+            userId: authorId,
+        });
+        await vote({
+            opinionId: opinion.id,
+            contentId: content.id,
+            userId: editorId,
+            option: "pass",
+        });
+        await vote({
+            opinionId: opinion.id,
+            contentId: content.id,
+            userId: voterId,
+            option: "pass",
+        });
+        // Deliberately retain the raw counters that used to leak into live events.
+        await db
+            .update(opinionTable)
+            .set({ numAgrees: 1, numPasses: 2 })
+            .where(eq(opinionTable.id, opinion.id));
+        const { survey, question } = await requiredSurvey();
+        const response = first(
+            await db
+                .insert(surveyResponseTable)
+                .values({ participantId: authorId, conversationId })
+                .returning(),
+        );
+        await db.insert(surveyAnswerTable).values({
+            surveyResponseId: response.id,
+            conversationId,
+            surveyQuestionId: question.id,
+            answeredQuestionSemanticVersion: 1,
+            textValueHtml: "Complete",
+            textValuePlainText: "Complete",
+        });
+        const emit = async () => {
+            await queueOpinionVoteCountsUpdatedEvent({
+                db,
+                conversationSlugId: "editconv",
+                opinionIds: [opinion.id],
+            });
+            return first(
+                await db
+                    .select()
+                    .from(realtimeEventOutboxTable)
+                    .orderBy(desc(realtimeEventOutboxTable.id)),
+            );
+        };
+        expect(await emit()).toMatchObject({
+            payload: {
+                opinionVoteCounts: [
+                    {
+                        opinionSlugId: opinion.slugId,
+                        numParticipants: 1,
+                        numAgrees: 1,
+                        numDisagrees: 0,
+                        numPasses: 0,
+                    },
+                ],
+            },
+        });
+        await db
+            .update(surveyQuestionTable)
+            .set({ currentSemanticVersion: 2 })
+            .where(eq(surveyQuestionTable.id, question.id));
+        expect(await emit()).toMatchObject({
+            payload: {
+                opinionVoteCounts: [
+                    { numParticipants: 0, numAgrees: 0, numPasses: 0 },
+                ],
+            },
+        });
+        expect(
+            (
+                await getOpinionManagementCapabilities({
+                    db,
+                    userId: editorId,
+                    opinionSlugIds: [opinion.slugId],
+                })
+            ).get(opinion.slugId)?.editing,
+        ).toEqual({ allowed: true });
+        expect(
+            (
+                await fetchConversationSeedOpinions({
+                    db,
+                    conversationId,
+                    conversationType: "polis",
+                })
+            ).at(0)?.editing,
+        ).toEqual({ allowed: true });
+        const votesBeforeEdit = await db.select().from(voteTable);
+        const voteContentsBeforeEdit = await db.select().from(voteContentTable);
+        expect(
+            (
+                await save({
+                    slugId: opinion.slugId,
+                    sourceVersion: content.publicId,
+                    userId: editorId,
+                })
+            ).success,
+        ).toBe(true);
+        expect(await db.select().from(voteTable)).toEqual(votesBeforeEdit);
+        expect(await db.select().from(voteContentTable)).toEqual(
+            voteContentsBeforeEdit,
+        );
+        await db
+            .update(surveyQuestionTable)
+            .set({ currentSemanticVersion: 1 })
+            .where(eq(surveyQuestionTable.id, question.id));
+        await db
+            .update(surveyResponseTable)
+            .set({ withdrawnAt: new Date() })
+            .where(eq(surveyResponseTable.id, response.id));
+        expect(await emit()).toMatchObject({
+            payload: {
+                opinionVoteCounts: [
+                    { numParticipants: 0, numAgrees: 0, numPasses: 0 },
+                ],
+            },
+        });
+        await db
+            .update(surveyConfigTable)
+            .set({ isOptional: true })
+            .where(eq(surveyConfigTable.id, survey.id));
+        expect(await emit()).toMatchObject({
+            payload: {
+                opinionVoteCounts: [
+                    { numParticipants: 3, numAgrees: 1, numPasses: 2 },
+                ],
+            },
+        });
+    });
+
+    it("does not attach another conversation's statement counts to a vote event", async () => {
+        const { opinion } = await statement(true);
+        await queueOpinionVoteCountsUpdatedEvent({
+            db,
+            conversationSlugId: "unrelated",
+            opinionIds: [opinion.id],
+        });
+        expect(await db.select().from(realtimeEventOutboxTable)).toHaveLength(
+            0,
+        );
+    });
+
+    it("scopes batched snapshot events to each conversation, including repeated snapshots", async () => {
+        const original = first(await db.select().from(conversationTable));
+        const config = first(
+            await db
+                .insert(polisConversationConfigTable)
+                .values({})
+                .returning(),
+        );
+        const otherConversation = first(
+            await db
+                .insert(conversationTable)
+                .values({
+                    slugId: "othercnv",
+                    projectId: original.projectId,
+                    polisConfigId: config.id,
+                })
+                .returning(),
+        );
+        const otherContent = first(
+            await db
+                .insert(conversationContentTable)
+                .values({
+                    conversationId: otherConversation.id,
+                    title: "Other conversation",
+                })
+                .returning(),
+        );
+        await db
+            .update(conversationTable)
+            .set({ currentContentId: otherContent.id })
+            .where(eq(conversationTable.id, otherConversation.id));
+        const own = await statement(true);
+        const other = await statementForConversation({
+            isSeed: true,
+            conversationId: otherConversation.id,
+            conversationContentId: otherContent.id,
+        });
+        await vote({
+            opinionId: own.opinion.id,
+            contentId: own.content.id,
+            userId: voterId,
+        });
+        await vote({
+            opinionId: other.opinion.id,
+            contentId: other.content.id,
+            userId: voterId,
+            option: "pass",
+        });
+        const { id: originalSnapshotId, ...snapshot } = first(
+            await db
+                .select()
+                .from(conversationViewSnapshotTable)
+                .where(
+                    eq(
+                        conversationViewSnapshotTable.conversationId,
+                        conversationId,
+                    ),
+                ),
+        );
+        const inserted = await db
+            .insert(conversationViewSnapshotTable)
+            .values([
+                snapshot,
+                {
+                    ...snapshot,
+                    conversationId: otherConversation.id,
+                    conversationContentId: otherContent.id,
+                },
+            ])
+            .returning({ id: conversationViewSnapshotTable.id });
+        await queueConversationCommentStatsUpdatedEventsForViewSnapshots({
+            db,
+            conversationViewSnapshotIds: [
+                originalSnapshotId,
+                ...inserted.map((row) => row.id),
+            ],
+            changedOpinionIds: [own.opinion.id, other.opinion.id],
+        });
+        const events = await db.select().from(realtimeEventOutboxTable);
+        expect(events).toHaveLength(3);
+        for (const event of events) {
+            const payload =
+                zodSSEEventDataByType.conversation_comment_stats_updated.parse(
+                    event.payload,
+                );
+            expect(payload.opinionVoteCounts).toEqual([
+                payload.conversationSlugId === "editconv"
+                    ? {
+                          opinionSlugId: own.opinion.slugId,
+                          numParticipants: 1,
+                          numAgrees: 1,
+                          numDisagrees: 0,
+                          numPasses: 0,
+                      }
+                    : {
+                          opinionSlugId: other.opinion.slugId,
+                          numParticipants: 1,
+                          numAgrees: 0,
+                          numDisagrees: 0,
+                          numPasses: 1,
+                      },
+            ]);
+        }
+    });
+
+    it("allows editing a seed when its only voter deleted their account, preserving the original vote", async () => {
+        const { opinion, content } = await statement(true);
+        await vote({
+            opinionId: opinion.id,
+            contentId: content.id,
+            userId: voterId,
+        });
+        await db
+            .update(userTable)
+            .set({ isDeleted: true })
+            .where(eq(userTable.id, voterId));
+        expect(
+            (
+                await getOpinionManagementCapabilities({
+                    db,
+                    userId: editorId,
+                    opinionSlugIds: [opinion.slugId],
+                })
+            ).get(opinion.slugId)?.editing,
+        ).toEqual({ allowed: true });
+        expect(
+            (
+                await fetchConversationSeedOpinions({
+                    db,
+                    conversationId,
+                    conversationType: "polis",
+                })
+            ).at(0)?.editing,
+        ).toEqual({ allowed: true });
+        const votesBeforeEdit = await db.select().from(voteTable);
+        expect(
+            (
+                await save({
+                    slugId: opinion.slugId,
+                    sourceVersion: content.publicId,
+                    userId: editorId,
+                })
+            ).success,
+        ).toBe(true);
+        expect(await db.select().from(voteTable)).toEqual(votesBeforeEdit);
+        expect(
+            first(await db.select().from(voteContentTable)).opinionContentId,
+        ).toBe(content.id);
+    });
+
+    it("uses the same eligibility for buffered votes, including surveys and deleted accounts", async () => {
+        const { opinion, content } = await statement(true);
+        const buffer = createVoteBuffer({
+            db,
+            valkeyRef: { current: undefined },
+            flushIntervalMs: 60_000,
+            valkeyBatchLimit: 100,
+        });
+        try {
+            await buffer.add({
+                vote: {
+                    userId: voterId,
+                    opinionId: opinion.id,
+                    opinionContentId: content.id,
+                    conversationId,
+                    vote: "agree",
+                    timestamp: new Date(),
+                },
+            });
+            expect(
+                await buffer.hasBlockingVotes({
+                    db,
+                    opinionId: opinion.id,
+                    authorId,
+                    isSeed: true,
+                }),
+            ).toBe(true);
+            const { survey } = await requiredSurvey();
+            expect(
+                await buffer.hasBlockingVotes({
+                    db,
+                    opinionId: opinion.id,
+                    authorId,
+                    isSeed: true,
+                }),
+            ).toBe(false);
+            await db
+                .update(surveyConfigTable)
+                .set({ isOptional: true })
+                .where(eq(surveyConfigTable.id, survey.id));
+            expect(
+                await buffer.hasBlockingVotes({
+                    db,
+                    opinionId: opinion.id,
+                    authorId,
+                    isSeed: true,
+                }),
+            ).toBe(true);
+            await db
+                .update(userTable)
+                .set({ isDeleted: true })
+                .where(eq(userTable.id, voterId));
+            expect(
+                await buffer.hasBlockingVotes({
+                    db,
+                    opinionId: opinion.id,
+                    authorId,
+                    isSeed: true,
+                }),
+            ).toBe(false);
         } finally {
             await buffer.shutdown();
         }
@@ -668,7 +1131,10 @@ describe("statement editing and seed deletion", () => {
                     userId: editorId,
                 })
             ).get(opinion.slugId),
-        ).toEqual({ canEdit: false, canDelete: true });
+        ).toEqual({
+            editing: { allowed: false, reason: "has_votes" },
+            canDelete: true,
+        });
         await deleteOpinionBySlugId({
             db,
             opinionSlugId: opinion.slugId,
@@ -858,6 +1324,7 @@ describe("statement editing and seed deletion", () => {
             });
             expect(
                 await receiver.hasBlockingVotes({
+                    db,
                     opinionId: opinion.id,
                     authorId,
                     isSeed: false,
@@ -865,6 +1332,7 @@ describe("statement editing and seed deletion", () => {
             ).toBe(false);
             expect(
                 await receiver.hasBlockingVotes({
+                    db,
                     opinionId: opinion.id,
                     authorId,
                     isSeed: true,
@@ -878,6 +1346,7 @@ describe("statement editing and seed deletion", () => {
             });
             expect(
                 await receiver.hasBlockingVotes({
+                    db,
                     opinionId: opinion.id,
                     authorId,
                     isSeed: false,
@@ -899,6 +1368,7 @@ describe("statement editing and seed deletion", () => {
             });
             expect(
                 await receiver.hasBlockingVotes({
+                    db,
                     opinionId: opinion.id,
                     authorId,
                     isSeed: false,

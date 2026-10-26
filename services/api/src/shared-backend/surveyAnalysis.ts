@@ -349,14 +349,17 @@ export function doesSurveyRequireCompletion({
     return requiredQuestionCount > 0;
 }
 
+/** Returns undefined when survey completion does not restrict participation. */
 export async function getEligibleParticipantIdsForAnalysis({
     db,
     conversationId,
-    candidateParticipantIds,
+    candidateParticipantIds: candidates,
 }: {
     db: PostgresJsDatabase;
     conversationId: number;
-    candidateParticipantIds: string[];
+    candidateParticipantIds:
+        | readonly string[]
+        | (() => Promise<readonly string[]>);
 }): Promise<Set<string> | undefined> {
     const surveyConfigRows = await db
         .select({
@@ -372,15 +375,12 @@ export async function getEligibleParticipantIdsForAnalysis({
         )
         .limit(1);
 
-    if (surveyConfigRows.length === 0) {
+    const activeSurveyConfig = surveyConfigRows.at(0);
+    if (activeSurveyConfig === undefined) {
         return undefined;
     }
-    const activeSurveyConfig = surveyConfigRows[0];
-    if (candidateParticipantIds.length === 0) {
-        return new Set();
-    }
     if (activeSurveyConfig.isOptional) {
-        return new Set(candidateParticipantIds);
+        return undefined;
     }
 
     const questionRows = await db
@@ -460,8 +460,14 @@ export async function getEligibleParticipantIdsForAnalysis({
             ).length,
         })
     ) {
-        return new Set(candidateParticipantIds);
+        return undefined;
     }
+
+    // An absent filter means every candidate is eligible. Only load voters when
+    // required questions actually make participant-by-participant checks necessary.
+    const candidateParticipantIds =
+        typeof candidates === "function" ? await candidates() : candidates;
+    if (candidateParticipantIds.length === 0) return new Set();
 
     const responseRows = await db
         .select({
@@ -473,10 +479,9 @@ export async function getEligibleParticipantIdsForAnalysis({
         .where(
             and(
                 eq(surveyResponseTable.conversationId, conversationId),
-                inArray(
-                    surveyResponseTable.participantId,
-                    candidateParticipantIds,
-                ),
+                inArray(surveyResponseTable.participantId, [
+                    ...candidateParticipantIds,
+                ]),
             ),
         );
 

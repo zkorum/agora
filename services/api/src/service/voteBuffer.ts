@@ -70,14 +70,26 @@
  */
 
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { eq, and, or, sql, inArray, type SQL } from "drizzle-orm";
+import {
+    eq,
+    and,
+    or,
+    sql,
+    inArray,
+    isNotNull,
+    isNull,
+    type SQL,
+} from "drizzle-orm";
 import {
     voteTable,
     voteContentTable,
     opinionTable,
     opinionContentTable,
     conversationTable,
+    opinionModerationTable,
+    userTable,
 } from "@/shared-backend/schema.js";
+import { getEligibleParticipantIdsForAnalysis } from "@/shared-backend/surveyAnalysis.js";
 import { zodVotingAction, type VotingOption } from "@/shared/types/zod.js";
 import { z } from "zod";
 import { log } from "@/app.js";
@@ -207,6 +219,7 @@ interface CounterDelta {
 export interface VoteBuffer {
     add: (params: { vote: BufferedVote }) => Promise<void>;
     hasBlockingVotes: (params: {
+        db: PostgresJsDatabase;
         opinionId: number;
         authorId: string;
         isSeed: boolean;
@@ -379,14 +392,11 @@ export function createVoteBuffer({
     };
 
     const hasBlockingVotes = async ({
+        db: authoritativeDb,
         opinionId,
         authorId,
         isSeed,
-    }: {
-        opinionId: number;
-        authorId: string;
-        isSeed: boolean;
-    }): Promise<boolean> => {
+    }: Parameters<VoteBuffer["hasBlockingVotes"]>[0]): Promise<boolean> => {
         const votes = new Map(inFlightVotes);
         for (const [key, vote] of pendingVotes) {
             const previous = votes.get(key);
@@ -408,11 +418,54 @@ export function createVoteBuffer({
                     votes.set(key, vote);
             }
         }
-        return [...votes.values()].some(
+        const candidates = [...votes.values()].filter(
             (vote) =>
                 vote.opinionId === opinionId &&
                 vote.vote !== "cancel" &&
                 (isSeed || vote.userId !== authorId),
+        );
+        if (candidates.length === 0) return false;
+        const opinions = await authoritativeDb
+            .select({ conversationId: opinionTable.conversationId })
+            .from(opinionTable)
+            .leftJoin(
+                opinionModerationTable,
+                and(
+                    eq(opinionModerationTable.opinionId, opinionTable.id),
+                    isNull(opinionModerationTable.deletedAt),
+                ),
+            )
+            .where(
+                and(
+                    eq(opinionTable.id, opinionId),
+                    isNotNull(opinionTable.currentContentId),
+                    isNull(opinionModerationTable.id),
+                ),
+            );
+        const opinion = opinions.at(0);
+        if (opinion === undefined) return false;
+        const voters = await authoritativeDb
+            .select({ id: userTable.id })
+            .from(userTable)
+            .where(
+                and(
+                    inArray(
+                        userTable.id,
+                        candidates.map((vote) => vote.userId),
+                    ),
+                    eq(userTable.isDeleted, false),
+                ),
+            );
+        const eligibleParticipantIds =
+            await getEligibleParticipantIdsForAnalysis({
+                db: authoritativeDb,
+                conversationId: opinion.conversationId,
+                candidateParticipantIds: voters.map((voter) => voter.id),
+            });
+        return voters.some(
+            (voter) =>
+                eligibleParticipantIds === undefined ||
+                eligibleParticipantIds.has(voter.id),
         );
     };
 

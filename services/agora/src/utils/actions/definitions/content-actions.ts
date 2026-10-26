@@ -19,7 +19,7 @@ import type {
   ContentActionContext,
   ContentActionDialogState,
 } from "../core/types";
-import { getAvailableCommentActions } from "./comments";
+import { type CommentEditAction, getAvailableCommentActions } from "./comments";
 import { getAvailablePostActions } from "./posts";
 
 // Confirmation dialog state interface
@@ -90,8 +90,7 @@ export function useContentActions() {
       muteUserCallback: () => void | Promise<void>;
       moderateCommentCallback: () => void | Promise<void>;
       shareOpinionCallback: () => void | Promise<void>;
-      editCommentCallback: () => void;
-      canEdit: boolean;
+      edit: CommentEditAction | undefined;
       canDelete: boolean;
     };
   }): void => {
@@ -130,10 +129,9 @@ export function useContentActions() {
       ...callbacks,
       translations: commentTranslations,
       management: {
-        canEdit: callbacks.canEdit,
+        edit: callbacks.edit,
         canDelete: callbacks.canDelete,
         editLabel: t("edit"),
-        editCommentCallback: callbacks.editCommentCallback,
       },
     });
 

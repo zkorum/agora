@@ -62,9 +62,6 @@ function getConversationCapabilities(
     return {
         canEdit: projectCapabilities?.has("conversation_edit") ?? false,
         canDelete: projectCapabilities?.has("conversation_delete") ?? false,
-        canManageIntegrations:
-            projectCapabilities?.has("conversation_manage_integrations") ??
-            false,
     };
 }
 
@@ -399,7 +396,6 @@ export function useCommonPost() {
                 requestedCapabilities: [
                     "conversation_edit",
                     "conversation_delete",
-                    "conversation_manage_integrations",
                 ],
             }),
         ]);

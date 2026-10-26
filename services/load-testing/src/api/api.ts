@@ -5486,7 +5486,6 @@ export interface ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInn
 export interface ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataInteractionConversationCapabilities {
     'canEdit': boolean;
     'canDelete': boolean;
-    'canManageIntegrations': boolean;
 }
 export interface ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataInteractionSurveyGate {
     'hasSurvey': boolean;
@@ -6512,28 +6511,8 @@ export interface ApiV1ConversationGetForEditPost200ResponseOneOfSeedOpinionsInne
     'slugId': string;
     'content': string;
     'sourceVersion': string;
-    'editing': ApiV1ConversationGetForEditPost200ResponseOneOfSeedOpinionsInnerEditing;
+    'editing': ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemManagementEditing;
 }
-/**
- * @type ApiV1ConversationGetForEditPost200ResponseOneOfSeedOpinionsInnerEditing
- */
-export type ApiV1ConversationGetForEditPost200ResponseOneOfSeedOpinionsInnerEditing = ApiV1ConversationGetForEditPost200ResponseOneOfSeedOpinionsInnerEditingOneOf | ApiV1ConversationGetForEditPost200ResponseOneOfSeedOpinionsInnerEditingOneOf1;
-
-export interface ApiV1ConversationGetForEditPost200ResponseOneOfSeedOpinionsInnerEditingOneOf {
-    'allowed': boolean;
-}
-export interface ApiV1ConversationGetForEditPost200ResponseOneOfSeedOpinionsInnerEditingOneOf1 {
-    'allowed': boolean;
-    'reason': ApiV1ConversationGetForEditPost200ResponseOneOfSeedOpinionsInnerEditingOneOf1ReasonEnum;
-}
-
-export const ApiV1ConversationGetForEditPost200ResponseOneOfSeedOpinionsInnerEditingOneOf1ReasonEnum = {
-    HasVotes: 'has_votes',
-    NotAllowed: 'not_allowed',
-} as const;
-
-export type ApiV1ConversationGetForEditPost200ResponseOneOfSeedOpinionsInnerEditingOneOf1ReasonEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfSeedOpinionsInnerEditingOneOf1ReasonEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfSeedOpinionsInnerEditingOneOf1ReasonEnum];
-
 export interface ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfig {
     'isOptional': boolean;
     'questions': Array<ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInner>;
@@ -10473,9 +10452,31 @@ export interface ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem {
     'management'?: ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemManagement;
 }
 export interface ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemManagement {
-    'canEdit': boolean;
+    'editing': ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemManagementEditing;
     'canDelete': boolean;
 }
+/**
+ * @type ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemManagementEditing
+ */
+export type ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemManagementEditing = ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemManagementEditingOneOf | ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemManagementEditingOneOf1;
+
+export interface ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemManagementEditingOneOf {
+    'allowed': boolean;
+}
+export interface ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemManagementEditingOneOf1 {
+    'allowed': boolean;
+    'reason': ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemManagementEditingOneOf1ReasonEnum;
+}
+
+export const ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemManagementEditingOneOf1ReasonEnum = {
+    HasVotes: 'has_votes',
+    NotAllowed: 'not_allowed',
+    ConversationLocked: 'conversation_locked',
+    ImportInProgress: 'import_in_progress',
+} as const;
+
+export type ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemManagementEditingOneOf1ReasonEnum = typeof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemManagementEditingOneOf1ReasonEnum[keyof typeof ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemManagementEditingOneOf1ReasonEnum];
+
 export interface ApiV1UserOpinionFetchPostRequest {
     'lastOpinionSlugId'?: string;
 }

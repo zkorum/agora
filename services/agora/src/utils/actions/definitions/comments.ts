@@ -5,6 +5,12 @@
 
 import type { ContentAction, ContentActionContext } from "../core/types";
 
+export interface CommentEditAction {
+  readonly disabled: boolean;
+  readonly description: string | undefined;
+  readonly handler: () => void;
+}
+
 /**
  * Translation keys for comment actions
  */
@@ -29,10 +35,9 @@ interface CommentActionsParams {
   shareOpinionCallback: () => void | Promise<void>;
   translations: CommentActionTranslations;
   management: {
-    canEdit: boolean;
+    edit: CommentEditAction | undefined;
     canDelete: boolean;
     editLabel: string;
-    editCommentCallback: () => void;
   };
 }
 
@@ -47,13 +52,17 @@ export function getCommentActions({
   management,
 }: CommentActionsParams): ContentAction[] {
   return [
-    {
-      id: "edit",
-      label: management.editLabel,
-      icon: "mdi-pencil",
-      handler: management.editCommentCallback,
-      isVisible: () => management.canEdit,
-    },
+    ...(management.edit === undefined
+      ? []
+      : [
+          {
+            id: "edit",
+            label: management.editLabel,
+            icon: "mdi-pencil",
+            ...management.edit,
+            isVisible: () => true,
+          } satisfies ContentAction,
+        ]),
     {
       id: "share",
       label: translations.share,

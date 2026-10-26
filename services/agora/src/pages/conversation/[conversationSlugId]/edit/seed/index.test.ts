@@ -1142,7 +1142,7 @@ describe("edit conversation statement step", () => {
       canEditSeed: false,
     });
     expect(container.textContent).toContain(
-      "has received votes and can no longer be edited"
+      "has valid votes and cannot be edited while they remain"
     );
     expect(
       Array.from(container.querySelectorAll("button")).some(

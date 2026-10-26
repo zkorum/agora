@@ -134,7 +134,6 @@ function conversation(config: ConversationTypeConfig): ConversationDetail {
         conversationCapabilities: {
           canEdit: true,
           canDelete: true,
-          canManageIntegrations: false,
         },
       },
     },

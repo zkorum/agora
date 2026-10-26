@@ -1544,6 +1544,24 @@ export const zodClusterStats = z.object({
     numDisagrees: z.number().int().nonnegative(),
     numPasses: z.number().int().nonnegative(),
 });
+export const zodOpinionEditingAvailability = z.discriminatedUnion("allowed", [
+    z.object({ allowed: z.literal(true) }).strict(),
+    z
+        .object({
+            allowed: z.literal(false),
+            reason: z.enum([
+                "has_votes",
+                "not_allowed",
+                "conversation_locked",
+                "import_in_progress",
+            ]),
+        })
+        .strict(),
+]);
+export type OpinionEditingAvailability = z.infer<
+    typeof zodOpinionEditingAvailability
+>;
+
 export const zodOpinionItem = z
     .object({
         opinionSlugId: zodSlugId,
@@ -1560,7 +1578,10 @@ export const zodOpinionItem = z
         isSeed: z.boolean(),
         isEdited: z.boolean().optional(),
         management: z
-            .object({ canEdit: z.boolean(), canDelete: z.boolean() })
+            .object({
+                editing: zodOpinionEditingAvailability,
+                canDelete: z.boolean(),
+            })
             .strict()
             .optional(),
     })
@@ -1646,7 +1667,6 @@ export const zodConversationCapabilities = z
     .object({
         canEdit: z.boolean(),
         canDelete: z.boolean(),
-        canManageIntegrations: z.boolean(),
     })
     .strict();
 export type ConversationCapabilities = z.infer<

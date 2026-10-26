@@ -416,7 +416,6 @@ describe("conversation translation completion", () => {
         conversationCapabilities: {
           canEdit: false,
           canDelete: false,
-          canManageIntegrations: false,
         },
       },
     };

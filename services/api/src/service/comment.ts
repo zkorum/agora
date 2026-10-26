@@ -3645,7 +3645,7 @@ export async function postNewOpinion(
         };
         const displayedOpinionItem: DisplayedOpinionItem = {
             ...opinionItem,
-            management: { canEdit: true, canDelete: true },
+            management: { editing: { allowed: true }, canDelete: true },
             displayContent: {
                 sourceVersion: opinionContentPublicId,
                 status: "available",

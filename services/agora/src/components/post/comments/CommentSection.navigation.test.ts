@@ -222,7 +222,6 @@ function conversation(
       conversationCapabilities: {
         canEdit: false,
         canDelete: false,
-        canManageIntegrations: false,
       },
     },
   };

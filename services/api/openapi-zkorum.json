@@ -4701,15 +4701,11 @@
                                                                                     },
                                                                                     "canDelete": {
                                                                                         "type": "boolean"
-                                                                                    },
-                                                                                    "canManageIntegrations": {
-                                                                                        "type": "boolean"
                                                                                     }
                                                                                 },
                                                                                 "required": [
                                                                                     "canEdit",
-                                                                                    "canDelete",
-                                                                                    "canManageIntegrations"
+                                                                                    "canDelete"
                                                                                 ],
                                                                                 "additionalProperties": false
                                                                             }
@@ -6634,15 +6630,11 @@
                                                                                     },
                                                                                     "canDelete": {
                                                                                         "type": "boolean"
-                                                                                    },
-                                                                                    "canManageIntegrations": {
-                                                                                        "type": "boolean"
                                                                                     }
                                                                                 },
                                                                                 "required": [
                                                                                     "canEdit",
-                                                                                    "canDelete",
-                                                                                    "canManageIntegrations"
+                                                                                    "canDelete"
                                                                                 ],
                                                                                 "additionalProperties": false
                                                                             }
@@ -12497,15 +12489,11 @@
                                                             },
                                                             "canDelete": {
                                                                 "type": "boolean"
-                                                            },
-                                                            "canManageIntegrations": {
-                                                                "type": "boolean"
                                                             }
                                                         },
                                                         "required": [
                                                             "canEdit",
-                                                            "canDelete",
-                                                            "canManageIntegrations"
+                                                            "canDelete"
                                                         ],
                                                         "additionalProperties": false
                                                     }
@@ -14186,15 +14174,11 @@
                                                                     },
                                                                     "canDelete": {
                                                                         "type": "boolean"
-                                                                    },
-                                                                    "canManageIntegrations": {
-                                                                        "type": "boolean"
                                                                     }
                                                                 },
                                                                 "required": [
                                                                     "canEdit",
-                                                                    "canDelete",
-                                                                    "canManageIntegrations"
+                                                                    "canDelete"
                                                                 ],
                                                                 "additionalProperties": false
                                                             }
@@ -14338,15 +14322,56 @@
                                                     "management": {
                                                         "type": "object",
                                                         "properties": {
-                                                            "canEdit": {
-                                                                "type": "boolean"
+                                                            "editing": {
+                                                                "oneOf": [
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "allowed": {
+                                                                                "type": "boolean",
+                                                                                "enum": [
+                                                                                    true
+                                                                                ]
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "allowed"
+                                                                        ],
+                                                                        "additionalProperties": false
+                                                                    },
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "allowed": {
+                                                                                "type": "boolean",
+                                                                                "enum": [
+                                                                                    false
+                                                                                ]
+                                                                            },
+                                                                            "reason": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "has_votes",
+                                                                                    "not_allowed",
+                                                                                    "conversation_locked",
+                                                                                    "import_in_progress"
+                                                                                ]
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "allowed",
+                                                                            "reason"
+                                                                        ],
+                                                                        "additionalProperties": false
+                                                                    }
+                                                                ]
                                                             },
                                                             "canDelete": {
                                                                 "type": "boolean"
                                                             }
                                                         },
                                                         "required": [
-                                                            "canEdit",
+                                                            "editing",
                                                             "canDelete"
                                                         ],
                                                         "additionalProperties": false
@@ -16505,15 +16530,56 @@
                                                         "management": {
                                                             "type": "object",
                                                             "properties": {
-                                                                "canEdit": {
-                                                                    "type": "boolean"
+                                                                "editing": {
+                                                                    "oneOf": [
+                                                                        {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "allowed": {
+                                                                                    "type": "boolean",
+                                                                                    "enum": [
+                                                                                        true
+                                                                                    ]
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "allowed"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        },
+                                                                        {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "allowed": {
+                                                                                    "type": "boolean",
+                                                                                    "enum": [
+                                                                                        false
+                                                                                    ]
+                                                                                },
+                                                                                "reason": {
+                                                                                    "type": "string",
+                                                                                    "enum": [
+                                                                                        "has_votes",
+                                                                                        "not_allowed",
+                                                                                        "conversation_locked",
+                                                                                        "import_in_progress"
+                                                                                    ]
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "allowed",
+                                                                                "reason"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        }
+                                                                    ]
                                                                 },
                                                                 "canDelete": {
                                                                     "type": "boolean"
                                                                 }
                                                             },
                                                             "required": [
-                                                                "canEdit",
+                                                                "editing",
                                                                 "canDelete"
                                                             ],
                                                             "additionalProperties": false
@@ -17008,15 +17074,56 @@
                                                         "management": {
                                                             "type": "object",
                                                             "properties": {
-                                                                "canEdit": {
-                                                                    "type": "boolean"
+                                                                "editing": {
+                                                                    "oneOf": [
+                                                                        {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "allowed": {
+                                                                                    "type": "boolean",
+                                                                                    "enum": [
+                                                                                        true
+                                                                                    ]
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "allowed"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        },
+                                                                        {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "allowed": {
+                                                                                    "type": "boolean",
+                                                                                    "enum": [
+                                                                                        false
+                                                                                    ]
+                                                                                },
+                                                                                "reason": {
+                                                                                    "type": "string",
+                                                                                    "enum": [
+                                                                                        "has_votes",
+                                                                                        "not_allowed",
+                                                                                        "conversation_locked",
+                                                                                        "import_in_progress"
+                                                                                    ]
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "allowed",
+                                                                                "reason"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        }
+                                                                    ]
                                                                 },
                                                                 "canDelete": {
                                                                     "type": "boolean"
                                                                 }
                                                             },
                                                             "required": [
-                                                                "canEdit",
+                                                                "editing",
                                                                 "canDelete"
                                                             ],
                                                             "additionalProperties": false
@@ -17162,15 +17269,56 @@
                                                         "management": {
                                                             "type": "object",
                                                             "properties": {
-                                                                "canEdit": {
-                                                                    "type": "boolean"
+                                                                "editing": {
+                                                                    "oneOf": [
+                                                                        {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "allowed": {
+                                                                                    "type": "boolean",
+                                                                                    "enum": [
+                                                                                        true
+                                                                                    ]
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "allowed"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        },
+                                                                        {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "allowed": {
+                                                                                    "type": "boolean",
+                                                                                    "enum": [
+                                                                                        false
+                                                                                    ]
+                                                                                },
+                                                                                "reason": {
+                                                                                    "type": "string",
+                                                                                    "enum": [
+                                                                                        "has_votes",
+                                                                                        "not_allowed",
+                                                                                        "conversation_locked",
+                                                                                        "import_in_progress"
+                                                                                    ]
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "allowed",
+                                                                                "reason"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        }
+                                                                    ]
                                                                 },
                                                                 "canDelete": {
                                                                     "type": "boolean"
                                                                 }
                                                             },
                                                             "required": [
-                                                                "canEdit",
+                                                                "editing",
                                                                 "canDelete"
                                                             ],
                                                             "additionalProperties": false
@@ -17907,15 +18055,56 @@
                                                         "management": {
                                                             "type": "object",
                                                             "properties": {
-                                                                "canEdit": {
-                                                                    "type": "boolean"
+                                                                "editing": {
+                                                                    "oneOf": [
+                                                                        {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "allowed": {
+                                                                                    "type": "boolean",
+                                                                                    "enum": [
+                                                                                        true
+                                                                                    ]
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "allowed"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        },
+                                                                        {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "allowed": {
+                                                                                    "type": "boolean",
+                                                                                    "enum": [
+                                                                                        false
+                                                                                    ]
+                                                                                },
+                                                                                "reason": {
+                                                                                    "type": "string",
+                                                                                    "enum": [
+                                                                                        "has_votes",
+                                                                                        "not_allowed",
+                                                                                        "conversation_locked",
+                                                                                        "import_in_progress"
+                                                                                    ]
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "allowed",
+                                                                                "reason"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        }
+                                                                    ]
                                                                 },
                                                                 "canDelete": {
                                                                     "type": "boolean"
                                                                 }
                                                             },
                                                             "required": [
-                                                                "canEdit",
+                                                                "editing",
                                                                 "canDelete"
                                                             ],
                                                             "additionalProperties": false
@@ -18557,15 +18746,56 @@
                                                     "management": {
                                                         "type": "object",
                                                         "properties": {
-                                                            "canEdit": {
-                                                                "type": "boolean"
+                                                            "editing": {
+                                                                "oneOf": [
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "allowed": {
+                                                                                "type": "boolean",
+                                                                                "enum": [
+                                                                                    true
+                                                                                ]
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "allowed"
+                                                                        ],
+                                                                        "additionalProperties": false
+                                                                    },
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "allowed": {
+                                                                                "type": "boolean",
+                                                                                "enum": [
+                                                                                    false
+                                                                                ]
+                                                                            },
+                                                                            "reason": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "has_votes",
+                                                                                    "not_allowed",
+                                                                                    "conversation_locked",
+                                                                                    "import_in_progress"
+                                                                                ]
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "allowed",
+                                                                            "reason"
+                                                                        ],
+                                                                        "additionalProperties": false
+                                                                    }
+                                                                ]
                                                             },
                                                             "canDelete": {
                                                                 "type": "boolean"
                                                             }
                                                         },
                                                         "required": [
-                                                            "canEdit",
+                                                            "editing",
                                                             "canDelete"
                                                         ],
                                                         "additionalProperties": false
@@ -19998,15 +20228,56 @@
                                                                 "management": {
                                                                     "type": "object",
                                                                     "properties": {
-                                                                        "canEdit": {
-                                                                            "type": "boolean"
+                                                                        "editing": {
+                                                                            "oneOf": [
+                                                                                {
+                                                                                    "type": "object",
+                                                                                    "properties": {
+                                                                                        "allowed": {
+                                                                                            "type": "boolean",
+                                                                                            "enum": [
+                                                                                                true
+                                                                                            ]
+                                                                                        }
+                                                                                    },
+                                                                                    "required": [
+                                                                                        "allowed"
+                                                                                    ],
+                                                                                    "additionalProperties": false
+                                                                                },
+                                                                                {
+                                                                                    "type": "object",
+                                                                                    "properties": {
+                                                                                        "allowed": {
+                                                                                            "type": "boolean",
+                                                                                            "enum": [
+                                                                                                false
+                                                                                            ]
+                                                                                        },
+                                                                                        "reason": {
+                                                                                            "type": "string",
+                                                                                            "enum": [
+                                                                                                "has_votes",
+                                                                                                "not_allowed",
+                                                                                                "conversation_locked",
+                                                                                                "import_in_progress"
+                                                                                            ]
+                                                                                        }
+                                                                                    },
+                                                                                    "required": [
+                                                                                        "allowed",
+                                                                                        "reason"
+                                                                                    ],
+                                                                                    "additionalProperties": false
+                                                                                }
+                                                                            ]
                                                                         },
                                                                         "canDelete": {
                                                                             "type": "boolean"
                                                                         }
                                                                     },
                                                                     "required": [
-                                                                        "canEdit",
+                                                                        "editing",
                                                                         "canDelete"
                                                                     ],
                                                                     "additionalProperties": false
@@ -20879,15 +21150,56 @@
                                                     "management": {
                                                         "type": "object",
                                                         "properties": {
-                                                            "canEdit": {
-                                                                "type": "boolean"
+                                                            "editing": {
+                                                                "oneOf": [
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "allowed": {
+                                                                                "type": "boolean",
+                                                                                "enum": [
+                                                                                    true
+                                                                                ]
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "allowed"
+                                                                        ],
+                                                                        "additionalProperties": false
+                                                                    },
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "allowed": {
+                                                                                "type": "boolean",
+                                                                                "enum": [
+                                                                                    false
+                                                                                ]
+                                                                            },
+                                                                            "reason": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "has_votes",
+                                                                                    "not_allowed",
+                                                                                    "conversation_locked",
+                                                                                    "import_in_progress"
+                                                                                ]
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "allowed",
+                                                                            "reason"
+                                                                        ],
+                                                                        "additionalProperties": false
+                                                                    }
+                                                                ]
                                                             },
                                                             "canDelete": {
                                                                 "type": "boolean"
                                                             }
                                                         },
                                                         "required": [
-                                                            "canEdit",
+                                                            "editing",
                                                             "canDelete"
                                                         ],
                                                         "additionalProperties": false
@@ -21671,15 +21983,56 @@
                                                     "management": {
                                                         "type": "object",
                                                         "properties": {
-                                                            "canEdit": {
-                                                                "type": "boolean"
+                                                            "editing": {
+                                                                "oneOf": [
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "allowed": {
+                                                                                "type": "boolean",
+                                                                                "enum": [
+                                                                                    true
+                                                                                ]
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "allowed"
+                                                                        ],
+                                                                        "additionalProperties": false
+                                                                    },
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "allowed": {
+                                                                                "type": "boolean",
+                                                                                "enum": [
+                                                                                    false
+                                                                                ]
+                                                                            },
+                                                                            "reason": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "has_votes",
+                                                                                    "not_allowed",
+                                                                                    "conversation_locked",
+                                                                                    "import_in_progress"
+                                                                                ]
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "allowed",
+                                                                            "reason"
+                                                                        ],
+                                                                        "additionalProperties": false
+                                                                    }
+                                                                ]
                                                             },
                                                             "canDelete": {
                                                                 "type": "boolean"
                                                             }
                                                         },
                                                         "required": [
-                                                            "canEdit",
+                                                            "editing",
                                                             "canDelete"
                                                         ],
                                                         "additionalProperties": false
@@ -22145,15 +22498,56 @@
                                                     "management": {
                                                         "type": "object",
                                                         "properties": {
-                                                            "canEdit": {
-                                                                "type": "boolean"
+                                                            "editing": {
+                                                                "oneOf": [
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "allowed": {
+                                                                                "type": "boolean",
+                                                                                "enum": [
+                                                                                    true
+                                                                                ]
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "allowed"
+                                                                        ],
+                                                                        "additionalProperties": false
+                                                                    },
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "allowed": {
+                                                                                "type": "boolean",
+                                                                                "enum": [
+                                                                                    false
+                                                                                ]
+                                                                            },
+                                                                            "reason": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "has_votes",
+                                                                                    "not_allowed",
+                                                                                    "conversation_locked",
+                                                                                    "import_in_progress"
+                                                                                ]
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "allowed",
+                                                                            "reason"
+                                                                        ],
+                                                                        "additionalProperties": false
+                                                                    }
+                                                                ]
                                                             },
                                                             "canDelete": {
                                                                 "type": "boolean"
                                                             }
                                                         },
                                                         "required": [
-                                                            "canEdit",
+                                                            "editing",
                                                             "canDelete"
                                                         ],
                                                         "additionalProperties": false
@@ -25716,15 +26110,11 @@
                                                                         },
                                                                         "canDelete": {
                                                                             "type": "boolean"
-                                                                        },
-                                                                        "canManageIntegrations": {
-                                                                            "type": "boolean"
                                                                         }
                                                                     },
                                                                     "required": [
                                                                         "canEdit",
-                                                                        "canDelete",
-                                                                        "canManageIntegrations"
+                                                                        "canDelete"
                                                                     ],
                                                                     "additionalProperties": false
                                                                 }
@@ -27282,7 +27672,9 @@
                                                                                 "type": "string",
                                                                                 "enum": [
                                                                                     "has_votes",
-                                                                                    "not_allowed"
+                                                                                    "not_allowed",
+                                                                                    "conversation_locked",
+                                                                                    "import_in_progress"
                                                                                 ]
                                                                             }
                                                                         },
@@ -28163,15 +28555,56 @@
                                                             "management": {
                                                                 "type": "object",
                                                                 "properties": {
-                                                                    "canEdit": {
-                                                                        "type": "boolean"
+                                                                    "editing": {
+                                                                        "oneOf": [
+                                                                            {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "allowed": {
+                                                                                        "type": "boolean",
+                                                                                        "enum": [
+                                                                                            true
+                                                                                        ]
+                                                                                    }
+                                                                                },
+                                                                                "required": [
+                                                                                    "allowed"
+                                                                                ],
+                                                                                "additionalProperties": false
+                                                                            },
+                                                                            {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "allowed": {
+                                                                                        "type": "boolean",
+                                                                                        "enum": [
+                                                                                            false
+                                                                                        ]
+                                                                                    },
+                                                                                    "reason": {
+                                                                                        "type": "string",
+                                                                                        "enum": [
+                                                                                            "has_votes",
+                                                                                            "not_allowed",
+                                                                                            "conversation_locked",
+                                                                                            "import_in_progress"
+                                                                                        ]
+                                                                                    }
+                                                                                },
+                                                                                "required": [
+                                                                                    "allowed",
+                                                                                    "reason"
+                                                                                ],
+                                                                                "additionalProperties": false
+                                                                            }
+                                                                        ]
                                                                     },
                                                                     "canDelete": {
                                                                         "type": "boolean"
                                                                     }
                                                                 },
                                                                 "required": [
-                                                                    "canEdit",
+                                                                    "editing",
                                                                     "canDelete"
                                                                 ],
                                                                 "additionalProperties": false
@@ -28543,15 +28976,56 @@
                                                             "management": {
                                                                 "type": "object",
                                                                 "properties": {
-                                                                    "canEdit": {
-                                                                        "type": "boolean"
+                                                                    "editing": {
+                                                                        "oneOf": [
+                                                                            {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "allowed": {
+                                                                                        "type": "boolean",
+                                                                                        "enum": [
+                                                                                            true
+                                                                                        ]
+                                                                                    }
+                                                                                },
+                                                                                "required": [
+                                                                                    "allowed"
+                                                                                ],
+                                                                                "additionalProperties": false
+                                                                            },
+                                                                            {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "allowed": {
+                                                                                        "type": "boolean",
+                                                                                        "enum": [
+                                                                                            false
+                                                                                        ]
+                                                                                    },
+                                                                                    "reason": {
+                                                                                        "type": "string",
+                                                                                        "enum": [
+                                                                                            "has_votes",
+                                                                                            "not_allowed",
+                                                                                            "conversation_locked",
+                                                                                            "import_in_progress"
+                                                                                        ]
+                                                                                    }
+                                                                                },
+                                                                                "required": [
+                                                                                    "allowed",
+                                                                                    "reason"
+                                                                                ],
+                                                                                "additionalProperties": false
+                                                                            }
+                                                                        ]
                                                                     },
                                                                     "canDelete": {
                                                                         "type": "boolean"
                                                                     }
                                                                 },
                                                                 "required": [
-                                                                    "canEdit",
+                                                                    "editing",
                                                                     "canDelete"
                                                                 ],
                                                                 "additionalProperties": false

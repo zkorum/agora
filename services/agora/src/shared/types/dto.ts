@@ -94,6 +94,7 @@ import {
     zodProjectDisplayedContent,
     zodSurveyQuestionDisplayedContent,
     zodSurveyQuestionResultDisplayContent,
+    zodOpinionEditingAvailability,
     zodProjectOrganizationAttributionRole,
     zodProjectSlug,
     zodConversationProjectTarget,
@@ -1964,15 +1965,7 @@ export class Dto {
     static editableConversationSeedOpinion = Dto.conversationSeedOpinion
         .extend({
             sourceVersion: z.uuid(),
-            editing: z.discriminatedUnion("allowed", [
-                z.object({ allowed: z.literal(true) }).strict(),
-                z
-                    .object({
-                        allowed: z.literal(false),
-                        reason: z.enum(["has_votes", "not_allowed"]),
-                    })
-                    .strict(),
-            ]),
+            editing: zodOpinionEditingAvailability,
         })
         .strict();
     static getConversationForEditResponse = z.discriminatedUnion("success", [
