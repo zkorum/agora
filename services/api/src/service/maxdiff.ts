@@ -509,7 +509,7 @@ async function getHistoricalMaxdiffResults({
             sourceLanguageConfidence:
                 rankingItemContentTable.sourceLanguageConfidence,
             lifecycleStatus: rankingConversationStatsItemTable.lifecycleStatus,
-            score: rankingScoreEntityTable.displayScore,
+            score: rankingConversationStatsItemTable.score,
             rank: rankingConversationStatsItemTable.rank,
             participantCount:
                 rankingConversationStatsItemTable.participantCount,
@@ -535,19 +535,6 @@ async function getHistoricalMaxdiffResults({
             eq(
                 rankingConversationStatsSnapshotTable.id,
                 rankingConversationStatsItemTable.statsSnapshotId,
-            ),
-        )
-        .leftJoin(
-            rankingScoreEntityTable,
-            and(
-                eq(
-                    rankingScoreEntityTable.rankingScoreId,
-                    rankingConversationStatsSnapshotTable.rankingScoreId,
-                ),
-                eq(
-                    rankingScoreEntityTable.entitySlugId,
-                    rankingItemTable.slugId,
-                ),
             ),
         )
         .where(

@@ -18,6 +18,7 @@
         :is-live-paused="isLivePaused"
         :is-latest-checkpoint-live="isLatestCheckpointLive"
         :is-live-closed="props.conversationData.metadata.isClosed"
+        :is-finalizing="props.conversationData.metadata.isFinalizing === true"
         :title="tAnalysis('checkpointTimelineLabel')"
         :start-label="tAnalysis('checkpointTimelineStart')"
         :now-label="timelineLiveLabel"
@@ -545,13 +546,16 @@ const activeLiveRankingStatsSnapshotId = computed(() =>
 );
 const isLatestCheckpointLive = computed(
   () =>
+    props.conversationData.metadata.isFinalizing !== true &&
     latestCheckpointId.value !== undefined &&
     latestCheckpointId.value === activeLiveRankingStatsSnapshotId.value
 );
 const timelineLiveLabel = computed(() =>
-  props.conversationData.metadata.isClosed
-    ? tAnalysis("checkpointReasonConversationClosed")
-    : tAnalysis("checkpointTimelineNow")
+  props.conversationData.metadata.isFinalizing === true
+    ? tAnalysis("checkpointTimelineFinalizing")
+    : props.conversationData.metadata.isClosed
+      ? tAnalysis("checkpointReasonConversationClosed")
+      : tAnalysis("checkpointTimelineNow")
 );
 
 function formatCheckpointReason(

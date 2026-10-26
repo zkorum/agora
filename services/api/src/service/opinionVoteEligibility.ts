@@ -1,4 +1,5 @@
-import { and, eq, inArray, isNotNull, isNull, ne, or } from "drizzle-orm";
+import { and, eq, inArray, isNull, ne, or } from "drizzle-orm";
+import { currentOpinionSourceCondition } from "@/shared-backend/opinionEligibility.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
     opinionModerationTable,
@@ -28,7 +29,7 @@ export async function getAnalysisEligibleOpinionVotes({
         })
         .from(voteTable)
         .innerJoin(opinionTable, eq(opinionTable.id, voteTable.opinionId))
-        .innerJoin(userTable, eq(userTable.id, voteTable.authorId))
+        .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
         .innerJoin(
             voteContentTable,
             eq(voteContentTable.id, voteTable.currentContentId),
@@ -44,8 +45,7 @@ export async function getAnalysisEligibleOpinionVotes({
             and(
                 eq(opinionTable.conversationId, conversationId),
                 inArray(opinionTable.id, [...opinionIds]),
-                isNotNull(opinionTable.currentContentId),
-                eq(userTable.isDeleted, false),
+                currentOpinionSourceCondition(),
                 isNull(opinionModerationTable.id),
             ),
         )

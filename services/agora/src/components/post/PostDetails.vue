@@ -60,6 +60,7 @@
           :show-report-button="true"
           :is-live-analysis-paused="isLiveAnalysisPaused"
           :is-conversation-closed="conversationData.metadata.isClosed"
+          :is-finalizing="conversationData.metadata.isFinalizing === true"
           :navigate-to-discover-tab="navigateToDiscoverTab"
           :conversation-scroll-context="conversationScrollContext"
           :conversation-route-context="conversationRouteContext"

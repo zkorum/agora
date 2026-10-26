@@ -87,6 +87,9 @@ import { log } from "@/app.js";
 import { createCommentModerationPropertyObject } from "./moderation.js";
 import { checkConversationParticipation } from "./participationGate.js";
 import type { VoteBuffer } from "./voteBuffer.js";
+import { admitVote } from "./voteAdmission.js";
+import { queueOpinionRedactedEvent } from "./realtimeEventOutbox.js";
+import { currentOpinionSourceCondition } from "@/shared-backend/opinionEligibility.js";
 import type { ImportPolisResults } from "@/shared/types/polis.js";
 import type {
     OpinionContentIdPerOpinionId,
@@ -815,7 +818,10 @@ export async function fetchOpinionsByPostId({
             numAgrees: countAnalysisSnapshotOpinionTable.numAgrees,
             numDisagrees: countAnalysisSnapshotOpinionTable.numDisagrees,
             numPasses: countAnalysisSnapshotOpinionTable.numPasses,
-            username: userTable.username,
+            username:
+                sql<string>`CASE WHEN ${userTable.isDeleted} = false THEN ${userTable.username} ELSE '' END`.as(
+                    "username",
+                ),
             isSeed: opinionTable.isSeed,
             moderationAction: opinionModerationTable.moderationAction,
             moderationExplanation: opinionModerationTable.moderationExplanation,
@@ -921,7 +927,7 @@ export async function fetchOpinionsByPostId({
 
     const results = await query
         .orderBy(...orderByClause)
-        .where(and(whereClause, eq(userTable.isDeleted, false)))
+        .where(and(whereClause, currentOpinionSourceCondition()))
         .limit(limit);
 
     const opinionItemMap: DisplayedOpinionItemPerSlugId = new Map<
@@ -1132,7 +1138,7 @@ export async function countUnansweredOpinions({
                 eq(conversationTable.isImporting, false),
                 isNotNull(conversationTable.currentContentId),
                 isNotNull(opinionTable.currentContentId),
-                eq(userTable.isDeleted, false),
+                currentOpinionSourceCondition(),
                 isNull(userMutePreferenceTable.id),
                 getUnansweredOpinionFilter({
                     personalizationUserId,
@@ -1285,7 +1291,10 @@ export async function fetchOpinionTargetsBySlugIdList({
             translationSourceLanguageCode:
                 opinionContentTranslationTable.sourceLanguageCode,
             translationWorkStatus: contentTranslationWorkTable.status,
-            username: userTable.username,
+            username:
+                sql<string>`CASE WHEN ${userTable.isDeleted} = false THEN ${userTable.username} ELSE '' END`.as(
+                    "username",
+                ),
             isSeed: opinionTable.isSeed,
             moderationAction: opinionModerationTable.moderationAction,
             moderationExplanation: opinionModerationTable.moderationExplanation,
@@ -1361,7 +1370,7 @@ export async function fetchOpinionTargetsBySlugIdList({
                 inArray(opinionTable.slugId, opinionSlugIdList),
                 eq(conversationTable.isImporting, false),
                 isNotNull(conversationTable.currentContentId),
-                eq(userTable.isDeleted, false),
+                currentOpinionSourceCondition(),
                 or(
                     isNull(opinionModerationTable.id),
                     ne(opinionModerationTable.moderationAction, "hide"),
@@ -1537,13 +1546,13 @@ interface SnapshotGroupMetadata {
 interface SnapshotAnalysisOpinionRow {
     analysisSnapshotOpinionId: number;
     opinionId: number;
-    opinionContentId: number;
-    contentPublicId: string;
+    opinionContentId: number | null;
+    contentPublicId: string | null;
     opinionSlugId: string;
     createdAt: Date;
-    updatedAt: Date;
-    opinion: string;
-    isEdited: boolean;
+    updatedAt: Date | null;
+    opinion: string | null;
+    isEdited: boolean | null;
     sourceLanguageCode: SupportedSpokenLanguageCodes | null;
     sourceRawLanguageCode: string | null;
     sourceLanguageProvider: LanguageDetectionProvider | null;
@@ -1557,7 +1566,8 @@ interface SnapshotAnalysisOpinionRow {
         | "failed"
         | null;
     authorId: string;
-    username: string;
+    username: string | null;
+    authorIsDeleted: boolean | null;
     isSeed: boolean;
     currentContentId: number | null;
     numAgrees: number;
@@ -1688,6 +1698,7 @@ function getSnapshotAnalysisOpinionSelectFields() {
         translationWorkStatus: contentTranslationWorkTable.status,
         authorId: opinionTable.authorId,
         username: userTable.username,
+        authorIsDeleted: userTable.isDeleted,
         isSeed: opinionTable.isSeed,
         currentContentId: opinionTable.currentContentId,
         numAgrees: analysisSnapshotOpinionTable.numAgrees,
@@ -1719,6 +1730,7 @@ function getAnalysisOpinionCurrentVisibilityFilter({
         : and(
               isNull(opinionModerationTable.id),
               isNotNull(opinionTable.currentContentId),
+              or(eq(opinionTable.isSeed, true), eq(userTable.isDeleted, false)),
           );
 }
 
@@ -1813,8 +1825,8 @@ async function fetchAnalysisOpinionRowsByIds({
             opinionTable,
             eq(opinionTable.id, analysisSnapshotOpinionTable.opinionId),
         )
-        .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
-        .innerJoin(
+        .leftJoin(userTable, eq(userTable.id, opinionTable.authorId))
+        .leftJoin(
             opinionContentTable,
             eq(
                 opinionContentTable.id,
@@ -1874,7 +1886,6 @@ async function fetchAnalysisOpinionRowsByIds({
                     frameMode,
                 }),
                 getAnalysisOpinionMuteFilter({ personalizationUserId }),
-                eq(userTable.isDeleted, false),
             ),
         );
 }
@@ -1917,8 +1928,8 @@ async function fetchAnalysisOpinionRowsForList({
             opinionTable,
             eq(opinionTable.id, analysisSnapshotOpinionTable.opinionId),
         )
-        .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
-        .innerJoin(
+        .leftJoin(userTable, eq(userTable.id, opinionTable.authorId))
+        .leftJoin(
             opinionContentTable,
             eq(
                 opinionContentTable.id,
@@ -1974,7 +1985,6 @@ async function fetchAnalysisOpinionRowsForList({
                     frameMode,
                 }),
                 getAnalysisOpinionMuteFilter({ personalizationUserId }),
-                eq(userTable.isDeleted, false),
             ),
         )
         .orderBy(
@@ -2033,17 +2043,19 @@ async function fetchGroupOpinionStatsRows({
 function getOpinionRedactionReason({
     currentContentId,
     moderationAction,
+    authorIsDeleted,
+    isSeed,
 }: {
     currentContentId: number | null;
     moderationAction: OpinionModerationAction | null;
+    authorIsDeleted: boolean | null;
+    isSeed: boolean;
 }): AnalysisOpinionRedactionReason | undefined {
     // The frozen snapshot already excludes opinions hidden before analysis.
     // For opinions that were analyzed and hidden/deleted afterward, checkpoints
     // retain the frozen row and statistics but redact its content. Live queries
     // omit currently non-visible rows; this is also a final leak safeguard.
-    // TODO(deletion-agent): centralize this historical projection with hard/legal
-    // deletion and translation-source policy instead of growing service-local rules.
-    if (currentContentId === null) {
+    if (currentContentId === null || (!isSeed && authorIsDeleted !== false)) {
         return "statement_deleted";
     }
     if (moderationAction === "hide") {
@@ -2064,12 +2076,22 @@ export function buildAnalysisOpinionContent({
     const redactionReason = getOpinionRedactionReason({
         currentContentId: row.currentContentId,
         moderationAction: row.moderationAction,
+        authorIsDeleted: row.authorIsDeleted,
+        isSeed: row.isSeed,
     });
     if (redactionReason !== undefined) {
         return {
             status: "redacted",
             reason: redactionReason,
         };
+    }
+
+    if (
+        row.opinion === null ||
+        row.opinionContentId === null ||
+        row.contentPublicId === null
+    ) {
+        return { status: "redacted", reason: "statement_deleted" };
     }
 
     return {
@@ -2211,35 +2233,68 @@ async function buildAnalysisOpinionsByIdFromRows({
         clustersStatsByOpinionId.set(opinionId, clusterStats);
     }
 
-    const opinionsById = new Map<number, AnalysisOpinionItem>();
-    for (const row of opinionRows) {
-        const commonOpinion = {
-            opinionSlugId: row.opinionSlugId,
-            createdAt: row.createdAt,
-            numParticipants: conversationParticipantCount,
-            numDisagrees: row.numDisagrees,
-            numAgrees: row.numAgrees,
-            numPasses: row.numPasses,
-            updatedAt: row.updatedAt,
-            username: row.username,
-            isSeed: row.isSeed,
-            isEdited: row.isEdited,
-            clustersStats: clustersStatsByOpinionId.get(row.opinionId) ?? [],
-            groupAwareConsensusAgree: row.groupAwareConsensusAgree ?? 0,
-            groupAwareConsensusDisagree: row.groupAwareConsensusDisagree ?? 0,
-            divisiveScore: row.divisiveScore ?? 0,
-        };
-        opinionsById.set(row.opinionId, {
-            ...commonOpinion,
-            content: buildAnalysisOpinionContent({
+    return new Map(
+        opinionRows.map((row) => [
+            row.opinionId,
+            buildAnalysisOpinionItem({
                 row,
+                conversationParticipantCount,
+                clustersStats:
+                    clustersStatsByOpinionId.get(row.opinionId) ?? [],
                 displayContentPreferences,
                 viewerUserId,
             }),
-        });
-    }
+        ]),
+    );
+}
 
-    return opinionsById;
+export function buildAnalysisOpinionItem({
+    row,
+    conversationParticipantCount,
+    clustersStats,
+    displayContentPreferences,
+    viewerUserId,
+}: {
+    row: SnapshotAnalysisOpinionRow;
+    conversationParticipantCount: number;
+    clustersStats: ClusterStats[];
+    displayContentPreferences: AnalysisOpinionDisplayContentPreferences;
+    viewerUserId: string | undefined;
+}): AnalysisOpinionItem {
+    const content = buildAnalysisOpinionContent({
+        row,
+        displayContentPreferences,
+        viewerUserId,
+    });
+    const attributionVisible =
+        content.status === "visible" && row.authorIsDeleted === false;
+    return {
+        opinionSlugId: row.opinionSlugId,
+        createdAt: attributionVisible ? row.createdAt : undefined,
+        numParticipants: conversationParticipantCount,
+        numDisagrees: row.numDisagrees,
+        numAgrees: row.numAgrees,
+        numPasses: row.numPasses,
+        updatedAt: attributionVisible
+            ? (row.updatedAt ?? undefined)
+            : undefined,
+        username: attributionVisible ? (row.username ?? undefined) : undefined,
+        isSeed: row.isSeed,
+        isEdited:
+            content.status === "visible"
+                ? (row.isEdited ?? undefined)
+                : undefined,
+        clustersStats: clustersStats.map(({ isAuthorInCluster, ...stats }) => ({
+            ...stats,
+            isAuthorInCluster: attributionVisible
+                ? isAuthorInCluster
+                : undefined,
+        })),
+        groupAwareConsensusAgree: row.groupAwareConsensusAgree ?? 0,
+        groupAwareConsensusDisagree: row.groupAwareConsensusDisagree ?? 0,
+        divisiveScore: row.divisiveScore ?? 0,
+        content,
+    };
 }
 
 async function fetchRepresentativeOpinionRows({
@@ -3341,7 +3396,7 @@ async function getHasVotedOnAllAvailableOpinions({
                     excludedOpinionSlugIds: [],
                 }),
                 isNull(userMutePreferenceTable.id),
-                eq(userTable.isDeleted, false),
+                currentOpinionSourceCondition(),
             ),
         )
         .limit(1);
@@ -3560,6 +3615,38 @@ export async function postNewOpinion(
         opinionItem: OpinionItem;
         displayedOpinionItem: DisplayedOpinionItem;
     }> => {
+        if (!isSeed) {
+            const actors = await transactionDb
+                .select({ id: userTable.id })
+                .from(userTable)
+                .where(
+                    and(
+                        eq(userTable.id, participationContext.participantId),
+                        eq(userTable.isDeleted, false),
+                    ),
+                )
+                .for("share");
+            if (actors.length === 0)
+                throw httpErrors.conflict(
+                    "Account no longer accepts statements",
+                );
+        }
+        const admissionRows = await transactionDb
+            .select({
+                isClosed: conversationTable.isClosed,
+                contentId: conversationTable.currentContentId,
+            })
+            .from(conversationTable)
+            .where(
+                eq(conversationTable.id, participationContext.conversationId),
+            )
+            .for("share");
+        const admission = admissionRows.at(0);
+        if (!isSeed && (admission?.contentId == null || admission.isClosed)) {
+            throw httpErrors.conflict(
+                "Conversation no longer accepts statements",
+            );
+        }
         const insertCommentResponse = await transactionDb
             .insert(opinionTable)
             .values({
@@ -3655,6 +3742,18 @@ export async function postNewOpinion(
             },
         };
 
+        if (!isSeed)
+            await admitVote({
+                db: transactionDb,
+                vote: {
+                    userId: participationContext.participantId,
+                    opinionId,
+                    opinionContentId: commentContentTableId,
+                    conversationId: participationContext.conversationId,
+                    vote: "agree",
+                    timestamp: now,
+                },
+            });
         return {
             opinionId,
             opinionContentId: commentContentTableId,
@@ -3771,7 +3870,10 @@ export async function deleteOpinionBySlugId({
         });
     await getPrimaryDatabase(db).transaction(async (tx) => {
         const conversationRows = await tx
-            .select({ projectId: conversationTable.projectId })
+            .select({
+                projectId: conversationTable.projectId,
+                slugId: conversationTable.slugId,
+            })
             .from(conversationTable)
             .where(eq(conversationTable.id, targetConversationId))
             .for("no key update")
@@ -3837,6 +3939,11 @@ export async function deleteOpinionBySlugId({
             .where(eq(opinionTable.id, opinion.opinionId));
 
         const conversationId = opinion.conversationId;
+        await queueOpinionRedactedEvent({
+            db: tx,
+            conversationSlugId: conversation.slugId,
+            opinions: [{ opinionSlugId, action: "redact" }],
+        });
 
         await createConversationViewSnapshotsFromCurrentState({
             db: tx,

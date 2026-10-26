@@ -21,6 +21,7 @@
       :report-route-override="props.reportRouteOverride"
       :is-live-analysis-paused="isLiveAnalysisPaused"
       :is-conversation-closed="conversationData.metadata.isClosed"
+      :is-finalizing="conversationData.metadata.isFinalizing === true"
       :navigate-to-discover-tab="props.navigateToDiscoverTab"
       :conversation-scroll-context="props.conversationScrollContext"
       :conversation-route-context="props.conversationRouteContext"

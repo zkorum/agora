@@ -248,6 +248,7 @@ export function useCommonPost() {
                 conversationType: conversationTable.conversationType,
                 rankingMode: rankingConversationConfigTable.rankingMode,
                 isClosed: conversationTable.isClosed,
+                closedFinalizedAt: conversationTable.closedFinalizedAt,
                 isEdited: conversationTable.isEdited,
                 requiresEventTicket: conversationTable.requiresEventTicket,
                 externalSourceConfig:
@@ -462,6 +463,8 @@ export function useCommonPost() {
                     ) ?? DEFAULT_CONVERSATION_MULTILINGUAL_SETTING,
                 participationMode: postItem.participationMode,
                 isClosed: postItem.isClosed,
+                isFinalizing:
+                    postItem.isClosed && postItem.closedFinalizedAt === null,
                 isEdited: postItem.isEdited,
                 requiresEventTicket: postItem.requiresEventTicket ?? undefined,
                 organization:

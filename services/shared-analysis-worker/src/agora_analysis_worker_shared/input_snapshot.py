@@ -19,6 +19,7 @@ class VoteInputRow:
     opinion_id: int
     opinion_content_id: int
     vote: str
+    participant_id: UUID | None = None
 
 
 @dataclass(frozen=True)
@@ -32,6 +33,7 @@ class SnapshotOpinion:
 class SnapshotParticipant:
     user_id: UUID
     local_participant_index: int
+    participant_id: UUID | None = None
 
 
 @dataclass(frozen=True)
@@ -78,7 +80,11 @@ def prepare_input_snapshot(
     rows: list[VoteInputRow],
 ) -> PreparedInputSnapshot:
     opinion_ids = sorted({row.opinion_id for row in rows})
-    user_ids = sorted({row.user_id for row in rows}, key=str)
+    participant_id_by_user_id = {row.user_id: row.participant_id for row in rows}
+    user_ids = sorted(
+        participant_id_by_user_id,
+        key=lambda user_id: str(participant_id_by_user_id[user_id] or user_id),
+    )
 
     local_opinion_index_by_id = {opinion_id: index for index, opinion_id in enumerate(opinion_ids)}
     local_participant_index_by_id = {user_id: index for index, user_id in enumerate(user_ids)}
@@ -99,6 +105,7 @@ def prepare_input_snapshot(
         SnapshotParticipant(
             user_id=user_id,
             local_participant_index=local_participant_index_by_id[user_id],
+            participant_id=participant_id_by_user_id[user_id],
         )
         for user_id in user_ids
     ]

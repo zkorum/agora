@@ -3615,6 +3615,9 @@
                                                                                     "isClosed": {
                                                                                         "type": "boolean"
                                                                                     },
+                                                                                    "isFinalizing": {
+                                                                                        "type": "boolean"
+                                                                                    },
                                                                                     "isEdited": {
                                                                                         "type": "boolean"
                                                                                     },
@@ -4386,6 +4389,9 @@
                                                                                         "additionalProperties": false
                                                                                     },
                                                                                     "isClosed": {
+                                                                                        "type": "boolean"
+                                                                                    },
+                                                                                    "isFinalizing": {
                                                                                         "type": "boolean"
                                                                                     },
                                                                                     "isEdited": {
@@ -5544,6 +5550,9 @@
                                                                                     "isClosed": {
                                                                                         "type": "boolean"
                                                                                     },
+                                                                                    "isFinalizing": {
+                                                                                        "type": "boolean"
+                                                                                    },
                                                                                     "isEdited": {
                                                                                         "type": "boolean"
                                                                                     },
@@ -6315,6 +6324,9 @@
                                                                                         "additionalProperties": false
                                                                                     },
                                                                                     "isClosed": {
+                                                                                        "type": "boolean"
+                                                                                    },
+                                                                                    "isFinalizing": {
                                                                                         "type": "boolean"
                                                                                     },
                                                                                     "isEdited": {
@@ -11403,6 +11415,9 @@
                                                             "isClosed": {
                                                                 "type": "boolean"
                                                             },
+                                                            "isFinalizing": {
+                                                                "type": "boolean"
+                                                            },
                                                             "isEdited": {
                                                                 "type": "boolean"
                                                             },
@@ -12174,6 +12189,9 @@
                                                                 "additionalProperties": false
                                                             },
                                                             "isClosed": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "isFinalizing": {
                                                                 "type": "boolean"
                                                             },
                                                             "isEdited": {
@@ -13088,6 +13106,9 @@
                                                                     "isClosed": {
                                                                         "type": "boolean"
                                                                     },
+                                                                    "isFinalizing": {
+                                                                        "type": "boolean"
+                                                                    },
                                                                     "isEdited": {
                                                                         "type": "boolean"
                                                                     },
@@ -13859,6 +13880,9 @@
                                                                         "additionalProperties": false
                                                                     },
                                                                     "isClosed": {
+                                                                        "type": "boolean"
+                                                                    },
+                                                                    "isFinalizing": {
                                                                         "type": "boolean"
                                                                     },
                                                                     "isEdited": {
@@ -20669,7 +20693,6 @@
                                                                         },
                                                                         "required": [
                                                                             "key",
-                                                                            "isAuthorInCluster",
                                                                             "numUsers",
                                                                             "numAgrees",
                                                                             "numDisagrees",
@@ -20693,13 +20716,10 @@
                                                             },
                                                             "required": [
                                                                 "opinionSlugId",
-                                                                "createdAt",
-                                                                "updatedAt",
                                                                 "numParticipants",
                                                                 "numAgrees",
                                                                 "numDisagrees",
                                                                 "numPasses",
-                                                                "username",
                                                                 "isSeed",
                                                                 "content",
                                                                 "clustersStats",
@@ -21591,7 +21611,6 @@
                                                             },
                                                             "required": [
                                                                 "key",
-                                                                "isAuthorInCluster",
                                                                 "numUsers",
                                                                 "numAgrees",
                                                                 "numDisagrees",
@@ -21615,13 +21634,10 @@
                                                 },
                                                 "required": [
                                                     "opinionSlugId",
-                                                    "createdAt",
-                                                    "updatedAt",
                                                     "numParticipants",
                                                     "numAgrees",
                                                     "numDisagrees",
                                                     "numPasses",
-                                                    "username",
                                                     "isSeed",
                                                     "content",
                                                     "clustersStats",
@@ -25042,6 +25058,9 @@
                                                                         "isClosed": {
                                                                             "type": "boolean"
                                                                         },
+                                                                        "isFinalizing": {
+                                                                            "type": "boolean"
+                                                                        },
                                                                         "isEdited": {
                                                                             "type": "boolean"
                                                                         },
@@ -25813,6 +25832,9 @@
                                                                             "additionalProperties": false
                                                                         },
                                                                         "isClosed": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isFinalizing": {
                                                                             "type": "boolean"
                                                                         },
                                                                         "isEdited": {

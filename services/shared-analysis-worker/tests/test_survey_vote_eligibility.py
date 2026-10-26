@@ -205,6 +205,66 @@ def test_required_survey_filters_votes_before_building_analysis_input(engine: En
         assert session.scalar(select(func.count()).select_from(Vote)) == 6
 
 
+@pytest.mark.parametrize("seed", [False, True])
+def test_account_deletion_removes_personal_columns_not_retained_voter_rows(
+    engine: Engine, seed: bool
+) -> None:
+    with Session(engine) as session:
+        session.execute(update(SurveyConfig).values(deleted_at=NOW))
+        session.execute(update(Vote).where(Vote.id > 3).values(current_content_id=None))
+        session.execute(update(Opinion).where(Opinion.id == 1).values(is_seed=seed))
+        for opinion_id in (2, 3):
+            session.add(
+                Opinion(
+                    id=opinion_id,
+                    slug_id=f"opinion{opinion_id}",
+                    author_id=UUID(int=opinion_id),
+                    conversation_id=1,
+                    current_content_id=opinion_id,
+                    created_at=NOW,
+                    updated_at=NOW,
+                    last_reacted_at=NOW,
+                )
+            )
+            for voter in (1, 2, 3):
+                vote_id = opinion_id * 10 + voter
+                session.add(
+                    Vote(
+                        id=vote_id,
+                        author_id=UUID(int=voter),
+                        opinion_id=opinion_id,
+                        current_content_id=vote_id,
+                        created_at=NOW,
+                        updated_at=NOW,
+                    )
+                )
+                session.add(
+                    VoteContent(
+                        id=vote_id,
+                        vote_id=vote_id,
+                        opinion_content_id=opinion_id,
+                        vote=VoteEnumAll.disagree if voter == 1 else VoteEnumAll.agree,
+                        created_at=NOW,
+                    )
+                )
+        session.commit()
+    before = fetch_vote_input_rows_batch(engine, conversation_ids=[1])[1]
+    assert len(before) == 9
+    with Session(engine) as session:
+        session.execute(update(User).where(User.id == UUID(int=1)).values(is_deleted=True))
+        session.commit()
+    after = fetch_vote_input_rows_batch(engine, conversation_ids=[1])[1]
+    expected_opinions = (1, 2, 3) if seed else (2, 3)
+    assert {(row.user_id, row.opinion_id) for row in after} == {
+        (UUID(int=voter), opinion_id) for voter in (1, 2, 3) for opinion_id in expected_opinions
+    }
+    assert {
+        (row.opinion_id, row.vote)
+        for row in after
+        if row.user_id == UUID(int=1) and row.opinion_id != 1
+    } == {(2, "disagree"), (3, "disagree")}
+
+
 def test_withdrawal_removes_last_eligible_voter_without_deleting_votes(engine: Engine) -> None:
     assert len(fetch_vote_input_rows_batch(engine, conversation_ids=[1])[1]) == 1
     with Session(engine) as session:

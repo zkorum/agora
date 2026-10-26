@@ -7,6 +7,8 @@ import { GenericContainer, type StartedTestContainer } from "testcontainers";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { fetchAnalysisFrameGroupLabelsByFrameKey } from "../src/service/comment.js";
 import { getDescriptionTextsByGroupId } from "../src/service/opinionGroupAnalysis.js";
+import { commentsGenerator } from "../src/service/conversationExport/generators/comments.js";
+import { createExportParticipantMap } from "../src/service/conversationExport/generators/participantMap.js";
 import * as schema from "../src/shared-backend/schema.js";
 import { readDbFixtureSql } from "./dbFixture.js";
 
@@ -399,6 +401,66 @@ describe("published analysis frame reads", () => {
         });
         expect(labels.frameKey).toEqual(frame.frameKey);
         expect(Object.keys(labels.labels)).toEqual(["0", "1"]);
+    });
+
+    it("fresh exports omit deleted-account personal statements and unlink surviving seeds", async () => {
+        const frame = await publishedFrame();
+        const author = first(
+            await db
+                .insert(schema.userTable)
+                .values({
+                    id: randomUUID(),
+                    username: randomUUID().slice(0, 16),
+                    isDeleted: true,
+                })
+                .returning(),
+        );
+        for (const isSeed of [false, true]) {
+            const opinion = first(
+                await db
+                    .insert(schema.opinionTable)
+                    .values({
+                        slugId: randomUUID().slice(0, 8),
+                        conversationId: frame.viewValues.conversationId,
+                        authorId: author.id,
+                        isSeed,
+                    })
+                    .returning(),
+            );
+            const content = first(
+                await db
+                    .insert(schema.opinionContentTable)
+                    .values({
+                        opinionId: opinion.id,
+                        conversationContentId:
+                            frame.viewValues.conversationContentId,
+                        content: isSeed
+                            ? "Surviving project seed"
+                            : "Private personal source",
+                    })
+                    .returning(),
+            );
+            await db
+                .update(schema.opinionTable)
+                .set({ currentContentId: content.id })
+                .where(eq(schema.opinionTable.id, opinion.id));
+        }
+        const participantMap = createExportParticipantMap();
+        const result = await commentsGenerator.generate({
+            db,
+            conversationId: frame.viewValues.conversationId,
+            conversationSlugId: frame.conversationSlugId,
+            participantMap,
+            exportAccessLevel: "public",
+        });
+        expect(result.recordCount).toBe(1);
+        const csv = result.csvBuffer.toString("utf8");
+        expect(csv).toContain("Surviving project seed");
+        expect(csv).not.toContain("Private personal source");
+        expect(csv.split("\n").at(1)?.split(",").at(3)).toBe("");
+        expect(
+            participantMap.getOrCreateExportParticipantId({ userId: "active" }),
+        ).toBe(0);
     });
 
     it("serves ready labels in a genuinely read-only transaction", async () => {

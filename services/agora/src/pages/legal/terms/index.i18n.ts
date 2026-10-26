@@ -508,7 +508,7 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "At the 15-day deadline, recovery ends and permanent account purge becomes due. The next hourly cleanup sweep handles eligible data, with bounded processing and retries; a delayed sweep does not extend recovery. We target eligible automated live-system completion within 24 hours. Restricted disaster-recovery backups may retain erased data for at most another 30 days after actual hard deletion, and erasure is reapplied before a restore is exposed.",
+                    text: "At the 15-day deadline, recovery ends and permanent account purge becomes due. Cleanup starts through the next scheduled hourly sweep and proceeds without undue delay, normally completing within seven days of that deadline. We monitor failures and retry and escalate delayed or blocked work. Delayed sweeps and retries do not restart that period or extend recovery or applicable legal deadlines. Restricted disaster-recovery backups may retain erased data for at most another 30 days after actual hard deletion, and erasure is reapplied before a restore is exposed.",
                   },
                 ],
               },
@@ -1381,7 +1381,7 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "عند حلول الموعد النهائي بعد 15 يومًا، ينتهي الاسترداد ويصبح المحو النهائي للحساب واجب التنفيذ. وتعالج دورة التنظيف التالية التي تُجرى كل ساعة البيانات المستوفية للشروط، مع معالجة وإعادة محاولات محدودة؛ ولا يمدّد تأخر الدورة الاسترداد. ونستهدف إتمام العمل الآلي المستوفي للشروط في الأنظمة الحية خلال 24 ساعة. وقد تحتفظ النسخ الاحتياطية المقيّدة للتعافي من الكوارث بالبيانات الممحوة لمدة لا تتجاوز 30 يومًا إضافيًا بعد الحذف الفعلي النهائي، ويُعاد تطبيق المحو قبل إتاحة البيانات المستعادة.",
+                    text: "عند حلول الموعد النهائي بعد 15 يومًا، ينتهي الاسترداد ويصبح المحو النهائي للحساب واجب التنفيذ. ويبدأ التنظيف خلال دورة التنظيف المجدولة التالية التي تُجرى كل ساعة ويستمر دون تأخير غير مبرر، ويكتمل عادة خلال سبعة أيام من ذلك الموعد النهائي. نراقب حالات الفشل ونعيد المحاولة ونصعّد معالجة الأعمال المتأخرة أو المتعذرة. ولا تعيد دورات التنظيف المتأخرة والمحاولات المتكررة بدء هذه المدة ولا تمدّد الاسترداد أو المهل القانونية السارية. وقد تحتفظ النسخ الاحتياطية المقيّدة للتعافي من الكوارث بالبيانات الممحوة لمدة لا تتجاوز 30 يومًا إضافيًا بعد الحذف الفعلي النهائي، ويُعاد تطبيق المحو قبل إتاحة البيانات المستعادة.",
                   },
                 ],
               },
@@ -2279,7 +2279,7 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "Al cumplirse el plazo de 15 días, finaliza la recuperación y debe procederse a la supresión permanente de la cuenta. El siguiente ciclo horario de limpieza gestiona los datos aptos para ello, con procesamiento y reintentos acotados; un ciclo retrasado no amplía el plazo de recuperación. Nuestro objetivo es completar en un plazo de 24 horas la limpieza automatizada de los datos aptos para ello en los sistemas en producción. Las copias de seguridad restringidas para recuperación ante desastres pueden conservar los datos suprimidos durante un máximo de otros 30 días tras la eliminación física efectiva, y la supresión se vuelve a aplicar antes de exponer una restauración a los usuarios.",
+                    text: "Al cumplirse el plazo de 15 días, finaliza la recuperación y debe procederse a la supresión permanente de la cuenta. La limpieza comienza con el siguiente ciclo horario programado y se realiza sin dilación indebida, normalmente en un plazo de siete días desde ese vencimiento. Supervisamos los fallos, reintentamos las tareas y escalamos las que se retrasan o bloquean. Los ciclos retrasados y los reintentos no reinician ese plazo ni amplían la recuperación o los plazos legales aplicables. Las copias de seguridad restringidas para recuperación ante desastres pueden conservar los datos suprimidos durante un máximo de otros 30 días tras la eliminación física efectiva, y la supresión se vuelve a aplicar antes de exponer una restauración a los usuarios.",
                   },
                 ],
               },
@@ -3177,7 +3177,7 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "در پایان مهلت 15 روزه، بازیابی پایان می‌یابد و زمان اجرای پاک‌سازی دائمی حساب فرامی‌رسد. نوبت بعدیِ پاک‌سازی ساعتی، داده‌های واجد شرایط را با پردازش محدود و تلاش‌های مجدد رسیدگی می‌کند؛ تأخیر نوبت پاک‌سازی، بازیابی را تمدید نمی‌کند. هدف ما تکمیل خودکارِ واجد شرایط در سامانه‌های فعال ظرف 24 ساعت است. پشتیبان‌های محدودشدهٔ بازیابی پس از بحران ممکن است داده‌های محوشده را حداکثر برای 30 روز دیگر پس از حذف قطعیِ واقعی نگه دارند و پیش از در دسترس قرار گرفتن بازگردانی، محو دوباره اعمال می‌شود.",
+                    text: "در پایان مهلت 15 روزه، بازیابی پایان می‌یابد و زمان اجرای پاک‌سازی دائمی حساب فرامی‌رسد. پاک‌سازی در نوبت ساعتیِ برنامه‌ریزی‌شدهٔ بعدی آغاز می‌شود و بدون تأخیر ناموجه ادامه می‌یابد و معمولاً ظرف هفت روز پس از آن موعد تکمیل می‌شود. خطاها را پایش می‌کنیم، دوباره تلاش می‌کنیم و کارهای به‌تأخیرافتاده یا مسدودشده را برای رسیدگی بیشتر ارجاع می‌دهیم. تأخیر نوبت‌ها و تلاش‌های مجدد این مهلت را از نو آغاز نمی‌کنند و بازیابی یا مهلت‌های قانونی قابل‌اعمال را تمدید نمی‌کنند. پشتیبان‌های محدودشدهٔ بازیابی پس از بحران ممکن است داده‌های محوشده را حداکثر برای 30 روز دیگر پس از حذف قطعیِ واقعی نگه دارند و پیش از در دسترس قرار گرفتن بازگردانی، محو دوباره اعمال می‌شود.",
                   },
                 ],
               },
@@ -4076,7 +4076,7 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "À l’échéance des 15 jours, la récupération prend fin et la purge définitive du compte devient exigible. Le prochain passage horaire de nettoyage traite les données admissibles, avec un traitement encadré et de nouvelles tentatives ; un passage retardé ne prolonge pas la récupération. Nous visons l’achèvement automatisé du nettoyage des données admissibles dans les systèmes en production dans un délai de 24 heures. Les sauvegardes de reprise après sinistre à accès restreint peuvent conserver les données effacées pendant 30 jours supplémentaires au maximum après la suppression définitive effective, et l’effacement est réappliqué avant que les données restaurées ne soient exposées.",
+                    text: "À l’échéance des 15 jours, la récupération prend fin et la purge définitive du compte devient exigible. Le nettoyage commence lors du prochain passage horaire planifié et s’effectue dans les meilleurs délais, normalement dans les sept jours suivant cette échéance. Nous surveillons les échecs, réessayons et faisons remonter les opérations retardées ou bloquées pour intervention. Les passages retardés et les nouvelles tentatives ne font pas repartir ce délai et ne prolongent ni la récupération ni les délais légaux applicables. Les sauvegardes de reprise après sinistre à accès restreint peuvent conserver les données effacées pendant 30 jours supplémentaires au maximum après la suppression définitive effective, et l’effacement est réappliqué avant que les données restaurées ne soient exposées.",
                   },
                 ],
               },
@@ -4974,7 +4974,7 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "במועד האחרון בתום 15 הימים, אפשרות השחזור מסתיימת ומגיע מועד המחיקה הסופית של החשבון. סריקת הניקוי השעתית הבאה מטפלת בנתונים העומדים בתנאים, עם עיבוד בגבולות שנקבעו וניסיונות חוזרים; עיכוב בסריקה אינו מאריך את אפשרות השחזור. יעדנו הוא השלמת הניקוי האוטומטי של הנתונים העומדים בתנאים במערכות הפעילות בתוך 24 שעות. גיבויי התאוששות מאסון בעלי גישה מוגבלת עשויים לשמור נתונים שנמחקו למשך לא יותר מ־30 ימים נוספים לאחר המחיקה הסופית בפועל, והמחיקה מוחלת מחדש לפני חשיפת נתונים משוחזרים.",
+                    text: "במועד האחרון בתום 15 הימים, אפשרות השחזור מסתיימת ומגיע מועד המחיקה הסופית של החשבון. הניקוי מתחיל בסריקת הניקוי השעתית המתוכננת הבאה ומתבצע ללא עיכוב בלתי מוצדק, ובדרך כלל מסתיים בתוך שבעה ימים ממועד זה. אנו מנטרים כשלים, מנסים שוב ומעבירים משימות מעוכבות או חסומות לטיפול מוגבר. סריקות שהתעכבו וניסיונות חוזרים אינם מתחילים תקופה זו מחדש ואינם מאריכים את השחזור או את המועדים החוקיים החלים. גיבויי התאוששות מאסון בעלי גישה מוגבלת עשויים לשמור נתונים שנמחקו למשך לא יותר מ־30 ימים נוספים לאחר המחיקה הסופית בפועל, והמחיקה מוחלת מחדש לפני חשיפת נתונים משוחזרים.",
                   },
                 ],
               },
@@ -5872,7 +5872,7 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "15日間の期限到来時に、復旧はできなくなり、アカウントを恒久的に消去する時点となります。次の1時間ごとの消去巡回処理で、対象のデータについて、上限を設けた処理および再試行を行います。巡回処理が遅れても、復旧期間は延長されません。対象となる現用システム上の自動処理は、24時間以内の完了を目標とします。アクセス制限付きの災害復旧用バックアップには、消去されたデータが、実際の恒久的削除後、追加で最長30日間残る場合があります。復元された情報を公開する前に、消去を再適用します。",
+                    text: "15日間の期限到来時に、復旧はできなくなり、アカウントを恒久的に消去する時点となります。消去処理は、次に予定された1時間ごとの巡回処理で開始し、不当に遅滞することなく、通常はその期限から7日以内に完了します。失敗を監視して再試行し、遅延または停止した処理は追加対応のためにエスカレーションします。巡回処理の遅延や再試行によって、この期間が最初から数え直されたり、復旧や適用される法定期限が延長されたりすることはありません。アクセス制限付きの災害復旧用バックアップには、消去されたデータが、実際の恒久的削除後、追加で最長30日間残る場合があります。復元された情報を公開する前に、消去を再適用します。",
                   },
                 ],
               },
@@ -6771,7 +6771,7 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "15 күндүк акыркы мөөнөттө калыбына келтирүү мүмкүнчүлүгү аяктайт жана аккаунтту биротоло тазалоону жүргүзүү убактысы келет. Кийинки сааттык тазалоо текшерүүсү жарамдуу маалыматтарды чектелген иштетүү жана кайра аракеттер менен иштетет; кечиккен текшерүү калыбына келтирүү мөөнөтүн узартпайт. Биз жарамдуу маалыматтарды иштеп турган тутумдарда автоматтык тазалоону 24 сааттын ичинде аяктоону көздөйбүз. Жеткиликтүүлүгү чектелген, кырсыктан калыбына келтирүүчү камдык көчүрмөлөрдө өчүрүлгөн маалымат чындап биротоло өчүрүлгөндөн кийин дагы эң көп 30 күнгө чейин сакталышы мүмкүн жана калыбына келтирилген маалымат көрсөтүлгөнгө чейин өчүрүү кайра колдонулат.",
+                    text: "15 күндүк акыркы мөөнөттө калыбына келтирүү мүмкүнчүлүгү аяктайт жана аккаунтту биротоло тазалоону жүргүзүү убактысы келет. Тазалоо кийинки пландалган сааттык текшерүүдө башталып, негизсиз кечиктирбестен жүргүзүлөт жана адатта ошол акыркы мөөнөттөн тартып жети күндүн ичинде аяктайт. Биз каталарды көзөмөлдөп, кайра аракет кылабыз жана кечиккен же бөгөттөлгөн иштерди кошумча чара көрүү үчүн жооптуу тарапка өткөрөбүз. Кечиккен текшерүүлөр жана кайра аракеттер бул мөөнөттү кайра баштабайт жана калыбына келтирүүнү же колдонулуучу мыйзамдык мөөнөттөрдү узартпайт. Жеткиликтүүлүгү чектелген, кырсыктан калыбына келтирүүчү камдык көчүрмөлөрдө өчүрүлгөн маалымат чындап биротоло өчүрүлгөндөн кийин дагы эң көп 30 күнгө чейин сакталышы мүмкүн жана калыбына келтирилген маалымат көрсөтүлгөнгө чейин өчүрүү кайра колдонулат.",
                   },
                 ],
               },
@@ -7670,7 +7670,7 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "По истечении 15-дневного срока возможность восстановления прекращается, и наступает срок окончательной очистки учётной записи. Следующий ежечасный проход очистки обрабатывает подлежащие очистке данные с ограниченной обработкой и повторными попытками; задержка прохода не продлевает срок восстановления. Наш целевой срок завершения автоматической очистки действующих систем для данных, подлежащих очистке, составляет 24 часа. Резервные копии для аварийного восстановления с ограниченным доступом могут сохранять удалённые данные ещё не более 30 дней после фактического окончательного физического удаления; удаление применяется повторно до предоставления доступа к восстановленным данным.",
+                    text: "По истечении 15-дневного срока возможность восстановления прекращается, и наступает срок окончательной очистки учётной записи. Очистка начинается при следующем запланированном ежечасном проходе и проводится без неоправданной задержки, обычно завершаясь в течение семи дней после этого срока. Мы отслеживаем сбои, повторяем попытки и передаём задержанные или заблокированные задачи на дополнительное рассмотрение. Задержанные проходы и повторные попытки не начинают этот период заново и не продлевают восстановление или применимые законные сроки. Резервные копии для аварийного восстановления с ограниченным доступом могут сохранять удалённые данные ещё не более 30 дней после фактического окончательного физического удаления; удаление применяется повторно до предоставления доступа к восстановленным данным.",
                   },
                 ],
               },
@@ -8568,7 +8568,7 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "15天截止时间到达时，恢复期结束，并应执行账户永久清除。下一次每小时清理扫描会处理符合条件的数据，处理和重试均设有界限；扫描延迟不会延长恢复期。我们的目标是在24小时内完成符合条件的线上系统自动清理。受限的灾难恢复备份可能在实际硬删除后再保留已删除数据最多30天，在恢复的数据开放访问前会重新应用删除措施。",
+                    text: "15天截止时间到达时，恢复期结束，并应执行账户永久清除。清理从下一次计划的每小时清理扫描开始，并在无不当延误的情况下进行，通常在该截止时间起七天内完成。我们会监测失败情况、重试，并将延迟或受阻的任务升级处理。扫描延迟和重试不会重新计算该期限，也不会延长恢复期或适用的法定期限。受限的灾难恢复备份可能在实际硬删除后再保留已删除数据最多30天，在恢复的数据开放访问前会重新应用删除措施。",
                   },
                 ],
               },
@@ -9466,7 +9466,7 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "15 天期限屆滿時，復原期間結束，並應永久清除帳戶。下一次每小時清理掃描會處理符合條件的資料，採取有限度的處理及重試；掃描延遲不會延長復原期間。我們的目標是在 24 小時內完成符合條件的運作中系統自動清理。受限制的災難復原備份，可在實際永久刪除後最多再保留已刪除資料 30 天，且還原資料向外開放前會重新套用刪除指示。",
+                    text: "15 天期限屆滿時，復原期間結束，並應永久清除帳戶。清理會透過下一次排定的每小時掃描啟動，並在無不當延誤的情況下進行，通常於該截止時間起七天內完成。我們會監控失敗情況、重試，並將延遲或受阻作業升級處理。掃描延遲和重試不會重新計算該期限，也不會延長復原期間或適用的法定期限。受限制的災難復原備份，可在實際永久刪除後最多再保留已刪除資料 30 天，且還原資料向外開放前會重新套用刪除指示。",
                   },
                 ],
               },

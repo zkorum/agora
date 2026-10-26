@@ -108,7 +108,6 @@ const voteBuffer: VoteBuffer = {
     add: vi.fn<VoteBuffer["add"]>().mockResolvedValue(undefined),
     flush: vi.fn<VoteBuffer["flush"]>().mockResolvedValue(undefined),
     shutdown: vi.fn<VoteBuffer["shutdown"]>().mockResolvedValue(undefined),
-    getBufferSize: () => 0,
     hasBlockingVotes: blockingVotes,
 };
 const translationQueueScript = new Script("return 0");
@@ -170,7 +169,7 @@ describe("statement editing and seed deletion", () => {
         blockingVotes.mockReset().mockResolvedValue(false);
         vi.mocked(createEagerContentTranslationWorkForOpinion).mockClear();
         await db.execute(
-            sql`TRUNCATE TABLE "user", project, organization, conversation, conversation_content, conversation_view_snapshot, opinion, opinion_content, vote, vote_content, analysis_snapshot_opinion, organization_membership, organization_membership_all_project_capability, project_organization_ownership, realtime_event_outbox, survey_config, survey_question, survey_question_content, survey_response, survey_answer CASCADE`,
+            sql`TRUNCATE TABLE "user", project, organization, conversation, conversation_content, conversation_view_snapshot, opinion, opinion_content, vote_submission, conversation_participant, vote, vote_content, analysis_snapshot_opinion, organization_membership, organization_membership_all_project_capability, project_organization_ownership, realtime_event_outbox, survey_config, survey_question, survey_question_content, survey_response, survey_answer CASCADE`,
         );
         await db.insert(userTable).values([
             {
@@ -692,7 +691,7 @@ describe("statement editing and seed deletion", () => {
         }
     });
 
-    it("allows editing a seed when its only voter deleted their account, preserving the original vote", async () => {
+    it("keeps a seed locked when its only voter deleted their account, preserving the original vote", async () => {
         const { opinion, content } = await statement(true);
         await vote({
             opinionId: opinion.id,
@@ -711,7 +710,7 @@ describe("statement editing and seed deletion", () => {
                     opinionSlugIds: [opinion.slugId],
                 })
             ).get(opinion.slugId)?.editing,
-        ).toEqual({ allowed: true });
+        ).toEqual({ allowed: false, reason: "has_votes" });
         expect(
             (
                 await fetchConversationSeedOpinions({
@@ -720,17 +719,15 @@ describe("statement editing and seed deletion", () => {
                     conversationType: "polis",
                 })
             ).at(0)?.editing,
-        ).toEqual({ allowed: true });
+        ).toEqual({ allowed: false, reason: "has_votes" });
         const votesBeforeEdit = await db.select().from(voteTable);
         expect(
-            (
-                await save({
-                    slugId: opinion.slugId,
-                    sourceVersion: content.publicId,
-                    userId: editorId,
-                })
-            ).success,
-        ).toBe(true);
+            await save({
+                slugId: opinion.slugId,
+                sourceVersion: content.publicId,
+                userId: editorId,
+            }),
+        ).toEqual({ success: false, reason: "has_votes" });
         expect(await db.select().from(voteTable)).toEqual(votesBeforeEdit);
         expect(
             first(await db.select().from(voteContentTable)).opinionContentId,
@@ -796,7 +793,7 @@ describe("statement editing and seed deletion", () => {
                     authorId,
                     isSeed: true,
                 }),
-            ).toBe(false);
+            ).toBe(true);
         } finally {
             await buffer.shutdown();
         }

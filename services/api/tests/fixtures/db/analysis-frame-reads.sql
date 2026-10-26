@@ -25,6 +25,8 @@ CREATE TYPE "public"."event_slug" AS ENUM('devconnect-2025');
 
 CREATE TYPE "public"."language_detection_provider" AS ENUM('lingua', 'google_translate');
 
+CREATE TYPE "public"."moderation_reason_enum" AS ENUM('misleading', 'antisocial', 'illegal', 'doxing', 'sexual', 'spam');
+
 CREATE TYPE "public"."opinion_group_candidate_hidden_reason_enum" AS ENUM('singleton_group', 'duplicate_representative_opinions', 'missing_representative_opinions', 'invalid_candidate_output');
 
 CREATE TYPE "public"."opinion_group_clusterer_enum" AS ENUM('kmeans');
@@ -32,6 +34,8 @@ CREATE TYPE "public"."opinion_group_clusterer_enum" AS ENUM('kmeans');
 CREATE TYPE "public"."opinion_group_reducer_enum" AS ENUM('pca');
 
 CREATE TYPE "public"."opinion_group_selection_policy_enum" AS ENUM('silhouette_size_balance');
+
+CREATE TYPE "public"."opinion_moderation_action" AS ENUM('move', 'hide');
 
 CREATE TYPE "public"."participation_mode" AS ENUM('account_required', 'strong_verification', 'email_verification', 'guest');
 
@@ -52,6 +56,21 @@ CREATE TABLE "analysis_input_snapshot" (
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	CONSTRAINT "analysis_input_snapshot_hash_unique" UNIQUE("conversation_id","data_generation","input_hash"),
 	CONSTRAINT "analysis_input_snapshot_counts_check" CHECK ("analysis_input_snapshot"."opinion_count" >= 0 AND "analysis_input_snapshot"."participant_count" >= 0 AND "analysis_input_snapshot"."vote_count" >= 0)
+);
+
+CREATE TABLE "analysis_snapshot_opinion" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "analysis_snapshot_opinion_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"analysis_snapshot_id" integer NOT NULL,
+	"opinion_id" integer NOT NULL,
+	"opinion_content_id" integer,
+	"local_opinion_index" integer NOT NULL,
+	"num_agrees" integer DEFAULT 0 NOT NULL,
+	"num_disagrees" integer DEFAULT 0 NOT NULL,
+	"num_passes" integer DEFAULT 0 NOT NULL,
+	"routing_priority" real,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "analysis_snapshot_opinion_unique" UNIQUE("analysis_snapshot_id","opinion_id"),
+	CONSTRAINT "analysis_snapshot_opinion_local_idx_unique" UNIQUE("analysis_snapshot_id","local_opinion_index")
 );
 
 CREATE TABLE "analysis_snapshot_result" (
@@ -116,6 +135,8 @@ CREATE TABLE "conversation" (
 	"conversation_type" "conversation_type" DEFAULT 'polis' NOT NULL,
 	"is_importing" boolean DEFAULT false NOT NULL,
 	"is_closed" boolean DEFAULT false NOT NULL,
+	"closing_target_revision" bigint,
+	"closed_finalized_at" timestamp (0),
 	"is_edited" boolean DEFAULT false NOT NULL,
 	"requires_event_ticket" "event_slug",
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
@@ -126,6 +147,7 @@ CREATE TABLE "conversation" (
 	CONSTRAINT "conversation_polis_config_id_unique" UNIQUE("polis_config_id"),
 	CONSTRAINT "conversation_ranking_config_id_unique" UNIQUE("ranking_config_id"),
 	CONSTRAINT "conversation_project_id_id_unique" UNIQUE("project_id","id"),
+	CONSTRAINT "conversation_closing_state_check" CHECK (("conversation"."is_closed" OR ("conversation"."closing_target_revision" IS NULL AND "conversation"."closed_finalized_at" IS NULL)) AND ("conversation"."closed_finalized_at" IS NULL OR "conversation"."closing_target_revision" IS NOT NULL)),
 	CONSTRAINT "conversation_subtype_config_check" CHECK ((("conversation"."conversation_type" = 'polis' AND "conversation"."polis_config_id" IS NOT NULL AND "conversation"."ranking_config_id" IS NULL) OR ("conversation"."conversation_type" = 'ranking' AND "conversation"."ranking_config_id" IS NOT NULL AND "conversation"."polis_config_id" IS NULL))),
 	CONSTRAINT "conversation_email_update_override_audit_check" CHECK (("conversation"."conversation_email_update_override_updated_at" IS NULL) = ("conversation"."conversation_email_update_override_updated_by_user_id" IS NULL))
 );
@@ -170,6 +192,26 @@ CREATE TABLE "conversation_view_snapshot" (
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	CONSTRAINT "conversation_view_snapshot_counts_check" CHECK ("conversation_view_snapshot"."opinion_count" >= 0 AND "conversation_view_snapshot"."vote_count" >= 0 AND "conversation_view_snapshot"."participant_count" >= 0 AND "conversation_view_snapshot"."total_opinion_count" >= 0 AND "conversation_view_snapshot"."total_vote_count" >= 0 AND "conversation_view_snapshot"."total_participant_count" >= 0 AND "conversation_view_snapshot"."moderated_opinion_count" >= 0 AND "conversation_view_snapshot"."hidden_opinion_count" >= 0),
 	CONSTRAINT "conversation_view_snapshot_preferred_opinion_group_count_check" CHECK ("conversation_view_snapshot"."preferred_opinion_group_count" IS NULL OR ("conversation_view_snapshot"."preferred_opinion_group_count" >= 2 AND "conversation_view_snapshot"."preferred_opinion_group_count" <= 6))
+);
+
+CREATE TABLE "opinion_content" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "opinion_content_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"public_id" uuid DEFAULT gen_random_uuid() NOT NULL,
+	"opinion_id" integer NOT NULL,
+	"conversation_content_id" integer NOT NULL,
+	"content" text NOT NULL,
+	"is_edited" boolean DEFAULT false NOT NULL,
+	"edited_by_user_id" uuid,
+	"content_plain_text" text,
+	"source_language_code" "spoken_language_code",
+	"source_raw_language_code" varchar(35),
+	"source_language_provider" "language_detection_provider",
+	"source_language_confidence" real,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "opinion_content_public_id_unique" UNIQUE("public_id"),
+	CONSTRAINT "opinion_content_edit_attribution_check" CHECK ("opinion_content"."is_edited" = ("opinion_content"."edited_by_user_id" IS NOT NULL)),
+	CONSTRAINT "opinion_content_content_byte_length_check" CHECK (octet_length("opinion_content"."content") <= 16384),
+	CONSTRAINT "opinion_content_source_metadata_check" CHECK ((("opinion_content"."source_language_provider" IS NULL AND "opinion_content"."source_raw_language_code" IS NULL) OR ("opinion_content"."source_language_provider" IS NOT NULL AND "opinion_content"."source_raw_language_code" IS NOT NULL)))
 );
 
 CREATE TABLE "opinion_group_candidate_assessment" (
@@ -229,6 +271,7 @@ CREATE TABLE "opinion_group_lineage_description_work" (
 	"lineage_id" integer NOT NULL,
 	"conversation_id" integer NOT NULL,
 	"source_candidate_id" integer NOT NULL,
+	"sources_blocked" boolean DEFAULT false NOT NULL,
 	"attempt_count" integer DEFAULT 0 NOT NULL,
 	"lease_owner" varchar(100),
 	"lease_token" varchar(100),
@@ -296,6 +339,34 @@ CREATE TABLE "opinion_group_variant" (
 	CONSTRAINT "opinion_group_variant_group_count_check" CHECK ("opinion_group_variant"."group_count" >= 2)
 );
 
+CREATE TABLE "opinion_moderation" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "opinion_moderation_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"opinion_id" integer NOT NULL,
+	"author_id" uuid,
+	"moderation_action" "opinion_moderation_action" NOT NULL,
+	"moderation_reason" "moderation_reason_enum" NOT NULL,
+	"moderation_explanation" varchar(1000),
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
+	"deleted_at" timestamp (0)
+);
+
+CREATE TABLE "opinion" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "opinion_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"slug_id" varchar(8) NOT NULL,
+	"author_id" uuid NOT NULL,
+	"conversation_id" integer NOT NULL,
+	"current_content_id" integer,
+	"is_seed" boolean DEFAULT false NOT NULL,
+	"num_agrees" integer DEFAULT 0 NOT NULL,
+	"num_disagrees" integer DEFAULT 0 NOT NULL,
+	"num_passes" integer DEFAULT 0 NOT NULL,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
+	"last_reacted_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "opinion_slug_id_unique" UNIQUE("slug_id")
+);
+
 CREATE TABLE "polis_conversation_config" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "polis_conversation_config_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"voting_presentation" "polis_voting_presentation" DEFAULT 'list' NOT NULL,
@@ -324,6 +395,26 @@ CREATE TABLE "project" (
 	CONSTRAINT "project_auto_provisioned_for_organization_id_unique" UNIQUE("auto_provisioned_for_organization_id"),
 	CONSTRAINT "project_current_content_id_unique" UNIQUE("current_content_id"),
 	CONSTRAINT "project_email_update_default_audit_check" CHECK (("project"."conversation_email_update_default_updated_at" IS NULL) = ("project"."conversation_email_update_default_updated_by_user_id" IS NULL))
+);
+
+CREATE TABLE "user" (
+	"id" uuid PRIMARY KEY NOT NULL,
+	"polis_participant_id" serial NOT NULL,
+	"username" varchar(20) NOT NULL,
+	"is_site_moderator" boolean DEFAULT false NOT NULL,
+	"is_site_org_admin" boolean DEFAULT false NOT NULL,
+	"is_imported" boolean DEFAULT false NOT NULL,
+	"is_deleted" boolean DEFAULT false NOT NULL,
+	"deleted_at" timestamp (0),
+	"auth_restricted_at" timestamp (0),
+	"auth_restriction_reason" text,
+	"active_conversation_count" integer DEFAULT 0 NOT NULL,
+	"total_conversation_count" integer DEFAULT 0 NOT NULL,
+	"total_opinion_count" integer DEFAULT 0 NOT NULL,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "user_username_unique" UNIQUE("username"),
+	CONSTRAINT "user_auth_restriction_reason_check" CHECK (("user"."auth_restricted_at" IS NULL) = ("user"."auth_restriction_reason" IS NULL))
 );
 
 CREATE INDEX "analysis_input_snapshot_conversation_idx" ON "analysis_input_snapshot" USING btree ("conversation_id","data_generation");
@@ -367,5 +458,17 @@ CREATE INDEX "og_candidate_desc_locale_request_translation_updated_idx" ON "opin
 CREATE INDEX "opinion_group_lineage_description_work_lease_expiry_idx" ON "opinion_group_lineage_description_work" USING btree ("lease_expires_at") WHERE "opinion_group_lineage_description_work"."lease_token" is not null;
 
 CREATE INDEX "opinion_group_lineage_description_work_claim_idx" ON "opinion_group_lineage_description_work" USING btree ("conversation_id","updated_at","id") WHERE "opinion_group_lineage_description_work"."lease_token" is null;
+
+CREATE INDEX "opinion_group_scope_latest_lineage_idx" ON "opinion_group" USING btree ("scope_id","candidate_id" DESC NULLS LAST) WHERE "opinion_group"."lineage_id" is not null;
+
+CREATE UNIQUE INDEX "opinion_moderation_active_opinion_unique" ON "opinion_moderation" USING btree ("opinion_id") WHERE "opinion_moderation"."deleted_at" is null;
+
+CREATE INDEX "opinion_authorId_idx" ON "opinion" USING btree ("author_id");
+
+CREATE INDEX "opinion_author_active_created_id_idx" ON "opinion" USING btree ("author_id","created_at" DESC,"id" DESC) WHERE "opinion"."current_content_id" is not null;
+
+CREATE INDEX "opinion_conversation_active_idx" ON "opinion" USING btree ("conversation_id","current_content_id");
+
+CREATE INDEX "opinion_conversation_active_created_id_idx" ON "opinion" USING btree ("conversation_id","created_at" DESC,"id" DESC) WHERE "opinion"."current_content_id" is not null;
 
 CREATE UNIQUE INDEX "project_active_slug_unique" ON "project" USING btree ("slug") WHERE "project"."deleted_at" IS NULL;

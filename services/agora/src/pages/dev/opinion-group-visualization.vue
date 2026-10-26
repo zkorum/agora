@@ -385,6 +385,7 @@
           :show-report-button="false"
           :is-live-analysis-paused="isLiveAnalysisPaused"
           :is-conversation-closed="mockSnapshotMetrics.isClosed"
+          :is-finalizing="false"
           :navigate-to-discover-tab="handleDevVoteMore"
           :conversation-scroll-context="conversationScrollContext"
           @update:live-analysis-paused="setLiveAnalysisPaused"

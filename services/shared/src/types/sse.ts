@@ -229,6 +229,7 @@ export const zodSSEConversationSettingsData = z
         presentation: zodConversationTypeConfig,
         preferredOpinionGroupCount: zodPreferredOpinionGroupCount,
         isClosed: z.boolean(),
+        isFinalizing: z.boolean().optional(),
         projectAssignment: zodConversationProjectAssignment.optional(),
     })
     .strict();
@@ -332,6 +333,23 @@ export const zodSSEShutdownData = z
 export type SSEShutdownData = z.infer<typeof zodSSEShutdownData>;
 
 export const zodSSEEventDataByType = {
+    opinion_redacted: z
+        .object({
+            conversationSlugId: zodSlugId,
+            opinions: z
+                .array(
+                    z
+                        .object({
+                            opinionSlugId: zodSlugId,
+                            action: z.enum(["redact", "unlink_author"]),
+                        })
+                        .strict(),
+                )
+                .min(1)
+                .max(100),
+            timestamp: z.number(),
+        })
+        .strict(),
     opinion_updated: z
         .object({
             conversationSlugId: zodSlugId,
@@ -403,6 +421,7 @@ export type SSEShutdownEvent = SSEEvent<"shutdown">;
  * Union of all possible SSE events
  */
 export type AnySSEEvent =
+    | SSEEvent<"opinion_redacted">
     | SSEEvent<"opinion_vote_counts_updated">
     | SSEConnectedEvent
     | SSENotificationEvent

@@ -130,6 +130,8 @@ CREATE TABLE "conversation" (
 	"conversation_type" "conversation_type" DEFAULT 'polis' NOT NULL,
 	"is_importing" boolean DEFAULT false NOT NULL,
 	"is_closed" boolean DEFAULT false NOT NULL,
+	"closing_target_revision" bigint,
+	"closed_finalized_at" timestamp (0),
 	"is_edited" boolean DEFAULT false NOT NULL,
 	"requires_event_ticket" "event_slug",
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
@@ -140,6 +142,7 @@ CREATE TABLE "conversation" (
 	CONSTRAINT "conversation_polis_config_id_unique" UNIQUE("polis_config_id"),
 	CONSTRAINT "conversation_ranking_config_id_unique" UNIQUE("ranking_config_id"),
 	CONSTRAINT "conversation_project_id_id_unique" UNIQUE("project_id","id"),
+	CONSTRAINT "conversation_closing_state_check" CHECK (("conversation"."is_closed" OR ("conversation"."closing_target_revision" IS NULL AND "conversation"."closed_finalized_at" IS NULL)) AND ("conversation"."closed_finalized_at" IS NULL OR "conversation"."closing_target_revision" IS NOT NULL)),
 	CONSTRAINT "conversation_subtype_config_check" CHECK ((("conversation"."conversation_type" = 'polis' AND "conversation"."polis_config_id" IS NOT NULL AND "conversation"."ranking_config_id" IS NULL) OR ("conversation"."conversation_type" = 'ranking' AND "conversation"."ranking_config_id" IS NOT NULL AND "conversation"."polis_config_id" IS NULL))),
 	CONSTRAINT "conversation_email_update_override_audit_check" CHECK (("conversation"."conversation_email_update_override_updated_at" IS NULL) = ("conversation"."conversation_email_update_override_updated_by_user_id" IS NULL))
 );
@@ -251,6 +254,17 @@ CREATE TABLE "polis_conversation_config" (
 	CONSTRAINT "polis_conversation_config_preferred_opinion_group_count_check" CHECK ("polis_conversation_config"."preferred_opinion_group_count" IS NULL OR "polis_conversation_config"."preferred_opinion_group_count" >= 2)
 );
 
+CREATE TABLE "survey_config" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "survey_config_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"conversation_id" integer NOT NULL,
+	"current_revision" integer DEFAULT 1 NOT NULL,
+	"is_optional" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
+	"deleted_at" timestamp (0),
+	CONSTRAINT "survey_config_id_conversation_unique" UNIQUE("id","conversation_id")
+);
+
 CREATE TABLE "user_mute_preference" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "user_mute_preference_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"source_user_id" uuid NOT NULL,
@@ -290,12 +304,14 @@ CREATE TABLE "vote_content" (
 CREATE TABLE "vote" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "vote_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"author_id" uuid NOT NULL,
+	"participant_id" uuid,
 	"opinion_id" integer NOT NULL,
 	"polis_vote_id" integer,
 	"current_content_id" integer,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
-	CONSTRAINT "vote_author_id_opinion_id_unique" UNIQUE("author_id","opinion_id")
+	CONSTRAINT "vote_author_id_opinion_id_unique" UNIQUE("author_id","opinion_id"),
+	CONSTRAINT "vote_participant_opinion_unique" UNIQUE("participant_id","opinion_id")
 );
 
 CREATE INDEX "analysis_snapshot_latest_idx" ON "analysis_snapshot" USING btree ("conversation_id","data_generation","created_at");
@@ -343,6 +359,8 @@ CREATE INDEX "opinion_author_active_created_id_idx" ON "opinion" USING btree ("a
 CREATE INDEX "opinion_conversation_active_idx" ON "opinion" USING btree ("conversation_id","current_content_id");
 
 CREATE INDEX "opinion_conversation_active_created_id_idx" ON "opinion" USING btree ("conversation_id","created_at" DESC,"id" DESC) WHERE "opinion"."current_content_id" is not null;
+
+CREATE UNIQUE INDEX "survey_config_active_conversation_uidx" ON "survey_config" USING btree ("conversation_id") WHERE "survey_config"."deleted_at" IS NULL;
 
 CREATE UNIQUE INDEX "user_mute_preference_active_unique" ON "user_mute_preference" USING btree ("source_user_id","target_user_id") WHERE "user_mute_preference"."deleted_at" is null;
 

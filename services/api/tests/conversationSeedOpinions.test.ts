@@ -1231,7 +1231,6 @@ describe("conversation seed statements", () => {
                     add: vi.fn(),
                     flush: vi.fn(),
                     shutdown: vi.fn(),
-                    getBufferSize: () => 0,
                 },
                 data: {
                     ...fixture.request,

@@ -61,6 +61,7 @@ export interface AnalysisPageTranslations {
   checkpointTimelineLabel: string;
   checkpointTimelineStart: string;
   checkpointTimelineNow: string;
+  checkpointTimelineFinalizing: string;
   checkpointReasonsLabel: string;
   checkpointReasonFirstDisplayableAnalysis: string;
   checkpointReasonFirstGroupCountAvailable: string;
@@ -149,6 +150,7 @@ export const analysisPageTranslations: Record<
     checkpointTimelineLabel: "Checkpoint timeline",
     checkpointTimelineStart: "Start",
     checkpointTimelineNow: "Now",
+    checkpointTimelineFinalizing: "Finalizing…",
     checkpointReasonsLabel: "Checkpoint markers",
     checkpointReasonFirstDisplayableAnalysis: "First analysis",
     checkpointReasonFirstGroupCountAvailable: "{count} groups available",
@@ -233,6 +235,7 @@ export const analysisPageTranslations: Record<
     checkpointTimelineLabel: "الخط الزمني لنقاط التحقق",
     checkpointTimelineStart: "البداية",
     checkpointTimelineNow: "الآن",
+    checkpointTimelineFinalizing: "جارٍ الإنهاء…",
     checkpointReasonsLabel: "علامات نقطة التحقق",
     checkpointReasonFirstDisplayableAnalysis: "أول تحليل",
     checkpointReasonFirstGroupCountAvailable: "{count} مجموعات متاحة",
@@ -319,6 +322,7 @@ export const analysisPageTranslations: Record<
     checkpointTimelineLabel: "Cronología de puntos de control",
     checkpointTimelineStart: "Inicio",
     checkpointTimelineNow: "Ahora",
+    checkpointTimelineFinalizing: "Finalizando…",
     checkpointReasonsLabel: "Marcadores del punto de control",
     checkpointReasonFirstDisplayableAnalysis: "Primer análisis",
     checkpointReasonFirstGroupCountAvailable: "{count} grupos disponibles",
@@ -404,6 +408,7 @@ export const analysisPageTranslations: Record<
     checkpointTimelineLabel: "خط زمانی نقطه های بررسی",
     checkpointTimelineStart: "شروع",
     checkpointTimelineNow: "اکنون",
+    checkpointTimelineFinalizing: "در حال نهایی‌سازی…",
     checkpointReasonsLabel: "نشانگرهای نقطه بررسی",
     checkpointReasonFirstDisplayableAnalysis: "اولین تحلیل",
     checkpointReasonFirstGroupCountAvailable: "{count} گروه در دسترس",
@@ -491,6 +496,7 @@ export const analysisPageTranslations: Record<
     checkpointTimelineLabel: "Chronologie des jalons",
     checkpointTimelineStart: "Début",
     checkpointTimelineNow: "Maintenant",
+    checkpointTimelineFinalizing: "Finalisation…",
     checkpointReasonsLabel: "Marqueurs du jalon",
     checkpointReasonFirstDisplayableAnalysis: "Première analyse",
     checkpointReasonFirstGroupCountAvailable: "{count} groupes disponibles",
@@ -570,6 +576,7 @@ export const analysisPageTranslations: Record<
     checkpointTimelineLabel: "检查点时间线",
     checkpointTimelineStart: "开始",
     checkpointTimelineNow: "现在",
+    checkpointTimelineFinalizing: "正在完成…",
     checkpointReasonsLabel: "检查点标记",
     checkpointReasonFirstDisplayableAnalysis: "首次分析",
     checkpointReasonFirstGroupCountAvailable: "{count} 个群组可用",
@@ -649,6 +656,7 @@ export const analysisPageTranslations: Record<
     checkpointTimelineLabel: "檢查點時間線",
     checkpointTimelineStart: "開始",
     checkpointTimelineNow: "現在",
+    checkpointTimelineFinalizing: "正在完成…",
     checkpointReasonsLabel: "檢查點標記",
     checkpointReasonFirstDisplayableAnalysis: "首次分析",
     checkpointReasonFirstGroupCountAvailable: "{count} 個群組可用",
@@ -732,6 +740,7 @@ export const analysisPageTranslations: Record<
     checkpointTimelineLabel: "ציר זמן של נקודות ביקורת",
     checkpointTimelineStart: "התחלה",
     checkpointTimelineNow: "עכשיו",
+    checkpointTimelineFinalizing: "בתהליך השלמה…",
     checkpointReasonsLabel: "סימוני נקודת ביקורת",
     checkpointReasonFirstDisplayableAnalysis: "ניתוח ראשון",
     checkpointReasonFirstGroupCountAvailable: "{count} קבוצות זמינות",
@@ -817,6 +826,7 @@ export const analysisPageTranslations: Record<
     checkpointTimelineLabel: "チェックポイントのタイムライン",
     checkpointTimelineStart: "開始",
     checkpointTimelineNow: "今",
+    checkpointTimelineFinalizing: "最終処理中…",
     checkpointReasonsLabel: "チェックポイントの目印",
     checkpointReasonFirstDisplayableAnalysis: "最初の分析",
     checkpointReasonFirstGroupCountAvailable: "{count} グループが利用可能",
@@ -903,6 +913,7 @@ export const analysisPageTranslations: Record<
     checkpointTimelineLabel: "Текшерүү чекиттеринин убакыт сызыгы",
     checkpointTimelineStart: "Башталыш",
     checkpointTimelineNow: "Азыр",
+    checkpointTimelineFinalizing: "Жыйынтыкталууда…",
     checkpointReasonsLabel: "Текшерүү чекитинин белгилери",
     checkpointReasonFirstDisplayableAnalysis: "Биринчи анализ",
     checkpointReasonFirstGroupCountAvailable: "{count} топ жеткиликтүү",
@@ -988,6 +999,7 @@ export const analysisPageTranslations: Record<
     checkpointTimelineLabel: "Хронология контрольных точек",
     checkpointTimelineStart: "Старт",
     checkpointTimelineNow: "Сейчас",
+    checkpointTimelineFinalizing: "Завершение…",
     checkpointReasonsLabel: "Маркеры контрольной точки",
     checkpointReasonFirstDisplayableAnalysis: "Первый анализ",
     checkpointReasonFirstGroupCountAvailable: "Доступно групп: {count}",

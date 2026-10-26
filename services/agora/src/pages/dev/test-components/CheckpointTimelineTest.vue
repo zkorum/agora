@@ -78,6 +78,7 @@
           :is-live-paused="false"
           :is-latest-checkpoint-live="isTerminalMarkerActive"
           :is-live-closed="closedTerminal"
+          :is-finalizing="false"
           :title="t('checkpointTimeline')"
           :start-label="t('start')"
           :now-label="closedTerminal ? t('conversationClosed') : t('now')"

@@ -58,7 +58,12 @@ export async function cancelPendingOpinionTranslationWorkForUser({
             opinionTable,
             eq(opinionTable.id, opinionContentTable.opinionId),
         )
-        .where(eq(opinionTable.authorId, userId));
+        .where(
+            and(
+                eq(opinionTable.authorId, userId),
+                eq(opinionTable.isSeed, false),
+            ),
+        );
     await db
         .update(contentTranslationWorkTable)
         .set({

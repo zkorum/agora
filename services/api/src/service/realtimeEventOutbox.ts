@@ -182,6 +182,11 @@ function parseContentTranslationUpdatedData(payload: unknown) {
 type RealtimeReplayEvent =
     | {
           id: number;
+          event: "opinion_redacted";
+          data: SSEEventDataByType["opinion_redacted"];
+      }
+    | {
+          id: number;
           event: "opinion_vote_counts_updated";
           data: SSEEventDataByType["opinion_vote_counts_updated"];
       }
@@ -488,6 +493,27 @@ export async function queueConversationSurveyUpdatedEvent({
         eventType: "conversation_survey_updated",
         payload,
     });
+}
+
+export async function queueOpinionRedactedEvent({
+    db,
+    conversationSlugId,
+    opinions,
+}: {
+    db: PostgresJsDatabase;
+    conversationSlugId: string;
+    opinions: SSEEventDataByType["opinion_redacted"]["opinions"];
+}): Promise<void> {
+    for (let offset = 0; offset < opinions.length; offset += 100) {
+        const payload: SSEEventDataByType["opinion_redacted"] = {
+            conversationSlugId,
+            opinions: opinions.slice(offset, offset + 100),
+            timestamp: Date.now(),
+        };
+        await db
+            .insert(realtimeEventOutboxTable)
+            .values({ eventType: "opinion_redacted", payload });
+    }
 }
 
 export async function queueOpinionUpdatedEvent({
@@ -920,6 +946,13 @@ function parseRealtimeEventOutboxRow({
                 ? { id, event: eventType, data: result.data }
                 : undefined;
         }
+        case "opinion_redacted": {
+            const parsed =
+                zodSSEEventDataByType.opinion_redacted.safeParse(payload);
+            return parsed.success
+                ? { id, event: eventType, data: parsed.data }
+                : undefined;
+        }
         case "conversation_analysis_updated": {
             try {
                 return {
@@ -1036,6 +1069,7 @@ export async function fetchConversationRealtimeEventsAfterId({
                     "conversation_settings_updated",
                     "conversation_survey_updated",
                     "opinion_updated",
+                    "opinion_redacted",
                 ]),
                 sql`${realtimeEventOutboxTable.payload}->>'conversationSlugId' = ${conversationSlugId}`,
             ),
@@ -1197,6 +1231,7 @@ export function createRealtimeEventOutboxBridge({
                 break;
             }
             case "opinion_updated":
+            case "opinion_redacted":
             case "conversation_survey_updated": {
                 realtimeSSEManager.broadcastToConversationSubscribers({
                     ...realtimeEvent,

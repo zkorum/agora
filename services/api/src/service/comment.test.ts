@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
     buildAnalysisOpinionContent,
+    buildAnalysisOpinionItem,
     isPersonalNonSeedOpinionByViewer,
 } from "./comment.js";
 
@@ -39,6 +40,7 @@ function snapshotOpinionRow(
         translationWorkStatus: "completed",
         authorId: "user-1",
         username: "alice",
+        authorIsDeleted: false,
         isSeed: false,
         currentContentId: 3,
         numAgrees: 4,
@@ -99,6 +101,78 @@ describe("opinion translation visibility", () => {
 });
 
 describe("checkpoint opinion content projection", () => {
+    it.each([
+        { currentContentId: null },
+        { authorIsDeleted: true },
+        { opinion: null, opinionContentId: null, contentPublicId: null },
+    ])(
+        "redacts the entire checkpoint DTO while preserving its numerical rows",
+        (overrides) => {
+            const item = buildAnalysisOpinionItem({
+                row: snapshotOpinionRow(overrides),
+                conversationParticipantCount: 100,
+                clustersStats: [
+                    {
+                        key: "0",
+                        isAuthorInCluster: true,
+                        numUsers: 60,
+                        numAgrees: 4,
+                        numDisagrees: 2,
+                        numPasses: 1,
+                    },
+                ],
+                displayContentPreferences,
+                viewerUserId: undefined,
+            });
+            expect(item.content).toEqual({
+                status: "redacted",
+                reason: "statement_deleted",
+            });
+            expect(item.numParticipants).toBe(100);
+            expect(item.numAgrees).toBe(4);
+            expect(item.clustersStats).toEqual([
+                {
+                    key: "0",
+                    numUsers: 60,
+                    numAgrees: 4,
+                    numDisagrees: 2,
+                    numPasses: 1,
+                },
+            ]);
+            const json = JSON.stringify(item);
+            for (const field of [
+                "SECRET",
+                "alice",
+                "username",
+                "createdAt",
+                "updatedAt",
+                "isAuthorInCluster",
+            ]) {
+                expect(json).not.toContain(field);
+            }
+        },
+    );
+
+    it("retains project seed text without exposing its deleted administrator", () => {
+        const item = buildAnalysisOpinionItem({
+            row: snapshotOpinionRow({ isSeed: true, authorIsDeleted: true }),
+            conversationParticipantCount: 100,
+            clustersStats: [],
+            displayContentPreferences,
+            viewerUserId: undefined,
+        });
+        expect(item.content.status).toBe("visible");
+        expect(item.username).toBeUndefined();
+    });
+
+    it("does not interpret literal deletion-placeholder text as deleted", () => {
+        const content = buildAnalysisOpinionContent({
+            row: snapshotOpinionRow({ opinion: "[deleted]" }),
+            displayContentPreferences,
+            viewerUserId: undefined,
+        });
+        expect(content.status).toBe("visible");
+    });
     it("returns no content, translation, or moderation details when hidden", () => {
         const content = buildAnalysisOpinionContent({
             row: snapshotOpinionRow({

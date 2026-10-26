@@ -1396,6 +1396,7 @@ const zodConversationMetadataBase = z
         languageSetting: zodConversationLanguageSettingOutput,
         multilingualSetting: zodConversationEffectiveMultilingualSetting,
         isClosed: z.boolean(),
+        isFinalizing: z.boolean().optional(),
         isEdited: z.boolean(),
         organization: zodOrganization.optional(),
         moderation: zodConversationModerationProperties,
@@ -1449,6 +1450,7 @@ const zodConversationMetadataWithIdBase = z
         languageSetting: zodConversationLanguageSettingOutput,
         multilingualSetting: zodConversationEffectiveMultilingualSetting,
         isClosed: z.boolean(),
+        isFinalizing: z.boolean().optional(),
         isEdited: z.boolean(),
         organization: zodOrganization.optional(),
         moderation: zodConversationModerationProperties,
@@ -1615,7 +1617,14 @@ export const zodAnalysisOpinionItem = zodOpinionItem
     })
     .extend({
         content: zodAnalysisOpinionContent,
-        clustersStats: z.array(zodClusterStats),
+        username: z.string().optional(),
+        createdAt: zodDateTimeFlexible.optional(),
+        updatedAt: zodDateTimeFlexible.optional(),
+        clustersStats: z.array(
+            zodClusterStats.extend({
+                isAuthorInCluster: z.boolean().optional(),
+            }),
+        ),
         groupAwareConsensusAgree: z.number().nonnegative(),
         groupAwareConsensusDisagree: z.number().nonnegative(),
         divisiveScore: z.number().nonnegative(),

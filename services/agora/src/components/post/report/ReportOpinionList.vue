@@ -19,7 +19,9 @@
         <tr>
           <th class="col-rank">#</th>
           <th class="col-statement">{{ t("statement") }}</th>
-          <th class="col-vote">{{ t("overall") }} ({{ formatAmount(totalParticipants) }})</th>
+          <th class="col-vote">
+            {{ t("overall") }} ({{ formatAmount(totalParticipants) }})
+          </th>
           <th v-for="entry in clusterEntries" :key="entry.key" class="col-vote">
             <template v-if="useLetterCodes">
               {{ formatClusterLabel(entry.key, false) }} ({{
@@ -44,7 +46,9 @@
                 :opinion-item="item"
                 :post-slug-id="props.conversationSlugId"
                 :conversation-author-username="props.conversationAuthorUsername"
-                :conversation-organization-name="props.conversationOrganizationName"
+                :conversation-organization-name="
+                  props.conversationOrganizationName
+                "
                 :compact-mode="false"
                 :enable-links="false"
                 :translation-interactive="translationInteractive"
@@ -94,7 +98,6 @@ import AnalysisOpinionText from "src/components/post/analysis/common/AnalysisOpi
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
   AnalysisOpinionItem,
-  ClusterStats,
   PolisClusters,
   PolisKey,
 } from "src/shared/types/zod";
@@ -158,7 +161,7 @@ function getClusterStats({
 }: {
   item: AnalysisOpinionItem;
   clusterKey: PolisKey;
-}): ClusterStats | undefined {
+}): AnalysisOpinionItem["clustersStats"][number] | undefined {
   return item.clustersStats.find((s) => s.key === clusterKey);
 }
 </script>

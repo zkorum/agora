@@ -9,12 +9,18 @@ from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Literal, TypedDict
 
 from pydantic import TypeAdapter, ValidationError
-from sqlalchemy import and_, case, func, or_, select, tuple_, update
+from sqlalchemy import and_, case, func, or_, select, true, tuple_, update
 from sqlalchemy import insert as sqlalchemy_insert
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session, aliased
 
+from agora_analysis_worker_shared.analysis_lifecycle import (
+    closing_retry_ready_condition,
+    finalize_closed_analysis,
+    no_pending_vote_submissions,
+    permitted_publication_claim_ids,
+)
 from agora_analysis_worker_shared.generated_models import (
     AnalysisCompressionEnum,
     AnalysisInputSnapshot,
@@ -76,6 +82,7 @@ from agora_analysis_worker_shared.lineage_matching import (
     exact_matching_lineage_ids,
     match_lineages_by_representative_opinions,
 )
+from agora_analysis_worker_shared.opinion_eligibility import current_opinion_source_condition
 from agora_analysis_worker_shared.survey_aggregates import (
     PUBLIC_AGGREGATE_SUPPRESSION_THRESHOLD,
     SurveyAggregateBuildResult,
@@ -641,6 +648,13 @@ def _claim_work_items_batch(
             > AnalysisWorkState.last_completed_data_generation,
             ~active_running_work_exists,
             or_(
+                Conversation.is_closed.is_(False),
+                closing_retry_ready_condition(
+                    data_generation=PolisConversationConfig.analysis_data_generation
+                ),
+            ),
+            or_(
+                Conversation.is_closed.is_(True),
                 AnalysisWorkState.non_retryable_generation.is_(None),
                 PolisConversationConfig.analysis_data_generation
                 > AnalysisWorkState.non_retryable_generation,
@@ -666,7 +680,10 @@ def _claim_work_items_batch(
                 and_(
                     AnalysisWorkState.conversation_id == conversation_id,
                     Conversation.current_content_id.is_not(None),
+                    Conversation.is_importing.is_(False),
                     Conversation.conversation_type == ConversationType.polis,
+                    Conversation.closed_finalized_at.is_(None),
+                    no_pending_vote_submissions(),
                     or_(resume_condition, fresh_condition),
                 )
             )
@@ -906,16 +923,41 @@ def fetch_claimable_work_conversation_ids(
     analysis_engine_epoch: int,
 ) -> list[int]:
     current_generation = _current_analysis_generation_subquery()
+    closing_pending = (
+        select(Conversation.id)
+        .where(
+            Conversation.id == AnalysisWorkState.conversation_id,
+            Conversation.is_closed.is_(True),
+            Conversation.closed_finalized_at.is_(None),
+        )
+        .exists()
+    )
+    processable = (
+        select(Conversation.id)
+        .where(
+            Conversation.id == AnalysisWorkState.conversation_id,
+            Conversation.current_content_id.is_not(None),
+            Conversation.is_importing.is_(False),
+            Conversation.closed_finalized_at.is_(None),
+        )
+        .exists()
+    )
     query = (
         select(AnalysisWorkState.conversation_id)
         .where(
             and_(
+                processable,
+                or_(
+                    ~closing_pending,
+                    closing_retry_ready_condition(data_generation=current_generation),
+                ),
                 current_generation > AnalysisWorkState.last_completed_data_generation,
                 or_(
                     AnalysisWorkState.running_data_generation.is_(None),
                     AnalysisWorkState.lease_expires_at < func.now(),
                 ),
                 or_(
+                    closing_pending,
                     AnalysisWorkState.non_retryable_generation.is_(None),
                     current_generation > AnalysisWorkState.non_retryable_generation,
                     analysis_engine_epoch
@@ -960,6 +1002,7 @@ def _fetch_vote_input_rows_batch(
             Opinion.conversation_id,
             PolisConversationConfig.analysis_data_generation,
             Vote.author_id,
+            Vote.participant_id,
             Opinion.id.label("opinion_id"),
             Opinion.current_content_id.label("opinion_content_id"),
             VoteContent.vote,
@@ -969,15 +1012,20 @@ def _fetch_vote_input_rows_batch(
         .join(Opinion, Opinion.id == Vote.opinion_id)
         .join(Conversation, Conversation.id == Opinion.conversation_id)
         .join(PolisConversationConfig, PolisConversationConfig.id == Conversation.polis_config_id)
-        .join(User, User.id == Vote.author_id)
-        .outerjoin(OpinionModeration, OpinionModeration.opinion_id == Vote.opinion_id)
+        .join(User, User.id == Opinion.author_id)
+        .outerjoin(
+            OpinionModeration,
+            and_(
+                OpinionModeration.opinion_id == Vote.opinion_id,
+                OpinionModeration.deleted_at.is_(None),
+            ),
+        )
         .where(
             and_(
                 Opinion.conversation_id.in_(conversation_ids),
-                User.is_deleted.is_(False),
+                current_opinion_source_condition(),
                 OpinionModeration.id.is_(None),
                 Vote.current_content_id.is_not(None),
-                Opinion.current_content_id.is_not(None),
             )
         )
         .order_by(Opinion.conversation_id, Vote.author_id, Opinion.id)
@@ -1021,6 +1069,7 @@ def _fetch_vote_input_rows_batch(
                 conversation_id=row.conversation_id,
                 data_generation=row.analysis_data_generation,
                 user_id=row.author_id,
+                participant_id=row.participant_id,
                 opinion_id=row.opinion_id,
                 opinion_content_id=row.opinion_content_id,
                 vote=row.vote.value,
@@ -1888,12 +1937,16 @@ def _fetch_conversation_view_snapshot_counters_by_id(
         )
         .select_from(Opinion)
         .join(User, User.id == Opinion.author_id)
-        .outerjoin(OpinionModeration, OpinionModeration.opinion_id == Opinion.id)
+        .outerjoin(
+            OpinionModeration,
+            and_(
+                OpinionModeration.opinion_id == Opinion.id, OpinionModeration.deleted_at.is_(None)
+            ),
+        )
         .where(
             and_(
                 Opinion.conversation_id.in_(unique_conversation_ids),
-                Opinion.current_content_id.is_not(None),
-                User.is_deleted.is_(False),
+                current_opinion_source_condition(),
             )
         )
         .group_by(Opinion.conversation_id)
@@ -1913,13 +1966,12 @@ def _fetch_conversation_view_snapshot_counters_by_id(
         )
         .select_from(Vote)
         .join(Opinion, Opinion.id == Vote.opinion_id)
-        .join(User, User.id == Vote.author_id)
+        .join(User, User.id == Opinion.author_id)
         .where(
             and_(
                 Opinion.conversation_id.in_(unique_conversation_ids),
-                Opinion.current_content_id.is_not(None),
+                current_opinion_source_condition(),
                 Vote.current_content_id.is_not(None),
-                User.is_deleted.is_(False),
             )
         )
         .group_by(Opinion.conversation_id)
@@ -2128,7 +2180,10 @@ def _persist_conversation_view_snapshot_rows(
                 "moderated_opinion_count": counters.moderated_opinion_count,
                 "hidden_opinion_count": counters.hidden_opinion_count,
                 "activated_at": None
-                if state.ai_labeling_enabled and ai_generation_expected and selected is not None
+                if not state.is_closed
+                and state.ai_labeling_enabled
+                and ai_generation_expected
+                and selected is not None
                 else func.now(),
             }
         )
@@ -2509,11 +2564,6 @@ def _checkpoint_reason_values(
         for row in existing_rows
         if row.reason == ConversationViewSnapshotCheckpointReasonEnum.default_group_count_changed
     }
-    existing_closed_view_snapshot_ids = {
-        row.conversation_view_snapshot_id
-        for row in existing_rows
-        if row.reason == ConversationViewSnapshotCheckpointReasonEnum.conversation_closed
-    }
     current_view_snapshot_ids = [
         view_snapshot.view_snapshot_id
         for view_snapshot in persisted_view_snapshots_by_pair.values()
@@ -2542,7 +2592,6 @@ def _checkpoint_reason_values(
         selected = persisted.selected_candidate
         if selected is None:
             continue
-        previous_selected = previous_selected_by_pair.get(pair)
 
         if pair not in existing_first_displayable_pairs and pair not in previous_selected_by_pair:
             reason_values.append(
@@ -2620,24 +2669,6 @@ def _checkpoint_reason_values(
                     reason=ConversationViewSnapshotCheckpointReasonEnum.major_vote_milestone,
                     vote_count=persisted.vote_count,
                     vote_milestone=vote_milestone,
-                )
-            )
-
-        lifecycle_reason: ConversationViewSnapshotCheckpointReasonEnum | None = None
-        if persisted.conversation_state.is_closed and (
-            previous_selected is None or not previous_selected.is_closed
-        ):
-            lifecycle_reason = ConversationViewSnapshotCheckpointReasonEnum.conversation_closed
-
-        if lifecycle_reason is not None:
-            if persisted.view_snapshot_id in existing_closed_view_snapshot_ids:
-                continue
-            reason_values.append(
-                _checkpoint_reason_insert_value(
-                    conversation_view_snapshot_id=persisted.view_snapshot_id,
-                    conversation_id=conversation_id,
-                    opinion_group_spec_id=opinion_group_spec_id,
-                    reason=lifecycle_reason,
                 )
             )
 
@@ -3222,7 +3253,7 @@ def _fetch_survey_responses(
         .where(
             and_(
                 SurveyResponse.conversation_id.in_(sorted(set(conversation_ids))),
-                User.is_deleted.is_(False),
+                true() if analysis_voters_only else User.is_deleted.is_(False),
             )
         )
     )
@@ -3335,6 +3366,11 @@ def persist_empty_vote_matrix_results_batch(
     opinion_group_spec_ids = sorted({claim.opinion_group_spec_id for claim in claims})
 
     with Session(engine) as session:
+        permitted_ids = permitted_publication_claim_ids(session, claims=claims)
+        claims = [claim for claim in claims if claim.id in permitted_ids]
+        if not claims:
+            session.commit()
+            return []
         _ensure_owned_work_states_locked(session=session, claims=claims)
         premium_analysis_conversation_ids = _fetch_premium_analysis_conversation_ids(
             session,
@@ -3476,6 +3512,9 @@ def persist_empty_vote_matrix_results_batch(
             premium_analysis_conversation_ids=premium_analysis_conversation_ids,
             ai_generation_expected=False,
         )
+        finalize_closed_analysis(
+            session, conversation_ids=[claim.conversation_id for claim in claims]
+        )
         _queue_conversation_analysis_updated_events_for_view_snapshots(
             session,
             conversation_view_snapshot_ids=[
@@ -3555,6 +3594,15 @@ def persist_computed_analysis_results_batch(
 
     computed_at = datetime.now(UTC)
     with Session(engine) as session:
+        permitted_ids = permitted_publication_claim_ids(session, claims=claims)
+        claims = [claim for claim in claims if claim.id in permitted_ids]
+        if not claims:
+            session.commit()
+            return PersistComputedAnalysisResult(
+                ai_description_work_conversation_ids=[],
+                ai_description_work_view_snapshot_ids=[],
+                checkpoint_activation_context=None,
+            )
         log.info(
             "[MathUpdaterDB] Persist computed batch start claims=%s",
             _format_claims_for_log(claims),
@@ -3905,6 +3953,10 @@ def persist_computed_analysis_results_batch(
                 participant.local_participant_index: participant.user_id
                 for participant in snapshot.participants
             }
+            participant_id_by_local_index = {
+                participant.local_participant_index: participant.participant_id
+                for participant in snapshot.participants
+            }
             snapshot_opinion_id_by_local_index = {
                 opinion.local_opinion_index: snapshot_opinion_id
                 for opinion in snapshot.opinions
@@ -3929,6 +3981,9 @@ def persist_computed_analysis_results_batch(
                             "candidate_id": candidate_id,
                             "group_id": group_id,
                             "user_id": user_id_by_local_index[local_participant_index],
+                            "participant_id": participant_id_by_local_index[
+                                local_participant_index
+                            ],
                         }
                         for local_participant_index in group.local_participant_indexes
                     )
@@ -3950,7 +4005,7 @@ def persist_computed_analysis_results_batch(
                 "[MathUpdaterDB] Inserting opinion_group_user rows=%d",
                 len(group_user_values),
             )
-            chunk_size = _max_rows_per_insert(column_count=3)
+            chunk_size = _max_rows_per_insert(column_count=4)
             if len(group_user_values) > chunk_size:
                 log.info(
                     "[MathUpdaterDB] Chunking opinion_group_user rows=%d max_rows_per_chunk=%d",
@@ -4061,7 +4116,8 @@ def persist_computed_analysis_results_batch(
             pair: persisted
             for pair, persisted in persisted_view_snapshots_by_pair.items()
             if not (
-                persisted.conversation_state.ai_labeling_enabled
+                not persisted.conversation_state.is_closed
+                and persisted.conversation_state.ai_labeling_enabled
                 and ai_generation_expected
                 and persisted.selected_candidate is not None
             )
@@ -4077,6 +4133,9 @@ def persist_computed_analysis_results_batch(
             current_options_by_pair=current_options_by_pair,
         )
         log.info("[MathUpdaterDB] Persisted checkpoint reasons")
+        finalize_closed_analysis(
+            session, conversation_ids=[claim.conversation_id for claim in claims]
+        )
         _queue_conversation_analysis_updated_events_for_view_snapshots(
             session,
             conversation_view_snapshot_ids=[

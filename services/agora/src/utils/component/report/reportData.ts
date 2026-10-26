@@ -21,9 +21,7 @@ export function getReportOpinions({
   getScore: (item: AnalysisOpinionItem) => number;
   maxItems?: number;
 }): AnalysisOpinionItem[] {
-  return items
-    .filter((item) => getScore(item) >= MIN_SCORE)
-    .slice(0, maxItems);
+  return items.filter((item) => getScore(item) >= MIN_SCORE).slice(0, maxItems);
 }
 
 export function getReportAllOpinions({
@@ -40,9 +38,11 @@ export function getReportAllOpinions({
 
   switch (order) {
     case "newest":
-      return Array.from(itemsBySlugId.values()).sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
+      return Array.from(itemsBySlugId.values()).sort((a, b) => {
+        if (a.createdAt === undefined) return b.createdAt === undefined ? 0 : 1;
+        if (b.createdAt === undefined) return -1;
+        return b.createdAt.getTime() - a.createdAt.getTime();
+      });
     case "agreement":
       return Array.from(itemsBySlugId.values()).sort(
         (a, b) => b.groupAwareConsensusAgree - a.groupAwareConsensusAgree

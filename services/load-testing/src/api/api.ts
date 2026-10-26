@@ -5533,6 +5533,7 @@ export interface ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInn
     'languageSetting': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfLanguageSetting;
     'multilingualSetting': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfMultilingualSetting;
     'isClosed': boolean;
+    'isFinalizing'?: boolean;
     'isEdited': boolean;
     'organization'?: ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfOrganization;
     'moderation': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfModeration;
@@ -5593,6 +5594,7 @@ export interface ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInn
     'languageSetting': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfLanguageSetting;
     'multilingualSetting': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfMultilingualSetting;
     'isClosed': boolean;
+    'isFinalizing'?: boolean;
     'isEdited': boolean;
     'organization'?: ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfOrganization;
     'moderation': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfModeration;
@@ -7952,13 +7954,13 @@ export type ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersVa
 
 export interface ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInner {
     'opinionSlugId': string;
-    'createdAt': string;
-    'updatedAt': string;
+    'createdAt'?: string;
+    'updatedAt'?: string;
     'numParticipants': number;
     'numAgrees': number;
     'numDisagrees': number;
     'numPasses': number;
-    'username': string;
+    'username'?: string;
     'isSeed': boolean;
     'isEdited'?: boolean;
     'management'?: ApiV1UserOpinionFetchPost200ResponseInnerOpinionItemManagement;
@@ -7970,7 +7972,7 @@ export interface ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClust
 }
 export interface ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInnerClustersStatsInner {
     'key': ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInnerClustersStatsInnerKeyEnum;
-    'isAuthorInCluster': boolean;
+    'isAuthorInCluster'?: boolean;
     'numUsers': number;
     'numAgrees': number;
     'numDisagrees': number;

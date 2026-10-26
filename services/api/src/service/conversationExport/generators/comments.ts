@@ -1,13 +1,4 @@
-import {
-    and,
-    desc,
-    eq,
-    inArray,
-    isNotNull,
-    isNull,
-    ne,
-    or,
-} from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, isNull, ne, or } from "drizzle-orm";
 import sanitizeHtml from "sanitize-html";
 import {
     analysisSnapshotOpinionTable,
@@ -15,7 +6,9 @@ import {
     opinionTable,
     opinionContentTable,
     opinionModerationTable,
+    userTable,
 } from "@/shared-backend/schema.js";
+import { currentOpinionSourceCondition } from "@/shared-backend/opinionEligibility.js";
 import { formatDatetime } from "../utils.js";
 import { buildCsvBuffer } from "./csv.js";
 import type {
@@ -39,7 +32,7 @@ export const commentHeaders = [
 ] as const;
 
 interface CommentExportOpinion {
-    authorId: string;
+    authorId: string | undefined;
     content: string;
     contentPlainText: string | null;
     createdAt: Date;
@@ -97,9 +90,12 @@ export function buildCommentRows({
     return opinions
         .filter((opinion) => !isHiddenOpinion(opinion))
         .map((opinion, index) => {
-            const authorId = participantMap.getOrCreateExportParticipantId({
-                userId: opinion.authorId,
-            });
+            const authorId =
+                opinion.authorId === undefined
+                    ? null
+                    : participantMap.getOrCreateExportParticipantId({
+                          userId: opinion.authorId,
+                      });
 
             return {
                 timestamp: Math.floor(opinion.createdAt.getTime() / 1000),
@@ -110,7 +106,9 @@ export function buildCommentRows({
                 disagrees: opinion.numDisagrees,
                 passes: opinion.numPasses,
                 votes:
-                    opinion.numAgrees + opinion.numDisagrees + opinion.numPasses,
+                    opinion.numAgrees +
+                    opinion.numDisagrees +
+                    opinion.numPasses,
                 moderated:
                     opinion.moderationId === null
                         ? 0 // unmoderated
@@ -118,7 +116,8 @@ export function buildCommentRows({
                           ? -1 // moved opinions remain in moderation history
                           : 1, // approved (fallback, though no explicit "approve" action exists)
                 comment_text:
-                    opinion.contentPlainText ?? stripHtmlForCsv(opinion.content),
+                    opinion.contentPlainText ??
+                    stripHtmlForCsv(opinion.content),
             };
         });
 }
@@ -166,6 +165,7 @@ export const commentsGenerator: CsvGenerator = {
             .select({
                 opinionId: opinionTable.id,
                 authorId: opinionTable.authorId,
+                isAuthorDeleted: userTable.isDeleted,
                 content: opinionContentTable.content,
                 contentPlainText: opinionContentTable.contentPlainText,
                 createdAt: opinionTable.createdAt,
@@ -173,6 +173,7 @@ export const commentsGenerator: CsvGenerator = {
                 moderationAction: opinionModerationTable.moderationAction,
             })
             .from(opinionTable)
+            .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
             .innerJoin(
                 opinionContentTable,
                 eq(opinionTable.currentContentId, opinionContentTable.id),
@@ -187,6 +188,7 @@ export const commentsGenerator: CsvGenerator = {
             .where(
                 and(
                     eq(opinionTable.conversationId, conversationId),
+                    currentOpinionSourceCondition(),
                     or(
                         isNull(opinionModerationTable.id),
                         ne(
@@ -239,6 +241,9 @@ export const commentsGenerator: CsvGenerator = {
             const counts = opinionCountsById.get(opinion.opinionId);
             return {
                 ...opinion,
+                authorId: opinion.isAuthorDeleted
+                    ? undefined
+                    : opinion.authorId,
                 numAgrees: counts?.numAgrees ?? 0,
                 numDisagrees: counts?.numDisagrees ?? 0,
                 numPasses: counts?.numPasses ?? 0,
