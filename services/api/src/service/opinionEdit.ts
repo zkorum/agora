@@ -136,12 +136,13 @@ async function validateEdit({
             opinionId: opinion.id,
             conversationId: opinion.conversationId,
         })) ||
-        (await voteBuffer.hasBlockingVotes({
-            db,
-            opinionId: opinion.id,
-            authorId: opinion.authorId,
-            isSeed: opinion.isSeed,
-        }));
+        (!lockAuthorization &&
+            (await voteBuffer.hasBlockingVotes({
+                db,
+                opinionId: opinion.id,
+                authorId: opinion.authorId,
+                isSeed: opinion.isSeed,
+            })));
     const editing = getOpinionEditingAvailability({
         canManage: true,
         isImporting: opinion.isImporting,
@@ -368,17 +369,11 @@ export async function editOpinion({
                 throw new Error("Saved statement is not readable");
             if (
                 prepared.kind === "changed" &&
-                ((await hasBlockingOpinionVotes({
+                (await hasBlockingOpinionVotes({
                     db: tx,
                     opinionId: opinion.id,
                     conversationId: opinion.conversationId,
-                })) ||
-                    (await voteBuffer.hasBlockingVotes({
-                        db: tx,
-                        opinionId: opinion.id,
-                        authorId: opinion.authorId,
-                        isSeed: opinion.isSeed,
-                    })))
+                }))
             ) {
                 // A policy refusal after staging writes must abort the transaction.
                 throw blockedDuringSave;

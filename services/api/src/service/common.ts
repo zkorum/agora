@@ -172,25 +172,6 @@ export function useCommonPost() {
         return moderationPostsTableResponse.length > 0;
     }
 
-    interface IsPostSlugIdLockedProps {
-        db: PostgresJsDatabase;
-        postSlugId: string;
-    }
-    async function isPostSlugIdLocked({
-        db,
-        postSlugId,
-    }: IsPostSlugIdLockedProps) {
-        const postDetails = await getPostMetadataFromSlugId({
-            db,
-            conversationSlugId: postSlugId,
-        });
-
-        return await isConversationIdLocked({
-            db,
-            conversationId: postDetails.id,
-        });
-    }
-
     interface FetchPostItemsProps {
         db: PostgresJsDatabase;
         limit?: number;
@@ -707,7 +688,6 @@ export function useCommonPost() {
         getPostMetadataFromSlugId,
         getPostParticipationMetadataFromSlugId,
         isConversationIdLocked,
-        isPostSlugIdLocked,
         createCompactHtmlBody,
     };
 }

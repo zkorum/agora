@@ -3486,6 +3486,7 @@ server.after(() => {
                 now: now,
                 currentDisplayLanguage: getRequestDisplayLanguage({ request }),
                 returnIsUserClustered: request.body.returnIsUserClustered,
+                clientAction: request.body.clientAction,
             });
             reply.send(castVoteResponse);
         },
@@ -4414,6 +4415,7 @@ server.after(() => {
                 },
             );
             return await postService.closeConversation({
+                voteBuffer,
                 db: db,
                 conversationSlugId: request.body.conversationSlugId,
                 userId: deviceStatus.userId,

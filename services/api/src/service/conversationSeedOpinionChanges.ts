@@ -268,12 +268,10 @@ export async function assertSeedOpinionEditsHaveNoVotes({
     db,
     conversationId,
     changes,
-    voteBuffer,
 }: {
     db: PostgresJsDatabase;
     conversationId: number;
     changes: readonly PreparedChange[];
-    voteBuffer: SeedVoteGuard | undefined;
 }): Promise<void> {
     const edits = changes.filter((change) => change.action === "edit");
     const polisIds = edits
@@ -315,7 +313,6 @@ export async function assertSeedOpinionEditsHaveNoVotes({
         throw new SeedOpinionChangeRejection(
             rejection({ slugId: first.slugId, changeFailure: "has_votes" }),
         );
-    await assertNoBufferedVotes({ db, changes: edits, voteBuffer });
 }
 
 export async function prepareSeedOpinionChanges({

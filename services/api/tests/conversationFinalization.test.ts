@@ -4,17 +4,36 @@ import { eq, sql } from "drizzle-orm";
 import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { GenericContainer, type StartedTestContainer } from "testcontainers";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import {
+    afterAll,
+    afterEach,
+    beforeAll,
+    beforeEach,
+    describe,
+    expect,
+    it,
+    vi,
+} from "vitest";
+import { Decoder, GlideClient } from "@valkey/valkey-glide";
 import { finalizeCurrentPolisConversation } from "../src/service/conversationFinalization.js";
 import { getAnalysisEligibleOpinionVotes } from "../src/service/opinionVoteEligibility.js";
 import { calculateConversationCounters } from "../src/shared-backend/conversationCounters.js";
 import { deleteUserAccount } from "../src/service/account.js";
 import {
-    admitVote,
-    acknowledgeVoteSubmissions,
-    fetchPendingVoteSubmissions,
-    type VoteSubmission,
-} from "../src/service/voteAdmission.js";
+    createVoteBuffer,
+    type VoteBuffer,
+} from "../src/service/voteBuffer.js";
+import {
+    getBufferedVoteKey,
+    type VoteBufferInput,
+} from "../src/service/voteBufferTypes.js";
+import { VALKEY_QUEUE_KEYS } from "../src/shared-backend/valkeyQueues.js";
+import { sealVoteBuffer } from "../src/service/voteBufferLifecycle.js";
+import {
+    buildClosingVoteDrainQuery,
+    buildVoteSourceQuery,
+} from "../src/service/voteQueries.js";
+import { z } from "zod";
 import * as schema from "../src/shared-backend/schema.js";
 import { readDbFixtureSql } from "./dbFixture.js";
 
@@ -32,11 +51,27 @@ function createBarrier() {
     return { promise, resolve };
 }
 
-describe("durable vote admission and closing publication", () => {
+describe("Valkey vote acceptance and closing publication", () => {
     let container: StartedTestContainer;
     let client: postgres.Sql;
     let db: PostgresJsDatabase;
-    let vote: VoteSubmission;
+    let vote: VoteBufferInput;
+    let cacheContainer: StartedTestContainer;
+    let valkey: GlideClient;
+    const buffers: VoteBuffer[] = [];
+    function createBuffer(): VoteBuffer {
+        const buffer = createVoteBuffer({
+            db,
+            valkeyRef: { current: valkey },
+            flushIntervalMs: 60_000,
+            valkeyBatchLimit: 100,
+        });
+        buffers.push(buffer);
+        return buffer;
+    }
+    afterEach(async () => {
+        for (const buffer of buffers.splice(0)) await buffer.shutdown();
+    });
     let configId: number;
 
     beforeAll(async () => {
@@ -56,6 +91,18 @@ describe("durable vote admission and closing publication", () => {
             database: "agora_test",
         });
         db = drizzle(client);
+        cacheContainer = await new GenericContainer("valkey/valkey:8-alpine")
+            .withExposedPorts(6379)
+            .start();
+        valkey = await GlideClient.createClient({
+            addresses: [
+                {
+                    host: cacheContainer.getHost(),
+                    port: cacheContainer.getMappedPort(6379),
+                },
+            ],
+            defaultDecoder: Decoder.String,
+        });
         await client.unsafe(readDbFixtureSql("conversation-finalization.sql"));
         await client.unsafe(
             readFileSync(
@@ -71,11 +118,14 @@ describe("durable vote admission and closing publication", () => {
     afterAll(async () => {
         await client?.end({ timeout: 5 });
         await container?.stop();
+        valkey?.close();
+        await cacheContainer?.stop();
     });
 
     beforeEach(async () => {
+        await valkey.flushall();
         await client.unsafe(
-            'TRUNCATE conversation, "user", opinion, opinion_content, opinion_moderation, conversation_content, polis_conversation_config, conversation_participant, vote_submission, vote, vote_content, analysis_spec, opinion_group_spec, analysis_input_snapshot, analysis_snapshot, analysis_snapshot_result, conversation_view_snapshot, conversation_view_snapshot_checkpoint_reason, realtime_event_outbox RESTART IDENTITY CASCADE',
+            'TRUNCATE conversation, "user", opinion, opinion_content, opinion_moderation, conversation_content, polis_conversation_config, conversation_participant, vote, vote_content, analysis_spec, opinion_group_spec, analysis_input_snapshot, analysis_snapshot, analysis_snapshot_result, conversation_view_snapshot, conversation_view_snapshot_checkpoint_reason, realtime_event_outbox RESTART IDENTITY CASCADE',
         );
         const userId = randomUUID();
         await db
@@ -145,19 +195,22 @@ describe("durable vote admission and closing publication", () => {
         };
     });
 
-    it("keeps acknowledged admissions durable and rejects new actions after closing", async () => {
-        await admitVote({ db, vote });
+    it("accepts into Valkey without writing a vote and drains the cache before closing analysis", async () => {
+        const buffer = createBuffer();
+        await buffer.add({ vote });
+        expect(await db.select().from(schema.voteTable)).toEqual([]);
+        expect(await valkey.hlen(VALKEY_QUEUE_KEYS.VOTE_BUFFER_DATA)).toBe(1);
         await db
             .update(schema.conversationTable)
-            .set({ isClosed: true, closingTargetRevision: 1 })
+            .set({
+                isClosed: true,
+                closingTargetRevision: 1,
+                voteBufferDrained: false,
+            })
             .where(eq(schema.conversationTable.id, vote.conversationId));
-        expect(await fetchPendingVoteSubmissions({ db, limit: 10 })).toEqual([
-            vote,
-        ]);
-        await admitVote({ db, vote });
-        await expect(
-            admitVote({ db, vote: { ...vote, vote: "cancel" } }),
-        ).rejects.toThrow("no longer accepts votes");
+        expect(await buffer.add({ vote: { ...vote, vote: "cancel" } })).toBe(
+            "conversation_closed",
+        );
         expect(
             await db.transaction(
                 async (tx) =>
@@ -172,20 +225,253 @@ describe("durable vote admission and closing publication", () => {
                 .select()
                 .from(schema.conversationViewSnapshotCheckpointReasonTable),
         ).toEqual([]);
+        await buffer.flush();
+        expect(await valkey.hlen(VALKEY_QUEUE_KEYS.VOTE_BUFFER_DATA)).toBe(0);
+        expect(
+            first(await db.select().from(schema.conversationTable))
+                .voteBufferDrained,
+        ).toBe(true);
+        expect(await db.select().from(schema.voteTable)).toHaveLength(1);
     });
 
-    it("does not consume a later same-timestamp cancellation when acknowledging an older action", async () => {
-        await admitVote({ db, vote });
-        const cancellation: VoteSubmission = { ...vote, vote: "cancel" };
-        await admitVote({ db, vote: cancellation });
-        await acknowledgeVoteSubmissions({ db, votes: [vote] });
-        expect(await fetchPendingVoteSubmissions({ db, limit: 10 })).toEqual([
-            cancellation,
-        ]);
-        await acknowledgeVoteSubmissions({ db, votes: [cancellation] });
-        expect(await fetchPendingVoteSubmissions({ db, limit: 10 })).toEqual(
-            [],
+    it("does not start a PostgreSQL transaction on the ordinary enqueue path", async () => {
+        const buffer = createBuffer();
+        const scope = first(await db.select().from(schema.conversationTable));
+        const transaction = vi.spyOn(db, "transaction");
+        try {
+            await buffer.add({
+                vote: {
+                    ...vote,
+                    scope: { epoch: scope.voteBufferEpoch, minimumSequence: 0 },
+                },
+            });
+            expect(transaction).not.toHaveBeenCalled();
+            expect(await db.select().from(schema.voteTable)).toEqual([]);
+        } finally {
+            transaction.mockRestore();
+        }
+    });
+
+    it("keeps the closing-drain lookup indexed with 100,000 unrelated conversations", async () => {
+        await client.unsafe(`INSERT INTO polis_conversation_config (analysis_data_generation)
+            SELECT 0 FROM generate_series(1, 100000)`);
+        await client.unsafe(
+            `INSERT INTO conversation (slug_id, project_id, polis_config_id)
+            SELECT 'b' || lpad(id::text, 7, '0'), 1, id FROM polis_conversation_config WHERE id > $1`,
+            [configId],
         );
+        await db
+            .update(schema.conversationTable)
+            .set({ isClosed: true, voteBufferDrained: false })
+            .where(eq(schema.conversationTable.id, vote.conversationId));
+        await client.unsafe("ANALYZE conversation");
+        const query = buildClosingVoteDrainQuery(db).toSQL();
+        const parameters = z
+            .array(z.union([z.string(), z.number(), z.boolean()]))
+            .parse(query.params);
+        const rows = z
+            .array(z.object({ "QUERY PLAN": z.string() }))
+            .parse(
+                await client.unsafe(
+                    `EXPLAIN (ANALYZE, BUFFERS) ${query.sql}`,
+                    parameters,
+                ),
+            );
+        const plan = rows.map((row) => row["QUERY PLAN"]).join("\n");
+        console.info(
+            "Synthetic closing-drain lookup (100,000 unrelated conversations):\n",
+            plan,
+        );
+        expect(plan).toContain("conversation_vote_buffer_drain_idx");
+        expect(await buildClosingVoteDrainQuery(db)).toHaveLength(1);
+    });
+
+    it("keeps the vote-source lookup indexed with 100,000 stored votes", async () => {
+        await client.unsafe(`INSERT INTO "user" (id, username)
+            SELECT gen_random_uuid(), 'bench' || n FROM generate_series(1, 100000) n`);
+        await client.unsafe(
+            `INSERT INTO vote (author_id, opinion_id)
+            SELECT id, $1 FROM "user" WHERE username LIKE 'bench%'`,
+            [vote.opinionId],
+        );
+        await client.unsafe("ANALYZE vote");
+        await client.unsafe('ANALYZE "user"');
+        const query = buildVoteSourceQuery({
+            db,
+            opinionSlugId: "source01",
+            participantId: vote.userId,
+        }).toSQL();
+        const parameters = z
+            .array(z.union([z.string(), z.number(), z.boolean()]))
+            .parse(query.params);
+        const rows = z
+            .array(
+                z.object({
+                    "QUERY PLAN": z.array(
+                        z.object({
+                            Plan: z.unknown(),
+                            "Execution Time": z.number(),
+                        }),
+                    ),
+                }),
+            )
+            .parse(
+                await client.unsafe(
+                    `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) ${query.sql}`,
+                    parameters,
+                ),
+            );
+        const measured = first(first(rows)["QUERY PLAN"]);
+        function voteScans(node: unknown): string[] {
+            const parsed = z
+                .object({
+                    "Node Type": z.string(),
+                    "Relation Name": z.string().optional(),
+                    Plans: z.array(z.unknown()).optional(),
+                })
+                .parse(node);
+            return [
+                ...(parsed["Relation Name"] === "vote"
+                    ? [parsed["Node Type"]]
+                    : []),
+                ...(parsed.Plans ?? []).flatMap(voteScans),
+            ];
+        }
+        const scans = voteScans(measured.Plan);
+        expect(scans.length).toBeGreaterThan(0);
+        expect(
+            scans.every((scan) =>
+                ["Index Scan", "Index Only Scan", "Bitmap Heap Scan"].includes(
+                    scan,
+                ),
+            ),
+        ).toBe(true);
+        console.info(
+            "Synthetic vote-source lookup (100,000 votes):",
+            measured["Execution Time"],
+            "ms;",
+            scans,
+        );
+    }, 60_000);
+
+    it("reports a known unavailable buffer instead of acknowledging a locally saved vote", async () => {
+        const buffer = createVoteBuffer({
+            db,
+            valkeyRef: { current: undefined },
+            flushIntervalMs: 60_000,
+            valkeyBatchLimit: 100,
+        });
+        buffers.push(buffer);
+        await expect(buffer.add({ vote })).rejects.toMatchObject({
+            statusCode: 503,
+        });
+        expect(await db.select().from(schema.voteTable)).toEqual([]);
+    });
+
+    it("does not apply an old buffered choice to edited statement content", async () => {
+        const buffer = createBuffer();
+        await buffer.add({ vote });
+        const next = first(
+            await db
+                .insert(schema.opinionContentTable)
+                .values({
+                    opinionId: vote.opinionId,
+                    conversationContentId: first(
+                        await db.select().from(schema.conversationContentTable),
+                    ).id,
+                    content: "Edited",
+                    contentPlainText: "Edited",
+                })
+                .returning(),
+        );
+        await db
+            .update(schema.opinionTable)
+            .set({ currentContentId: next.id })
+            .where(eq(schema.opinionTable.id, vote.opinionId));
+        await buffer.flush();
+        expect(await db.select().from(schema.voteTable)).toEqual([]);
+        expect(await valkey.hlen(VALKEY_QUEUE_KEYS.VOTE_BUFFER_DATA)).toBe(0);
+    });
+
+    it("cleans malformed cache entries without starving valid votes", async () => {
+        const buffer = createBuffer();
+        await buffer.add({ vote });
+        await valkey.hset(VALKEY_QUEUE_KEYS.VOTE_BUFFER_DATA, {
+            "malformed:0": "{",
+            "legacy:0": "null",
+        });
+        await valkey.zadd(VALKEY_QUEUE_KEYS.VOTE_BUFFER_INDEX, {
+            "malformed:0": 0,
+            "legacy:0": 0,
+        });
+        await buffer.flush();
+        expect(await db.select().from(schema.voteTable)).toHaveLength(1);
+        expect(await valkey.hlen(VALKEY_QUEUE_KEYS.VOTE_BUFFER_DATA)).toBe(0);
+        expect(await valkey.zcard(VALKEY_QUEUE_KEYS.VOTE_BUFFER_INDEX)).toBe(0);
+    });
+
+    it("rejects stale epoch payloads after reopening and fences delayed close calls", async () => {
+        const buffer = createBuffer();
+        const previousEpoch = first(
+            await db.select().from(schema.conversationTable),
+        ).voteBufferEpoch;
+        await buffer.add({ vote });
+        const blockingParams = {
+            db,
+            opinionId: vote.opinionId,
+            authorId: vote.userId,
+            isSeed: true,
+        };
+        expect(await buffer.hasBlockingVotes(blockingParams)).toBe(true);
+        const epoch = randomUUID();
+        await db
+            .update(schema.conversationTable)
+            .set({ voteBufferEpoch: epoch })
+            .where(eq(schema.conversationTable.id, vote.conversationId));
+        expect(await buffer.hasBlockingVotes(blockingParams)).toBe(false);
+        await sealVoteBuffer({
+            valkey,
+            epoch: previousEpoch,
+        });
+        // Both epochs can be in the queue: an old scope must neither replace
+        // the reopened action nor cause its cleanup to consume that action.
+        await buffer.add({ vote: { ...vote, vote: "disagree" } });
+        await buffer.flush();
+        expect(await db.select().from(schema.voteTable)).toHaveLength(1);
+        expect(
+            first(await db.select().from(schema.voteContentTable)).vote,
+        ).toBe("disagree");
+    });
+
+    it("cannot replay an older committed vote over a same-timestamp cancellation", async () => {
+        const buffer = createBuffer();
+        await buffer.add({ vote });
+        const key = getBufferedVoteKey({
+            ...vote,
+            voteBufferEpoch: first(
+                await db.select().from(schema.conversationTable),
+            ).voteBufferEpoch,
+        });
+        const oldPayload = String(
+            await valkey.hget(VALKEY_QUEUE_KEYS.VOTE_BUFFER_DATA, key),
+        );
+        await buffer.flush();
+        await buffer.add({ vote: { ...vote, vote: "cancel" } });
+        await buffer.flush();
+        await valkey.hset(VALKEY_QUEUE_KEYS.VOTE_BUFFER_DATA, {
+            [key]: oldPayload,
+        });
+        await valkey.zadd(VALKEY_QUEUE_KEYS.VOTE_BUFFER_INDEX, {
+            [key]: vote.timestamp.getTime(),
+        });
+        await buffer.flush();
+        expect(
+            first(await db.select().from(schema.voteTable)).currentContentId,
+        ).toBeNull();
+        expect(
+            first(await db.select().from(schema.opinionTable)).numAgrees,
+        ).toBe(0);
+        expect(await db.select().from(schema.voteContentTable)).toHaveLength(1);
     });
 
     it("ignores removed moderation records without duplicating live counts", async () => {

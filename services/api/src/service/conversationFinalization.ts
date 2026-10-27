@@ -6,7 +6,6 @@ import {
     conversationViewSnapshotTable,
     opinionGroupSpecTable,
     polisConversationConfigTable,
-    voteSubmissionTable,
     rankingConversationConfigTable,
     rankingConversationStatsSnapshotTable,
     rankingConversationStatsItemTable,
@@ -44,22 +43,12 @@ export async function finalizeCurrentPolisConversation({
                 eq(conversationTable.id, conversationId),
                 eq(conversationTable.isClosed, true),
                 isNull(conversationTable.closedFinalizedAt),
+                eq(conversationTable.voteBufferDrained, true),
             ),
         )
         .for("no key update", { of: conversationTable });
     const state = stateRows.at(0);
     if (state === undefined) return false;
-    const pending = await db
-        .select({ id: voteSubmissionTable.id })
-        .from(voteSubmissionTable)
-        .where(
-            and(
-                eq(voteSubmissionTable.conversationId, conversationId),
-                eq(voteSubmissionTable.pending, true),
-            ),
-        )
-        .limit(1);
-    if (pending.length > 0) return false;
     const specs = await db
         .selectDistinctOn([opinionGroupSpecTable.key], {
             id: opinionGroupSpecTable.id,

@@ -434,6 +434,13 @@ export function generateSqlAlchemyModels({
                     mcArgs.push(`server_default=text("${col.defaultValue}")`);
                 } else if (/^-?\d+$/.test(col.defaultValue)) {
                     mcArgs.push(`server_default="${col.defaultValue}"`);
+                } else if (
+                    col.sqlType.toLowerCase() === "uuid" &&
+                    col.defaultValue === "gen_random_uuid()"
+                ) {
+                    // Match PostgreSQL's random UUID default for Python inserts,
+                    // including schema-derived SQLite integration fixtures.
+                    mcArgs.push("default=uuid_pkg.uuid4");
                 }
             }
             const isNullable = col.nullable && !isPk;

@@ -82,6 +82,8 @@ CREATE TABLE "conversation" (
 	"conversation_type" "conversation_type" DEFAULT 'polis' NOT NULL,
 	"is_importing" boolean DEFAULT false NOT NULL,
 	"is_closed" boolean DEFAULT false NOT NULL,
+	"vote_buffer_epoch" uuid DEFAULT gen_random_uuid() NOT NULL,
+	"vote_buffer_drained" boolean DEFAULT true NOT NULL,
 	"closing_target_revision" bigint,
 	"closed_finalized_at" timestamp (0),
 	"is_edited" boolean DEFAULT false NOT NULL,
@@ -382,6 +384,8 @@ CREATE TABLE "ranking_conversation_stats_snapshot" (
 CREATE INDEX "conversation_feed_idx" ON "conversation" USING btree ("created_at" DESC,"id" DESC) WHERE "conversation"."is_indexed" = true AND "conversation"."is_importing" = false;
 
 CREATE INDEX "conversation_type_importing_idx" ON "conversation" USING btree ("is_importing","conversation_type");
+
+CREATE INDEX "conversation_vote_buffer_drain_idx" ON "conversation" USING btree ("id") WHERE "conversation"."conversation_type" = 'polis' AND "conversation"."is_closed" = true AND "conversation"."vote_buffer_drained" = false AND "conversation"."closed_finalized_at" IS NULL;
 
 CREATE INDEX "conversation_project_id_idx" ON "conversation" USING btree ("project_id");
 

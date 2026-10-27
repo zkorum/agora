@@ -283,6 +283,8 @@ CREATE TABLE "conversation" (
 	"conversation_type" "conversation_type" DEFAULT 'polis' NOT NULL,
 	"is_importing" boolean DEFAULT false NOT NULL,
 	"is_closed" boolean DEFAULT false NOT NULL,
+	"vote_buffer_epoch" uuid DEFAULT gen_random_uuid() NOT NULL,
+	"vote_buffer_drained" boolean DEFAULT true NOT NULL,
 	"closing_target_revision" bigint,
 	"closed_finalized_at" timestamp (0),
 	"is_edited" boolean DEFAULT false NOT NULL,
@@ -799,25 +801,14 @@ CREATE TABLE "vote_content" (
 	"created_at" timestamp (0) DEFAULT now() NOT NULL
 );
 
-CREATE TABLE "vote_submission" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "vote_submission_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"conversation_id" integer NOT NULL,
-	"user_id" uuid NOT NULL,
-	"opinion_id" integer NOT NULL,
-	"opinion_content_id" integer NOT NULL,
-	"action" varchar(8) NOT NULL,
-	"submitted_at" timestamp (3) NOT NULL,
-	"pending" boolean DEFAULT true NOT NULL,
-	CONSTRAINT "vote_submission_account_opinion_unique" UNIQUE("user_id","opinion_id"),
-	CONSTRAINT "vote_submission_action_check" CHECK ("vote_submission"."action" IN ('agree', 'disagree', 'pass', 'cancel'))
-);
-
 CREATE TABLE "vote" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "vote_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"author_id" uuid NOT NULL,
 	"participant_id" uuid,
 	"opinion_id" integer NOT NULL,
 	"polis_vote_id" integer,
+	"buffer_epoch" uuid,
+	"buffer_sequence" bigint DEFAULT 0 NOT NULL,
 	"current_content_id" integer,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
@@ -862,6 +853,8 @@ CREATE INDEX "conversation_participant_user_idx" ON "conversation_participant" U
 CREATE INDEX "conversation_feed_idx" ON "conversation" USING btree ("created_at" DESC,"id" DESC) WHERE "conversation"."is_indexed" = true AND "conversation"."is_importing" = false;
 
 CREATE INDEX "conversation_type_importing_idx" ON "conversation" USING btree ("is_importing","conversation_type");
+
+CREATE INDEX "conversation_vote_buffer_drain_idx" ON "conversation" USING btree ("id") WHERE "conversation"."conversation_type" = 'polis' AND "conversation"."is_closed" = true AND "conversation"."vote_buffer_drained" = false AND "conversation"."closed_finalized_at" IS NULL;
 
 CREATE INDEX "conversation_project_id_idx" ON "conversation" USING btree ("project_id");
 
@@ -944,10 +937,6 @@ CREATE UNIQUE INDEX "survey_question_active_config_display_order_uidx" ON "surve
 CREATE INDEX "survey_question_config_idx" ON "survey_question" USING btree ("survey_config_id");
 
 CREATE INDEX "survey_response_conversation_created_idx" ON "survey_response" USING btree ("conversation_id","created_at");
-
-CREATE INDEX "vote_submission_pending_idx" ON "vote_submission" USING btree ("submitted_at","id") WHERE "vote_submission"."pending" = true;
-
-CREATE INDEX "vote_submission_conversation_pending_idx" ON "vote_submission" USING btree ("conversation_id") WHERE "vote_submission"."pending" = true;
 
 CREATE INDEX "vote_authorId_idx" ON "vote" USING btree ("author_id");
 

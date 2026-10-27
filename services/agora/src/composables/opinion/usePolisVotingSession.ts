@@ -8,6 +8,13 @@ import { computed, shallowRef } from "vue";
 
 // The next-unanswered endpoint accepts at most 100 exclusions.
 const MAX_FETCH_EXCLUSIONS = 100;
+const MAX_IN_FLIGHT_ACTIONS = 4;
+export type VoteRecoveryFeedback = "changed" | "unconfirmed" | "unavailable";
+
+interface RecoveryEntry {
+  readonly entry: HistoryEntry;
+  readonly feedback: "changed" | "unconfirmed";
+}
 
 interface StatementState {
   opinion: DisplayedOpinionItem;
@@ -25,6 +32,7 @@ type FeedState =
   | { kind: "caught_up" };
 
 interface HistoryEntry {
+  readonly id: number;
   opinion: DisplayedOpinionItem;
   before: VotingOption | undefined;
   after: VotingOption | undefined;
@@ -41,6 +49,10 @@ interface SessionState {
   revisit: readonly StatementState[];
   exclusions: readonly string[];
   pending: ReadonlyMap<string, PendingWrite>;
+  inFlight: readonly HistoryEntry[];
+  recoveries: ReadonlyMap<string, RecoveryEntry>;
+  feedback: ReadonlyMap<string, VoteRecoveryFeedback>;
+  skippedFeedback: number;
 }
 
 export interface FetchedPolisOpinion {
@@ -56,6 +68,10 @@ function emptySession(): SessionState {
     revisit: [],
     exclusions: [],
     pending: new Map(),
+    inFlight: [],
+    recoveries: new Map(),
+    feedback: new Map(),
+    skippedFeedback: 0,
   };
 }
 
@@ -194,6 +210,8 @@ function adjustRemaining({
 export function usePolisVotingSession() {
   const state = shallowRef<SessionState>(emptySession());
   let generation = 0;
+  let undoGeneration = 0;
+  let nextActionId = 0;
 
   function acceptFetchedOpinion({
     response,
@@ -244,7 +262,9 @@ export function usePolisVotingSession() {
       ...nextState,
       // Only add held statements actually excluded by this particular request.
       remaining:
-        previous.pending.size === 0
+        previous.pending.size === 0 &&
+        previous.inFlight.length === 0 &&
+        previous.recoveries.size === 0
           ? response.remainingCount + reservedUnanswered
           : previous.remaining === undefined
             ? undefined
@@ -259,75 +279,216 @@ export function usePolisVotingSession() {
     previousVote,
   }: OpinionVoteParams & { previousVote: VotingOption | undefined }) {
     const current = currentStatement(state.value.feed);
-    if (current?.opinion.opinionSlugId !== opinionSlugId) return undefined;
+    if (
+      current?.opinion.opinionSlugId !== opinionSlugId ||
+      current.opinion.displayContent.sourceVersion !== sourceVersion ||
+      state.value.inFlight.some(
+        (entry) => entry.opinion.opinionSlugId === opinionSlugId
+      ) ||
+      state.value.inFlight.length + state.value.recoveries.size >=
+        MAX_IN_FLIGHT_ACTIONS
+    )
+      return undefined;
     const actionGeneration = generation;
+    const previousPending = state.value.pending.get(opinionSlugId);
     const after = voteAction === "cancel" ? undefined : voteAction;
     const params: OpinionVoteParams = {
       opinionSlugId,
       voteAction,
       sourceVersion,
     };
+    const entry: HistoryEntry = {
+      id: ++nextActionId,
+      opinion: current.opinion,
+      before: previousVote,
+      after,
+    };
+    let applied = false;
+    const apply = () => {
+      if (applied || generation !== actionGeneration) return;
+      applied = true;
+      const previous = state.value;
+      const pending = new Map(previous.pending);
+      const history = [...previous.history, entry];
+      const remaining = adjustRemaining({
+        count: previous.remaining,
+        before: previousVote,
+        after,
+      });
+      if (after === undefined) {
+        pending.set(opinionSlugId, { expectedVote: undefined });
+        state.value = {
+          ...previous,
+          feed: {
+            kind: "ready",
+            current: { opinion: current.opinion, vote: undefined },
+            next:
+              previous.feed.kind === "ready"
+                ? previous.feed.next
+                : { kind: "unfetched" },
+          },
+          history,
+          remaining,
+          pending,
+          exclusions: previous.exclusions.filter((id) => id !== opinionSlugId),
+        };
+      } else {
+        pending.delete(opinionSlugId);
+        state.value = {
+          ...previous,
+          ...advanceFeed({
+            feed: previous.feed,
+            revisit: previous.revisit,
+            previousOpinion: current.opinion,
+          }),
+          history,
+          remaining,
+          pending,
+          exclusions: withExclusion({
+            exclusions: previous.exclusions,
+            id: opinionSlugId,
+          }),
+        };
+      }
+    };
     return {
       params,
+      optimistic: () => {
+        if (applied || generation !== actionGeneration) return false;
+        apply();
+        state.value = {
+          ...state.value,
+          inFlight: [...state.value.inFlight, entry],
+        };
+        return true;
+      },
       confirm: () => {
         if (generation !== actionGeneration) return;
+        if (applied && !state.value.inFlight.includes(entry)) return;
+        apply();
+        state.value = {
+          ...state.value,
+          inFlight: state.value.inFlight.filter((pending) => pending !== entry),
+        };
+      },
+      reject: (feedback: "changed" | "unconfirmed" | "blocked") => {
+        if (
+          !applied ||
+          generation !== actionGeneration ||
+          !state.value.inFlight.includes(entry)
+        )
+          return;
         const previous = state.value;
+        const recoveries = new Map(previous.recoveries);
         const pending = new Map(previous.pending);
-        const history = [
-          ...previous.history,
-          { opinion: current.opinion, before: previousVote, after },
-        ];
-        const remaining = adjustRemaining({
-          count: previous.remaining,
-          before: previousVote,
-          after,
-        });
-        if (after === undefined) {
-          pending.set(opinionSlugId, { expectedVote: undefined });
-          state.value = {
-            ...previous,
-            feed: {
-              kind: "ready",
-              current: { opinion: current.opinion, vote: undefined },
-              next:
-                previous.feed.kind === "ready"
-                  ? previous.feed.next
-                  : { kind: "unfetched" },
-            },
-            history,
-            remaining,
-            pending,
-            exclusions: previous.exclusions.filter(
-              (id) => id !== opinionSlugId
-            ),
-          };
-        } else {
-          pending.delete(opinionSlugId);
-          state.value = {
-            ...previous,
-            ...advanceFeed({
-              feed: previous.feed,
-              revisit: previous.revisit,
-              previousOpinion: current.opinion,
-            }),
-            history,
-            remaining,
-            pending,
-            exclusions: withExclusion({
-              exclusions: previous.exclusions,
-              id: opinionSlugId,
-            }),
-          };
-        }
+        if (previousPending === undefined) pending.delete(opinionSlugId);
+        else pending.set(opinionSlugId, previousPending);
+        if (feedback !== "blocked")
+          recoveries.set(opinionSlugId, { entry, feedback });
+        state.value = {
+          ...previous,
+          inFlight: previous.inFlight.filter((pending) => pending !== entry),
+          history: previous.history.filter((item) => item !== entry),
+          remaining: adjustRemaining({
+            count: previous.remaining,
+            before: after,
+            after: previousVote,
+          }),
+          recoveries,
+          pending,
+          exclusions:
+            feedback === "blocked"
+              ? previous.exclusions.filter((id) => id !== opinionSlugId)
+              : previous.exclusions,
+        };
       },
     };
+  }
+
+  function acceptRecoveredOpinions({
+    opinions,
+    captured,
+  }: {
+    opinions: readonly DisplayedOpinionItem[];
+    captured: ReadonlyMap<string, RecoveryEntry>;
+  }): void {
+    const byId = new Map(
+      opinions.map((opinion) => [opinion.opinionSlugId, opinion])
+    );
+    for (const [id, recovery] of captured) {
+      if (state.value.recoveries.get(id)?.entry.id !== recovery.entry.id)
+        continue;
+      const previous = state.value;
+      const recoveries = new Map(previous.recoveries);
+      recoveries.delete(id);
+      const opinion = byId.get(id);
+      const feedback = new Map(previous.feedback);
+      let feed = previous.feed;
+      let revisit = previous.revisit;
+      if (opinion !== undefined) {
+        feedback.set(id, recovery.feedback);
+        const restored: StatementState = {
+          opinion,
+          vote: recovery.entry.before,
+        };
+        if (feed.kind === "ready")
+          revisit = [
+            ...revisit.filter((item) => item.opinion.opinionSlugId !== id),
+            restored,
+          ];
+        else
+          feed = {
+            kind: "ready",
+            current: restored,
+            next: { kind: "unfetched" },
+          };
+      }
+      state.value = {
+        ...previous,
+        feed,
+        revisit,
+        recoveries,
+        feedback,
+        remaining:
+          opinion === undefined &&
+          recovery.entry.before === undefined &&
+          previous.remaining !== undefined
+            ? Math.max(0, previous.remaining - 1)
+            : previous.remaining,
+        exclusions:
+          opinion === undefined
+            ? previous.exclusions
+            : previous.exclusions.filter((existing) => existing !== id),
+        skippedFeedback:
+          previous.skippedFeedback + Number(opinion === undefined),
+      };
+    }
+  }
+
+  function takeFeedback(): VoteRecoveryFeedback | undefined {
+    const previous = state.value;
+    const id = currentStatement(previous.feed)?.opinion.opinionSlugId;
+    const message = id === undefined ? undefined : previous.feedback.get(id);
+    if (message !== undefined && id !== undefined) {
+      const feedback = new Map(previous.feedback);
+      feedback.delete(id);
+      state.value = { ...previous, feedback };
+      return message;
+    }
+    if (previous.skippedFeedback > 0) {
+      state.value = { ...previous, skippedFeedback: 0 };
+      return "unavailable";
+    }
+    return undefined;
   }
 
   function prepareUndo() {
     const previous = state.value;
     const entry = previous.history.at(-1);
-    if (entry === undefined) return undefined;
+    if (entry === undefined || previous.inFlight.includes(entry))
+      return undefined;
     const actionGeneration = generation;
+    const capturedUndoGeneration = undoGeneration;
     const id = entry.opinion.opinionSlugId;
     const pending = new Map(previous.pending);
     pending.set(id, { expectedVote: entry.before });
@@ -366,7 +527,11 @@ export function usePolisVotingSession() {
     return {
       params,
       rollback: () => {
-        if (generation !== actionGeneration) return;
+        if (
+          generation !== actionGeneration ||
+          undoGeneration !== capturedUndoGeneration
+        )
+          return;
         // Statement submission can exclude an auto-agreed item while Undo is pending.
         const addedExclusions = new Set(
           state.value.exclusions.filter(
@@ -404,7 +569,39 @@ export function usePolisVotingSession() {
               ),
             };
         }
-        state.value = restored;
+        // Only undo this action's delta. Other votes can finish or enter recovery
+        // while Undo is in flight; restoring the whole snapshot would revive them.
+        const observed = state.value;
+        const pending = new Map(observed.pending);
+        const priorWrite = previous.pending.get(id);
+        if (priorWrite === undefined) pending.delete(id);
+        else pending.set(id, priorWrite);
+        const restoredIds = new Set(
+          restored.revisit.map((item) => item.opinion.opinionSlugId)
+        );
+        state.value = {
+          ...restored,
+          pending,
+          inFlight: observed.inFlight,
+          recoveries: observed.recoveries,
+          feedback: observed.feedback,
+          skippedFeedback: observed.skippedFeedback,
+          history: [...observed.history, entry],
+          remaining: adjustRemaining({
+            count: observed.remaining,
+            before: entry.before,
+            after: entry.after,
+          }),
+          revisit: [
+            ...restored.revisit,
+            ...observed.revisit.filter(
+              (item) =>
+                !restoredIds.has(item.opinion.opinionSlugId) &&
+                item.opinion.opinionSlugId !==
+                  currentStatement(restored.feed)?.opinion.opinionSlugId
+            ),
+          ],
+        };
       },
     };
   }
@@ -436,7 +633,10 @@ export function usePolisVotingSession() {
     const previous = state.value;
     const preserve =
       previous.feed.kind === "ready" &&
-      (preserveCurrent || previous.pending.size > 0);
+      (preserveCurrent ||
+        previous.pending.size > 0 ||
+        previous.inFlight.length > 0 ||
+        previous.recoveries.size > 0);
     state.value = {
       ...previous,
       feed:
@@ -469,11 +669,14 @@ export function usePolisVotingSession() {
   }
 
   function discard(matches: (opinion: DisplayedOpinionItem) => boolean): void {
-    generation += 1;
+    undoGeneration += 1;
     const previous = state.value;
     const known = [
       ...previous.history.map((entry) => entry.opinion),
       ...previous.revisit.map((item) => item.opinion),
+      ...[...previous.recoveries.values()].map(
+        (recovery) => recovery.entry.opinion
+      ),
     ];
     const feed = previous.feed;
     if (feed.kind === "ready") {
@@ -487,9 +690,20 @@ export function usePolisVotingSession() {
     );
     const pending = new Map(previous.pending);
     for (const id of removed) pending.delete(id);
+    const recoveries = new Map(previous.recoveries);
+    const feedback = new Map(previous.feedback);
+    for (const id of removed) {
+      recoveries.delete(id);
+      feedback.delete(id);
+    }
     state.value = {
       ...excludeOpinions({ state: previous, ids: removed }),
       pending,
+      recoveries,
+      feedback,
+      inFlight: previous.inFlight.filter(
+        (entry) => !removed.has(entry.opinion.opinionSlugId)
+      ),
       history: previous.history.filter(
         (entry) => !removed.has(entry.opinion.opinionSlugId)
       ),
@@ -527,16 +741,49 @@ export function usePolisVotingSession() {
           state.value.feed.next.kind === "unfetched" &&
           state.value.revisit.length === 0)
     ),
-    canUndo: computed(() => state.value.history.length > 0),
+    canUndo: computed(() => {
+      const entry = state.value.history.at(-1);
+      return entry !== undefined && !state.value.inFlight.includes(entry);
+    }),
+    hasInFlightActions: computed(() => state.value.inFlight.length > 0),
+    isAtCapacity: computed(
+      () =>
+        state.value.inFlight.length + state.value.recoveries.size >=
+        MAX_IN_FLIGHT_ACTIONS
+    ),
+    isCurrentOpinionPending: computed(() =>
+      state.value.inFlight.some(
+        (entry) =>
+          entry.opinion.opinionSlugId ===
+          currentStatement(state.value.feed)?.opinion.opinionSlugId
+      )
+    ),
+    recoveries: computed(() => state.value.recoveries),
+    currentFeedback: computed(() => {
+      const id = currentStatement(state.value.feed)?.opinion.opinionSlugId;
+      return id === undefined ? undefined : state.value.feedback.get(id);
+    }),
     hasPendingWrites: computed(() => state.value.pending.size > 0),
-    isWaitingForOpinion: computed(() => state.value.feed.kind === "waiting"),
-    isCaughtUp: computed(() => state.value.feed.kind === "caught_up"),
+    isWaitingForOpinion: computed(
+      () =>
+        state.value.feed.kind === "waiting" ||
+        (state.value.feed.kind === "caught_up" &&
+          (state.value.inFlight.length > 0 || state.value.recoveries.size > 0))
+    ),
+    isCaughtUp: computed(
+      () =>
+        state.value.feed.kind === "caught_up" &&
+        state.value.inFlight.length === 0 &&
+        state.value.recoveries.size === 0
+    ),
     acceptFetchedOpinion,
     updateCurrentOpinion,
     prepareVote,
     prepareUndo,
     capturePendingWrites,
     confirmPendingWrites,
+    acceptRecoveredOpinions,
+    takeFeedback,
     refresh,
     excludeCreatedOpinion,
     discard,

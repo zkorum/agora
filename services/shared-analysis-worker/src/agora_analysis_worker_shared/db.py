@@ -18,8 +18,8 @@ from sqlalchemy.orm import Session, aliased
 from agora_analysis_worker_shared.analysis_lifecycle import (
     closing_retry_ready_condition,
     finalize_closed_analysis,
-    no_pending_vote_submissions,
     permitted_publication_claim_ids,
+    vote_buffer_ready_for_analysis,
 )
 from agora_analysis_worker_shared.generated_models import (
     AnalysisCompressionEnum,
@@ -683,7 +683,7 @@ def _claim_work_items_batch(
                     Conversation.is_importing.is_(False),
                     Conversation.conversation_type == ConversationType.polis,
                     Conversation.closed_finalized_at.is_(None),
-                    no_pending_vote_submissions(),
+                    vote_buffer_ready_for_analysis(),
                     or_(resume_condition, fresh_condition),
                 )
             )

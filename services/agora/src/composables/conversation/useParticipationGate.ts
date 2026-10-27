@@ -93,5 +93,6 @@ export function useParticipationGate(
     needsTicket,
     openParticipationOnboarding,
     captureParticipationAction,
+    recordParticipationRejection: recordRejection,
   };
 }

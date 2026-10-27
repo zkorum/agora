@@ -1,6 +1,5 @@
 import {
   type ApiV1UserVoteGetByConversationsPostRequest,
-  type ApiV1VoteCastPostRequest,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
@@ -26,19 +25,22 @@ export function useBackendVoteApi() {
     returnIsUserClustered,
     isCurrent,
     sourceVersion,
+    clientAction,
   }: {
     opinionSlugId: string;
     votingAction: VotingAction;
     returnIsUserClustered: boolean;
     isCurrent: () => boolean;
     sourceVersion: string;
+    clientAction?: { sessionId: string; sequence: number };
   }): Promise<CastVoteResponse> {
-    const params: ApiV1VoteCastPostRequest = {
+    const params = Dto.castVoteRequest.parse({
       opinionSlugId,
       chosenOption: votingAction,
       returnIsUserClustered,
       sourceVersion,
-    };
+      clientAction,
+    });
 
     const { url, options: requestOptions } =
       await DefaultApiAxiosParamCreator().apiV1VoteCastPost(params);

@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
+import { isAxiosError } from "axios";
 import { storeToRefs } from "pinia";
 import type { OpinionVoteParams } from "src/composables/opinion/types";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
@@ -78,7 +79,13 @@ export function useUserVotesQuery({
   });
 }
 
-export function useVoteMutation(postSlugId: string) {
+export function useVoteMutation({
+  postSlugId,
+  feedback = "inline",
+}: {
+  postSlugId: string;
+  feedback?: "inline" | "session";
+}) {
   const queryClient = useQueryClient();
   const { castVoteForComment } = useBackendVoteApi();
   const { showNotifyMessage } = useNotify();
@@ -128,6 +135,7 @@ export function useVoteMutation(postSlugId: string) {
     OpinionVoteParams & { isCurrent: () => boolean }
   >;
   type SubmissionVariables = VoteVariables & {
+    clientAction: { sessionId: string; sequence: number };
     isCurrentViewer: () => boolean;
     ownerVotesKey: () => UserVotesQueryKey;
     readsCancelled: Promise<void>;
@@ -150,14 +158,17 @@ export function useVoteMutation(postSlugId: string) {
       if (!variables.isCurrent() || !variables.submission.isLatest())
         return undefined;
       const { opinionSlugId, voteAction } = variables;
-      const analysisQueryData = queryClient.getQueriesData<AnalysisData>({
-        queryKey: ["analysis", postSlugId],
-        predicate: (query) =>
-          isQueryForViewerScope({
-            queryKey: query.queryKey,
-            viewerScope: viewerScope.value,
-          }),
-      });
+      const analysisQueryData =
+        feedback === "inline"
+          ? queryClient.getQueriesData<AnalysisData>({
+              queryKey: ["analysis", postSlugId],
+              predicate: (query) =>
+                isQueryForViewerScope({
+                  queryKey: query.queryKey,
+                  viewerScope: viewerScope.value,
+                }),
+            })
+          : [];
 
       const cacheKnowsUserIsClustered = analysisQueryData.some(
         ([, analysisData]) =>
@@ -174,9 +185,9 @@ export function useVoteMutation(postSlugId: string) {
         })
       );
 
-      const returnIsUserClustered = !(
-        cacheKnowsUserIsClustered || sessionKnowsUserIsClustered
-      );
+      const returnIsUserClustered =
+        feedback === "inline" &&
+        !(cacheKnowsUserIsClustered || sessionKnowsUserIsClustered);
 
       const response = await castVoteForComment({
         opinionSlugId,
@@ -184,6 +195,7 @@ export function useVoteMutation(postSlugId: string) {
         returnIsUserClustered,
         isCurrent: variables.isCurrent,
         sourceVersion: variables.sourceVersion,
+        clientAction: variables.clientAction,
       });
       // Receipt of an accepted write matters even if its view was replaced:
       // a newer choice may need to roll back to this vote.
@@ -195,6 +207,7 @@ export function useVoteMutation(postSlugId: string) {
       rollbackSubmission(variables);
       if (error instanceof DOMException && error.name === "AbortError") return;
       if (!variables.isCurrent() || !variables.submission.isLatest()) return;
+      if (feedback === "session") return;
 
       const apiError = classifyApiError(error);
       if (apiError.kind === "transport") {
@@ -210,7 +223,8 @@ export function useVoteMutation(postSlugId: string) {
         if (!variables.isCurrentViewer()) return;
         if (
           variables.submission.isLatest() &&
-          data?.reason === "statement_changed"
+          data?.reason === "statement_changed" &&
+          feedback === "inline"
         ) {
           const voterId = userId.value;
           await Promise.all([
@@ -271,7 +285,13 @@ export function useVoteMutation(postSlugId: string) {
       }
     },
 
-    retry: false, // Disable auto-retry
+    retry: (failures, error) =>
+      feedback === "session" &&
+      failures < 2 &&
+      isAxiosError(error) &&
+      (error.response === undefined ||
+        error.response.status >= 500 ||
+        error.response.status === 429),
   });
 
   async function cancelVoteReads(votesKey: UserVotesQueryKey): Promise<void> {
@@ -299,6 +319,7 @@ export function useVoteMutation(postSlugId: string) {
       // so different read-completion times cannot reorder the user's choices.
       const votesKey = viewer.votesKey();
       const readsCancelled = cancelVoteReads(votesKey);
+      const clientAction = submissions.nextAction();
       const result = await submissions.submit({
         conversationSlugId: postSlugId,
         snapshot: applyOptimisticVote({
@@ -316,6 +337,7 @@ export function useVoteMutation(postSlugId: string) {
             ownerVotesKey: viewer.votesKey,
             readsCancelled,
             submission,
+            clientAction,
           }),
       });
       return isCurrent() ? result : undefined;

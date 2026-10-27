@@ -5439,6 +5439,13 @@ def test_closing_accepts_only_current_complete_frames(lineage_scan_engine: Engin
                 created_at=NOW,
             )
         )
+        conversation.vote_buffer_drained = False
+        session.flush()
+        finalize_closed_analysis(session, conversation_ids=[10])
+        session.refresh(conversation)
+        assert conversation.closed_finalized_at is None
+        assert activatable_analysis_view_ids(session, view_ids=[21], conversation_ids=[10]) == []
+        conversation.vote_buffer_drained = True
         session.flush()
         finalize_closed_analysis(session, conversation_ids=[10])
         session.refresh(conversation)

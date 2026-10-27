@@ -2675,6 +2675,10 @@ export const conversationTable = pgTable(
             .default("polis"), // "polis" = standard agree/disagree/unsure voting with clustering, "ranking" = ranked-choice prioritization family
         isImporting: boolean("is_importing").notNull().default(false), // if true, the conversation is being imported from CSV and should not be visible in feed until import completes
         isClosed: boolean("is_closed").notNull().default(false), // if true, the conversation was closed by owner and users cannot post opinions or vote
+        voteBufferEpoch: uuid("vote_buffer_epoch").notNull().defaultRandom(),
+        voteBufferDrained: boolean("vote_buffer_drained")
+            .notNull()
+            .default(true),
         closingTargetRevision: bigint("closing_target_revision", {
             mode: "number",
         }),
@@ -2722,6 +2726,12 @@ export const conversationTable = pgTable(
             table.isImporting,
             table.conversationType,
         ),
+        // Buffer maintenance polls this rare lifecycle state on every flush.
+        index("conversation_vote_buffer_drain_idx")
+            .on(table.id)
+            .where(
+                sql`${table.conversationType} = 'polis' AND ${table.isClosed} = true AND ${table.voteBufferDrained} = false AND ${table.closedFinalizedAt} IS NULL`,
+            ),
         index("conversation_project_id_idx").on(table.projectId),
         index("conversation_project_timeline_idx")
             .using(
@@ -3983,50 +3993,6 @@ export const conversationParticipantTable = pgTable(
     ],
 );
 
-/** @service api, shared-analysis-worker */
-export const voteSubmissionTable = pgTable(
-    "vote_submission",
-    {
-        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        conversationId: integer("conversation_id")
-            .notNull()
-            .references(() => conversationTable.id),
-        userId: uuid("user_id")
-            .notNull()
-            .references(() => userTable.id),
-        opinionId: integer("opinion_id")
-            .notNull()
-            .references(() => opinionTable.id),
-        opinionContentId: integer("opinion_content_id")
-            .notNull()
-            .references(() => opinionContentTable.id),
-        action: varchar("action", { length: 8 })
-            .$type<"agree" | "disagree" | "pass" | "cancel">()
-            .notNull(),
-        submittedAt: timestamp("submitted_at", {
-            mode: "date",
-            precision: 3,
-        }).notNull(),
-        pending: boolean("pending").notNull().default(true),
-    },
-    (table) => [
-        unique("vote_submission_account_opinion_unique").on(
-            table.userId,
-            table.opinionId,
-        ),
-        index("vote_submission_pending_idx")
-            .on(table.submittedAt, table.id)
-            .where(sql`${table.pending} = true`),
-        index("vote_submission_conversation_pending_idx")
-            .on(table.conversationId)
-            .where(sql`${table.pending} = true`),
-        check(
-            "vote_submission_action_check",
-            sql`${table.action} IN ('agree', 'disagree', 'pass', 'cancel')`,
-        ),
-    ],
-);
-
 // like or dislike on opinions for each user
 /** @service shared-analysis-worker, import-worker */
 export const voteTable = pgTable(
@@ -4043,6 +4009,10 @@ export const voteTable = pgTable(
             .notNull()
             .references(() => opinionTable.id),
         polisVoteId: integer("polis_vote_id"), // only used for importing
+        bufferEpoch: uuid("buffer_epoch"),
+        bufferSequence: bigint("buffer_sequence", { mode: "number" })
+            .notNull()
+            .default(0),
         currentContentId: integer("current_content_id").references(
             (): AnyPgColumn => voteContentTable.id,
         ), // not null if not deleted, else null
