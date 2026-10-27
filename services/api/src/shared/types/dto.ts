@@ -2514,6 +2514,13 @@ export class Dto {
             opinionSlugId: z.string(),
             sourceVersion: z.uuid(),
             chosenOption: zodVotingAction,
+            clientAction: z
+                .object({
+                    sessionId: z.uuid(),
+                    sequence: z.number().int().positive(),
+                })
+                .strict()
+                .optional(),
             returnIsUserClustered: z.boolean().optional(),
         })
         .strict();

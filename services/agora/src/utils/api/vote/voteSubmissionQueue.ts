@@ -29,6 +29,14 @@ interface StatementSubmissions {
 
 function createVoteSubmissionQueue() {
   const statements = new Map<string, Set<StatementSubmissions>>();
+  const sessionId = crypto.randomUUID();
+  let nextSequence = 0;
+
+  function nextAction() {
+    // Global monotonic order also orders each statement, without retaining an
+    // ever-growing map of every statement visited during the app's lifetime.
+    return { sessionId, sequence: ++nextSequence };
+  }
 
   async function drain({
     key,
@@ -102,7 +110,7 @@ function createVoteSubmissionQueue() {
     });
   }
 
-  return { submit };
+  return { submit, nextAction };
 }
 
 // QueryClient ownership shares ordering across mounted views without sharing

@@ -72,6 +72,154 @@ function votedSession(): Session {
 }
 
 describe("atomic Polis session state", () => {
+  it("advances immediately and allows another statement while an earlier vote is unresolved", () => {
+    const session = usePolisVotingSession();
+    acceptResult({
+      session,
+      response: { status: "ready", opinion: statement, remainingCount: 2 },
+    });
+    const second = { ...statement, opinionSlugId: "second" };
+    acceptResult({
+      session,
+      response: { status: "ready", opinion: second, remainingCount: 1 },
+    });
+    const firstVote = session.prepareVote({
+      opinionSlugId: statement.opinionSlugId,
+      sourceVersion: "source",
+      voteAction: "agree",
+      previousVote: undefined,
+    });
+    expect(firstVote?.optimistic()).toBe(true);
+    expect(session.currentOpinion.value).toEqual(second);
+    expect(session.canUndo.value).toBe(false);
+    expect(
+      session.prepareVote({
+        opinionSlugId: statement.opinionSlugId,
+        sourceVersion: "source",
+        voteAction: "agree",
+        previousVote: undefined,
+      })
+    ).toBeUndefined();
+    expect(
+      session.prepareVote({
+        opinionSlugId: second.opinionSlugId,
+        sourceVersion: "source",
+        voteAction: "agree",
+        previousVote: undefined,
+      })
+    ).toBeDefined();
+    firstVote?.confirm();
+    expect(session.hasInFlightActions.value).toBe(false);
+    expect(session.canUndo.value).toBe(true);
+  });
+
+  it("does not claim completion before the final Valkey acceptance response", () => {
+    const session = usePolisVotingSession();
+    acceptResult({
+      session,
+      response: { status: "ready", opinion: statement, remainingCount: 1 },
+    });
+    acceptResult({
+      session,
+      response: { status: "caught_up", remainingCount: 0 },
+    });
+    const vote = session.prepareVote({
+      opinionSlugId: statement.opinionSlugId,
+      sourceVersion: "source",
+      voteAction: "agree",
+      previousVote: undefined,
+    });
+    vote?.optimistic();
+    expect(session.isCaughtUp.value).toBe(false);
+    expect(session.isWaitingForOpinion.value).toBe(true);
+    vote?.confirm();
+    expect(session.isCaughtUp.value).toBe(true);
+  });
+
+  it("keeps the current statement stable and attaches rejection feedback to the later review", () => {
+    const session = usePolisVotingSession();
+    acceptResult({
+      session,
+      response: { status: "ready", opinion: statement, remainingCount: 2 },
+    });
+    const second = { ...statement, opinionSlugId: "second" };
+    acceptResult({
+      session,
+      response: { status: "ready", opinion: second, remainingCount: 1 },
+    });
+    const vote = session.prepareVote({
+      opinionSlugId: statement.opinionSlugId,
+      sourceVersion: "source",
+      voteAction: "agree",
+      previousVote: undefined,
+    });
+    vote?.optimistic();
+    vote?.reject("changed");
+    const refreshed = {
+      ...statement,
+      displayContent: {
+        ...statement.displayContent,
+        sourceVersion: "new-source",
+      },
+    };
+    session.acceptRecoveredOpinions({
+      opinions: [refreshed],
+      captured: session.recoveries.value,
+    });
+    expect(session.currentOpinion.value).toEqual(second);
+    expect(session.takeFeedback()).toBeUndefined();
+    confirmVote({ session, opinion: second });
+    expect(session.currentOpinion.value).toEqual(refreshed);
+    expect(session.takeFeedback()).toBe("changed");
+    expect(session.takeFeedback()).toBeUndefined();
+  });
+
+  it("never resurrects a removed recovery through a late response", () => {
+    const session = usePolisVotingSession();
+    acceptResult({
+      session,
+      response: { status: "ready", opinion: statement, remainingCount: 1 },
+    });
+    const vote = session.prepareVote({
+      opinionSlugId: statement.opinionSlugId,
+      sourceVersion: "source",
+      voteAction: "agree",
+      previousVote: undefined,
+    });
+    vote?.optimistic();
+    vote?.reject("changed");
+    const captured = session.recoveries.value;
+    session.discard((item) => item.opinionSlugId === statement.opinionSlugId);
+    session.acceptRecoveredOpinions({ opinions: [statement], captured });
+    expect(session.currentOpinion.value).toBeUndefined();
+    expect(session.recoveries.value.size).toBe(0);
+  });
+
+  it("does not revive an earlier in-flight vote when a later Undo fails", () => {
+    const session = usePolisVotingSession();
+    acceptResult({
+      session,
+      response: { status: "ready", opinion: statement, remainingCount: 2 },
+    });
+    const second = { ...statement, opinionSlugId: "second" };
+    acceptResult({
+      session,
+      response: { status: "ready", opinion: second, remainingCount: 1 },
+    });
+    const firstVote = session.prepareVote({
+      opinionSlugId: statement.opinionSlugId,
+      sourceVersion: "source",
+      voteAction: "agree",
+      previousVote: undefined,
+    });
+    firstVote?.optimistic();
+    confirmVote({ session, opinion: second });
+    const undo = session.prepareUndo();
+    firstVote?.confirm();
+    undo?.rollback();
+    expect(session.hasInFlightActions.value).toBe(false);
+  });
+
   it("updates edited content without advancing and does not let a stale response undo the edit", () => {
     const session = usePolisVotingSession();
     acceptResult({

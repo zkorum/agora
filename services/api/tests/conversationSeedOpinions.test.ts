@@ -43,6 +43,7 @@ import {
 import { validateSeedOpinionAdditions } from "../src/shared/utils/seedOpinions.js";
 import { readDbFixtureSql } from "./dbFixture.js";
 import type { GoogleCloudCredentials } from "../src/shared-backend/googleCloudAuth.js";
+import type { VoteBuffer } from "../src/service/voteBuffer.js";
 
 process.env.TESTCONTAINERS_RYUK_DISABLED ??= "true";
 const OWNER = "00000000-0000-4000-8000-000000000001";
@@ -1216,12 +1217,9 @@ describe("conversation seed statements", () => {
         }
     });
 
-    it("rolls back the entire save when a buffered vote arrives after staging an edit", async () => {
+    it("rejects the entire save when a buffered vote exists before staging an edit", async () => {
         const fixture = await seedFixture();
-        const hasBlockingVotes = vi
-            .fn()
-            .mockResolvedValueOnce(false)
-            .mockResolvedValueOnce(true);
+        const hasBlockingVotes = vi.fn().mockResolvedValueOnce(true);
         expect(
             await updateConversation({
                 db,
@@ -1482,6 +1480,48 @@ describe("conversation seed statements", () => {
                 seedOpinions: [{ slugId: "oldseed1", content: "Changed" }],
             }).success,
         ).toBe(false);
+    });
+
+    it("returns the committed statement when its automatic agreement cannot be queued", async () => {
+        const original = await createConversation();
+        const voteBuffer: VoteBuffer = {
+            add: vi.fn(async () => {
+                throw new Error("Cache unavailable");
+            }),
+            hasBlockingVotes: vi.fn(async () => false),
+            flush: vi.fn(async () => {}),
+            shutdown: vi.fn(async () => {}),
+        };
+        const result = await postNewOpinion({
+            db,
+            normalizedContent: {
+                html: "<p>Committed statement</p>",
+                plainText: "Committed statement",
+            },
+            conversationSlugId: original.conversation.slugId,
+            now: new Date(),
+            isSeed: false,
+            voteBuffer,
+            conversationMetadata: {
+                conversationId: original.conversation.id,
+                conversationContentId: original.content.id,
+                conversationAuthorId: OWNER,
+                conversationIsIndexed: true,
+                conversationParticipationMode: "account_required",
+                conversationIsClosed: false,
+                requiresEventTicket: null,
+            },
+        });
+        expect(result.success).toBe(true);
+        expect(voteBuffer.add).toHaveBeenCalledOnce();
+        expect(
+            await db
+                .select()
+                .from(opinionTable)
+                .where(
+                    eq(opinionTable.conversationId, original.conversation.id),
+                ),
+        ).toHaveLength(1);
     });
 
     it("appends new seeds without altering existing content or votes", async () => {

@@ -1,7 +1,6 @@
 import {
     conversationTable,
     opinionTable,
-    opinionContentTable,
     voteContentTable,
     voteTable,
 } from "@/shared-backend/schema.js";
@@ -18,57 +17,15 @@ import type {
     OpinionIdPerStatementId,
     UserIdPerParticipantId,
 } from "@/utils/dataStructure.js";
-import { httpErrors } from "@fastify/sensible";
 import { and, eq, inArray, isNotNull, sql, SQL } from "drizzle-orm";
+import { buildVoteSourceQuery } from "./voteQueries.js";
+import type { VoteBufferInput } from "./voteBufferTypes.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { useCommonComment, useCommonPost } from "./common.js";
+import { useCommonComment } from "./common.js";
 import { isUserInSelectedOpinionGroup } from "./opinionGroupAnalysis.js";
 import { checkConversationParticipation } from "./participationGate.js";
 import type { VoteBuffer } from "./voteBuffer.js";
 import { getPrimaryDatabase } from "@/shared-backend/db.js";
-
-interface GetCommentMetadataFromCommentSlugIdProps {
-    db: PostgresJsDatabase;
-    commentSlugId: string;
-}
-
-interface GetCommentMetadataFromCommentSlugIdReturn {
-    commentId: number;
-    contentId: number;
-    userId: string;
-}
-
-async function getCommentMetadataFromCommentSlugId({
-    db,
-    commentSlugId,
-}: GetCommentMetadataFromCommentSlugIdProps): Promise<GetCommentMetadataFromCommentSlugIdReturn> {
-    const response = await db
-        .select({
-            opinionId: opinionTable.id,
-            contentId: opinionTable.currentContentId,
-            userId: opinionTable.authorId,
-        })
-        .from(opinionTable)
-        .where(eq(opinionTable.slugId, commentSlugId));
-    if (response.length == 1) {
-        const commentData = response[0];
-        if (commentData.contentId == null) {
-            throw httpErrors.notFound(
-                "Failed to locate comment content ID while casting vote",
-            );
-        } else {
-            return {
-                commentId: commentData.opinionId,
-                contentId: commentData.contentId,
-                userId: commentData.userId,
-            };
-        }
-    } else {
-        throw httpErrors.internalServerError(
-            "Database error while fetching opinion ID from opinion slug ID",
-        );
-    }
-}
 
 interface CastVoteForOpinionSlugIdProps {
     db: PostgresJsDatabase;
@@ -81,107 +38,7 @@ interface CastVoteForOpinionSlugIdProps {
     currentDisplayLanguage: SupportedDisplayLanguageCodes;
     returnIsUserClustered?: boolean;
     sourceVersion: string;
-}
-
-interface CastVoteForOpinionSlugIdFromUserIdProps {
-    db: PostgresJsDatabase;
-    voteBuffer: VoteBuffer;
-    now: Date;
-    opinionSlugId: string;
-    votingAction: VotingAction;
-    userId: string;
-    optionalConversationSlugId?: string;
-    optionalConversationId?: number;
-    optionalConversationContentId?: number | null;
-    contentMetadata?: GetCommentMetadataFromCommentSlugIdReturn;
-}
-
-/**
- * Cast vote using buffered processing when userId is already known
- *
- * Used for seed votes and account deletion where userId is already available.
- * Adds vote to buffer for batched processing (flushes every 1 second).
- */
-export async function castVoteForOpinionSlugIdFromUserId({
-    db,
-    voteBuffer,
-    now,
-    opinionSlugId,
-    votingAction,
-    userId,
-    optionalConversationId,
-    optionalConversationSlugId,
-    optionalConversationContentId,
-    contentMetadata,
-}: CastVoteForOpinionSlugIdFromUserIdProps): Promise<boolean> {
-    // Get conversation metadata if not provided
-    let conversationId: number;
-    let conversationSlugId: string;
-    if (
-        optionalConversationId === undefined ||
-        optionalConversationSlugId === undefined
-    ) {
-        const {
-            conversationSlugId: fetchedConversationSlugId,
-            conversationId: fetchedConversationId,
-        } = await useCommonComment().getOpinionMetadataFromOpinionSlugId({
-            opinionSlugId: opinionSlugId,
-            db: db,
-        });
-        conversationId = fetchedConversationId;
-        conversationSlugId = fetchedConversationSlugId;
-    } else {
-        conversationId = optionalConversationId;
-        conversationSlugId = optionalConversationSlugId;
-    }
-
-    // Check if conversation is deleted
-    let conversationContentId: number | null;
-    if (optionalConversationContentId === undefined) {
-        const { contentId: fetchedConversationContentId } =
-            await useCommonPost().getPostMetadataFromSlugId({
-                db: db,
-                conversationSlugId: conversationSlugId,
-            });
-        conversationContentId = fetchedConversationContentId;
-    } else {
-        conversationContentId = optionalConversationContentId;
-    }
-    if (conversationContentId === null) {
-        throw httpErrors.gone("Cannot vote on a deleted post");
-    }
-
-    // Check if post is locked
-    const isLocked = await useCommonPost().isPostSlugIdLocked({
-        db: db,
-        postSlugId: conversationSlugId,
-    });
-
-    if (isLocked) {
-        return false;
-    }
-
-    // Get opinion metadata (commentId and contentId)
-    const commentData =
-        contentMetadata ??
-        (await getCommentMetadataFromCommentSlugId({
-            db: db,
-            commentSlugId: opinionSlugId,
-        }));
-
-    // Add to buffer (returns immediately, vote writes happen in 1 second)
-    await voteBuffer.add({
-        vote: {
-            userId: userId,
-            opinionId: commentData.commentId,
-            opinionContentId: commentData.contentId,
-            conversationId: conversationId,
-            vote: votingAction,
-            timestamp: now,
-        },
-    });
-
-    return true;
+    clientAction?: VoteBufferInput["clientAction"];
 }
 
 interface GetUserVotesForPostSlugIdsProps {
@@ -485,6 +342,7 @@ export async function castVoteForOpinionSlugId({
     currentDisplayLanguage,
     returnIsUserClustered,
     sourceVersion,
+    clientAction,
 }: CastVoteForOpinionSlugIdProps): Promise<CastVoteResponse> {
     const { conversationSlugId, conversationId } =
         await useCommonComment().getOpinionMetadataFromOpinionSlugId({
@@ -503,39 +361,54 @@ export async function castVoteForOpinionSlugId({
         return participationCheck;
     }
 
-    const contentRows = await getPrimaryDatabase(db)
-        .select({
-            commentId: opinionTable.id,
-            contentId: opinionContentTable.id,
-            userId: opinionTable.authorId,
-            sourceVersion: opinionContentTable.publicId,
-        })
-        .from(opinionTable)
-        .innerJoin(
-            opinionContentTable,
-            eq(opinionContentTable.id, opinionTable.currentContentId),
-        )
-        .where(eq(opinionTable.slugId, opinionSlugId))
-        .limit(1);
+    const contentRows = await buildVoteSourceQuery({
+        db: getPrimaryDatabase(db),
+        opinionSlugId,
+        participantId: participationCheck.participantId,
+    });
     const content = contentRows.at(0);
+    if (content?.isClosed)
+        return {
+            success: false,
+            reason: "conversation_closed",
+            participationStatus: {
+                status: "blocked",
+                reason: "conversation_closed",
+            },
+        };
     if (
         content === undefined ||
         (votingAction !== "cancel" && sourceVersion !== content.sourceVersion)
     )
         return { success: false, reason: "statement_changed" };
 
-    await castVoteForOpinionSlugIdFromUserId({
-        db,
-        voteBuffer,
-        now,
-        opinionSlugId,
-        votingAction,
-        userId: participationCheck.participantId,
-        optionalConversationId: conversationId,
-        optionalConversationSlugId: conversationSlugId,
-        optionalConversationContentId: participationCheck.conversationContentId,
-        contentMetadata: content,
+    const admission = await voteBuffer.add({
+        vote: {
+            userId: participationCheck.participantId,
+            opinionId: content.commentId,
+            opinionContentId: content.contentId,
+            conversationId,
+            vote: votingAction,
+            timestamp: now,
+            scope: {
+                epoch: content.epoch,
+                minimumSequence:
+                    content.previousEpoch === content.epoch
+                        ? (content.sequence ?? 0)
+                        : 0,
+            },
+            clientAction,
+        },
     });
+    if (admission === "conversation_closed")
+        return {
+            success: false,
+            reason: "conversation_closed",
+            participationStatus: {
+                status: "blocked",
+                reason: "conversation_closed",
+            },
+        };
 
     // Only run clustering check if frontend requests it
     let userIsClustered: boolean | undefined;

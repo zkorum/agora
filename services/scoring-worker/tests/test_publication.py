@@ -61,6 +61,108 @@ def migration_version(path: Path) -> tuple[int, ...]:
     return tuple(int(part) for part in path.name.split("__")[0][1:].split("."))
 
 
+def test_vote_buffer_migration_preserves_persisted_votes_and_closed_state() -> None:
+    migrations = Path(__file__).resolve().parents[2] / "api" / "database" / "flyway"
+    upgrade = migrations / "V0112__parallel_puppet_master.sql"
+    container = PostgresContainer("postgres:16-alpine", driver="psycopg")
+    container.start()
+    try:
+        engine = create_engine(container.get_connection_url(), hide_parameters=True)
+        try:
+            for path in sorted(migrations.glob("V*.sql"), key=migration_version):
+                if migration_version(path) >= migration_version(upgrade):
+                    break
+                with engine.begin() as connection:
+                    connection.exec_driver_sql(
+                        path.read_text(), execution_options={"no_parameters": True}
+                    )
+
+            # The current ORM includes columns absent before this migration.
+            # Seed through the real legacy schema, including its participant trigger.
+            with engine.begin() as connection:
+                connection.exec_driver_sql("""
+                    INSERT INTO "user" (id, username)
+                    VALUES ('00000000-0000-4000-8000-000000000001', 'migration-voter');
+                    WITH project AS (
+                        INSERT INTO project (slug, title, directory_visibility)
+                        VALUES ('migration', 'Migration', 'unlisted')
+                        RETURNING id
+                    ), configs AS (
+                        INSERT INTO polis_conversation_config (analysis_data_generation)
+                        SELECT 3 FROM generate_series(1, 2) RETURNING id
+                    )
+                    INSERT INTO conversation (slug_id, project_id, polis_config_id)
+                    SELECT 'mig' || lpad(configs.id::text, 5, '0'), project.id, configs.id
+                    FROM project CROSS JOIN configs;
+                    INSERT INTO conversation_content (conversation_id, title)
+                    SELECT id, 'Migration' FROM conversation;
+                    UPDATE conversation c SET current_content_id = content.id
+                    FROM conversation_content content WHERE content.conversation_id = c.id;
+                    INSERT INTO opinion (slug_id, author_id, conversation_id, num_agrees)
+                    SELECT 'migrate1', '00000000-0000-4000-8000-000000000001', min(id), 1
+                    FROM conversation;
+                    INSERT INTO opinion_content (opinion_id, conversation_content_id, content)
+                    SELECT o.id, c.current_content_id, 'Persisted statement'
+                    FROM opinion o JOIN conversation c ON c.id = o.conversation_id;
+                    UPDATE opinion o SET current_content_id = content.id
+                    FROM opinion_content content WHERE content.opinion_id = o.id;
+                    INSERT INTO vote (author_id, opinion_id)
+                    SELECT author_id, id FROM opinion;
+                    INSERT INTO vote_content (vote_id, opinion_content_id, vote)
+                    SELECT v.id, o.current_content_id, 'agree'
+                    FROM vote v JOIN opinion o ON o.id = v.opinion_id;
+                    UPDATE vote v SET current_content_id = content.id
+                    FROM vote_content content WHERE content.vote_id = v.id;
+                    INSERT INTO vote_submission (
+                        conversation_id, user_id, opinion_id, opinion_content_id,
+                        action, submitted_at, pending
+                    )
+                    SELECT conversation_id, author_id, id, current_content_id,
+                        'disagree', now(), true FROM opinion;
+                    UPDATE conversation SET is_closed = true, closing_target_revision = 3,
+                        closed_finalized_at = '2026-10-26 12:00:00'
+                    WHERE id = (SELECT conversation_id FROM opinion);
+                """)
+                snapshot_query = """
+                    SELECT to_jsonb(v) - 'buffer_epoch' - 'buffer_sequence',
+                        to_jsonb(content), to_jsonb(o), to_jsonb(participant),
+                        to_jsonb(c) - 'vote_buffer_epoch' - 'vote_buffer_drained'
+                    FROM vote v
+                    JOIN vote_content content ON content.id = v.current_content_id
+                    JOIN opinion o ON o.id = v.opinion_id
+                    JOIN conversation_participant participant ON participant.id = v.participant_id
+                    JOIN conversation c ON c.id = o.conversation_id
+                """
+                before = connection.exec_driver_sql(snapshot_query).one()
+
+            # Flyway runs this PostgreSQL migration transactionally as well.
+            with engine.begin() as connection:
+                connection.exec_driver_sql(upgrade.read_text())
+
+            with engine.connect() as connection:
+                assert connection.exec_driver_sql(snapshot_query).one() == before
+                assert connection.exec_driver_sql(
+                    "SELECT to_regclass('public.vote_submission')"
+                ).scalar_one() is None
+                assert connection.exec_driver_sql("""
+                    SELECT count(*) = 2 AND count(DISTINCT vote_buffer_epoch) = 2
+                        AND bool_and(vote_buffer_drained)
+                    FROM conversation
+                """).scalar_one() is True
+                assert connection.exec_driver_sql(
+                    "SELECT buffer_epoch IS NULL AND buffer_sequence = 0 FROM vote"
+                ).scalar_one() is True
+                assert connection.exec_driver_sql("""
+                    SELECT i.indisvalid FROM pg_index i
+                    JOIN pg_class c ON c.oid = i.indexrelid
+                    WHERE c.relname = 'conversation_vote_buffer_drain_idx'
+                """).scalar_one() is True
+        finally:
+            engine.dispose()
+    finally:
+        container.stop()
+
+
 @pytest.fixture(scope="module")
 def ranking_db() -> Generator[Engine]:
     # Exercise the real constraints and trigger migrations, not a test-only schema.

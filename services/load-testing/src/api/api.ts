@@ -10726,6 +10726,7 @@ export interface ApiV1VoteCastPostRequest {
     'opinionSlugId': string;
     'sourceVersion': string;
     'chosenOption': ApiV1VoteCastPostRequestChosenOptionEnum;
+    'clientAction'?: ApiV1VoteCastPostRequestClientAction;
     'returnIsUserClustered'?: boolean;
 }
 
@@ -10738,6 +10739,10 @@ export const ApiV1VoteCastPostRequestChosenOptionEnum = {
 
 export type ApiV1VoteCastPostRequestChosenOptionEnum = typeof ApiV1VoteCastPostRequestChosenOptionEnum[keyof typeof ApiV1VoteCastPostRequestChosenOptionEnum];
 
+export interface ApiV1VoteCastPostRequestClientAction {
+    'sessionId': string;
+    'sequence': number;
+}
 
 /**
  * DefaultApi - axios parameter creator

@@ -1527,7 +1527,6 @@ export async function updateConversation({
             db: tx,
             conversationId,
             changes: preparedChanges.changes,
-            voteBuffer,
         });
         return {
             success: true,

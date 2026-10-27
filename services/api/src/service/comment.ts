@@ -84,10 +84,10 @@ import type {
 import { httpErrors } from "@fastify/sensible";
 import { useCommonComment } from "./common.js";
 import { log } from "@/app.js";
+import { logApiError } from "@/logging/privacy.js";
 import { createCommentModerationPropertyObject } from "./moderation.js";
 import { checkConversationParticipation } from "./participationGate.js";
 import type { VoteBuffer } from "./voteBuffer.js";
-import { admitVote } from "./voteAdmission.js";
 import { queueOpinionRedactedEvent } from "./realtimeEventOutbox.js";
 import { currentOpinionSourceCondition } from "@/shared-backend/opinionEligibility.js";
 import type { ImportPolisResults } from "@/shared/types/polis.js";
@@ -3430,18 +3430,18 @@ async function getPostIdFromPostSlugId(
     return postId;
 }
 
-interface PostNewOpinionBaseProps {
+type PostNewOpinionBaseProps = {
     db: PostgresJsDatabase;
-    tx?: PostgresJsDatabase;
     conversationSlugId: string;
     now: Date;
-    isSeed: boolean;
     googleCloudCredentials?: GoogleCloudCredentials;
     useGoogleLanguageDetection?: boolean;
-    voteBuffer?: VoteBuffer;
     realtimeSSEManager?: RealtimeSSEManager;
     onCreatedOpinionSource?: (source: OpinionContentSource) => void;
-}
+} & (
+    | { isSeed: true; tx?: PostgresJsDatabase; voteBuffer?: never }
+    | { isSeed: false; tx?: never; voteBuffer: VoteBuffer }
+);
 
 type PostNewOpinionContentProps =
     | {
@@ -3742,18 +3742,6 @@ export async function postNewOpinion(
             },
         };
 
-        if (!isSeed)
-            await admitVote({
-                db: transactionDb,
-                vote: {
-                    userId: participationContext.participantId,
-                    opinionId,
-                    opinionContentId: commentContentTableId,
-                    conversationId: participationContext.conversationId,
-                    vote: "agree",
-                    timestamp: now,
-                },
-            });
         return {
             opinionId,
             opinionContentId: commentContentTableId,
@@ -3790,22 +3778,27 @@ export async function postNewOpinion(
     });
 
     if (!isSeed) {
-        if (voteBuffer === undefined) {
-            throw httpErrors.internalServerError(
-                "Vote buffer is required when creating a non-seed opinion",
-            );
+        try {
+            await voteBuffer.add({
+                vote: {
+                    userId: participationContext.participantId,
+                    opinionId,
+                    opinionContentId,
+                    conversationId: participationContext.conversationId,
+                    vote: "agree",
+                    timestamp: now,
+                },
+            });
+        } catch (error) {
+            // Statement creation has committed. An optional automatic agreement
+            // must not turn success into an error that prompts duplicate creation.
+            logApiError({
+                logger: log,
+                level: "error",
+                event: { event: "vote_buffer", voteBufferOperation: "enqueue" },
+                error,
+            });
         }
-
-        await voteBuffer.add({
-            vote: {
-                userId: participationContext.participantId,
-                opinionId,
-                opinionContentId,
-                conversationId: participationContext.conversationId,
-                vote: "agree",
-                timestamp: now,
-            },
-        });
     }
 
     // Create notification for conversation owner + org members (outside transaction)

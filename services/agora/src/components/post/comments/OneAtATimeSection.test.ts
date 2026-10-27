@@ -4,6 +4,7 @@ import type { VotingSessionProgress } from "src/components/post/voting/VotingSes
 import type { OpinionVotingUtilities } from "src/composables/opinion/types";
 import type {
   CastVoteResponse,
+  ConversationParticipationStatus,
   FetchNextUnansweredOpinionResponse,
 } from "src/shared/types/dto";
 import type { DisplayedOpinionItem } from "src/shared/types/zod";
@@ -27,6 +28,7 @@ type EnsureParticipationAuth = AuthApi["ensureParticipationAuthState"];
 
 const mocks = vi.hoisted(() => ({
   fetchNext: vi.fn<FetchNextOpinion>(),
+  fetchOpinions: vi.fn<CommentApi["fetchOpinionsBySlugIdList"]>(),
   castVote: vi.fn<CastVote>(),
   fetchVotes: vi.fn<FetchVotes>(),
   ensureAuth: vi.fn<EnsureParticipationAuth>(),
@@ -34,7 +36,10 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("src/utils/api/comment/comment", () => ({
-  useBackendCommentApi: () => ({ fetchNextUnansweredOpinion: mocks.fetchNext }),
+  useBackendCommentApi: () => ({
+    fetchNextUnansweredOpinion: mocks.fetchNext,
+    fetchOpinionsBySlugIdList: mocks.fetchOpinions,
+  }),
 }));
 vi.mock("src/utils/api/vote", () => ({
   useBackendVoteApi: () => ({
@@ -52,14 +57,20 @@ vi.mock("src/utils/api/common", () => ({
   useCommonApi: () => ({ getErrorMessage: () => "error" }),
 }));
 vi.mock("src/composables/conversation/useParticipationGate", () => ({
-  useParticipationGate: () => ({
-    participationStatus: ref({ status: "ready" }),
-    openParticipationOnboarding: vi.fn(),
-    captureParticipationAction: () => ({
-      isCurrent: () => true,
-      handleBlockedReason: vi.fn(),
-    }),
-  }),
+  useParticipationGate: () => {
+    const status = ref<ConversationParticipationStatus>({ status: "ready" });
+    return {
+      participationStatus: status,
+      openParticipationOnboarding: vi.fn(),
+      recordParticipationRejection: (next: ConversationParticipationStatus) => {
+        status.value = next;
+      },
+      captureParticipationAction: () => ({
+        isCurrent: () => true,
+        handleBlockedReason: vi.fn(),
+      }),
+    };
+  },
 }));
 vi.mock("src/utils/ui/notify", () => ({
   useNotify: () => ({ showNotifyMessage: mocks.notify }),
@@ -142,11 +153,14 @@ vi.mock("src/components/post/voting/VotingSessionToolbar.vue", () => ({
 }));
 vi.mock("./group/CommentGroup.vue", () => ({
   default: defineComponent(
-    (props: {
-      commentItemList: DisplayedOpinionItem[];
-      votingUtilities: OpinionVotingUtilities;
-      isVotingDisabled: boolean;
-    }) =>
+    (
+      props: {
+        commentItemList: DisplayedOpinionItem[];
+        votingUtilities: OpinionVotingUtilities;
+        isVotingDisabled: boolean;
+      },
+      { emit }
+    ) =>
       () => {
         const opinion = props.commentItemList.at(0);
         if (opinion === undefined) return h("div");
@@ -166,6 +180,14 @@ vi.mock("./group/CommentGroup.vue", () => ({
             },
             "Agree"
           ),
+          h(
+            "button",
+            {
+              "data-testid": "delete",
+              onClick: () => emit("deleted", opinion.opinionSlugId),
+            },
+            "Delete"
+          ),
         ]);
       },
     {
@@ -174,6 +196,7 @@ vi.mock("./group/CommentGroup.vue", () => ({
         votingUtilities: { type: Object, required: true },
         isVotingDisabled: { type: Boolean, required: true },
       },
+      emits: ["deleted"],
     }
   ),
 }));
@@ -247,6 +270,17 @@ beforeEach(async () => {
   vi.resetAllMocks();
   databaseVotes.clear();
   availableOpinions = [...opinions];
+  mocks.fetchOpinions.mockImplementation(({ opinionSlugIdList }) =>
+    Promise.resolve(
+      availableOpinions
+        .filter((item) => opinionSlugIdList.includes(item.opinionSlugId))
+        .map((item) => ({
+          opinion: item,
+          conversationSlugId: "conversation",
+          isOwn: false,
+        }))
+    )
+  );
   isVisible.value = true;
   const pinia = createPinia();
   setActivePinia(pinia);
@@ -366,6 +400,7 @@ describe("Polis repeated Undo", () => {
     await click("agree");
     mocks.castVote.mockRejectedValueOnce(new Error("network failure"));
     await click("undo");
+    expect(mocks.notify).toHaveBeenCalledExactlyOnceWith("voteUnconfirmed");
     expect(container.querySelector('[data-testid="statement"]')).toBeNull();
     expect(container.textContent).toContain("0 remaining");
     await click("undo");
@@ -410,6 +445,80 @@ describe("Polis repeated Undo", () => {
 });
 
 describe("one-at-a-time prefetching", () => {
+  it("settles unrelated outstanding votes after deleting the current statement", async () => {
+    await click("agree");
+    const second = Promise.withResolvers<CastVoteResponse>();
+    mocks.castVote.mockReturnValueOnce(second.promise);
+    await click("agree");
+    availableOpinions = availableOpinions.filter(
+      (item) => item.opinionSlugId !== "third"
+    );
+    await click("delete");
+    expect(container.textContent).not.toContain("caughtUp");
+    second.resolve({ success: true });
+    await settle();
+    expect(container.textContent).toContain("caughtUp");
+  });
+
+  it("lets people keep voting while unrelated statement responses are pending", async () => {
+    await click("agree");
+    const second = Promise.withResolvers<CastVoteResponse>();
+    const third = Promise.withResolvers<CastVoteResponse>();
+    mocks.castVote
+      .mockReturnValueOnce(second.promise)
+      .mockReturnValueOnce(third.promise);
+    await click("agree");
+    expect(
+      container.querySelector('[data-testid="statement"]')?.textContent
+    ).toContain("third");
+    const nextButton = container.querySelector('[data-testid="agree"]');
+    expect(nextButton instanceof HTMLButtonElement && nextButton.disabled).toBe(
+      false
+    );
+    await click("agree");
+    expect(mocks.castVote).toHaveBeenCalledTimes(3);
+    expect(container.textContent).not.toContain("caughtUp");
+    third.resolve({ success: true });
+    await settle();
+    expect(container.textContent).not.toContain("caughtUp");
+    second.resolve({ success: true });
+    await settle();
+    expect(container.textContent).toContain("caughtUp");
+  });
+
+  it("defers a network-uncertainty explanation until its statement is shown for review", async () => {
+    await click("agree");
+    mocks.castVote.mockRejectedValueOnce(new Error("response lost"));
+    await click("agree");
+    expect(
+      container.querySelector('[data-testid="statement"]')?.textContent
+    ).toContain("third");
+    expect(mocks.notify).not.toHaveBeenCalled();
+    await click("agree");
+    expect(
+      container.querySelector('[data-testid="statement"]')?.textContent
+    ).toContain("second");
+    expect(mocks.notify).toHaveBeenCalledExactlyOnceWith("voteUnconfirmed");
+  });
+
+  it("explains an unavailable rejected statement at the next transition rather than interrupting reading", async () => {
+    mocks.castVote.mockResolvedValueOnce({
+      success: false,
+      reason: "statement_changed",
+    });
+    mocks.fetchOpinions.mockResolvedValueOnce([]);
+    await click("agree");
+    expect(
+      container.querySelector('[data-testid="statement"]')?.textContent
+    ).toContain("second");
+    expect(mocks.notify).not.toHaveBeenCalled();
+    await click("agree");
+    expect(
+      container.querySelector('[data-testid="statement"]')?.textContent
+    ).toContain("third");
+    expect(mocks.notify).toHaveBeenCalledExactlyOnceWith("voteUnavailable");
+  });
+
   it("keeps the current and next statements ready and refills without interrupting reading", async () => {
     expect(mocks.fetchNext).toHaveBeenCalledTimes(2);
     expect(mocks.fetchNext).toHaveBeenLastCalledWith(
@@ -522,7 +631,8 @@ describe("one-at-a-time prefetching", () => {
     await settle();
     expect(
       container.querySelector('[data-testid="statement"]')?.textContent
-    ).toContain("second");
+    ).toContain("third");
+    expect(container.textContent).not.toContain("caughtUp");
 
     vote.resolve({ success: true });
     await settle();
@@ -588,13 +698,14 @@ describe("one-at-a-time prefetching", () => {
     ).toContain("other-account");
   });
 
-  it("reloads the displayed version after a statement-changed vote rejection", async () => {
+  it("defers statement rejection feedback until the refreshed statement is naturally shown again", async () => {
     mocks.castVote.mockResolvedValueOnce({
       success: false,
       reason: "statement_changed",
     });
     const edited = opinion("first");
     edited.displayContent.sourceVersion = "edited-source";
+    availableOpinions = [edited, ...opinions.slice(1)];
     mocks.fetchNext.mockImplementation((request) => {
       const response = nextResponse(request);
       return Promise.resolve(
@@ -607,7 +718,13 @@ describe("one-at-a-time prefetching", () => {
     await click("agree");
     expect(
       container.querySelector('[data-testid="statement"]')?.textContent
+    ).toContain("second");
+    expect(mocks.notify).not.toHaveBeenCalled();
+    await click("agree");
+    expect(
+      container.querySelector('[data-testid="statement"]')?.textContent
     ).toContain("first");
+    expect(mocks.notify).toHaveBeenCalledExactlyOnceWith("voteChanged");
     await click("agree");
     expect(mocks.castVote).toHaveBeenLastCalledWith(
       expect.objectContaining({ sourceVersion: "edited-source" })
@@ -629,20 +746,21 @@ describe("one-at-a-time prefetching", () => {
     ).toContain("second");
   });
 
-  it("keeps the current and prefetched statements when a vote is rejected", async () => {
+  it("keeps the next statement visible and stops further voting when the conversation closes", async () => {
     mocks.castVote.mockResolvedValueOnce(
       participationRejectionFixture("conversation_closed")
     );
     await click("agree");
     expect(
       container.querySelector('[data-testid="statement"]')?.textContent
-    ).toContain("first");
+    ).toContain("second");
     expect(container.textContent).toContain("3 remaining");
-    expect(mocks.fetchNext).toHaveBeenCalledTimes(2);
+    expect(mocks.notify).toHaveBeenCalledExactlyOnceWith("votingUnavailable");
     await click("agree");
     expect(
       container.querySelector('[data-testid="statement"]')?.textContent
     ).toContain("second");
+    expect(mocks.castVote).toHaveBeenCalledTimes(1);
   });
 
   it("keeps an eligible in-flight refill through Undo without changing the local statement order", async () => {

@@ -12,6 +12,9 @@ import {
 import { and, eq } from "drizzle-orm";
 import { generateRandomSlugId } from "@/crypto.js";
 import { log } from "@/app.js";
+import { randomUUID } from "node:crypto";
+import { logApiError } from "@/logging/privacy.js";
+import type { VoteBuffer } from "./voteBuffer.js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
 import type {
@@ -39,12 +42,8 @@ import {
     setSurveyConfigForConversation,
 } from "@/service/survey.js";
 import { scheduleConversationAnalysisRefresh } from "@/shared-backend/conversationCounters.js";
-import {
-    finalizeCurrentPolisConversation,
-    finalizeCurrentRankingConversation,
-} from "./conversationFinalization.js";
+import { finalizeCurrentRankingConversation } from "./conversationFinalization.js";
 import { createConversationViewSnapshotsFromCurrentState } from "./conversationViewSnapshot.js";
-import { scheduleAnalysisUpdate } from "@/shared-backend/analysisScheduler.js";
 import { queueConversationSettingsUpdatedEvent } from "@/service/realtimeEventOutbox.js";
 import {
     hasProjectCapability,
@@ -777,6 +776,7 @@ interface CloseConversationProps {
     conversationSlugId: string;
     userId: string;
     valkey: Valkey | undefined;
+    voteBuffer: VoteBuffer;
 }
 
 export async function closeConversation({
@@ -784,6 +784,7 @@ export async function closeConversation({
     conversationSlugId,
     userId,
     valkey,
+    voteBuffer,
 }: CloseConversationProps): Promise<CloseConversationResponse> {
     // First, get the conversation to check permissions and current state
     const conversation = await db
@@ -847,6 +848,8 @@ export async function closeConversation({
                 .set({
                     isClosed: true,
                     closedFinalizedAt: null,
+                    voteBufferDrained:
+                        conversation[0].conversationType !== "polis",
                 })
                 .where(
                     and(
@@ -864,18 +867,9 @@ export async function closeConversation({
 
             let finalized: boolean;
             if (conversation[0].conversationType === "polis") {
-                finalized = await finalizeCurrentPolisConversation({
-                    db: tx,
-                    conversationId: conversation[0].conversationId,
-                });
-                if (!finalized) {
-                    await scheduleAnalysisUpdate({
-                        db: tx,
-                        conversationId: conversation[0].conversationId,
-                        log,
-                        advanceGeneration: false,
-                    });
-                }
+                // The buffer seals admission and drains outside this transaction.
+                // Its durable lifecycle barrier also survives an API restart.
+                finalized = false;
             } else {
                 finalized = await finalizeCurrentRankingConversation({
                     db: tx,
@@ -905,6 +899,19 @@ export async function closeConversation({
 
     if (!transitioned.transitioned) {
         return { success: false, reason: "already_closed" };
+    }
+    if (conversation[0].conversationType === "polis") {
+        try {
+            await voteBuffer.flush();
+        } catch (error) {
+            // The close is committed. Periodic flushing recovers its drain.
+            logApiError({
+                logger: log,
+                level: "error",
+                event: { event: "application_error" },
+                error,
+            });
+        }
     }
     if (
         conversation[0].conversationType === "ranking" &&
@@ -981,6 +988,7 @@ export async function openConversation({
         return { success: false, reason: "not_allowed" };
     }
 
+    const epoch = randomUUID();
     const transitioned = await db.transaction(async (tx) => {
         const updatedRows = await tx
             .update(conversationTable)
@@ -988,6 +996,8 @@ export async function openConversation({
                 isClosed: false,
                 closingTargetRevision: null,
                 closedFinalizedAt: null,
+                voteBufferEpoch: epoch,
+                voteBufferDrained: true,
             })
             .where(
                 and(
@@ -1029,7 +1039,6 @@ export async function openConversation({
     if (!transitioned) {
         return { success: false, reason: "already_open" };
     }
-
     if (conversation[0].conversationType === "ranking") {
         await scheduleRankingStatsRefresh({
             valkey,

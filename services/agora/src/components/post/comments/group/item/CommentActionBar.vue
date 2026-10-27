@@ -294,7 +294,8 @@ const showViewAnalysisLink = computed(
 );
 
 const shouldShowBanner = computed(
-  () => hasVotedThisSession.value && userCastedVote.value
+  () =>
+    props.showVoteResults && hasVotedThisSession.value && userCastedVote.value
 );
 
 function handleViewAnalysisClick() {

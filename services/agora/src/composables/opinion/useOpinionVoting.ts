@@ -10,6 +10,7 @@ import type { OpinionVoteParams, UserVote } from "./types";
 export interface UseOpinionVotingParams {
   postSlugId: string;
   captureAction?: () => () => boolean;
+  feedback?: "inline" | "session";
 }
 
 export interface UseOpinionVotingReturn {
@@ -23,6 +24,7 @@ export interface UseOpinionVotingReturn {
 export function useOpinionVoting({
   postSlugId,
   captureAction,
+  feedback,
 }: UseOpinionVotingParams): UseOpinionVotingReturn {
   // Use TanStack Query for vote data
   const userVotesQuery = useUserVotesQuery({
@@ -30,7 +32,7 @@ export function useOpinionVoting({
   });
 
   // Use TanStack Query mutation for voting
-  const voteMutation = useVoteMutation(postSlugId);
+  const voteMutation = useVoteMutation({ postSlugId, feedback });
 
   const userVotes = computed<readonly UserVote[]>(
     () => userVotesQuery.data.value ?? []

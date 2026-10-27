@@ -136,7 +136,7 @@ function mountVoting({
   let mutation: ReturnType<typeof useVoteMutation> | undefined;
   const app = createApp({
     setup() {
-      mutation = useVoteMutation("conversation");
+      mutation = useVoteMutation({ postSlugId: "conversation" });
       return () => h("div");
     },
   });

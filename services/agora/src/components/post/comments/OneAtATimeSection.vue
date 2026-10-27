@@ -14,6 +14,20 @@
       @undo="undoVote"
     />
 
+    <div class="saving-status" role="status" aria-live="polite">
+      <span v-if="showSavingStatus">{{ t("finishingSaving") }}</span>
+    </div>
+
+    <ErrorRetryBlock
+      v-if="
+        recoveryQuery.isError.value &&
+        (session.isAtCapacity.value || currentOpinion === undefined)
+      "
+      :title="t('recoveryError')"
+      :retry-label="t('retry')"
+      @retry="retryRecovery"
+    />
+
     <CommentGroup
       v-if="displayedOpinion !== undefined"
       :comment-item-list="[displayedOpinion]"
@@ -27,6 +41,10 @@
       :is-voting-disabled="
         props.isVotingDisabled ||
         isSubmittingVote ||
+        session.isAtCapacity.value ||
+        session.isCurrentOpinionPending.value ||
+        (userId === undefined && session.hasInFlightActions.value) ||
+        participationStatus.status === 'blocked' ||
         currentOpinion === undefined
       "
       :show-vote-results="false"
@@ -116,16 +134,86 @@ const {
   participationStatus,
   openParticipationOnboarding,
   captureParticipationAction,
+  recordParticipationRejection,
 } = useParticipationGate(() => props.postSlugId);
 const { fetchUserVotesForPostSlugIds } = useBackendVoteApi();
 const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
 const authStore = useAuthenticationStore();
 const { userId } = storeToRefs(authStore);
+// Guest creation changes identity while the first optimistic refill is already
+// running. Keep that session's query identity stable instead of cancel/refetch.
+const sessionViewerId = ref(userId.value);
 const opinionUpdates = useOpinionUpdatesStore();
-const { fetchNextUnansweredOpinion } = useBackendCommentApi();
+const { fetchNextUnansweredOpinion, fetchOpinionsBySlugIdList } =
+  useBackendCommentApi();
 const isSubmittingVote = actionGuard.isPending;
 const showLoading = ref(false);
 const isActive = ref(true);
+const showSavingStatus = ref(false);
+const savingDelay = useTimeoutFn(
+  () => {
+    showSavingStatus.value = true;
+  },
+  200,
+  { immediate: false }
+);
+watch([session.hasInFlightActions, isActive], ([saving, active]) => {
+  savingDelay.stop();
+  showSavingStatus.value = false;
+  if (saving && active) savingDelay.start();
+});
+const recoveryQuery = useQuery(() => {
+  const captured = session.recoveries.value;
+  return {
+    queryKey: [
+      "oneAtATimeRecovery",
+      props.postSlugId,
+      sessionViewerId.value,
+      displayLanguage.value,
+      [...captured.values()].map((recovery) => recovery.entry.id),
+    ],
+    queryFn: async ({ signal }: { signal: AbortSignal }) => ({
+      targets: await fetchOpinionsBySlugIdList({
+        opinionSlugIdList: [...captured.keys()],
+        signal,
+      }),
+      captured,
+    }),
+    enabled: isActive.value && captured.size > 0,
+    gcTime: 0,
+    retry: false,
+  };
+});
+watch([recoveryQuery.data, recoveryQuery.isFetching], ([data, fetching]) => {
+  if (data === undefined || fetching || recoveryQuery.isError.value) return;
+  session.acceptRecoveredOpinions({
+    captured: data.captured,
+    opinions: data.targets
+      .filter((target) => target.conversationSlugId === props.postSlugId)
+      .map((target) => target.opinion),
+  });
+});
+async function retryRecovery(): Promise<void> {
+  await recoveryQuery.refetch();
+}
+function showRecoveryFeedback(): void {
+  if (!isActive.value) return;
+  const feedback = session.takeFeedback();
+  if (feedback !== undefined)
+    showNotifyMessage(
+      t(
+        feedback === "changed"
+          ? "voteChanged"
+          : feedback === "unconfirmed"
+            ? "voteUnconfirmed"
+            : "voteUnavailable"
+      )
+    );
+}
+watch(
+  [currentOpinion, session.isCaughtUp, session.currentFeedback],
+  showRecoveryFeedback
+);
 const reconciliation = useVoteReconciliation({
   needsConfirmation: session.hasPendingWrites,
   isBusy: isSubmittingVote,
@@ -155,7 +243,7 @@ const query = useQuery(() => {
       "nextUnansweredOpinion",
       request.conversationSlugId,
       request.order,
-      userId.value,
+      sessionViewerId.value,
       displayLanguage.value,
       spokenLanguagesKey.value,
       request.excludedOpinionSlugIds,
@@ -174,7 +262,10 @@ const query = useQuery(() => {
   };
 });
 const isWaitingForOpinion = computed(
-  () => session.isWaitingForOpinion.value && !query.isError.value
+  () =>
+    session.isWaitingForOpinion.value &&
+    !query.isError.value &&
+    !recoveryQuery.isError.value
 );
 const displayedOpinion = computed(
   () =>
@@ -206,6 +297,7 @@ const {
 } = useOpinionVoting({
   postSlugId: props.postSlugId,
   captureAction: actionGuard.capture,
+  feedback: "session",
 });
 
 watch(
@@ -256,18 +348,30 @@ async function castVote({
   voteAction,
   sourceVersion,
 }: OpinionVoteParams) {
-  return await actionGuard.run(async (isCurrent) => {
-    if (props.isVotingDisabled) return undefined;
-    const previousVote = userVotes.value.find(
-      (vote) => vote.opinionSlugId === opinionSlugId
-    )?.votingAction;
-    const vote = session.prepareVote({
-      opinionSlugId,
-      voteAction,
-      sourceVersion,
-      previousVote,
-    });
-    if (vote === undefined) return undefined;
+  const isCurrent = actionGuard.capture();
+  const participation = captureParticipationAction();
+  if (
+    props.isVotingDisabled ||
+    isSubmittingVote.value ||
+    (userId.value === undefined && session.hasInFlightActions.value) ||
+    session.isAtCapacity.value
+  )
+    return undefined;
+  if (participationStatus.value.status !== "ready") {
+    await openParticipationOnboarding();
+    return undefined;
+  }
+  const previousVote = userVotes.value.find(
+    (vote) => vote.opinionSlugId === opinionSlugId
+  )?.votingAction;
+  const vote = session.prepareVote({
+    opinionSlugId,
+    voteAction,
+    sourceVersion,
+    previousVote,
+  });
+  if (vote === undefined || !vote.optimistic()) return undefined;
+  try {
     const response = await submitVote(vote.params);
     if (!isCurrent()) return undefined;
     if (response?.success) {
@@ -277,11 +381,26 @@ async function castVote({
       response?.success === false &&
       response.reason === "statement_changed"
     ) {
-      session.refresh({ preserveCurrent: false });
-      await query.refetch();
+      vote.reject("changed");
+    } else if (response !== undefined && !response.success) {
+      vote.reject("blocked");
+      recordParticipationRejection(response.participationStatus);
+      if (isActive.value && participation.isCurrent()) {
+        if (
+          response.reason === "conversation_closed" ||
+          response.reason === "conversation_locked"
+        )
+          showNotifyMessage(t("votingUnavailable"));
+        else await participation.handleBlockedReason(response);
+      }
+    } else {
+      vote.reject("unconfirmed");
     }
     return response;
-  });
+  } catch {
+    if (isCurrent()) vote.reject("unconfirmed");
+    return undefined;
+  }
 }
 
 async function undoVote(): Promise<void> {
@@ -302,30 +421,38 @@ async function undoVote(): Promise<void> {
         if (!response?.success) {
           undo.rollback();
           if (!participation.isCurrent()) return;
-          if (
-            response === undefined ||
+          if (response === undefined) {
+            if (isActive.value) showNotifyMessage(t("voteUnconfirmed"));
+          } else if (
             response.reason === "statement_changed" ||
             response.reason === "conversation_closed" ||
             response.reason === "conversation_locked"
           ) {
-            showNotifyMessage(t("undoFailed"));
+            if (response.reason !== "statement_changed")
+              recordParticipationRejection(response.participationStatus);
+            if (isActive.value) showNotifyMessage(t("undoFailed"));
           } else {
-            await participation.handleBlockedReason(response);
+            recordParticipationRejection(response.participationStatus);
+            if (isActive.value)
+              await participation.handleBlockedReason(response);
           }
         } else {
           reconciliation.restart();
         }
-      } catch (error) {
-        if (isCurrent()) undo.rollback();
-        throw error;
+      } catch {
+        if (isCurrent()) {
+          undo.rollback();
+          if (isActive.value) showNotifyMessage(t("voteUnconfirmed"));
+        }
       }
     });
   } catch {
-    // The vote mutation owns technical-error notifications and cache rollback.
+    // Onboarding failures are handled by its own flow.
   }
 }
 
 function resetSession(): void {
+  sessionViewerId.value = userId.value;
   liveRefresh.stop();
   actionGuard.invalidate();
   session.reset();
@@ -352,7 +479,6 @@ async function refresh({
 function discardOpinions(
   matches: (opinion: DisplayedOpinionItem) => boolean
 ): void {
-  actionGuard.invalidate();
   session.discard(matches);
   reconciliation.restart();
 }
@@ -384,6 +510,7 @@ function acknowledgeEditedOpinion(opinion: DisplayedOpinionItem): void {
 
 onActivated(() => {
   isActive.value = true;
+  showRecoveryFeedback();
   reconciliation.resume();
   void refresh({ preserveCurrent: true });
 });
@@ -407,6 +534,11 @@ defineExpose({
 <style scoped lang="scss">
 .one-at-a-time {
   min-height: 13rem;
+}
+.saving-status {
+  min-block-size: 1.25rem;
+  color: $color-text-weak;
+  font-size: 0.875rem;
 }
 .caught-up {
   display: flex;

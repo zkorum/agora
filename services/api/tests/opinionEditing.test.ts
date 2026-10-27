@@ -138,6 +138,8 @@ describe("statement editing and seed deletion", () => {
     let db: PostgresJsDatabase;
     let conversationId: number;
     let conversationContentId: number;
+    let cacheContainer: StartedTestContainer;
+    let sharedValkey: GlideClient;
 
     beforeAll(async () => {
         container = await new GenericContainer("postgres:16-alpine")
@@ -156,6 +158,18 @@ describe("statement editing and seed deletion", () => {
             database: "agora_test",
         });
         db = drizzle(client);
+        cacheContainer = await new GenericContainer("valkey/valkey:8-alpine")
+            .withExposedPorts(6379)
+            .start();
+        sharedValkey = await GlideClient.createClient({
+            addresses: [
+                {
+                    host: cacheContainer.getHost(),
+                    port: cacheContainer.getMappedPort(6379),
+                },
+            ],
+            defaultDecoder: Decoder.String,
+        });
         await db.execute(
             sql.raw(readDbFixtureSql("conversation-seed-opinions.sql")),
         );
@@ -164,12 +178,15 @@ describe("statement editing and seed deletion", () => {
         translationQueueScript.release();
         await client?.end({ timeout: 5 });
         await container?.stop();
+        sharedValkey?.close();
+        await cacheContainer?.stop();
     }, 120_000);
     beforeEach(async () => {
+        await sharedValkey.flushall();
         blockingVotes.mockReset().mockResolvedValue(false);
         vi.mocked(createEagerContentTranslationWorkForOpinion).mockClear();
         await db.execute(
-            sql`TRUNCATE TABLE "user", project, organization, conversation, conversation_content, conversation_view_snapshot, opinion, opinion_content, vote_submission, conversation_participant, vote, vote_content, analysis_snapshot_opinion, organization_membership, organization_membership_all_project_capability, project_organization_ownership, realtime_event_outbox, survey_config, survey_question, survey_question_content, survey_response, survey_answer CASCADE`,
+            sql`TRUNCATE TABLE "user", project, organization, conversation, conversation_content, conversation_view_snapshot, opinion, opinion_content, conversation_participant, vote, vote_content, analysis_snapshot_opinion, organization_membership, organization_membership_all_project_capability, project_organization_ownership, realtime_event_outbox, survey_config, survey_question, survey_question_content, survey_response, survey_answer CASCADE`,
         );
         await db.insert(userTable).values([
             {
@@ -355,7 +372,7 @@ describe("statement editing and seed deletion", () => {
         const { opinion, content } = await statement(true);
         const buffer = createVoteBuffer({
             db,
-            valkeyRef: { current: undefined },
+            valkeyRef: { current: sharedValkey },
             flushIntervalMs: 60_000,
             valkeyBatchLimit: 100,
         });
@@ -738,7 +755,7 @@ describe("statement editing and seed deletion", () => {
         const { opinion, content } = await statement(true);
         const buffer = createVoteBuffer({
             db,
-            valkeyRef: { current: undefined },
+            valkeyRef: { current: sharedValkey },
             flushIntervalMs: 60_000,
             valkeyBatchLimit: 100,
         });
@@ -1167,12 +1184,9 @@ describe("statement editing and seed deletion", () => {
         ).toBe(1);
     });
 
-    it("rolls back staged content and events when a vote arrives before commit", async () => {
+    it("rejects pending buffered votes before starting the content transaction", async () => {
         const { opinion, content } = await statement();
-        blockingVotes
-            .mockResolvedValueOnce(false)
-            .mockResolvedValueOnce(false)
-            .mockResolvedValueOnce(true);
+        blockingVotes.mockResolvedValueOnce(true);
         expect(
             await save({
                 slugId: opinion.slugId,
@@ -1349,7 +1363,13 @@ describe("statement editing and seed deletion", () => {
                     isSeed: false,
                 }),
             ).toBe(true);
-            const member = `${voterId}:${String(opinion.id)}`;
+            const epoch = first(
+                await db
+                    .select({ epoch: conversationTable.voteBufferEpoch })
+                    .from(conversationTable)
+                    .where(eq(conversationTable.id, conversationId)),
+            ).epoch;
+            const member = `${voterId}:${epoch}:${String(opinion.id)}`;
             const previousPayload = await valkey.hget(
                 VALKEY_QUEUE_KEYS.VOTE_BUFFER_DATA,
                 member,
@@ -1379,6 +1399,7 @@ describe("statement editing and seed deletion", () => {
                             VALKEY_QUEUE_KEYS.VOTE_BUFFER_INDEX,
                             VALKEY_QUEUE_KEYS.VOTE_BUFFER_DATA,
                             `${VALKEY_QUEUE_KEYS.VOTE_BUFFER_DATA}:opinion:`,
+                            `${VALKEY_QUEUE_KEYS.VOTE_BUFFER_DATA}:conversation:`,
                         ],
                         args: [member, String(previousPayload)],
                     }),

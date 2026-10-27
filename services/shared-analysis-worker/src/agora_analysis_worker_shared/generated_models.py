@@ -473,7 +473,7 @@ class ConversationContent(Base):
     __tablename__ = "conversation_content"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    public_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
+    public_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid, default=uuid_pkg.uuid4)
     conversation_id: Mapped[int] = mapped_column(Integer)
     title: Mapped[str] = mapped_column(String(150))
     body: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -504,7 +504,7 @@ class ConversationContent(Base):
 class ConversationParticipant(Base):
     __tablename__ = "conversation_participant"
 
-    id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid, primary_key=True)
+    id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid, primary_key=True, default=uuid_pkg.uuid4)
     conversation_id: Mapped[int] = mapped_column(Integer)
     user_id: Mapped[uuid_pkg.UUID | None] = mapped_column(Uuid, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
@@ -561,6 +561,8 @@ class Conversation(Base):
     )
     is_importing: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     is_closed: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
+    vote_buffer_epoch: Mapped[uuid_pkg.UUID] = mapped_column(Uuid, default=uuid_pkg.uuid4)
+    vote_buffer_drained: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
     closing_target_revision: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     closed_finalized_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     is_edited: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
@@ -662,7 +664,7 @@ class OpinionContent(Base):
     __tablename__ = "opinion_content"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    public_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
+    public_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid, default=uuid_pkg.uuid4)
     opinion_id: Mapped[int] = mapped_column(Integer)
     conversation_content_id: Mapped[int] = mapped_column(Integer)
     content: Mapped[str] = mapped_column(Text)
@@ -1078,7 +1080,7 @@ class RankingItemContent(Base):
     __tablename__ = "ranking_item_content"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    public_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
+    public_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid, default=uuid_pkg.uuid4)
     ranking_item_id: Mapped[int] = mapped_column(Integer)
     conversation_content_id: Mapped[int] = mapped_column(Integer)
     title: Mapped[str] = mapped_column(Text)
@@ -1269,7 +1271,7 @@ class SurveyQuestionContent(Base):
     __tablename__ = "survey_question_content"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    public_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
+    public_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid, default=uuid_pkg.uuid4)
     survey_question_id: Mapped[int] = mapped_column(Integer)
     question_text: Mapped[str] = mapped_column(String(500))
     constraints: Mapped[Any] = mapped_column(JSON(none_as_null=True))
@@ -1300,7 +1302,7 @@ class SurveyQuestionOptionContent(Base):
     __tablename__ = "survey_question_option_content"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    public_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
+    public_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid, default=uuid_pkg.uuid4)
     survey_question_option_id: Mapped[int] = mapped_column(Integer)
     option_text: Mapped[str] = mapped_column(String(200))
     source_language_code: Mapped[SpokenLanguageCode | None] = mapped_column(
@@ -1418,19 +1420,6 @@ class VoteContent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime)
 
 
-class VoteSubmission(Base):
-    __tablename__ = "vote_submission"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    conversation_id: Mapped[int] = mapped_column(Integer)
-    user_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
-    opinion_id: Mapped[int] = mapped_column(Integer)
-    opinion_content_id: Mapped[int] = mapped_column(Integer)
-    action: Mapped[str] = mapped_column(String(8))
-    submitted_at: Mapped[datetime] = mapped_column(DateTime)
-    pending: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
-
-
 class Vote(Base):
     __tablename__ = "vote"
 
@@ -1439,6 +1428,8 @@ class Vote(Base):
     participant_id: Mapped[uuid_pkg.UUID | None] = mapped_column(Uuid, nullable=True)
     opinion_id: Mapped[int] = mapped_column(Integer)
     polis_vote_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    buffer_epoch: Mapped[uuid_pkg.UUID | None] = mapped_column(Uuid, nullable=True)
+    buffer_sequence: Mapped[int] = mapped_column(BigInteger, server_default="0")
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)

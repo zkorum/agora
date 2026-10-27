@@ -16,7 +16,6 @@ from agora_analysis_worker_shared.generated_models import (
     ConversationViewSnapshotCheckpointReasonEnum,
     OpinionGroupSpec,
     PolisConversationConfig,
-    VoteSubmission,
 )
 
 if TYPE_CHECKING:
@@ -57,16 +56,10 @@ def closing_retry_ready_condition(
     )
 
 
-def no_pending_vote_submissions() -> ColumnElement[bool]:
-    return (
-        ~select(VoteSubmission.id)
-        .where(
-            VoteSubmission.conversation_id == Conversation.id,
-            VoteSubmission.pending.is_(True),
-        )
-        .correlate(Conversation)
-        .exists()
-    )
+def vote_buffer_ready_for_analysis() -> ColumnElement[bool]:
+    # Open analysis follows persisted input generations. Closed finalization must
+    # additionally wait until the API has sealed/drained that epoch's cache.
+    return or_(Conversation.is_closed.is_(False), Conversation.vote_buffer_drained.is_(True))
 
 
 def lock_analysis_conversations(session: Session, *, conversation_ids: Sequence[int]) -> None:
@@ -92,7 +85,7 @@ def permitted_publication_claim_ids(
             Conversation.current_content_id.is_not(None),
             Conversation.is_importing.is_(False),
             Conversation.closed_finalized_at.is_(None),
-            no_pending_vote_submissions(),
+            vote_buffer_ready_for_analysis(),
         )
     ).all()
     generation_by_conversation = {row.id: row.analysis_data_generation for row in states}
@@ -148,7 +141,7 @@ def activatable_analysis_view_ids(
                 Conversation.current_content_id.is_not(None),
                 Conversation.is_importing.is_(False),
                 Conversation.closed_finalized_at.is_(None),
-                no_pending_vote_submissions(),
+                vote_buffer_ready_for_analysis(),
                 AnalysisSnapshot.data_generation
                 == PolisConversationConfig.analysis_data_generation,
             )
@@ -180,7 +173,7 @@ def finalize_closed_analysis(session: Session, *, conversation_ids: list[int]) -
             Conversation.id.in_(conversation_ids),
             Conversation.is_closed.is_(True),
             Conversation.closed_finalized_at.is_(None),
-            no_pending_vote_submissions(),
+            vote_buffer_ready_for_analysis(),
         )
     ).all()
     for state in states:

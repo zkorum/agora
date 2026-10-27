@@ -12,10 +12,7 @@ import {
     assertParsedTablesForService,
 } from "./sync-schema-lib.js";
 
-function getParsedColumns(
-    result: Map<string, Column[]>,
-    tableName: string,
-) {
+function getParsedColumns(result: Map<string, Column[]>, tableName: string) {
     const columns = result.get(tableName);
     expect(columns).toBeDefined();
     if (columns === undefined) {
@@ -577,6 +574,29 @@ describe("generateSqlAlchemyModels", () => {
 
         expect(output).toContain('server_default=text("false")');
         expect(output).toContain('server_default="0"');
+    });
+
+    it("preserves random UUID defaults for Python insertions", () => {
+        const output = generateSqlAlchemyModels({
+            tables: new Map([
+                [
+                    "conversation",
+                    [
+                        {
+                            name: "vote_buffer_epoch",
+                            sqlType: "uuid",
+                            nullable: false,
+                            hasDefault: true,
+                            defaultValue: "gen_random_uuid()",
+                            isPrimaryKey: false,
+                        },
+                    ],
+                ],
+            ]),
+            enums: new Map(),
+            service: "test",
+        });
+        expect(output).toContain("default=uuid_pkg.uuid4");
     });
 
     it("includes header comment", () => {
