@@ -88,7 +88,7 @@
       </div>
     </ZKHoverEffect>
 
-    <FloatingBottomContainer v-if="!compactMode">
+    <FloatingBottomContainer v-if="!compactMode" :anchor-element="undefined">
       <CommentComposer
         :editing-target="editingTarget"
         :action-bar-element="

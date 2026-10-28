@@ -67,7 +67,10 @@
           </router-view>
         </div>
 
-        <FloatingBottomContainer v-if="!isMaxDiffConversation">
+        <FloatingBottomContainer
+          v-if="!isMaxDiffConversation"
+          :anchor-element="undefined"
+        >
           <CommentComposer
             :editing-target="undefined"
             :action-bar-element="

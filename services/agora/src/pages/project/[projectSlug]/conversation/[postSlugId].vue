@@ -105,7 +105,6 @@
         !isMaxDiffConversation
       "
       :anchor-element="actionBarElement ?? undefined"
-      :respect-drawer-offset="false"
     >
       <CommentComposer
         :editing-target="editingTarget"
