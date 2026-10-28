@@ -17,7 +17,6 @@ import type {
   AnalysisFrameManifest,
   AnalysisFrameOpinionList,
   AnalysisFreshnessRequest,
-  FetchCommentStatsResponse,
 } from "src/shared/types/dto";
 import type { Dto } from "src/shared/types/dto";
 import type {
@@ -74,46 +73,6 @@ import {
   type UseCommentQueriesTranslations,
   useCommentQueriesTranslations,
 } from "./useCommentQueries.i18n";
-
-export function useCommentStatsQuery({
-  conversationSlugId,
-  enabled = true,
-}: {
-  conversationSlugId: MaybeRefOrGetter<string>;
-  enabled?: MaybeRefOrGetter<boolean>;
-}) {
-  const { fetchCommentStatsForPost } = useBackendCommentApi();
-
-  return useQuery({
-    queryKey: ["commentStats", computed(() => toValue(conversationSlugId))],
-    queryFn: () => fetchCommentStatsForPost(toValue(conversationSlugId)),
-    enabled: computed(
-      () => toValue(enabled) && toValue(conversationSlugId) !== ""
-    ),
-    placeholderData: (previousData) => previousData,
-    staleTime: 30_000,
-    retry: false,
-  });
-}
-
-export function pickCommentStatsForActionBar(
-  stats: FetchCommentStatsResponse
-): Pick<
-  FetchCommentStatsResponse,
-  | "opinionCount"
-  | "participantCount"
-  | "voteCount"
-  | "totalParticipantCount"
-  | "totalVoteCount"
-> {
-  return {
-    opinionCount: stats.opinionCount,
-    participantCount: stats.participantCount,
-    voteCount: stats.voteCount,
-    totalParticipantCount: stats.totalParticipantCount,
-    totalVoteCount: stats.totalVoteCount,
-  };
-}
 
 /**
  * Calculate optimal stale time based on conversation size

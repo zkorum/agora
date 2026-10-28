@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createApp } from "vue";
+import { computed, createApp, ref } from "vue";
 
 vi.mock("src/components/post/ConversationCommentTab.vue", () => ({
   default: { template: '<div data-testid="comment-tab"></div>' },
@@ -21,8 +21,17 @@ describe("conversation index route", () => {
     document.body.append(container);
     const app = createApp(ConversationIndexRoute, {
       conversationData: undefined,
-      moderationHistoryTrigger: 0,
-      commentFilter: "moderated",
+      opinionState: {
+        filter: computed(() => "moderated"),
+        selectFilter: vi.fn(),
+        targetOpinion: computed(() => null),
+        highlightState: computed<{ kind: "none" }>(() => ({ kind: "none" })),
+        isResolvingLink: ref(false),
+        clearHighlight: vi.fn(),
+        highlightOpinion: vi.fn(),
+        captureHighlight: () => vi.fn(),
+      },
+      editingOpinion: undefined,
       onViewAnalysis: vi.fn(),
       conversationRouteContext: { kind: "normal" },
     });

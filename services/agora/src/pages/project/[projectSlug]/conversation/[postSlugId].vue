@@ -77,8 +77,7 @@
                 :is="Component"
                 :key="route.path"
                 :conversation-data="loadedConversationData"
-                :moderation-history-trigger="moderationHistoryTrigger"
-                :comment-filter="commentFilter"
+                :opinion-state="opinionState"
                 :on-view-analysis="onViewAnalysis"
                 :navigate-to-discover-tab="navigateToDiscoverTab"
                 :conversation-route-context="conversationRouteContext"
@@ -86,11 +85,6 @@
                 v-bind="analysisRouteProps"
                 @edit-opinion="beginEditOpinion"
                 @analysis-live-pause-stats="setAnalysisLivePauseStats"
-                @update:comment-filter="
-                  (filter: CommentFilterOptions) => {
-                    commentFilter = filter;
-                  }
-                "
               />
             </KeepAlive>
           </router-view>
@@ -149,7 +143,6 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLanguageStore } from "src/stores/language";
 import { useBackendProjectPageApi } from "src/utils/api/projectPage";
-import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { getScrollTop } from "src/utils/html/scroll";
 import { getConversationEditReturnPath } from "src/utils/router/conversationEditReturn";
 import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
@@ -236,7 +229,7 @@ const {
   finishEditOpinion,
   handleEditedOpinion,
   isCurrentTabLoading,
-  moderationHistoryTrigger,
+  opinionState,
   commentFilter,
   selectCommentFilter,
   actionBarElement,

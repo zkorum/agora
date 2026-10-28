@@ -6,7 +6,7 @@ import type { ConversationRouteContext } from "src/utils/router/conversationRout
 
 export type OpinionView =
   | { kind: "one_at_a_time"; order: "discover" | "new" }
-  | { kind: "list"; filter: CommentFilterOptions };
+  | { kind: "list" };
 
 export function resolveOpinionView({
   metadata,
@@ -18,7 +18,7 @@ export function resolveOpinionView({
   filter: CommentFilterOptions;
 }): OpinionView {
   if (metadata.conversationType !== "polis") {
-    return { kind: "list", filter };
+    return { kind: "list" };
   }
   if (routeContext.kind === "embed") {
     return { kind: "one_at_a_time", order: "discover" };
@@ -30,7 +30,7 @@ export function resolveOpinionView({
   ) {
     return { kind: "one_at_a_time", order: filter };
   }
-  return { kind: "list", filter };
+  return { kind: "list" };
 }
 
 export function resolveLinkedOpinionFilter({

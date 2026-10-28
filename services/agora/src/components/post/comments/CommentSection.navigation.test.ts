@@ -1,10 +1,9 @@
 import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { createPinia, defineStore } from "pinia";
+import { useConversationActionBarStats } from "src/composables/conversation/useConversationActionBarStats";
 import { useConversationOnboardingExit } from "src/composables/conversation/useConversationOnboardingExit";
-import {
-  getOpinionFilterSelection,
-  isOpinionListRoute,
-} from "src/composables/opinion/opinionLinkRoute";
+import { useConversationParentState } from "src/composables/conversation/useConversationParentState";
+import { isOpinionListRoute } from "src/composables/opinion/opinionLinkRoute";
 import type {
   GetOpinionBySlugIdListResponse,
   OpinionTarget,
@@ -17,8 +16,10 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useConversationOnboardingStore } from "src/stores/conversationOnboarding";
 import { useLanguageStore } from "src/stores/language";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
+import { useUserStore } from "src/stores/user";
 import type { useBackendCommentApi } from "src/utils/api/comment/comment";
 import { getOpinionTargetQueryKey } from "src/utils/api/comment/opinionTargetQueryKey";
+import { resetLocalAuthState } from "src/utils/auth/localAuthState";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { getConversationRouteContextFromRoute } from "src/utils/router/conversationRouteContext";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -30,7 +31,6 @@ import {
   KeepAlive,
   nextTick,
   ref,
-  watch,
 } from "vue";
 import { createMemoryHistory, createRouter } from "vue-router";
 
@@ -42,6 +42,12 @@ const mocks = vi.hoisted(() => ({
   fetchPage:
     vi.fn<ReturnType<typeof useBackendCommentApi>["fetchOpinionPage"]>(),
   notify: vi.fn(),
+  conversationData: vi.fn<() => ExtendedConversationDisplayData | undefined>(),
+  fetchStats:
+    vi.fn<
+      ReturnType<typeof useBackendCommentApi>["fetchCommentStatsForPost"]
+    >(),
+  queryClient: vi.fn<() => QueryClient>(),
 }));
 
 vi.mock("src/stores/user", () => ({
@@ -52,14 +58,9 @@ vi.mock("src/stores/user", () => ({
         isSiteModerator: false,
       },
     }),
-  }),
-}));
-vi.mock("src/stores/authentication", () => ({
-  useAuthenticationStore: defineStore("test-auth", {
-    state: (): { userId: string | undefined } => ({ userId: "viewer" }),
     actions: {
-      setLoginStatus(status: { userId?: string }) {
-        this.userId = status.userId;
+      clearProfileData() {
+        this.profileData.isSiteModerator = false;
       },
     },
   }),
@@ -72,22 +73,81 @@ vi.mock("src/stores/language", () => ({
         this.displayLanguage = newLanguage;
         return Promise.resolve(true);
       },
+      clearLanguagePreferences: () => Promise.resolve(true),
     },
   }),
 }));
 vi.mock("src/utils/api/auth", () => ({
   useBackendAuthApi: () => ({ loadAuthenticatedModules: vi.fn() }),
 }));
+vi.mock("src/composables/zupass/useZupassVerification", () => ({
+  resetZupassModuleState: vi.fn(),
+}));
+vi.mock("src/stores/newConversationDrafts", () => ({
+  useNewPostDraftsStore: () => ({ resetDraft: vi.fn() }),
+}));
+vi.mock("src/stores/newOpinionDrafts", () => ({
+  useNewOpinionDraftsStore: () => ({ clearOpinionDrafts: vi.fn() }),
+}));
+vi.mock("src/stores/notification", () => ({
+  useNotificationStore: () => ({ clearNotificationData: vi.fn() }),
+}));
+vi.mock("src/stores/onboarding/email", () => ({
+  emailVerificationStore: () => ({ reset: vi.fn() }),
+}));
+vi.mock("src/stores/onboarding/phone", () => ({
+  phoneVerificationStore: () => ({ reset: vi.fn() }),
+}));
+vi.mock("src/stores/topic", () => ({
+  useTopicStore: () => ({ clearTopicsData: vi.fn() }),
+}));
+vi.mock("src/utils/crypto/ucan/operation", () => ({
+  deleteDid: () => Promise.resolve(),
+  deleteDidIfCurrent: vi.fn(),
+}));
+vi.mock("src/utils/query/client", () => ({
+  get queryClient() {
+    return mocks.queryClient();
+  },
+}));
+vi.mock("src/utils/api/maxdiff/useMaxDiffQueries", () => ({
+  useRankingStatsCheckpointsQuery: () => ({
+    data: ref(),
+    isPending: ref(true),
+    isRefetching: ref(false),
+  }),
+}));
+vi.mock("src/utils/api/post/useConversationQuery", () => ({
+  useConversationQuery: () => ({
+    data: computed(() => {
+      const data = mocks.conversationData();
+      return data === undefined
+        ? undefined
+        : { conversationData: data, displayContent: undefined };
+    }),
+  }),
+}));
+vi.mock("src/utils/api/vote/useVoteQueries", () => ({
+  useInvalidateVoteQueries: () => ({ invalidateUserVotes: vi.fn() }),
+}));
 vi.mock("src/utils/api/comment/comment", () => ({
   useBackendCommentApi: () => ({
     fetchOpinionsBySlugIdList: mocks.fetchTargets,
     fetchOpinionPage: mocks.fetchPage,
+    fetchCommentStatsForPost: mocks.fetchStats,
   }),
 }));
 vi.mock("src/utils/api/comment/useCommentQueries", () => ({
+  useAnalysisCheckpointsQuery: () => ({
+    data: ref(),
+    isPending: ref(true),
+    isRefetching: ref(false),
+  }),
   useInvalidateCommentQueries: () => ({
     invalidateAll: vi.fn(),
     markCommentsAsStale: vi.fn(),
+    invalidateComments: vi.fn(),
+    markAnalysisAsStale: vi.fn(),
   }),
 }));
 vi.mock("src/composables/opinion/useOpinionVoting", () => ({
@@ -102,13 +162,6 @@ vi.mock("src/composables/ui/useComponentI18n", () => ({
 }));
 vi.mock("src/utils/ui/notify", () => ({
   useNotify: () => ({ showNotifyMessage: mocks.notify }),
-}));
-vi.mock("src/components/ui/AsyncStateHandler.vue", () => ({
-  default: defineComponent(
-    (_, { slots }) =>
-      () =>
-        h("div", slots.default?.())
-  ),
 }));
 vi.mock("src/components/feed/NewContentPill.vue", () => ({
   default: defineComponent(() => () => null),
@@ -230,12 +283,24 @@ function conversation(
 let app: ReturnType<typeof createApp> | undefined;
 let queryClient: QueryClient | undefined;
 beforeEach(() => {
-  vi.clearAllMocks();
+  vi.resetAllMocks();
   mocks.fetchTargets.mockResolvedValue([target()]);
   mocks.fetchPage.mockResolvedValue({
     items: [],
     nextCursor: null,
     nextRequest: undefined,
+  });
+  mocks.fetchStats.mockResolvedValue({
+    conversationViewSnapshotId: 1,
+    opinionCount: 1,
+    voteCount: 0,
+    participantCount: 0,
+    totalOpinionCount: 1,
+    totalVoteCount: 0,
+    totalParticipantCount: 0,
+    moderatedOpinionCount: 0,
+    hiddenOpinionCount: 0,
+    isClosed: false,
   });
 });
 afterEach(() => {
@@ -248,10 +313,12 @@ async function mountStatementLink({
   presentation = "list",
   url = "/conversation/conversa/?opinion=statement",
   loaded = true,
+  authenticated = true,
 }: {
   presentation?: "list" | "one_at_a_time";
   url?: string;
   loaded?: boolean;
+  authenticated?: boolean;
 } = {}) {
   const router = createRouter({
     history: createMemoryHistory(),
@@ -278,63 +345,69 @@ async function mountStatementLink({
     loaded ? conversation(presentation) : undefined
   );
   const visible = ref(true);
-  const initialFilterSelection = getOpinionFilterSelection(
-    router.currentRoute.value
-  );
-  const filter = ref<CommentFilterOptions>(
-    initialFilterSelection.kind === "explicit"
-      ? initialFilterSelection.filter
-      : "discover"
-  );
+  mocks.conversationData.mockImplementation(() => conversationData.value);
   const editingOpinion = ref<DisplayedOpinionItem>();
+  let parentState: ReturnType<typeof useConversationParentState> | undefined;
   const root = defineComponent(() => {
-    watch(
-      [
-        () => router.currentRoute.value.path,
-        () => router.currentRoute.value.query.filter,
+    const state = useConversationParentState({
+      analysisRouteName: "/conversation/[postSlugId]/analysis",
+      commentRouteNames: [
+        "/conversation/[postSlugId]/",
+        "/project/[projectSlug]/conversation/[postSlugId]/",
       ],
-      () => {
-        const route = router.currentRoute.value;
-        const selection = getOpinionFilterSelection(route);
-        if (
-          isOpinionListRoute({ route, conversationSlugId: "conversa" }) &&
-          selection.kind === "explicit"
-        ) {
-          filter.value = selection.filter;
-        }
-      }
-    );
+      routeContext: computed(() =>
+        getConversationRouteContextFromRoute(router.currentRoute.value)
+      ),
+    });
+    parentState = state;
+    const stats = useConversationActionBarStats({
+      conversationData: state.conversationData,
+      currentTab: state.currentTab,
+      routeQuery: computed(() => router.currentRoute.value.query),
+    });
     return () =>
-      h(KeepAlive, null, () =>
-        visible.value &&
-        isOpinionListRoute({
-          route: router.currentRoute.value,
-          conversationSlugId: "conversa",
-        })
-          ? h(ConversationCommentTab, {
-              conversationData: conversationData.value,
-              moderationHistoryTrigger: 0,
-              commentFilter: filter.value,
-              editingOpinion: editingOpinion.value,
-              onViewAnalysis: vi.fn(),
-              conversationRouteContext: getConversationRouteContextFromRoute(
-                router.currentRoute.value
-              ),
-              "onUpdate:commentFilter": (value: CommentFilterOptions) => {
-                filter.value = value;
-              },
-            })
-          : null
-      );
+      h("div", [
+        h(
+          "output",
+          {
+            "data-testid": "action-bar",
+            "aria-busy":
+              state.isCurrentTabLoading.value ||
+              stats.isLoadingCommentStats.value ||
+              stats.isLoadingCheckpointStats.value,
+          },
+          stats.actionBarStats.value?.opinionCount
+        ),
+        h(KeepAlive, null, () =>
+          visible.value &&
+          isOpinionListRoute({
+            route: router.currentRoute.value,
+            conversationSlugId: "conversa",
+          })
+            ? h(ConversationCommentTab, {
+                conversationData: conversationData.value,
+                opinionState: state.opinionState,
+                editingOpinion: editingOpinion.value,
+                onViewAnalysis: vi.fn(),
+                conversationRouteContext: getConversationRouteContextFromRoute(
+                  router.currentRoute.value
+                ),
+              })
+            : null
+        ),
+      ]);
   });
   const container = document.createElement("div");
   document.body.append(container);
   queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
+  mocks.queryClient.mockReturnValue(queryClient);
   app = createApp(root);
   const pinia = createPinia();
   app.use(pinia);
+  const auth = useAuthenticationStore(pinia);
+  if (authenticated) auth.setLoginStatus({ isKnown: true, userId: "viewer" });
   app.use(router);
   app.use(VueQueryPlugin, { queryClient });
   app.component(
@@ -345,16 +418,35 @@ async function mountStatementLink({
           h("div", slots.default?.())
     )
   );
+  app.component(
+    "QSpinnerDots",
+    defineComponent(() => () => h("span", { "data-testid": "list-spinner" }))
+  );
+  app.component(
+    "QIcon",
+    defineComponent(() => () => h("span"))
+  );
   app.mount(container);
   await nextTick();
+  if (parentState === undefined)
+    throw new Error("Conversation parent was not mounted");
+  const state = parentState;
+  const filter = computed({
+    get: () => state.commentFilter.value,
+    set: (value: CommentFilterOptions) =>
+      state.opinionState.selectFilter(value),
+  });
   return {
     router,
     conversationData,
     filter,
     editingOpinion,
+    isLoading: state.isCurrentTabLoading,
+    selectFilter: state.selectCommentFilter,
     visible,
     container,
-    auth: useAuthenticationStore(pinia),
+    auth,
+    user: useUserStore(pinia),
     language: useLanguageStore(pinia),
     flow: onboardingFlowStore(pinia),
     onboarding: useConversationOnboardingStore(pinia),
@@ -370,6 +462,186 @@ function highlighted(container: HTMLElement): string | undefined {
 }
 
 describe("statement URL navigation", () => {
+  it("does not cancel a pending target when moderator metadata restores Hidden", async () => {
+    const response = Promise.withResolvers<GetOpinionBySlugIdListResponse>();
+    mocks.fetchTargets.mockReturnValueOnce(response.promise);
+    const { auth, user, filter, container } = await mountStatementLink({
+      url: "/conversation/conversa/?opinion=statement&filter=hidden",
+    });
+    expect(filter.value).toBe("discover");
+    auth.setLoginStatus({ isRegistered: true, isLoggedIn: true });
+    user.profileData.isSiteModerator = true;
+    await nextTick();
+    expect(mocks.fetchTargets.mock.calls[0]?.[0].signal?.aborted).toBe(false);
+    response.resolve([target({ isOwn: false })]);
+    await vi.waitFor(() => {
+      expect(filter.value).toBe("hidden");
+      expect(highlighted(container)).toBe("statement");
+    });
+  });
+  it("recovers the list and action-bar stats after real auth cleanup clears the cache", async () => {
+    const { container, auth, filter, isLoading } = await mountStatementLink({
+      url: "/conversation/conversa/?opinion=statement&filter=my_statements",
+    });
+    await vi.waitFor(() => {
+      expect(highlighted(container)).toBe("statement");
+      expect(
+        container
+          .querySelector('[data-testid="action-bar"]')
+          ?.getAttribute("aria-busy")
+      ).toBe("false");
+    });
+    mocks.fetchPage.mockClear();
+    mocks.fetchStats.mockClear();
+    mocks.fetchTargets.mockResolvedValue([target({ isOwn: false })]);
+
+    await app?.runWithContext(async () => {
+      await resetLocalAuthState();
+    });
+
+    await vi.waitFor(() => {
+      expect(auth.isGuestOrLoggedIn).toBe(false);
+      expect(filter.value).toBe("discover");
+      expect(highlighted(container)).toBe("statement");
+      expect(isLoading.value).toBe(false);
+      expect(mocks.fetchStats).toHaveBeenCalledOnce();
+      expect(
+        mocks.fetchPage.mock.calls.map(([request]) => request.filter)
+      ).toEqual(["discover"]);
+      expect(
+        container
+          .querySelector('[data-testid="action-bar"]')
+          ?.getAttribute("aria-busy")
+      ).toBe("false");
+      expect(
+        container.querySelector('[data-testid="list-spinner"]')
+      ).toBeNull();
+    });
+  });
+  it.each(["my_statements", "my_votes"])(
+    "keeps a linked statement when guest creation restores %s",
+    async (requestedFilter) => {
+      mocks.fetchTargets.mockResolvedValue([target({ isOwn: false })]);
+      const { auth, filter, container, isLoading } = await mountStatementLink({
+        url: `/conversation/conversa/?opinion=statement&filter=${requestedFilter}`,
+        authenticated: false,
+      });
+      await vi.waitFor(() => expect(highlighted(container)).toBe("statement"));
+      const response = Promise.withResolvers<GetOpinionBySlugIdListResponse>();
+      mocks.fetchTargets.mockReturnValueOnce(response.promise);
+      auth.setLoginStatus({ isKnown: true, userId: "new-guest" });
+      await vi.waitFor(() =>
+        expect(mocks.fetchTargets).toHaveBeenCalledTimes(2)
+      );
+      expect(mocks.fetchTargets.mock.calls.at(-1)?.[0].signal?.aborted).toBe(
+        false
+      );
+      expect(
+        container.querySelector('[data-testid="list-spinner"]')
+      ).not.toBeNull();
+      response.resolve([target({ isOwn: false })]);
+      await vi.waitFor(() => {
+        expect(filter.value).toBe(requestedFilter);
+        expect(highlighted(container)).toBe("statement");
+        expect(isLoading.value).toBe(false);
+        expect(
+          container.querySelector('[data-testid="list-spinner"]')
+        ).toBeNull();
+      });
+    }
+  );
+
+  it.each(["my_statements", "my_votes", "hidden"])(
+    "keeps anonymous one-at-a-time %s links in the configured voting view",
+    async (requestedFilter) => {
+      const { container, filter } = await mountStatementLink({
+        presentation: "one_at_a_time",
+        authenticated: false,
+        url: `/conversation/conversa/?opinion=statement&filter=${requestedFilter}`,
+      });
+      expect(filter.value).toBe("discover");
+      expect(
+        container.querySelector('[data-testid="one-at-a-time"]')
+      ).not.toBeNull();
+      expect(mocks.fetchTargets).not.toHaveBeenCalled();
+      expect(mocks.fetchPage).not.toHaveBeenCalled();
+    }
+  );
+  it.each([
+    { path: "/conversation/conversa/", filter: "my_statements" },
+    { path: "/conversation/conversa/", filter: "my_votes" },
+    { path: "/conversation/conversa/", filter: "hidden" },
+    {
+      path: "/project/project/conversation/conversa/",
+      filter: "my_statements",
+    },
+    { path: "/project/project/conversation/conversa/", filter: "my_votes" },
+    { path: "/project/project/conversation/conversa/", filter: "hidden" },
+  ])(
+    "opens a copied $filter link anonymously at $path",
+    async ({ path, filter: requestedFilter }) => {
+      mocks.fetchTargets.mockResolvedValue([target({ isOwn: false })]);
+      const { filter, container, isLoading, router } = await mountStatementLink(
+        {
+          url: `${path}?opinion=statement&filter=${requestedFilter}`,
+          authenticated: false,
+        }
+      );
+
+      await vi.waitFor(() => {
+        expect(highlighted(container)).toBe("statement");
+        expect(filter.value).toBe("discover");
+        expect(isLoading.value).toBe(false);
+      });
+      expect(
+        mocks.fetchPage.mock.calls.map(([request]) => request.filter)
+      ).toEqual(["discover"]);
+      expect(router.currentRoute.value.query.opinion).toBe("statement");
+    }
+  );
+
+  it.each(["my_statements", "my_votes", "hidden"])(
+    "falls back from an anonymous %s URL without a statement target",
+    async (requestedFilter) => {
+      const { filter, isLoading } = await mountStatementLink({
+        url: `/conversation/conversa/?filter=${requestedFilter}`,
+        authenticated: false,
+      });
+      await vi.waitFor(() => {
+        expect(filter.value).toBe("discover");
+        expect(isLoading.value).toBe(false);
+      });
+      expect(mocks.fetchTargets).not.toHaveBeenCalled();
+      expect(
+        mocks.fetchPage.mock.calls.map(([request]) => request.filter)
+      ).toEqual(["discover"]);
+    }
+  );
+
+  it.each(["my_statements", "my_votes"])(
+    "stops requesting %s after logout while keeping the linked statement",
+    async (requestedFilter) => {
+      const { auth, filter, container, isLoading } = await mountStatementLink({
+        url: `/conversation/conversa/?opinion=statement&filter=${requestedFilter}`,
+      });
+      await vi.waitFor(() => expect(highlighted(container)).toBe("statement"));
+      await vi.waitFor(() => expect(isLoading.value).toBe(false));
+      mocks.fetchPage.mockClear();
+      mocks.fetchTargets.mockResolvedValue([target({ isOwn: false })]);
+
+      auth.setLoginStatus({ isKnown: false });
+
+      await vi.waitFor(() => {
+        expect(filter.value).toBe("discover");
+        expect(highlighted(container)).toBe("statement");
+        expect(isLoading.value).toBe(false);
+        expect(
+          mocks.fetchPage.mock.calls.map(([request]) => request.filter)
+        ).toEqual(["discover"]);
+      });
+    }
+  );
+
   for (const mode of ["LOGIN", "SIGNUP"] satisfies Array<"LOGIN" | "SIGNUP">) {
     for (const presentation of ["list", "one_at_a_time"] satisfies Array<
       "list" | "one_at_a_time"
@@ -475,7 +747,7 @@ describe("statement URL navigation", () => {
       url: "/conversation/conversa/?opinion=statement&opinion=second",
     });
     expect(mocks.fetchTargets).not.toHaveBeenCalled();
-    expect(highlighted(container)).toBe("");
+    expect(highlighted(container)).toBeFalsy();
   });
 
   it("uses refreshed backend presentation even while the URL targets a statement", async () => {
@@ -570,7 +842,7 @@ describe("statement URL navigation", () => {
     await vi.waitFor(() =>
       expect(mocks.notify).toHaveBeenCalledWith("statementNotFound")
     );
-    expect(highlighted(container)).toBe("");
+    expect(highlighted(container)).toBeFalsy();
   });
 
   it("does not restore a pending highlight after a manual filter selection", async () => {
@@ -582,7 +854,7 @@ describe("statement URL navigation", () => {
     response.resolve([target()]);
     await nextTick();
     expect(filter.value).toBe("my_votes");
-    expect(highlighted(container)).toBe("");
+    expect(highlighted(container)).toBeFalsy();
   });
 
   it("keeps one-at-a-time Discover when clearing the statement URL", async () => {
@@ -609,7 +881,7 @@ describe("statement URL navigation", () => {
     await nextTick();
     response.resolve([target()]);
     await nextTick();
-    expect(highlighted(container)).toBe("");
+    expect(highlighted(container)).toBeFalsy();
     expect(
       queryClient?.getQueryData(
         getOpinionTargetQueryKey({
@@ -631,13 +903,10 @@ describe("statement URL navigation", () => {
     filter.value = "my_statements";
     await vi.waitFor(() => expect(mocks.fetchPage).toHaveBeenCalled());
     expect(filter.value).toBe("my_statements");
-    const response = Promise.withResolvers<GetOpinionBySlugIdListResponse>();
-    mocks.fetchTargets.mockReturnValueOnce(response.promise);
     mocks.fetchPage.mockClear();
     auth.setLoginStatus({ isKnown: false });
     await nextTick();
     expect(mocks.fetchPage).not.toHaveBeenCalled();
-    response.resolve([target({ isOwn: false })]);
     await vi.waitFor(() => expect(filter.value).toBe("discover"));
     expect(mocks.fetchPage).not.toHaveBeenCalled();
   });
@@ -652,7 +921,7 @@ describe("statement URL navigation", () => {
     await language.changeDisplayLanguage({ newLanguage: "fr" });
     response.resolve([target()]);
     await nextTick();
-    expect(highlighted(container)).toBe("");
+    expect(highlighted(container)).toBeFalsy();
     expect(
       queryClient?.getQueryData(
         getOpinionTargetQueryKey({

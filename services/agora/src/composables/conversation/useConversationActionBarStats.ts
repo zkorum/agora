@@ -4,11 +4,11 @@ import type {
 } from "src/shared/types/dto";
 import type { ExtendedConversationDisplayData } from "src/shared/types/zod";
 import { parseCheckpointQuery } from "src/utils/analysis/analysisRoute";
+import { useAnalysisCheckpointsQuery } from "src/utils/api/comment/useCommentQueries";
 import {
   pickCommentStatsForActionBar,
-  useAnalysisCheckpointsQuery,
   useCommentStatsQuery,
-} from "src/utils/api/comment/useCommentQueries";
+} from "src/utils/api/comment/useCommentStatsQuery";
 import { useRankingStatsCheckpointsQuery } from "src/utils/api/maxdiff/useMaxDiffQueries";
 import type { MaybeRefOrGetter } from "vue";
 import { computed, toValue } from "vue";
@@ -106,22 +106,22 @@ export function useConversationActionBarStats({
     enabled: shouldLoadCommentStats,
   });
 
-  const selectedAnalysisCheckpoint = computed<
-    AnalysisCheckpoint | undefined
-  >(() => {
-    if (!shouldLoadPolisCheckpointStats.value) {
-      return undefined;
-    }
+  const selectedAnalysisCheckpoint = computed<AnalysisCheckpoint | undefined>(
+    () => {
+      if (!shouldLoadPolisCheckpointStats.value) {
+        return undefined;
+      }
 
-    const checkpointId = checkpointViewSnapshotId.value;
-    if (checkpointId === undefined) {
-      return undefined;
-    }
+      const checkpointId = checkpointViewSnapshotId.value;
+      if (checkpointId === undefined) {
+        return undefined;
+      }
 
-    return analysisCheckpointsQuery.data.value?.find(
-      (checkpoint) => checkpoint.conversationViewSnapshotId === checkpointId
-    );
-  });
+      return analysisCheckpointsQuery.data.value?.find(
+        (checkpoint) => checkpoint.conversationViewSnapshotId === checkpointId
+      );
+    }
+  );
   const selectedRankingCheckpoint = computed<
     RankingStatsCheckpointsResponse[number] | undefined
   >(() => {

@@ -63,8 +63,10 @@ type TargetLookup =
 
 export function useTargetOpinion({
   conversationSlugId,
+  enabled = true,
 }: {
   conversationSlugId: MaybeRefOrGetter<string>;
+  enabled?: MaybeRefOrGetter<boolean>;
 }) {
   const route = useRoute();
   const queryClient = useQueryClient();
@@ -86,7 +88,7 @@ export function useTargetOpinion({
   );
   const linkRequest = computed<LinkRequest>(() => {
     const opinionSlugId = linkedSlugId.value;
-    if (!isActive.value || opinionSlugId === undefined)
+    if (!isActive.value || !toValue(enabled) || opinionSlugId === undefined)
       return { kind: "inactive" };
     const scope: OpinionQueryScope = {
       viewerUserId: userId.value,
@@ -165,7 +167,8 @@ export function useTargetOpinion({
                 return result.target.opinion;
               },
         // Linked requests seed this cache; observe edits without issuing a duplicate read.
-        enabled: isActive.value && selected.kind === "local",
+        enabled:
+          isActive.value && toValue(enabled) && selected.kind === "local",
         staleTime: 30_000,
         retry: false,
       };

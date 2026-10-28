@@ -50,18 +50,12 @@
                 :is="Component"
                 :key="route.path"
                 :conversation-data="loadedConversationData"
-                :moderation-history-trigger="moderationHistoryTrigger"
-                :comment-filter="commentFilter"
+                :opinion-state="opinionState"
                 :on-view-analysis="onViewAnalysis"
                 :navigate-to-discover-tab="navigateToDiscoverTab"
                 :conversation-scroll-context="conversationScrollContext"
                 :conversation-route-context="conversationRouteContext"
                 :editing-opinion="undefined"
-                @update:comment-filter="
-                  (filter: CommentFilterOptions) => {
-                    commentFilter = filter;
-                  }
-                "
               />
             </KeepAlive>
           </router-view>
@@ -99,7 +93,6 @@ import { useConversationParentState } from "src/composables/conversation/useConv
 import { useTabScrollRestoration } from "src/composables/conversation/useTabScrollRestoration";
 import { useStickyObserver } from "src/composables/ui/useStickyObserver";
 import EmbedLayout from "src/layouts/EmbedLayout.vue";
-import type { CommentFilterOptions } from "src/utils/component/opinion";
 import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
 import { useConversationDisplayContent } from "src/utils/translation/useConversationDisplayContent";
 import { computed, ref } from "vue";
@@ -123,8 +116,7 @@ const {
   loadedConversationDisplayContent,
   currentTab,
   isCurrentTabLoading,
-  moderationHistoryTrigger,
-  commentFilter,
+  opinionState,
   actionBarElement,
   onViewAnalysis,
   navigateToDiscoverTab,

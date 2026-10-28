@@ -1,6 +1,6 @@
 import { storeToRefs } from "pinia";
-import { getOpinionFilterSelection } from "src/composables/opinion/opinionLinkRoute";
 import { useOpinionEditTarget } from "src/composables/opinion/useOpinionEditTarget";
+import { useOpinionListState } from "src/composables/opinion/useOpinionListState";
 import type { DisplayedOpinionItem } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useBackendAuthApi } from "src/utils/api/auth";
@@ -175,7 +175,6 @@ export function useConversationParentState({
   }
   watch(() => authStore.userId, finishEditOpinion);
   const isCurrentTabLoading = ref(false);
-  const moderationHistoryTrigger = ref(0);
 
   // Ref for scroll targeting — bound to a wrapper div around PostActionBar in parent pages
   const actionBarElement = ref<HTMLElement | null>(null);
@@ -235,31 +234,21 @@ export function useConversationParentState({
     });
   }
 
-  // Filter state: owned here, displayed in PostActionBar slot, synced with child route via props
-  const initialFilterSelection = getOpinionFilterSelection(route);
-  const commentFilter = ref<CommentFilterOptions>(
-    routeContextValue.value.kind !== "embed" &&
-      initialFilterSelection.kind === "explicit"
-      ? initialFilterSelection.filter
-      : "discover"
-  );
-
-  // Honor explicit filter URLs when navigating to a cached page.
-  watch([() => route.path, () => route.query.filter], () => {
-    const selection = getOpinionFilterSelection(route);
-    if (
-      selection.kind === "explicit" &&
-      routeContextValue.value.kind !== "embed" &&
-      commentRouteNames.some((name) => name === route.name)
-    ) {
-      commentFilter.value = selection.filter;
-    }
+  const opinionState = useOpinionListState({
+    conversationSlugId: () =>
+      getSingleRouteParam(
+        "postSlugId" in route.params ? route.params.postSlugId : undefined
+      ),
+    metadata: () => conversationData.value?.metadata,
+    routeContext: routeContextValue,
+    enabled: () => currentTab.value === "comment",
   });
+  const commentFilter = opinionState.filter;
 
   async function selectCommentFilter(
     filter: CommentFilterOptions
   ): Promise<void> {
-    commentFilter.value = filter;
+    opinionState.selectFilter(filter);
     await router.replace({
       path: route.path,
       hash: route.hash,
@@ -322,7 +311,7 @@ export function useConversationParentState({
     const data = conversationData.value;
     if (data === undefined) return;
 
-    commentFilter.value = "discover";
+    opinionState.selectFilter("discover");
 
     // Invalidate comments cache to ensure fresh data when user navigates
     void invalidateComments(data.metadata.conversationSlugId);
@@ -360,13 +349,12 @@ export function useConversationParentState({
   );
 
   function openModerationHistory(): void {
-    commentFilter.value = "moderated";
+    opinionState.selectFilter("moderated");
     if (currentTab.value !== "comment") {
       navigateToCommentTab();
     } else {
       void selectCommentFilter("moderated");
     }
-    moderationHistoryTrigger.value += 1;
   }
 
   const { loadAuthenticatedModules } = useBackendAuthApi();
@@ -408,7 +396,7 @@ export function useConversationParentState({
     }
 
     if (currentTab.value !== "comment") {
-      commentFilter.value = "discover";
+      opinionState.selectFilter("discover");
       pendingScrollOverride.value = true;
       await router.push(
         getConversationCommentRoute({
@@ -469,7 +457,7 @@ export function useConversationParentState({
     finishEditOpinion,
     handleEditedOpinion,
     isCurrentTabLoading,
-    moderationHistoryTrigger,
+    opinionState,
     commentFilter,
     selectCommentFilter,
     actionBarElement,

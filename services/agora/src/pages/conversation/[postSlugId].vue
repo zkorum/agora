@@ -101,8 +101,7 @@
                     :is="Component"
                     :key="route.path"
                     :conversation-data="loadedConversationData"
-                    :moderation-history-trigger="moderationHistoryTrigger"
-                    :comment-filter="commentFilter"
+                    :opinion-state="opinionState"
                     :on-view-analysis="onViewAnalysis"
                     :navigate-to-discover-tab="navigateToDiscoverTab"
                     :conversation-route-context="normalConversationRouteContext"
@@ -110,11 +109,6 @@
                     v-bind="analysisRouteProps"
                     @edit-opinion="beginEditOpinion"
                     @analysis-live-pause-stats="setAnalysisLivePauseStats"
-                    @update:comment-filter="
-                      (filter: CommentFilterOptions) => {
-                        commentFilter = filter;
-                      }
-                    "
                   />
                 </KeepAlive>
               </router-view>
@@ -176,7 +170,6 @@ import { useStickyObserver } from "src/composables/ui/useStickyObserver";
 import { useLayoutHeaderStore } from "src/stores/layout/header";
 import { useNavigationStore } from "src/stores/navigation";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
-import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { getElementScrollTop, getScrollTop } from "src/utils/html/scroll";
 import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
 import {
@@ -243,7 +236,7 @@ const {
   finishEditOpinion,
   handleEditedOpinion,
   isCurrentTabLoading,
-  moderationHistoryTrigger,
+  opinionState,
   commentFilter,
   selectCommentFilter,
   actionBarElement,
