@@ -817,7 +817,6 @@ def _write_scores_batch(
                     for s in scores
                 ],
                 participant_counts=participant_counts,
-                group_sources_snapshot=None,
                 user_weights_snapshot=None,
                 pipeline_config={
                     "preferenceLearning": PIPELINE_CONFIG["preference_learning"],

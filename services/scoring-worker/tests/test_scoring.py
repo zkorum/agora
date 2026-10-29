@@ -1,8 +1,7 @@
-"""Tests for score_comparisons with trust_scores and group_sources (COCM)."""
+"""Tests for the standard BWS and pairwise scoring pipelines."""
 
 from __future__ import annotations
 
-from scoring_worker.cocm_voting import GroupSource, UserGroupEntry
 from scoring_worker.db import ComparisonRow
 from scoring_worker.entity_mapping import SolidagoEntityScore
 from scoring_worker.observations import PairwiseObservation
@@ -39,30 +38,17 @@ COMPS: list[ComparisonRow] = [
     _row(2, "B", "C", ["B", "C", "D"]),
 ]
 
-COLLUDING_GROUPS = [
-    GroupSource(
-        source_id="org",
-        memberships=[
-            UserGroupEntry(user_id=0, group_id=1),
-            UserGroupEntry(user_id=2, group_id=1),
-            UserGroupEntry(user_id=1, group_id=2),
-        ],
-    ),
-]
-
 
 def _score(
     *,
     entity_ids: list[str] = IDS,
     comparisons: list[ComparisonRow] = COMPS,
     trust_scores: dict[int, float] | None = None,
-    group_sources: list[GroupSource] | None = None,
 ) -> dict[str, float]:
-    output = score_comparisons(
+    output = _score_raw(
         entity_ids=entity_ids,
         comparisons=comparisons,
         trust_scores=trust_scores,
-        group_sources=group_sources,
     )
     assert output is not None
     return {r.entity_id: r.score for r in output.global_scores}
@@ -73,15 +59,12 @@ def _score_raw(
     entity_ids: list[str] = IDS,
     comparisons: list[ComparisonRow] = COMPS,
     trust_scores: dict[int, float] | None = None,
-    group_sources: list[GroupSource] | None = None,
 ) -> ConversationScoringOutput | None:
-    output = score_comparisons(
+    return score_comparisons(
         entity_ids=entity_ids,
         comparisons=comparisons,
         trust_scores=trust_scores,
-        group_sources=group_sources,
     )
-    return output
 
 
 # --- Edge cases ---
@@ -163,34 +146,6 @@ class TestTrustScores:
     def test_missing_users_default_to_one(self) -> None:
         scores = _score(trust_scores={0: 1.0})
         assert len(scores) == 4
-
-
-# --- COCM ---
-
-
-class TestCOCM:
-    def test_colluding_group_attenuated(self) -> None:
-        """Users 0,2 collude (same group, agree B>C).
-        COCM attenuates them, shifting C up relative to B."""
-        no_cocm = _score()
-        with_cocm = _score(group_sources=COLLUDING_GROUPS)
-        assert with_cocm["C"] - with_cocm["B"] > no_cocm["C"] - no_cocm["B"]
-
-    def test_trust_and_cocm_compose(self) -> None:
-        scores = _score(
-            trust_scores={0: 2.0, 1: 1.0, 2: 2.0},
-            group_sources=COLLUDING_GROUPS,
-        )
-        assert len(scores) == 4
-
-    def test_empty_group_sources_matches_default(self) -> None:
-        default = _score_raw()
-        empty = _score_raw(group_sources=[])
-        assert default is not None
-        assert empty is not None
-        for d, e in zip(default.global_scores, empty.global_scores, strict=True):
-            assert d.entity_id == e.entity_id
-            assert abs(d.score - e.score) < 0.01
 
 
 class TestPairwiseIntegration:

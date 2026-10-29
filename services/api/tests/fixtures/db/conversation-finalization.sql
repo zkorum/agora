@@ -620,7 +620,6 @@ CREATE TABLE "ranking_score" (
 	"conversation_id" integer NOT NULL,
 	"scores" jsonb NOT NULL,
 	"participant_counts" jsonb NOT NULL,
-	"group_sources_snapshot" jsonb,
 	"user_weights_snapshot" jsonb,
 	"pipeline_config" jsonb NOT NULL,
 	"preference_learning" varchar(100),

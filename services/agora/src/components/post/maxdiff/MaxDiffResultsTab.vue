@@ -184,7 +184,6 @@
           <template v-if="learnMoreContext === 'community'">
             <p>{{ t("communityLearnMoreHow") }}</p>
             <p>{{ t("scoreScaleExplanation") }}</p>
-            <p>{{ t("communityLearnMoreCocm") }}</p>
             <p>{{ t("communityLearnMoreDiversity") }}</p>
             <p>
               {{
@@ -209,14 +208,6 @@
                 rel="noopener noreferrer"
                 class="learn-more-link"
                 >Best-Worst Scaling</a
-              >
-              ·
-              <a
-                href="https://ssrn.com/abstract=4311507"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="learn-more-link"
-                >COCM</a
               >
             </p>
           </template>

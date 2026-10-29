@@ -9,7 +9,6 @@ export interface MaxDiffResultsTabTranslations {
   loadingError: string;
   retryButton: string;
   communityLearnMoreHow: string;
-  communityLearnMoreCocm: string;
   communityLearnMoreDiversity: string;
   communityLearnMoreSourceManual: string;
   communityLearnMoreSourceGitHub: string;
@@ -48,8 +47,6 @@ export const maxDiffResultsTabTranslations: Record<
     retryButton: "Try again",
     communityLearnMoreHow:
       "Votes count immediately. Individual preferences are aggregated into a community ranking using Solidago, an open-source algorithm that weighs votes by user trust level.",
-    communityLearnMoreCocm:
-      "Connection-Oriented Cluster Match (COCM) is an optional setup that is not enabled here yet. When enabled, it helps correct unrepresentative participation by quadratically improving how votes are distributed across groups.",
     communityLearnMoreDiversity:
       "Items are presented in randomized groups to prevent position bias. Indirect comparisons are inferred to minimize voting rounds.",
     communityLearnMoreSourceManual:
@@ -91,8 +88,6 @@ export const maxDiffResultsTabTranslations: Record<
     retryButton: "حاول مرة أخرى",
     communityLearnMoreHow:
       "الأصوات تُحتسب فوراً. يتم تجميع التفضيلات الفردية في ترتيب مجتمعي باستخدام Solidago، خوارزمية مفتوحة المصدر تُرجّح الأصوات حسب مستوى ثقة المستخدم.",
-    communityLearnMoreCocm:
-      "مطابقة العناقيد الموجّهة بالروابط (COCM) إعداد اختياري غير مفعّل هنا بعد. عند تفعيله، يساعد في تصحيح المشاركة غير الممثلة عبر تحسين توزيع الأصوات بين المجموعات بشكل تربيعي.",
     communityLearnMoreDiversity:
       "تُعرض العناصر في مجموعات عشوائية لمنع التحيز الموضعي. تُستنتج المقارنات غير المباشرة لتقليل جولات التصويت.",
     communityLearnMoreSourceManual:
@@ -136,8 +131,6 @@ export const maxDiffResultsTabTranslations: Record<
     retryButton: "Intentar de nuevo",
     communityLearnMoreHow:
       "Los votos cuentan inmediatamente. Las preferencias individuales se agregan en una clasificación comunitaria usando Solidago, un algoritmo de código abierto que pondera los votos según el nivel de confianza del usuario.",
-    communityLearnMoreCocm:
-      "Connection-Oriented Cluster Match (COCM) es una configuración opcional que aún no está activada aquí. Cuando se activa, ayuda a corregir una participación no representativa mejorando de forma cuadrática cómo se distribuyen los votos entre grupos.",
     communityLearnMoreDiversity:
       "Los elementos se presentan en grupos aleatorios para evitar sesgo de posicion. Se infieren comparaciones indirectas para minimizar rondas de votacion.",
     communityLearnMoreSourceManual:
@@ -183,8 +176,6 @@ export const maxDiffResultsTabTranslations: Record<
     retryButton: "دوباره تلاش کنید",
     communityLearnMoreHow:
       "آرا فوراً محاسبه می‌شوند. ترجیحات فردی با الگوریتم Solidago، سیستم متن‌باز که آرا را بر اساس سطح اعتماد کاربر وزن‌دهی می‌کند، در رتبه‌بندی جمعی تجمیع می‌شوند.",
-    communityLearnMoreCocm:
-      "Connection-Oriented Cluster Match (COCM) یک تنظیم اختیاری است که هنوز اینجا فعال نشده است. وقتی فعال شود، با بهبود درجه‌دومی توزیع آرا میان گروه‌ها به اصلاح مشارکت غیرنماینده کمک می‌کند.",
     communityLearnMoreDiversity:
       "گزاره‌ها در گروه‌های تصادفی ارائه می‌شوند تا از تعصب موقعیتی جلوگیری شود. مقایسه‌های غیرمستقیم استنتاج می‌شوند تا دورهای رأی‌گیری کمینه شوند.",
     communityLearnMoreSourceManual:
@@ -227,8 +218,6 @@ export const maxDiffResultsTabTranslations: Record<
     retryButton: "נסו שוב",
     communityLearnMoreHow:
       "ההצבעות נספרות מיידית. העדפות אישיות מצטברות לדירוג קהילתי באמצעות Solidago, אלגוריתם בקוד פתוח שמשקלל הצבעות לפי רמת האמון של המשתמש.",
-    communityLearnMoreCocm:
-      "Connection-Oriented Cluster Match (COCM) היא הגדרה אופציונלית שעדיין אינה מופעלת כאן. כשהיא מופעלת, היא עוזרת לתקן השתתפות שאינה מייצגת באמצעות שיפור ריבועי של חלוקת הקולות בין קבוצות.",
     communityLearnMoreDiversity:
       "פריטים מוצגים בקבוצות אקראיות למניעת הטיית מיקום. השוואות עקיפות מוסקות כדי למזער סיבובי הצבעה.",
     communityLearnMoreSourceManual:
@@ -271,8 +260,6 @@ export const maxDiffResultsTabTranslations: Record<
     retryButton: "Réessayer",
     communityLearnMoreHow:
       "Les votes comptent immédiatement. Les préférences individuelles sont agrégées en un classement communautaire via Solidago, un algorithme open source qui pondère les votes selon le niveau de confiance de l'utilisateur.",
-    communityLearnMoreCocm:
-      "Connection-Oriented Cluster Match (COCM) est une configuration optionnelle qui n'est pas encore activée ici. Une fois activée, elle aide à corriger une participation non représentative en améliorant quadratiquement la répartition des votes entre les groupes.",
     communityLearnMoreDiversity:
       "Les éléments sont présentés dans des groupes aléatoires pour éviter le biais de position. Les comparaisons indirectes sont déduites pour minimiser les tours de vote.",
     communityLearnMoreSourceManual:
@@ -316,8 +303,6 @@ export const maxDiffResultsTabTranslations: Record<
     retryButton: "重试",
     communityLearnMoreHow:
       "投票立即生效。个人偏好通过 Solidago（一种按用户信任级别加权投票的开源算法）汇总为社区排名。",
-    communityLearnMoreCocm:
-      "Connection-Oriented Cluster Match (COCM) 是一项可选设置，此处尚未启用。启用后，它通过以二次方式改善各群体之间的投票分配，帮助修正参与者分布不具代表性的问题。",
     communityLearnMoreDiversity:
       "项目以随机分组呈现，防止位置偏差。间接比较会被推断以减少投票轮数。",
     communityLearnMoreSourceManual:
@@ -358,8 +343,6 @@ export const maxDiffResultsTabTranslations: Record<
     retryButton: "重試",
     communityLearnMoreHow:
       "投票立即生效。個人偏好透過 Solidago（一種按使用者信任級別加權投票的開源演算法）匯總為社群排名。",
-    communityLearnMoreCocm:
-      "Connection-Oriented Cluster Match (COCM) 是一項可選設定，此處尚未啟用。啟用後，它透過以二次方式改善各群體之間的投票分配，協助修正參與者分布不具代表性的問題。",
     communityLearnMoreDiversity:
       "項目以隨機分組呈現，防止位置偏差。間接比較會被推斷以減少投票輪數。",
     communityLearnMoreSourceManual:
@@ -400,8 +383,6 @@ export const maxDiffResultsTabTranslations: Record<
     retryButton: "再試行",
     communityLearnMoreHow:
       "投票は即座に反映されます。個人の好みはSolidago（ユーザーの信頼レベルに基づいて投票を重み付けするオープンソースアルゴリズム）でコミュニティランキングに集約されます。",
-    communityLearnMoreCocm:
-      "Connection-Oriented Cluster Match (COCM) は任意設定で、ここではまだ有効化されていません。有効化すると、グループ間の票の配分を二次的に改善することで、代表性の低い参加状況の補正に役立ちます。",
     communityLearnMoreDiversity:
       "項目はランダムなグループで提示され、位置バイアスを防止します。間接比較も推論され、投票ラウンドを最小化します。",
     communityLearnMoreSourceManual:
@@ -445,8 +426,6 @@ export const maxDiffResultsTabTranslations: Record<
     retryButton: "Кайра аракет кылуу",
     communityLearnMoreHow:
       "Добуштар дароо эсепке алынат. Жеке каалоолор Solidago (колдонуучунун ишеним деңгээлине жараша добуштарды салмактаган ачык булак алгоритми) менен коомдук рейтингге бириктирилет.",
-    communityLearnMoreCocm:
-      "Connection-Oriented Cluster Match (COCM) бул кошумча жөндөө жана бул жерде азырынча иштетилген эмес. Иштетилгенде, топтор арасында добуштардын бөлүштүрүлүшүн квадраттык түрдө жакшыртып, өкүлчүлүгү жетишсиз катышууну оңдоого жардам берет.",
     communityLearnMoreDiversity:
       "Элементтер позициялык калыстыксыздыкты алдын алуу үчүн кокустук топтордо берилет. Кыйыр салыштыруулар добуш берүү раунддарын азайтуу үчүн чыгарылат.",
     communityLearnMoreSourceManual:
@@ -489,8 +468,6 @@ export const maxDiffResultsTabTranslations: Record<
     retryButton: "Попробовать ещё раз",
     communityLearnMoreHow:
       "Голоса учитываются сразу. Индивидуальные предпочтения агрегируются в общий рейтинг с помощью Solidago, алгоритма с открытым кодом, взвешивающего голоса по уровню доверия пользователя.",
-    communityLearnMoreCocm:
-      "Connection-Oriented Cluster Match (COCM) — это необязательная настройка, которая здесь пока не включена. При включении она помогает корректировать нерепрезентативное участие, квадратично улучшая распределение голосов между группами.",
     communityLearnMoreDiversity:
       "Элементы представляются в рандомизированных группах для предотвращения позиционного смещения. Косвенные сравнения выводятся автоматически для минимизации раундов голосования.",
     communityLearnMoreSourceManual:

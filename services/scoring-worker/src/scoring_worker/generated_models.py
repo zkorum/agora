@@ -602,10 +602,6 @@ class RankingScore(Base):
     conversation_id: Mapped[int] = mapped_column(Integer)
     scores: Mapped[Any] = mapped_column(JSON(none_as_null=True))
     participant_counts: Mapped[Any] = mapped_column(JSON(none_as_null=True))
-    group_sources_snapshot: Mapped[Any | None] = mapped_column(
-        JSON(none_as_null=True),
-        nullable=True,
-    )
     user_weights_snapshot: Mapped[Any | None] = mapped_column(
         JSON(none_as_null=True),
         nullable=True,

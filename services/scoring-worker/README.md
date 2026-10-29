@@ -115,28 +115,6 @@ lifecycle snapshots without raw-score provenance retain their ranks/counts, but
 show no fixed-scale score. Their original spread cannot be recovered from the
 old min–max values alone; the backfill does not guess it from timestamps or ranks.
 
-### COCM Voting Rights (partially implemented)
-
-[COCM](https://ssrn.com/abstract=4311507) (Connection-Oriented Cluster Match) provides collusion-resistant voting by attenuating the influence of socially connected voters. The core algorithm is implemented in `src/scoring_worker/cocm_voting.py`:
-
-```
-voting_right = trust / sqrt(1 + connected_co_scorers)
-```
-
-Where `connected_co_scorers` = number of other voters on the same entity who share at least one group with this voter. This gives O(sqrt) collective influence for groups of connected voters.
-
-**What exists:**
-
-- `COCMVotingRights` class with friend matrix construction from group sources (`src/scoring_worker/cocm_voting.py`)
-- `build_friend_matrix` using binary K function (any shared group = connected)
-- Tests in `test_cocm_voting.py`
-
-**What remains:**
-
-- Connect the live worker to the implemented optional COCM path in `score_comparisons`. The live worker currently uses `AffineOvertrust` with uniform `trust_score=1.0`.
-- Feed group source data (e.g., organization memberships, verification levels) into the pipeline
-- Set per-user trust scores based on verification level (currently hardcoded to 1.0). Possible scheme: Rarimo (ZK proof of personhood) > phone OTP > email-only > guest, with configurable weights per conversation or organization
-
 ## Modules
 
 | Module                | Purpose                                                    |

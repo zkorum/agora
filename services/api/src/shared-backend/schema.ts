@@ -5987,9 +5987,6 @@ export const rankingScoreTable = pgTable(
         // Kept as backup; canonical data is in ranking_score_entity.participant_count.
         participantCounts: jsonb("participant_counts").notNull(),
         // --- Input context: what parameters produced these scores ---
-        // Snapshot of group sources used for COCM voting rights (if any).
-        // Null if no group weighting was applied.
-        groupSourcesSnapshot: jsonb("group_sources_snapshot"),
         // Snapshot of user trust weights used (if any).
         // Null if all users had equal trust.
         userWeightsSnapshot: jsonb("user_weights_snapshot"),
