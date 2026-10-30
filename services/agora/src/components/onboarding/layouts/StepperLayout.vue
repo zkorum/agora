@@ -25,7 +25,7 @@
       <slot name="header"></slot>
 
       <div class="bodyContent">
-        <slot name="body"></slot>
+        <slot name="body" :navigation-element="nextButton ?? undefined"></slot>
       </div>
     </div>
 

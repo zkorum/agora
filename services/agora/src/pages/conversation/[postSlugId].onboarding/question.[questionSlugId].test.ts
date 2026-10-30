@@ -138,7 +138,7 @@ vi.mock("src/components/onboarding/layouts/StepperLayout.vue", () => ({
     setup(props, { slots }) {
       return () =>
         h("section", [
-          slots.body?.(),
+          slots.body?.({ navigationElement: undefined }),
           h("button", { onClick: props.submitCallBack }, "Next"),
         ]);
     },

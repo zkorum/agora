@@ -34,7 +34,7 @@
         <div class="survey-progress">{{ progressLabel }}</div>
       </template>
 
-      <template #body>
+      <template #body="{ navigationElement }">
         <div class="survey-card">
           <div class="survey-card__prompt-row">
             <h1 class="survey-card__prompt">{{ displayedQuestionText }}</h1>
@@ -101,6 +101,7 @@
             :selected-multi-option-slug-ids="selectedMultiOptionSlugIds"
             :select-option-label="t('selectOptionLabel')"
             :max-selections="question.constraints.maxSelections"
+            :popup-bottom-boundary="navigationElement"
             density="compact"
             @update:selected-single-option-slug-id="
               selectedSingleOptionSlugId = $event
