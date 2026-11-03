@@ -13,15 +13,20 @@ from valkey import Valkey
 
 from import_worker.config import Settings
 from import_worker.database import create_primary_engine, create_session_factory
+from import_worker.generated_import_contracts import FailureReason
 from import_worker.google_language_detection import initialize_google_language_detection_service
 from import_worker.importer import (
+    ImportIdentity,
+    ImportProcessResult,
     cleanup_stale_imports,
     complete_ready_imports,
+    heartbeat_imports,
     mark_import_failed,
     process_import_request,
 )
 from import_worker.queue import (
     IMPORT_BUFFER_KEY,
+    ImportNotificationEvent,
     ImportValkeyClient,
     extract_minimal_import_request,
     pop_import_requests,
@@ -35,10 +40,9 @@ if TYPE_CHECKING:
     from import_worker.importer import (
         AnalysisQueueSchedule,
         ContentTranslationQueueSchedule,
-        ImportProcessResult,
     )
     from import_worker.language_detection import GoogleLanguageDetector
-    from import_worker.queue import ImportNotificationEvent, ImportRequest, InvalidImportItem
+    from import_worker.queue import ImportRequest, InvalidImportItem
 
 ANALYSIS_DIRTY_KEY = "analysis:dirty"
 CONTENT_TRANSLATION_DIRTY_KEY = "content-translation:dirty"
@@ -77,10 +81,7 @@ class SyncValkeyClient:
         self._client.close()
 
 
-@dataclass(frozen=True)
-class ProcessedImport:
-    result: ImportProcessResult | None
-    failure_event: ImportNotificationEvent | None
+type ProcessedImport = ImportProcessResult | ImportNotificationEvent | None
 
 
 @dataclass(frozen=True)
@@ -185,8 +186,7 @@ def _schedule_content_translation(
     if schedule is None:
         return
     score = (
-        CONTENT_TRANSLATION_EAGER_VISIBLE_PRIORITY
-        * CONTENT_TRANSLATION_PRIORITY_SCORE_OFFSET
+        CONTENT_TRANSLATION_EAGER_VISIBLE_PRIORITY * CONTENT_TRANSLATION_PRIORITY_SCORE_OFFSET
         + schedule.enqueued_at_ms
     )
     LOGGER.info(
@@ -200,20 +200,19 @@ def _schedule_content_translation(
     )
 
 
-def _push_result_events(vk: ImportValkeyClient, *, processed: ProcessedImport) -> None:
-    if processed.result is not None:
-        if processed.result.event is not None:
-            push_import_event(vk, event=processed.result.event)
+def _handle_processed_import(vk: ImportValkeyClient, *, processed: ProcessedImport) -> None:
+    if isinstance(processed, ImportProcessResult):
         _schedule_analysis(
             vk,
-            schedule=processed.result.analysis_schedule,
+            schedule=processed.analysis_schedule,
         )
         _schedule_content_translation(
             vk,
-            schedule=processed.result.content_translation_schedule,
+            schedule=processed.content_translation_schedule,
         )
-    if processed.failure_event is not None:
-        push_import_event(vk, event=processed.failure_event)
+        push_import_event(vk, event=processed.notification)
+    elif processed is not None:
+        push_import_event(vk, event=processed)
 
 
 def _process_request(
@@ -232,17 +231,21 @@ def _process_request(
                 google_detector=google_detector,
                 polis_fetch_timeout_seconds=polis_fetch_timeout_seconds,
             )
-            LOGGER.info("Completed %s import %s", request.type, request.import_slug_id)
-            return ProcessedImport(result=result, failure_event=None)
+            if result is None:
+                LOGGER.info("Skipped inactive import %s", request.import_slug_id)
+            else:
+                LOGGER.info("Published %s import %s", request.type, request.import_slug_id)
+            return result
         except Exception:
             LOGGER.exception("Import %s failed", request.import_slug_id)
             session.rollback()
             failure_event = mark_import_failed(
                 session,
                 import_slug_id=request.import_slug_id,
-                failure_reason="processing_error",
+                user_id=request.actor_user_id,
+                failure_reason=FailureReason.processing_error,
             )
-            return ProcessedImport(result=None, failure_event=failure_event)
+            return failure_event
 
 
 def _handle_invalid_item(
@@ -263,7 +266,8 @@ def _handle_invalid_item(
         return mark_import_failed(
             session,
             import_slug_id=minimal.import_slug_id,
-            failure_reason="invalid_data_format",
+            user_id=minimal.user_id,
+            failure_reason=FailureReason.invalid_data_format,
         )
 
 
@@ -271,9 +275,14 @@ def _cleanup_stale(
     *,
     session_factory: sessionmaker[Session],
     stale_threshold_ms: int,
+    active_imports: frozenset[ImportIdentity],
 ) -> list[ImportNotificationEvent]:
     with session_factory() as session:
-        events = cleanup_stale_imports(session, stale_threshold_ms=stale_threshold_ms)
+        heartbeat_imports(session, imports=active_imports)
+        events = cleanup_stale_imports(
+            session,
+            stale_threshold_ms=stale_threshold_ms,
+        )
         if events:
             LOGGER.info("Cleaned up %s stale imports", len(events))
         return events
@@ -284,10 +293,12 @@ def _push_stale_cleanup_events(
     vk: ImportValkeyClient,
     session_factory: sessionmaker[Session],
     stale_threshold_ms: int,
+    active_imports: frozenset[ImportIdentity],
 ) -> None:
     for event in _cleanup_stale(
         session_factory=session_factory,
         stale_threshold_ms=stale_threshold_ms,
+        active_imports=active_imports,
     ):
         push_import_event(vk, event=event)
 
@@ -358,17 +369,10 @@ def run_worker(settings: Settings) -> None:
     vk = connected_queue.client
     queue_depth = connected_queue.queue_depth
     LOGGER.info("Import worker Valkey connected (queue_depth=%s)", queue_depth)
-    flush_count = 0
-
-    if queue_depth == 0:
-        try:
-            _push_stale_cleanup_events(
-                vk=vk,
-                session_factory=session_factory,
-                stale_threshold_ms=settings.stale_threshold_ms,
-            )
-        except Exception:
-            LOGGER.exception("Initial stale import cleanup failed")
+    cleanup_interval_seconds = (
+        settings.stale_cleanup_every_n_flushes * settings.flush_interval_ms / 1000
+    )
+    last_cleanup = time.monotonic() - cleanup_interval_seconds
 
     with ThreadPoolExecutor(max_workers=settings.max_concurrency) as executor:
         pending_futures: dict[Future[ProcessedImport], ImportRequest] = {}
@@ -377,23 +381,43 @@ def run_worker(settings: Settings) -> None:
             for future in completed_futures:
                 request = pending_futures.pop(future)
                 try:
-                    _push_result_events(vk, processed=future.result())
+                    _handle_processed_import(vk, processed=future.result())
                 except Exception:
                     LOGGER.exception(
                         "Failed to handle import result %s",
                         request.import_slug_id,
                     )
 
-            if settings.max_batch_size <= 0:
-                time.sleep(settings.flush_interval_ms / 1000)
-                continue
+            # Lifecycle maintenance must run even when every ingestion slot is
+            # occupied, polling fails, or the queue never becomes idle.
+            try:
+                _push_ready_import_events(vk=vk, session_factory=session_factory)
+            except Exception:
+                LOGGER.exception("Ready import completion failed")
+
+            now = time.monotonic()
+            if now - last_cleanup >= cleanup_interval_seconds:
+                try:
+                    _push_stale_cleanup_events(
+                        vk=vk,
+                        session_factory=session_factory,
+                        stale_threshold_ms=settings.stale_threshold_ms,
+                        active_imports=frozenset(
+                            ImportIdentity(
+                                slug_id=request.import_slug_id, user_id=request.actor_user_id
+                            )
+                            for request in pending_futures.values()
+                        ),
+                    )
+                except Exception:
+                    LOGGER.exception("Stale import cleanup failed")
+                last_cleanup = now
 
             available_capacity = settings.max_concurrency - len(pending_futures)
             if available_capacity <= 0:
                 time.sleep(settings.flush_interval_ms / 1000)
                 continue
 
-            flush_count += 1
             try:
                 batch = pop_import_requests(
                     vk,
@@ -416,32 +440,6 @@ def run_worker(settings: Settings) -> None:
                     LOGGER.exception("Failed to mark invalid import item failed")
 
             if not batch.requests:
-                try:
-                    _push_ready_import_events(vk=vk, session_factory=session_factory)
-                except Exception:
-                    LOGGER.exception("Ready import completion failed")
-
-                if (
-                    not pending_futures
-                    and flush_count % settings.stale_cleanup_every_n_flushes == 0
-                ):
-                    try:
-                        _push_stale_cleanup_events(
-                            vk=vk,
-                            session_factory=session_factory,
-                            stale_threshold_ms=settings.stale_threshold_ms,
-                        )
-                    except Exception:
-                        LOGGER.exception("Stale import cleanup failed")
-                    try:
-                        idle_queue_depth: int | str = vk.llen(IMPORT_BUFFER_KEY)
-                    except Exception:
-                        LOGGER.exception("Failed to read import queue depth")
-                        idle_queue_depth = "unknown"
-                    LOGGER.info(
-                        "Import worker idle (queue_depth=%s)",
-                        idle_queue_depth,
-                    )
                 time.sleep(settings.flush_interval_ms / 1000)
                 continue
 
@@ -456,11 +454,6 @@ def run_worker(settings: Settings) -> None:
                     polis_fetch_timeout_seconds=settings.polis_fetch_timeout_seconds,
                 )
                 pending_futures[future] = request
-
-            try:
-                _push_ready_import_events(vk=vk, session_factory=session_factory)
-            except Exception:
-                LOGGER.exception("Ready import completion failed")
 
     vk.close()
     engine.dispose()

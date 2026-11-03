@@ -6,7 +6,6 @@ import {
 } from "@/shared/types/zod.js";
 import { ZodSupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import { z } from "zod";
-import type { CsvFiles } from "./csvImport.js";
 import { zodCsvFiles } from "./csvImport.js";
 
 function withJsonSchemaId<T extends z.ZodType>(id: string, schema: T): T {
@@ -69,8 +68,8 @@ const zodImportRequestBase = withJsonSchemaId(
     z
         .object({
             importSlugId: z.string(),
-            userId: z.string(),
-            actorUserId: z.string(),
+            userId: z.uuid(),
+            actorUserId: z.uuid(),
             projectId: z.number().int().positive(),
             formData: zodImportFormData,
             didWrite: z.string(),
@@ -106,7 +105,7 @@ export const zodMinimalImportRequest = withJsonSchemaId(
     z
         .object({
             importSlugId: z.string(),
-            userId: z.string(),
+            userId: z.uuid(),
         })
         .loose(),
 );
@@ -144,26 +143,5 @@ export const zodImportWorkerContracts = withJsonSchemaId(
         .strict(),
 );
 
-type ImportFormData = z.infer<typeof zodImportFormData>;
-
-interface ImportRequestBase {
-    importSlugId: string;
-    userId: string;
-    actorUserId: string;
-    projectId: number;
-    formData: ImportFormData;
-    didWrite: string;
-}
-
-export interface CsvImportRequest extends ImportRequestBase {
-    type: "csv";
-    files: CsvFiles;
-}
-
-export interface UrlImportRequest extends ImportRequestBase {
-    type: "url";
-    polisUrl: string;
-}
-
-export type ImportRequest = CsvImportRequest | UrlImportRequest;
+export type ImportRequest = z.infer<typeof zodImportRequest>;
 export type ImportWorkerEvent = z.infer<typeof zodImportWorkerEvent>;

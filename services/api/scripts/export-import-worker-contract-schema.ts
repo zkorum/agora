@@ -42,6 +42,14 @@ const outputPath = process.argv[2];
 
 const schema = z.toJSONSchema(zodImportWorkerContracts, {
     io: "input",
+    override: ({ jsonSchema }) => {
+        if (jsonSchema.format === "date-time" || jsonSchema.format === "uuid") {
+            // Pydantic parses native datetime/UUID values before applying field
+            // constraints; string patterns would then throw a TypeError.
+            // Keep native format validation and the API's full Zod validation.
+            delete jsonSchema.pattern;
+        }
+    },
 });
 removeJsonSchemaSafeIntegerBounds(schema);
 mkdirSync(dirname(outputPath), { recursive: true });

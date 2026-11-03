@@ -333,11 +333,11 @@ export async function getActiveImportForUser(
     const result = await database.getActiveImportForUser(params);
 
     if (result === null) {
-        return { hasActiveImport: false as const };
+        return { hasActiveImport: false };
     }
 
     return {
-        hasActiveImport: true as const,
+        hasActiveImport: true,
         importSlugId: result.importSlugId,
         createdAt: result.createdAt,
     };

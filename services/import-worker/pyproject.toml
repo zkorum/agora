@@ -32,6 +32,7 @@ dev = [
     "datamodel-code-generator>=0.64",
     "pytest>=8.0",
     "ruff>=0.9",
+    "testcontainers[postgres]>=4.0",
 ]
 
 [build-system]
@@ -50,6 +51,9 @@ line-length = 100
 
 [tool.ruff.lint.per-file-ignores]
 "src/import_worker/generated_models.py" = ["TCH003"]
+
+[tool.ruff.lint.flake8-type-checking]
+runtime-evaluated-base-classes = ["pydantic.BaseModel", "pydantic.RootModel"]
 
 [tool.ruff.lint]
 select = [

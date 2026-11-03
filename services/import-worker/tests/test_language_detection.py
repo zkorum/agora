@@ -62,8 +62,8 @@ def _build_import_request(*, dynamic_translation_enabled: bool) -> ImportRequest
     return IMPORT_REQUEST_ADAPTER.validate_python(
         {
             "importSlugId": "import-1",
-            "userId": "user-1",
-            "actorUserId": "user-1",
+            "userId": "00000000-0000-4000-8000-000000000001",
+            "actorUserId": "00000000-0000-4000-8000-000000000001",
             "projectId": 1,
             "formData": {
                 "participationMode": "guest",

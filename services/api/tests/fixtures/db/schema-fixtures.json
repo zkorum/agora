@@ -292,6 +292,7 @@
         "conversation_email_update_user_conversation_preference"
     ],
     "admission-guards": [
+        "conversation",
         "conversation_import",
         "conversation_export_generation",
         "conversation_export_request"
