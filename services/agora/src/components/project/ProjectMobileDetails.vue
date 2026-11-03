@@ -88,6 +88,7 @@ import {
 } from "src/shared/languages";
 import { computed, ref } from "vue";
 
+import { getProjectContactPresentation } from "./projectContactPresentation";
 import ProjectDetailsAside from "./ProjectDetailsAside.vue";
 import {
   type ProjectPageTranslations,
@@ -145,9 +146,7 @@ const projectDetailsSummary = computed(() => {
 const projectContactName = computed(() => {
   if (props.contact === undefined) return "";
 
-  return [props.contact.firstName, props.contact.lastName]
-    .filter((part): part is string => part !== undefined)
-    .join(" ");
+  return getProjectContactPresentation(props.contact).displayName;
 });
 const detailsIcon = computed(() =>
   getLanguageTextDirection(props.languageCode) === "rtl"

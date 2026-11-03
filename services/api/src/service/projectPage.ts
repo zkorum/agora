@@ -36,6 +36,7 @@ import {
     type SupportedDisplayLanguageCodes,
     type SupportedSpokenLanguageCodes,
 } from "@/shared/languages.js";
+import { Dto } from "@/shared/types/dto.js";
 import type {
     FetchProjectPageActivitiesRequest,
     FetchProjectPageActivitiesResponse,
@@ -1863,7 +1864,7 @@ async function fetchProjectContact({
     if (row === undefined) {
         return undefined;
     }
-    const affiliationName = (() => {
+    const affiliation = (() => {
         if (row.organizationName !== null) {
             const defaultRow: OrganizationLocalizationRow = {
                 languageCode:
@@ -1902,7 +1903,7 @@ async function fetchProjectContact({
                 defaultRow,
                 additionalRows,
                 effectiveLanguageCode,
-            }).displayName;
+            });
         }
 
         if (row.externalName !== null) {
@@ -1943,24 +1944,27 @@ async function fetchProjectContact({
                 defaultRow,
                 additionalRows,
                 effectiveLanguageCode,
-            }).displayName;
+            });
         }
 
         return undefined;
     })();
-    return {
-        firstName: row.firstName,
-        lastName: optionalText(row.lastName),
-        roleLabel: optionalText(row.roleLabel),
-        affiliationName,
-        email: optionalText(row.email),
-        websiteUrl: optionalHttpsUrl(row.websiteUrl),
+    return Dto.projectPageContact.parse({
+        firstName: row.firstName ?? undefined,
+        lastName: row.lastName ?? undefined,
+        roleLabel: row.roleLabel ?? undefined,
+        affiliationName: affiliation?.displayName,
+        email: row.email ?? undefined,
+        websiteUrl: row.websiteUrl ?? undefined,
         imageUrl: toImageUrl({
-            imagePath: row.imagePath,
-            isFullImagePath: row.isFullImagePath,
+            imagePath: row.imagePath ?? affiliation?.imagePath ?? null,
+            isFullImagePath:
+                row.imagePath === null
+                    ? (affiliation?.isFullImagePath ?? false)
+                    : row.isFullImagePath,
             baseImageServiceUrl,
         }),
-    };
+    });
 }
 
 async function buildProjectShellPayload({

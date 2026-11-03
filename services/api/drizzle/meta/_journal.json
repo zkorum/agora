@@ -785,6 +785,13 @@
       "when": 1793091659134,
       "tag": "0111_parallel_puppet_master",
       "breakpoints": true
+    },
+    {
+      "idx": 112,
+      "version": "7",
+      "when": 1793736531397,
+      "tag": "0112_curly_secret_warriors",
+      "breakpoints": true
     }
   ]
 }

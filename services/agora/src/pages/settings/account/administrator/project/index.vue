@@ -251,7 +251,7 @@
             v-model="contactFirstNameInput"
             outlined
             :maxlength="MAX_LENGTH_NAME_CREATOR"
-            :label="contactRequiredLabel(t('contactFirstNameLabel'))"
+            :label="optionalLabel(t('contactFirstNameLabel'))"
           />
           <q-input
             v-model="contactLastNameInput"
@@ -294,7 +294,11 @@
             v-model="contactOrganizationSlugSelectModel"
             clearable
             searchable
-            :label="optionalLabel(t('contactOrganizationLabel'))"
+            :label="
+              contactForm.requiresOrganization
+                ? requiredLabel(t('contactOrganizationLabel'))
+                : optionalLabel(t('contactOrganizationLabel'))
+            "
             :loading="isLoadingOrganizations"
             :disable="isLoadingOrganizations"
             :options="contactOrganizationOptions"
@@ -635,11 +639,7 @@
               v-model="manageContactFirstNameInput"
               outlined
               :maxlength="MAX_LENGTH_NAME_CREATOR"
-              :label="
-                hasManageContactInput
-                  ? requiredLabel(t('contactFirstNameLabel'))
-                  : optionalLabel(t('contactFirstNameLabel'))
-              "
+              :label="optionalLabel(t('contactFirstNameLabel'))"
             />
             <q-input
               v-model="manageContactLastNameInput"
@@ -682,7 +682,11 @@
               v-model="manageContactOrganizationSlugSelectModel"
               clearable
               searchable
-              :label="optionalLabel(t('contactOrganizationLabel'))"
+              :label="
+                manageContactForm.requiresOrganization
+                  ? requiredLabel(t('contactOrganizationLabel'))
+                  : optionalLabel(t('contactOrganizationLabel'))
+              "
               :loading="isLoadingOrganizations"
               :disable="isLoadingOrganizations"
               :options="contactOrganizationOptions"
@@ -812,6 +816,7 @@
 import { copyToClipboard, useQuasar } from "quasar";
 import AdminSectionHeader from "src/components/administrator/AdminSectionHeader.vue";
 import ProjectBodyEditor from "src/components/administrator/project/ProjectBodyEditor.vue";
+import { getProjectContactFormState } from "src/components/administrator/project/projectContactForm";
 import ProjectContentLocalizationEditor from "src/components/administrator/project/ProjectContentLocalizationEditor.vue";
 import {
   type ProjectConversationUpdatesActivationTranslations,
@@ -841,6 +846,7 @@ import type {
   AdminProjectOption,
   ConversationEmailUpdateConfigurationResponse,
   CreateProjectAttributionRequest,
+  CreateProjectContactRequest,
   CreateProjectRequest,
   UpdateProjectRequest,
 } from "src/shared/types/dto";
@@ -849,7 +855,6 @@ import {
   zodProjectOrganizationAttributionRole,
   zodProjectSlug,
 } from "src/shared/types/zod";
-import { zodEmail } from "src/shared/types/zod-email";
 import {
   createRandomOrganizationSlugFallback,
   slugifyOrganizationDisplayName,
@@ -1274,67 +1279,30 @@ const canAddManageAttribution = computed(() => {
   );
 });
 
-const hasContactInput = computed(
-  () =>
-    contactFirstName.value.trim() !== "" ||
-    contactLastName.value.trim() !== "" ||
-    contactRole.value.trim() !== "" ||
-    contactEmail.value.trim() !== "" ||
-    contactWebsite.value.trim() !== "" ||
-    contactImagePath.value.trim() !== "" ||
-    contactOrganizationSlug.value !== null
+const contactForm = computed(() =>
+  getProjectContactFormState({
+    firstName: contactFirstName.value,
+    lastName: contactLastName.value,
+    roleLabel: contactRole.value,
+    email: contactEmail.value,
+    websiteUrl: contactWebsite.value,
+    imagePath: contactImagePath.value,
+    isFullImagePath: contactImageIsFullPath.value,
+    organizationSlug: contactOrganizationSlug.value ?? undefined,
+  })
 );
-
-const hasManageContactInput = computed(
-  () =>
-    manageContactFirstName.value.trim() !== "" ||
-    manageContactLastName.value.trim() !== "" ||
-    manageContactRole.value.trim() !== "" ||
-    manageContactEmail.value.trim() !== "" ||
-    manageContactWebsite.value.trim() !== "" ||
-    manageContactImagePath.value.trim() !== "" ||
-    manageContactOrganizationSlug.value !== null
+const manageContactForm = computed(() =>
+  getProjectContactFormState({
+    firstName: manageContactFirstName.value,
+    lastName: manageContactLastName.value,
+    roleLabel: manageContactRole.value,
+    email: manageContactEmail.value,
+    websiteUrl: manageContactWebsite.value,
+    imagePath: manageContactImagePath.value,
+    isFullImagePath: manageContactImageIsFullPath.value,
+    organizationSlug: manageContactOrganizationSlug.value ?? undefined,
+  })
 );
-
-const hasContactChannelInput = computed(
-  () => contactEmail.value.trim() !== "" || contactWebsite.value.trim() !== ""
-);
-
-const hasManageContactChannelInput = computed(
-  () =>
-    manageContactEmail.value.trim() !== "" ||
-    manageContactWebsite.value.trim() !== ""
-);
-
-const hasValidContact = computed(() => {
-  if (!hasContactInput.value) {
-    return true;
-  }
-
-  const trimmedEmail = contactEmail.value.trim();
-  const trimmedWebsite = contactWebsite.value.trim();
-  return (
-    contactFirstName.value.trim() !== "" &&
-    (trimmedEmail === "" || zodEmail.safeParse(trimmedEmail).success) &&
-    isOptionalHttpsUrl(trimmedWebsite) &&
-    hasContactChannelInput.value
-  );
-});
-
-const hasValidManageContact = computed(() => {
-  if (!hasManageContactInput.value) {
-    return true;
-  }
-
-  const trimmedEmail = manageContactEmail.value.trim();
-  const trimmedWebsite = manageContactWebsite.value.trim();
-  return (
-    manageContactFirstName.value.trim() !== "" &&
-    (trimmedEmail === "" || zodEmail.safeParse(trimmedEmail).success) &&
-    isOptionalHttpsUrl(trimmedWebsite) &&
-    hasManageContactChannelInput.value
-  );
-});
 
 const canCreateProject = computed(
   () =>
@@ -1345,7 +1313,7 @@ const canCreateProject = computed(
     ownerOrganizationSlugs.value.length > 0 &&
     !isProjectBodyOverLimit.value &&
     hasCompleteCreateManualLocalizations.value &&
-    hasValidContact.value
+    contactForm.value.validation.success
 );
 
 const canSaveProject = computed(
@@ -1356,7 +1324,7 @@ const canSaveProject = computed(
     manageOwnerOrganizationSlugs.value.length > 0 &&
     !isManageProjectBodyOverLimit.value &&
     hasCompleteManageManualLocalizations.value &&
-    hasValidManageContact.value
+    manageContactForm.value.validation.success
 );
 
 const canSaveProjectSlug = computed(() => {
@@ -1531,8 +1499,9 @@ watch(selectedProject, async (project) => {
       response.configuration.target !== "project" ||
       response.configuration.projectSlug !== project.projectSlug
     ) {
-      conversationUpdatesConfigurationError.value =
-        tConversationUpdates("configurationUnavailable");
+      conversationUpdatesConfigurationError.value = tConversationUpdates(
+        "configurationUnavailable"
+      );
       return;
     }
     selectedProjectConversationUpdatesConfiguration.value =
@@ -1540,8 +1509,9 @@ watch(selectedProject, async (project) => {
   } catch (error) {
     console.error("Failed to load project Email Update configuration", error);
     if (requestId === conversationUpdatesConfigurationRequestId) {
-      conversationUpdatesConfigurationError.value =
-        tConversationUpdates("configurationUnavailable");
+      conversationUpdatesConfigurationError.value = tConversationUpdates(
+        "configurationUnavailable"
+      );
     }
   }
 });
@@ -1715,18 +1685,14 @@ function optionalLabel(label: string): string {
   return `${label} (${t("optionalSuffix")})`;
 }
 
-function contactRequiredLabel(label: string): string {
-  return hasContactInput.value ? requiredLabel(label) : optionalLabel(label);
-}
-
 function contactChannelLabel(label: string): string {
-  return hasContactInput.value && !hasContactChannelInput.value
+  return contactForm.value.requiresChannel
     ? requiredLabel(label)
     : optionalLabel(label);
 }
 
 function manageContactChannelLabel(label: string): string {
-  return hasManageContactInput.value && !hasManageContactChannelInput.value
+  return manageContactForm.value.requiresChannel
     ? requiredLabel(label)
     : optionalLabel(label);
 }
@@ -2137,7 +2103,9 @@ function populateExternalAttributionForm({
   );
 }
 
-function buildCreateRequest(): CreateProjectRequest {
+function buildCreateRequest(
+  contact: CreateProjectContactRequest | undefined
+): CreateProjectRequest {
   return {
     projectSlug: projectSlug.value.trim(),
     projectTitle: projectTitle.value.trim(),
@@ -2159,22 +2127,17 @@ function buildCreateRequest(): CreateProjectRequest {
         createMultilingualSetting.value.dynamicTranslationEnabled,
     },
     attributions: attributions.value,
-    contact: hasContactInput.value
-      ? {
-          firstName: contactFirstName.value.trim(),
-          lastName: optionalString(contactLastName.value),
-          roleLabel: optionalString(contactRole.value),
-          email: optionalString(contactEmail.value),
-          websiteUrl: optionalString(contactWebsite.value),
-          imagePath: optionalString(contactImagePath.value),
-          isFullImagePath: contactImageIsFullPath.value,
-          organizationSlug: contactOrganizationSlug.value ?? undefined,
-        }
-      : undefined,
+    contact,
   };
 }
 
-function buildUpdateRequest(project: AdminProject): UpdateProjectRequest {
+function buildUpdateRequest({
+  project,
+  contact,
+}: {
+  project: AdminProject;
+  contact: CreateProjectContactRequest | undefined;
+}): UpdateProjectRequest {
   return {
     currentProjectSlug: project.projectSlug,
     projectSlug: project.projectSlug,
@@ -2197,18 +2160,7 @@ function buildUpdateRequest(project: AdminProject): UpdateProjectRequest {
         manageMultilingualSetting.value.dynamicTranslationEnabled,
     },
     attributions: manageAttributions.value,
-    contact: hasManageContactInput.value
-      ? {
-          firstName: manageContactFirstName.value.trim(),
-          lastName: optionalString(manageContactLastName.value),
-          roleLabel: optionalString(manageContactRole.value),
-          email: optionalString(manageContactEmail.value),
-          websiteUrl: optionalString(manageContactWebsite.value),
-          imagePath: optionalString(manageContactImagePath.value),
-          isFullImagePath: manageContactImageIsFullPath.value,
-          organizationSlug: manageContactOrganizationSlug.value ?? undefined,
-        }
-      : undefined,
+    contact,
   };
 }
 
@@ -2253,14 +2205,15 @@ function resetForm(): void {
 }
 
 async function submitProject(): Promise<void> {
-  if (!canCreateProject.value) {
+  const contact = contactForm.value.validation;
+  if (!canCreateProject.value || !contact.success) {
     return;
   }
 
   isCreating.value = true;
   try {
     const createdProjectSlug = projectSlug.value.trim();
-    const wasCreated = await createProject(buildCreateRequest());
+    const wasCreated = await createProject(buildCreateRequest(contact.data));
     if (wasCreated) {
       resetForm();
       selectedProjectSlug.value = createdProjectSlug;
@@ -2322,18 +2275,23 @@ async function saveProjectSlug(): Promise<void> {
 
 async function saveSelectedProject(): Promise<void> {
   const project = selectedProject.value;
-  if (!canSaveProject.value || project === undefined) {
+  const contact = manageContactForm.value.validation;
+  if (!canSaveProject.value || project === undefined || !contact.success) {
     return;
   }
 
   isSavingProject.value = true;
-  const updatedProjectSlug = await updateProject(buildUpdateRequest(project));
-  isSavingProject.value = false;
-
-  if (updatedProjectSlug !== undefined) {
-    showProjectSlugConfirmDialog.value = false;
-    selectedProjectSlug.value = updatedProjectSlug;
-    await refreshProjects();
+  try {
+    const updatedProjectSlug = await updateProject(
+      buildUpdateRequest({ project, contact: contact.data })
+    );
+    if (updatedProjectSlug !== undefined) {
+      showProjectSlugConfirmDialog.value = false;
+      selectedProjectSlug.value = updatedProjectSlug;
+      await refreshProjects();
+    }
+  } finally {
+    isSavingProject.value = false;
   }
 }
 

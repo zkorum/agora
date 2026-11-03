@@ -7705,47 +7705,131 @@
                                                     }
                                                 },
                                                 "contact": {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "firstName": {
-                                                            "type": "string",
-                                                            "minLength": 1,
-                                                            "maxLength": 65
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "firstName": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 65
+                                                                },
+                                                                "lastName": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 65
+                                                                },
+                                                                "roleLabel": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 150
+                                                                },
+                                                                "affiliationName": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 65
+                                                                },
+                                                                "imageUrl": {
+                                                                    "type": "string",
+                                                                    "format": "uri"
+                                                                },
+                                                                "email": {
+                                                                    "type": "string",
+                                                                    "maxLength": 254,
+                                                                    "format": "email",
+                                                                    "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                                                },
+                                                                "websiteUrl": {
+                                                                    "type": "string",
+                                                                    "format": "uri"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "firstName"
+                                                            ],
+                                                            "additionalProperties": false
                                                         },
-                                                        "lastName": {
-                                                            "type": "string",
-                                                            "minLength": 1,
-                                                            "maxLength": 65
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "firstName": {
+                                                                    "not": {}
+                                                                },
+                                                                "lastName": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 65
+                                                                },
+                                                                "roleLabel": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 150
+                                                                },
+                                                                "affiliationName": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 65
+                                                                },
+                                                                "imageUrl": {
+                                                                    "type": "string",
+                                                                    "format": "uri"
+                                                                },
+                                                                "email": {
+                                                                    "type": "string",
+                                                                    "maxLength": 254,
+                                                                    "format": "email",
+                                                                    "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                                                },
+                                                                "websiteUrl": {
+                                                                    "type": "string",
+                                                                    "format": "uri"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "lastName"
+                                                            ],
+                                                            "additionalProperties": false
                                                         },
-                                                        "roleLabel": {
-                                                            "type": "string",
-                                                            "minLength": 1,
-                                                            "maxLength": 150
-                                                        },
-                                                        "affiliationName": {
-                                                            "type": "string",
-                                                            "minLength": 1,
-                                                            "maxLength": 65
-                                                        },
-                                                        "imageUrl": {
-                                                            "type": "string",
-                                                            "format": "uri"
-                                                        },
-                                                        "email": {
-                                                            "type": "string",
-                                                            "maxLength": 254,
-                                                            "format": "email",
-                                                            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
-                                                        },
-                                                        "websiteUrl": {
-                                                            "type": "string",
-                                                            "format": "uri"
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "firstName": {
+                                                                    "not": {}
+                                                                },
+                                                                "lastName": {
+                                                                    "not": {}
+                                                                },
+                                                                "roleLabel": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 150
+                                                                },
+                                                                "affiliationName": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 65
+                                                                },
+                                                                "imageUrl": {
+                                                                    "type": "string",
+                                                                    "format": "uri"
+                                                                },
+                                                                "email": {
+                                                                    "type": "string",
+                                                                    "maxLength": 254,
+                                                                    "format": "email",
+                                                                    "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                                                },
+                                                                "websiteUrl": {
+                                                                    "type": "string",
+                                                                    "format": "uri"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "affiliationName"
+                                                            ],
+                                                            "additionalProperties": false
                                                         }
-                                                    },
-                                                    "required": [
-                                                        "firstName"
-                                                    ],
-                                                    "additionalProperties": false
+                                                    ]
                                                 }
                                             },
                                             "required": [
@@ -10138,47 +10222,131 @@
                                                     }
                                                 },
                                                 "contact": {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "firstName": {
-                                                            "type": "string",
-                                                            "minLength": 1,
-                                                            "maxLength": 65
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "firstName": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 65
+                                                                },
+                                                                "lastName": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 65
+                                                                },
+                                                                "roleLabel": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 150
+                                                                },
+                                                                "affiliationName": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 65
+                                                                },
+                                                                "imageUrl": {
+                                                                    "type": "string",
+                                                                    "format": "uri"
+                                                                },
+                                                                "email": {
+                                                                    "type": "string",
+                                                                    "maxLength": 254,
+                                                                    "format": "email",
+                                                                    "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                                                },
+                                                                "websiteUrl": {
+                                                                    "type": "string",
+                                                                    "format": "uri"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "firstName"
+                                                            ],
+                                                            "additionalProperties": false
                                                         },
-                                                        "lastName": {
-                                                            "type": "string",
-                                                            "minLength": 1,
-                                                            "maxLength": 65
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "firstName": {
+                                                                    "not": {}
+                                                                },
+                                                                "lastName": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 65
+                                                                },
+                                                                "roleLabel": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 150
+                                                                },
+                                                                "affiliationName": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 65
+                                                                },
+                                                                "imageUrl": {
+                                                                    "type": "string",
+                                                                    "format": "uri"
+                                                                },
+                                                                "email": {
+                                                                    "type": "string",
+                                                                    "maxLength": 254,
+                                                                    "format": "email",
+                                                                    "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                                                },
+                                                                "websiteUrl": {
+                                                                    "type": "string",
+                                                                    "format": "uri"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "lastName"
+                                                            ],
+                                                            "additionalProperties": false
                                                         },
-                                                        "roleLabel": {
-                                                            "type": "string",
-                                                            "minLength": 1,
-                                                            "maxLength": 150
-                                                        },
-                                                        "affiliationName": {
-                                                            "type": "string",
-                                                            "minLength": 1,
-                                                            "maxLength": 65
-                                                        },
-                                                        "imageUrl": {
-                                                            "type": "string",
-                                                            "format": "uri"
-                                                        },
-                                                        "email": {
-                                                            "type": "string",
-                                                            "maxLength": 254,
-                                                            "format": "email",
-                                                            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
-                                                        },
-                                                        "websiteUrl": {
-                                                            "type": "string",
-                                                            "format": "uri"
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "firstName": {
+                                                                    "not": {}
+                                                                },
+                                                                "lastName": {
+                                                                    "not": {}
+                                                                },
+                                                                "roleLabel": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 150
+                                                                },
+                                                                "affiliationName": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 65
+                                                                },
+                                                                "imageUrl": {
+                                                                    "type": "string",
+                                                                    "format": "uri"
+                                                                },
+                                                                "email": {
+                                                                    "type": "string",
+                                                                    "maxLength": 254,
+                                                                    "format": "email",
+                                                                    "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                                                },
+                                                                "websiteUrl": {
+                                                                    "type": "string",
+                                                                    "format": "uri"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "affiliationName"
+                                                            ],
+                                                            "additionalProperties": false
                                                         }
-                                                    },
-                                                    "required": [
-                                                        "firstName"
-                                                    ],
-                                                    "additionalProperties": false
+                                                    ]
                                                 }
                                             },
                                             "required": [
@@ -37891,52 +38059,146 @@
                                                         }
                                                     },
                                                     "contact": {
-                                                        "type": "object",
-                                                        "properties": {
-                                                            "firstName": {
-                                                                "type": "string",
-                                                                "minLength": 1,
-                                                                "maxLength": 65
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "firstName": {
+                                                                        "type": "string",
+                                                                        "minLength": 1,
+                                                                        "maxLength": 65
+                                                                    },
+                                                                    "lastName": {
+                                                                        "type": "string",
+                                                                        "minLength": 1,
+                                                                        "maxLength": 65
+                                                                    },
+                                                                    "roleLabel": {
+                                                                        "type": "string",
+                                                                        "minLength": 1,
+                                                                        "maxLength": 150
+                                                                    },
+                                                                    "email": {
+                                                                        "type": "string",
+                                                                        "maxLength": 254,
+                                                                        "format": "email",
+                                                                        "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                                                    },
+                                                                    "organizationSlug": {
+                                                                        "type": "string",
+                                                                        "maxLength": 65,
+                                                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                                    },
+                                                                    "websiteUrl": {
+                                                                        "type": "string",
+                                                                        "format": "uri"
+                                                                    },
+                                                                    "imagePath": {
+                                                                        "type": "string",
+                                                                        "minLength": 1
+                                                                    },
+                                                                    "isFullImagePath": {
+                                                                        "default": false,
+                                                                        "type": "boolean"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "firstName",
+                                                                    "isFullImagePath"
+                                                                ],
+                                                                "additionalProperties": false
                                                             },
-                                                            "lastName": {
-                                                                "type": "string",
-                                                                "minLength": 1,
-                                                                "maxLength": 65
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "firstName": {
+                                                                        "not": {}
+                                                                    },
+                                                                    "lastName": {
+                                                                        "type": "string",
+                                                                        "minLength": 1,
+                                                                        "maxLength": 65
+                                                                    },
+                                                                    "roleLabel": {
+                                                                        "type": "string",
+                                                                        "minLength": 1,
+                                                                        "maxLength": 150
+                                                                    },
+                                                                    "email": {
+                                                                        "type": "string",
+                                                                        "maxLength": 254,
+                                                                        "format": "email",
+                                                                        "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                                                    },
+                                                                    "organizationSlug": {
+                                                                        "type": "string",
+                                                                        "maxLength": 65,
+                                                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                                    },
+                                                                    "websiteUrl": {
+                                                                        "type": "string",
+                                                                        "format": "uri"
+                                                                    },
+                                                                    "imagePath": {
+                                                                        "type": "string",
+                                                                        "minLength": 1
+                                                                    },
+                                                                    "isFullImagePath": {
+                                                                        "default": false,
+                                                                        "type": "boolean"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "lastName",
+                                                                    "isFullImagePath"
+                                                                ],
+                                                                "additionalProperties": false
                                                             },
-                                                            "roleLabel": {
-                                                                "type": "string",
-                                                                "minLength": 1,
-                                                                "maxLength": 150
-                                                            },
-                                                            "email": {
-                                                                "type": "string",
-                                                                "maxLength": 254,
-                                                                "format": "email",
-                                                                "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
-                                                            },
-                                                            "organizationSlug": {
-                                                                "type": "string",
-                                                                "maxLength": 65,
-                                                                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
-                                                            },
-                                                            "websiteUrl": {
-                                                                "type": "string",
-                                                                "format": "uri"
-                                                            },
-                                                            "imagePath": {
-                                                                "type": "string",
-                                                                "minLength": 1
-                                                            },
-                                                            "isFullImagePath": {
-                                                                "default": false,
-                                                                "type": "boolean"
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "firstName": {
+                                                                        "not": {}
+                                                                    },
+                                                                    "lastName": {
+                                                                        "not": {}
+                                                                    },
+                                                                    "roleLabel": {
+                                                                        "type": "string",
+                                                                        "minLength": 1,
+                                                                        "maxLength": 150
+                                                                    },
+                                                                    "email": {
+                                                                        "type": "string",
+                                                                        "maxLength": 254,
+                                                                        "format": "email",
+                                                                        "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                                                    },
+                                                                    "organizationSlug": {
+                                                                        "type": "string",
+                                                                        "maxLength": 65,
+                                                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                                    },
+                                                                    "websiteUrl": {
+                                                                        "type": "string",
+                                                                        "format": "uri"
+                                                                    },
+                                                                    "imagePath": {
+                                                                        "type": "string",
+                                                                        "minLength": 1
+                                                                    },
+                                                                    "isFullImagePath": {
+                                                                        "default": false,
+                                                                        "type": "boolean"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "organizationSlug",
+                                                                    "isFullImagePath"
+                                                                ],
+                                                                "additionalProperties": false
                                                             }
-                                                        },
-                                                        "required": [
-                                                            "firstName",
-                                                            "isFullImagePath"
-                                                        ],
-                                                        "additionalProperties": false
+                                                        ]
                                                     }
                                                 },
                                                 "required": [
@@ -38379,52 +38641,146 @@
                                                     }
                                                 },
                                                 "contact": {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "firstName": {
-                                                            "type": "string",
-                                                            "minLength": 1,
-                                                            "maxLength": 65
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "firstName": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 65
+                                                                },
+                                                                "lastName": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 65
+                                                                },
+                                                                "roleLabel": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 150
+                                                                },
+                                                                "email": {
+                                                                    "type": "string",
+                                                                    "maxLength": 254,
+                                                                    "format": "email",
+                                                                    "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                                                },
+                                                                "organizationSlug": {
+                                                                    "type": "string",
+                                                                    "maxLength": 65,
+                                                                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                                },
+                                                                "websiteUrl": {
+                                                                    "type": "string",
+                                                                    "format": "uri"
+                                                                },
+                                                                "imagePath": {
+                                                                    "type": "string",
+                                                                    "minLength": 1
+                                                                },
+                                                                "isFullImagePath": {
+                                                                    "default": false,
+                                                                    "type": "boolean"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "firstName",
+                                                                "isFullImagePath"
+                                                            ],
+                                                            "additionalProperties": false
                                                         },
-                                                        "lastName": {
-                                                            "type": "string",
-                                                            "minLength": 1,
-                                                            "maxLength": 65
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "firstName": {
+                                                                    "not": {}
+                                                                },
+                                                                "lastName": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 65
+                                                                },
+                                                                "roleLabel": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 150
+                                                                },
+                                                                "email": {
+                                                                    "type": "string",
+                                                                    "maxLength": 254,
+                                                                    "format": "email",
+                                                                    "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                                                },
+                                                                "organizationSlug": {
+                                                                    "type": "string",
+                                                                    "maxLength": 65,
+                                                                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                                },
+                                                                "websiteUrl": {
+                                                                    "type": "string",
+                                                                    "format": "uri"
+                                                                },
+                                                                "imagePath": {
+                                                                    "type": "string",
+                                                                    "minLength": 1
+                                                                },
+                                                                "isFullImagePath": {
+                                                                    "default": false,
+                                                                    "type": "boolean"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "lastName",
+                                                                "isFullImagePath"
+                                                            ],
+                                                            "additionalProperties": false
                                                         },
-                                                        "roleLabel": {
-                                                            "type": "string",
-                                                            "minLength": 1,
-                                                            "maxLength": 150
-                                                        },
-                                                        "email": {
-                                                            "type": "string",
-                                                            "maxLength": 254,
-                                                            "format": "email",
-                                                            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
-                                                        },
-                                                        "organizationSlug": {
-                                                            "type": "string",
-                                                            "maxLength": 65,
-                                                            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
-                                                        },
-                                                        "websiteUrl": {
-                                                            "type": "string",
-                                                            "format": "uri"
-                                                        },
-                                                        "imagePath": {
-                                                            "type": "string",
-                                                            "minLength": 1
-                                                        },
-                                                        "isFullImagePath": {
-                                                            "default": false,
-                                                            "type": "boolean"
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "firstName": {
+                                                                    "not": {}
+                                                                },
+                                                                "lastName": {
+                                                                    "not": {}
+                                                                },
+                                                                "roleLabel": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 150
+                                                                },
+                                                                "email": {
+                                                                    "type": "string",
+                                                                    "maxLength": 254,
+                                                                    "format": "email",
+                                                                    "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                                                },
+                                                                "organizationSlug": {
+                                                                    "type": "string",
+                                                                    "maxLength": 65,
+                                                                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                                },
+                                                                "websiteUrl": {
+                                                                    "type": "string",
+                                                                    "format": "uri"
+                                                                },
+                                                                "imagePath": {
+                                                                    "type": "string",
+                                                                    "minLength": 1
+                                                                },
+                                                                "isFullImagePath": {
+                                                                    "default": false,
+                                                                    "type": "boolean"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "organizationSlug",
+                                                                "isFullImagePath"
+                                                            ],
+                                                            "additionalProperties": false
                                                         }
-                                                    },
-                                                    "required": [
-                                                        "firstName",
-                                                        "isFullImagePath"
-                                                    ],
-                                                    "additionalProperties": false
+                                                    ]
                                                 }
                                             },
                                             "required": [
@@ -38734,51 +39090,177 @@
                                         }
                                     },
                                     "contact": {
-                                        "type": "object",
-                                        "properties": {
-                                            "firstName": {
-                                                "type": "string",
-                                                "minLength": 1,
-                                                "maxLength": 65
+                                        "allOf": [
+                                            {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "firstName": {
+                                                                "type": "string",
+                                                                "minLength": 1,
+                                                                "maxLength": 65
+                                                            },
+                                                            "lastName": {
+                                                                "type": "string",
+                                                                "minLength": 1,
+                                                                "maxLength": 65
+                                                            },
+                                                            "roleLabel": {
+                                                                "type": "string",
+                                                                "minLength": 1,
+                                                                "maxLength": 150
+                                                            },
+                                                            "email": {
+                                                                "type": "string",
+                                                                "maxLength": 254,
+                                                                "format": "email",
+                                                                "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                                            },
+                                                            "organizationSlug": {
+                                                                "type": "string",
+                                                                "maxLength": 65,
+                                                                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                            },
+                                                            "websiteUrl": {
+                                                                "type": "string",
+                                                                "format": "uri"
+                                                            },
+                                                            "imagePath": {
+                                                                "type": "string",
+                                                                "minLength": 1
+                                                            },
+                                                            "isFullImagePath": {
+                                                                "default": false,
+                                                                "type": "boolean"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "firstName"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "firstName": {
+                                                                "not": {}
+                                                            },
+                                                            "lastName": {
+                                                                "type": "string",
+                                                                "minLength": 1,
+                                                                "maxLength": 65
+                                                            },
+                                                            "roleLabel": {
+                                                                "type": "string",
+                                                                "minLength": 1,
+                                                                "maxLength": 150
+                                                            },
+                                                            "email": {
+                                                                "type": "string",
+                                                                "maxLength": 254,
+                                                                "format": "email",
+                                                                "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                                            },
+                                                            "organizationSlug": {
+                                                                "type": "string",
+                                                                "maxLength": 65,
+                                                                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                            },
+                                                            "websiteUrl": {
+                                                                "type": "string",
+                                                                "format": "uri"
+                                                            },
+                                                            "imagePath": {
+                                                                "type": "string",
+                                                                "minLength": 1
+                                                            },
+                                                            "isFullImagePath": {
+                                                                "default": false,
+                                                                "type": "boolean"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "lastName"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "firstName": {
+                                                                "not": {}
+                                                            },
+                                                            "lastName": {
+                                                                "not": {}
+                                                            },
+                                                            "roleLabel": {
+                                                                "type": "string",
+                                                                "minLength": 1,
+                                                                "maxLength": 150
+                                                            },
+                                                            "email": {
+                                                                "type": "string",
+                                                                "maxLength": 254,
+                                                                "format": "email",
+                                                                "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                                            },
+                                                            "organizationSlug": {
+                                                                "type": "string",
+                                                                "maxLength": 65,
+                                                                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                            },
+                                                            "websiteUrl": {
+                                                                "type": "string",
+                                                                "format": "uri"
+                                                            },
+                                                            "imagePath": {
+                                                                "type": "string",
+                                                                "minLength": 1
+                                                            },
+                                                            "isFullImagePath": {
+                                                                "default": false,
+                                                                "type": "boolean"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "organizationSlug"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    }
+                                                ]
                                             },
-                                            "lastName": {
-                                                "type": "string",
-                                                "minLength": 1,
-                                                "maxLength": 65
-                                            },
-                                            "roleLabel": {
-                                                "type": "string",
-                                                "minLength": 1,
-                                                "maxLength": 150
-                                            },
-                                            "email": {
-                                                "type": "string",
-                                                "maxLength": 254,
-                                                "format": "email",
-                                                "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
-                                            },
-                                            "organizationSlug": {
-                                                "type": "string",
-                                                "maxLength": 65,
-                                                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
-                                            },
-                                            "websiteUrl": {
-                                                "type": "string",
-                                                "format": "uri"
-                                            },
-                                            "imagePath": {
-                                                "type": "string",
-                                                "minLength": 1
-                                            },
-                                            "isFullImagePath": {
-                                                "default": false,
-                                                "type": "boolean"
+                                            {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "email": {
+                                                                "type": "string",
+                                                                "maxLength": 254,
+                                                                "format": "email",
+                                                                "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "email"
+                                                        ]
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "websiteUrl": {
+                                                                "type": "string",
+                                                                "format": "uri"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "websiteUrl"
+                                                        ]
+                                                    }
+                                                ]
                                             }
-                                        },
-                                        "required": [
-                                            "firstName"
-                                        ],
-                                        "additionalProperties": false
+                                        ]
                                     }
                                 },
                                 "required": [
@@ -39346,51 +39828,177 @@
                                         }
                                     },
                                     "contact": {
-                                        "type": "object",
-                                        "properties": {
-                                            "firstName": {
-                                                "type": "string",
-                                                "minLength": 1,
-                                                "maxLength": 65
+                                        "allOf": [
+                                            {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "firstName": {
+                                                                "type": "string",
+                                                                "minLength": 1,
+                                                                "maxLength": 65
+                                                            },
+                                                            "lastName": {
+                                                                "type": "string",
+                                                                "minLength": 1,
+                                                                "maxLength": 65
+                                                            },
+                                                            "roleLabel": {
+                                                                "type": "string",
+                                                                "minLength": 1,
+                                                                "maxLength": 150
+                                                            },
+                                                            "email": {
+                                                                "type": "string",
+                                                                "maxLength": 254,
+                                                                "format": "email",
+                                                                "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                                            },
+                                                            "organizationSlug": {
+                                                                "type": "string",
+                                                                "maxLength": 65,
+                                                                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                            },
+                                                            "websiteUrl": {
+                                                                "type": "string",
+                                                                "format": "uri"
+                                                            },
+                                                            "imagePath": {
+                                                                "type": "string",
+                                                                "minLength": 1
+                                                            },
+                                                            "isFullImagePath": {
+                                                                "default": false,
+                                                                "type": "boolean"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "firstName"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "firstName": {
+                                                                "not": {}
+                                                            },
+                                                            "lastName": {
+                                                                "type": "string",
+                                                                "minLength": 1,
+                                                                "maxLength": 65
+                                                            },
+                                                            "roleLabel": {
+                                                                "type": "string",
+                                                                "minLength": 1,
+                                                                "maxLength": 150
+                                                            },
+                                                            "email": {
+                                                                "type": "string",
+                                                                "maxLength": 254,
+                                                                "format": "email",
+                                                                "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                                            },
+                                                            "organizationSlug": {
+                                                                "type": "string",
+                                                                "maxLength": 65,
+                                                                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                            },
+                                                            "websiteUrl": {
+                                                                "type": "string",
+                                                                "format": "uri"
+                                                            },
+                                                            "imagePath": {
+                                                                "type": "string",
+                                                                "minLength": 1
+                                                            },
+                                                            "isFullImagePath": {
+                                                                "default": false,
+                                                                "type": "boolean"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "lastName"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "firstName": {
+                                                                "not": {}
+                                                            },
+                                                            "lastName": {
+                                                                "not": {}
+                                                            },
+                                                            "roleLabel": {
+                                                                "type": "string",
+                                                                "minLength": 1,
+                                                                "maxLength": 150
+                                                            },
+                                                            "email": {
+                                                                "type": "string",
+                                                                "maxLength": 254,
+                                                                "format": "email",
+                                                                "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                                            },
+                                                            "organizationSlug": {
+                                                                "type": "string",
+                                                                "maxLength": 65,
+                                                                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                            },
+                                                            "websiteUrl": {
+                                                                "type": "string",
+                                                                "format": "uri"
+                                                            },
+                                                            "imagePath": {
+                                                                "type": "string",
+                                                                "minLength": 1
+                                                            },
+                                                            "isFullImagePath": {
+                                                                "default": false,
+                                                                "type": "boolean"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "organizationSlug"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    }
+                                                ]
                                             },
-                                            "lastName": {
-                                                "type": "string",
-                                                "minLength": 1,
-                                                "maxLength": 65
-                                            },
-                                            "roleLabel": {
-                                                "type": "string",
-                                                "minLength": 1,
-                                                "maxLength": 150
-                                            },
-                                            "email": {
-                                                "type": "string",
-                                                "maxLength": 254,
-                                                "format": "email",
-                                                "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
-                                            },
-                                            "organizationSlug": {
-                                                "type": "string",
-                                                "maxLength": 65,
-                                                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
-                                            },
-                                            "websiteUrl": {
-                                                "type": "string",
-                                                "format": "uri"
-                                            },
-                                            "imagePath": {
-                                                "type": "string",
-                                                "minLength": 1
-                                            },
-                                            "isFullImagePath": {
-                                                "default": false,
-                                                "type": "boolean"
+                                            {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "email": {
+                                                                "type": "string",
+                                                                "maxLength": 254,
+                                                                "format": "email",
+                                                                "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "email"
+                                                        ]
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "websiteUrl": {
+                                                                "type": "string",
+                                                                "format": "uri"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "websiteUrl"
+                                                        ]
+                                                    }
+                                                ]
                                             }
-                                        },
-                                        "required": [
-                                            "firstName"
-                                        ],
-                                        "additionalProperties": false
+                                        ]
                                     },
                                     "currentProjectSlug": {
                                         "type": "string",

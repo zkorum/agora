@@ -412,6 +412,16 @@ export const ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfAdd
 export type ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfAdditionalLocalizationsInnerLanguageCodeEnum = typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfAdditionalLocalizationsInnerLanguageCodeEnum[keyof typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfAdditionalLocalizationsInnerLanguageCodeEnum];
 
 export interface ApiV1AdministratorProjectCreatePostRequestContact {
+    'firstName': any;
+    'lastName': any;
+    'roleLabel'?: string;
+    'email': string;
+    'organizationSlug': string;
+    'websiteUrl': string;
+    'imagePath'?: string;
+    'isFullImagePath'?: boolean;
+}
+export interface ApiV1AdministratorProjectCreatePostRequestContactAllOfAnyOf {
     'firstName': string;
     'lastName'?: string;
     'roleLabel'?: string;
@@ -420,6 +430,32 @@ export interface ApiV1AdministratorProjectCreatePostRequestContact {
     'websiteUrl'?: string;
     'imagePath'?: string;
     'isFullImagePath'?: boolean;
+}
+export interface ApiV1AdministratorProjectCreatePostRequestContactAllOfAnyOf1 {
+    'firstName'?: any;
+    'lastName': string;
+    'roleLabel'?: string;
+    'email'?: string;
+    'organizationSlug'?: string;
+    'websiteUrl'?: string;
+    'imagePath'?: string;
+    'isFullImagePath'?: boolean;
+}
+export interface ApiV1AdministratorProjectCreatePostRequestContactAllOfAnyOf2 {
+    'firstName'?: any;
+    'lastName'?: any;
+    'roleLabel'?: string;
+    'email'?: string;
+    'organizationSlug': string;
+    'websiteUrl'?: string;
+    'imagePath'?: string;
+    'isFullImagePath'?: boolean;
+}
+export interface ApiV1AdministratorProjectCreatePostRequestContactAllOfAnyOf3 {
+    'email': string;
+}
+export interface ApiV1AdministratorProjectCreatePostRequestContactAllOfAnyOf4 {
+    'websiteUrl': string;
 }
 export interface ApiV1AdministratorProjectCreatePostRequestContentLocalizationsInner {
     'languageCode': ApiV1AdministratorProjectCreatePostRequestContentLocalizationsInnerLanguageCodeEnum;
@@ -678,11 +714,41 @@ export const ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListIn
 export type ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1AdditionalLocalizationsInnerLanguageCodeEnum = typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1AdditionalLocalizationsInnerLanguageCodeEnum[keyof typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1AdditionalLocalizationsInnerLanguageCodeEnum];
 
 export interface ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContact {
+    'firstName': any;
+    'lastName': any;
+    'roleLabel'?: string;
+    'email'?: string;
+    'organizationSlug': string;
+    'websiteUrl'?: string;
+    'imagePath'?: string;
+    'isFullImagePath': boolean;
+}
+export interface ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContactAnyOf {
     'firstName': string;
     'lastName'?: string;
     'roleLabel'?: string;
     'email'?: string;
     'organizationSlug'?: string;
+    'websiteUrl'?: string;
+    'imagePath'?: string;
+    'isFullImagePath': boolean;
+}
+export interface ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContactAnyOf1 {
+    'firstName'?: any;
+    'lastName': string;
+    'roleLabel'?: string;
+    'email'?: string;
+    'organizationSlug'?: string;
+    'websiteUrl'?: string;
+    'imagePath'?: string;
+    'isFullImagePath': boolean;
+}
+export interface ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContactAnyOf2 {
+    'firstName'?: any;
+    'lastName'?: any;
+    'roleLabel'?: string;
+    'email'?: string;
+    'organizationSlug': string;
     'websiteUrl'?: string;
     'imagePath'?: string;
     'isFullImagePath': boolean;
@@ -9108,10 +9174,37 @@ export const ApiV1ProjectPageFetchPost200ResponseProjectAttributionsInnerRoleEnu
 export type ApiV1ProjectPageFetchPost200ResponseProjectAttributionsInnerRoleEnum = typeof ApiV1ProjectPageFetchPost200ResponseProjectAttributionsInnerRoleEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseProjectAttributionsInnerRoleEnum];
 
 export interface ApiV1ProjectPageFetchPost200ResponseProjectContact {
+    'firstName': any;
+    'lastName': any;
+    'roleLabel'?: string;
+    'affiliationName': string;
+    'imageUrl'?: string;
+    'email'?: string;
+    'websiteUrl'?: string;
+}
+export interface ApiV1ProjectPageFetchPost200ResponseProjectContactAnyOf {
     'firstName': string;
     'lastName'?: string;
     'roleLabel'?: string;
     'affiliationName'?: string;
+    'imageUrl'?: string;
+    'email'?: string;
+    'websiteUrl'?: string;
+}
+export interface ApiV1ProjectPageFetchPost200ResponseProjectContactAnyOf1 {
+    'firstName'?: any;
+    'lastName': string;
+    'roleLabel'?: string;
+    'affiliationName'?: string;
+    'imageUrl'?: string;
+    'email'?: string;
+    'websiteUrl'?: string;
+}
+export interface ApiV1ProjectPageFetchPost200ResponseProjectContactAnyOf2 {
+    'firstName'?: any;
+    'lastName'?: any;
+    'roleLabel'?: string;
+    'affiliationName': string;
     'imageUrl'?: string;
     'email'?: string;
     'websiteUrl'?: string;

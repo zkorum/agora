@@ -247,7 +247,7 @@ CREATE TABLE "premium_feature_entitlement" (
 CREATE TABLE "project_contact" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "project_contact_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"project_id" integer NOT NULL,
-	"first_name" varchar(65) NOT NULL,
+	"first_name" varchar(65),
 	"last_name" varchar(65),
 	"role_label" varchar(150),
 	"email" text,
@@ -259,8 +259,9 @@ CREATE TABLE "project_contact" (
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
 	"deleted_at" timestamp (0),
+	CONSTRAINT "project_contact_name_or_affiliation_check" CHECK ((("project_contact"."first_name" is not null AND "project_contact"."first_name" ~ U&'[^\0009-\000d \00a0\1680\2000-\200a\2028\2029\202f\205f\3000\feff]') OR ("project_contact"."last_name" is not null AND "project_contact"."last_name" ~ U&'[^\0009-\000d \00a0\1680\2000-\200a\2028\2029\202f\205f\3000\feff]') OR "project_contact"."organization_id" is not null)),
 	CONSTRAINT "project_contact_affiliation_source_check" CHECK (num_nonnulls("project_contact"."organization_id", "project_contact"."external_organization_id") <= 1),
-	CONSTRAINT "project_contact_email_or_website_check" CHECK (num_nonnulls("project_contact"."email", "project_contact"."website_url") >= 1)
+	CONSTRAINT "project_contact_email_or_website_check" CHECK ((("project_contact"."email" is not null AND "project_contact"."email" ~ U&'[^\0009-\000d \00a0\1680\2000-\200a\2028\2029\202f\205f\3000\feff]') OR ("project_contact"."website_url" is not null AND "project_contact"."website_url" ~ U&'[^\0009-\000d \00a0\1680\2000-\200a\2028\2029\202f\205f\3000\feff]')))
 );
 
 CREATE TABLE "project_content" (
