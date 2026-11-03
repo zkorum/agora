@@ -41,8 +41,8 @@ Each worker loop completes fully saved imports before timeout cleanup. This
 recovers older imports blocked on analysis or failed completion notifications.
 Analysis requires `is_importing=false`, so it must follow publication rather than
 be a prerequisite for it. Failed imports remain terminal and unpublished partial data
-stays hidden. See [import recovery](../../doc/import-recovery.md) for rollout and
-diagnosis details.
+stays hidden. For existing stuck imports, deploy the fixed worker and drain its
+saved-import recovery batches before deploying the updated API and frontend.
 
 ## Generated Artifacts
 
