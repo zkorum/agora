@@ -157,7 +157,7 @@ const en: AdministratorProjectTranslations = {
   externalOrganizationSource: "External organization",
   contactTitle: "Participant contact",
   contactDescription:
-    "Optional. If you add contact details, a contact name and either an email address or HTTPS contact page are required.",
+    "Optional. Provide a person's name or select an organization, plus an email address or HTTPS contact page. Without a person's name, the organization is shown as the contact name.",
   contactFirstNameLabel: "Contact first name",
   contactLastNameLabel: "Contact last name",
   contactRoleLabel: "Contact role label",
@@ -269,7 +269,7 @@ const ar: AdministratorProjectTranslations = {
   externalOrganizationSource: "منظمة خارجية",
   contactTitle: "جهة اتصال المشاركين",
   contactDescription:
-    "اختياري. إذا أضفت تفاصيل اتصال، فيلزم إدخال اسم جهة الاتصال وإما عنوان بريد إلكتروني أو صفحة اتصال تستخدم HTTPS.",
+    "اختياري. أدخل اسم شخص أو اختر مؤسسة، مع عنوان بريد إلكتروني أو صفحة اتصال تستخدم HTTPS. إذا لم تُدخل اسم شخص، فسيظهر اسم المؤسسة كاسم جهة الاتصال.",
   contactFirstNameLabel: "الاسم الأول لجهة الاتصال",
   contactLastNameLabel: "اسم العائلة لجهة الاتصال",
   contactRoleLabel: "مسمى دور جهة الاتصال",
@@ -384,7 +384,7 @@ const es: AdministratorProjectTranslations = {
   externalOrganizationSource: "Organización externa",
   contactTitle: "Contacto para participantes",
   contactDescription:
-    "Opcional. Si añade datos de contacto, se requiere un nombre de contacto y una dirección de correo electrónico o una página de contacto HTTPS.",
+    "Opcional. Indique el nombre de una persona o seleccione una organización, junto con un correo electrónico o una página de contacto HTTPS. Si no hay nombre de persona, la organización se mostrará como nombre de contacto.",
   contactFirstNameLabel: "Nombre del contacto",
   contactLastNameLabel: "Apellidos del contacto",
   contactRoleLabel: "Nombre del rol del contacto",
@@ -500,7 +500,7 @@ const fa: AdministratorProjectTranslations = {
   externalOrganizationSource: "سازمان خارجی",
   contactTitle: "اطلاعات تماس شرکت‌کنندگان",
   contactDescription:
-    "اختیاری. اگر اطلاعات تماس را اضافه کنید، نام شخص تماس و یکی از این دو مورد الزامی است: نشانی ایمیل یا صفحه تماس HTTPS.",
+    "اختیاری. نام یک شخص را وارد کنید یا سازمانی را انتخاب کنید و نشانی ایمیل یا صفحه تماس HTTPS ارائه دهید. اگر نام شخص وارد نشود، نام سازمان به‌عنوان نام مخاطب نمایش داده می‌شود.",
   contactFirstNameLabel: "نام شخص تماس",
   contactLastNameLabel: "نام خانوادگی شخص تماس",
   contactRoleLabel: "عنوان نقش شخص تماس",
@@ -617,7 +617,7 @@ const fr: AdministratorProjectTranslations = {
   externalOrganizationSource: "Organisation externe",
   contactTitle: "Contact pour les participants",
   contactDescription:
-    "Facultatif. Si vous ajoutez des coordonnées, le nom du contact ainsi qu’une adresse e-mail ou une page de contact HTTPS sont obligatoires.",
+    "Facultatif. Renseignez le nom d’une personne ou sélectionnez une organisation, ainsi qu’une adresse e-mail ou une page de contact HTTPS. Sans nom de personne, l’organisation est affichée comme nom du contact.",
   contactFirstNameLabel: "Prénom du contact",
   contactLastNameLabel: "Nom du contact",
   contactRoleLabel: "Libellé du rôle du contact",
@@ -732,7 +732,7 @@ const he: AdministratorProjectTranslations = {
   externalOrganizationSource: "ארגון חיצוני",
   contactTitle: "איש קשר למשתתפים",
   contactDescription:
-    "אופציונלי. אם תוסיפו פרטי קשר, יידרשו שם איש קשר וכתובת דוא״ל או דף קשר המשתמש ב-HTTPS.",
+    "אופציונלי. הזינו שם של אדם או בחרו ארגון, לצד כתובת דוא״ל או דף קשר המשתמש ב-HTTPS. ללא שם של אדם, שם הארגון יוצג כשם איש הקשר.",
   contactFirstNameLabel: "השם הפרטי של איש הקשר",
   contactLastNameLabel: "שם המשפחה של איש הקשר",
   contactRoleLabel: "תיאור התפקיד של איש הקשר",
@@ -844,7 +844,7 @@ const ja: AdministratorProjectTranslations = {
   externalOrganizationSource: "外部組織",
   contactTitle: "参加者向け連絡先",
   contactDescription:
-    "任意です。連絡先の詳細を追加する場合は、連絡先名と、メールアドレスまたはHTTPSの連絡先ページのいずれかが必要です。",
+    "任意です。個人名を入力するか組織を選択し、メールアドレスまたはHTTPSの連絡先ページを指定してください。個人名がない場合は、組織名が連絡先名として表示されます。",
   contactFirstNameLabel: "連絡先の名",
   contactLastNameLabel: "連絡先の姓",
   contactRoleLabel: "連絡先の役割ラベル",
@@ -957,7 +957,7 @@ const zhHans: AdministratorProjectTranslations = {
   externalOrganizationSource: "外部组织",
   contactTitle: "参与者联系人",
   contactDescription:
-    "可选。如果添加联系信息，则必须提供联系人姓名，以及电子邮件地址或 HTTPS 联系页面中的一项。",
+    "可选。请填写个人姓名或选择组织，并提供电子邮件地址或 HTTPS 联系页面。未填写个人姓名时，将使用组织名称作为联系人名称。",
   contactFirstNameLabel: "联系人名字",
   contactLastNameLabel: "联系人姓氏",
   contactRoleLabel: "联系人角色标签",
@@ -1065,7 +1065,7 @@ const zhHant: AdministratorProjectTranslations = {
   externalOrganizationSource: "外部組織",
   contactTitle: "參與者聯絡人",
   contactDescription:
-    "選填。如果新增聯絡資訊，則必須提供聯絡人姓名，以及電子郵件地址或 HTTPS 聯絡頁面其中一項。",
+    "選填。請填寫個人姓名或選擇組織，並提供電子郵件地址或 HTTPS 聯絡頁面。未填寫個人姓名時，將使用組織名稱作為聯絡人名稱。",
   contactFirstNameLabel: "聯絡人名字",
   contactLastNameLabel: "聯絡人姓氏",
   contactRoleLabel: "聯絡人角色標籤",
@@ -1176,7 +1176,7 @@ const ky: AdministratorProjectTranslations = {
   externalOrganizationSource: "Тышкы уюм",
   contactTitle: "Катышуучулар үчүн байланыш",
   contactDescription:
-    "Милдеттүү эмес. Байланыш маалыматын кошсоңуз, байланыш адамынын аты жана электрондук почта дареги же HTTPS байланыш барагы талап кылынат.",
+    "Милдеттүү эмес. Адамдын атын жазыңыз же уюмду тандаңыз жана электрондук почта дарегин же HTTPS байланыш барагын көрсөтүңүз. Адамдын аты жок болсо, байланыштын аты катары уюмдун аты көрсөтүлөт.",
   contactFirstNameLabel: "Байланыш адамынын аты",
   contactLastNameLabel: "Байланыш адамынын фамилиясы",
   contactRoleLabel: "Байланыш адамынын ролу",
@@ -1293,7 +1293,7 @@ const ru: AdministratorProjectTranslations = {
   externalOrganizationSource: "Внешняя организация",
   contactTitle: "Контактное лицо для участников",
   contactDescription:
-    "Необязательно. Если вы добавите контактные данные, потребуется имя контактного лица и адрес электронной почты или страница для связи по протоколу HTTPS.",
+    "Необязательно. Укажите имя человека или выберите организацию, а также адрес электронной почты или страницу для связи по HTTPS. Если имя человека не указано, в качестве имени контакта отображается название организации.",
   contactFirstNameLabel: "Имя контактного лица",
   contactLastNameLabel: "Фамилия контактного лица",
   contactRoleLabel: "Роль контактного лица",

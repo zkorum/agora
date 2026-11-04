@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from enum import StrEnum
 from typing import Any, Literal
+from uuid import UUID
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, RootModel
 
@@ -95,8 +96,8 @@ class UrlImportRequest(BaseModel):
         validate_by_name=True,
     )
     import_slug_id: str = Field(..., alias="importSlugId")
-    user_id: str = Field(..., alias="userId")
-    actor_user_id: str = Field(..., alias="actorUserId")
+    user_id: UUID = Field(..., alias="userId")
+    actor_user_id: UUID = Field(..., alias="actorUserId")
     project_id: int = Field(..., alias="projectId", gt=0)
     form_data: ImportFormData = Field(..., alias="formData")
     did_write: str = Field(..., alias="didWrite")
@@ -110,7 +111,7 @@ class MinimalImportRequest(BaseModel):
         validate_by_name=True,
     )
     import_slug_id: str = Field(..., alias="importSlugId")
-    user_id: str = Field(..., alias="userId")
+    user_id: UUID = Field(..., alias="userId")
 
 
 MinimalImportRequest.__annotations__["__pydantic_extra__"] = dict[str, Any]
@@ -132,11 +133,7 @@ class ImportWorkerEvent(BaseModel):
     type: Literal["import_notification"]
     user_id: str = Field(..., alias="userId")
     notification_slug_id: str = Field(..., alias="notificationSlugId", max_length=10)
-    notification_created_at: AwareDatetime = Field(
-        ...,
-        alias="notificationCreatedAt",
-        pattern="^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
-    )
+    notification_created_at: AwareDatetime = Field(..., alias="notificationCreatedAt")
     notification_is_read: bool = Field(..., alias="notificationIsRead")
     import_id: int = Field(..., alias="importId")
     import_slug_id: str = Field(..., alias="importSlugId", max_length=10)
@@ -153,8 +150,8 @@ class CsvImportRequest(BaseModel):
         validate_by_name=True,
     )
     import_slug_id: str = Field(..., alias="importSlugId")
-    user_id: str = Field(..., alias="userId")
-    actor_user_id: str = Field(..., alias="actorUserId")
+    user_id: UUID = Field(..., alias="userId")
+    actor_user_id: UUID = Field(..., alias="actorUserId")
     project_id: int = Field(..., alias="projectId", gt=0)
     form_data: ImportFormData = Field(..., alias="formData")
     did_write: str = Field(..., alias="didWrite")

@@ -9,8 +9,36 @@ import {
     importStatusEnum,
     importFailureReasonEnum,
 } from "@/shared-backend/schema.js";
-import { eq, and } from "drizzle-orm";
+import { eq, and, lte } from "drizzle-orm";
 import { generateRandomSlugId } from "@/crypto.js";
+import { MAX_CONVERSATION_IMPORT_DURATION_MS } from "@/shared/shared.js";
+
+async function expireImportsForUser({
+    db,
+    userId,
+}: {
+    db: PostgresDatabase;
+    userId: string;
+}): Promise<void> {
+    const now = new Date();
+    // API polling/admission must recover even when the import worker is down.
+    // The conditional writer-side update cannot overwrite a completed import.
+    await db
+        .update(conversationImportTable)
+        .set({ status: "failed", failureReason: "timeout", updatedAt: now })
+        .where(
+            and(
+                eq(conversationImportTable.userId, userId),
+                eq(conversationImportTable.status, "processing"),
+                lte(
+                    conversationImportTable.createdAt,
+                    new Date(
+                        now.getTime() - MAX_CONVERSATION_IMPORT_DURATION_MS,
+                    ),
+                ),
+            ),
+        );
+}
 
 interface CreateImportRecordParams {
     db: PostgresDatabase;
@@ -28,6 +56,8 @@ export type CreateImportRecordResult =
           importSlugId: string;
       };
 
+type ImportRecordAttempt = CreateImportRecordResult | { status: "retry" };
+
 const MAX_IMPORT_RECORD_ATTEMPTS = 5;
 
 /**
@@ -41,7 +71,8 @@ export async function createImportRecord(
     for (let attempt = 0; attempt < MAX_IMPORT_RECORD_ATTEMPTS; attempt += 1) {
         const importSlugId = generateRandomSlugId();
         const now = new Date();
-        const result = await db.transaction(async (tx) => {
+        const result = await db.transaction<ImportRecordAttempt>(async (tx) => {
+            await expireImportsForUser({ db: tx, userId });
             const insertedRows = await tx
                 .insert(conversationImportTable)
                 .values({
@@ -57,21 +88,24 @@ export async function createImportRecord(
             const inserted = insertedRows.at(0);
             if (inserted !== undefined) {
                 return {
-                    status: "created" as const,
+                    status: "created",
                     importId: inserted.id,
                     importSlugId,
                 };
             }
 
-            const activeImport = await getActiveImportForUser({ db: tx, userId });
+            const activeImport = await findActiveImportForUser({
+                db: tx,
+                userId,
+            });
             if (activeImport !== null) {
                 return {
-                    status: "active_import_exists" as const,
+                    status: "active_import_exists",
                     importSlugId: activeImport.importSlugId,
                 };
             }
 
-            return { status: "retry" as const };
+            return { status: "retry" };
         });
 
         if (result.status !== "retry") {
@@ -100,7 +134,12 @@ export async function markImportFailed({
             failureReason,
             updatedAt: new Date(),
         })
-        .where(eq(conversationImportTable.slugId, importSlugId));
+        .where(
+            and(
+                eq(conversationImportTable.slugId, importSlugId),
+                eq(conversationImportTable.status, "processing"),
+            ),
+        );
 }
 
 interface GetImportStatusParams {
@@ -151,7 +190,10 @@ export async function getConversationImportAccessState({
         .from(conversationImportTable)
         .where(
             and(
-                eq(conversationImportTable.conversationId, conversation.conversationId),
+                eq(
+                    conversationImportTable.conversationId,
+                    conversation.conversationId,
+                ),
                 eq(conversationImportTable.userId, userId),
             ),
         )
@@ -175,7 +217,7 @@ interface ImportStatusResult {
  * Get the status of a CSV import
  * Uses left join to get conversation slug ID when import is completed
  */
-export async function getImportStatus(
+async function readImportStatus(
     params: GetImportStatusParams,
 ): Promise<ImportStatusResult | null> {
     const { db, importSlugId, userId } = params;
@@ -204,6 +246,31 @@ export async function getImportStatus(
     return result.at(0) ?? null;
 }
 
+function isPastImportDeadline(createdAt: Date): boolean {
+    return (
+        createdAt.getTime() <= Date.now() - MAX_CONVERSATION_IMPORT_DURATION_MS
+    );
+}
+
+export async function getImportStatus(
+    params: GetImportStatusParams,
+): Promise<ImportStatusResult | null> {
+    const result = await readImportStatus(params);
+    if (
+        result?.status !== "processing" ||
+        !isPastImportDeadline(result.createdAt)
+    ) {
+        return result;
+    }
+
+    // Only overdue reads need a writer transaction. Read again inside that
+    // transaction: a stale replica candidate may already be completed or failed.
+    return await params.db.transaction(async (tx) => {
+        await expireImportsForUser({ db: tx, userId: params.userId });
+        return await readImportStatus({ ...params, db: tx });
+    });
+}
+
 interface GetActiveImportForUserParams {
     db: PostgresDatabase;
     userId: string;
@@ -211,7 +278,6 @@ interface GetActiveImportForUserParams {
 
 interface ActiveImportResult {
     importSlugId: string;
-    status: (typeof importStatusEnum.enumValues)[number];
     createdAt: Date;
 }
 
@@ -219,7 +285,7 @@ interface ActiveImportResult {
  * Get the active (processing) import for a user, if any
  * Returns null if user has no active import
  */
-export async function getActiveImportForUser(
+async function findActiveImportForUser(
     params: GetActiveImportForUserParams,
 ): Promise<ActiveImportResult | null> {
     const { db, userId } = params;
@@ -227,7 +293,6 @@ export async function getActiveImportForUser(
     const result = await db
         .select({
             importSlugId: conversationImportTable.slugId,
-            status: conversationImportTable.status,
             createdAt: conversationImportTable.createdAt,
         })
         .from(conversationImportTable)
@@ -239,9 +304,19 @@ export async function getActiveImportForUser(
         )
         .limit(1);
 
-    if (result.length === 0) {
-        return null;
+    return result.at(0) ?? null;
+}
+
+export async function getActiveImportForUser(
+    params: GetActiveImportForUserParams,
+): Promise<ActiveImportResult | null> {
+    const result = await findActiveImportForUser(params);
+    if (result === null || !isPastImportDeadline(result.createdAt)) {
+        return result;
     }
 
-    return result[0];
+    return await params.db.transaction(async (tx) => {
+        await expireImportsForUser({ db: tx, userId: params.userId });
+        return await findActiveImportForUser({ ...params, db: tx });
+    });
 }

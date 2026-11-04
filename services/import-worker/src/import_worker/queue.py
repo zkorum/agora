@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
-from typing import Annotated, Any, Protocol
+from typing import Annotated, Protocol
 
-from pydantic import Field, TypeAdapter, ValidationError
+from pydantic import Field, JsonValue, TypeAdapter, ValidationError
 
 from import_worker.generated_import_contracts import (
     CsvImportRequest,
@@ -21,6 +20,7 @@ type ImportRequest = Annotated[
     Field(discriminator="type"),
 ]
 IMPORT_REQUEST_ADAPTER: TypeAdapter[ImportRequest] = TypeAdapter(ImportRequest)
+JSON_ADAPTER: TypeAdapter[JsonValue] = TypeAdapter(JsonValue)
 
 
 class ImportValkeyClient(Protocol):
@@ -63,20 +63,26 @@ def pop_import_requests(vk: ImportValkeyClient, *, count: int) -> PoppedImportBa
     invalid_items: list[InvalidImportItem] = []
 
     for item in items:
-        parsed_json: Any
         try:
-            parsed_json = json.loads(_decode_item(item))
-        except json.JSONDecodeError as error:
+            parsed_json = JSON_ADAPTER.validate_json(_decode_item(item))
+        except ValidationError:
             invalid_items.append(
-                InvalidImportItem(parsed_json=None, error_message=f"Malformed JSON: {error}"),
+                InvalidImportItem(parsed_json=None, error_message="Malformed JSON"),
             )
             continue
 
         try:
             requests.append(IMPORT_REQUEST_ADAPTER.validate_python(parsed_json))
         except ValidationError as error:
+            # Rendered Pydantic errors include input values, including CSV text.
+            error_types = sorted(
+                {entry["type"] for entry in error.errors(include_input=False, include_url=False)}
+            )
             invalid_items.append(
-                InvalidImportItem(parsed_json=parsed_json, error_message=str(error)),
+                InvalidImportItem(
+                    parsed_json=parsed_json,
+                    error_message=f"Invalid import request ({', '.join(error_types)})",
+                ),
             )
 
     return PoppedImportBatch(requests=requests, invalid_items=invalid_items)
@@ -91,6 +97,19 @@ def extract_minimal_import_request(parsed_json: object | None) -> MinimalImportR
         return None
 
 
+def serialize_import_event(event: ImportNotificationEvent) -> str:
+    # Zod optional fields accept absence, not JSON null. conversationId is
+    # deliberately nullable and required, so exclude_none=True would drop it.
+    optional_values = {
+        "conversation_slug_id": event.conversation_slug_id,
+        "conversation_title": event.conversation_title,
+        "failure_reason": event.failure_reason,
+    }
+    return event.model_dump_json(
+        by_alias=True,
+        exclude={name for name, value in optional_values.items() if value is None},
+    )
+
+
 def push_import_event(vk: ImportValkeyClient, *, event: ImportNotificationEvent) -> None:
-    payload = event.model_dump_json(by_alias=True)
-    vk.rpush(IMPORT_EVENTS_KEY, payload)
+    vk.rpush(IMPORT_EVENTS_KEY, serialize_import_event(event))

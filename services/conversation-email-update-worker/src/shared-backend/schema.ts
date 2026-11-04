@@ -63,6 +63,14 @@ function sqlOr(first: SQL, second: SQL, ...rest: SQL[]): SQL {
     return sql`(${sql.join([first, second, ...rest], sql` OR `)})`;
 }
 
+function hasNonBlankText(column: AnyPgColumn): SQL {
+    // Match ECMAScript trim(), including Unicode spaces. A SQL literal keeps schema DDL free of bound parameters.
+    return sqlAnd(
+        isNotNull(column),
+        sql`${column} ~ U&'[^\\0009-\\000d \\00a0\\1680\\2000-\\200a\\2028\\2029\\202f\\205f\\3000\\feff]'`,
+    );
+}
+
 export const bytea = customType<{
     data: string;
     notNull: false;
@@ -1777,7 +1785,7 @@ export const projectContactTable = pgTable(
             .notNull(),
         firstName: varchar("first_name", {
             length: MAX_LENGTH_NAME_CREATOR,
-        }).notNull(),
+        }),
         lastName: varchar("last_name", { length: MAX_LENGTH_NAME_CREATOR }),
         roleLabel: varchar("role_label", { length: MAX_LENGTH_TITLE }),
         email: text("email"),
@@ -1804,12 +1812,24 @@ export const projectContactTable = pgTable(
     },
     (table) => [
         check(
+            "project_contact_name_or_affiliation_check",
+            // Organization-only contacts must round-trip through the admin API's organization selector.
+            sqlOr(
+                hasNonBlankText(table.firstName),
+                hasNonBlankText(table.lastName),
+                isNotNull(table.organizationId),
+            ),
+        ),
+        check(
             "project_contact_affiliation_source_check",
             sql`num_nonnulls(${table.organizationId}, ${table.externalOrganizationId}) <= 1`,
         ),
         check(
             "project_contact_email_or_website_check",
-            sql`num_nonnulls(${table.email}, ${table.websiteUrl}) >= 1`,
+            sqlOr(
+                hasNonBlankText(table.email),
+                hasNonBlankText(table.websiteUrl),
+            ),
         ),
         foreignKey({
             columns: [table.projectId, table.externalOrganizationId],

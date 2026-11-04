@@ -155,6 +155,15 @@ function generateLengthConstantsSection({
 const PYTHON_SHARED_SECTION_GENERATORS = [
     generateDisplayLanguageSection,
     generateLengthConstantsSection,
+    ({ sharedTs }: SharedTypesSources): PythonSharedSection => ({
+        title: "Import Lifecycle",
+        body: `MAX_CONVERSATION_IMPORT_DURATION_MS: int = ${String(
+            parseNumericExport({
+                source: sharedTs,
+                exportName: "MAX_CONVERSATION_IMPORT_DURATION_MS",
+            }),
+        )}`,
+    }),
 ];
 
 export function generatePythonSharedTypes({

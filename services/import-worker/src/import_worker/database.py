@@ -3,14 +3,11 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from pydantic import TypeAdapter
-from sqlalchemy import create_engine, text
+from sqlalchemy import String, create_engine, func, select
 from sqlalchemy.orm import Session, sessionmaker
 
 if TYPE_CHECKING:
     from sqlalchemy.engine import Connection, Engine
-
-STRING_RESULT = TypeAdapter(str)
 
 
 def database_timestamp_to_utc(value: datetime) -> datetime:
@@ -27,8 +24,11 @@ def use_psycopg_driver(connection_string: str) -> str:
 
 
 def _is_transaction_read_only(connection: Connection) -> bool:
-    result = connection.execute(text("show transaction_read_only")).scalar_one()
-    return STRING_RESULT.validate_python(result) == "on"
+    # This is PostgreSQL connection metadata, not an application-table read.
+    result = connection.execute(
+        select(func.current_setting("transaction_read_only", type_=String())),
+    ).scalar_one()
+    return result == "on"
 
 
 def create_primary_engine(connection_string: str) -> Engine:
@@ -43,7 +43,6 @@ def create_primary_engine(connection_string: str) -> Engine:
     )
     try:
         with engine.connect() as connection:
-            connection.execute(text("select 1"))
             if _is_transaction_read_only(connection):
                 msg = (
                     "IMPORT_WORKER_CONNECTION_STRING points to a read-only database; "

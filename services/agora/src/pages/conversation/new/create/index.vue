@@ -100,7 +100,6 @@
       <ActiveImportBanner
         v-if="
           hasActiveImport &&
-          conversationDraft.importSettings.importType === 'csv-import' &&
           activeImportQuery.data.value?.hasActiveImport
         "
         :import-slug-id="activeImportQuery.data.value.importSlugId"
@@ -243,6 +242,7 @@ import {
   useConversationDraft,
   type ValidationErrorField,
 } from "src/composables/conversation/draft";
+import { useImportAdmission } from "src/composables/conversation/useImportAdmission";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   MAX_LENGTH_CONVERSATION_BODY,
@@ -255,7 +255,6 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { useUserStore } from "src/stores/user";
 import { useCommonApi } from "src/utils/api/common";
-import { useActiveImportQuery } from "src/utils/api/conversationImport/useConversationImportQueries";
 import { classifyApiError } from "src/utils/api/error";
 import { useBackendPostApi } from "src/utils/api/post/post";
 import { isHistoryPathEqual } from "src/utils/nav/historyBack";
@@ -579,13 +578,9 @@ const { showNotifyMessage } = useNotify();
 
 const showLoginDialog = ref(false);
 
-// Active import query - only enabled when logged in and on CSV import mode
-const activeImportQuery = useActiveImportQuery({
-  enabled: computed(
-    () =>
-      isLoggedIn.value &&
-      conversationDraft.value.importSettings.importType === "csv-import"
-  ),
+const { activeImportQuery, hasActiveImport } = useImportAdmission({
+  isLoggedIn,
+  importType: () => conversationDraft.value.importSettings.importType,
 });
 
 watch(
@@ -707,10 +702,6 @@ watch(
     conversationEmailUpdateEnabledOverride.value = undefined;
   }
 );
-
-const hasActiveImport = computed(() => {
-  return activeImportQuery.data.value?.hasActiveImport ?? false;
-});
 
 function showProjectTargetFailure(reason: ProjectTargetFailureReason): void {
   if (reason === "organization_not_available") {

@@ -1,21 +1,14 @@
 <template>
   <section class="project-contact-card">
     <div class="project-contact-card__header">
-      <div
-        class="project-contact-card__avatar"
-        :class="{
-          'project-contact-card__avatar--image': contact.imageUrl !== undefined,
-        }"
-      >
-        <OrganizationImage
-          v-if="contact.imageUrl !== undefined"
-          class="project-contact-card__avatar-image"
-          height="100%"
-          :organization-image-url="contact.imageUrl"
-          :organization-name="displayName"
-        />
-        <template v-else>{{ initials }}</template>
-      </div>
+      <OrganizationImage
+        v-if="contact.imageUrl !== undefined"
+        class="project-contact-card__image"
+        height="48px"
+        :organization-image-url="contact.imageUrl"
+        :organization-name="displayName"
+      />
+      <div v-else class="project-contact-card__avatar">{{ initials }}</div>
       <div class="project-contact-card__body">
         <h3>{{ displayName }}</h3>
         <p v-if="subtitle !== ''">{{ subtitle }}</p>
@@ -56,6 +49,7 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import { computed } from "vue";
 
 import ProjectActionButton from "./ProjectActionButton.vue";
+import { getProjectContactPresentation } from "./projectContactPresentation";
 import {
   type ProjectPageTranslations,
   translateProjectPageText,
@@ -68,23 +62,12 @@ const props = defineProps<{
   languageCode: SupportedDisplayLanguageCodes;
 }>();
 
-const subtitle = computed(() => {
-  return [props.contact.roleLabel, props.contact.affiliationName]
-    .filter((value): value is string => value !== undefined)
-    .join(" · ");
-});
-
-const displayName = computed(() =>
-  [props.contact.firstName, props.contact.lastName]
-    .filter((part): part is string => part !== undefined)
-    .join(" ")
+const presentation = computed(() =>
+  getProjectContactPresentation(props.contact)
 );
-
-const initials = computed(() => {
-  const firstInitial = props.contact.firstName.trim().at(0) ?? "";
-  const lastInitial = props.contact.lastName?.trim().at(0) ?? "";
-  return `${firstInitial}${lastInitial}`.toUpperCase();
-});
+const displayName = computed(() => presentation.value.displayName);
+const subtitle = computed(() => presentation.value.subtitle);
+const initials = computed(() => presentation.value.initials);
 
 const safeEmailHref = computed(() =>
   props.contact.email === undefined
@@ -119,7 +102,7 @@ function t(
 .project-contact-card__header {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: 0.75rem;
   min-width: 0;
 }
 
@@ -135,21 +118,14 @@ function t(
   font-weight: var(--font-weight-bold);
 }
 
-.project-contact-card__avatar--image {
-  padding: 0.35rem;
-  border: 1px solid $sky-lighter;
-  background: white;
-}
-
-.project-contact-card__avatar-image {
-  width: 100%;
-  max-width: 100%;
-  display: block;
-  object-fit: contain;
-}
-
 .project-contact-card__body {
   min-width: 0;
+}
+
+.project-contact-card__image {
+  max-inline-size: min(40%, 10rem);
+  object-fit: contain;
+  flex: none;
 }
 
 h3,

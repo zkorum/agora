@@ -313,35 +313,55 @@ const zodProjectExternalOrganizationLocalizationInput = z
         isFullImagePath: z.boolean().default(false),
     })
     .strict();
-const zodProjectContact = z
+const zodProjectContactPersonName = z
+    .string()
+    .min(1)
+    .max(MAX_LENGTH_NAME_CREATOR);
+const zodProjectContactPersonNameInput = z
+    .string()
+    .trim()
+    .min(1)
+    .max(MAX_LENGTH_NAME_CREATOR);
+const zodProjectContactBase = z
     .object({
-        firstName: z.string().trim().min(1).max(MAX_LENGTH_NAME_CREATOR),
-        lastName: z
-            .string()
-            .trim()
-            .min(1)
-            .max(MAX_LENGTH_NAME_CREATOR)
-            .optional(),
-        roleLabel: z.string().trim().min(1).max(MAX_LENGTH_TITLE).optional(),
+        firstName: zodProjectContactPersonName.optional(),
+        lastName: zodProjectContactPersonName.optional(),
+        roleLabel: z.string().min(1).max(MAX_LENGTH_TITLE).optional(),
         email: zodEmail.optional(),
         organizationSlug: zodOrganizationSlug.optional(),
         websiteUrl: zodHttpsUrl.optional(),
-        imagePath: zodOptionalNonEmptyText,
+        imagePath: z.string().min(1).optional(),
         isFullImagePath: z.boolean().default(false),
     })
     .strict();
-const zodCreateProjectContact = zodProjectContact.superRefine(
-    (contact, context) => {
-        if (contact.email !== undefined || contact.websiteUrl !== undefined) {
-            return;
-        }
-
-        context.addIssue({
-            code: "custom",
-            message: "Contact requires an email or website URL",
-            path: ["email"],
-        });
-    },
+function projectContactIdentitySchema(base: typeof zodProjectContactBase) {
+    const personName = base.shape.firstName.unwrap();
+    return z.union([
+        base.extend({ firstName: personName }),
+        base.extend({
+            firstName: z.never().optional(),
+            lastName: personName,
+        }),
+        base.extend({
+            firstName: z.never().optional(),
+            lastName: z.never().optional(),
+            organizationSlug: zodOrganizationSlug,
+        }),
+    ]);
+}
+const zodProjectContact = projectContactIdentitySchema(zodProjectContactBase);
+const zodCreateProjectContact = projectContactIdentitySchema(
+    zodProjectContactBase.extend({
+        firstName: zodProjectContactPersonNameInput.optional(),
+        lastName: zodProjectContactPersonNameInput.optional(),
+        roleLabel: z.string().trim().min(1).max(MAX_LENGTH_TITLE).optional(),
+        imagePath: zodOptionalNonEmptyText,
+    }),
+).and(
+    z.union([
+        z.object({ email: zodEmail }),
+        z.object({ websiteUrl: zodHttpsUrl }),
+    ]),
 );
 const zodAdminOrganization = zodOrganization
     .extend({
@@ -608,19 +628,13 @@ const zodProjectPageAttribution = z
         imageUrl: z.url().optional(),
     })
     .strict();
-const zodProjectPageContact = z
+const zodProjectPageContactBase = z
     .object({
-        firstName: z.string().trim().min(1).max(MAX_LENGTH_NAME_CREATOR),
-        lastName: z
-            .string()
-            .trim()
-            .min(1)
-            .max(MAX_LENGTH_NAME_CREATOR)
-            .optional(),
-        roleLabel: z.string().trim().min(1).max(MAX_LENGTH_TITLE).optional(),
+        firstName: zodProjectContactPersonName.optional(),
+        lastName: zodProjectContactPersonName.optional(),
+        roleLabel: z.string().min(1).max(MAX_LENGTH_TITLE).optional(),
         affiliationName: z
             .string()
-            .trim()
             .min(1)
             .max(MAX_LENGTH_NAME_CREATOR)
             .optional(),
@@ -629,6 +643,20 @@ const zodProjectPageContact = z
         websiteUrl: zodHttpsUrl.optional(),
     })
     .strict();
+const zodProjectPageContact = z.union([
+    zodProjectPageContactBase.extend({
+        firstName: zodProjectContactPersonName,
+    }),
+    zodProjectPageContactBase.extend({
+        firstName: z.never().optional(),
+        lastName: zodProjectContactPersonName,
+    }),
+    zodProjectPageContactBase.extend({
+        firstName: z.never().optional(),
+        lastName: z.never().optional(),
+        affiliationName: zodProjectContactPersonName,
+    }),
+]);
 const zodProjectDocumentLocalization = z
     .object({
         languageCode: ZodSupportedDisplayLanguageCodes,
@@ -2938,6 +2966,8 @@ export class Dto {
             .strict(),
     ]);
     static createProjectContactRequest = zodCreateProjectContact;
+    static adminProjectContact = zodProjectContact;
+    static projectPageContact = zodProjectPageContact;
     static createProjectRequest = z
         .object({
             projectSlug: zodProjectSlug,

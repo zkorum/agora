@@ -20,6 +20,9 @@ import {
     conversationContentTable,
     conversationTable,
     conversationViewSnapshotTable,
+    organizationTable,
+    projectContactTable,
+    projectExternalOrganizationTable,
     projectTable,
     projectContentTable,
     rankingConversationConfigTable,
@@ -67,7 +70,8 @@ describe("project published participation counts", () => {
     }, 120_000);
 
     beforeEach(async () => {
-        await db.execute(sql`TRUNCATE conversation, conversation_view_snapshot,
+        await db.execute(sql`TRUNCATE project_contact, project_external_organization,
+            organization, conversation, conversation_view_snapshot,
             ranking_conversation_config, ranking_conversation_stats_snapshot, project
             RESTART IDENTITY CASCADE`);
         const projects = await db
@@ -355,6 +359,163 @@ describe("project published participation counts", () => {
             },
         );
     }, 15_000);
+
+    it("reads an organization-only contact with an affiliation and no fabricated first name", async () => {
+        const [organization] = await db
+            .insert(organizationTable)
+            .values({
+                slug: "agrotoulouse",
+                displayName: "AgroToulouse",
+                defaultLanguageCode: "en",
+                directoryVisibility: "listed",
+                isFullImagePath: true,
+                imagePath: "https://example.com/organization-logo.png",
+            })
+            .returning({ id: organizationTable.id });
+        if (organization === undefined)
+            throw new Error("Missing organization fixture");
+        await db.insert(projectContactTable).values({
+            projectId: 1,
+            organizationId: organization.id,
+            email: "contact@example.com",
+        });
+
+        const page = await fetchProjectPage({
+            db,
+            baseImageServiceUrl: "https://images.example.com",
+            currentDisplayLanguage: "en",
+            requesterUserId: undefined,
+            request: Dto.fetchProjectPageRequest.parse({
+                projectSlug: "test-project",
+            }),
+        });
+        expect(page.project.contact).toMatchObject({
+            firstName: undefined,
+            affiliationName: "AgroToulouse",
+            email: "contact@example.com",
+            imageUrl: "https://example.com/organization-logo.png",
+        });
+        expect(Dto.fetchProjectPageResponse.safeParse(page).success).toBe(true);
+
+        await db
+            .update(projectContactTable)
+            .set({
+                imagePath: "https://example.com/contact-logo.png",
+                isFullImagePath: true,
+            })
+            .where(eq(projectContactTable.projectId, 1));
+        const updatedPage = await fetchProjectPage({
+            db,
+            baseImageServiceUrl: "https://images.example.com",
+            currentDisplayLanguage: "en",
+            requesterUserId: undefined,
+            request: Dto.fetchProjectPageRequest.parse({
+                projectSlug: "test-project",
+            }),
+        });
+        expect(updatedPage.project.contact?.imageUrl).toBe(
+            "https://example.com/contact-logo.png",
+        );
+    });
+
+    it("requires a person's name for external affiliations that the admin contact contract cannot select", async () => {
+        const [organization] = await db
+            .insert(projectExternalOrganizationTable)
+            .values({
+                projectId: 1,
+                displayName: "External contact organization",
+                defaultLanguageCode: "en",
+            })
+            .returning({ id: projectExternalOrganizationTable.id });
+        if (organization === undefined)
+            throw new Error("Missing external organization fixture");
+        await expect(
+            db
+                .insert(projectContactTable)
+                .values({
+                    projectId: 1,
+                    externalOrganizationId: organization.id,
+                    websiteUrl: "https://example.com/contact",
+                })
+                .returning(),
+        ).rejects.toMatchObject({
+            cause: {
+                code: "23514",
+                constraint_name: "project_contact_name_or_affiliation_check",
+            },
+        });
+    });
+
+    it.each([undefined, null, "", " \t\n\r ", "\u00a0\u2003\ufeff"])(
+        "rejects a direct database insert without a name or organization (%j)",
+        async (name) => {
+            await expect(
+                db.insert(projectContactTable).values({
+                    projectId: 1,
+                    firstName: name,
+                    lastName: name,
+                    email: "contact@example.com",
+                }),
+            ).rejects.toMatchObject({
+                cause: {
+                    code: "23514",
+                    constraint_name:
+                        "project_contact_name_or_affiliation_check",
+                },
+            });
+        },
+    );
+
+    it("rejects removing the last contact identity through a direct database update", async () => {
+        await db.insert(projectContactTable).values({
+            projectId: 1,
+            firstName: "Alex",
+            email: "alex@example.com",
+        });
+        await expect(
+            db
+                .update(projectContactTable)
+                .set({ firstName: null })
+                .where(eq(projectContactTable.projectId, 1)),
+        ).rejects.toMatchObject({
+            cause: {
+                code: "23514",
+                constraint_name: "project_contact_name_or_affiliation_check",
+            },
+        });
+    });
+
+    it("still requires a contact channel in the database", async () => {
+        await expect(
+            db
+                .insert(projectContactTable)
+                .values({ projectId: 1, firstName: "Alex" }),
+        ).rejects.toMatchObject({
+            cause: {
+                code: "23514",
+                constraint_name: "project_contact_email_or_website_check",
+            },
+        });
+    });
+
+    it.each(["", " \t\n\r ", "\u00a0\u2003\ufeff"])(
+        "rejects a blank database contact channel (%j)",
+        async (channel) => {
+            await expect(
+                db.insert(projectContactTable).values({
+                    projectId: 1,
+                    firstName: "Alex",
+                    email: channel,
+                    websiteUrl: channel,
+                }),
+            ).rejects.toMatchObject({
+                cause: {
+                    code: "23514",
+                    constraint_name: "project_contact_email_or_website_check",
+                },
+            });
+        },
+    );
 
     it("uses published ranking counters rather than the old Polis-style snapshot", async () => {
         const configs = await db

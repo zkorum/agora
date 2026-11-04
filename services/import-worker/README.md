@@ -18,16 +18,31 @@ The API remains responsible for auth, request validation, creating import rows, 
 
 Environment variables use the `IMPORT_WORKER_` prefix.
 
-| Variable                                      | Default                   | Description                                          |
-| --------------------------------------------- | ------------------------- | ---------------------------------------------------- |
-| `IMPORT_WORKER_CONNECTION_STRING`             | Required                  | PostgreSQL primary DSN                               |
-| `IMPORT_WORKER_CONNECTION_STRING_READ`        | Same as primary           | PostgreSQL read replica DSN                          |
-| `IMPORT_WORKER_VALKEY_URL`                    | `valkey://localhost:6379` | Valkey connection URL                                |
-| `IMPORT_WORKER_FLUSH_INTERVAL_MS`             | `1000`                    | Poll interval                                        |
-| `IMPORT_WORKER_MAX_BATCH_SIZE`                | `4`                       | Max queue items per flush                            |
-| `IMPORT_WORKER_MAX_CONCURRENCY`               | `2`                       | Max concurrent import jobs                           |
-| `IMPORT_WORKER_STALE_THRESHOLD_MS`            | `300000`                  | Age after which in-progress imports are marked stale |
-| `IMPORT_WORKER_STALE_CLEANUP_EVERY_N_FLUSHES` | `60`                      | Stale cleanup cadence                                |
+| Variable                                      | Default                   | Description                                                |
+| --------------------------------------------- | ------------------------- | ---------------------------------------------------------- |
+| `IMPORT_WORKER_CONNECTION_STRING`             | Required                  | PostgreSQL primary DSN                                     |
+| `IMPORT_WORKER_CONNECTION_STRING_READ`        | Same as primary           | PostgreSQL read replica DSN                                |
+| `IMPORT_WORKER_VALKEY_URL`                    | `valkey://localhost:6379` | Valkey connection URL                                      |
+| `IMPORT_WORKER_FLUSH_INTERVAL_MS`             | `1000`                    | Poll interval                                              |
+| `IMPORT_WORKER_MAX_BATCH_SIZE`                | `4`                       | Max queue items per flush                                  |
+| `IMPORT_WORKER_MAX_CONCURRENCY`               | `2`                       | Max concurrent import jobs                                 |
+| `IMPORT_WORKER_STALE_THRESHOLD_MS`            | `300000`                  | Ingestion heartbeat age after which orphaned imports fail  |
+| `IMPORT_WORKER_STALE_CLEANUP_EVERY_N_FLUSHES` | `60`                      | Maintenance interval in poll periods, including while busy |
+
+Imports also have a shared one-hour deadline, defined by
+`MAX_CONVERSATION_IMPORT_DURATION_MS` in `services/shared/src/shared.ts` and
+generated into Python. It includes queueing and ingestion. Successful ingestion
+publishes the conversation before queueing opinion-group analysis in the background.
+Live ingestion receives heartbeats, but a heartbeat cannot extend this deadline.
+The API enforces it during status polling, active-import checks, and import
+admission even if this worker is unavailable.
+
+Each worker loop completes fully saved imports before timeout cleanup. This
+recovers older imports blocked on analysis or failed completion notifications.
+Analysis requires `is_importing=false`, so it must follow publication rather than
+be a prerequisite for it. Failed imports remain terminal and unpublished partial data
+stays hidden. For existing stuck imports, deploy the fixed worker and drain its
+saved-import recovery batches before deploying the updated API and frontend.
 
 ## Generated Artifacts
 
@@ -65,6 +80,10 @@ uv run --extra dev ruff check
 uv run --extra dev basedpyright
 uv run --extra dev pytest -v
 ```
+
+The lifecycle integration tests require Docker (or a configured Podman
+`DOCKER_HOST`) and apply the real Flyway migrations to a disposable PostgreSQL
+container. Test data is read and written through generated SQLAlchemy models.
 
 ## Docker
 

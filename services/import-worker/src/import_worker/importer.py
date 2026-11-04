@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Protocol
 
 from pydantic import BaseModel, TypeAdapter
 from reddwarf.data_loader import Loader
-from sqlalchemy import and_, case, desc, select, update
+from sqlalchemy import and_, case, desc, or_, select, tuple_, update
 from sqlalchemy import insert as sqlalchemy_insert
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
@@ -30,6 +30,7 @@ from import_worker.generated_models import (
     DisplayLanguageCode,
     Notification,
     NotificationImport,
+    NotificationTypeEnum,
     Opinion,
     OpinionContent,
     OpinionGroupSpec,
@@ -40,6 +41,7 @@ from import_worker.generated_models import (
     VoteContent,
 )
 from import_worker.generated_shared_types import (
+    MAX_CONVERSATION_IMPORT_DURATION_MS,
     MAX_LENGTH_CONVERSATION_BODY_HTML,
     MAX_LENGTH_CONVERSATION_TITLE,
     MAX_LENGTH_OPINION_HTML_OUTPUT,
@@ -54,14 +56,16 @@ from import_worker.language_detection import (
     detect_source_language,
 )
 from import_worker.polis_url import extract_polis_id_from_url
+from import_worker.queue import ImportNotificationEvent
 
 if TYPE_CHECKING:
     import uuid
     from collections.abc import Iterable
 
+    from sqlalchemy import Select
     from sqlalchemy.orm import Session
 
-    from import_worker.queue import ImportNotificationEvent, ImportRequest
+    from import_worker.queue import ImportRequest
 
 
 class PolisLoader(Protocol):
@@ -160,6 +164,7 @@ class TimeoutRedDwarfLoader(Loader):
 
 
 LOGGER = logging.getLogger(__name__)
+IMPORT_LIFECYCLE_BATCH_SIZE = 100
 CHUNK_SIZE = 1000
 
 
@@ -178,9 +183,15 @@ class ContentTranslationQueueSchedule:
 
 @dataclass(frozen=True)
 class ImportProcessResult:
-    event: ImportNotificationEvent | None
+    notification: ImportNotificationEvent
     analysis_schedule: AnalysisQueueSchedule | None
     content_translation_schedule: ContentTranslationQueueSchedule | None
+
+
+@dataclass(frozen=True)
+class ImportIdentity:
+    slug_id: str
+    user_id: uuid.UUID
 
 
 @dataclass(frozen=True)
@@ -188,6 +199,7 @@ class ConversationIds:
     conversation_slug_id: str
     conversation_id: int
     conversation_content_id: int
+    conversation_title: str
     conversation_source_language_code: str | None
     content_language_hints: list[SourceLanguageHint]
 
@@ -530,6 +542,7 @@ def _create_conversation(
         conversation_slug_id=conversation_slug_id,
         conversation_id=conversation_id,
         conversation_content_id=conversation_content_id,
+        conversation_title=title,
         conversation_source_language_code=content_source_language_code,
         content_language_hints=content_language_hints,
     )
@@ -691,9 +704,7 @@ def _insert_opinions(
             content_language_hints=conversation_ids.content_language_hints,
             google_detector=google_detector,
         )
-        source_language_code_per_opinion_id[opinion_id] = (
-            source_language_metadata.language_code
-        )
+        source_language_code_per_opinion_id[opinion_id] = source_language_metadata.language_code
         content_values.append(
             {
                 "opinion_id": opinion_id,
@@ -868,9 +879,7 @@ def _create_content_translation_work(
     if first_target_row is None or not first_target_row.dynamic_translation_enabled:
         return None
     target_language_codes = {
-        row.target_language_code
-        for row in target_rows
-        if row.target_language_code is not None
+        row.target_language_code for row in target_rows if row.target_language_code is not None
     }
     if not target_language_codes:
         return None
@@ -1048,7 +1057,8 @@ def _update_counts_and_schedule(
     session.commit()
     return AnalysisSchedule(
         conversation_id=conversation_id,
-        should_enqueue_analysis=bool(current_spec_ids) and participant_data.vote_count > 0,
+        # Empty vote matrices also need a terminal (insufficient-data) result.
+        should_enqueue_analysis=bool(current_spec_ids),
     )
 
 
@@ -1069,122 +1079,114 @@ def _current_opinion_group_spec_ids(session: Session) -> list[int]:
     return current_spec_ids
 
 
-def _is_analysis_terminal_for_import(
-    session: Session,
-    *,
-    conversation_id: int,
-) -> bool:
-    conversation_row = session.execute(
-        select(PolisConversationConfig.analysis_data_generation)
-        .join(Conversation, Conversation.polis_config_id == PolisConversationConfig.id)
-        .where(Conversation.id == conversation_id),
-    ).first()
-    if conversation_row is None:
-        return False
-
-    current_spec_ids = _current_opinion_group_spec_ids(session)
-    if not current_spec_ids:
-        return True
-
-    work_state_rows = session.execute(
-        select(
-            AnalysisWorkState.last_completed_data_generation,
-            AnalysisWorkState.non_retryable_generation,
-        ).where(
-            and_(
-                AnalysisWorkState.conversation_id == conversation_id,
-                AnalysisWorkState.opinion_group_spec_id.in_(current_spec_ids),
-            ),
-        ),
-    ).all()
-    if len(work_state_rows) != len(current_spec_ids):
-        return False
-
-    data_generation = conversation_row.analysis_data_generation
-    return all(
-        row.last_completed_data_generation >= data_generation
-        or (
-            row.non_retryable_generation is not None
-            and row.non_retryable_generation >= data_generation
-        )
-        for row in work_state_rows
-    )
-
-
-def complete_ready_imports(session: Session) -> list[ImportNotificationEvent]:
-    from import_worker.queue import ImportNotificationEvent
-
-    import_rows = session.execute(
+def _ready_imports_query() -> Select[tuple[int, str, uuid.UUID, int, str, str]]:
+    # The import is linked only after all ingestion phases have committed. Math
+    # requires is_importing=False, so publication must not wait for analysis.
+    return (
         select(
             ConversationImport.id,
             ConversationImport.slug_id,
             ConversationImport.user_id,
-            ConversationImport.conversation_id,
-            Conversation.slug_id.label("conversation_slug_id"),
-            ConversationContent.title.label("conversation_title"),
+            Conversation.id,
+            Conversation.slug_id,
+            ConversationContent.title,
         )
         .join(Conversation, Conversation.id == ConversationImport.conversation_id)
         .join(ConversationContent, ConversationContent.id == Conversation.current_content_id)
-        .where(
-            and_(
-                ConversationImport.status == "processing",
-                ConversationImport.conversation_id.is_not(None),
-            ),
-        ),
+        .where(ConversationImport.status == "processing")
+        .correlate(None)
+    )
+
+
+def _publish_import(
+    session: Session,
+    *,
+    import_id: int,
+    import_slug_id: str,
+    user_id: uuid.UUID,
+    conversation_id: int,
+    conversation_slug_id: str,
+    title: str,
+) -> ImportNotificationEvent:
+    # Both callers hold the processing import's writer-side row lock.
+    session.execute(
+        update(Conversation)
+        .where(Conversation.id == conversation_id)
+        .values(
+            is_importing=False,
+        )
+    )
+    session.execute(
+        update(ConversationImport)
+        .where(ConversationImport.id == import_id)
+        .values(
+            status="completed",
+            failure_reason=None,
+            updated_at=now_zero_ms(),
+        )
+    )
+    notification_slug_id, notification_created_at, notification_is_read = (
+        _create_import_notification(
+            session,
+            user_id=user_id,
+            import_id=import_id,
+            conversation_id=conversation_id,
+            notification_type=NotificationTypeEnum.import_completed,
+        )
+    )
+    return ImportNotificationEvent(
+        type="import_notification",
+        userId=str(user_id),
+        notificationSlugId=notification_slug_id,
+        notificationCreatedAt=notification_created_at,
+        notificationIsRead=notification_is_read,
+        importId=import_id,
+        importSlugId=import_slug_id,
+        conversationId=conversation_id,
+        conversationSlugId=conversation_slug_id,
+        conversationTitle=title,
+        failureReason=None,
+        broadcastNewConversation=True,
+    )
+
+
+def complete_ready_imports(session: Session) -> list[ImportNotificationEvent]:
+    ready_imports = _ready_imports_query()
+    import_ids = session.scalars(
+        ready_imports.with_only_columns(ConversationImport.id)
+        .order_by(ConversationImport.created_at, ConversationImport.id)
+        .limit(IMPORT_LIFECYCLE_BATCH_SIZE),
     ).all()
+    session.rollback()
     events: list[ImportNotificationEvent] = []
-    for row in import_rows:
-        conversation_id = row.conversation_id
-        if conversation_id is None or not _is_analysis_terminal_for_import(
-            session,
-            conversation_id=conversation_id,
-        ):
+    for import_id in import_ids:
+        # Recover one saved import at a time without holding locks across the
+        # rest of the sweep or blocking unrelated API status requests.
+        ready_import = (
+            session.execute(
+                ready_imports.where(ConversationImport.id == import_id).with_for_update(
+                    of=ConversationImport, skip_locked=True
+                ),
+            )
+            .tuples()
+            .first()
+        )
+        if ready_import is None:
+            session.rollback()
             continue
+        _, import_slug_id, user_id, conversation_id, conversation_slug_id, title = ready_import
 
-        now = now_zero_ms()
-        session.execute(
-            update(Conversation)
-            .where(Conversation.id == conversation_id)
-            .values(is_importing=False),
-        )
-        session.execute(
-            update(ConversationImport)
-            .where(ConversationImport.id == row.id)
-            .values(status="completed", updated_at=now),
-        )
-        (
-            notification_slug_id,
-            _,
-            notification_created_at,
-            notification_is_read,
-        ) = _create_import_notification(
+        event = _publish_import(
             session,
-            user_id=row.user_id,
-            import_id=row.id,
+            import_id=import_id,
+            import_slug_id=import_slug_id,
+            user_id=user_id,
             conversation_id=conversation_id,
-            notification_type="import_completed",
+            conversation_slug_id=conversation_slug_id,
+            title=title,
         )
-        events.append(
-            ImportNotificationEvent(
-                type="import_notification",
-                userId=str(row.user_id),
-                notificationSlugId=notification_slug_id,
-                notificationCreatedAt=notification_created_at,
-                notificationIsRead=notification_is_read,
-                importId=row.id,
-                importSlugId=row.slug_id,
-                conversationId=conversation_id,
-                conversationSlugId=row.conversation_slug_id,
-                conversationTitle=row.conversation_title,
-                failureReason=None,
-                broadcastNewConversation=True,
-            ),
-        )
-
-    if events:
         session.commit()
-    else:
-        session.rollback()
+        events.append(event)
     return events
 
 
@@ -1235,22 +1237,25 @@ def _delete_imported_conversation(
     session: Session,
     *,
     conversation_id: int,
-) -> None:
-    conversation_row = session.execute(
-        select(Conversation.current_content_id).where(Conversation.id == conversation_id),
-    ).first()
-    if conversation_row is None or conversation_row.current_content_id is None:
-        return
-    session.execute(
+) -> bool:
+    discarded_id = session.scalars(
         update(Conversation)
-        .where(Conversation.id == conversation_id)
-        .values(current_content_id=None),
-    )
+        .where(
+            Conversation.id == conversation_id,
+            Conversation.is_importing.is_(True),
+            Conversation.current_content_id.is_not(None),
+        )
+        .values(current_content_id=None)
+        .returning(Conversation.id),
+    ).first()
+    if discarded_id is None:
+        return False
     session.execute(
         update(Opinion)
         .where(Opinion.conversation_id == conversation_id)
         .values(current_content_id=None),
     )
+    return True
 
 
 def _create_import_notification(
@@ -1259,16 +1264,14 @@ def _create_import_notification(
     user_id: uuid.UUID,
     import_id: int,
     conversation_id: int | None,
-    notification_type: str,
-) -> tuple[str, int, datetime, bool]:
+    notification_type: NotificationTypeEnum,
+) -> tuple[str, datetime, bool]:
     notification_slug_id = generate_random_slug_id()
-    notification_row = session.execute(
+    notification_row = session.scalars(
         sqlalchemy_insert(Notification)
         .values(slug_id=notification_slug_id, user_id=user_id, notification_type=notification_type)
-        .returning(Notification.id, Notification.created_at, Notification.is_read),
-    ).first()
-    if notification_row is None:
-        raise RuntimeError("Failed to create import notification")
+        .returning(Notification),
+    ).one()
     session.execute(
         sqlalchemy_insert(NotificationImport).values(
             notification_id=notification_row.id,
@@ -1278,21 +1281,43 @@ def _create_import_notification(
     )
     return (
         notification_slug_id,
-        notification_row.id,
         database_timestamp_to_utc(notification_row.created_at),
         notification_row.is_read,
     )
 
 
-def _get_import_user_id(session: Session, *, import_slug_id: str) -> uuid.UUID:
-    row = session.execute(
-        select(ConversationImport.user_id).where(
+def _start_import(
+    session: Session,
+    *,
+    import_slug_id: str,
+    actor_user_id: uuid.UUID,
+) -> bool:
+    active_import_id = session.scalars(
+        update(ConversationImport)
+        .where(
             ConversationImport.slug_id == import_slug_id,
-        ),
+            ConversationImport.user_id == actor_user_id,
+            ConversationImport.status == "processing",
+            ConversationImport.conversation_id.is_(None),
+            ConversationImport.created_at > import_deadline_cutoff(),
+        )
+        .values(updated_at=now_zero_ms())
+        .returning(ConversationImport.id),
     ).first()
-    if row is None:
-        raise RuntimeError(f"Import record not found for {import_slug_id}")
-    return row.user_id
+    if active_import_id is None:
+        session.rollback()
+        return False
+    session.commit()
+    return True
+
+
+def _discard_imported_conversation(session: Session, *, conversation_id: int) -> None:
+    session.rollback()
+    # A lost commit acknowledgement must never discard an already-published
+    # conversation. The conditional ORM update only tombstones unpublished data.
+    if _delete_imported_conversation(session, conversation_id=conversation_id):
+        _soft_delete_imported_users_for_conversation(session, conversation_id=conversation_id)
+    session.commit()
 
 
 def google_detector_for_import(
@@ -1311,17 +1336,16 @@ def process_import_request(
     request: ImportRequest,
     google_detector: GoogleLanguageDetector | None = None,
     polis_fetch_timeout_seconds: float,
-) -> ImportProcessResult:
+) -> ImportProcessResult | None:
     conversation_id: int | None = None
     import_started_at = time.perf_counter()
     try:
-        import_user_id = _get_import_user_id(session, import_slug_id=request.import_slug_id)
-        if str(import_user_id) != request.actor_user_id:
-            raise RuntimeError(
-                f"Import actor mismatch for {request.import_slug_id}: "
-                f"payload actor {request.actor_user_id} does not match "
-                f"import owner {import_user_id}",
-            )
+        if not _start_import(
+            session,
+            import_slug_id=request.import_slug_id,
+            actor_user_id=request.actor_user_id,
+        ):
+            return None
 
         imported, polis_url_type = _build_imported_polis_conversation(
             request,
@@ -1341,8 +1365,7 @@ def process_import_request(
         )
         conversation_id = conversation_ids.conversation_id
         LOGGER.info(
-            "Created imported conversation importSlugId=%s conversationSlugId=%s "
-            "durationMs=%.1f",
+            "Created imported conversation importSlugId=%s conversationSlugId=%s durationMs=%.1f",
             request.import_slug_id,
             conversation_ids.conversation_slug_id,
             _elapsed_ms(phase_started_at),
@@ -1431,70 +1454,89 @@ def process_import_request(
         )
 
         phase_started_at = time.perf_counter()
-        session.execute(
+        finalized_import = session.scalars(
             update(ConversationImport)
-            .where(ConversationImport.slug_id == request.import_slug_id)
+            .where(
+                ConversationImport.slug_id == request.import_slug_id,
+                ConversationImport.status == "processing",
+                ConversationImport.conversation_id.is_(None),
+                ConversationImport.created_at > import_deadline_cutoff(),
+            )
             .values(
                 conversation_id=conversation_ids.conversation_id,
                 updated_at=now_zero_ms(),
-            ),
-        )
-        session.commit()
-        LOGGER.info(
-            "Finalized imported conversation row importSlugId=%s conversationSlugId=%s "
-            "durationMs=%.1f totalDurationMs=%.1f",
-            request.import_slug_id,
-            conversation_ids.conversation_slug_id,
-            _elapsed_ms(phase_started_at),
-            _elapsed_ms(import_started_at),
+            )
+            .returning(ConversationImport),
+        ).first()
+        if finalized_import is None:
+            _discard_imported_conversation(
+                session, conversation_id=conversation_ids.conversation_id
+            )
+            return None
+        notification = _publish_import(
+            session,
+            import_id=finalized_import.id,
+            import_slug_id=finalized_import.slug_id,
+            user_id=finalized_import.user_id,
+            conversation_id=conversation_ids.conversation_id,
+            conversation_slug_id=conversation_ids.conversation_slug_id,
+            title=conversation_ids.conversation_title,
         )
         analysis_queue_schedule = (
             AnalysisQueueSchedule(
                 conversation_id=conversation_ids.conversation_id,
                 conversation_slug_id=conversation_ids.conversation_slug_id,
-                enqueued_at_ms=int(now_zero_ms().timestamp() * 1000),
+                enqueued_at_ms=int(time.time() * 1000),
             )
             if schedule.should_enqueue_analysis
             else None
         )
-        return ImportProcessResult(
-            event=None,
+        result = ImportProcessResult(
+            notification=notification,
             analysis_schedule=analysis_queue_schedule,
             content_translation_schedule=content_translation_schedule,
         )
+        session.commit()
     except Exception:
-        session.rollback()
-        if conversation_id is not None:
-            _delete_imported_conversation(session, conversation_id=conversation_id)
-            _soft_delete_imported_users_for_conversation(session, conversation_id=conversation_id)
-            session.commit()
+        if conversation_id is None:
+            session.rollback()
+        else:
+            _discard_imported_conversation(session, conversation_id=conversation_id)
         raise
+
+    LOGGER.info(
+        "Finalized imported conversation row importSlugId=%s conversationSlugId=%s "
+        "durationMs=%.1f totalDurationMs=%.1f",
+        request.import_slug_id,
+        conversation_ids.conversation_slug_id,
+        _elapsed_ms(phase_started_at),
+        _elapsed_ms(import_started_at),
+    )
+    return result
 
 
 def mark_import_failed(
     session: Session,
     *,
     import_slug_id: str,
-    failure_reason: str,
+    user_id: uuid.UUID,
+    failure_reason: FailureReason,
 ) -> ImportNotificationEvent | None:
-    from import_worker.queue import ImportNotificationEvent
-
-    row = session.execute(
-        select(ConversationImport.id, ConversationImport.slug_id, ConversationImport.user_id).where(
+    row = session.scalars(
+        update(ConversationImport)
+        .where(
             ConversationImport.slug_id == import_slug_id,
-        ),
+            ConversationImport.user_id == user_id,
+            ConversationImport.status == "processing",
+        )
+        .values(status="failed", failure_reason=failure_reason, updated_at=now_zero_ms())
+        .returning(ConversationImport),
     ).first()
     if row is None:
         session.rollback()
         return None
-    session.execute(
-        update(ConversationImport)
-        .where(ConversationImport.slug_id == import_slug_id)
-        .values(status="failed", failure_reason=failure_reason, updated_at=now_zero_ms()),
-    )
     (
         notification_slug_id,
-        _,
         notification_created_at,
         notification_is_read,
     ) = _create_import_notification(
@@ -1502,7 +1544,7 @@ def mark_import_failed(
         user_id=row.user_id,
         import_id=row.id,
         conversation_id=None,
-        notification_type="import_failed",
+        notification_type=NotificationTypeEnum.import_failed,
     )
     session.commit()
     return ImportNotificationEvent(
@@ -1516,9 +1558,36 @@ def mark_import_failed(
         conversationId=None,
         conversationSlugId=None,
         conversationTitle=None,
-        failureReason=FailureReason(failure_reason),
+        failureReason=failure_reason,
         broadcastNewConversation=False,
     )
+
+
+def import_deadline_cutoff() -> datetime:
+    return datetime.fromtimestamp(
+        (datetime.now(UTC).timestamp() * 1000 - MAX_CONVERSATION_IMPORT_DURATION_MS) / 1000,
+        UTC,
+    ).replace(tzinfo=None)
+
+
+def heartbeat_imports(session: Session, *, imports: frozenset[ImportIdentity]) -> None:
+    if not imports:
+        return
+    # Commit heartbeats separately from global expiry. Otherwise two workers can
+    # each lock their own live import and then wait for the other's stale row.
+    session.execute(
+        update(ConversationImport)
+        .where(
+            ConversationImport.status == "processing",
+            ConversationImport.conversation_id.is_(None),
+            tuple_(ConversationImport.slug_id, ConversationImport.user_id).in_(
+                [(item.slug_id, item.user_id) for item in imports],
+            ),
+            ConversationImport.created_at > import_deadline_cutoff(),
+        )
+        .values(updated_at=now_zero_ms()),
+    )
+    session.commit()
 
 
 def cleanup_stale_imports(
@@ -1526,40 +1595,45 @@ def cleanup_stale_imports(
     *,
     stale_threshold_ms: int,
 ) -> list[ImportNotificationEvent]:
-    from import_worker.queue import ImportNotificationEvent
-
     stale_before = datetime.fromtimestamp(
         (datetime.now(UTC).timestamp() * 1000 - stale_threshold_ms) / 1000,
         UTC,
     ).replace(tzinfo=None)
-    stale_rows = session.execute(
-        select(ConversationImport.id, ConversationImport.slug_id, ConversationImport.user_id).where(
-            and_(
-                ConversationImport.status == "processing",
-                ConversationImport.conversation_id.is_(None),
-                ConversationImport.updated_at < stale_before,
-            ),
-        ),
-    ).all()
-    if not stale_rows:
-        return []
-
-    session.execute(
-        update(ConversationImport)
+    # The hard deadline bounds queueing and ingestion, even if a local job hangs.
+    # Live work has committed owner-scoped heartbeats before this sweep.
+    # Ready imports may be waiting for the next bounded completion batch. Keep
+    # them available for publication instead of timing them out in this sweep.
+    ready_import_ids = _ready_imports_query().with_only_columns(ConversationImport.id)
+    stale_import_ids = (
+        select(ConversationImport.id)
         .where(
-            and_(
-                ConversationImport.status == "processing",
-                ConversationImport.conversation_id.is_(None),
-                ConversationImport.updated_at < stale_before,
+            ConversationImport.status == "processing",
+            ConversationImport.id.not_in(ready_import_ids),
+            or_(
+                ConversationImport.created_at <= import_deadline_cutoff(),
+                and_(
+                    ConversationImport.conversation_id.is_(None),
+                    # Queue creation sets both timestamps equally. Only an
+                    # observed ingestion heartbeat justifies early orphan expiry.
+                    ConversationImport.updated_at > ConversationImport.created_at,
+                    ConversationImport.updated_at < stale_before,
+                ),
             ),
         )
-        .values(status="failed", failure_reason="timeout", updated_at=now_zero_ms()),
+        .order_by(ConversationImport.created_at)
+        .limit(IMPORT_LIFECYCLE_BATCH_SIZE)
+        .with_for_update(skip_locked=True)
     )
+    stale_rows = session.scalars(
+        update(ConversationImport)
+        .where(ConversationImport.id.in_(stale_import_ids))
+        .values(status="failed", failure_reason="timeout", updated_at=now_zero_ms())
+        .returning(ConversationImport),
+    ).all()
     events: list[ImportNotificationEvent] = []
     for row in stale_rows:
         (
             notification_slug_id,
-            _,
             notification_created_at,
             notification_is_read,
         ) = _create_import_notification(
@@ -1567,7 +1641,7 @@ def cleanup_stale_imports(
             user_id=row.user_id,
             import_id=row.id,
             conversation_id=None,
-            notification_type="import_failed",
+            notification_type=NotificationTypeEnum.import_failed,
         )
         events.append(
             ImportNotificationEvent(

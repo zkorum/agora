@@ -31,6 +31,9 @@ export const PEPPER_VERSION = 0;
 export const MAX_CONVERSATION_LANGUAGE_DETECTION_BODY_CHARS = 1000;
 export const MIN_CONVERSATION_LANGUAGE_DETECTION_CHARS = 2;
 
+// Includes queueing and data ingestion; analysis runs after publication.
+export const MAX_CONVERSATION_IMPORT_DURATION_MS = 3600000;
+
 export function toUnionUndefined<T>(
     value: T | null | undefined,
 ): T | undefined {
