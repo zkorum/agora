@@ -32,19 +32,40 @@ describe("API request language", () => {
     expect(headers.get("Accept-Language")).toBe("fr");
   });
 
-  it("uses browser-family detection when no supported preference is saved", async () => {
-    localStorage.setItem("displayLanguage", "not-a-language");
-    const options = new Intl.DateTimeFormat().resolvedOptions();
-    vi.spyOn(Intl.DateTimeFormat.prototype, "resolvedOptions").mockReturnValue({
-      ...options,
-      locale: "fr",
-    });
-    vi.spyOn(navigator, "userAgent", "get").mockReturnValue("Chrome/142.0.0.0");
-    vi.spyOn(navigator, "languages", "get").mockReturnValue(["en-US"]);
-    expect(
-      (await inspectRequestHeaders(undefined)).get("Accept-Language")
-    ).toBe("fr");
-  });
+  it.each([
+    { userAgent: "Chrome/142.0.0.0", expectedLanguage: "en" },
+    { userAgent: "Firefox/145.0", expectedLanguage: "en" },
+    {
+      userAgent: "Mozilla/5.0 (Linux; Android 15) Chrome/142.0.0.0",
+      expectedLanguage: "fr",
+    },
+    {
+      userAgent: "Mozilla/5.0 (Android 15; Mobile) Firefox/145.0",
+      expectedLanguage: "fr",
+    },
+    {
+      userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 26_0) CriOS/142.0.0.0",
+      expectedLanguage: "en",
+    },
+  ])(
+    "uses the platform language policy without a supported saved preference: $userAgent",
+    async ({ userAgent, expectedLanguage }) => {
+      localStorage.setItem("displayLanguage", "not-a-language");
+      const options = new Intl.DateTimeFormat().resolvedOptions();
+      vi.spyOn(
+        Intl.DateTimeFormat.prototype,
+        "resolvedOptions"
+      ).mockReturnValue({
+        ...options,
+        locale: "fr",
+      });
+      vi.spyOn(navigator, "userAgent", "get").mockReturnValue(userAgent);
+      vi.spyOn(navigator, "languages", "get").mockReturnValue(["en-US"]);
+      expect(
+        (await inspectRequestHeaders(undefined)).get("Accept-Language")
+      ).toBe(expectedLanguage);
+    }
+  );
 
   it("snapshots the effective language at request creation, not after a later change", async () => {
     setApiDisplayLanguage("fr");
