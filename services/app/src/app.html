@@ -63,7 +63,7 @@
         }
 
         function detectBrowserLocale() {
-          const languages = navigator.languages || [navigator.language || ""];
+          const languages = [...navigator.languages, navigator.language];
           for (const language of languages) {
             const locale = parseSupportedLocale(language);
             if (locale) return locale;
@@ -79,9 +79,11 @@
           } catch (_) {
             // Storage can be unavailable in private or embedded browsing.
           }
-          return (
-            detectDeviceLocale() || detectBrowserLocale() || DEFAULT_LOCALE
-          );
+          // Product policy: only Android prefers Intl; desktop and iOS/iPadOS
+          // prefer website languages, regardless of browser brand.
+          return /\bAndroid\b/i.test(navigator.userAgent)
+            ? detectDeviceLocale() || detectBrowserLocale() || DEFAULT_LOCALE
+            : detectBrowserLocale() || detectDeviceLocale() || DEFAULT_LOCALE;
         }
 
         function handleLanguageRedirect() {

@@ -159,22 +159,6 @@ function firstSupportedDisplayLanguage(
   return undefined;
 }
 
-export function resolveInitialDisplayLanguage({
-  storedLanguage,
-  browserLanguages,
-  conversationLanguage,
-}: {
-  storedLanguage: string | null | undefined;
-  browserLanguages: readonly string[];
-  conversationLanguage?: SupportedDisplayLanguageCodes;
-}): SupportedDisplayLanguageCodes {
-  return resolveDisplayLanguage({
-    storedLanguage: firstSupportedDisplayLanguage([storedLanguage]),
-    browserLanguage: firstSupportedDisplayLanguage(browserLanguages),
-    conversationLanguage,
-  });
-}
-
 export function resolveDisplayLanguage({
   storedLanguage,
   browserLanguage,
@@ -187,21 +171,38 @@ export function resolveDisplayLanguage({
   return storedLanguage ?? browserLanguage ?? conversationLanguage ?? "en";
 }
 
-function browserDisplayLanguageCandidates(): readonly string[] {
-  const formattingLocale = new Intl.DateTimeFormat().resolvedOptions().locale;
-  const preferredLanguages = [...navigator.languages, navigator.language];
-  // Chromium derivatives share Chrome/Chromium tokens; iOS CriOS is WebKit.
-  // Prefer their runtime locale when website-language preferences lag behind
-  // the interface language or are reduced by fingerprinting protection.
-  return /\b(?:Chrome|Chromium)\//.test(navigator.userAgent)
-    ? [formattingLocale, ...preferredLanguages]
-    : [...preferredLanguages, formattingLocale];
+function detectPreferredBrowserDisplayLanguage():
+  | SupportedDisplayLanguageCodes
+  | undefined {
+  return firstSupportedDisplayLanguage([
+    ...navigator.languages,
+    navigator.language,
+  ]);
+}
+
+function detectFormattingDisplayLanguage():
+  | SupportedDisplayLanguageCodes
+  | undefined {
+  try {
+    return parseSupportedDisplayLanguageOrUndefined(
+      new Intl.DateTimeFormat().resolvedOptions().locale
+    );
+  } catch {
+    // A failed browser signal must not prevent trying the remaining defaults.
+    return undefined;
+  }
 }
 
 export function detectBrowserDisplayLanguage():
   | SupportedDisplayLanguageCodes
   | undefined {
-  return firstSupportedDisplayLanguage(browserDisplayLanguageCandidates());
+  // Product policy: only Android prefers Intl; desktop and iOS/iPadOS
+  // prefer website languages, regardless of browser brand.
+  return /\bAndroid\b/i.test(navigator.userAgent)
+    ? (detectFormattingDisplayLanguage() ??
+        detectPreferredBrowserDisplayLanguage())
+    : (detectPreferredBrowserDisplayLanguage() ??
+        detectFormattingDisplayLanguage());
 }
 
 export function detectInitialDisplayLanguage({
@@ -209,10 +210,11 @@ export function detectInitialDisplayLanguage({
 }: {
   storedLanguage: string | null | undefined;
 }): SupportedDisplayLanguageCodes {
-  return resolveInitialDisplayLanguage({
-    storedLanguage,
-    browserLanguages: browserDisplayLanguageCandidates(),
-  });
+  return (
+    firstSupportedDisplayLanguage([storedLanguage]) ??
+    detectBrowserDisplayLanguage() ??
+    "en"
+  );
 }
 
 /**
