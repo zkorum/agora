@@ -1,5 +1,6 @@
 // Import only English translations for initial load
 import { Lang, type QuasarLanguage } from "quasar";
+import enUS from "quasar/lang/en-US";
 import en from "src/i18n/en";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import {
@@ -8,8 +9,6 @@ import {
   ZodSupportedDisplayLanguageCodes,
 } from "src/shared/languages";
 import { detectInitialDisplayLanguage } from "src/utils/language";
-import { nextTick } from "vue";
-import type { I18n } from "vue-i18n";
 import { createI18n } from "vue-i18n";
 
 import { defineBoot } from "#q-app/wrappers";
@@ -18,150 +17,48 @@ export type MessageLanguages = SupportedDisplayLanguageCodes;
 // Type-define 'en' as the master schema for the resource
 export type MessageSchema = typeof en;
 
-// See https://vue-i18n.intlify.dev/guide/advanced/typescript.html#global-resource-schema-type-definition
-/* eslint-disable @typescript-eslint/no-empty-object-type */
-declare module "vue-i18n" {
-  // define the locale messages schema
-  export interface DefineLocaleMessage extends MessageSchema {}
+const localeMessageImports = {
+  en: () => Promise.resolve({ default: en }),
+  ar: () => import("../i18n/ar/index"),
+  es: () => import("../i18n/es/index"),
+  fa: () => import("../i18n/fa/index"),
+  fr: () => import("../i18n/fr/index"),
+  he: () => import("../i18n/he/index"),
+  ja: () => import("../i18n/ja/index"),
+  ky: () => import("../i18n/ky/index"),
+  ru: () => import("../i18n/ru/index"),
+  "zh-Hans": () => import("../i18n/zh-Hans/index"),
+  "zh-Hant": () => import("../i18n/zh-Hant/index"),
+} satisfies Record<MessageLanguages, () => Promise<{ default: MessageSchema }>>;
 
-  // define the datetime format schema
-  export interface DefineDateTimeFormat {}
+const LOCALE_LOAD_TIMEOUT_MS = 500;
 
-  // define the number format schema
-  export interface DefineNumberFormat {}
-}
-/* eslint-enable @typescript-eslint/no-empty-object-type */
-
-// Global i18n instance reference
-let i18nInstance: I18n<
-  { message: MessageSchema },
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-  {},
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-  {},
-  MessageLanguages,
-  false
-> | null = null;
-
-/**
- * Set the i18n language and update HTML lang attribute.
- * Also loads the corresponding Quasar language pack so that $q.lang.rtl
- * is set correctly — Quasar's layout components (QDrawer, QLayout, etc.)
- * rely on this flag for RTL positioning.
- */
-function getQuasarLangImport(
-  locale: string
-): Promise<{ default: QuasarLanguage }> {
-  switch (locale) {
-    case "ar":
-      return import("quasar/lang/ar");
-    case "fa":
-      return import("quasar/lang/fa");
-    case "he":
-      return import("quasar/lang/he");
-    default:
-      return import("quasar/lang/en-US");
-  }
-}
-
-async function loadQuasarLangPack(locale: MessageLanguages): Promise<void> {
+async function withinLocaleDeadline<T>(promise: Promise<T>): Promise<T> {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
   try {
-    const langPack = await getQuasarLangImport(locale);
-    Lang.set(langPack.default);
-  } catch (error) {
-    console.error(
-      `[i18n] Failed to load Quasar lang pack for "${locale}"`,
-      error
-    );
+    return await Promise.race([
+      promise,
+      new Promise<never>((_, reject) => {
+        timeout = setTimeout(() => {
+          reject(new Error("Language resource loading timed out"));
+        }, LOCALE_LOAD_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
-export function setI18nLanguage(locale: MessageLanguages): void {
-  if (!i18nInstance) return;
-
-  // @ts-expect-error: locale type issue with lazy loading
-  i18nInstance.global.locale.value = locale;
-
-  /**
-   * NOTE:
-   * If you need to specify the language setting for headers, such as the `fetch` API, set it here.
-   * The following is an example for axios.
-   *
-   * axios.defaults.headers.common['Accept-Language'] = locale
-   */
-  const htmlEl = document.querySelector("html");
-  if (htmlEl) {
-    htmlEl.setAttribute("lang", locale);
-    htmlEl.setAttribute("dir", getLanguageTextDirection(locale));
+// See https://vue-i18n.intlify.dev/guide/advanced/typescript.html#global-resource-schema-type-definition
+declare module "vue-i18n" {
+  export interface DefineLocaleMessage {
+    common: MessageSchema["common"];
+    [key: string]: MessageSchema[string];
   }
-
-  void loadQuasarLangPack(locale);
 }
 
-/**
- * Load locale messages dynamically using dynamic imports
- */
-export async function loadLocaleMessages(
-  locale: MessageLanguages
-): Promise<void> {
-  if (!i18nInstance) return;
-
-  // Check if already loaded
-  // @ts-expect-error: availableLocales type issue with lazy loading
-  if (i18nInstance.global.availableLocales.includes(locale)) {
-    return;
-  }
-
-  // Retry up to 3 times with delay — dynamic imports can fail after deployments
-  // when old chunk filenames no longer exist on the server
-  let lastError: unknown;
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      const messages = await import(
-        /* webpackChunkName: "locale-[request]" */
-        /* vite-chunk-name: "locale-[request]" */
-        `../i18n/${locale}/index.ts`
-      );
-
-      i18nInstance.global.setLocaleMessage(locale, messages.default);
-      return nextTick();
-    } catch (error) {
-      lastError = error;
-      if (attempt < 2) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-      }
-    }
-  }
-
-  console.error(
-    `[i18n] Failed to load locale "${locale}" after 3 attempts, falling back to English`,
-    lastError
-  );
-  setI18nLanguage("en");
-}
-
-/**
- * Get the i18n instance (for use in stores and composables)
- */
-export function getI18nInstance(): I18n<
-  { message: MessageSchema },
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-  {},
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-  {},
-  MessageLanguages,
-  false
-> | null {
-  return i18nInstance;
-}
-
-export default defineBoot(async ({ app }) => {
-  // Stored app preference wins; otherwise follow the browser's website-language preferences.
-  const storedLocale = localStorage.getItem("displayLanguage");
-  const defaultLocale = detectInitialDisplayLanguage({
-    storedLanguage: storedLocale,
-  });
-
+function createAppI18n() {
+  const messages: Partial<Record<MessageLanguages, MessageSchema>> = { en };
   const fallbackLocale = Object.fromEntries(
     ZodSupportedDisplayLanguageCodes.options.map((languageCode) => [
       languageCode,
@@ -170,44 +67,121 @@ export default defineBoot(async ({ app }) => {
       ),
     ])
   );
-
-  // Await Quasar lang pack so $q.lang.rtl is set before first render.
-  // This prevents QPageContainer/QDrawer from applying padding on the wrong side.
-  await loadQuasarLangPack(defaultLocale);
-
-  // Create i18n instance with only English loaded initially
-  const i18n = createI18n<{ message: MessageSchema }, MessageLanguages>({
-    locale: defaultLocale,
+  return createI18n({
+    locale: "en",
     fallbackLocale,
     legacy: false,
-    // @ts-expect-error: Only English loaded initially, others loaded lazily
-    messages: {
-      en, // Only English is loaded initially
-    },
+    messages,
+  });
+}
+
+let i18nInstance: ReturnType<typeof createAppI18n> | undefined;
+const preparedQuasarPacks = new Map<MessageLanguages, QuasarLanguage>([
+  ["en", enUS],
+]);
+const localeLoads = new Map<MessageLanguages, Promise<void>>();
+const failedLocales = new Set<MessageLanguages>();
+
+export function hasFailedLocaleLoad(locale: MessageLanguages): boolean {
+  return failedLocales.has(locale);
+}
+
+function getQuasarLangImport(
+  locale: MessageLanguages
+): Promise<{ default: QuasarLanguage }> {
+  switch (locale) {
+    case "ar":
+      return import("quasar/lang/ar");
+    case "fa":
+      return import("quasar/lang/fa");
+    case "he":
+      return import("quasar/lang/he");
+    case "en":
+      return Promise.resolve({ default: enUS });
+    case "es":
+      return import("quasar/lang/es");
+    case "fr":
+      return import("quasar/lang/fr");
+    case "ja":
+      return import("quasar/lang/ja");
+    // Quasar has no Kyrgyz pack; use Russian for its built-in controls only.
+    case "ky":
+    case "ru":
+      return import("quasar/lang/ru");
+    case "zh-Hans":
+      return import("quasar/lang/zh-CN");
+    case "zh-Hant":
+      return import("quasar/lang/zh-TW");
+  }
+}
+
+export function setI18nLanguage(locale: MessageLanguages): void {
+  const pack = preparedQuasarPacks.get(locale);
+  if (i18nInstance === undefined || pack === undefined) return;
+  // Applying a prepared language is synchronous: messages, Quasar RTL state,
+  // and document direction cannot diverge while another import is pending.
+  i18nInstance.global.locale.value = locale;
+  Lang.set(pack);
+  document.documentElement.lang = locale;
+  document.documentElement.dir = getLanguageTextDirection(locale);
+}
+
+export async function loadLocaleResources(
+  locale: MessageLanguages
+): Promise<void> {
+  const instance = i18nInstance;
+  if (instance === undefined || preparedQuasarPacks.has(locale)) return;
+  const pending = localeLoads.get(locale);
+  if (pending !== undefined) return await pending;
+
+  const loading = (async () => {
+    try {
+      // Share one deadline and install neither resource after a timeout/failure.
+      const [messages, pack] = await withinLocaleDeadline(
+        Promise.all([
+          localeMessageImports[locale](),
+          getQuasarLangImport(locale),
+        ])
+      );
+      instance.global.setLocaleMessage(locale, messages.default);
+      preparedQuasarPacks.set(locale, pack.default);
+      failedLocales.delete(locale);
+    } catch (error) {
+      failedLocales.add(locale);
+      throw error;
+    } finally {
+      localeLoads.delete(locale);
+    }
+  })();
+  localeLoads.set(locale, loading);
+  await loading;
+}
+
+/**
+ * Get the i18n instance (for use in stores and composables)
+ */
+export function getI18nInstance() {
+  return i18nInstance;
+}
+
+export default defineBoot(async ({ app }) => {
+  // Saved preferences win; browser-family detection supplies the initial default.
+  const storedLocale = localStorage.getItem("displayLanguage");
+  const defaultLocale = detectInitialDisplayLanguage({
+    storedLanguage: storedLocale,
   });
 
-  // Store reference for helper functions
-  // @ts-expect-error: Type inference issue with lazy loading
+  const i18n = createAppI18n();
   i18nInstance = i18n;
 
-  // Load the initial locale if it's not English.
-  // Fire-and-forget: the app renders immediately with English fallback strings,
-  // then updates when the locale messages finish loading.
-  if (defaultLocale !== "en") {
-    void (async () => {
-      try {
-        await loadLocaleMessages(defaultLocale);
-        setI18nLanguage(defaultLocale);
-      } catch (error) {
-        console.error(
-          "[i18n] Failed to load initial locale, using English",
-          error
-        );
-        setI18nLanguage("en");
-      }
-    })();
-  } else {
+  // Load both resources concurrently: the initial language decision takes at
+  // most one short deadline, not two sequential waits. RTL is ready before mount.
+  try {
+    await loadLocaleResources(defaultLocale);
     setI18nLanguage(defaultLocale);
+  } catch (error) {
+    console.error("[i18n] Failed to load initial locale, using English", error);
+    setI18nLanguage("en");
   }
 
   // Set i18n instance on app

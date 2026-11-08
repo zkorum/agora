@@ -1,6 +1,7 @@
 import type { ApiV1UserLanguagePreferencesUpdatePostRequest } from "src/api";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+import type { UpdateLanguagePreferencesRequest } from "src/shared/types/dto";
 import {
   type LanguagePreferences as LanguagePreferencesData,
   zodLanguagePreferences,
@@ -73,7 +74,7 @@ export function useBackendLanguageApi() {
   async function updateLanguagePreferences({
     spokenLanguages,
     displayLanguage,
-  }: LanguagePreferencesData): Promise<UpdateLanguagePreferencesResponse> {
+  }: UpdateLanguagePreferencesRequest): Promise<UpdateLanguagePreferencesResponse> {
     try {
       const params: ApiV1UserLanguagePreferencesUpdatePostRequest = {
         spokenLanguages: spokenLanguages,

@@ -4,6 +4,7 @@ import {
   DefaultApiFactory,
 } from "src/api";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import type {
   ConversationLanguageSettingsSource,
   CreateNewConversationRequest,
@@ -85,10 +86,12 @@ export function useBackendPostApi() {
   async function fetchConversationBySlugIdWithDisplayContent({
     postSlugId,
     loadPersonalizedData,
+    displayLanguage,
     signal,
   }: {
     postSlugId: string;
     loadPersonalizedData: boolean;
+    displayLanguage: SupportedDisplayLanguageCodes;
     signal?: AbortSignal;
   }): Promise<FetchConversationBySlugIdResult> {
     try {
@@ -97,23 +100,25 @@ export function useBackendPostApi() {
       } satisfies z.input<typeof Dto.getConversationRequest>);
       const url = "/api/v1/conversation/get";
       const options = { method: "POST" };
-      if (!loadPersonalizedData) {
-        const response = await api.post<unknown>(url, params, { signal });
-        const data = Dto.getConversationResponse.parse(response.data);
-
-        return await handleGetConversationResponse(data);
-      } else {
-        const encodedUcan = await buildEncodedUcan(url, options);
-        const response = await api.post<unknown>(url, params, {
-          signal,
-          headers: {
-            ...buildAuthorizationHeader(encodedUcan),
-          },
-        });
-        const data = Dto.getConversationResponse.parse(response.data);
-
-        return await handleGetConversationResponse(data);
+      const authorizationHeaders = loadPersonalizedData
+        ? buildAuthorizationHeader(await buildEncodedUcan(url, options))
+        : {};
+      const response = await api.post<unknown>(url, params, {
+        signal,
+        headers: {
+          ...authorizationHeaders,
+          "Accept-Language": displayLanguage,
+        },
+      });
+      if (signal?.aborted) {
+        // In particular, an obsolete import response must not redirect the page.
+        throw new DOMException(
+          "Conversation request was aborted",
+          "AbortError"
+        );
       }
+      const data = Dto.getConversationResponse.parse(response.data);
+      return await handleGetConversationResponse(data);
     } catch (error) {
       if (axiosInstance.isAxiosError(error) && error.status === 404) {
         const conversationNotFoundMessage = t("conversationNotFound");

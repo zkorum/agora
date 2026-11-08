@@ -72,18 +72,19 @@ describe("initial display language", () => {
     "follows website preferences even when Intl defaults to $intlLocale",
     ({ intlLocale, browserLanguages, expectedLanguage }) => {
       const formattingOptions = new Intl.DateTimeFormat().resolvedOptions();
-      const formattingLocale = vi
-        .spyOn(Intl.DateTimeFormat.prototype, "resolvedOptions")
-        .mockReturnValue({
-          ...formattingOptions,
-          locale: intlLocale,
-        });
+      vi.spyOn(navigator, "userAgent", "get").mockReturnValue("Firefox/145.0");
+      vi.spyOn(
+        Intl.DateTimeFormat.prototype,
+        "resolvedOptions"
+      ).mockReturnValue({
+        ...formattingOptions,
+        locale: intlLocale,
+      });
       vi.spyOn(navigator, "languages", "get").mockReturnValue(browserLanguages);
 
       expect(detectInitialDisplayLanguage({ storedLanguage: undefined })).toBe(
         expectedLanguage
       );
-      expect(formattingLocale).not.toHaveBeenCalled();
     }
   );
 
@@ -94,5 +95,101 @@ describe("initial display language", () => {
     expect(detectInitialDisplayLanguage({ storedLanguage: undefined })).toBe(
       "es"
     );
+  });
+
+  it.each([
+    "Chrome/142.0.0.0 Safari/537.36",
+    "Chromium/142.0.0.0",
+    "Chrome/142.0.0.0 Edg/142.0.0.0",
+    "Chrome/142.0.0.0 OPR/124.0.0.0",
+    "Mozilla/5.0 (Linux; Android 10; K) Chrome/142.0.0.0 Mobile Safari/537.36",
+  ])("prefers the runtime locale on Chromium: %s", (userAgent) => {
+    const options = new Intl.DateTimeFormat().resolvedOptions();
+    vi.spyOn(Intl.DateTimeFormat.prototype, "resolvedOptions").mockReturnValue({
+      ...options,
+      locale: "fr",
+    });
+    vi.spyOn(navigator, "userAgent", "get").mockReturnValue(userAgent);
+    vi.spyOn(navigator, "languages", "get").mockReturnValue(["en-US"]);
+
+    expect(detectInitialDisplayLanguage({ storedLanguage: undefined })).toBe(
+      "fr"
+    );
+    expect(detectInitialDisplayLanguage({ storedLanguage: "es" })).toBe("es");
+  });
+
+  it.each([
+    "Firefox/145.0",
+    "AppleWebKit/605.1.15 Version/26.0 Safari/605.1.15",
+    "AppleWebKit/605.1.15 CriOS/142.0.0.0 Mobile Safari/604.1",
+    "",
+  ])("prefers website languages on non-Chromium: %s", (userAgent) => {
+    const options = new Intl.DateTimeFormat().resolvedOptions();
+    vi.spyOn(Intl.DateTimeFormat.prototype, "resolvedOptions").mockReturnValue({
+      ...options,
+      locale: "en-US",
+    });
+    vi.spyOn(navigator, "userAgent", "get").mockReturnValue(userAgent);
+    vi.spyOn(navigator, "languages", "get").mockReturnValue(["de-DE", "fr-FR"]);
+
+    expect(detectInitialDisplayLanguage({ storedLanguage: undefined })).toBe(
+      "fr"
+    );
+  });
+
+  it.each(["Chrome/142.0.0.0", "Firefox/145.0"])(
+    "tries every browser fallback before English on %s",
+    (userAgent) => {
+      const options = new Intl.DateTimeFormat().resolvedOptions();
+      vi.spyOn(navigator, "userAgent", "get").mockReturnValue(userAgent);
+      vi.spyOn(
+        Intl.DateTimeFormat.prototype,
+        "resolvedOptions"
+      ).mockReturnValue({
+        ...options,
+        locale: "de-DE",
+      });
+      vi.spyOn(navigator, "languages", "get").mockReturnValue(["it-IT"]);
+      vi.spyOn(navigator, "language", "get").mockReturnValue("es-AR");
+      expect(detectInitialDisplayLanguage({ storedLanguage: undefined })).toBe(
+        "es"
+      );
+
+      vi.spyOn(navigator, "language", "get").mockReturnValue("it-IT");
+      vi.spyOn(
+        Intl.DateTimeFormat.prototype,
+        "resolvedOptions"
+      ).mockReturnValue({
+        ...options,
+        locale: "fr-FR",
+      });
+      expect(detectInitialDisplayLanguage({ storedLanguage: undefined })).toBe(
+        "fr"
+      );
+    }
+  );
+
+  it("tries the conversation before English, never ahead of a supported saved/browser choice", () => {
+    expect(
+      resolveInitialDisplayLanguage({
+        storedLanguage: undefined,
+        browserLanguages: ["de-DE"],
+        conversationLanguage: "fr",
+      })
+    ).toBe("fr");
+    expect(
+      resolveInitialDisplayLanguage({
+        storedLanguage: "es",
+        browserLanguages: ["de-DE"],
+        conversationLanguage: "fr",
+      })
+    ).toBe("es");
+    expect(
+      resolveInitialDisplayLanguage({
+        storedLanguage: undefined,
+        browserLanguages: ["en-US"],
+        conversationLanguage: "fr",
+      })
+    ).toBe("en");
   });
 });

@@ -142,14 +142,9 @@ export function parseBrowserLanguage({
   };
 }
 
-export function resolveInitialDisplayLanguage({
-  storedLanguage,
-  browserLanguages,
-}: {
-  storedLanguage: string | null | undefined;
-  browserLanguages: readonly string[];
-}): SupportedDisplayLanguageCodes {
-  const candidates = [storedLanguage, ...browserLanguages];
+function firstSupportedDisplayLanguage(
+  candidates: readonly (string | null | undefined)[]
+): SupportedDisplayLanguageCodes | undefined {
   for (const candidate of candidates) {
     if (candidate === null || candidate === undefined) {
       continue;
@@ -161,7 +156,52 @@ export function resolveInitialDisplayLanguage({
     }
   }
 
-  return "en";
+  return undefined;
+}
+
+export function resolveInitialDisplayLanguage({
+  storedLanguage,
+  browserLanguages,
+  conversationLanguage,
+}: {
+  storedLanguage: string | null | undefined;
+  browserLanguages: readonly string[];
+  conversationLanguage?: SupportedDisplayLanguageCodes;
+}): SupportedDisplayLanguageCodes {
+  return resolveDisplayLanguage({
+    storedLanguage: firstSupportedDisplayLanguage([storedLanguage]),
+    browserLanguage: firstSupportedDisplayLanguage(browserLanguages),
+    conversationLanguage,
+  });
+}
+
+export function resolveDisplayLanguage({
+  storedLanguage,
+  browserLanguage,
+  conversationLanguage,
+}: {
+  storedLanguage: SupportedDisplayLanguageCodes | undefined;
+  browserLanguage: SupportedDisplayLanguageCodes | undefined;
+  conversationLanguage: SupportedDisplayLanguageCodes | undefined;
+}): SupportedDisplayLanguageCodes {
+  return storedLanguage ?? browserLanguage ?? conversationLanguage ?? "en";
+}
+
+function browserDisplayLanguageCandidates(): readonly string[] {
+  const formattingLocale = new Intl.DateTimeFormat().resolvedOptions().locale;
+  const preferredLanguages = [...navigator.languages, navigator.language];
+  // Chromium derivatives share Chrome/Chromium tokens; iOS CriOS is WebKit.
+  // Prefer their runtime locale when website-language preferences lag behind
+  // the interface language or are reduced by fingerprinting protection.
+  return /\b(?:Chrome|Chromium)\//.test(navigator.userAgent)
+    ? [formattingLocale, ...preferredLanguages]
+    : [...preferredLanguages, formattingLocale];
+}
+
+export function detectBrowserDisplayLanguage():
+  | SupportedDisplayLanguageCodes
+  | undefined {
+  return firstSupportedDisplayLanguage(browserDisplayLanguageCandidates());
 }
 
 export function detectInitialDisplayLanguage({
@@ -169,12 +209,9 @@ export function detectInitialDisplayLanguage({
 }: {
   storedLanguage: string | null | undefined;
 }): SupportedDisplayLanguageCodes {
-  const browserLanguages =
-    navigator.languages.length > 0 ? navigator.languages : [navigator.language];
-
   return resolveInitialDisplayLanguage({
     storedLanguage,
-    browserLanguages,
+    browserLanguages: browserDisplayLanguageCandidates(),
   });
 }
 

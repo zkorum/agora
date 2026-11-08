@@ -1,23 +1,29 @@
 import { useLocalStorage } from "@vueuse/core";
 import { defineStore } from "pinia";
-import { loadLocaleMessages, setI18nLanguage } from "src/boot/i18n";
+import {
+  hasFailedLocaleLoad,
+  loadLocaleResources,
+  setI18nLanguage,
+} from "src/boot/i18n";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
   SupportedDisplayLanguageCodes,
   SupportedSpokenLanguageCodes,
 } from "src/shared/languages";
 import { parseSupportedDisplayLanguageOrUndefined } from "src/shared/languages";
+import type { UpdateLanguagePreferencesRequest } from "src/shared/types/dto";
 import type { LanguagePreferences } from "src/shared/types/zod";
-import { zodLanguagePreferences } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { setApiDisplayLanguage } from "src/utils/api/client";
 import { isNetworkError } from "src/utils/api/common";
 import { useBackendLanguageApi } from "src/utils/api/language";
 import {
-  detectInitialDisplayLanguage,
+  detectBrowserDisplayLanguage,
   parseBrowserLanguage,
+  resolveDisplayLanguage,
 } from "src/utils/language";
 import { useNotify } from "src/utils/ui/notify";
-import { computed, ref } from "vue";
+import { computed, onScopeDispose, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import {
@@ -25,11 +31,7 @@ import {
   languageStoreTranslations,
 } from "./language.i18n";
 
-function getDefaultDisplayLanguage(): SupportedDisplayLanguageCodes {
-  return detectInitialDisplayLanguage({
-    storedLanguage: undefined,
-  });
-}
+const BACKGROUND_LANGUAGE_RECOVERY_DELAY_MS = 1000;
 
 function getDefaultSpokenLanguages(): SupportedSpokenLanguageCodes[] {
   // Use browser detection for smart default
@@ -51,7 +53,10 @@ export const useLanguageStore = defineStore("language", () => {
   );
 
   // Browser detection is a default, not a saved override of future browser preferences.
-  const browserDisplayLanguage = ref(getDefaultDisplayLanguage());
+  const browserDisplayLanguage = ref(detectBrowserDisplayLanguage());
+  const conversationFallbackLanguage = ref<SupportedDisplayLanguageCodes>();
+  const isDisplayLanguageReady = ref(true);
+  let localeApplicationRevision = 0;
   const storedDisplayLanguage = useLocalStorage<
     SupportedDisplayLanguageCodes | undefined
   >("displayLanguage", undefined, {
@@ -61,11 +66,53 @@ export const useLanguageStore = defineStore("language", () => {
       write: (languageCode) => languageCode ?? "",
     },
   });
-  const displayLanguage = computed(
-    () => storedDisplayLanguage.value ?? browserDisplayLanguage.value
+  const preferredDisplayLanguage = computed(() =>
+    resolveDisplayLanguage({
+      storedLanguage: storedDisplayLanguage.value,
+      browserLanguage: browserDisplayLanguage.value,
+      conversationLanguage: conversationFallbackLanguage.value,
+    })
   );
+  const failedDisplayLanguage = ref(
+    hasFailedLocaleLoad(preferredDisplayLanguage.value)
+      ? preferredDisplayLanguage.value
+      : undefined
+  );
+  // Resource fallback affects rendering only. Requests and persisted defaults
+  // must keep the preferred language, never a temporary English UI fallback.
+  const displayLanguage = preferredDisplayLanguage;
+  const renderedDisplayLanguage = computed(() =>
+    failedDisplayLanguage.value === preferredDisplayLanguage.value
+      ? "en"
+      : preferredDisplayLanguage.value
+  );
+  // Synchronous defaults keep request headers aligned with reactive query keys.
+  watch(displayLanguage, setApiDisplayLanguage, {
+    immediate: true,
+    flush: "sync",
+  });
   // Selecting or clearing a preference can invalidate work even if the language stays the same.
   let displayLanguageRevision = 0;
+  let accountRevision = 0;
+  let spokenLanguageRevision = 0;
+  let backgroundRecoveryStarted = false;
+  let isDisposed = false;
+  let recoveryTimer: ReturnType<typeof setTimeout> | undefined;
+  const attemptedBackgroundLocales = new Set<SupportedDisplayLanguageCodes>();
+  // Comparing IDs alone misses an account switch away and back during an await.
+  watch(
+    () => authStore.userId,
+    () => {
+      accountRevision += 1;
+      displayLanguageRevision += 1;
+    },
+    { flush: "sync" }
+  );
+
+  onScopeDispose(() => {
+    isDisposed = true;
+    clearTimeout(recoveryTimer);
+  });
 
   const spokenLanguages = useLocalStorage<SupportedSpokenLanguageCodes[]>(
     "spokenLanguages",
@@ -73,73 +120,221 @@ export const useLanguageStore = defineStore("language", () => {
   );
 
   // Boot loads messages lazily; only switch directly when this locale is already available.
-  if (availableLocales.includes(displayLanguage.value)) {
-    locale.value = displayLanguage.value;
+  if (availableLocales.includes(renderedDisplayLanguage.value)) {
+    locale.value = renderedDisplayLanguage.value;
   }
 
   function captureLanguageOperation(): () => boolean {
     const revision = displayLanguageRevision;
     const userId = authStore.userId;
     return () =>
-      displayLanguageRevision === revision && authStore.userId === userId;
+      !isDisposed &&
+      displayLanguageRevision === revision &&
+      authStore.userId === userId;
+  }
+
+  function hasPendingLanguageRecovery(
+    language: SupportedDisplayLanguageCodes
+  ): boolean {
+    return (
+      hasFailedLocaleLoad(language) || failedDisplayLanguage.value === language
+    );
+  }
+
+  function scheduleBackgroundLanguageRecovery(): void {
+    const language = preferredDisplayLanguage.value;
+    if (
+      !backgroundRecoveryStarted ||
+      recoveryTimer !== undefined ||
+      isDisposed ||
+      !hasPendingLanguageRecovery(language) ||
+      attemptedBackgroundLocales.has(language)
+    ) {
+      return;
+    }
+    // One deferred attempt after the fallback page has had time to paint.
+    recoveryTimer = setTimeout(() => {
+      recoveryTimer = undefined;
+      void retryFailedDisplayLanguage();
+    }, BACKGROUND_LANGUAGE_RECOVERY_DELAY_MS);
+  }
+
+  function startBackgroundLanguageRecovery(): void {
+    backgroundRecoveryStarted = true;
+    scheduleBackgroundLanguageRecovery();
+  }
+
+  async function retryFailedDisplayLanguage(): Promise<boolean> {
+    const language = preferredDisplayLanguage.value;
+    const isCurrentAccountOperation = captureLanguageOperation();
+    const applicationRevision = localeApplicationRevision;
+    const isCurrent = () =>
+      isCurrentAccountOperation() &&
+      localeApplicationRevision === applicationRevision &&
+      preferredDisplayLanguage.value === language;
+    if (
+      isDisposed ||
+      !isCurrent() ||
+      !hasPendingLanguageRecovery(language) ||
+      attemptedBackgroundLocales.has(language)
+    ) {
+      return false;
+    }
+    attemptedBackgroundLocales.add(language);
+    try {
+      await loadLocaleResources(language);
+      if (!isCurrent()) {
+        return false;
+      }
+      setI18nLanguage(language);
+      failedDisplayLanguage.value = undefined;
+      return true;
+    } catch (error) {
+      // Keep the visible fallback and never schedule another retry automatically.
+      console.warn("Background language recovery failed:", error);
+      return false;
+    } finally {
+      // A different locale may have failed while this recovery was in flight.
+      scheduleBackgroundLanguageRecovery();
+    }
   }
 
   async function applyCurrentLocale(
     isCurrentOperation: () => boolean
   ): Promise<boolean> {
-    const localeCode = displayLanguage.value;
-    await loadLocaleMessages(localeCode);
-    if (!isCurrentOperation()) {
-      return false;
+    const localeCode = renderedDisplayLanguage.value;
+    const revision = ++localeApplicationRevision;
+    isDisplayLanguageReady.value = availableLocales.includes(localeCode);
+    try {
+      await loadLocaleResources(localeCode);
+      if (
+        !isCurrentOperation() ||
+        localeApplicationRevision !== revision ||
+        renderedDisplayLanguage.value !== localeCode
+      ) {
+        return false;
+      }
+      setI18nLanguage(localeCode);
+      scheduleBackgroundLanguageRecovery();
+      return true;
+    } catch (error) {
+      if (
+        isCurrentOperation() &&
+        localeApplicationRevision === revision &&
+        preferredDisplayLanguage.value === localeCode
+      ) {
+        failedDisplayLanguage.value = localeCode;
+        setI18nLanguage("en");
+        scheduleBackgroundLanguageRecovery();
+      }
+      throw error;
+    } finally {
+      if (localeApplicationRevision === revision) {
+        isDisplayLanguageReady.value = true;
+      }
     }
-
-    setI18nLanguage(localeCode);
-    return true;
   }
 
-  async function loadLanguagePreferencesFromBackend(): Promise<LanguagePreferences | null> {
-    const requestDisplayLanguage = displayLanguage.value;
-    const requestStoredLanguage = storedDisplayLanguage.value;
+  async function restoreCurrentLocale(
+    isCurrentOperation: () => boolean
+  ): Promise<void> {
+    try {
+      await applyCurrentLocale(isCurrentOperation);
+    } catch (error) {
+      // applyCurrentLocale already renders English and registers recovery.
+      console.warn("Failed to restore display language:", error);
+    }
+  }
+
+  async function setConversationLanguageFallback(
+    language: SupportedDisplayLanguageCodes | undefined
+  ): Promise<boolean> {
+    const previousLanguage = displayLanguage.value;
+    conversationFallbackLanguage.value = language;
+    if (displayLanguage.value === previousLanguage) {
+      return true;
+    }
+
+    const expectedLanguage = preferredDisplayLanguage.value;
     const isCurrentAccountOperation = captureLanguageOperation();
     const isCurrentOperation = () =>
       isCurrentAccountOperation() &&
-      displayLanguage.value === requestDisplayLanguage &&
+      conversationFallbackLanguage.value === language &&
+      preferredDisplayLanguage.value === expectedLanguage;
+    try {
+      return await applyCurrentLocale(isCurrentOperation);
+    } catch (error) {
+      if (isCurrentOperation()) {
+        // Resource failure does not change the backend-owned conversation language.
+        showNotifyMessage(t("failedToChangeDisplayLanguage"));
+        console.error("Error applying conversation language fallback:", error);
+      }
+      return false;
+    }
+  }
+
+  let accountRequestRevision = 0;
+
+  async function loadLanguagePreferencesFromBackend(): Promise<
+    LanguagePreferences | undefined
+  > {
+    const requestRevision = ++accountRequestRevision;
+    const requestDisplayLanguage = displayLanguage.value;
+    const requestStoredLanguage = storedDisplayLanguage.value;
+    const requestSpokenLanguageRevision = spokenLanguageRevision;
+    const isCurrentAccountOperation = captureLanguageOperation();
+    const isCurrentOperation = () =>
+      isCurrentAccountOperation() &&
+      accountRequestRevision === requestRevision &&
       storedDisplayLanguage.value === requestStoredLanguage;
     try {
       const response = await getLanguagePreferences({
         currentDisplayLanguage: requestDisplayLanguage,
       });
       if (!isCurrentOperation()) {
-        return null;
+        return undefined;
       }
 
       if (response.status === "success") {
-        const validationResult = zodLanguagePreferences.safeParse(
-          response.data
+        // The API boundary already parsed this shared DTO. Keep persisted
+        // account preferences authoritative even if an automatic fallback moved.
+        const preferences = response.data;
+        const applicationRevision = ++localeApplicationRevision;
+        isDisplayLanguageReady.value = availableLocales.includes(
+          preferences.displayLanguage
         );
-
-        if (!validationResult.success) {
-          showNotifyMessage(t("failedToFetchLanguagePreferences"));
-          console.error(
-            "Invalid language preferences data:",
-            validationResult.error
-          );
-          return null;
+        let resourceFailure = false;
+        try {
+          await loadLocaleResources(preferences.displayLanguage);
+        } catch (error) {
+          resourceFailure = true;
+          if (isCurrentOperation()) {
+            console.warn("Failed to load account language resources:", error);
+          }
+        } finally {
+          if (localeApplicationRevision === applicationRevision) {
+            isDisplayLanguageReady.value = true;
+          }
         }
-
-        const validated = validationResult.data;
-
-        await loadLocaleMessages(validated.displayLanguage);
         if (!isCurrentOperation()) {
-          return null;
+          return undefined;
         }
 
         displayLanguageRevision += 1;
-        spokenLanguages.value = validated.spokenLanguages;
-        storedDisplayLanguage.value = validated.displayLanguage;
-        setI18nLanguage(validated.displayLanguage);
+        localeApplicationRevision += 1;
+        isDisplayLanguageReady.value = true;
+        if (spokenLanguageRevision === requestSpokenLanguageRevision) {
+          spokenLanguageRevision += 1;
+          spokenLanguages.value = preferences.spokenLanguages;
+        }
+        failedDisplayLanguage.value = resourceFailure
+          ? preferences.displayLanguage
+          : undefined;
+        storedDisplayLanguage.value = preferences.displayLanguage;
+        setI18nLanguage(resourceFailure ? "en" : preferences.displayLanguage);
+        if (resourceFailure) scheduleBackgroundLanguageRecovery();
 
-        return validated;
+        return preferences;
       } else {
         // Network errors are covered by the "Connection lost" notification
         if (!isNetworkError(response.code)) {
@@ -150,59 +345,24 @@ export const useLanguageStore = defineStore("language", () => {
             response.message
           );
         }
-        return null;
+        return undefined;
       }
     } catch (err) {
       if (!isCurrentOperation()) {
-        return null;
+        return undefined;
       }
       showNotifyMessage(t("failedToFetchLanguagePreferences"));
       console.error("Error fetching language preferences from backend:", err);
-      return null;
+      return undefined;
     }
   }
 
-  async function saveSpokenLanguagesToBackend({
-    newSpokenLanguages,
-  }: {
-    newSpokenLanguages: SupportedSpokenLanguageCodes[];
-  }): Promise<void> {
-    try {
-      const response = await updateLanguagePreferences({
-        spokenLanguages: newSpokenLanguages,
-        displayLanguage: displayLanguage.value,
-      });
-
-      if (response.status === "success") {
-        spokenLanguages.value = newSpokenLanguages;
-      } else {
-        throw new Error("Failed to save language preferences");
-      }
-    } catch (err) {
-      showNotifyMessage(t("failedToSaveLanguagePreferences"));
-      console.error("Error saving language preferences:", err);
-      throw err;
-    }
-  }
-
-  async function saveDisplayLanguageToBackend({
-    newDisplayLanguage,
-  }: {
-    newDisplayLanguage: SupportedDisplayLanguageCodes;
-  }): Promise<void> {
-    try {
-      const response = await updateLanguagePreferences({
-        spokenLanguages: spokenLanguages.value,
-        displayLanguage: newDisplayLanguage,
-      });
-
-      if (response.status !== "success") {
-        throw new Error("Failed to save display language preference");
-      }
-    } catch (err) {
-      showNotifyMessage(t("failedToSaveDisplayLanguagePreference"));
-      console.error("Error saving display language preference:", err);
-      throw err;
+  async function saveLanguagePreferences(
+    preferences: UpdateLanguagePreferencesRequest
+  ): Promise<void> {
+    const response = await updateLanguagePreferences(preferences);
+    if (response.status !== "success") {
+      throw new Error("Failed to save language preferences");
     }
   }
 
@@ -212,18 +372,25 @@ export const useLanguageStore = defineStore("language", () => {
     newLanguages: SupportedSpokenLanguageCodes[];
   }): Promise<boolean> {
     const previousSpokenLanguages = [...spokenLanguages.value];
+    const revision = ++spokenLanguageRevision;
+    const requestedAccountRevision = accountRevision;
+    const isCurrent = () =>
+      !isDisposed &&
+      accountRevision === requestedAccountRevision &&
+      spokenLanguageRevision === revision;
 
     try {
       spokenLanguages.value = newLanguages;
 
       if (authStore.isGuestOrLoggedIn) {
-        await saveSpokenLanguagesToBackend({
-          newSpokenLanguages: newLanguages,
+        await saveLanguagePreferences({
+          spokenLanguages: newLanguages,
         });
       }
 
-      return true;
+      return isCurrent();
     } catch (err) {
+      if (!isCurrent()) return false;
       spokenLanguages.value = previousSpokenLanguages;
       showNotifyMessage(t("failedToUpdateSpokenLanguages"));
       console.error("Error updating spoken languages:", err);
@@ -239,6 +406,7 @@ export const useLanguageStore = defineStore("language", () => {
     const previousStoredLanguage = storedDisplayLanguage.value;
     displayLanguageRevision += 1;
     const isCurrentOperation = captureLanguageOperation();
+    failedDisplayLanguage.value = undefined;
     storedDisplayLanguage.value = newLanguage;
 
     try {
@@ -247,8 +415,8 @@ export const useLanguageStore = defineStore("language", () => {
       }
 
       if (authStore.isGuestOrLoggedIn) {
-        await saveDisplayLanguageToBackend({
-          newDisplayLanguage: newLanguage,
+        await saveLanguagePreferences({
+          displayLanguage: newLanguage,
         });
       }
 
@@ -260,50 +428,50 @@ export const useLanguageStore = defineStore("language", () => {
       showNotifyMessage(t("failedToChangeDisplayLanguage"));
       console.error("Error changing display language:", err);
       storedDisplayLanguage.value = previousStoredLanguage;
-      await applyCurrentLocale(isCurrentOperation);
+      await restoreCurrentLocale(isCurrentOperation);
       return false;
     }
   }
 
   async function clearLanguagePreferences(): Promise<boolean> {
-    const browserDefaultDisplayLanguage = getDefaultDisplayLanguage();
+    const browserDefaultDisplayLanguage = detectBrowserDisplayLanguage();
     const browserDefaultSpokenLanguages = getDefaultSpokenLanguages();
 
-    const previousStoredLanguage = storedDisplayLanguage.value;
-    const previousBrowserLanguage = browserDisplayLanguage.value;
     displayLanguageRevision += 1;
+    spokenLanguageRevision += 1;
     const isCurrentOperation = captureLanguageOperation();
 
+    browserDisplayLanguage.value = browserDefaultDisplayLanguage;
+    storedDisplayLanguage.value = undefined;
+    spokenLanguages.value = browserDefaultSpokenLanguages;
     try {
-      browserDisplayLanguage.value = browserDefaultDisplayLanguage;
-      storedDisplayLanguage.value = undefined;
-      if (!(await applyCurrentLocale(isCurrentOperation))) {
-        return false;
-      }
-      spokenLanguages.value = browserDefaultSpokenLanguages;
-
-      return true;
+      await applyCurrentLocale(isCurrentOperation);
+      return isCurrentOperation();
     } catch (err) {
       if (!isCurrentOperation()) {
         return false;
       }
-      browserDisplayLanguage.value = previousBrowserLanguage;
-      storedDisplayLanguage.value = previousStoredLanguage;
-      await applyCurrentLocale(isCurrentOperation);
-
-      showNotifyMessage(t("failedToClearLanguagePreferences"));
-      console.error("Error clearing language preferences:", err);
-      return false;
+      // Clearing account state succeeded. A missing language chunk must neither
+      // restore the old account's preferences nor make logout fail.
+      console.warn(
+        "Preferences cleared using the English resource fallback:",
+        err
+      );
+      return true;
     }
   }
 
   return {
     displayLanguage,
+    isDisplayLanguageReady: computed(() => isDisplayLanguageReady.value),
     spokenLanguages: computed(() => spokenLanguages.value),
     availableLocales,
     loadLanguagePreferencesFromBackend,
     updateSpokenLanguages,
     changeDisplayLanguage,
     clearLanguagePreferences,
+    setConversationLanguageFallback,
+    startBackgroundLanguageRecovery,
+    retryFailedDisplayLanguage,
   };
 });

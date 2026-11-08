@@ -1,15 +1,25 @@
 import axios, { type AxiosError, isAxiosError } from "axios";
 import { DefaultApiAxiosParamCreator } from "src/api";
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+import { detectInitialDisplayLanguage } from "src/utils/language";
 import { processEnv } from "src/utils/processEnv";
 
 // Create axios instances that can be imported
 export const axiosInstance = axios;
 export const api = axios.create({ baseURL: processEnv.VITE_API_BASE_URL });
 
+export function setApiDisplayLanguage(
+  language: SupportedDisplayLanguageCodes
+): void {
+  api.defaults.headers.common["Accept-Language"] = language;
+}
+
 let authRefreshAfterUnauthorizedPromise: Promise<void> | undefined;
 let authCheckLoginStatusPathnamePromise: Promise<string> | undefined;
 
-function isUnauthorizedAxiosError(error: unknown): error is AxiosError<unknown> {
+function isUnauthorizedAxiosError(
+  error: unknown
+): error is AxiosError<unknown> {
   return isAxiosError(error) && error.response?.status === 401;
 }
 
@@ -60,9 +70,8 @@ async function refreshAuthStateAfterUnauthorizedRequest(): Promise<void> {
 
   authRefreshAfterUnauthorizedPromise = (async () => {
     try {
-      const { refreshAuthStateFromBackend } = await import(
-        "src/utils/auth/refreshAuthState"
-      );
+      const { refreshAuthStateFromBackend } =
+        await import("src/utils/auth/refreshAuthState");
       const result = await refreshAuthStateFromBackend();
       if (result.needsCacheRefresh) {
         const { useUserStore } = await import("src/stores/user");
@@ -81,11 +90,15 @@ async function refreshAuthStateAfterUnauthorizedRequest(): Promise<void> {
 // Add request interceptor to include Accept-Language header
 api.interceptors.request.use(
   (config) => {
-    // Get display language from localStorage (same key used by useLanguageStore)
-    const displayLanguage = localStorage.getItem("displayLanguage");
-
-    if (displayLanguage) {
-      config.headers["Accept-Language"] = displayLanguage;
+    // Explicit request snapshots win over defaults. Before the store starts,
+    // use the same parsed saved/browser preference as the initial UI.
+    if (!config.headers.has("Accept-Language")) {
+      config.headers.set(
+        "Accept-Language",
+        detectInitialDisplayLanguage({
+          storedLanguage: localStorage.getItem("displayLanguage"),
+        })
+      );
     }
 
     // Bodyless generated POST requests need a supported Fastify content type.

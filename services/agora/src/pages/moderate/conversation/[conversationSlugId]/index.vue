@@ -73,6 +73,7 @@ import type {
   ConversationModerationProperties,
   ModerationReason,
 } from "src/shared/types/zod";
+import { useLanguageStore } from "src/stores/language";
 import { useBackendModerateApi } from "src/utils/api/moderation";
 import { useBackendPostApi } from "src/utils/api/post/post";
 import {
@@ -125,6 +126,7 @@ let postSlugId: string | null = null;
 loadRouteParams();
 
 const conversationItem = ref<ConversationDetail | undefined>();
+const languageStore = useLanguageStore();
 
 const { t } = useComponentI18n<ConversationModerationTranslations>(
   conversationModerationTranslations
@@ -163,6 +165,7 @@ async function loadRemoteConversationData() {
     const response = await fetchConversationBySlugIdWithDisplayContent({
       postSlugId,
       loadPersonalizedData: false,
+      displayLanguage: languageStore.displayLanguage,
     });
     conversationItem.value = response;
   }
