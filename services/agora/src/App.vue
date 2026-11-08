@@ -1,5 +1,6 @@
 <template>
   <div
+    v-show="languageStore.isDisplayLanguageReady"
     :inert="isOnboarding || undefined"
     :aria-hidden="isOnboarding || undefined"
   >
@@ -8,7 +9,10 @@
       :route="background.route"
     />
   </div>
-  <router-view v-if="isOnboarding" />
+  <div v-if="isOnboarding" v-show="languageStore.isDisplayLanguageReady">
+    <router-view />
+  </div>
+  <PageLoadingSpinner v-if="!languageStore.isDisplayLanguageReady" />
 
   <ConversationPageMetadata
     v-if="metadataConversationSlugId !== undefined"
@@ -32,6 +36,8 @@ import EmbeddedBrowserWarningDialog from "./components/embeddedBrowser/EmbeddedB
 import ConversationPageMetadata from "./components/metadata/ConversationPageMetadata.vue";
 import ApplicationRouteView from "./components/navigation/ApplicationRouteView.vue";
 import PostSignupPreferencesDialog from "./components/onboarding/dialogs/PostSignupPreferencesDialog.vue";
+import PageLoadingSpinner from "./components/ui/PageLoadingSpinner.vue";
+import { useConversationLanguageFallback } from "./composables/conversation/useConversationLanguageFallback";
 import { useOnboardingBackgroundRoute } from "./composables/conversation/useOnboardingBackgroundRoute";
 import { createOfflineNotificationController } from "./composables/offlineNotification";
 import { useComponentI18n } from "./composables/ui/useComponentI18n";
@@ -84,6 +90,9 @@ const route = useRoute();
 const metadataConversationSlugId = computed(() =>
   getConversationMetadataSlugId(route)
 );
+useConversationLanguageFallback({
+  conversationSlugId: metadataConversationSlugId,
+});
 const realtimeConversationSlugId = computed(() => {
   if (!isConversationRouteName(route.name)) {
     return undefined;
@@ -193,6 +202,7 @@ watch(
 );
 
 onMounted(async () => {
+  languageStore.startBackgroundLanguageRecovery();
   window.addEventListener("online", retryAuthInitialization);
   document.addEventListener(
     "visibilitychange",

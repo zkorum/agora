@@ -10,7 +10,6 @@ import type {
   SSEConversationRankingStatsUpdatedData,
 } from "src/shared/types/dto";
 import type { ExtendedConversation } from "src/shared/types/zod";
-import { useAuthenticationStore } from "src/stores/authentication";
 import { useLanguageStore } from "src/stores/language";
 import {
   getConversationContentQueryKey,
@@ -299,7 +298,6 @@ export function useConversationQuery({
   enabled?: MaybeRefOrGetter<boolean>;
 }) {
   const { fetchConversationBySlugIdWithDisplayContent } = useBackendPostApi();
-  const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
   const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
   const queryClient = useQueryClient();
   const viewerScope = useViewerQueryScope();
@@ -324,17 +322,28 @@ export function useConversationQuery({
       })
     ),
     queryFn: async ({ queryKey, signal }) => {
-      const slugId = toValue(conversationSlugId);
+      const [
+        ,
+        slugId,
+        targetLanguageCode,
+        requestedSpokenLanguages,
+        requestedViewerScope,
+      ] = queryKey;
       const cachedConversationBeforeFetch =
         queryClient.getQueryData<ConversationDetail>(queryKey);
-      const targetLanguageCode = displayLanguage.value;
-      const requestedSpokenLanguages = [...spokenLanguages.value];
       const fetchedConversation =
         await fetchConversationBySlugIdWithDisplayContent({
           postSlugId: slugId,
-          loadPersonalizedData: isGuestOrLoggedIn.value,
+          loadPersonalizedData: requestedViewerScope.userId !== undefined,
+          displayLanguage: targetLanguageCode,
           signal,
         });
+      if (signal.aborted) {
+        throw new DOMException(
+          "Conversation request was aborted",
+          "AbortError"
+        );
+      }
       const cachedConversation =
         queryClient.getQueryData<ConversationDetail>(queryKey);
       const fetchedMetadata = fetchedConversation.conversationData.metadata;
