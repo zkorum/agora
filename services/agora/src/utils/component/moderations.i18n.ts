@@ -1,16 +1,14 @@
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+import type {
+  ConversationModerationAction,
+  ModerationReason,
+  OpinionModerationAction,
+} from "src/shared/types/zod";
 
-export interface ModerationsTranslations {
-  misleading: string;
-  antisocial: string;
-  illegal: string;
-  doxing: string;
-  sexual: string;
-  spam: string;
-  lock: string;
-  move: string;
-  hide: string;
-}
+export type ModerationsTranslations = Record<
+  ModerationReason | ConversationModerationAction | OpinionModerationAction,
+  string
+>;
 
 export const moderationsTranslations: Record<
   SupportedDisplayLanguageCodes,
@@ -23,6 +21,8 @@ export const moderationsTranslations: Record<
     doxing: "Doxing",
     sexual: "Sexual",
     spam: "Spam",
+    off_topic: "Off-topic",
+    other: "Other",
     lock: "Lock",
     move: "Move",
     hide: "Hide",
@@ -34,6 +34,8 @@ export const moderationsTranslations: Record<
     doxing: "كشف المعلومات الشخصية",
     sexual: "جنسي",
     spam: "محتوى مزعج",
+    off_topic: "خارج الموضوع",
+    other: "سبب آخر",
     lock: "قفل",
     move: "نقل",
     hide: "إخفاء",
@@ -45,6 +47,8 @@ export const moderationsTranslations: Record<
     doxing: "Doxing",
     sexual: "Sexual",
     spam: "Spam",
+    off_topic: "Fuera de tema",
+    other: "Otro",
     lock: "Bloquear",
     move: "Mover",
     hide: "Ocultar",
@@ -56,6 +60,8 @@ export const moderationsTranslations: Record<
     doxing: "افشای اطلاعات شخصی",
     sexual: "جنسی",
     spam: "هرزنامه",
+    off_topic: "خارج از موضوع",
+    other: "سایر",
     lock: "قفل کردن",
     move: "انتقال",
     hide: "پنهان کردن",
@@ -67,6 +73,8 @@ export const moderationsTranslations: Record<
     doxing: "חשיפת מידע אישי",
     sexual: "מיני",
     spam: "ספאם",
+    off_topic: "לא קשור לנושא",
+    other: "אחר",
     lock: "נעילה",
     move: "העברה",
     hide: "הסתרה",
@@ -78,6 +86,8 @@ export const moderationsTranslations: Record<
     doxing: "Doxing",
     sexual: "Sexuel",
     spam: "Spam",
+    off_topic: "Hors sujet",
+    other: "Autre",
     lock: "Verrouiller",
     move: "Déplacer",
     hide: "Masquer",
@@ -89,6 +99,8 @@ export const moderationsTranslations: Record<
     doxing: "人肉搜索",
     sexual: "色情",
     spam: "垃圾信息",
+    off_topic: "偏离主题",
+    other: "其他",
     lock: "锁定",
     move: "移动",
     hide: "隐藏",
@@ -100,6 +112,8 @@ export const moderationsTranslations: Record<
     doxing: "人肉搜索",
     sexual: "色情",
     spam: "垃圾資訊",
+    off_topic: "偏離主題",
+    other: "其他",
     lock: "鎖定",
     move: "移動",
     hide: "隱藏",
@@ -111,6 +125,8 @@ export const moderationsTranslations: Record<
     doxing: "個人情報晒し",
     sexual: "性的",
     spam: "スパム",
+    off_topic: "トピックと無関係",
+    other: "その他",
     lock: "ロック",
     move: "移動",
     hide: "非表示",
@@ -122,6 +138,8 @@ export const moderationsTranslations: Record<
     doxing: "Жеке маалыматты ачыктоо",
     sexual: "Жыныстык",
     spam: "Спам",
+    off_topic: "Темага тиешеси жок",
+    other: "Башка",
     lock: "Кулпулоо",
     move: "Жылдыруу",
     hide: "Жашыруу",
@@ -133,6 +151,8 @@ export const moderationsTranslations: Record<
     doxing: "Раскрытие личных данных",
     sexual: "Сексуальное",
     spam: "Спам",
+    off_topic: "Не по теме",
+    other: "Другое",
     lock: "Заблокировать",
     move: "Переместить",
     hide: "Скрыть",

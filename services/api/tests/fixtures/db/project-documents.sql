@@ -11,7 +11,7 @@ CREATE TYPE "public"."display_language_code" AS ENUM('en', 'es', 'fr', 'zh-Hant'
 
 CREATE TYPE "public"."event_slug" AS ENUM('devconnect-2025');
 
-CREATE TYPE "public"."moderation_reason_enum" AS ENUM('misleading', 'antisocial', 'illegal', 'doxing', 'sexual', 'spam');
+CREATE TYPE "public"."moderation_reason_enum" AS ENUM('misleading', 'antisocial', 'illegal', 'doxing', 'sexual', 'spam', 'off_topic', 'other');
 
 CREATE TYPE "public"."opinion_moderation_action" AS ENUM('move', 'hide');
 

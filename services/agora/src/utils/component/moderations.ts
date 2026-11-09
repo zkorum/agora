@@ -1,8 +1,9 @@
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type {
-  ConversationModerationAction,
-  ModerationReason,
-  OpinionModerationAction,
+import {
+  type ConversationModerationAction,
+  type ModerationReason,
+  type OpinionModerationAction,
+  zodModerationReason,
 } from "src/shared/types/zod";
 import { computed } from "vue";
 
@@ -31,14 +32,15 @@ export function useModerationMappings() {
     moderationsTranslations
   );
 
-  const moderationReasonMapping = computed<ModerationReasonOption[]>(() => [
-    { label: t("misleading"), value: "misleading" },
-    { label: t("antisocial"), value: "antisocial" },
-    { label: t("illegal"), value: "illegal" },
-    { label: t("doxing"), value: "doxing" },
-    { label: t("sexual"), value: "sexual" },
-    { label: t("spam"), value: "spam" },
-  ]);
+  const getModerationReasonLabel = (reason: ModerationReason): string =>
+    t(reason);
+
+  const moderationReasonMapping = computed<ModerationReasonOption[]>(() =>
+    zodModerationReason.options.map((value) => ({
+      label: getModerationReasonLabel(value),
+      value,
+    }))
+  );
 
   const moderationActionPostsMapping = computed<
     ConversationModerationActionOption[]
@@ -52,6 +54,7 @@ export function useModerationMappings() {
   ]);
 
   return {
+    getModerationReasonLabel,
     moderationReasonMapping,
     moderationActionPostsMapping,
     opinionModerationActionMapping,

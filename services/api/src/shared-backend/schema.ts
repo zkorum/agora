@@ -4104,6 +4104,8 @@ export const moderationReasonsEnum = pgEnum("moderation_reason_enum", [
     "doxing",
     "sexual",
     "spam",
+    "off_topic",
+    "other",
 ]);
 
 // todo: add suspend and ban

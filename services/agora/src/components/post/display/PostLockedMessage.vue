@@ -79,18 +79,14 @@ const { t } = useComponentI18n<PostLockedMessageTranslations>(
   postLockedMessageTranslations
 );
 
-const { moderationReasonMapping } = useModerationMappings();
+const { getModerationReasonLabel } = useModerationMappings();
 const moderationReasonName = computed(() => {
   const moderationProperty = props.moderationProperty;
   if (moderationProperty.status !== "moderated") {
     return "";
   }
 
-  return (
-    moderationReasonMapping.value.find(
-      (option) => option.value === moderationProperty.reason
-    )?.label ?? ""
-  );
+  return getModerationReasonLabel(moderationProperty.reason);
 });
 
 const router = useRouter();
