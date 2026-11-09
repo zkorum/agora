@@ -20,5 +20,6 @@
     "services/api/database/flyway/V0073.1__backfill_project_language_defaults.sql": "135e4b4850e93dc4727dfae9064536ac92e9d4c66527d1fa1803db2d6915ca5f",
     "services/api/database/flyway/V0074__fair_argent.sql": "b2c89808dbfd82f9c9c6bf0950f78986259c6c67c83d1f25d8d5ba34eb8145ea",
     "services/api/database/flyway/V0077__nebulous_fantastic_four.sql": "ba556deec5d3ea606a4673e2b3ed4b903f0dc818c3c7965220dbac06534f1b99",
-    "services/api/database/flyway/V0081__abnormal_puff_adder.sql": "7151853939e011bb99de05ea169232aa3eecfd6be354e8aec36a741a8d87c5cb"
+    "services/api/database/flyway/V0081__abnormal_puff_adder.sql": "7151853939e011bb99de05ea169232aa3eecfd6be354e8aec36a741a8d87c5cb",
+    "services/api/database/flyway/V0112__parallel_puppet_master.sql": "46aeafe80019b1875a339aaf0d3481227baf134692a49e18e2b225342faea120"
 }

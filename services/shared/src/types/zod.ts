@@ -90,6 +90,8 @@ export const zodModerationReason = z.enum([
     "doxing",
     "sexual",
     "spam",
+    "off_topic",
+    "other",
 ]);
 export const zodFeedSortAlgorithm = z.enum(["following", "new"]);
 export const zodParticipationMode = z.enum([

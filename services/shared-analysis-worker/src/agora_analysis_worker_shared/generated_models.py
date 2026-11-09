@@ -295,6 +295,8 @@ class ModerationReasonEnum(StrEnum):
     doxing = "doxing"
     sexual = "sexual"
     spam = "spam"
+    off_topic = "off_topic"
+    other = "other"
 
 
 class PolisVotingPresentation(StrEnum):

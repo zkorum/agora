@@ -5,7 +5,8 @@
         <div class="moderationContainer">
           <div class="moderatedMessage">
             <div class="moderatedFont moderatedItalic">
-              {{ t("moderatorFlaggedMessage") }} "{{ moderation.reason }}".
+              {{ t("moderatorFlaggedMessage") }}
+              "{{ getModerationReasonLabel(moderation.reason) }}".
             </div>
             <div v-if="moderation.explanation.length > 0" class="moderatedFont">
               "{{ moderation.explanation }}"
@@ -50,6 +51,7 @@ import ZKCard from "src/components/ui-library/ZKCard.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { OpinionModerationProperties } from "src/shared/types/zod";
 import { useUserStore } from "src/stores/user";
+import { useModerationMappings } from "src/utils/component/moderations";
 import { computed } from "vue";
 
 import {
@@ -66,6 +68,7 @@ const props = defineProps<{
 }>();
 
 const { profileData } = storeToRefs(useUserStore());
+const { getModerationReasonLabel } = useModerationMappings();
 
 const canModerateConversation = computed(() => {
   const profile = profileData.value;

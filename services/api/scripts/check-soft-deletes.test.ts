@@ -128,6 +128,29 @@ queue.delete("queue:imports")
         expect(isProductionSource(path)).toBe(production);
     });
 
+    it("pins the historical vote-submission removal without allowing edits", async () => {
+        const path =
+            "services/api/database/flyway/V0112__parallel_puppet_master.sql";
+        const source = await readFile(
+            new URL(
+                "../database/flyway/V0112__parallel_puppet_master.sql",
+                import.meta.url,
+            ),
+            "utf8",
+        );
+        const hashes = await loadHistoricalMigrationHashes();
+        expect(hashes.has(path)).toBe(true);
+        expect(
+            getHistoricalMigrationFinding({ source: { path, source }, hashes }),
+        ).toBeUndefined();
+        expect(
+            getHistoricalMigrationFinding({
+                source: { path, source: source + "\n" },
+                hashes,
+            }),
+        ).toMatchObject({ operation: "Historical migration modified" });
+    });
+
     it("pins historical files even when an edit removes every destructive statement", async () => {
         const path =
             "services/api/database/flyway/V0028.1__cleanup_bad_zupass_nullifiers.sql";

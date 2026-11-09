@@ -6124,6 +6124,8 @@ export const ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerCo
     Doxing: 'doxing',
     Sexual: 'sexual',
     Spam: 'spam',
+    OffTopic: 'off_topic',
+    Other: 'other',
 } as const;
 
 export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfModerationOneOfReasonEnum = typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfModerationOneOfReasonEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfModerationOneOfReasonEnum];
@@ -7448,6 +7450,8 @@ export const ApiV1ModerationConversationCreatePostRequestModerationReasonEnum = 
     Doxing: 'doxing',
     Sexual: 'sexual',
     Spam: 'spam',
+    OffTopic: 'off_topic',
+    Other: 'other',
 } as const;
 
 export type ApiV1ModerationConversationCreatePostRequestModerationReasonEnum = typeof ApiV1ModerationConversationCreatePostRequestModerationReasonEnum[keyof typeof ApiV1ModerationConversationCreatePostRequestModerationReasonEnum];
@@ -7477,6 +7481,8 @@ export const ApiV1ModerationOpinionCreatePostRequestModerationReasonEnum = {
     Doxing: 'doxing',
     Sexual: 'sexual',
     Spam: 'spam',
+    OffTopic: 'off_topic',
+    Other: 'other',
 } as const;
 
 export type ApiV1ModerationOpinionCreatePostRequestModerationReasonEnum = typeof ApiV1ModerationOpinionCreatePostRequestModerationReasonEnum[keyof typeof ApiV1ModerationOpinionCreatePostRequestModerationReasonEnum];
@@ -7519,6 +7525,8 @@ export const ApiV1ModerationOpinionGetPost200ResponseOneOfReasonEnum = {
     Doxing: 'doxing',
     Sexual: 'sexual',
     Spam: 'spam',
+    OffTopic: 'off_topic',
+    Other: 'other',
 } as const;
 
 export type ApiV1ModerationOpinionGetPost200ResponseOneOfReasonEnum = typeof ApiV1ModerationOpinionGetPost200ResponseOneOfReasonEnum[keyof typeof ApiV1ModerationOpinionGetPost200ResponseOneOfReasonEnum];
