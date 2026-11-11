@@ -236,6 +236,8 @@ export default defineConfig((ctx) => {
 
         viteConf.build = {
           ...viteConf.build,
+          // Oxc can reintroduce modern syntax after the legacy Babel transform.
+          minify: "terser",
           // Vite does not read Browserslist for CSS syntax lowering.
           // Keep these engine floors aligned with .browserslistrc.
           cssTarget: ["chrome51", "edge15", "firefox54", "ios10", "safari10"],

@@ -214,6 +214,8 @@ Keystore operations prefer the native Web Locks API for cross-tab coordination. 
 
 First-party frontend UUID generation uses Quasar's `uid()` helper with native WebCrypto, so these flows do not require the newer `crypto.randomUUID()` API. This covers draft correlation and client-generated idempotency keys. UUID validation still uses the shared Zod schemas.
 
+Startup loads FormatJS only when Segmenter is missing, preserving native locale prerequisites. Vite transpiles these lazy chunks; build scripts check all legacy bundles for ES2016 syntax. ESLint blocks direct UUID/Segmenter access outside approved boundaries; `pnpm lint:compat` audits frontend and canonical shared code for other compatibility gaps as warnings.
+
 ## Logos
 
 Currently we are not bundling company logos in the source code due to copyright.

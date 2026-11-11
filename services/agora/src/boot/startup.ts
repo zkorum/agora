@@ -1,3 +1,4 @@
+import { initializeBrowserCompatibility } from "src/browserCompatibility";
 import { createVueChunkErrorHandler } from "src/utils/error/chunkErrorRecovery";
 import type { App } from "vue";
 
@@ -11,6 +12,7 @@ export function hasStartupCompleted(app: App | undefined): boolean {
 
 export default defineBoot(async (context) => {
   try {
+    await initializeBrowserCompatibility();
     const telemetryModules = Promise.allSettled([
       import("./plausible"),
       ...(import.meta.env.PROD && process.env.VITE_STAGING !== "true"

@@ -68,6 +68,7 @@ describe("application startup", () => {
     document.body.replaceChildren();
     for (const name of mockedBootNames) vi.doUnmock(`src/boot/${name}`);
     vi.doUnmock("src/boot/vue-query");
+    vi.doUnmock("src/browserCompatibility");
     vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
@@ -121,6 +122,55 @@ describe("application startup", () => {
     const otherContainer = mountApplication(otherContext.app);
     expect(otherContainer.textContent).toContain("Unable to start Agora");
     expect(applicationSetup).toHaveBeenCalledOnce();
+  });
+
+  it("awaits compatibility before importing application plugins", async () => {
+    const importPlugin = vi.fn();
+    vi.doMock("src/boot/i18n", () => {
+      importPlugin();
+      return { default: () => initializedBoots.push("i18n") };
+    });
+    let finishCompatibility = (): void => undefined;
+    const compatibilityReady = new Promise<void>((resolve) => {
+      finishCompatibility = resolve;
+    });
+    vi.doMock("src/browserCompatibility", () => ({
+      initializeBrowserCompatibility: () => compatibilityReady,
+    }));
+    const { default: startup } = await import("src/boot/startup");
+    const context = await createApplication();
+    const initialization = startup(context);
+    await Promise.resolve();
+    expect(importPlugin).not.toHaveBeenCalled();
+    expect(initializedBoots).toEqual([]);
+    finishCompatibility();
+    await initialization;
+    expect(importPlugin).toHaveBeenCalledOnce();
+    const container = mountApplication(context.app);
+    expect(container.textContent).toBe("Application ready");
+  });
+
+  it("keeps the startup gate closed when compatibility loading fails", async () => {
+    const compatibilityError = new Error("Compatibility chunk unavailable");
+    vi.doMock("src/browserCompatibility", () => ({
+      initializeBrowserCompatibility: () => {
+        throw compatibilityError;
+      },
+    }));
+    const { default: startup } = await import("src/boot/startup");
+    const context = await createApplication();
+    const handleError = vi.fn();
+    context.app.config.errorHandler = handleError;
+    await startup(context);
+    const container = mountApplication(context.app);
+    expect(handleError).toHaveBeenCalledExactlyOnceWith(
+      compatibilityError,
+      null,
+      "application startup"
+    );
+    expect(initializedBoots).toEqual([]);
+    expect(applicationSetup).not.toHaveBeenCalled();
+    expect(container.textContent).toContain("Unable to start Agora");
   });
 
   it("mounts the failure screen without starting initializers when a required plugin import fails", async () => {

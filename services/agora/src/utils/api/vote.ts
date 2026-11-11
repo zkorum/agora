@@ -3,6 +3,7 @@ import {
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
+import type { VoteClientAction } from "src/composables/opinion/types";
 import {
   type CastVoteResponse,
   Dto,
@@ -32,7 +33,7 @@ export function useBackendVoteApi() {
     returnIsUserClustered: boolean;
     isCurrent: () => boolean;
     sourceVersion: string;
-    clientAction?: { sessionId: string; sequence: number };
+    clientAction?: VoteClientAction;
   }): Promise<CastVoteResponse> {
     const params = Dto.castVoteRequest.parse({
       opinionSlugId,

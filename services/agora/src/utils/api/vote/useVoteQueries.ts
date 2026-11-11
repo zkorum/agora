@@ -1,7 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import { isAxiosError } from "axios";
 import { storeToRefs } from "pinia";
-import type { OpinionVoteParams } from "src/composables/opinion/types";
+import type {
+  OpinionVoteParams,
+  VoteClientAction,
+} from "src/composables/opinion/types";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useAuthenticationStore } from "src/stores/authentication";
 import type { AnalysisData } from "src/utils/api/comment/analysisData";
@@ -135,7 +138,7 @@ export function useVoteMutation({
     OpinionVoteParams & { isCurrent: () => boolean }
   >;
   type SubmissionVariables = VoteVariables & {
-    clientAction: { sessionId: string; sequence: number };
+    clientAction: VoteClientAction;
     isCurrentViewer: () => boolean;
     ownerVotesKey: () => UserVotesQueryKey;
     readsCancelled: Promise<void>;
