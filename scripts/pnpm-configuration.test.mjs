@@ -43,9 +43,14 @@ for (const entry of await readdir(servicesDirectory, { withFileTypes: true })) {
         "utf8"
       );
       const versions = [
-        ...dockerfile.matchAll(/corepack prepare (pnpm@\S+) --activate/g),
+        ...dockerfile.matchAll(/^RUN npm install --global (pnpm@\S+)$/gm),
       ];
       assert.ok(versions.length > 0, `${file} must pin pnpm`);
+      assert.doesNotMatch(
+        dockerfile,
+        /corepack/,
+        "Node 26 does not bundle Corepack"
+      );
       for (const [, version] of versions)
         assert.equal(version, expectedPackageManager, file);
       assert.doesNotMatch(dockerfile, /pnpm-workspace-docker\.yaml/);

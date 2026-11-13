@@ -6,7 +6,7 @@ services:
   api:
     container_name: agora_api
     # Publish a fresh image from the patched Dockerfile; old tags retain old Node.
-    image: quay.io/zkorum/agora-api:${API_IMAGE_TAG:?Set API_IMAGE_TAG to an image rebuilt with Node 24.22.1 or newer}
+    image: quay.io/zkorum/agora-api:${API_IMAGE_TAG:?Set API_IMAGE_TAG to an image rebuilt with Node 26.13.1 or newer}
     environment:
       CONNECTION_STRING: "postgres://postgres:CHANGEME@postgres:5432/agora"
       CORS_ORIGIN_LIST: "https://www.agoracitizen.network,https://agoracitizen.network,https://agoracitizen.app,https://www.agoracitizen.app"
@@ -48,7 +48,7 @@ services:
     restart: unless-stopped
   conversation-email-update-worker:
     container_name: agora_conversation_email_update_worker
-    image: quay.io/zkorum/agora-conversation-email-update-worker:${EMAIL_UPDATE_WORKER_IMAGE_TAG:?Set EMAIL_UPDATE_WORKER_IMAGE_TAG to an image rebuilt with Node 24.22.1 or newer}
+    image: quay.io/zkorum/agora-conversation-email-update-worker:${EMAIL_UPDATE_WORKER_IMAGE_TAG:?Set EMAIL_UPDATE_WORKER_IMAGE_TAG to an image rebuilt with Node 26.13.1 or newer}
     environment:
       CONNECTION_STRING: "postgres://postgres:CHANGEME@postgres:5432/agora"
       NODE_ENV: "production"
@@ -222,7 +222,7 @@ services:
         awslogs-stream: verificator-svc
   app:
     container_name: agora_app
-    image: quay.io/zkorum/agora-app-production:${AGORA_IMAGE_TAG:?Set AGORA_IMAGE_TAG to an image rebuilt with Node 24.22.1 or newer}
+    image: quay.io/zkorum/agora-app-production:${AGORA_IMAGE_TAG:?Set AGORA_IMAGE_TAG to an image rebuilt with Node 26.13.1 or newer}
     volumes:
       - agora-assets:/usr/share/nginx/html/assets
     expose:

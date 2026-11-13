@@ -2,10 +2,10 @@
 
 # ---- Dependencies ----
 # The frontend output is architecture-independent; avoid emulating build tools.
-FROM --platform=$BUILDPLATFORM node:24.22.1-alpine AS deps
+FROM --platform=$BUILDPLATFORM node:26.13.1-alpine AS deps
 RUN apk add --no-cache 'ca-certificates>=20261020-r0'
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@12.4.1 --activate
+RUN npm install --global pnpm@12.4.1
 ENV PATH=/app/node_modules/.bin:$PATH
 # Copy manifest files then full source before install:
 # quasar's prepare lifecycle script (run during pnpm install) needs the full source
