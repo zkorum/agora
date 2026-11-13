@@ -48,18 +48,6 @@ Restart running development services after switching Node; existing processes ke
 their original runtime. CI reads `.nvmrc`; Netlify and Docker builds pin the same
 version explicitly.
 
-The project uses Node.js 26.13.1 LTS, including the fixes from the
-[November 2026 Node.js security releases](https://nodejs.org/en/blog/vulnerability/november-2026-security-releases).
-Rebuild affected Docker images with `--pull --no-cache`, publish fresh tags, and
-redeploy the API, conversation-email-update-worker, Agora frontend, and Netlify landing page.
-Existing images and running processes do not pick up the patched runtime automatically.
-
-Check runtime pins and supported minimums with:
-
-```bash
-node --test scripts/node-configuration.test.mjs
-```
-
 ### Python TLS trust updates
 
 Python worker and experiments projects require uv 0.13.4 or newer and certifi
