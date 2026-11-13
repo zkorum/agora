@@ -1,16 +1,16 @@
 # ---- Dependencies ----
-FROM node:24.22.1-alpine AS deps
+FROM node:26.13.1-alpine AS deps
 WORKDIR /app
 RUN apk add --no-cache 'ca-certificates>=20261020-r0' python3 make g++
-RUN corepack enable && corepack prepare pnpm@12.4.1 --activate
+RUN npm install --global pnpm@12.4.1
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile --prod
 
 # ---- Build ----
-FROM node:24.22.1-alpine AS build
+FROM node:26.13.1-alpine AS build
 WORKDIR /app
 RUN apk add --no-cache 'ca-certificates>=20261020-r0' python3 make g++
-RUN corepack enable && corepack prepare pnpm@12.4.1 --activate
+RUN npm install --global pnpm@12.4.1
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY tsconfig.json tsconfig.build.json ./
@@ -19,7 +19,7 @@ COPY src ./src
 RUN pnpm build && rm -rf dist/devExercise
 
 # ---- Production ----
-FROM node:24.22.1-alpine
+FROM node:26.13.1-alpine
 RUN apk add --no-cache 'ca-certificates>=20261020-r0' tini
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules

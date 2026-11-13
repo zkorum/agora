@@ -27,7 +27,7 @@ Install:
 - [jq](https://jqlang.github.io/jq/)
 - sed
 - bash
-- [Node.js](https://nodejs.org/) 24.22.1 (matches `.nvmrc` and the Docker builds)
+- [Node.js](https://nodejs.org/) 26.13.1 LTS (matches `.nvmrc` and the Docker builds)
 - [pnpm](https://pnpm.io/) 12.4.1
 - [watchman](https://facebook.github.io/watchman/)
 - [docker](https://www.docker.com/)
@@ -40,12 +40,25 @@ select the pinned runtime:
 ```bash
 nvm install
 nvm use
-nvm alias default 24.22.1
+nvm alias default 26.13.1
+npm install --global pnpm@12.4.1
 ```
 
 Restart running development services after switching Node; existing processes keep
 their original runtime. CI reads `.nvmrc`; Netlify and Docker builds pin the same
 version explicitly.
+
+The project uses Node.js 26.13.1 LTS, including the fixes from the
+[November 2026 Node.js security releases](https://nodejs.org/en/blog/vulnerability/november-2026-security-releases).
+Rebuild affected Docker images with `--pull --no-cache`, publish fresh tags, and
+redeploy the API, conversation-email-update-worker, Agora frontend, and Netlify landing page.
+Existing images and running processes do not pick up the patched runtime automatically.
+
+Check runtime pins and supported minimums with:
+
+```bash
+node --test scripts/node-configuration.test.mjs
+```
 
 ### Python TLS trust updates
 
@@ -67,7 +80,8 @@ project virtual environments need their own pip and certifi upgrades.
 
 All nine JavaScript services pin `pnpm@12.4.1` in `package.json`, and the API,
 Agora, and conversation-email-update-worker Docker build stages use that same
-version. Each service's `pnpm-workspace.yaml` is used for both local and Docker
+version, installed through npm because Node.js 26 no longer bundles Corepack.
+Each service's `pnpm-workspace.yaml` is used for both local and Docker
 installs. Run `pnpm install --frozen-lockfile` from the service directory after
 pulling dependency changes.
 

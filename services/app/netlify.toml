@@ -4,7 +4,7 @@ publish = "build"
 ignore = 'if [ "$CONTEXT" = "production" ]; then git diff --quiet "$COMMIT_REF^" "$COMMIT_REF" -- .; else test -n "$CACHED_COMMIT_REF" && git diff --quiet "$CACHED_COMMIT_REF" "$COMMIT_REF" -- .; fi'
 
 [build.environment]
-NODE_VERSION = "24.22.1"
+NODE_VERSION = "26.13.1"
 
 # Preserve old blog URLs after resources replaced the blog section.
 [[redirects]]

@@ -16,6 +16,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
+      - run: node --test scripts/node-configuration.test.mjs scripts/pnpm-configuration.test.mjs
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"

@@ -121,7 +121,7 @@ test(
         network,
         "--volume",
         `${directory}:/fixtures:ro`,
-        "node:24-alpine",
+        "node:26.13.1-alpine",
         "node",
         "/fixtures/api.mjs",
       ]);
