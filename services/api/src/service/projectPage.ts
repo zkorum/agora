@@ -44,6 +44,7 @@ import type {
     FetchProjectConversationPageResponse,
     FetchProjectPageRequest,
     FetchProjectPageResponse,
+    ConversationLanguageSettingsSource,
     ProjectPageActivity,
     ProjectPageActivityCursor,
     ProjectPageAttribution,
@@ -71,15 +72,15 @@ import {
     resolveOrganizationLocalizationRow,
     type OrganizationLocalizationRow,
 } from "./projectLanguage.js";
+import { resolvePreferredContentLanguage } from "./contentLanguagePreference.js";
 import {
-    resolvePreferredContentLanguage,
-    resolvePreferredContentLanguageFromSettings,
-} from "./contentLanguagePreference.js";
-import {
+    getConversationOverrideTranslationTargetLanguagePolicy,
     getProjectTranslationTargetLanguagePolicy,
     isConfiguredTranslationTargetLanguage,
+    isTranslationAllowedForTarget,
     shouldTranslateContent,
     sourceLanguageToDisplayLanguage,
+    type TranslationTargetLanguagePolicy,
 } from "./translationLanguageSetting.js";
 import {
     fetchConversationDisplayCountsByConversationId,
@@ -173,6 +174,7 @@ interface ProjectActivityRow {
     bodyPlainText: string | null;
     sourceLanguageCode: SupportedSpokenLanguageCodes | null;
     sourceRawLanguageCode: string | null;
+    languageSettingsSource: ConversationLanguageSettingsSource;
     dynamicTranslationEnabled: boolean;
 }
 
@@ -466,6 +468,24 @@ function projectOriginalContent(project: ProjectContentResolutionProject) {
     };
 }
 
+function getProjectContentTranslationPolicy({
+    project,
+    additionalLanguageCodes,
+}: {
+    project: ProjectContentResolutionProject;
+    additionalLanguageCodes: readonly SupportedDisplayLanguageCodes[];
+}): TranslationTargetLanguagePolicy {
+    return getProjectTranslationTargetLanguagePolicy({
+        languageSettings: {
+            dynamicTranslationEnabled: project.dynamicTranslationEnabled,
+            defaultLanguageCode: getProjectDefaultDisplayLanguage({
+                sourceLanguageCode: project.sourceLanguageCode,
+            }),
+            targetLanguageCodes: additionalLanguageCodes,
+        },
+    });
+}
+
 function canUseProjectMachineTranslation({
     project,
     effectiveLanguageCode,
@@ -475,19 +495,12 @@ function canUseProjectMachineTranslation({
     effectiveLanguageCode: SupportedDisplayLanguageCodes;
     additionalLanguageCodes: readonly SupportedDisplayLanguageCodes[];
 }): boolean {
-    const targetLanguagePolicy = getProjectTranslationTargetLanguagePolicy({
-        languageSettings: {
-            dynamicTranslationEnabled: project.dynamicTranslationEnabled,
-            defaultLanguageCode: getProjectDefaultDisplayLanguage({
-                sourceLanguageCode: project.sourceLanguageCode,
-            }),
-            targetLanguageCodes: additionalLanguageCodes,
-        },
-    });
     return (
-        targetLanguagePolicy.dynamicTranslationEnabled &&
-        isConfiguredTranslationTargetLanguage({
-            policy: targetLanguagePolicy,
+        isTranslationAllowedForTarget({
+            policy: getProjectContentTranslationPolicy({
+                project,
+                additionalLanguageCodes,
+            }),
             targetLanguageCode: effectiveLanguageCode,
         }) &&
         shouldTranslateContent({
@@ -512,10 +525,18 @@ export function resolveProjectContentForDisplay({
     translationStatus?: ProjectPageTranslationStatus;
 }): ResolvedProjectContent {
     const original = projectOriginalContent(project);
-    const manualRow = findManualProjectContentTranslationRow({
-        translationRows,
-        effectiveLanguageCode,
-    });
+    const manualRow = isConfiguredTranslationTargetLanguage({
+        policy: getProjectContentTranslationPolicy({
+            project,
+            additionalLanguageCodes,
+        }),
+        targetLanguageCode: effectiveLanguageCode,
+    })
+        ? findManualProjectContentTranslationRow({
+              translationRows,
+              effectiveLanguageCode,
+          })
+        : undefined;
     if (manualRow !== undefined) {
         const manualOriginal = {
             title: manualRow.title,
@@ -607,21 +628,11 @@ function findManualProjectContentTranslationRow({
     translationRows: readonly ProjectContentTranslationResolutionRow[];
     effectiveLanguageCode: SupportedDisplayLanguageCodes;
 }): ProjectContentTranslationResolutionRow | undefined {
-    const fallbackChain = getDisplayLanguageFallbackChain({
-        languageCode: effectiveLanguageCode,
-    });
-    for (const languageCode of fallbackChain) {
-        const row = translationRows.find(
-            (translationRow) =>
-                translationRow.languageCode === languageCode &&
-                translationRow.sourceKind === "manual",
-        );
-        if (row !== undefined) {
-            return row;
-        }
-    }
-
-    return undefined;
+    return translationRows.find(
+        (row) =>
+            row.languageCode === effectiveLanguageCode &&
+            row.sourceKind === "manual",
+    );
 }
 
 function findFreshMachineProjectContentTranslationRow({
@@ -676,19 +687,14 @@ export function projectContentNeedsTranslationStatus({
 async function fetchResolvedProjectContent({
     db,
     project,
-    languageCandidateSet,
     effectiveLanguageCode,
     additionalLanguageCodes,
-    includeTranslationStatus,
 }: {
     db: PostgresJsDatabase;
     project: ProjectBaseRow;
-    languageCandidateSet: Set<SupportedDisplayLanguageCodes>;
     effectiveLanguageCode: SupportedDisplayLanguageCodes;
     additionalLanguageCodes: SupportedDisplayLanguageCodes[];
-    includeTranslationStatus: boolean;
 }): Promise<ResolvedProjectContent> {
-    const languageCandidates = Array.from(languageCandidateSet);
     const translationRows = await db
         .select({
             languageCode: projectContentTranslationTable.displayLanguageCode,
@@ -706,28 +712,26 @@ async function fetchResolvedProjectContent({
                     projectContentTranslationTable.projectContentId,
                     project.projectContentId,
                 ),
-                inArray(
+                eq(
                     projectContentTranslationTable.displayLanguageCode,
-                    languageCandidates,
+                    effectiveLanguageCode,
                 ),
                 isNull(projectContentTranslationTable.deletedAt),
             ),
         );
 
-    const translationStatus =
-        includeTranslationStatus &&
-        projectContentNeedsTranslationStatus({
-            project,
-            translationRows,
-            effectiveLanguageCode,
-            additionalLanguageCodes,
-        })
-            ? await fetchProjectTranslationWorkStatus({
-                  db,
-                  projectContentId: project.projectContentId,
-                  targetLanguageCode: effectiveLanguageCode,
-              })
-            : undefined;
+    const translationStatus = projectContentNeedsTranslationStatus({
+        project,
+        translationRows,
+        effectiveLanguageCode,
+        additionalLanguageCodes,
+    })
+        ? await fetchProjectTranslationWorkStatus({
+              db,
+              projectContentId: project.projectContentId,
+              targetLanguageCode: effectiveLanguageCode,
+          })
+        : undefined;
 
     return resolveProjectContentForDisplay({
         project,
@@ -741,9 +745,11 @@ async function fetchResolvedProjectContent({
 async function fetchProjectContentTranslationsByContentId({
     db,
     projectContentIds,
+    displayLanguage,
 }: {
     db: PostgresJsDatabase;
     projectContentIds: readonly number[];
+    displayLanguage: SupportedDisplayLanguageCodes;
 }): Promise<Map<number, ProjectContentTranslationResolutionRow[]>> {
     const uniqueProjectContentIds = Array.from(new Set(projectContentIds));
     if (uniqueProjectContentIds.length === 0) {
@@ -767,6 +773,10 @@ async function fetchProjectContentTranslationsByContentId({
                 inArray(
                     projectContentTranslationTable.projectContentId,
                     uniqueProjectContentIds,
+                ),
+                eq(
+                    projectContentTranslationTable.displayLanguageCode,
+                    displayLanguage,
                 ),
                 isNull(projectContentTranslationTable.deletedAt),
             ),
@@ -835,14 +845,14 @@ export function toProjectDisplayContent({
 function toProjectActivityDisplayContent({
     row,
     translation,
-    targetLanguageCode,
+    translationPolicy,
     displayLanguage,
     mode,
     canRequestAlternate,
 }: {
     row: ProjectActivityRow;
     translation: ProjectActivityContentTranslationRow | undefined;
-    targetLanguageCode: SupportedDisplayLanguageCodes;
+    translationPolicy: TranslationTargetLanguagePolicy;
     displayLanguage: SupportedDisplayLanguageCodes;
     mode: "original" | "translated" | undefined;
     canRequestAlternate: boolean;
@@ -860,21 +870,14 @@ function toProjectActivityDisplayContent({
         title: row.title,
         bodyPlainText: row.bodyPlainText ?? "",
     };
-    const translated =
-        translation === undefined
-            ? undefined
-            : {
-                  title: translation.translatedTitle,
-                  bodyPlainText: translation.translatedBodyPlainText ?? "",
-              };
     const localizedContent =
-        translated === undefined
+        translation === undefined
             ? {
                   kind: "translatable" as const,
                   sourceVersion: row.conversationContentPublicId,
                   initialMode: "original" as const,
                   translation: buildTranslationMetadata({
-                      targetLanguageCode,
+                      targetLanguageCode: displayLanguage,
                       sourceMetadata: {
                           sourceLanguageCode: row.sourceLanguageCode,
                           sourceRawLanguageCode: row.sourceRawLanguageCode,
@@ -890,7 +893,7 @@ function toProjectActivityDisplayContent({
                   sourceVersion: row.conversationContentPublicId,
                   initialMode: "translated" as const,
                   translation: buildTranslationMetadata({
-                      targetLanguageCode,
+                      targetLanguageCode: translation.displayLanguageCode,
                       sourceMetadata: {
                           sourceLanguageCode: row.sourceLanguageCode,
                           sourceRawLanguageCode: row.sourceRawLanguageCode,
@@ -899,12 +902,22 @@ function toProjectActivityDisplayContent({
                       },
                       status: "completed",
                   }),
-                  variants: { original, translated },
+                  variants: {
+                      original,
+                      translated: {
+                          title: translation.translatedTitle,
+                          bodyPlainText:
+                              translation.translatedBodyPlainText ?? "",
+                      },
+                  },
               };
 
     return toDisplayedContent({
         content: localizedContent,
-        translationAllowed: row.dynamicTranslationEnabled,
+        translationAllowed: isTranslationAllowedForTarget({
+            policy: translationPolicy,
+            targetLanguageCode: displayLanguage,
+        }),
         displayLanguage,
         spokenLanguages: [],
         mode,
@@ -936,18 +949,18 @@ function toProjectActivityDisplayContent({
 function toProjectActivityContentPresentation({
     row,
     translation,
-    targetLanguageCode,
+    translationPolicy,
     displayLanguage,
 }: {
     row: ProjectActivityRow;
     translation: ProjectActivityContentTranslationRow | undefined;
-    targetLanguageCode: SupportedDisplayLanguageCodes;
+    translationPolicy: TranslationTargetLanguagePolicy;
     displayLanguage: SupportedDisplayLanguageCodes;
 }): ProjectActivityContentPresentation {
     const displayContent = toProjectActivityDisplayContent({
         row,
         translation,
-        targetLanguageCode,
+        translationPolicy,
         displayLanguage,
         mode: undefined,
         canRequestAlternate: row.isIndexed,
@@ -963,7 +976,7 @@ function toProjectActivityContentPresentation({
     const alternateDisplayContent = toProjectActivityDisplayContent({
         row,
         translation,
-        targetLanguageCode,
+        translationPolicy,
         displayLanguage,
         mode: displayContent.translationControl.alternateMode,
         canRequestAlternate: false,
@@ -995,20 +1008,20 @@ function toProjectActivityContentPresentation({
 export function toProjectPageActivity({
     row,
     translation,
-    targetLanguageCode,
+    translationPolicy,
     displayLanguage,
     counts,
 }: {
     row: ProjectActivityRow;
     translation: ProjectActivityContentTranslationRow | undefined;
-    targetLanguageCode: SupportedDisplayLanguageCodes;
+    translationPolicy: TranslationTargetLanguagePolicy;
     displayLanguage: SupportedDisplayLanguageCodes;
     counts: ConversationDisplayCounts | undefined;
 }): ProjectPageActivity {
     const presentation = toProjectActivityContentPresentation({
         row,
         translation,
-        targetLanguageCode,
+        translationPolicy,
         displayLanguage,
     });
     const activityBase = {
@@ -1227,6 +1240,7 @@ async function fetchProjectActivityRows({
                 conversationContentTable.sourceRawLanguageCode,
             dynamicTranslationEnabled:
                 conversationTable.dynamicTranslationEnabled,
+            languageSettingsSource: conversationTable.languageSettingsSource,
         })
         .from(conversationTable)
         .innerJoin(
@@ -1261,6 +1275,7 @@ async function fetchProjectActivityRows({
         sourceLanguageCode: row.sourceLanguageCode,
         sourceRawLanguageCode: row.sourceRawLanguageCode,
         dynamicTranslationEnabled: row.dynamicTranslationEnabled,
+        languageSettingsSource: row.languageSettingsSource,
     }));
 }
 
@@ -1308,15 +1323,13 @@ async function fetchConversationTargetLanguagesByConversationId({
 
 async function fetchProjectActivityTranslations({
     db,
-    preferredLanguageByContentId,
+    contentIds,
+    displayLanguage,
 }: {
     db: PostgresJsDatabase;
-    preferredLanguageByContentId: ReadonlyMap<
-        number,
-        SupportedDisplayLanguageCodes
-    >;
+    contentIds: number[];
+    displayLanguage: SupportedDisplayLanguageCodes;
 }): Promise<Map<number, ProjectActivityContentTranslationRow>> {
-    const contentIds = [...preferredLanguageByContentId.keys()];
     if (contentIds.length === 0) {
         return new Map();
     }
@@ -1337,9 +1350,15 @@ async function fetchProjectActivityTranslations({
         })
         .from(conversationContentTranslationTable)
         .where(
-            inArray(
-                conversationContentTranslationTable.conversationContentId,
-                contentIds,
+            and(
+                inArray(
+                    conversationContentTranslationTable.conversationContentId,
+                    contentIds,
+                ),
+                eq(
+                    conversationContentTranslationTable.displayLanguageCode,
+                    displayLanguage,
+                ),
             ),
         );
 
@@ -1348,12 +1367,6 @@ async function fetchProjectActivityTranslations({
         ProjectActivityContentTranslationRow
     >();
     for (const row of rows) {
-        if (
-            preferredLanguageByContentId.get(row.conversationContentId) !==
-            row.displayLanguageCode
-        ) {
-            continue;
-        }
         translationsByContentId.set(row.conversationContentId, row);
     }
     return translationsByContentId;
@@ -1362,12 +1375,14 @@ async function fetchProjectActivityTranslations({
 async function fetchProjectActivities({
     db,
     projectId,
+    projectTranslationPolicy,
     displayLanguage,
     activityLimit,
     activityCursor,
 }: {
     db: PostgresJsDatabase;
     projectId: number;
+    projectTranslationPolicy: TranslationTargetLanguagePolicy;
     displayLanguage: SupportedDisplayLanguageCodes;
     activityLimit: number;
     activityCursor: ProjectPageActivityCursor | undefined;
@@ -1382,42 +1397,25 @@ async function fetchProjectActivities({
     const hasMore = rows.length > activityLimit;
 
     const conversationIds = pageRows.map((row) => row.conversationId);
-    const targetLanguagesByConversationId =
-        await fetchConversationTargetLanguagesByConversationId({
+    const [
+        targetLanguagesByConversationId,
+        countsByConversationId,
+        translationsByContentId,
+    ] = await Promise.all([
+        fetchConversationTargetLanguagesByConversationId({
             db,
             conversationIds,
-        });
-    const preferredLanguageByContentId = new Map<
-        number,
-        SupportedDisplayLanguageCodes
-    >();
-    for (const row of pageRows) {
-        const { preferredContentLanguage } =
-            resolvePreferredContentLanguageFromSettings({
-                displayLanguage,
-                sourceLanguageCode: row.sourceLanguageCode,
-                targetLanguageCodes:
-                    targetLanguagesByConversationId.get(row.conversationId) ??
-                    [],
-                fallbackContentLanguage: displayLanguage,
-            });
-        preferredLanguageByContentId.set(
-            row.conversationContentId,
-            preferredContentLanguage,
-        );
-    }
-    const [countsByConversationId, translationsByContentId] = await Promise.all(
-        [
-            fetchConversationDisplayCountsByConversationId({
-                db,
-                conversationIds,
-            }),
-            fetchProjectActivityTranslations({
-                db,
-                preferredLanguageByContentId,
-            }),
-        ],
-    );
+        }),
+        fetchConversationDisplayCountsByConversationId({
+            db,
+            conversationIds,
+        }),
+        fetchProjectActivityTranslations({
+            db,
+            contentIds: pageRows.map((row) => row.conversationContentId),
+            displayLanguage,
+        }),
+    ]);
     const activities: ProjectPageActivity[] = pageRows.map((row) => {
         const counts = countsByConversationId.get(row.conversationId);
         const translation = translationsByContentId.get(
@@ -1431,13 +1429,30 @@ async function fetchProjectActivities({
             })
                 ? translation
                 : undefined;
-        const targetLanguageCode =
-            preferredLanguageByContentId.get(row.conversationContentId) ??
-            displayLanguage;
+        const detectedTargetLanguageCode = sourceLanguageToDisplayLanguage({
+            sourceLanguageCode: row.sourceLanguageCode,
+        });
+        const translationPolicy =
+            row.languageSettingsSource === "project_inherited"
+                ? projectTranslationPolicy
+                : getConversationOverrideTranslationTargetLanguagePolicy({
+                      detectedTargetLanguageCode,
+                      multilingualSettings: {
+                          dynamicTranslationEnabled:
+                              row.dynamicTranslationEnabled,
+                          additionalLanguageCodes: (
+                              targetLanguagesByConversationId.get(
+                                  row.conversationId,
+                              ) ?? []
+                          ).filter(
+                              (code) => code !== detectedTargetLanguageCode,
+                          ),
+                      },
+                  });
         return toProjectPageActivity({
             row,
             translation: freshTranslation,
-            targetLanguageCode,
+            translationPolicy,
             displayLanguage,
             counts,
         });
@@ -1971,19 +1986,17 @@ async function buildProjectShellPayload({
     db,
     baseImageServiceUrl,
     project,
+    additionalLanguageCodes,
     currentDisplayLanguage,
     requesterUserId,
 }: ProjectPageServiceParams & {
     project: ProjectBaseRow;
+    additionalLanguageCodes: SupportedDisplayLanguageCodes[];
     currentDisplayLanguage: SupportedDisplayLanguageCodes;
     requesterUserId: string | undefined;
 }): Promise<ProjectShellPayload> {
     const defaultLanguageCode = getProjectDefaultDisplayLanguage({
         sourceLanguageCode: project.sourceLanguageCode,
-    });
-    const additionalLanguageCodes = await fetchProjectTargetLanguages({
-        db,
-        projectId: project.projectId,
     });
     const displayLanguage = currentDisplayLanguage;
     const { preferredContentLanguage } = resolvePreferredContentLanguage({
@@ -2006,10 +2019,8 @@ async function buildProjectShellPayload({
         fetchResolvedProjectContent({
             db,
             project,
-            languageCandidateSet,
-            effectiveLanguageCode: preferredContentLanguage,
+            effectiveLanguageCode: currentDisplayLanguage,
             additionalLanguageCodes,
-            includeTranslationStatus: true,
         }),
         fetchResolvedBannerImageUrl({
             db,
@@ -2085,17 +2096,26 @@ async function buildProjectPagePayload({
         db,
         projectSlug: request.projectSlug,
     });
+    const additionalLanguageCodes = await fetchProjectTargetLanguages({
+        db,
+        projectId: project.projectId,
+    });
     const [projectShellPayload, activityPage] = await Promise.all([
         buildProjectShellPayload({
             db,
             baseImageServiceUrl,
             project,
+            additionalLanguageCodes,
             currentDisplayLanguage,
             requesterUserId,
         }),
         fetchProjectActivities({
             db,
             projectId: project.projectId,
+            projectTranslationPolicy: getProjectContentTranslationPolicy({
+                project,
+                additionalLanguageCodes,
+            }),
             displayLanguage: currentDisplayLanguage,
             activityLimit: request.activityLimit,
             activityCursor: request.activityCursor,
@@ -2142,9 +2162,17 @@ export async function fetchProjectPageActivities({
         db,
         projectSlug: request.projectSlug,
     });
+    const additionalLanguageCodes = await fetchProjectTargetLanguages({
+        db,
+        projectId: project.projectId,
+    });
     return await fetchProjectActivities({
         db,
         projectId: project.projectId,
+        projectTranslationPolicy: getProjectContentTranslationPolicy({
+            project,
+            additionalLanguageCodes,
+        }),
         displayLanguage: currentDisplayLanguage,
         activityLimit: request.activityLimit,
         activityCursor: request.activityCursor,
@@ -2172,11 +2200,16 @@ export async function fetchProjectConversationPage({
         projectId: project.projectId,
         conversationSlugId: request.conversationSlugId,
     });
+    const additionalLanguageCodes = await fetchProjectTargetLanguages({
+        db,
+        projectId: project.projectId,
+    });
 
     return await buildProjectShellPayload({
         db,
         baseImageServiceUrl,
         project,
+        additionalLanguageCodes,
         currentDisplayLanguage,
         requesterUserId,
     });
@@ -2224,6 +2257,7 @@ export async function fetchConversationProjectContexts({
             }),
             fetchProjectContentTranslationsByContentId({
                 db,
+                displayLanguage: currentDisplayLanguage,
                 projectContentIds: projects.map(
                     (project) => project.projectContentId,
                 ),
@@ -2232,21 +2266,13 @@ export async function fetchConversationProjectContexts({
 
     const contexts = new Map<string, ConversationProjectContext>();
     for (const project of projects) {
-        const defaultLanguageCode = getProjectDefaultDisplayLanguage({
-            sourceLanguageCode: project.sourceLanguageCode,
-        });
         const additionalLanguageCodes =
             additionalLanguagesByProjectId.get(project.projectId) ?? [];
-        const { preferredContentLanguage } = resolvePreferredContentLanguage({
-            displayLanguage: currentDisplayLanguage,
-            defaultContentLanguage: defaultLanguageCode,
-            configuredContentLanguages: additionalLanguageCodes,
-        });
         const content = resolveProjectContentForDisplay({
             project,
             translationRows:
                 translationsByContentId.get(project.projectContentId) ?? [],
-            effectiveLanguageCode: preferredContentLanguage,
+            effectiveLanguageCode: currentDisplayLanguage,
             additionalLanguageCodes,
         });
 

@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { getProjectTranslationTargetLanguagePolicy } from "./translationLanguageSetting.js";
 import {
     projectContentNeedsTranslationStatus,
     resolveProjectContentForDisplay,
@@ -7,6 +8,19 @@ import {
     type ProjectContentResolutionProject,
     type ProjectContentTranslationResolutionRow,
 } from "./projectPage.js";
+
+vi.mock("../app.js", () => ({
+    config: {},
+    log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+}));
+
+const translationPolicy = getProjectTranslationTargetLanguagePolicy({
+    languageSettings: {
+        dynamicTranslationEnabled: true,
+        defaultLanguageCode: "en",
+        targetLanguageCodes: ["fr"],
+    },
+});
 
 const baseProject = {
     projectContentPublicId: "00000000-0000-4000-8000-000000000001",
@@ -39,6 +53,7 @@ function createUnlistedActivityRow(): TestProjectActivityRow {
         bodyPlainText: "Source activity body",
         sourceLanguageCode: "en",
         sourceRawLanguageCode: "en",
+        languageSettingsSource: "conversation_override",
         dynamicTranslationEnabled: true,
     };
 }
@@ -75,6 +90,63 @@ function availableProjectContent(
 }
 
 describe("resolveProjectContentForDisplay", () => {
+    it("does not let an English manual fallback override an exact French machine translation", () => {
+        const resolved = resolveProjectContent({
+            translationRows: [
+                {
+                    languageCode: "en",
+                    title: "English manual fallback",
+                    subtitle: null,
+                    body: null,
+                    sourceKind: "manual",
+                    sourceLanguageCode: null,
+                },
+                {
+                    languageCode: "fr",
+                    title: "Traduction française",
+                    subtitle: null,
+                    body: null,
+                    sourceKind: "machine",
+                    sourceLanguageCode: "en",
+                },
+            ],
+        });
+        expect(resolved.localizedContent).toMatchObject({
+            kind: "translatable",
+            translation: { targetLanguageCode: "fr", status: "completed" },
+            variants: { translated: { title: "Traduction française" } },
+        });
+    });
+
+    it("does not substitute an English manual localization for unsupported French", () => {
+        const project = {
+            ...baseProject,
+            sourceLanguageCode: "ky",
+            sourceRawLanguageCode: "ky",
+        } satisfies ProjectContentResolutionProject;
+        const resolved = resolveProjectContent({
+            project,
+            effectiveLanguageCode: "fr",
+            additionalLanguageCodes: ["en", "ru"],
+            translationRows: [
+                {
+                    languageCode: "en",
+                    title: "English localization",
+                    subtitle: null,
+                    body: null,
+                    sourceKind: "manual",
+                    sourceLanguageCode: null,
+                },
+            ],
+        });
+
+        expect(resolved.localizedContent).toMatchObject({
+            kind: "original_only",
+            variants: { original: { title: project.projectTitle } },
+        });
+        expect(resolved.translatedTitle).toBeUndefined();
+    });
+
     it("returns source title, subtitle, and body as original content for the source language", () => {
         const resolved = resolveProjectContent({
             effectiveLanguageCode: "en",
@@ -264,7 +336,9 @@ describe("resolveProjectContentForDisplay", () => {
     });
 
     it("returns original content with translation status when machine translation is missing", () => {
-        const resolved = resolveProjectContent({ translationStatus: "pending" });
+        const resolved = resolveProjectContent({
+            translationStatus: "pending",
+        });
 
         const displayContent = availableProjectContent(
             toProjectDisplayContent({
@@ -398,6 +472,65 @@ describe("resolveProjectContentForDisplay", () => {
 });
 
 describe("toProjectPageActivity", () => {
+    it.each([true, false])(
+        "returns only the original for an unsupported target (indexed=%s)",
+        (isIndexed) => {
+            const row = { ...createUnlistedActivityRow(), isIndexed };
+            const activity = toProjectPageActivity({
+                row,
+                translation: {
+                    conversationContentId: 2,
+                    displayLanguageCode: "fr",
+                    translatedTitle: "Previously generated French",
+                    translatedBody: null,
+                    translatedBodyPlainText: null,
+                    sourceLanguageCode: "en",
+                },
+                translationPolicy: getProjectTranslationTargetLanguagePolicy({
+                    languageSettings: {
+                        dynamicTranslationEnabled: true,
+                        defaultLanguageCode: "en",
+                        targetLanguageCodes: ["ru"],
+                    },
+                }),
+                displayLanguage: "fr",
+                counts: undefined,
+            });
+
+            expect(activity.displayContent).toMatchObject({
+                status: "available",
+                mode: "original",
+                content: { title: row.title },
+                translationControl: null,
+            });
+            expect(activity).not.toHaveProperty("alternateContent");
+        },
+    );
+
+    it("cannot present an English translation or toggle under a French target", () => {
+        const activity = toProjectPageActivity({
+            row: { ...createUnlistedActivityRow(), isIndexed: true },
+            translation: {
+                conversationContentId: 2,
+                displayLanguageCode: "en",
+                translatedTitle: "Wrong target language",
+                translatedBody: null,
+                translatedBodyPlainText: null,
+                sourceLanguageCode: "en",
+            },
+            translationPolicy,
+            displayLanguage: "fr",
+            counts: undefined,
+        });
+
+        expect(activity.displayContent).toMatchObject({
+            status: "available",
+            mode: "original",
+            content: { title: "Source activity" },
+            translationControl: null,
+        });
+    });
+
     it("displays completed translations for unlisted activities", () => {
         const row = createUnlistedActivityRow();
         const activity = toProjectPageActivity({
@@ -410,7 +543,7 @@ describe("toProjectPageActivity", () => {
                 translatedBodyPlainText: "Corps traduit",
                 sourceLanguageCode: "en",
             },
-            targetLanguageCode: "fr",
+            translationPolicy,
             displayLanguage: "fr",
             counts: undefined,
         });
@@ -445,7 +578,7 @@ describe("toProjectPageActivity", () => {
         const activity = toProjectPageActivity({
             row: createUnlistedActivityRow(),
             translation: undefined,
-            targetLanguageCode: "fr",
+            translationPolicy,
             displayLanguage: "fr",
             counts: undefined,
         });

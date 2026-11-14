@@ -15,20 +15,27 @@ import {
     fetchProjectAggregateCounts,
     fetchProjectPage,
     fetchProjectConversationPage,
+    fetchProjectPageActivities,
+    fetchConversationProjectContext,
 } from "../src/service/projectPage.js";
 import {
     conversationContentTable,
+    conversationContentTranslationTable,
     conversationTable,
+    conversationTranslationTargetLanguageTable,
     conversationViewSnapshotTable,
     organizationTable,
     projectContactTable,
     projectExternalOrganizationTable,
     projectTable,
     projectContentTable,
+    projectContentTranslationTable,
+    projectTranslationTargetLanguageTable,
     rankingConversationConfigTable,
     rankingConversationStatsSnapshotTable,
 } from "../src/shared-backend/schema.js";
 import { Dto } from "../src/shared/types/dto.js";
+import type { ConversationLanguageSettingsSource } from "../src/shared/types/dto.js";
 import { readDbFixtureSql } from "./dbFixture.js";
 
 vi.mock("../src/app.js", () => ({
@@ -72,7 +79,10 @@ describe("project published participation counts", () => {
     beforeEach(async () => {
         await db.execute(sql`TRUNCATE project_contact, project_external_organization,
             organization, conversation, conversation_view_snapshot,
-            ranking_conversation_config, ranking_conversation_stats_snapshot, project
+            ranking_conversation_config, ranking_conversation_stats_snapshot, project,
+            project_content, project_content_translation,
+            project_translation_target_language, conversation_content,
+            conversation_content_translation, conversation_translation_target_language
             RESTART IDENTITY CASCADE`);
         const projects = await db
             .insert(projectTable)
@@ -189,6 +199,218 @@ describe("project published participation counts", () => {
         if (row === undefined) throw new Error("Missing snapshot fixture");
         return row.id;
     }
+
+    async function addTranslatedActivity(
+        languageSettingsSource: ConversationLanguageSettingsSource,
+    ): Promise<void> {
+        const [projectContent] = await db
+            .update(projectContentTable)
+            .set({
+                title: "Кыргызча долбоор",
+                subtitle: "Кыргызча сүрөттөмө",
+                sourceLanguageCode: "ky",
+            })
+            .where(eq(projectContentTable.projectId, 1))
+            .returning({ id: projectContentTable.id });
+        if (projectContent === undefined)
+            throw new Error("Missing project content fixture");
+        await db
+            .update(projectTable)
+            .set({ dynamicTranslationEnabled: true, title: "Кыргызча долбоор" })
+            .where(eq(projectTable.id, 1));
+        await db.insert(projectTranslationTargetLanguageTable).values([
+            { projectId: 1, languageCode: "en" },
+            { projectId: 1, languageCode: "ru" },
+        ]);
+        await db.insert(projectContentTranslationTable).values({
+            projectContentId: projectContent.id,
+            displayLanguageCode: "en",
+            translatedTitle: "English project localization",
+            sourceKind: "manual",
+        });
+        const conversationId = await addConversation({ slugId: "1" });
+        await db
+            .update(conversationTable)
+            .set({
+                languageSettingsSource,
+                // Inherited policy must win over stale conversation-local settings.
+                dynamicTranslationEnabled:
+                    languageSettingsSource === "conversation_override",
+            })
+            .where(eq(conversationTable.id, conversationId));
+        await db.insert(conversationTranslationTargetLanguageTable).values(
+            languageSettingsSource === "project_inherited"
+                ? [{ conversationId, languageCode: "fr" }]
+                : [
+                      { conversationId, languageCode: "en" },
+                      { conversationId, languageCode: "ru" },
+                  ],
+        );
+        const [content] = await db
+            .update(conversationContentTable)
+            .set({ title: "Кыргызча сунуш", sourceLanguageCode: "ky" })
+            .where(eq(conversationContentTable.conversationId, conversationId))
+            .returning({ id: conversationContentTable.id });
+        if (content === undefined)
+            throw new Error("Missing conversation content fixture");
+        await db.insert(conversationContentTranslationTable).values([
+            {
+                conversationContentId: content.id,
+                displayLanguageCode: "en",
+                translatedTitle: "English activity",
+                sourceLanguageCode: "ky",
+            },
+            {
+                conversationContentId: content.id,
+                displayLanguageCode: "fr",
+                translatedTitle: "Cached but unconfigured French activity",
+                sourceLanguageCode: "ky",
+            },
+        ]);
+    }
+
+    describe.each([
+        "project_inherited",
+        "conversation_override",
+    ] satisfies ConversationLanguageSettingsSource[])(
+        "translation presentation (%s)",
+        (languageSettingsSource) => {
+            it("returns originals without controls for unsupported French on every project entry point", async () => {
+                await addTranslatedActivity(languageSettingsSource);
+                const common = {
+                    db,
+                    baseImageServiceUrl: "https://images.example.com",
+                    currentDisplayLanguage: "fr",
+                    requesterUserId: undefined,
+                } satisfies Omit<
+                    Parameters<typeof fetchProjectPage>[0],
+                    "request"
+                >;
+                const page = Dto.fetchProjectPageResponse.parse(
+                    await fetchProjectPage({
+                        ...common,
+                        request: Dto.fetchProjectPageRequest.parse({
+                            projectSlug: "test-project",
+                        }),
+                    }),
+                );
+                expect(page.project.displayContent).toMatchObject({
+                    status: "available",
+                    mode: "original",
+                    content: {
+                        title: "Кыргызча долбоор",
+                        subtitle: "Кыргызча сүрөттөмө",
+                    },
+                    translationControl: null,
+                });
+                expect(page.activities[0]?.displayContent).toMatchObject({
+                    status: "available",
+                    mode: "original",
+                    content: { title: "Кыргызча сунуш" },
+                    translationControl: null,
+                });
+                const activities = await fetchProjectPageActivities({
+                    db,
+                    currentDisplayLanguage: "fr",
+                    request: Dto.fetchProjectPageActivitiesRequest.parse({
+                        projectSlug: "test-project",
+                    }),
+                });
+                expect(activities.activities).toEqual(page.activities);
+                const conversationPage = await fetchProjectConversationPage({
+                    ...common,
+                    request: {
+                        projectSlug: "test-project",
+                        conversationSlugId: "1",
+                    },
+                });
+                expect(conversationPage.project.displayContent).toEqual(
+                    page.project.displayContent,
+                );
+                const context = await fetchConversationProjectContext({
+                    db,
+                    conversationSlugId: "1",
+                    currentDisplayLanguage: "fr",
+                });
+                expect(context).toMatchObject({
+                    originalProjectTitle: "Кыргызча долбоор",
+                    translatedProjectTitle: undefined,
+                });
+            });
+
+            it("keeps supported English translations and their original toggle", async () => {
+                await addTranslatedActivity(languageSettingsSource);
+                let projectReads = 0;
+                let projectTargetReads = 0;
+                const measuredDb = drizzle(client, {
+                    logger: {
+                        logQuery(query) {
+                            if (query.includes('from "project" '))
+                                projectReads += 1;
+                            if (
+                                query.includes(
+                                    'from "project_translation_target_language"',
+                                )
+                            ) {
+                                projectTargetReads += 1;
+                            }
+                        },
+                    },
+                });
+                const page = await fetchProjectPage({
+                    db: measuredDb,
+                    baseImageServiceUrl: "https://images.example.com",
+                    currentDisplayLanguage: "en",
+                    requesterUserId: undefined,
+                    request: Dto.fetchProjectPageRequest.parse({
+                        projectSlug: "test-project",
+                    }),
+                });
+                expect(page.project.displayContent).toMatchObject({
+                    content: { title: "English project localization" },
+                });
+                expect(page.activities[0]?.displayContent).toMatchObject({
+                    status: "available",
+                    mode: "translated",
+                    content: { title: "English activity" },
+                    translationControl: {
+                        status: "completed",
+                        alternateMode: "original",
+                    },
+                });
+                expect(projectReads).toBe(1);
+                expect(projectTargetReads).toBe(1);
+            });
+
+            it("ignores cached translations when the effective policy is disabled", async () => {
+                await addTranslatedActivity(languageSettingsSource);
+                if (languageSettingsSource === "project_inherited") {
+                    await db
+                        .update(projectTable)
+                        .set({ dynamicTranslationEnabled: false })
+                        .where(eq(projectTable.id, 1));
+                } else {
+                    await db
+                        .update(conversationTable)
+                        .set({ dynamicTranslationEnabled: false })
+                        .where(eq(conversationTable.slugId, "1"));
+                }
+                const page = await fetchProjectPageActivities({
+                    db,
+                    currentDisplayLanguage: "en",
+                    request: Dto.fetchProjectPageActivitiesRequest.parse({
+                        projectSlug: "test-project",
+                    }),
+                });
+                expect(page.activities[0]?.displayContent).toMatchObject({
+                    status: "available",
+                    mode: "original",
+                    content: { title: "Кыргызча сунуш" },
+                    translationControl: null,
+                });
+            });
+        },
+    );
 
     it("sums published counts and switches only when a pending snapshot activates", async () => {
         const first = await addConversation({ slugId: "1" });

@@ -105,6 +105,19 @@ export function isConfiguredTranslationTargetLanguage({
     return policy.effectiveTargetLanguageCodes.includes(targetLanguageCode);
 }
 
+export function isTranslationAllowedForTarget({
+    policy,
+    targetLanguageCode,
+}: {
+    policy: TranslationTargetLanguagePolicy;
+    targetLanguageCode: SupportedDisplayLanguageCodes;
+}): boolean {
+    return (
+        policy.dynamicTranslationEnabled &&
+        isConfiguredTranslationTargetLanguage({ policy, targetLanguageCode })
+    );
+}
+
 export function getManualMultilingualSettingsFromEffectiveTargets({
     effectiveMultilingualSettings,
     detectedTargetLanguageCode,
