@@ -144,7 +144,7 @@ import {
     getConversationOverrideTranslationTargetLanguagePolicy,
     getManualMultilingualSettingsFromProjectLanguageSettings,
     getProjectTranslationTargetLanguagePolicy,
-    isConfiguredTranslationTargetLanguage,
+    isTranslationAllowedForTarget,
     normalizeInheritedConversationMultilingualSettings,
     sourceLanguageToDisplayLanguage,
 } from "@/service/translationLanguageSetting.js";
@@ -974,12 +974,10 @@ async function getContentTranslationAvailabilityForConversation({
                   },
                   detectedTargetLanguageCode,
               });
-    const translationAllowed =
-        targetLanguagePolicy.dynamicTranslationEnabled &&
-        isConfiguredTranslationTargetLanguage({
-            policy: targetLanguagePolicy,
-            targetLanguageCode,
-        });
+    const translationAllowed = isTranslationAllowedForTarget({
+        policy: targetLanguagePolicy,
+        targetLanguageCode,
+    });
     return {
         isAllowed: translationAllowed,
         multilingualSetting,
@@ -1118,12 +1116,10 @@ async function getContentTranslationAvailabilityForProject({
             targetLanguageCodes: multilingualSetting.additionalLanguageCodes,
         },
     });
-    const projectTranslationAllowed =
-        targetLanguagePolicy.dynamicTranslationEnabled &&
-        isConfiguredTranslationTargetLanguage({
-            policy: targetLanguagePolicy,
-            targetLanguageCode,
-        });
+    const projectTranslationAllowed = isTranslationAllowedForTarget({
+        policy: targetLanguagePolicy,
+        targetLanguageCode,
+    });
     if (
         projectTranslationAllowed ||
         conversationSlugId === undefined ||

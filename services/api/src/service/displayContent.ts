@@ -4,6 +4,7 @@ import type {
     SupportedSpokenLanguageCodes,
 } from "@/shared/languages.js";
 import type {
+    LocalizedConversationContent,
     LocalizedContentDisplayMode,
     LocalizedContentTranslationStatus,
 } from "@/shared/types/zod.js";
@@ -20,31 +21,28 @@ export type DisplayedContentUnavailableStatus = Exclude<
     "completed"
 >;
 
-interface TranslatableLocalizedContent {
-    kind: "translatable";
-    translation: {
-        sourceLanguageCode?: string | null;
-        sourceLanguageLabel?: string;
-        sourceLanguage:
-            | { kind: "recognized"; languageCode: string; label: string }
-            | { kind: "raw"; rawLanguageCode: string; label?: string }
-            | { kind: "unknown" };
-        status: LocalizedContentTranslationStatus;
-    };
-}
+type TranslatableLocalizedContent = Pick<
+    Extract<LocalizedConversationContent, { kind: "translatable" }>,
+    "kind" | "translation"
+>;
 
 type DisplayableLocalizedContent =
     | { kind: "original_only" }
     | TranslatableLocalizedContent;
 
 type DisplayableLocalizedContentWithVariants<TOriginal, TTranslated> =
-    DisplayableLocalizedContent & {
-        sourceVersion: string;
-        variants: {
-            original?: TOriginal;
-            translated?: TTranslated;
-        };
-    };
+    | {
+          kind: "original_only";
+          sourceVersion: string;
+          variants: { original: TOriginal };
+      }
+    | (TranslatableLocalizedContent & {
+          sourceVersion: string;
+          variants: {
+              original?: TOriginal;
+              translated?: TTranslated;
+          };
+      });
 
 const languageDisplayNamesByLocale = new Map<
     SupportedDisplayLanguageCodes,
@@ -180,7 +178,11 @@ function canTranslateForDisplayLanguage({
     translationAllowed: boolean;
     displayLanguage: SupportedDisplayLanguageCodes;
 }): boolean {
-    if (!translationAllowed || content.kind !== "translatable") {
+    if (
+        !translationAllowed ||
+        content.kind !== "translatable" ||
+        content.translation.targetLanguageCode !== displayLanguage
+    ) {
         return false;
     }
 
@@ -326,26 +328,26 @@ export function toDisplayedContent<
         translationControl: DisplayedContentTranslationControl | null;
     }) => TUnavailableResponse;
 }): TOriginalResponse | TTranslatedResponse | TUnavailableResponse {
-    const selectedMode =
-        mode ??
-        getInitialDisplayContentMode({
-            content,
-            translationAllowed,
-            displayLanguage,
-            spokenLanguages,
-        });
+    const canTranslate = canTranslateForDisplayLanguage({
+        content,
+        translationAllowed,
+        displayLanguage,
+    });
+    const selectedMode = canTranslate
+        ? (mode ??
+          getInitialDisplayContentMode({
+              content,
+              translationAllowed,
+              displayLanguage,
+              spokenLanguages,
+          }))
+        : "original";
     const translationControl = getTranslationControl({
         content,
         mode: selectedMode,
         translationAllowed,
         displayLanguage,
     });
-    const canTranslate = canTranslateForDisplayLanguage({
-        content,
-        translationAllowed,
-        displayLanguage,
-    });
-
     if (selectedMode === "original") {
         const original = content.variants.original;
         if (original !== undefined) {

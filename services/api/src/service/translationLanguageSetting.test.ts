@@ -6,10 +6,33 @@ import {
     getManualMultilingualSettingsFromProjectLanguageSettings,
     getProjectTranslationTargetLanguagePolicy,
     isConfiguredTranslationTargetLanguage,
+    isTranslationAllowedForTarget,
     shouldTranslateContent,
 } from "./translationLanguageSetting.js";
 
 describe("translation target language policy", () => {
+    it("requires both an enabled policy and the exact configured target", () => {
+        const policy = getProjectTranslationTargetLanguagePolicy({
+            languageSettings: {
+                dynamicTranslationEnabled: true,
+                defaultLanguageCode: "ky",
+                targetLanguageCodes: ["en", "ru"],
+            },
+        });
+        expect(
+            isTranslationAllowedForTarget({ policy, targetLanguageCode: "fr" }),
+        ).toBe(false);
+        expect(
+            isTranslationAllowedForTarget({ policy, targetLanguageCode: "en" }),
+        ).toBe(true);
+        expect(
+            isTranslationAllowedForTarget({
+                policy: { ...policy, dynamicTranslationEnabled: false },
+                targetLanguageCode: "en",
+            }),
+        ).toBe(false);
+    });
+
     it("uses project detected target plus manual targets", () => {
         const policy = getProjectTranslationTargetLanguagePolicy({
             languageSettings: {
