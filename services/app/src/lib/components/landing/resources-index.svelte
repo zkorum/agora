@@ -1,13 +1,14 @@
 <script lang="ts">
-  import agoraBgGradient from "$lib/assets/agora-bg-gradient.png";
-  import resourcesHeroIllustration from "$lib/assets/resources-hero-illustration.png";
-  import * as m from "$lib/paraglide/messages.js";
-  import { getLocale, localizeHref } from "$lib/paraglide/runtime";
-  import { formatResourceDate } from "$logic/shared/resource-date";
+  import agoraBgGradient from "#lib/assets/agora-bg-gradient.png";
+  import resourcesHeroIllustration from "#lib/assets/resources-hero-illustration.png";
+  import * as m from "#lib/paraglide/messages.js";
+  import { getLocale, localizeHref } from "#lib/paraglide/runtime.js";
   import type {
     ResourcePostMeta,
     ResourceType,
-  } from "$server/landing/resources";
+  } from "$logic/landing/resource-types.js";
+  import { formatResourceDate } from "$logic/shared/resource-date.js";
+  import Button from "$ui/shared/button.svelte";
   import GradientButton from "$ui/shared/gradient-button.svelte";
   import GradientText from "$ui/shared/gradient-text.svelte";
   import Text from "$ui/shared/text.svelte";
@@ -21,13 +22,13 @@
   let { posts }: Props = $props();
   let selectedType = $state<ResourceFilter>("all");
 
-  const resourceFilters: { label: string; value: ResourceFilter }[] = [
+  const resourceFilters: { label: string; value: ResourceFilter }[] = $derived([
     { label: m.resources_filter_all(), value: "all" },
     { label: m.resources_filter_vision(), value: "vision" },
     { label: m.resources_filter_case_studies(), value: "case-study" },
     { label: m.resources_filter_guides(), value: "guide" },
     { label: m.resources_filter_tech(), value: "tech" },
-  ];
+  ]);
 
   function findFeaturedPost(
     postList: ResourcePostMeta[],
@@ -161,21 +162,21 @@
         mb-14 flex flex-wrap justify-center gap-3
         sm:gap-4
       "
-      role="tablist"
+      role="group"
       aria-label={m.resources_filter_label()}
     >
       {#each resourceFilters as filter (filter.value)}
-        <button
+        <Button
+          variant="unstyled"
           type="button"
-          role="tab"
-          aria-selected={selectedType === filter.value}
+          aria-pressed={selectedType === filter.value}
           onclick={() => (selectedType = filter.value)}
           class="
             inline-flex h-10 items-center gap-2 rounded-full border px-4 text-sm
             font-semibold transition-colors
             hover:border-primary-base hover:bg-sky-lightest
-            aria-selected:border-primary-base aria-selected:bg-sky-lightest
-            aria-selected:text-primary-base
+            aria-pressed:border-primary-base aria-pressed:bg-sky-lightest
+            aria-pressed:text-primary-base
           "
         >
           <span>{filter.label}</span>
@@ -184,7 +185,7 @@
           >
             {getFilterCount(filter.value)}
           </span>
-        </button>
+        </Button>
       {/each}
     </div>
 

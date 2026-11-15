@@ -2,11 +2,7 @@
   import { Select } from "bits-ui";
   import type { Snippet } from "svelte";
 
-  interface SelectItem {
-    value: string;
-    label: string;
-    disabled?: boolean;
-  }
+  import type { SelectItem } from "./view-types.js";
 
   interface Props {
     items: SelectItem[];
@@ -18,6 +14,14 @@
     contentClass?: string;
     triggerLabel?: Snippet<[SelectItem]>;
     itemLabel?: Snippet<[SelectItem]>;
+    rootProps?: Omit<
+      Extract<Select.RootProps, { type: "single" }>,
+      "type" | "value" | "children" | "disabled" | "onValueChange"
+    >;
+    triggerProps?: Omit<Select.TriggerProps, "children" | "class" | "ref">;
+    contentProps?: Omit<Select.ContentProps, "children" | "class" | "ref">;
+    triggerRef?: Select.TriggerProps["ref"];
+    contentRef?: Select.ContentProps["ref"];
   }
 
   let {
@@ -30,13 +34,20 @@
     contentClass = "",
     triggerLabel,
     itemLabel,
+    rootProps = {},
+    triggerProps = {},
+    contentProps = {},
+    triggerRef = $bindable(null),
+    contentRef = $bindable(null),
   }: Props = $props();
 
   const selectedItem = $derived(items.find((item) => item.value === value));
 </script>
 
-<Select.Root type="single" bind:value {onValueChange} {disabled}>
+<Select.Root {...rootProps} type="single" bind:value {onValueChange} {disabled}>
   <Select.Trigger
+    {...triggerProps}
+    bind:ref={triggerRef}
     class="
       inline-flex items-center gap-1.5 rounded-chip bg-sky-lightest px-2 py-1.5
       text-sm transition-colors outline-none
@@ -53,26 +64,20 @@
     {:else}
       <span class="text-muted-foreground">{placeholder}</span>
     {/if}
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="16"
-      height="16"
-      viewBox="0 0 256 256"
-      class="text-primary-base"
-      fill="currentColor"
-    >
-      <path
-        d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"
-      />
-    </svg>
+    <span
+      class="icon-[lucide--chevron-down] size-4 text-primary-base"
+      aria-hidden="true"
+    ></span>
   </Select.Trigger>
 
   <Select.Portal>
     <Select.Content
+      {...contentProps}
+      bind:ref={contentRef}
       class="
         z-80 min-w-32 rounded-md bg-white py-1 shadow-md
         {contentClass}"
-      sideOffset={4}
+      sideOffset={contentProps.sideOffset ?? 4}
     >
       {#each items as item (item.value)}
         <Select.Item

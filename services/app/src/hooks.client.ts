@@ -1,61 +1,47 @@
-import type { HandleClientError } from "@sveltejs/kit";
+import type { ClientCaughtError, HandleClientError } from "@sveltejs/kit/hooks";
 
-import { sentryEnabled } from "$lib/sentry-enabled";
+import { sentryEnabled } from "#lib/sentry-enabled.js";
+import { sentryOptions } from "#lib/sentry-options.js";
 import { recoverFromDynamicImportError } from "$logic/shared/dynamic-import-error";
-
-const isProduction =
-  sentryEnabled &&
-  typeof window !== "undefined" &&
-  !["localhost", "127.0.0.1"].includes(window.location.hostname) &&
-  !window.location.hostname.includes("staging") &&
-  !window.location.hostname.includes("dev");
 
 let sentryPromise: ReturnType<typeof initializeSentry> | undefined;
 
-async function initSentry() {
-  if (!isProduction) return undefined;
-
-  sentryPromise ??= initializeSentry();
-  return await sentryPromise;
-}
-
 async function initializeSentry() {
-  const sentry = await import("@sentry/sveltekit");
-  sentry.init({
-    dsn: "https://763fc22c86934ac6b99980f7624eb9fb@o4510068006780928.ingest.de.sentry.io/4510772432994384",
-    tracesSampleRate: 0.1,
-    sendDefaultPii: false,
-  });
-  return sentry;
+  try {
+    const sentry = await import("@sentry/sveltekit");
+    sentry.init({
+      ...sentryOptions,
+      tracesSampleRate: 0.1,
+    });
+    return sentry;
+  } catch (error) {
+    // Share an in-flight attempt, but do not permanently cache a failed SDK load.
+    sentryPromise = undefined;
+    throw error;
+  }
 }
 
 async function reportError(error: unknown): Promise<void> {
   try {
-    const sentry = await initSentry();
-    sentry?.captureException(error);
+    sentryPromise ??= initializeSentry();
+    const sentry = await sentryPromise;
+    sentry.captureException(error);
   } catch (reportingError) {
     console.error("[Sentry] Failed to report client error", reportingError);
   }
 }
 
-export const handleError: HandleClientError = async ({
-  error,
-  event: _event,
-  status,
-  message,
-}) => {
+export const handleError = (({ kind, error }: ClientCaughtError) => {
+  if (kind !== "unknown") return;
+
   if (recoverFromDynamicImportError(error)) {
-    return { message, status };
+    return;
   }
 
-  if (isProduction) {
-    await reportError(error);
+  if (sentryEnabled) {
+    // Rendering errors require a synchronous hook unless experimental async is enabled.
+    void reportError(error);
   } else {
     console.error("[Client Error]", error);
   }
-
-  return {
-    message,
-    status,
-  };
-};
+}) satisfies HandleClientError;

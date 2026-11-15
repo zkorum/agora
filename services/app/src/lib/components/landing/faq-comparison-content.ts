@@ -1,4 +1,4 @@
-import type { locales } from "$lib/paraglide/runtime";
+import type { locales } from "#lib/paraglide/runtime.js";
 
 import type { FaqItem } from "./faq-content";
 

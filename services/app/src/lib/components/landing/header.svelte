@@ -1,12 +1,9 @@
 <script lang="ts">
-  import { NavigationMenu } from "bits-ui";
-
+  import agoraIcon from "#lib/assets/agora-icon.svg";
+  import agoraText from "#lib/assets/agora-text.svg";
+  import * as m from "#lib/paraglide/messages.js";
+  import { localizeHref } from "#lib/paraglide/runtime.js";
   import LanguageSwitcher from "$components/shared/language-switcher.svelte";
-  import agoraIcon from "$lib/assets/agora-icon.svg";
-  import agoraText from "$lib/assets/agora-text.svg";
-  import * as m from "$lib/paraglide/messages.js";
-  import { localizeHref } from "$lib/paraglide/runtime";
-  import Chip from "$ui/shared/chip.svelte";
   import GradientButton from "$ui/shared/gradient-button.svelte";
   import MobileNavDrawer from "$ui/shared/mobile-nav-drawer.svelte";
   import TopBar from "$ui/shared/top-bar.svelte";
@@ -47,23 +44,13 @@
   );
 </script>
 
-<TopBar {hideOnScroll}>
+<TopBar {hideOnScroll} links={navLinks}>
   {#snippet start()}
     <!-- Logo -->
     <a href={localizeHref("/")} class="flex shrink-0 items-center gap-3">
       <img src={agoraIcon} alt="" class="h-[29px] w-auto" />
       <img src={agoraText} alt={m.brand_name()} class="h-[25px] w-auto" />
     </a>
-  {/snippet}
-
-  {#snippet nav()}
-    {#each navLinks as link (link.href)}
-      <NavigationMenu.Item>
-        <NavigationMenu.Link href={link.href}>
-          <Chip variant="nav">{link.label}</Chip>
-        </NavigationMenu.Link>
-      </NavigationMenu.Item>
-    {/each}
   {/snippet}
 
   {#snippet end()}
@@ -98,6 +85,7 @@
       "
       onclick={() => (mobileMenuOpen = true)}
       aria-label={m.nav_open_menu()}
+      aria-expanded={mobileMenuOpen}
     >
       <span class="icon-[lucide--menu] size-6 gradient-primary"></span>
     </button>

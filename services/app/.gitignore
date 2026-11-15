@@ -9,6 +9,8 @@ test-results
 playwright-report
 /.svelte-kit
 /build
+/storybook-static
+/storybook.log
 
 # OS
 .DS_Store

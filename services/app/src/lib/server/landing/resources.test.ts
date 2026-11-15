@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { locales } from "$lib/paraglide/runtime";
-import { SITE_ORIGIN } from "$lib/seo";
+import { locales } from "#lib/paraglide/runtime.js";
+import { SITE_ORIGIN } from "#lib/seo.js";
 
 import { getResourcePost, renderResourceMarkdown } from "./resources";
 

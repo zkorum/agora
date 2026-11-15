@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
 
   interface Props {
     videoid: string;

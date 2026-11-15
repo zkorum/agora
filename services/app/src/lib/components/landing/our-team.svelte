@@ -1,7 +1,7 @@
 <script lang="ts">
-  import photoNicolas from "$lib/assets/team/nicolas.png?enhanced";
-  import photoYuting from "$lib/assets/team/yuting.png?enhanced";
-  import * as m from "$lib/paraglide/messages.js";
+  import photoNicolas from "#lib/assets/team/nicolas.png?enhanced";
+  import photoYuting from "#lib/assets/team/yuting.png?enhanced";
+  import * as m from "#lib/paraglide/messages.js";
   import GradientLink from "$ui/shared/gradient-link.svelte";
   import GradientText from "$ui/shared/gradient-text.svelte";
   import Text from "$ui/shared/text.svelte";

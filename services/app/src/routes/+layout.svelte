@@ -2,17 +2,20 @@
   import "@fontsource-variable/albert-sans";
   import "../app.css";
 
+  import * as m from "#lib/paraglide/messages.js";
+  import { locales, localizeHref } from "#lib/paraglide/runtime.js";
+  import { DEFAULT_OG_IMAGE } from "#lib/seo.js";
   import { page } from "$app/state";
   import Footer from "$components/landing/footer.svelte";
   import Header from "$components/landing/header.svelte";
-  import * as m from "$lib/paraglide/messages.js";
-  import { locales, localizeHref } from "$lib/paraglide/runtime";
-  import { DEFAULT_OG_IMAGE } from "$lib/seo";
 
-  let { children } = $props();
+  import type { LayoutProps } from "./$types.js";
+
+  let { children }: LayoutProps = $props();
 
   const seo = $derived(page.data.seo);
   const isResources = $derived(/\/resources(\/|$)/.test(page.url.pathname));
+  const isAgora = $derived(page.route.id?.startsWith("/(agora)/") ?? false);
   const title = $derived(seo?.title ?? m.meta_title());
   const description = $derived(seo?.description ?? m.meta_description());
   const ogType = $derived(seo?.ogType ?? "website");
@@ -75,15 +78,22 @@
   <link rel="alternate" hreflang="x-default" href={page.url.pathname} />
 </svelte:head>
 
-<div
-  class="
-    flex min-h-screen flex-col font-sans text-foreground
-    {isResources ? 'bg-[#fefeff]' : 'bg-background'}
-  "
->
-  <Header hideOnScroll={true} variant={isResources ? "resources" : "default"} />
-  <main class="flex-1 pt-24">
-    {@render children()}
-  </main>
-  <Footer showFunding={!isResources} />
-</div>
+{#if isAgora}
+  {@render children()}
+{:else}
+  <div
+    class="
+      flex min-h-screen flex-col font-sans text-foreground
+      {isResources ? 'bg-[#fefeff]' : 'bg-background'}
+    "
+  >
+    <Header
+      hideOnScroll={true}
+      variant={isResources ? "resources" : "default"}
+    />
+    <main class="flex-1 pt-24">
+      {@render children()}
+    </main>
+    <Footer showFunding={!isResources} />
+  </div>
+{/if}

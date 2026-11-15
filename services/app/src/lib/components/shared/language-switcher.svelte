@@ -1,10 +1,11 @@
 <script lang="ts">
-  import { browser } from "$app/environment";
+  import * as m from "#lib/paraglide/messages.js";
+  import { locales, localizeHref, toLocale } from "#lib/paraglide/runtime.js";
+  import { browser } from "$app/env";
   import { page } from "$app/state";
-  import * as m from "$lib/paraglide/messages.js";
-  import { locales, localizeHref, toLocale } from "$lib/paraglide/runtime";
   import GradientText from "$ui/shared/gradient-text.svelte";
   import Select from "$ui/shared/select.svelte";
+  import type { SelectItem } from "$ui/shared/view-types.js";
 
   type Locale = (typeof locales)[number];
 
@@ -63,12 +64,12 @@
   value={currentLocale}
   onValueChange={handleLocaleChange}
 >
-  {#snippet triggerLabel(item)}
+  {#snippet triggerLabel(item: SelectItem)}
     <GradientText angle={122}
       >{localeData[toLocale(item.value) ?? "en"].label}</GradientText
     >
   {/snippet}
-  {#snippet itemLabel(item)}
+  {#snippet itemLabel(item: SelectItem)}
     <GradientText angle={122}>{item.label}</GradientText>
   {/snippet}
 </Select>

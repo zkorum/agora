@@ -5,9 +5,18 @@ import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
 import { unified } from "unified";
 
-import type { locales } from "$lib/paraglide/runtime";
-import { baseLocale, localizeHref, toLocale } from "$lib/paraglide/runtime";
-import { SITE_ORIGIN } from "$lib/seo";
+import {
+  baseLocale,
+  localizeHref,
+  toLocale,
+  type locales,
+} from "#lib/paraglide/runtime.js";
+import { SITE_ORIGIN } from "#lib/seo.js";
+import {
+  resourceTypes,
+  type ResourcePost,
+  type ResourcePostMeta,
+} from "$logic/landing/resource-types.js";
 import { parseResourceDate } from "$logic/shared/resource-date";
 
 type Locale = (typeof locales)[number];
@@ -71,24 +80,6 @@ function rehypeLocalizeResourceLinks({ locale }: { locale: Locale }) {
   return (tree: unknown): void => {
     localizeResourceLinks({ node: tree, locale });
   };
-}
-
-const resourceTypes = ["vision", "case-study", "guide", "tech"] as const;
-export type ResourceType = (typeof resourceTypes)[number];
-
-interface ResourcePost extends ResourcePostMeta {
-  readonly content: string;
-}
-
-export interface ResourcePostMeta {
-  readonly slug: string;
-  readonly type: ResourceType;
-  readonly title: string;
-  readonly description: string;
-  readonly author: string;
-  readonly date: Date;
-  readonly thumbnail: string;
-  readonly image: string | undefined;
 }
 
 const markdownFiles = import.meta.glob<string>(

@@ -1,8 +1,6 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
-import "unplugin-icons/types/svelte";
-
-import type { SeoData } from "$lib/seo";
+import type { SeoData } from "#lib/seo.js";
 
 declare global {
   namespace App {

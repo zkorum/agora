@@ -1,0 +1,12 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "servers": {
+      "agora-storybook": {
+        "type": "remote",
+        "url": "http://127.0.0.1:6006/mcp",
+        "disabled": true
+      }
+    }
+  }
+}

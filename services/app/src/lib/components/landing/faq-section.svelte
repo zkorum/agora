@@ -1,10 +1,10 @@
 <script lang="ts">
-  import * as m from "$lib/paraglide/messages.js";
-  import { getLocale, localizeHref } from "$lib/paraglide/runtime";
+  import * as m from "#lib/paraglide/messages.js";
+  import { getLocale, localizeHref } from "#lib/paraglide/runtime.js";
   import GradientText from "$ui/shared/gradient-text.svelte";
   import Text from "$ui/shared/text.svelte";
 
-  import { getFaqContent } from "./faq-content";
+  import { getFaqContent } from "./faq-content.js";
 
   interface AnswerSegment {
     text: string;

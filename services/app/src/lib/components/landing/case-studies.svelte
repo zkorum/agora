@@ -1,6 +1,6 @@
 <script module lang="ts">
-  import * as m from "$lib/paraglide/messages.js";
-  import { localizeHref } from "$lib/paraglide/runtime";
+  import * as m from "#lib/paraglide/messages.js";
+  import { localizeHref } from "#lib/paraglide/runtime.js";
   import GradientButton from "$ui/shared/gradient-button.svelte";
   import GradientText from "$ui/shared/gradient-text.svelte";
   import Text from "$ui/shared/text.svelte";
@@ -58,7 +58,7 @@
         >
           {#if slug === "bloquonstout"}
             <enhanced:img
-              src="$lib/assets/casestudy-bloquonstout.png"
+              src="#lib/assets/casestudy-bloquonstout.png"
               alt=""
               loading="lazy"
               sizes="(min-width: 768px) min(352px, (100vw - 8rem) / 3), (min-width: 640px) calc(100vw - 4rem), calc(100vw - 2rem)"
@@ -85,7 +85,7 @@
             ></div>
           {:else if slug === "unesco-mil-alliance"}
             <enhanced:img
-              src="$lib/assets/casestudy-unesco-mil.jpeg"
+              src="#lib/assets/casestudy-unesco-mil.jpeg"
               alt=""
               loading="lazy"
               sizes="(min-width: 768px) min(352px, (100vw - 8rem) / 3), (min-width: 640px) calc(100vw - 4rem), calc(100vw - 2rem)"

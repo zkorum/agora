@@ -1,4 +1,10 @@
 @import "tailwindcss";
+/* Explorer fixtures must not introduce utilities into production CSS. */
+@source not "../stories";
+@source not "../.storybook";
+@source not "../eslint";
+@source not "../tests";
+@source not "./**/*.test.ts";
 @plugin "@tailwindcss/typography";
 @plugin "@iconify/tailwind4";
 
@@ -22,6 +28,7 @@
 
   /* Colors - Sky (light backgrounds/borders) */
   --color-sky-white: var(--sky-white);
+  --color-sky-off-white: var(--sky-off-white);
   --color-sky-lightest: var(--sky-lightest);
   --color-sky-lighter: var(--sky-lighter);
   --color-sky-light: var(--sky-light);
@@ -67,6 +74,7 @@
   --color-yellow-light: var(--yellow-light);
   --color-yellow-base: var(--yellow-base);
   --color-yellow-darkest: var(--yellow-darkest);
+  --color-accent-yellow: var(--accent-yellow);
 
   /* Colors - Semantic (component-level) */
   --color-background: var(--background);
@@ -162,6 +170,7 @@
 
   /* Sky palette (light backgrounds/borders) */
   --sky-white: #ffffff;
+  --sky-off-white: #fbfafb;
   --sky-lightest: #f6f5f8;
   --sky-lighter: #e9e9f1;
   --sky-light: #e2e1e7;
@@ -206,7 +215,8 @@
   --yellow-lighter: #ffd188;
   --yellow-light: #ffc462;
   --yellow-base: #ffb323;
-  --yellow-darkest: #a05e03;
+  --yellow-darkest: #693e03;
+  --accent-yellow: #ffcc00;
 
   /* ---- Layer 2: Semantic aliases (reference palette) ---- */
 

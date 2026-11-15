@@ -2,32 +2,21 @@
   import { NavigationMenu } from "bits-ui";
   import type { Snippet } from "svelte";
 
-  import { createScrollVisibility } from "$logic/shared/scroll-visibility.svelte";
+  import { createScrollVisibility } from "$logic/shared/scroll-visibility.svelte.js";
+
+  import Chip from "./chip.svelte";
 
   interface Props {
     hideOnScroll?: boolean;
     start?: Snippet;
     nav?: Snippet;
     end?: Snippet;
+    links?: readonly { href: string; label: string }[];
   }
 
-  let { hideOnScroll = false, start, nav, end }: Props = $props();
+  let { hideOnScroll = false, start, nav, end, links = [] }: Props = $props();
 
   const scrollVisibility = createScrollVisibility();
-
-  $effect(() => {
-    if (!hideOnScroll) return;
-
-    function handleScroll() {
-      scrollVisibility.update(window.scrollY);
-    }
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-  });
 
   const headerClass = $derived(
     hideOnScroll && scrollVisibility.hidden
@@ -35,6 +24,12 @@
       : "translate-y-0",
   );
 </script>
+
+<svelte:window
+  onscroll={() => {
+    if (hideOnScroll) scrollVisibility.update(window.scrollY);
+  }}
+/>
 
 <header
   class="
@@ -54,7 +49,15 @@
       "
     >
       <NavigationMenu.List class="flex items-center gap-1.5">
-        {@render nav?.()}
+        {#if nav}{@render nav()}{:else}
+          {#each links as link (link.href)}
+            <NavigationMenu.Item>
+              <NavigationMenu.Link href={link.href}>
+                <Chip variant="nav">{link.label}</Chip>
+              </NavigationMenu.Link>
+            </NavigationMenu.Item>
+          {/each}
+        {/if}
       </NavigationMenu.List>
     </NavigationMenu.Root>
 

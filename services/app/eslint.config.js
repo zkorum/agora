@@ -1,5 +1,9 @@
+import { globSync, readFileSync } from "node:fs";
+
 import eslint from "@eslint/js";
+import eslintComments from "@eslint-community/eslint-plugin-eslint-comments";
 import eslintPluginBetterTailwindcss from "eslint-plugin-better-tailwindcss";
+import checkFile from "eslint-plugin-check-file";
 import eslintConfigPrettier from "eslint-config-prettier";
 import importX from "eslint-plugin-import-x";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
@@ -7,6 +11,68 @@ import sveltePlugin from "eslint-plugin-svelte";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 import svelteParser from "svelte-eslint-parser";
+import { parse } from "svelte/compiler";
+
+import appPolicy from "./eslint/app-policy.js";
+
+/** @param {import("svelte/compiler").AST.CSS.Node | null} node @returns {string[]} */
+function declaredCssClasses(node) {
+  if (node === null) return [];
+  switch (node.type) {
+    case "ClassSelector":
+      return [node.name];
+    case "StyleSheet":
+    case "Block":
+    case "SelectorList":
+    case "ComplexSelector":
+      return node.children.flatMap(declaredCssClasses);
+    case "RelativeSelector":
+      return node.selectors.flatMap(declaredCssClasses);
+    case "Rule":
+      return [node.prelude, node.block].flatMap(declaredCssClasses);
+    case "Atrule":
+      return declaredCssClasses(node.block);
+    case "PseudoClassSelector":
+    case "PseudoElementSelector":
+      return declaredCssClasses(node.args ?? null);
+    case "AttributeSelector":
+    case "Combinator":
+    case "Declaration":
+    case "IdSelector":
+    case "NestingSelector":
+    case "Nth":
+    case "Percentage":
+    case "TypeSelector":
+      return [];
+  }
+}
+
+// Tailwind cannot see Svelte's scoped styles. Allow only class selectors actually
+// declared in each foundation component; unknown utility/class typos still fail.
+const scopedClassOverrides = globSync(
+  [
+    "src/lib/ui/shared/{avatar,button,collection-toolbar,dialog,empty-state,expandable-text,field,icon,metrics,mobile-nav-drawer,panel,segmented-control,setting-row,top-bar}.svelte",
+    "src/lib/ui/agora/*.svelte",
+    "src/lib/components/agora/*.svelte",
+  ],
+  { cwd: import.meta.dirname },
+).map(
+  /** @returns {import("eslint").Linter.Config} */ (file) => ({
+    files: [file],
+    rules: {
+      "better-tailwindcss/no-unknown-classes": [
+        "error",
+        {
+          ignore: declaredCssClasses(
+            parse(readFileSync(new URL(file, import.meta.url), "utf8"), {
+              modern: true,
+            }).css,
+          ).map((name) => `^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`),
+        },
+      ],
+    },
+  }),
+);
 
 export default tseslint.config(
   {
@@ -19,6 +85,7 @@ export default tseslint.config(
       "static/",
       "test-results/",
       "playwright-report/",
+      "storybook-static/",
       "src/lib/paraglide/",
       "vite.config.ts.timestamp-*",
       "postcss.config.js",
@@ -27,6 +94,63 @@ export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,
+  {
+    linterOptions: {
+      noInlineConfig: true,
+      reportUnusedDisableDirectives: "error",
+    },
+    plugins: {
+      "app-policy": appPolicy,
+      "check-file": checkFile,
+      "eslint-comments": eslintComments,
+    },
+    rules: {
+      "app-policy/no-html-lint-directives": "error",
+      "eslint-comments/no-use": "error",
+      "check-file/filename-blocklist": [
+        "error",
+        {
+          "**/*.spec.*": "*.test.ts",
+          "**/*.test.!(ts)": "*.test.ts",
+        },
+      ],
+      "no-extend-native": "error",
+      "@typescript-eslint/consistent-type-assertions": [
+        "error",
+        { assertionStyle: "never" },
+      ],
+      "@typescript-eslint/ban-ts-comment": [
+        "error",
+        {
+          "ts-expect-error": true,
+          "ts-ignore": true,
+          "ts-nocheck": true,
+          "ts-check": false,
+        },
+      ],
+    },
+  },
+  {
+    ignores: [
+      "**/+{page,layout,server,error}{,.server,@*,.server@*}.{js,ts,svelte}",
+      "**/$types.d.ts",
+    ],
+    rules: {
+      "check-file/filename-naming-convention": [
+        "error",
+        { "**/*": "KEBAB_CASE" },
+        { ignoreMiddleExtensions: true },
+      ],
+    },
+  },
+  {
+    files: [
+      "src/lib/**/*.{js,ts,mjs,mts,cjs,cts,svelte}",
+      "**/index.{js,ts,mjs,mts,cjs,cts}",
+    ],
+    ignores: ["**/*.d.ts", "**/*.test.ts"],
+    rules: { "app-policy/no-barrel-exports": "error" },
+  },
   {
     languageOptions: {
       globals: {
@@ -54,25 +178,20 @@ export default tseslint.config(
     },
   },
   eslintPluginBetterTailwindcss.configs["recommended"],
+  ...scopedClassOverrides,
   {
     settings: {
       "better-tailwindcss": {
         entryPoint: "src/app.css",
       },
     },
-    rules: {},
   },
   {
-    files: [
-      "eslint.config.js",
-      "svelte.config.js",
-      "vite.config.ts",
-      "playwright.config.ts",
-    ],
+    files: ["eslint.config.js", "vite.config.ts", "playwright.config.ts"],
     ...tseslint.configs.disableTypeChecked,
   },
   {
-    files: ["src/**/*.ts", "src/**/*.svelte", "src/**/*.svelte.ts"],
+    files: ["src/**/*.{js,ts,mjs,mts,cjs,cts,jsx,tsx,svelte}"],
     plugins: {
       "simple-import-sort": simpleImportSort,
       "import-x": importX,
@@ -89,12 +208,7 @@ export default tseslint.config(
         "error",
         {
           caseSensitive: true,
-          ignore: [
-            "^\\$app/",
-            "^\\$env/",
-            "^\\$service-worker$",
-            "^unplugin-icons/",
-          ],
+          ignore: ["^\\$app/", "^\\$env/", "^\\$service-worker$"],
         },
       ],
       "@typescript-eslint/switch-exhaustiveness-check": "error",
@@ -122,30 +236,34 @@ export default tseslint.config(
     },
   },
   {
+    files: ["src/**/*.{js,ts,mjs,mts,cjs,cts,jsx,tsx,svelte}"],
+    rules: {
+      "app-policy/module-boundaries": "error",
+    },
+  },
+  {
     files: ["**/*.svelte"],
     rules: {
-      "@typescript-eslint/no-unsafe-call": "off",
-      "@typescript-eslint/no-unsafe-assignment": "off",
-      "@typescript-eslint/no-unsafe-member-access": "off",
       // Disabled: This codebase uses localizeHref() from Paraglide for i18n-aware navigation
       // instead of SvelteKit's resolve(). The rule can't detect this equivalent pattern.
       "svelte/no-navigation-without-resolve": "off",
+      "svelte/block-lang": ["error", { script: "ts" }],
+      "svelte/button-has-type": "error",
+      "svelte/no-target-blank": "error",
+      "svelte/no-top-level-browser-globals": "error",
+      "svelte/no-inspect": "error",
+      "svelte/no-at-debug-tags": "error",
     },
   },
   {
-    files: ["src/routes/resources/*/+page.svelte"],
+    files: ["**/*.svelte.ts", "**/*.svelte.js"],
+    rules: { "svelte/no-top-level-browser-globals": "error" },
+  },
+  {
+    files: ["src/routes/resources/[[]slug[]]/+page.svelte"],
     rules: {
       // Resource HTML comes only from repository-owned Markdown, not user input.
       "svelte/no-at-html-tags": "off",
-    },
-  },
-  {
-    files: ["src/**/*.test.ts", "src/**/*.spec.ts", "tests/**/*.ts"],
-    rules: {
-      "@typescript-eslint/no-floating-promises": "off",
-      "@typescript-eslint/no-unsafe-assignment": "off",
-      "@typescript-eslint/no-unsafe-member-access": "off",
-      "@typescript-eslint/no-unsafe-call": "off",
     },
   },
   eslintConfigPrettier,

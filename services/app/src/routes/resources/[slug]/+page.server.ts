@@ -1,8 +1,8 @@
 import { error } from "@sveltejs/kit";
 
-import * as m from "$lib/paraglide/messages.js";
-import { getLocale } from "$lib/paraglide/runtime";
-import { type SeoData, SITE_ORIGIN } from "$lib/seo";
+import * as m from "#lib/paraglide/messages.js";
+import { getLocale } from "#lib/paraglide/runtime.js";
+import { type SeoData, SITE_ORIGIN } from "#lib/seo.js";
 import { getAllSlugs, getResourcePost } from "$server/landing/resources";
 
 import type { EntryGenerator, PageServerLoad } from "./$types";
