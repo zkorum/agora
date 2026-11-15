@@ -7,7 +7,7 @@
     <div class="container">
       <ZKTab
         :icon-code="
-          isMaxDiffConversation
+          isPrioritizingConversation
             ? 'mdi:sort-numeric-ascending'
             : 'meteor-icons:comment'
         "
@@ -77,10 +77,9 @@ const { t } = useComponentI18n<InteractionTabTranslations>(
 
 const route = useRoute();
 const router = useRouter();
-const isMaxDiffConversation = computed(
+const isPrioritizingConversation = computed(
   () =>
-    props.conversationTypeConfig.conversationType === "ranking" &&
-    props.conversationTypeConfig.rankingMode === "bws"
+    props.conversationTypeConfig.conversationType === "prioritizing"
 );
 
 // Track whether we can use router.back() to return to comment tab

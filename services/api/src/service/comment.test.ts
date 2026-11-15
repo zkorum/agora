@@ -43,6 +43,8 @@ function snapshotOpinionRow(
         authorIsDeleted: false,
         isSeed: false,
         currentContentId: 3,
+        deletedAt: null,
+        accountHiddenAt: null,
         numAgrees: 4,
         numDisagrees: 2,
         numPasses: 1,
@@ -104,6 +106,8 @@ describe("checkpoint opinion content projection", () => {
     it.each([
         { currentContentId: null },
         { authorIsDeleted: true },
+        { authorId: null, authorIsDeleted: null, accountHiddenAt: new Date() },
+        { authorIsDeleted: false, accountHiddenAt: new Date() },
         { opinion: null, opinionContentId: null, contentPublicId: null },
     ])(
         "redacts the entire checkpoint DTO while preserving its numerical rows",

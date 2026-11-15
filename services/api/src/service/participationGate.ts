@@ -9,7 +9,6 @@ import type {
 import type {
     ConversationType,
     DeviceLoginStatusExtended,
-    EventSlug,
     ParticipationBlockedReason,
     ParticipationMode,
     RankingMode,
@@ -18,7 +17,6 @@ import type {
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import { useCommonPost } from "./common.js";
 import * as authUtilService from "./authUtil.js";
-import * as zupassService from "./zupass.js";
 import { getSurveyParticipationStatus } from "./survey.js";
 
 interface ResolveParticipantIdentityResultSuccess {
@@ -53,9 +51,9 @@ export interface CheckConversationParticipationSuccess {
     conversationContentId: number;
     conversationType: ConversationType;
     rankingMode: RankingMode | null;
+    prioritizationType: "comparisons" | "qv" | null;
     participantId: string;
     participationMode: ParticipationMode;
-    requiresEventTicket: EventSlug | null;
 }
 
 export type CheckConversationParticipationFailure =
@@ -72,7 +70,6 @@ const verificationStepKinds = {
         | "survey_outdated"
         | "conversation_closed"
         | "conversation_locked"
-        | "event_ticket_required"
     >,
     Exclude<ConversationOnboardingStep["kind"], "survey">
 >;
@@ -83,7 +80,7 @@ function rejectParticipation({
 }: {
     reason: Exclude<
         ParticipationBlockedReason,
-        "survey_required" | "survey_outdated" | "event_ticket_required"
+        "survey_required" | "survey_outdated"
     >;
     deviceStatus: DeviceLoginStatusExtended;
 }): CheckConversationParticipationFailure {
@@ -102,19 +99,6 @@ function rejectParticipation({
                               : "login",
                       },
                   },
-    };
-}
-
-function rejectEventTicket(
-    eventSlug: EventSlug,
-): CheckConversationParticipationFailure {
-    return {
-        success: false,
-        reason: "event_ticket_required",
-        participationStatus: {
-            status: "onboarding_required",
-            nextStep: { kind: "ticket", eventSlug },
-        },
     };
 }
 
@@ -276,7 +260,7 @@ type ParticipationEligibility =
       })
     | CheckConversationParticipationFailure;
 
-async function resolveConversationParticipation({
+export async function resolveConversationParticipation({
     db,
     conversationSlugId,
     deviceStatus,
@@ -336,21 +320,6 @@ async function resolveConversationParticipation({
 
     const participantId = identityResolution.participantId;
 
-    if (metadata.requiresEventTicket !== null) {
-        if (participantId === undefined) {
-            return rejectEventTicket(metadata.requiresEventTicket);
-        }
-
-        const hasEventTicket = await zupassService.hasEventTicket({
-            db,
-            userId: participantId,
-            eventSlug: metadata.requiresEventTicket,
-        });
-        if (!hasEventTicket) {
-            return rejectEventTicket(metadata.requiresEventTicket);
-        }
-    }
-
     const surveyStatus = requireCompletedSurvey
         ? await getSurveyParticipationStatus({
               db,
@@ -386,9 +355,9 @@ async function resolveConversationParticipation({
         conversationContentId: metadata.contentId,
         conversationType: metadata.conversationType,
         rankingMode: metadata.rankingMode,
+        prioritizationType: metadata.prioritizationType,
         participantId,
         participationMode: metadata.participationMode,
-        requiresEventTicket: metadata.requiresEventTicket,
     };
 }
 
@@ -464,6 +433,35 @@ export async function checkConversationParticipation({
         didWrite,
         now,
     });
+    return await checkConversationParticipationWithDeviceStatus({
+        db,
+        conversationSlugId,
+        didWrite,
+        userAgent,
+        now,
+        currentDisplayLanguage,
+        requireCompletedSurvey,
+        skipLockCheck,
+        skipClosedCheck,
+        deviceStatus,
+    });
+}
+
+/** Reuse a device snapshot resolved at the caller's lifecycle/identity boundary. */
+export async function checkConversationParticipationWithDeviceStatus({
+    db,
+    conversationSlugId,
+    didWrite,
+    userAgent,
+    now,
+    currentDisplayLanguage,
+    requireCompletedSurvey = true,
+    skipLockCheck = false,
+    skipClosedCheck = false,
+    deviceStatus,
+}: Parameters<typeof checkConversationParticipation>[0] & {
+    deviceStatus: DeviceLoginStatusExtended;
+}): Promise<CheckConversationParticipationResult> {
     const eligibility = await resolveConversationParticipation({
         db,
         conversationSlugId,

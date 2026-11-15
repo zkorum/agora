@@ -80,6 +80,10 @@ function generateFixtureSql({
     indexStatements: { tableName: string; statement: string }[];
 }): string {
     const selectedTables = new Set(tableNames);
+    // Device authentication also consults account-independent key retirement.
+    if (selectedTables.has("device") && tableStatements.has("retired_device_key")) {
+        selectedTables.add("retired_device_key");
+    }
     const missingTables = tableNames.filter(
         (tableName) => !tableStatements.has(tableName),
     );

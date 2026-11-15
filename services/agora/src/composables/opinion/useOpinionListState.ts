@@ -47,9 +47,7 @@ export function useOpinionListState({
       return (
         toValue(enabled) &&
         config !== undefined &&
-        !(
-          config.conversationType === "ranking" && config.rankingMode === "bws"
-        ) &&
+        config.conversationType !== "prioritizing" &&
         resolveOpinionView({
           metadata: config,
           routeContext: toValue(routeContext),

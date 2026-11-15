@@ -21,7 +21,6 @@
     <div class="container">
       <NewConversationControlBar
         v-model:is-private="isPrivate"
-        v-model:requires-event-ticket="requiresEventTicket"
         v-model:import-settings="importSettings"
         v-model:external-source-config="externalSourceConfig"
         v-model:title="title"
@@ -34,9 +33,6 @@
         :allowed-post-as="allowedPostAs"
         :participation-mode="participationMode"
         :is-edit-mode="true"
-        :can-add-event-ticket="canAddEventTicket"
-        :can-change-event-ticket="canChangeEventTicket"
-        :can-remove-event-ticket="canRemoveEventTicket"
         :can-use-analysis-variants-preference="canUseAnalysisVariantsPreference"
         :can-use-dynamic-translation="canUseDynamicTranslation"
         :hide-language-setting="currentProjectLanguageProject !== undefined"
@@ -94,15 +90,6 @@
         @action="handlePartialEmailReachAction"
       />
 
-      <ZKCard
-        v-if="showPremiumEditRestrictedBanner"
-        class="premium-restricted-banner"
-        padding="1rem"
-      >
-        <q-icon name="mdi-lock-alert-outline" class="premium-restricted-icon" />
-        <span>{{ t("premiumEditRestrictedBanner") }}</span>
-      </ZKCard>
-
       <div class="contentFlexStyle">
         <div v-if="isSurveyFeatureAllowed" class="surveyActionRow">
           <q-btn
@@ -121,6 +108,7 @@
           </div>
 
           <Editor
+            v-if="editPermissions?.canEditConversationContent === true"
             v-model="title"
             outlined
             :placeholder="t('titlePlaceholder')"
@@ -133,11 +121,20 @@
             @update:model-value="updateTitle"
             @update:is-over-limit="(v: boolean) => (isTitleOverLimit = v)"
           />
+          <ZKHtmlContent
+            v-else-if="hasLoadedSession"
+            :html-body="title"
+            :compact-mode="false"
+            :enable-links="false"
+            content-role="title"
+            :collapsible="false"
+          />
         </div>
 
         <div>
           <div class="editor-style">
             <Editor
+              v-if="editPermissions?.canEditConversationContent === true"
               v-model="content"
               outlined
               :placeholder="t('bodyPlaceholder')"
@@ -149,6 +146,13 @@
               :show-character-count="true"
               @update:model-value="updateContent"
               @update:is-over-limit="(v: boolean) => (isBodyOverLimit = v)"
+            />
+            <ZKHtmlContent
+              v-else-if="hasLoadedSession"
+              :html-body="content"
+              :compact-mode="false"
+              :enable-links="true"
+              :collapsible="false"
             />
           </div>
         </div>
@@ -186,7 +190,7 @@ import {
 import NewConversationControlBar from "src/components/newConversation/NewConversationControlBar.vue";
 import { seedOpinionsTranslations } from "src/components/newConversation/SeedOpinions.i18n";
 import SpaLink from "src/components/ui-library/SpaLink.vue";
-import ZKCard from "src/components/ui-library/ZKCard.vue";
+import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import {
   type PostAsSettings,
   useConversationDraft,
@@ -295,7 +299,6 @@ const hasLoadedSession = computed(
     !isLoading.value &&
     editStore.session?.original.conversationSlugId === conversationSlugId.value
 );
-
 const titleInputRef = ref<HTMLDivElement>();
 
 const responseSurveyButtonLabel = computed(() => {
@@ -316,15 +319,6 @@ const canEditConversationContent = computed(() => {
     editPermissions.value?.canEditConversationContent === true
   );
 });
-const canAddEventTicket = computed(() => {
-  return editPermissions.value?.canAddEventTicket ?? true;
-});
-const canChangeEventTicket = computed(() => {
-  return editPermissions.value?.canChangeEventTicket ?? true;
-});
-const canRemoveEventTicket = computed(() => {
-  return editPermissions.value?.canRemoveEventTicket ?? true;
-});
 const canUseAnalysisVariantsPreference = computed(() => {
   if (hasProjectChange.value)
     return (
@@ -342,9 +336,6 @@ const canUseDynamicTranslation = computed(() => {
       ) ?? false
     );
   return editPermissions.value?.canUseDynamicTranslation ?? false;
-});
-const showPremiumEditRestrictedBanner = computed(() => {
-  return (editPermissions.value?.restrictedPremiumFeatures.length ?? 0) > 0;
 });
 
 const hasUnsavedChanges = computed(() => {
@@ -365,7 +356,6 @@ const {
   inheritProjectLanguages,
   isPrivate,
   participationMode,
-  requiresEventTicket,
   aiLabelingEnabled,
   preferredOpinionGroupCount,
   postAs,
@@ -693,6 +683,7 @@ function getLiveDetails(): EditConversationDetails | undefined {
     original,
     projectTarget: target,
     form: {
+      participantStatements: original.participantStatements,
       title: title.value,
       content: content.value,
       multilingualSetting: multilingualSetting.value,
@@ -700,7 +691,6 @@ function getLiveDetails(): EditConversationDetails | undefined {
       inheritProjectLanguages: inheritProjectLanguages.value,
       isPrivate: isPrivate.value,
       participationMode: participationMode.value,
-      requiresEventTicket: requiresEventTicket.value,
       conversationTypeConfig: conversationTypeConfig.value,
       aiLabelingEnabled: aiLabelingEnabled.value,
       preferredOpinionGroupCount: preferredOpinionGroupCount.value,

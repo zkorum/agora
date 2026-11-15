@@ -15,8 +15,10 @@ import { type App, createApp, h, nextTick, ref } from "vue";
 import ProjectDocumentFilePicker from "./ProjectDocumentFilePicker.vue";
 
 // Exercise browser drag/drop behavior rather than Quasar's Node/SSR entry point.
-vi.mock("quasar", async () =>
-  await vi.importActual<typeof QuasarModule>("quasar/dist/quasar.client.js")
+vi.mock(
+  "quasar",
+  async () =>
+    await vi.importActual<typeof QuasarModule>("quasar/dist/quasar.client.js")
 );
 
 const mountedApps: App[] = [];
@@ -87,9 +89,11 @@ function removeButton(container: HTMLElement): HTMLButtonElement {
 describe("ProjectDocumentFilePicker", () => {
   it("removes a pending file after selection with an active drag overlay and allows reselecting it", async () => {
     const { container, modelValue } = mountPicker();
-    container.querySelector(".q-uploader")?.dispatchEvent(
-      new Event("dragover", { bubbles: true, cancelable: true })
-    );
+    container
+      .querySelector(".q-uploader")
+      ?.dispatchEvent(
+        new Event("dragover", { bubbles: true, cancelable: true })
+      );
     await nextTick();
     expect(container.querySelector(".q-uploader__dnd")).not.toBeNull();
 

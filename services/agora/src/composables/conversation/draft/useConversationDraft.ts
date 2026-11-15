@@ -5,21 +5,25 @@
  * settings stay together; individual controls are read-only projections.
  */
 
+import { uid } from "quasar";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { validateHtmlStringCharacterCount } from "src/shared/richText";
 import { MAX_LENGTH_CONVERSATION_BODY } from "src/shared/shared";
 import type {
   ConversationMultilingualSetting,
+  ConversationStatementSettings,
   ConversationType,
   ConversationTypeConfig,
-  EventSlug,
   ExternalSourceConfig,
+  ParticipantStatements,
   ParticipationMode,
   PolisVotingPresentation,
   PreferredOpinionGroupCount,
   SurveyConfig,
 } from "src/shared/types/zod";
+import { zodConversationStatementSettings } from "src/shared/types/zod";
 import { projectConversationTypeConfig } from "src/shared/utils/conversationTypeConfig";
+import { changeConversationStatementSettings } from "src/shared/utils/participantStatements";
 import { isValidPolisUrl } from "src/shared/utils/polis";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import {
@@ -42,6 +46,7 @@ import type {
   ConversationImportSettings,
   MutationResult,
   PostAsSettings,
+  QvStatementDraft,
   UseConversationDraftConfig,
   ValidationResult,
   ValidationState,
@@ -56,18 +61,19 @@ import { useConversationDraftTranslations } from "./useConversationDraft.i18n";
 export interface UseConversationDraftReturn {
   // State (always refs - single source of truth)
   title: Ref<string>;
+  participantStatements: Ref<ParticipantStatements>;
   content: Ref<string>;
   multilingualSetting: Ref<ConversationMultilingualSetting>;
   selectedProjectSlug: Ref<string | undefined>;
   inheritProjectLanguages: Ref<boolean>;
   conversationEmailUpdateEnabledOverride: Ref<boolean | undefined>;
   seedOpinions: Ref<string[]>;
+  qvStatements: Ref<QvStatementDraft[]>;
   conversationTypeConfig: Ref<Readonly<ConversationTypeConfig>>;
   conversationType: ComputedRef<ConversationType>;
   votingPresentation: ComputedRef<PolisVotingPresentation>;
   isPrivate: Ref<boolean>;
   participationMode: Ref<ParticipationMode>;
-  requiresEventTicket: Ref<EventSlug | undefined>;
   aiLabelingEnabled: Ref<boolean>;
   preferredOpinionGroupCount: Ref<PreferredOpinionGroupCount>;
   postAs: Ref<PostAsSettings>;
@@ -129,6 +135,27 @@ export function useConversationDraft(
 
   // All state as refs (single source of truth)
   const title = ref(initialDraft.title);
+  const ownedStatementSettings = ref<ConversationStatementSettings>(
+    changeConversationStatementSettings({
+      current: initialDraft,
+      config: projectConversationTypeConfig(initialDraft),
+    })
+  );
+  const participantStatements = computed({
+    get: () => ownedStatementSettings.value.participantStatements,
+    set: (value: ParticipantStatements) => {
+      const current = ownedStatementSettings.value;
+      if (
+        value.supported &&
+        (current.conversationType === "polis" ||
+          current.prioritizationType === "comparisons")
+      )
+        ownedStatementSettings.value = {
+          ...current,
+          participantStatements: { ...value },
+        };
+    },
+  });
   const content = ref(initialDraft.content);
   const multilingualSetting = ref<ConversationMultilingualSetting>(
     initialDraft.multilingualSetting
@@ -141,14 +168,34 @@ export function useConversationDraft(
     initialDraft.conversationEmailUpdateEnabledOverride
   );
   const seedOpinions = ref<string[]>([...initialDraft.seedOpinions]);
-  const aiSuggestionDraftId = ref(initialDraft.aiSuggestionDraftId);
-  const ownedConversationTypeConfig = ref<Readonly<ConversationTypeConfig>>(
-    projectConversationTypeConfig(initialDraft)
+  const qvStatements = ref<QvStatementDraft[]>(
+    initialDraft.qvStatements.map((item) => ({ ...item }))
   );
+  const aiSuggestionDraftId = ref(initialDraft.aiSuggestionDraftId);
   const conversationTypeConfig = computed({
-    get: () => ownedConversationTypeConfig.value,
+    get: () => projectConversationTypeConfig(ownedStatementSettings.value),
     set: (value: Readonly<ConversationTypeConfig>) => {
-      ownedConversationTypeConfig.value = projectConversationTypeConfig(value);
+      if (
+        value.conversationType === "prioritizing" &&
+        value.prioritizationType === "qv" &&
+        qvStatements.value.length === 0
+      ) {
+        qvStatements.value = seedOpinions.value.map((title) => ({
+          localKey: uid(),
+          title,
+          description: "",
+        }));
+      } else if (
+        (value.conversationType === "polis" ||
+          value.prioritizationType === "comparisons") &&
+        seedOpinions.value.length === 0
+      ) {
+        seedOpinions.value = qvStatements.value.map((item) => item.title);
+      }
+      ownedStatementSettings.value = changeConversationStatementSettings({
+        current: ownedStatementSettings.value,
+        config: value,
+      });
     },
   });
   const conversationType = computed(
@@ -162,9 +209,6 @@ export function useConversationDraft(
   const isPrivate = ref(initialDraft.isPrivate);
   const participationMode = ref<ParticipationMode>(
     initialDraft.participationMode
-  );
-  const requiresEventTicket = ref<EventSlug | undefined>(
-    initialDraft.requiresEventTicket
   );
   const aiLabelingEnabled = ref(initialDraft.aiLabelingEnabled);
   const preferredOpinionGroupCount = ref<PreferredOpinionGroupCount>(
@@ -201,16 +245,16 @@ export function useConversationDraft(
       conversationEmailUpdateEnabledOverride:
         conversationEmailUpdateEnabledOverride.value,
       seedOpinions: [...seedOpinions.value],
+      qvStatements: qvStatements.value.map((item) => ({ ...item })),
       isPrivate: isPrivate.value,
       participationMode: participationMode.value,
-      requiresEventTicket: requiresEventTicket.value,
       aiLabelingEnabled: aiLabelingEnabled.value,
       preferredOpinionGroupCount: preferredOpinionGroupCount.value,
       postAs: { ...postAs.value },
       externalSourceConfig: externalSourceConfig.value,
       surveyConfig: surveyConfig.value,
       importSettings: { ...importSettings.value },
-      ...conversationTypeConfig.value,
+      ...ownedStatementSettings.value,
     }));
 
     // Single deep watcher syncs all changes to store
@@ -432,7 +476,9 @@ export function useConversationDraft(
     // Check seed opinions changes
     const hasSeedOpinionsChanges =
       JSON.stringify(seedOpinions.value) !==
-      JSON.stringify(emptyDraft.seedOpinions);
+        JSON.stringify(emptyDraft.seedOpinions) ||
+      JSON.stringify(qvStatements.value) !==
+        JSON.stringify(emptyDraft.qvStatements);
 
     // Check conversation type changes
     const hasConversationTypeChanges =
@@ -471,6 +517,8 @@ export function useConversationDraft(
     });
 
     return (
+      JSON.stringify(participantStatements.value) !==
+        JSON.stringify(emptyDraft.participantStatements) ||
       hasContentChanges ||
       hasMultilingualSettingChanges ||
       hasProjectSelectionChanges ||
@@ -508,11 +556,12 @@ export function useConversationDraft(
     conversationEmailUpdateEnabledOverride.value =
       emptyDraft.conversationEmailUpdateEnabledOverride;
     seedOpinions.value = [];
+    qvStatements.value = [];
     conversationTypeConfig.value = projectConversationTypeConfig(emptyDraft);
+    participantStatements.value = emptyDraft.participantStatements;
     aiSuggestionDraftId.value = emptyDraft.aiSuggestionDraftId;
     isPrivate.value = emptyDraft.isPrivate;
     participationMode.value = emptyDraft.participationMode;
-    requiresEventTicket.value = emptyDraft.requiresEventTicket;
     aiLabelingEnabled.value = emptyDraft.aiLabelingEnabled;
     preferredOpinionGroupCount.value = emptyDraft.preferredOpinionGroupCount;
     postAs.value = { ...emptyDraft.postAs };
@@ -540,10 +589,12 @@ export function useConversationDraft(
     inheritProjectLanguages.value = data.inheritProjectLanguages;
     isPrivate.value = data.isPrivate;
     participationMode.value = data.participationMode;
-    requiresEventTicket.value = data.requiresEventTicket;
     aiLabelingEnabled.value = data.aiLabelingEnabled;
     preferredOpinionGroupCount.value = data.preferredOpinionGroupCount;
-    conversationTypeConfig.value = data.conversationTypeConfig;
+    ownedStatementSettings.value = zodConversationStatementSettings.parse({
+      ...data.conversationTypeConfig,
+      participantStatements: data.participantStatements,
+    });
     surveyConfig.value = cloneSurveyConfig({
       surveyConfig: toRaw(data.surveyConfig),
     });
@@ -556,6 +607,7 @@ export function useConversationDraft(
    */
   function getDraftSnapshot(): ConversationFormState {
     return {
+      participantStatements: { ...participantStatements.value },
       title: title.value,
       content: content.value,
       multilingualSetting: cloneConversationMultilingualSetting(
@@ -565,7 +617,6 @@ export function useConversationDraft(
       inheritProjectLanguages: inheritProjectLanguages.value,
       isPrivate: isPrivate.value,
       participationMode: participationMode.value,
-      requiresEventTicket: requiresEventTicket.value,
       aiLabelingEnabled: aiLabelingEnabled.value,
       preferredOpinionGroupCount: preferredOpinionGroupCount.value,
       surveyConfig: cloneSurveyConfig({
@@ -597,6 +648,7 @@ export function useConversationDraft(
 
   return {
     // State
+    participantStatements,
     title,
     content,
     multilingualSetting,
@@ -604,12 +656,12 @@ export function useConversationDraft(
     inheritProjectLanguages,
     conversationEmailUpdateEnabledOverride,
     seedOpinions,
+    qvStatements,
     conversationTypeConfig,
     conversationType,
     votingPresentation,
     isPrivate,
     participationMode,
-    requiresEventTicket,
     aiLabelingEnabled,
     preferredOpinionGroupCount,
     postAs,

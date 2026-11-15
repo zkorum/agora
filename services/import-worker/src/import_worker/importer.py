@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Protocol
 
 from pydantic import BaseModel, TypeAdapter
 from reddwarf.data_loader import Loader
-from sqlalchemy import and_, case, desc, or_, select, tuple_, update
+from sqlalchemy import and_, case, desc, func, or_, select, tuple_, update
 from sqlalchemy import insert as sqlalchemy_insert
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
@@ -35,12 +35,17 @@ from import_worker.generated_models import (
     OpinionContent,
     OpinionGroupSpec,
     OpinionModeration,
+    Organization,
+    OrganizationMembership,
     PolisConversationConfig,
+    Project,
+    ProjectOrganizationOwnership,
     User,
     Vote,
     VoteContent,
 )
 from import_worker.generated_shared_types import (
+    CONVERSATION_CREATE_ORGANIZATION_ROLES,
     MAX_CONVERSATION_IMPORT_DURATION_MS,
     MAX_LENGTH_CONVERSATION_BODY_HTML,
     MAX_LENGTH_CONVERSATION_TITLE,
@@ -183,7 +188,7 @@ class ContentTranslationQueueSchedule:
 
 @dataclass(frozen=True)
 class ImportProcessResult:
-    notification: ImportNotificationEvent
+    notification: ImportNotificationEvent | None
     analysis_schedule: AnalysisQueueSchedule | None
     content_translation_schedule: ContentTranslationQueueSchedule | None
 
@@ -456,7 +461,6 @@ def _create_conversation(
             conversation_type="polis",
             polis_config_id=polis_config_row.id,
             is_importing=True,
-            requires_event_ticket=request.form_data.requires_event_ticket,
             current_content_id=None,
             created_at=now,
             updated_at=now,
@@ -1079,7 +1083,7 @@ def _current_opinion_group_spec_ids(session: Session) -> list[int]:
     return current_spec_ids
 
 
-def _ready_imports_query() -> Select[tuple[int, str, uuid.UUID, int, str, str]]:
+def _ready_imports_query() -> Select[tuple[int, str, uuid.UUID | None, int, str, str, int]]:
     # The import is linked only after all ingestion phases have committed. Math
     # requires is_importing=False, so publication must not wait for analysis.
     return (
@@ -1090,10 +1094,16 @@ def _ready_imports_query() -> Select[tuple[int, str, uuid.UUID, int, str, str]]:
             Conversation.id,
             Conversation.slug_id,
             ConversationContent.title,
+            Conversation.project_id,
         )
         .join(Conversation, Conversation.id == ConversationImport.conversation_id)
         .join(ConversationContent, ConversationContent.id == Conversation.current_content_id)
-        .where(ConversationImport.status == "processing")
+        .join(Project, Project.id == Conversation.project_id)
+        .where(
+            ConversationImport.status == "processing",
+            Conversation.deleted_at.is_(None),
+            Project.deleted_at.is_(None),
+        )
         .correlate(None)
     )
 
@@ -1103,11 +1113,11 @@ def _publish_import(
     *,
     import_id: int,
     import_slug_id: str,
-    user_id: uuid.UUID,
+    user_id: uuid.UUID | None,
     conversation_id: int,
     conversation_slug_id: str,
     title: str,
-) -> ImportNotificationEvent:
+) -> ImportNotificationEvent | None:
     # Both callers hold the processing import's writer-side row lock.
     session.execute(
         update(Conversation)
@@ -1125,10 +1135,15 @@ def _publish_import(
             updated_at=now_zero_ms(),
         )
     )
+    active_recipient = session.scalar(
+        select(User.id).where(User.id == user_id, User.is_deleted.is_(False))
+    )
+    if active_recipient is None:
+        return None
     notification_slug_id, notification_created_at, notification_is_read = (
         _create_import_notification(
             session,
-            user_id=user_id,
+            user_id=active_recipient,
             import_id=import_id,
             conversation_id=conversation_id,
             notification_type=NotificationTypeEnum.import_completed,
@@ -1136,7 +1151,7 @@ def _publish_import(
     )
     return ImportNotificationEvent(
         type="import_notification",
-        userId=str(user_id),
+        userId=str(active_recipient),
         notificationSlugId=notification_slug_id,
         notificationCreatedAt=notification_created_at,
         notificationIsRead=notification_is_read,
@@ -1162,6 +1177,35 @@ def complete_ready_imports(session: Session) -> list[ImportNotificationEvent]:
     for import_id in import_ids:
         # Recover one saved import at a time without holding locks across the
         # rest of the sweep or blocking unrelated API status requests.
+        target = (
+            session.execute(ready_imports.where(ConversationImport.id == import_id))
+            .tuples()
+            .first()
+        )
+        session.rollback()
+        if target is None:
+            continue
+        project = session.scalar(
+            select(Project.id)
+            .where(Project.id == target[6], Project.deleted_at.is_(None))
+            .with_for_update(key_share=True, skip_locked=True)
+        )
+        if project is None:
+            session.rollback()
+            continue
+        conversation = session.scalar(
+            select(Conversation.id)
+            .where(
+                Conversation.id == target[3],
+                Conversation.project_id == project,
+                Conversation.deleted_at.is_(None),
+                Conversation.current_content_id.is_not(None),
+            )
+            .with_for_update(key_share=True, skip_locked=True)
+        )
+        if conversation is None:
+            session.rollback()
+            continue
         ready_import = (
             session.execute(
                 ready_imports.where(ConversationImport.id == import_id).with_for_update(
@@ -1174,7 +1218,7 @@ def complete_ready_imports(session: Session) -> list[ImportNotificationEvent]:
         if ready_import is None:
             session.rollback()
             continue
-        _, import_slug_id, user_id, conversation_id, conversation_slug_id, title = ready_import
+        _, import_slug_id, user_id, conversation_id, conversation_slug_id, title, _ = ready_import
 
         event = _publish_import(
             session,
@@ -1186,7 +1230,8 @@ def complete_ready_imports(session: Session) -> list[ImportNotificationEvent]:
             title=title,
         )
         session.commit()
-        events.append(event)
+        if event is not None:
+            events.append(event)
     return events
 
 
@@ -1245,7 +1290,10 @@ def _delete_imported_conversation(
             Conversation.is_importing.is_(True),
             Conversation.current_content_id.is_not(None),
         )
-        .values(current_content_id=None)
+        .values(
+            current_content_id=None,
+            deleted_at=func.coalesce(Conversation.deleted_at, now_zero_ms()),
+        )
         .returning(Conversation.id),
     ).first()
     if discarded_id is None:
@@ -1253,7 +1301,9 @@ def _delete_imported_conversation(
     session.execute(
         update(Opinion)
         .where(Opinion.conversation_id == conversation_id)
-        .values(current_content_id=None),
+        .values(
+            current_content_id=None, deleted_at=func.coalesce(Opinion.deleted_at, now_zero_ms())
+        ),
     )
     return True
 
@@ -1300,6 +1350,13 @@ def _start_import(
             ConversationImport.status == "processing",
             ConversationImport.conversation_id.is_(None),
             ConversationImport.created_at > import_deadline_cutoff(),
+            ConversationImport.user_id.in_(
+                select(User.id).where(
+                    User.id == actor_user_id,
+                    User.is_deleted.is_(False),
+                    User.auth_restricted_at.is_(None),
+                )
+            ),
         )
         .values(updated_at=now_zero_ms())
         .returning(ConversationImport.id),
@@ -1318,6 +1375,89 @@ def _discard_imported_conversation(session: Session, *, conversation_id: int) ->
     if _delete_imported_conversation(session, conversation_id=conversation_id):
         _soft_delete_imported_users_for_conversation(session, conversation_id=conversation_id)
     session.commit()
+
+
+def lock_import_publication_target(
+    session: Session,
+    *,
+    actor_user_id: uuid.UUID,
+    project_id: int,
+    import_slug_id: str,
+) -> None:
+    """Recheck accepted work after provider/bulk work, holding locks only through commit."""
+    actor = session.execute(
+        select(User.id)
+        .where(
+            User.id == actor_user_id, User.is_deleted.is_(False), User.auth_restricted_at.is_(None)
+        )
+        .with_for_update(key_share=True)
+    ).first()
+    if actor is None:
+        raise RuntimeError("Import actor is no longer active")
+    organization_ids = session.scalars(
+        select(ProjectOrganizationOwnership.organization_id)
+        .join(
+            OrganizationMembership,
+            OrganizationMembership.organization_id == ProjectOrganizationOwnership.organization_id,
+        )
+        .where(
+            ProjectOrganizationOwnership.project_id == project_id,
+            ProjectOrganizationOwnership.deleted_at.is_(None),
+            OrganizationMembership.user_id == actor_user_id,
+            OrganizationMembership.deleted_at.is_(None),
+        )
+    ).all()
+    if not organization_ids:
+        raise RuntimeError("Import target is no longer authorized")
+    active_organizations = session.scalars(
+        select(Organization.id)
+        .where(Organization.id.in_(organization_ids), Organization.deleted_at.is_(None))
+        .order_by(Organization.id)
+        .with_for_update(read=True)
+    ).all()
+    project = session.execute(
+        select(Project.id)
+        .where(Project.id == project_id, Project.deleted_at.is_(None))
+        .with_for_update(key_share=True)
+    ).first()
+    if project is None:
+        raise RuntimeError("Import project is no longer active")
+    authorization = session.execute(
+        select(OrganizationMembership.id)
+        .join(
+            ProjectOrganizationOwnership,
+            ProjectOrganizationOwnership.organization_id == OrganizationMembership.organization_id,
+        )
+        .where(
+            OrganizationMembership.user_id == actor_user_id,
+            OrganizationMembership.deleted_at.is_(None),
+            OrganizationMembership.organization_id.in_(active_organizations),
+            OrganizationMembership.role.in_(CONVERSATION_CREATE_ORGANIZATION_ROLES),
+            ProjectOrganizationOwnership.project_id == project_id,
+            ProjectOrganizationOwnership.deleted_at.is_(None),
+        )
+        .limit(1)
+        .with_for_update(
+            read=True,
+            of=[
+                OrganizationMembership,
+                ProjectOrganizationOwnership,
+            ],
+        )
+    ).first()
+    if authorization is None:
+        raise RuntimeError("Import target is no longer authorized")
+    request = session.execute(
+        select(ConversationImport.id)
+        .where(
+            ConversationImport.slug_id == import_slug_id,
+            ConversationImport.user_id == actor_user_id,
+            ConversationImport.status == "processing",
+        )
+        .with_for_update()
+    ).first()
+    if request is None:
+        raise RuntimeError("Import request is no longer active")
 
 
 def google_detector_for_import(
@@ -1454,6 +1594,12 @@ def process_import_request(
         )
 
         phase_started_at = time.perf_counter()
+        lock_import_publication_target(
+            session,
+            actor_user_id=request.actor_user_id,
+            project_id=request.project_id,
+            import_slug_id=request.import_slug_id,
+        )
         finalized_import = session.scalars(
             update(ConversationImport)
             .where(
@@ -1535,13 +1681,19 @@ def mark_import_failed(
     if row is None:
         session.rollback()
         return None
+    active_recipient = session.execute(
+        select(User.id).where(User.id == row.user_id, User.is_deleted.is_(False))
+    ).first()
+    if active_recipient is None:
+        session.commit()
+        return None
     (
         notification_slug_id,
         notification_created_at,
         notification_is_read,
     ) = _create_import_notification(
         session,
-        user_id=row.user_id,
+        user_id=active_recipient.id,
         import_id=row.id,
         conversation_id=None,
         notification_type=NotificationTypeEnum.import_failed,
@@ -1549,7 +1701,7 @@ def mark_import_failed(
     session.commit()
     return ImportNotificationEvent(
         type="import_notification",
-        userId=str(row.user_id),
+        userId=str(active_recipient.id),
         notificationSlugId=notification_slug_id,
         notificationCreatedAt=notification_created_at,
         notificationIsRead=notification_is_read,
@@ -1632,13 +1784,18 @@ def cleanup_stale_imports(
     ).all()
     events: list[ImportNotificationEvent] = []
     for row in stale_rows:
+        active_recipient = session.scalar(
+            select(User.id).where(User.id == row.user_id, User.is_deleted.is_(False))
+        )
+        if active_recipient is None:
+            continue
         (
             notification_slug_id,
             notification_created_at,
             notification_is_read,
         ) = _create_import_notification(
             session,
-            user_id=row.user_id,
+            user_id=active_recipient,
             import_id=row.id,
             conversation_id=None,
             notification_type=NotificationTypeEnum.import_failed,
@@ -1646,7 +1803,7 @@ def cleanup_stale_imports(
         events.append(
             ImportNotificationEvent(
                 type="import_notification",
-                userId=str(row.user_id),
+                userId=str(active_recipient),
                 notificationSlugId=notification_slug_id,
                 notificationCreatedAt=notification_created_at,
                 notificationIsRead=notification_is_read,

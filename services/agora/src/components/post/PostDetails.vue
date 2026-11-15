@@ -11,7 +11,6 @@
           :initial-display-content="initialDisplayContent"
           :compact-mode="compactMode"
           @open-moderation-history="openModerationHistory()"
-          @verified="(payload) => handleTicketVerified(payload)"
         />
 
         <PostActionBar
@@ -89,6 +88,7 @@
 
     <FloatingBottomContainer v-if="!compactMode" :anchor-element="undefined">
       <CommentComposer
+        :participant-statements="conversationData.metadata.participantStatements"
         :editing-target="editingTarget"
         :action-bar-element="
           conversationScrollContext.actionBarElement ?? undefined
@@ -148,12 +148,6 @@ const props = defineProps<{
   conversationData: ExtendedConversation;
   initialDisplayContent: ConversationContentFetchResponse | undefined;
   compactMode: boolean;
-}>();
-
-const emit = defineEmits<{
-  ticketVerified: [
-    payload: { userIdChanged: boolean; needsCacheRefresh: boolean },
-  ];
 }>();
 
 const currentTab = ref<"comment" | "analysis">("comment");
@@ -381,26 +375,6 @@ async function refreshAllData(): Promise<void> {
   // Refresh comment data if the component is rendered
   if (opinionSectionRef.value) {
     await opinionSectionRef.value.refreshData();
-  }
-}
-
-async function handleTicketVerified(payload: {
-  userIdChanged: boolean;
-  needsCacheRefresh: boolean;
-}): Promise<void> {
-  // This is called directly by PostContent when EventTicketRequirementBanner emits verified
-  // Emit to parent (conversation page) so it can refresh conversation data AND all tab data
-  emit("ticketVerified", payload);
-
-  // Handle deferred cache refresh if a new guest was created via Zupass
-  if (payload.needsCacheRefresh) {
-    // Load authenticated modules (including user profile) after ticket verification
-    // The underlying problem is read replica lag: when a new guest user is created via Zupass,
-    // the username is written to the primary database but may not yet be replicated to read replicas.
-    // By deferring loadAuthenticatedModules() until after the verification flow completes,
-    // we give the replication time to catch up, increasing the likelihood that the username
-    // will be available when we fetch the user profile.
-    await loadAuthenticatedModules();
   }
 }
 

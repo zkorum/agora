@@ -34,7 +34,6 @@ import {
     getProjectLanguageSettings,
 } from "./projectAccess.js";
 import {
-    getConversationContentEditPremiumFeatures,
     getPremiumEntitlementSubjectForConversation,
     getPremiumFeaturesInConversation,
     getRestrictedPremiumFeatures,
@@ -42,6 +41,11 @@ import {
 import type { NormalizedUserRichText } from "./richText.js";
 import { getSurveyConfigForConversation } from "./survey.js";
 import type { VoteBuffer } from "./voteBuffer.js";
+import {
+    getQvStatementLanguageInput,
+    prepareQvStatementUpdate,
+    type NormalizedQvStatementUpdate,
+} from "./qvStatements.js";
 
 export function buildConversationEditLanguageInput({
     title,
@@ -80,6 +84,7 @@ export async function prepareConversationEditLanguages({
     bodyPlainText,
     googleCloudCredentials,
     voteBuffer,
+    qvStatementUpdate,
 }: {
     db: PostgresJsDatabase;
     userId: string;
@@ -90,6 +95,7 @@ export async function prepareConversationEditLanguages({
     bodyPlainText: string;
     googleCloudCredentials: GoogleCloudCredentials | undefined;
     voteBuffer: VoteBuffer | undefined;
+    qvStatementUpdate: NormalizedQvStatementUpdate | undefined;
 }): Promise<
     | {
           success: true;
@@ -120,7 +126,8 @@ export async function prepareConversationEditLanguages({
                 dynamicTranslationEnabled:
                     conversationTable.dynamicTranslationEnabled,
                 isImporting: conversationTable.isImporting,
-                requiresEventTicket: conversationTable.requiresEventTicket,
+                isClosed: conversationTable.isClosed,
+                creditVotingConfigId: conversationTable.creditVotingConfigId,
                 externalSourceConfig:
                     rankingConversationConfigTable.externalSourceConfig,
                 moderationAction: conversationModerationTable.moderationAction,
@@ -223,6 +230,19 @@ export async function prepareConversationEditLanguages({
         lockTargets: false,
     });
     if (!seedChanges.success) return seedChanges;
+    if (qvStatementUpdate !== undefined) {
+        if (source.creditVotingConfigId === null)
+            return { success: false, reason: "seed_opinions_not_allowed" };
+        const qvChanges = await prepareQvStatementUpdate({
+            db,
+            conversationId: source.id,
+            configId: source.creditVotingConfigId,
+            isClosed: source.isClosed,
+            update: qvStatementUpdate,
+            lockConfig: false,
+        });
+        if (!qvChanges.success) return qvChanges;
+    }
     const contentChanged =
         data.conversationTitle !== source.title ||
         sanitizedBody !== toUnionUndefined(source.body);
@@ -230,19 +250,19 @@ export async function prepareConversationEditLanguages({
         !projectChanged &&
         (contentChanged ||
             normalizedSeeds.length > 0 ||
-            seedChanges.changes.length > 0)
+            seedChanges.changes.length > 0 ||
+            qvStatementUpdate !== undefined)
     ) {
         const features = await getPremiumFeaturesInConversation({
             db,
             conversation: {
                 conversationId: source.id,
-                requiresEventTicket: source.requiresEventTicket,
             },
         });
         const expired = await getRestrictedPremiumFeatures({
             db,
             subject,
-            features: getConversationContentEditPremiumFeatures(features),
+            features,
             mode: "edit",
             now: new Date(),
         });
@@ -253,6 +273,11 @@ export async function prepareConversationEditLanguages({
     const inputs: { text: string; googleText?: string }[] = [
         ...normalizedSeeds.map((opinion) => ({ text: opinion.plainText })),
         ...getSeedOpinionChangeLanguageInputs(seedChanges.changes),
+        ...(qvStatementUpdate?.changes.flatMap((change) =>
+            change.action === "delete"
+                ? []
+                : [getQvStatementLanguageInput(change.content)],
+        ) ?? []),
     ];
     if (contentChanged || data.surveyConfig !== undefined) {
         const effectiveSurvey =

@@ -3,7 +3,7 @@
 
 CREATE TYPE "public"."conversation_language_settings_source" AS ENUM('conversation_override', 'project_inherited');
 
-CREATE TYPE "public"."conversation_type" AS ENUM('polis', 'ranking');
+CREATE TYPE "public"."conversation_type" AS ENUM('polis', 'prioritizing');
 
 CREATE TYPE "public"."directory_visibility" AS ENUM('listed', 'unlisted');
 
@@ -17,6 +17,8 @@ CREATE TYPE "public"."opinion_moderation_action" AS ENUM('move', 'hide');
 
 CREATE TYPE "public"."organization_membership_all_project_capability_enum" AS ENUM('project_update', 'project_delete', 'project_manage_owner_organizations', 'conversation_create', 'conversation_edit', 'conversation_delete', 'conversation_view_private_results', 'conversation_export_owner_data', 'conversation_moderate', 'conversation_manage_integrations', 'conversation_email_update');
 
+CREATE TYPE "public"."organization_role" AS ENUM('admin', 'manager', 'moderator');
+
 CREATE TYPE "public"."participation_mode" AS ENUM('account_required', 'strong_verification', 'email_verification', 'guest');
 
 CREATE TYPE "public"."project_document_audience" AS ENUM('participant', 'owner');
@@ -29,13 +31,44 @@ CREATE TYPE "public"."project_document_file_status" AS ENUM('pending', 'availabl
 
 CREATE TYPE "public"."project_document_representation_status" AS ENUM('pending', 'available', 'failed');
 
+CREATE TABLE "comparison_answer" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "comparison_answer_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"comparison_response_id" integer NOT NULL,
+	"position" integer NOT NULL,
+	"best_slug_id" varchar(8) NOT NULL,
+	"worst_slug_id" varchar(8) NOT NULL,
+	"candidate_set" text[] NOT NULL,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	"deleted_at" timestamp (0),
+	CONSTRAINT "comparison_answer_position_check" CHECK ("comparison_answer"."position" >= 0),
+	CONSTRAINT "comparison_answer_distinct_choices_check" CHECK ("comparison_answer"."best_slug_id" <> "comparison_answer"."worst_slug_id"),
+	CONSTRAINT "comparison_answer_candidates_check" CHECK ((cardinality("comparison_answer"."candidate_set") BETWEEN 2 AND 4 and "comparison_answer"."candidate_set" @> ARRAY["comparison_answer"."best_slug_id"::text, "comparison_answer"."worst_slug_id"::text]))
+);
+
+CREATE TABLE "comparison_response" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "comparison_response_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"participant_id" uuid,
+	"conversation_id" integer NOT NULL,
+	"ranking" jsonb,
+	"comparisons" jsonb NOT NULL,
+	"detached_at" timestamp (3),
+	"is_complete" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "comparison_response_participant_id_conversation_id_unique" UNIQUE("participant_id","conversation_id"),
+	CONSTRAINT "comparison_response_account_binding_check" CHECK ((("comparison_response"."participant_id" is not null and "comparison_response"."detached_at" is null) or ("comparison_response"."participant_id" is null and "comparison_response"."detached_at" is not null)))
+);
+
 CREATE TABLE "conversation" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "conversation_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"slug_id" varchar(8) NOT NULL,
 	"project_id" integer NOT NULL,
 	"current_content_id" integer,
+	"deleted_at" timestamp (3),
 	"polis_config_id" integer,
 	"ranking_config_id" integer,
+	"credit_voting_config_id" integer,
+	"prioritization_type" text,
 	"dynamic_translation_enabled" boolean DEFAULT false NOT NULL,
 	"conversation_email_update_enabled_override" boolean,
 	"conversation_email_update_override_updated_at" timestamp (0),
@@ -59,33 +92,25 @@ CREATE TABLE "conversation" (
 	CONSTRAINT "conversation_current_content_id_unique" UNIQUE("current_content_id"),
 	CONSTRAINT "conversation_polis_config_id_unique" UNIQUE("polis_config_id"),
 	CONSTRAINT "conversation_ranking_config_id_unique" UNIQUE("ranking_config_id"),
+	CONSTRAINT "conversation_credit_voting_config_id_unique" UNIQUE("credit_voting_config_id"),
 	CONSTRAINT "conversation_project_id_id_unique" UNIQUE("project_id","id"),
+	CONSTRAINT "conversation_deletion_intent_check" CHECK (("conversation"."deleted_at" is null or "conversation"."current_content_id" is null)),
 	CONSTRAINT "conversation_closing_state_check" CHECK (("conversation"."is_closed" OR ("conversation"."closing_target_revision" IS NULL AND "conversation"."closed_finalized_at" IS NULL)) AND ("conversation"."closed_finalized_at" IS NULL OR "conversation"."closing_target_revision" IS NOT NULL)),
-	CONSTRAINT "conversation_subtype_config_check" CHECK ((("conversation"."conversation_type" = 'polis' AND "conversation"."polis_config_id" IS NOT NULL AND "conversation"."ranking_config_id" IS NULL) OR ("conversation"."conversation_type" = 'ranking' AND "conversation"."ranking_config_id" IS NOT NULL AND "conversation"."polis_config_id" IS NULL))),
-	CONSTRAINT "conversation_email_update_override_audit_check" CHECK (("conversation"."conversation_email_update_override_updated_at" IS NULL) = ("conversation"."conversation_email_update_override_updated_by_user_id" IS NULL))
+	CONSTRAINT "conversation_subtype_config_check" CHECK ((("conversation"."conversation_type" = 'polis' AND "conversation"."polis_config_id" IS NOT NULL AND "conversation"."ranking_config_id" IS NULL AND "conversation"."credit_voting_config_id" IS NULL AND "conversation"."prioritization_type" IS NULL) OR ("conversation"."conversation_type" = 'prioritizing' AND "conversation"."polis_config_id" IS NULL AND "conversation"."prioritization_type" IS NOT NULL AND (("conversation"."prioritization_type" = 'comparisons' AND "conversation"."ranking_config_id" IS NOT NULL AND "conversation"."credit_voting_config_id" IS NULL) OR ("conversation"."prioritization_type" = 'qv' AND "conversation"."credit_voting_config_id" IS NOT NULL AND "conversation"."ranking_config_id" IS NULL))))),
+	CONSTRAINT "conversation_email_update_override_audit_check" CHECK (("conversation"."conversation_email_update_override_updated_by_user_id" is null or "conversation"."conversation_email_update_override_updated_at" is not null))
 );
 
-CREATE TABLE "maxdiff_comparison" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "maxdiff_comparison_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"maxdiff_result_id" integer NOT NULL,
-	"position" integer NOT NULL,
-	"best_slug_id" varchar(8) NOT NULL,
-	"worst_slug_id" varchar(8) NOT NULL,
-	"candidate_set" text[] NOT NULL,
+CREATE TABLE "credit_voting_config" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "credit_voting_config_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"credit_budget" integer DEFAULT 100 NOT NULL,
+	"allow_opposition" boolean DEFAULT true NOT NULL,
+	"item_count" integer DEFAULT 0 NOT NULL,
+	"statement_set_revision" integer DEFAULT 0 NOT NULL,
+	"statements_locked_at" timestamp (3),
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
-	"deleted_at" timestamp (0)
-);
-
-CREATE TABLE "maxdiff_result" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "maxdiff_result_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"participant_id" uuid NOT NULL,
-	"conversation_id" integer NOT NULL,
-	"ranking" jsonb,
-	"comparisons" jsonb NOT NULL,
-	"is_complete" boolean DEFAULT false NOT NULL,
-	"created_at" timestamp (0) DEFAULT now() NOT NULL,
-	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
-	CONSTRAINT "maxdiff_result_participant_id_conversation_id_unique" UNIQUE("participant_id","conversation_id")
+	CONSTRAINT "credit_voting_fixed_budget_check" CHECK ("credit_voting_config"."credit_budget" = 100),
+	CONSTRAINT "credit_voting_statement_revision_check" CHECK ("credit_voting_config"."statement_set_revision" >= 0),
+	CONSTRAINT "credit_voting_item_count_check" CHECK ("credit_voting_config"."item_count" >= 0)
 );
 
 CREATE TABLE "opinion_moderation" (
@@ -103,9 +128,11 @@ CREATE TABLE "opinion_moderation" (
 CREATE TABLE "opinion" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "opinion_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"slug_id" varchar(8) NOT NULL,
-	"author_id" uuid NOT NULL,
+	"author_id" uuid,
 	"conversation_id" integer NOT NULL,
 	"current_content_id" integer,
+	"deleted_at" timestamp (3),
+	"account_hidden_at" timestamp (3),
 	"is_seed" boolean DEFAULT false NOT NULL,
 	"num_agrees" integer DEFAULT 0 NOT NULL,
 	"num_disagrees" integer DEFAULT 0 NOT NULL,
@@ -113,7 +140,9 @@ CREATE TABLE "opinion" (
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
 	"last_reacted_at" timestamp (0) DEFAULT now() NOT NULL,
-	CONSTRAINT "opinion_slug_id_unique" UNIQUE("slug_id")
+	CONSTRAINT "opinion_slug_id_unique" UNIQUE("slug_id"),
+	CONSTRAINT "opinion_source_owner_check" CHECK (("opinion"."author_id" is not null or "opinion"."is_seed" = true or "opinion"."deleted_at" is not null or "opinion"."account_hidden_at" is not null)),
+	CONSTRAINT "opinion_deletion_intent_check" CHECK (("opinion"."deleted_at" is null or "opinion"."current_content_id" is null))
 );
 
 CREATE TABLE "organization_membership_all_project_capability" (
@@ -125,13 +154,14 @@ CREATE TABLE "organization_membership_all_project_capability" (
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
 	"deleted_at" timestamp (0),
-	CONSTRAINT "organization_membership_all_project_capability_revocation_check" CHECK ((("organization_membership_all_project_capability"."deleted_at" IS NULL AND "organization_membership_all_project_capability"."revoked_by_user_id" IS NULL) OR ("organization_membership_all_project_capability"."deleted_at" IS NOT NULL AND "organization_membership_all_project_capability"."revoked_by_user_id" IS NOT NULL)))
+	CONSTRAINT "organization_membership_all_project_capability_revocation_check" CHECK (("organization_membership_all_project_capability"."revoked_by_user_id" is null or "organization_membership_all_project_capability"."deleted_at" is not null))
 );
 
 CREATE TABLE "organization_membership" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "organization_membership_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"user_id" uuid NOT NULL,
 	"organization_id" integer NOT NULL,
+	"role" "organization_role" NOT NULL,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
 	"deleted_at" timestamp (0)
@@ -151,7 +181,9 @@ CREATE TABLE "organization" (
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
 	"deleted_at" timestamp (0),
-	CONSTRAINT "organization_auto_provisioned_for_user_id_unique" UNIQUE("auto_provisioned_for_user_id")
+	"retired_for_account_deletion_at" timestamp (3),
+	CONSTRAINT "organization_auto_provisioned_for_user_id_unique" UNIQUE("auto_provisioned_for_user_id"),
+	CONSTRAINT "organization_account_retirement_check" CHECK (("organization"."retired_for_account_deletion_at" is null or ("organization"."auto_provisioned_for_user_id" is not null and "organization"."deleted_at" is not null and "organization"."deleted_at" = "organization"."retired_for_account_deletion_at"::timestamp(0))))
 );
 
 CREATE TABLE "project_document_file" (
@@ -236,9 +268,10 @@ CREATE TABLE "project" (
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
 	"deleted_at" timestamp (0),
-	CONSTRAINT "project_auto_provisioned_for_organization_id_unique" UNIQUE("auto_provisioned_for_organization_id"),
+	"retired_for_account_deletion_at" timestamp (3),
 	CONSTRAINT "project_current_content_id_unique" UNIQUE("current_content_id"),
-	CONSTRAINT "project_email_update_default_audit_check" CHECK (("project"."conversation_email_update_default_updated_at" IS NULL) = ("project"."conversation_email_update_default_updated_by_user_id" IS NULL))
+	CONSTRAINT "project_account_retirement_check" CHECK (("project"."retired_for_account_deletion_at" is null or ("project"."auto_provisioned_for_organization_id" is not null and "project"."deleted_at" is not null and "project"."deleted_at" = "project"."retired_for_account_deletion_at"::timestamp(0)))),
+	CONSTRAINT "project_email_update_default_audit_check" CHECK (("project"."conversation_email_update_default_updated_by_user_id" is null or "project"."conversation_email_update_default_updated_at" is not null))
 );
 
 CREATE TABLE "user" (
@@ -249,7 +282,12 @@ CREATE TABLE "user" (
 	"is_site_org_admin" boolean DEFAULT false NOT NULL,
 	"is_imported" boolean DEFAULT false NOT NULL,
 	"is_deleted" boolean DEFAULT false NOT NULL,
+	"contribution_revision" integer DEFAULT 0 NOT NULL,
 	"deleted_at" timestamp (0),
+	"deletion_reason" text,
+	"deletion_requested_at" timestamp (3),
+	"recoverable_until" timestamp (3),
+	"purge_started_at" timestamp (3),
 	"auth_restricted_at" timestamp (0),
 	"auth_restriction_reason" text,
 	"active_conversation_count" integer DEFAULT 0 NOT NULL,
@@ -258,7 +296,10 @@ CREATE TABLE "user" (
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
 	CONSTRAINT "user_username_unique" UNIQUE("username"),
-	CONSTRAINT "user_auth_restriction_reason_check" CHECK (("user"."auth_restricted_at" IS NULL) = ("user"."auth_restriction_reason" IS NULL))
+	CONSTRAINT "user_contribution_revision_check" CHECK ("user"."contribution_revision" >= 0),
+	CONSTRAINT "user_recovery_lifecycle_check" CHECK (((("user"."deletion_requested_at" is null and "user"."recoverable_until" is null) or ("user"."is_deleted" = true and "user"."deletion_reason" is not null and "user"."deletion_reason" = 'account_deletion' and "user"."deletion_requested_at" is not null and "user"."recoverable_until" is not null and "user"."recoverable_until" = "user"."deletion_requested_at" + interval '15 days')) and ("user"."purge_started_at" is null or "user"."is_deleted" = true))),
+	CONSTRAINT "user_auth_restriction_reason_check" CHECK (("user"."auth_restricted_at" IS NULL) = ("user"."auth_restriction_reason" IS NULL)),
+	CONSTRAINT "user_deletion_reason_check" CHECK (("user"."deletion_reason" is null or ("user"."is_deleted" = true and "user"."deleted_at" is not null and "user"."deletion_reason" in ('account_deletion', 'guest_merge'))))
 );
 
 CREATE TABLE "vote" (
@@ -270,11 +311,22 @@ CREATE TABLE "vote" (
 	"buffer_epoch" uuid,
 	"buffer_sequence" bigint DEFAULT 0 NOT NULL,
 	"current_content_id" integer,
+	"withdrawn_at" timestamp (3),
+	"retired_at" timestamp (3),
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
 	CONSTRAINT "vote_author_id_opinion_id_unique" UNIQUE("author_id","opinion_id"),
-	CONSTRAINT "vote_participant_opinion_unique" UNIQUE("participant_id","opinion_id")
+	CONSTRAINT "vote_participant_opinion_unique" UNIQUE("participant_id","opinion_id"),
+	CONSTRAINT "vote_inactive_intent_check" CHECK ((("vote"."withdrawn_at" is null and "vote"."retired_at" is null) or "vote"."current_content_id" is null))
 );
+
+CREATE INDEX "comparison_answer_response_idx" ON "comparison_answer" USING btree ("comparison_response_id");
+
+CREATE UNIQUE INDEX "comparison_answer_active_response_position_unique" ON "comparison_answer" USING btree ("comparison_response_id","position") WHERE "comparison_answer"."deleted_at" is null;
+
+CREATE INDEX "comparison_response_conversation_idx" ON "comparison_response" USING btree ("conversation_id");
+
+CREATE INDEX "conversation_deleted_idx" ON "conversation" USING btree ("deleted_at","id") WHERE "conversation"."deleted_at" is not null;
 
 CREATE INDEX "conversation_feed_idx" ON "conversation" USING btree ("created_at" DESC,"id" DESC) WHERE "conversation"."is_indexed" = true AND "conversation"."is_importing" = false;
 
@@ -286,15 +338,9 @@ CREATE INDEX "conversation_project_id_idx" ON "conversation" USING btree ("proje
 
 CREATE INDEX "conversation_project_timeline_idx" ON "conversation" USING btree ("project_id","is_importing","created_at" DESC,"id" DESC) WHERE "conversation"."current_content_id" is not null;
 
-CREATE INDEX "maxdiff_comparison_result_idx" ON "maxdiff_comparison" USING btree ("maxdiff_result_id");
-
-CREATE UNIQUE INDEX "maxdiff_comparison_active_result_position_unique" ON "maxdiff_comparison" USING btree ("maxdiff_result_id","position") WHERE "maxdiff_comparison"."deleted_at" IS NULL;
-
-CREATE INDEX "maxdiff_result_complete_idx" ON "maxdiff_result" USING btree ("conversation_id","is_complete");
-
-CREATE INDEX "maxdiff_result_conversation_idx" ON "maxdiff_result" USING btree ("conversation_id");
-
 CREATE UNIQUE INDEX "opinion_moderation_active_opinion_unique" ON "opinion_moderation" USING btree ("opinion_id") WHERE "opinion_moderation"."deleted_at" is null;
+
+CREATE INDEX "opinion_deleted_idx" ON "opinion" USING btree ("deleted_at","id") WHERE "opinion"."deleted_at" is not null;
 
 CREATE INDEX "opinion_authorId_idx" ON "opinion" USING btree ("author_id");
 
@@ -309,6 +355,8 @@ CREATE UNIQUE INDEX "organization_membership_all_project_capability_active_uniqu
 CREATE UNIQUE INDEX "organization_membership_active_unique" ON "organization_membership" USING btree ("user_id","organization_id") WHERE "organization_membership"."deleted_at" is null;
 
 CREATE INDEX "organization_membership_organization_idx" ON "organization_membership" USING btree ("organization_id");
+
+CREATE INDEX "organization_membership_active_admin_idx" ON "organization_membership" USING btree ("organization_id","user_id") WHERE ("organization_membership"."deleted_at" is null and "organization_membership"."role" = 'admin');
 
 CREATE UNIQUE INDEX "organization_active_slug_unique" ON "organization" USING btree ("slug") WHERE "organization"."deleted_at" IS NULL;
 
@@ -332,7 +380,9 @@ CREATE UNIQUE INDEX "project_organization_ownership_active_unique" ON "project_o
 
 CREATE INDEX "project_organization_ownership_organization_idx" ON "project_organization_ownership" USING btree ("organization_id");
 
-CREATE UNIQUE INDEX "project_active_slug_unique" ON "project" USING btree ("slug") WHERE "project"."deleted_at" IS NULL;
+CREATE UNIQUE INDEX "project_active_slug_unique" ON "project" USING btree ("slug") WHERE "project"."deleted_at" is null;
+
+CREATE UNIQUE INDEX "project_active_default_organization_unique" ON "project" USING btree ("auto_provisioned_for_organization_id") WHERE "project"."deleted_at" is null;
 
 CREATE INDEX "vote_authorId_idx" ON "vote" USING btree ("author_id");
 

@@ -3,20 +3,19 @@ import { describe, expect, it } from "vitest";
 import { resolveRequirementBannerCopy } from "./conversationRequirementBannerLogic";
 
 describe("resolveRequirementBannerCopy", () => {
-  it("uses requirement-first copy when a survey also needs ticket verification", () => {
+  it("shows ordinary survey copy without retired ticket verification", () => {
     expect(
       resolveRequirementBannerCopy({
         hasSurvey: true,
         isOptional: false,
         needsAuth: false,
-        needsTicket: true,
         surveyGateStatus: "not_started",
         canParticipate: false,
       })
     ).toEqual({
-      titleKey: "requiredAccessTitle",
-      messageKey: "verifyTicketMessage",
-      buttonKey: "continueLabel",
+      titleKey: "requiredSurveyTitle",
+      messageKey: "requiredSurveyMessage",
+      buttonKey: "startSurveyLabel",
     });
   });
 
@@ -26,7 +25,6 @@ describe("resolveRequirementBannerCopy", () => {
         hasSurvey: true,
         isOptional: false,
         needsAuth: true,
-        needsTicket: false,
         surveyGateStatus: "not_started",
         canParticipate: false,
       })
@@ -37,13 +35,12 @@ describe("resolveRequirementBannerCopy", () => {
     });
   });
 
-  it("uses requirement-first copy when both account and ticket are required before the survey", () => {
+  it("keeps account verification before the survey", () => {
     expect(
       resolveRequirementBannerCopy({
         hasSurvey: true,
         isOptional: false,
         needsAuth: true,
-        needsTicket: true,
         surveyGateStatus: "not_started",
         canParticipate: false,
       })
@@ -60,7 +57,6 @@ describe("resolveRequirementBannerCopy", () => {
         hasSurvey: true,
         isOptional: true,
         needsAuth: false,
-        needsTicket: false,
         surveyGateStatus: "not_started",
         canParticipate: true,
       })
@@ -74,7 +70,6 @@ describe("resolveRequirementBannerCopy", () => {
         hasSurvey: true,
         isOptional: false,
         needsAuth: false,
-        needsTicket: false,
         surveyGateStatus: "not_started",
         canParticipate: true,
       })

@@ -1,6 +1,6 @@
 import { storeToRefs } from "pinia";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { useMaxDiffApi } from "src/utils/api/maxdiff/maxdiff";
+import { useComparisonApi } from "src/utils/api/comparison/comparison";
 import { processEnv } from "src/utils/processEnv";
 import { computed, type Ref, ref, watch } from "vue";
 
@@ -32,7 +32,7 @@ export function useFeaturedBannerVisibility(): FeaturedBannerVisibility {
   const { isGuestOrLoggedIn, isAuthInitialized } = storeToRefs(
     useAuthenticationStore()
   );
-  const { loadMaxDiffResult } = useMaxDiffApi();
+  const { loadComparisonResponse } = useComparisonApi();
 
   let isChecking = false;
 
@@ -47,7 +47,7 @@ export function useFeaturedBannerVisibility(): FeaturedBannerVisibility {
       return;
     }
 
-    const response = await loadMaxDiffResult({
+    const response = await loadComparisonResponse({
       conversationSlugId,
     });
 

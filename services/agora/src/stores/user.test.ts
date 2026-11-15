@@ -43,7 +43,6 @@ function createProfile(): GetUserProfileResponse {
     isSiteOrgAdmin: true,
     username: "account-a",
     organizationList: [],
-    verifiedEventTickets: [],
   };
 }
 
@@ -125,11 +124,9 @@ describe("user profile loading and account isolation", () => {
   it("creates fresh defaults when clearing an account", () => {
     const userStore = useUserStore();
     const previous = userStore.profileData;
-    userStore.addVerifiedTicket("devconnect-2025");
 
     userStore.clearProfileData();
 
-    expect(userStore.profileData.verifiedEventTickets).toEqual([]);
     expect(userStore.profileData.userPostList).not.toBe(previous.userPostList);
     expect(userStore.profileData.userCommentList).not.toBe(
       previous.userCommentList

@@ -4,10 +4,10 @@ import {
     ZodSupportedDisplayLanguageCodes,
 } from "../languages.js";
 import {
-    zodEventSlug,
     zodRegularNotificationItem,
     zodParticipationMode,
     zodConversationTypeConfig,
+    zodParticipantStatements,
     zodPreferredOpinionGroupCount,
     zodProjectSlug,
     zodConversationProjectAssignment,
@@ -224,15 +224,27 @@ export const zodSSEConversationSettingsData = z
     .object({
         isIndexed: z.boolean(),
         participationMode: zodParticipationMode,
-        requiresEventTicket: zodEventSlug.nullable(),
         aiLabelingEnabled: z.boolean(),
         presentation: zodConversationTypeConfig,
+        // Retained events from before this setting leave the cached policy unchanged.
+        participantStatements: zodParticipantStatements.optional(),
         preferredOpinionGroupCount: zodPreferredOpinionGroupCount,
         isClosed: z.boolean(),
         isFinalizing: z.boolean().optional(),
         projectAssignment: zodConversationProjectAssignment.optional(),
     })
-    .strict();
+    .strict()
+    .refine(
+        (settings) =>
+            settings.participantStatements === undefined ||
+            settings.participantStatements.supported ===
+                (settings.presentation.conversationType === "polis" ||
+                    settings.presentation.prioritizationType === "comparisons"),
+        {
+            path: ["participantStatements"],
+            message: "Statement capability must match the conversation family",
+        },
+    );
 export type SSEConversationSettingsData = z.infer<
     typeof zodSSEConversationSettingsData
 >;
@@ -247,6 +259,13 @@ export const zodSSEConversationSettingsUpdatedData = z
 export type SSEConversationSettingsUpdatedData = z.infer<
     typeof zodSSEConversationSettingsUpdatedData
 >;
+
+export const zodSSEComparisonItemsUpdatedData = z
+    .object({
+        conversationSlugId: zodSlugId,
+        timestamp: z.number(),
+    })
+    .strict();
 
 export const zodSSEConversationSurveyUpdatedData = z
     .object({
@@ -332,7 +351,46 @@ export const zodSSEShutdownData = z
     .strict();
 export type SSEShutdownData = z.infer<typeof zodSSEShutdownData>;
 
+/** Live activity only: deliberately no lifecycle fields or result reference. */
+export const zodSSEConversationQvStatsUpdatedData = z
+    .object({
+        conversationSlugId: zodSlugId,
+        qvStatsRevision: z.number().int().positive(),
+        participantCount: z.number().int().nonnegative(),
+    })
+    .strict();
+export type SSEConversationQvStatsUpdatedData = z.infer<
+    typeof zodSSEConversationQvStatsUpdatedData
+>;
+
 export const zodSSEEventDataByType = {
+    conversation_qv_calculation_updated: z
+        .object({
+            conversationSlugId: zodSlugId,
+            generation: z.number().int().positive(),
+            status: z.enum(["open", "calculating", "ready", "failed"]),
+        })
+        .strict(),
+    opinion_source_changed: z
+        .object({
+            conversationSlugId: zodSlugId,
+            opinionSlugId: zodSlugId,
+            previousSourceVersion: z.uuid(),
+            sourceVersion: z.uuid(),
+            timestamp: z.number(),
+        })
+        .strict(),
+    resync_required: z
+        .object({
+            cursor: z.string(),
+            reason: z.enum([
+                "cursor_expired",
+                "replay_limit",
+                "replay_failed",
+                "sources_changed",
+            ]),
+        })
+        .strict(),
     opinion_redacted: z
         .object({
             conversationSlugId: zodSlugId,
@@ -372,7 +430,9 @@ export const zodSSEEventDataByType = {
         zodSSEConversationCommentStatsUpdatedData,
     conversation_ranking_stats_updated:
         zodSSEConversationRankingStatsUpdatedData,
+    conversation_qv_stats_updated: zodSSEConversationQvStatsUpdatedData,
     conversation_settings_updated: zodSSEConversationSettingsUpdatedData,
+    comparison_items_updated: zodSSEComparisonItemsUpdatedData,
     conversation_survey_updated: zodSSEConversationSurveyUpdatedData,
     content_translation_updated: zodSSEContentTranslationUpdatedData,
     subscription_ready: zodSSESubscriptionReadyData,
@@ -421,6 +481,10 @@ export type SSEShutdownEvent = SSEEvent<"shutdown">;
  * Union of all possible SSE events
  */
 export type AnySSEEvent =
+    | SSEEvent<"comparison_items_updated">
+    | SSEEvent<"conversation_qv_calculation_updated">
+    | SSEEvent<"opinion_source_changed">
+    | SSEEvent<"resync_required">
     | SSEEvent<"opinion_redacted">
     | SSEEvent<"opinion_vote_counts_updated">
     | SSEConnectedEvent
@@ -432,6 +496,7 @@ export type AnySSEEvent =
     | SSEConversationAnalysisUpdatedEvent
     | SSEConversationCommentStatsUpdatedEvent
     | SSEConversationRankingStatsUpdatedEvent
+    | SSEEvent<"conversation_qv_stats_updated">
     | SSEConversationSettingsUpdatedEvent
     | SSEConversationSurveyUpdatedEvent
     | SSEContentTranslationUpdatedEvent

@@ -14,8 +14,43 @@ import { DrizzleFastifyLogger, safeDependencyError } from "./logger.js";
 
 const POSTGRES_STARTUP_RETRY_MS = 5_000;
 
+export type PostgresTransaction = Parameters<
+    Parameters<PostgresJsDatabase["transaction"]>[0]
+>[0];
+
 interface PrimaryReplicaDatabase extends PostgresJsDatabase {
     $primary: PostgresJsDatabase;
+}
+
+/**
+ * Query-only handle for replica-eligible reads. CTEs and raw execution stay on
+ * the primary because SELECT can contain writes. Row locks are checked by lint.
+ */
+export type ReplicaDatabase = Readonly<
+    Pick<
+        PostgresJsDatabase,
+        "select" | "selectDistinct" | "selectDistinctOn" | "$count"
+    >
+>;
+
+interface ReplicaSourceDatabase extends PostgresJsDatabase {
+    $replica: PostgresJsDatabase;
+}
+
+function hasReplicaDatabase(
+    database: PostgresJsDatabase,
+): database is ReplicaSourceDatabase {
+    return "$replica" in database;
+}
+
+/**
+ * Plain primary handles and transactions remain on that same connection.
+ * Only the root withReplicas handle can opt into a replica.
+ */
+export function getReplicaDatabase(
+    database: PostgresJsDatabase,
+): ReplicaDatabase {
+    return hasReplicaDatabase(database) ? database.$replica : database;
 }
 
 export function hasPrimaryDatabase(
@@ -168,7 +203,8 @@ export async function createDb({
         log,
         useReadReplica: false,
     });
-    const primaryDb = drizzle(primaryClient, {
+    const primaryDb = drizzle({
+        client: primaryClient,
         logger: logQueries
             ? new DrizzleFastifyLogger({ fastifyLogger: log })
             : false,
@@ -188,18 +224,18 @@ export async function createDb({
             log,
             useReadReplica: true,
         });
-        const readDb = drizzle(readClient, {
+        const readDb = drizzle({
+            client: readClient,
             logger: logQueries
                 ? new DrizzleFastifyLogger({ fastifyLogger: log })
                 : false,
         });
 
         log.info(
-            "Connected to read replica - SELECTs will use replica, writes use primary",
+            "Connected to read replica - explicit reads use replica, writes use primary",
         );
 
-        // Use Drizzle's built-in withReplicas
-        // Automatically routes SELECT queries to replica, writes to primary
+        // v1 keeps the primary as default; replica reads are explicit.
         return withReplicas(primaryDb, [readDb]);
     } else {
         log.info(
@@ -238,7 +274,7 @@ export async function createManagedPostgresDatabase({
         log,
         useReadReplica: false,
     });
-    const db = drizzle(client);
+    const db = drizzle({ client });
     const listeners = new Set<PostgresListener>();
     let activeListenOperations = 0;
     let listenOperationsIdle = Promise.resolve();

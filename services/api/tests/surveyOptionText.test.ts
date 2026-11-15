@@ -94,7 +94,8 @@ describe("optional choice text persistence", () => {
             username: "postgres",
             password: "postgres",
         });
-        db = drizzle(client, {
+        db = drizzle({
+            client,
             logger: {
                 logQuery: (query) => {
                     queries.push(query);
@@ -831,7 +832,8 @@ describe("optional choice text persistence", () => {
         await db
             .update(conversationTable)
             .set({
-                conversationType: "ranking",
+                conversationType: "prioritizing",
+                prioritizationType: "comparisons",
                 polisConfigId: null,
                 rankingConfigId: rankingConfig.id,
             })
@@ -840,7 +842,8 @@ describe("optional choice text persistence", () => {
             success: true,
             participantId,
             conversationId,
-            conversationType: "ranking",
+            conversationType: "prioritizing",
+            prioritizationType: "comparisons",
             rankingMode: "bws",
         });
         await configure({ allowsText: true });

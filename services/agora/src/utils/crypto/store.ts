@@ -3,7 +3,7 @@ import { getNewInstance as createBrowserTabsLock } from "browser-tabs-lock/bundl
 import * as BrowserCrypto from "../crypto/ucan/implementation/browser.js";
 import { type Implementation } from "./ucan/implementation.js";
 
-const WEB_CRYPTO_STORE_NAME = "agora-keys";
+export const WEB_CRYPTO_STORE_NAME = "agora-keys";
 const WEB_CRYPTO_STORE_LOCK_NAME = "agora-web-crypto-store";
 const CROSS_CONTEXT_LOCK_TIMEOUT_MS = 60_000;
 const WEB_CRYPTO_CLEAR_ATTEMPTS = 3;

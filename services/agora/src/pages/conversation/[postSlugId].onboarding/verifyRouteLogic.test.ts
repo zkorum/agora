@@ -14,10 +14,6 @@ const steps = [
     suffix: "verify/identity",
   },
   {
-    step: { kind: "ticket", eventSlug: "devconnect-2025" },
-    suffix: "verify/ticket",
-  },
-  {
     step: { kind: "email_updates", action: emailUpdateActionFixture },
     suffix: "complete",
   },

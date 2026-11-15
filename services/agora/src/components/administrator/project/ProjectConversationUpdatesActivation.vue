@@ -17,7 +17,10 @@
       @action="emit('editContact')"
     />
 
-    <div class="conversation-updates-configuration__activation">
+    <div
+      v-if="hasParticipantContactEmail || enabled"
+      class="conversation-updates-configuration__activation"
+    >
       <div>
         <strong>{{ t("defaultLabel") }}</strong>
         <span>{{ activationDescription }}</span>
@@ -25,7 +28,7 @@
       <ZKSwitch
         v-model="enabled"
         :aria-label="t('defaultAriaLabel')"
-        :disable="disabled || (!hasParticipantContactEmail && !enabled)"
+        :disable="disabled"
       />
     </div>
   </ZKCard>
@@ -56,9 +59,10 @@ const emit = defineEmits<{
 }>();
 
 const enabled = defineModel<boolean>({ required: true });
-const { t } = useComponentI18n<ProjectConversationUpdatesActivationTranslations>(
-  projectConversationUpdatesActivationTranslations
-);
+const { t } =
+  useComponentI18n<ProjectConversationUpdatesActivationTranslations>(
+    projectConversationUpdatesActivationTranslations
+  );
 
 const configurationDescription = computed(() =>
   props.activationKind === "listed-project"

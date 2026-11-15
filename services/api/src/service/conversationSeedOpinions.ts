@@ -1,5 +1,4 @@
 import { and, asc, eq, exists, isNotNull, isNull, sql } from "drizzle-orm";
-import { httpErrors } from "@fastify/sensible";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
     opinionContentTable,
@@ -15,8 +14,6 @@ import type { GetConversationForEditResponse } from "@/shared/types/dto.js";
 import type {
     ConversationType,
     DisplayedOpinionItem,
-    EventSlug,
-    ParticipationMode,
 } from "@/shared/types/zod.js";
 import {
     normalizeUserRichTextInput,
@@ -31,9 +28,11 @@ import { postNewOpinion } from "./comment.js";
 import { getOpinionEditingAvailability } from "./opinionPermissions.js";
 import { getOpinionIdsWithBlockingVotes } from "./opinionVoteEligibility.js";
 import { createRankingItem } from "./rankingItem.js";
-import { lockRankingScoringConfig } from "./maxdiff.js";
+import { lockRankingScoringConfig } from "./comparison.js";
 import type { RankingItemContentSource } from "./contentTranslation.js";
 import { rankingSeedHasVotes } from "./seedOpinionEditability.js";
+import { currentRankingItemSourceCondition } from "@/shared-backend/opinionEligibility.js";
+import { queueComparisonItemsUpdatedEvent } from "./realtimeEventOutbox.js";
 const LANGUAGE_DETECTION_BATCH_SIZE = 5;
 
 export function normalizeSeedOpinionList(
@@ -79,10 +78,6 @@ export async function appendConversationSeedOpinions({
         slugId: string;
         contentId: number;
         conversationType: ConversationType;
-        isIndexed: boolean;
-        participationMode: ParticipationMode;
-        isClosed: boolean;
-        requiresEventTicket: EventSlug | undefined;
     };
     userId: string;
     resolveLanguageMetadata: ContentLanguageMetadataResolver;
@@ -122,7 +117,7 @@ export async function appendConversationSeedOpinions({
         );
         prepared.push(...batch);
     }
-    if (conversation.conversationType === "ranking") {
+    if (conversation.conversationType === "prioritizing") {
         await lockRankingScoringConfig({ db, conversationId: conversation.id });
         for (const content of prepared) {
             const item = await createRankingItem({
@@ -163,16 +158,11 @@ export async function appendConversationSeedOpinions({
                     ),
                 ),
             );
+        await queueComparisonItemsUpdatedEvent({
+            db,
+            conversationSlugId: conversation.slugId,
+        });
     } else {
-        const author = (
-            await db
-                .select({ username: userTable.username })
-                .from(userTable)
-                .where(eq(userTable.id, userId))
-                .limit(1)
-        ).at(0);
-        if (author === undefined)
-            throw httpErrors.notFound("Seed statement author not found");
         for (const content of prepared) {
             const opinion = await postNewOpinion({
                 db,
@@ -186,13 +176,6 @@ export async function appendConversationSeedOpinions({
                     conversationId: conversation.id,
                     conversationContentId: conversation.contentId,
                     conversationAuthorId: userId,
-                    conversationAuthorUsername: author.username,
-                    conversationIsIndexed: conversation.isIndexed,
-                    conversationParticipationMode:
-                        conversation.participationMode,
-                    conversationIsClosed: conversation.isClosed,
-                    requiresEventTicket:
-                        conversation.requiresEventTicket ?? null,
                 },
             });
             addedSeedOpinions.push({
@@ -224,7 +207,7 @@ export async function fetchConversationSeedOpinions({
     conversationType: ConversationType;
     externalSourceManaged?: boolean;
 }): Promise<EditableSeedOpinion[]> {
-    if (conversationType === "ranking") {
+    if (conversationType === "prioritizing") {
         const hasVotes = await rankingSeedHasVotes({
             db,
             conversationId,
@@ -238,6 +221,7 @@ export async function fetchConversationSeedOpinions({
                 hasVotes,
             })
             .from(rankingItemTable)
+            .leftJoin(userTable, eq(userTable.id, rankingItemTable.authorId))
             .innerJoin(
                 rankingItemContentTable,
                 eq(
@@ -251,7 +235,7 @@ export async function fetchConversationSeedOpinions({
                     externalSourceManaged
                         ? undefined
                         : eq(rankingItemTable.isSeed, true),
-                    isNotNull(rankingItemTable.currentContentId),
+                    currentRankingItemSourceCondition(),
                 ),
             )
             .orderBy(asc(rankingItemTable.id));
@@ -293,7 +277,7 @@ export async function fetchConversationSeedOpinions({
             opinionContentTable,
             eq(opinionContentTable.id, opinionTable.currentContentId),
         )
-        .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
+        .leftJoin(userTable, eq(userTable.id, opinionTable.authorId))
         .where(
             and(
                 eq(opinionTable.conversationId, conversationId),

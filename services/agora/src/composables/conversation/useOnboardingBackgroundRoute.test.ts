@@ -31,9 +31,6 @@ vi.mock("src/layouts/PersistentLayout.vue", async () => {
     ),
   };
 });
-vi.mock("src/composables/zupass/useZupassVerification", () => ({
-  useZupassVerification: () => ({ isVerifying: false }),
-}));
 
 const mountedApps: App[] = [];
 

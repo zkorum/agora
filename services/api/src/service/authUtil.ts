@@ -2,6 +2,7 @@
 import {
     conversationTable,
     deviceTable,
+    retiredDeviceKeyTable,
     emailTable,
     opinionTable,
     organizationMembershipTable,
@@ -234,17 +235,15 @@ interface GetDeviceStatusParams {
  * - Unknown device: No record in database (isKnown: false)
  * - Guest (soft login): Device exists, user has NO strong credentials
  *   - Can be "logged in" with sessionExpiry, but isLoggedIn returns false for guests
- * - Zupass-only (soft verification): Guest with event tickets, NOT counted as registered
  * - Registered (hard verification): User has phone, Rarimo, or email credentials (isRegistered: true)
  *   - Only registered users can be "logged in" (isLoggedIn: true)
  *
  * CREDENTIAL HIERARCHY:
  * - Strong credentials (phone/Rarimo/email): Checked by this function, grant isRegistered: true
- * - Soft credentials (Zupass): NOT checked here, users remain guests (isRegistered: false)
  *
  * DELETED USER HANDLING:
  * - Deleted users are treated as unknown devices (isKnown: false)
- * - No recovery window - deleted accounts are permanently gone
+ * - Recovery is a separate verified action; ordinary access stays denied.
  */
 export async function getDeviceStatus({
     db,
@@ -264,10 +263,15 @@ export async function getDeviceStatus({
             email: emailTable.email,
             userId: deviceTable.userId,
             isDeleted: userTable.isDeleted,
+            retiredKey: retiredDeviceKeyTable.didWrite,
             authRestrictedAt: userTable.authRestrictedAt,
         })
         .from(deviceTable)
         .innerJoin(userTable, eq(deviceTable.userId, userTable.id))
+        .leftJoin(
+            retiredDeviceKeyTable,
+            eq(retiredDeviceKeyTable.didWrite, deviceTable.didWrite),
+        )
         .leftJoin(
             zkPassportTable,
             and(
@@ -292,6 +296,13 @@ export async function getDeviceStatus({
         .where(eq(deviceTable.didWrite, didWrite));
 
     if (resultDevice.length === 0) {
+        const retired = await getPrimaryDatabase(db)
+            .select({ didWrite: retiredDeviceKeyTable.didWrite })
+            .from(retiredDeviceKeyTable)
+            .where(eq(retiredDeviceKeyTable.didWrite, didWrite))
+            .limit(1);
+        if (retired.length > 0)
+            throw httpErrors.unauthorized("Device key has been retired");
         return {
             isKnown: false,
             isLoggedIn: false,
@@ -301,8 +312,10 @@ export async function getDeviceStatus({
     }
 
     const device = resultDevice[0];
+    if (device.retiredKey !== null)
+        throw httpErrors.unauthorized("Device key has been retired");
 
-    // If user is deleted, treat as unknown device (no recovery)
+    // Pending and irreversible deletion never grant an ordinary session.
     if (device.isDeleted) {
         return {
             isKnown: false,
@@ -319,7 +332,6 @@ export async function getDeviceStatus({
     const sessionExpiry = device.sessionExpiry;
     const isLoggedIn = sessionExpiry.getTime() > now.getTime();
     // isRegistered: true if user has phone, Rarimo, or email (strong credentials)
-    // Zupass tickets are NOT checked here - they are "soft credentials"
     const isRegistered =
         device.phoneTableId !== null ||
         device.zkPassportTableId !== null ||
@@ -356,6 +368,19 @@ export async function getDeviceStatus({
         userId: device.userId,
         credentials,
         sessionExpiry,
+    };
+}
+
+/** Only the public identity fields may accompany an accepted participation response. */
+export function projectKnownDeviceLoginStatus(
+    status: Extract<DeviceLoginStatusInternal, { isKnown: true }>,
+) {
+    return {
+        isKnown: true as const,
+        userId: status.userId,
+        isRegistered: status.isRegistered,
+        isLoggedIn: status.isLoggedIn,
+        credentials: status.credentials,
     };
 }
 

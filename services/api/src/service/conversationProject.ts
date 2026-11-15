@@ -1,7 +1,6 @@
 import { and, eq, gt, inArray, isNull, isNotNull, lte, or } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
-    organizationMembershipAllProjectCapabilityTable,
     organizationMembershipTable,
     organizationTable,
     premiumFeatureEntitlementTable,
@@ -18,14 +17,13 @@ import type {
     PremiumFeature,
 } from "@/shared/types/zod.js";
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
+import { zodPremiumFeature } from "@/shared/types/zod.js";
 import {
     getOrCreateDefaultProjectForOrganization,
     getOrCreatePersonalOrganization,
 } from "./projectAccess.js";
-import {
-    type AllProjectCapability,
-    isAllProjectCapability,
-} from "./projectAccessLogic.js";
+import type { AllProjectCapability } from "./projectAccessLogic.js";
+import { organizationRoleCapabilities, projectCapabilityValues } from "@/shared/organizationAccess.js";
 import { getImplicitDefaultDisplayLanguage } from "./projectLanguage.js";
 import { sourceLanguageToDisplayLanguage } from "./translationLanguageSetting.js";
 
@@ -59,8 +57,7 @@ async function getDestinationOrganizations({
             slug: organizationTable.slug,
             autoProvisionedForUserId:
                 organizationTable.autoProvisionedForUserId,
-            capability:
-                organizationMembershipAllProjectCapabilityTable.capability,
+            role: organizationMembershipTable.role,
         })
         .from(organizationTable)
         .innerJoin(
@@ -77,26 +74,6 @@ async function getDestinationOrganizations({
                 eq(userTable.isDeleted, false),
             ),
         )
-        .leftJoin(
-            organizationMembershipAllProjectCapabilityTable,
-            and(
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
-                    organizationMembershipTable.id,
-                ),
-                isNull(
-                    organizationMembershipAllProjectCapabilityTable.deletedAt,
-                ),
-                inArray(
-                    organizationMembershipAllProjectCapabilityTable.capability,
-                    [
-                        "conversation_create",
-                        "conversation_edit",
-                        "conversation_email_update",
-                    ],
-                ),
-            ),
-        )
         .where(
             and(
                 eq(organizationMembershipTable.userId, userId),
@@ -110,17 +87,15 @@ async function getDestinationOrganizations({
         );
     const organizations = new Map<
         number,
-        Omit<(typeof rows)[number], "capability"> & {
+        (typeof rows)[number] & {
             capabilities: Set<AllProjectCapability>;
         }
     >();
-    for (const { capability, ...row } of rows) {
-        const organization = organizations.get(row.id) ?? {
+    for (const row of rows) {
+        const organization = {
             ...row,
-            capabilities: new Set<AllProjectCapability>(),
+            capabilities: new Set<AllProjectCapability>(projectCapabilityValues.filter((capability) => organizationRoleCapabilities[row.role].includes(capability))),
         };
-        if (capability !== null && isAllProjectCapability(capability))
-            organization.capabilities.add(capability);
         organizations.set(row.id, organization);
     }
     return organizations;
@@ -152,6 +127,7 @@ export async function getConversationProjectOptions({
                         organizationIds,
                     ),
                     isNull(premiumFeatureEntitlementTable.revokedAt),
+                    inArray(premiumFeatureEntitlementTable.feature, zodPremiumFeature.options),
                     lte(premiumFeatureEntitlementTable.startsAt, now),
                     or(
                         isNull(premiumFeatureEntitlementTable.expiresAt),
@@ -167,6 +143,11 @@ export async function getConversationProjectOptions({
                 email: projectContactTable.email,
             })
             .from(projectTable)
+            .innerJoin(projectOrganizationOwnershipTable, and(
+                eq(projectOrganizationOwnershipTable.projectId, projectTable.id),
+                eq(projectOrganizationOwnershipTable.organizationId, projectTable.autoProvisionedForOrganizationId),
+                isNull(projectOrganizationOwnershipTable.deletedAt),
+            ))
             .leftJoin(
                 projectContactTable,
                 and(
@@ -241,7 +222,7 @@ export async function getConversationProjectOptions({
         const features =
             featuresByOrganization.get(row.organizationId) ??
             new Set<PremiumFeature>();
-        features.add(row.feature);
+        features.add(zodPremiumFeature.parse(row.feature));
         featuresByOrganization.set(row.organizationId, features);
     }
     const defaultsByOrganization = new Map(
@@ -474,13 +455,8 @@ export async function resolveConversationProjectTarget({
             });
         });
     }
-    const organizations = await getDestinationOrganizations({ db, userId });
-    const organization = [...organizations.values()].find(
-        (row) =>
-            row.slug === target.organizationSlug &&
-            row.capabilities.has("conversation_create") &&
-            row.capabilities.has("conversation_edit"),
-    );
+    const organization = (await db.select({ id: organizationTable.id }).from(organizationTable)
+        .where(and(eq(organizationTable.slug, target.organizationSlug), isNull(organizationTable.deletedAt)))).at(0);
     if (organization === undefined) return undefined;
     // Existing scopes need no provisioning locks; moves lock projects before owners.
     const existing = (

@@ -37,7 +37,7 @@ export const VALKEY_QUEUE_KEYS = {
 
     /**
      * Scoring dirty set: conversations needing Solidago rescoring.
-     * Used by: maxdiff.ts (API writes SADD), scoring-worker (SPOP to process)
+     * Used by: comparison.ts (API writes ZADD), scoring-worker (ZPOPMIN to process)
      * Pattern: SET of conversationId strings. SADD deduplicates, SPOP is atomic.
      */
     SCORING_DIRTY_SOLIDAGO: "scoring:dirty:solidago",

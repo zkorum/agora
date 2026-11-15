@@ -15,7 +15,7 @@ import { useNavigationStore } from "src/stores/navigation";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { useUserStore } from "src/stores/user";
 import { useCommonApi } from "src/utils/api/common";
-import { useMaxDiffApi } from "src/utils/api/maxdiff/maxdiff";
+import { useComparisonApi } from "src/utils/api/comparison/comparison";
 import { useBackendPostApi } from "src/utils/api/post/post";
 import { useInvalidateFeedQuery } from "src/utils/api/post/useFeedQuery";
 import { buildSurveyConfigForSave } from "src/utils/survey/config";
@@ -77,7 +77,6 @@ function buildBaseCreateConversationRequest({
     isIndexed: !conversationDraft.isPrivate,
     participationMode: conversationDraft.participationMode,
     seedOpinionList: conversationDraft.seedOpinions,
-    requiresEventTicket: conversationDraft.requiresEventTicket,
     conversationEmailUpdateEnabledOverride:
       conversationDraft.conversationEmailUpdateEnabledOverride,
   };
@@ -97,13 +96,38 @@ function buildCreateConversationRequest({
     postAsOrganizationSlug,
   });
 
-  if (conversationDraft.conversationType === "ranking") {
+  if (conversationDraft.conversationType === "prioritizing") {
+    if (conversationDraft.prioritizationType === "qv") {
+      const normalizedSurvey = buildSurveyConfigForSave({ surveyConfig });
+      if (!normalizedSurvey.success) return { success: false };
+      const parsed = Dto.createNewConversationRequest.safeParse({
+        ...baseCreateRequest,
+        conversationType: "prioritizing",
+        prioritizationType: "qv",
+        creditPricing: "quadratic",
+        allowOpposition: conversationDraft.allowOpposition,
+        seedOpinionList: [],
+        seedStatements: conversationDraft.qvStatements.map(
+          ({ title, description }) => ({
+            title,
+            description: description.trim() === "" ? undefined : description,
+          })
+        ),
+        surveyConfig: normalizedSurvey.surveyConfig,
+      });
+      return parsed.success
+        ? { success: true, request: parsed.data }
+        : { success: false };
+    }
     return {
       success: true,
       request: Dto.createNewConversationRequest.parse({
         ...baseCreateRequest,
         conversationType: conversationDraft.conversationType,
-        rankingMode: conversationDraft.rankingMode,
+        prioritizationType: "comparisons",
+        comparisonMethod: conversationDraft.comparisonMethod,
+        allowParticipantStatements:
+          conversationDraft.participantStatements.enabled,
         externalSourceConfig: conversationDraft.externalSourceConfig,
       } satisfies z.input<typeof Dto.createNewConversationRequest>),
     };
@@ -125,6 +149,8 @@ function buildCreateConversationRequest({
       ...baseCreateRequest,
       conversationType: conversationDraft.conversationType,
       votingPresentation: conversationDraft.votingPresentation,
+      allowParticipantStatements:
+        conversationDraft.participantStatements.enabled,
       aiLabelingEnabled: conversationDraft.aiLabelingEnabled,
       preferredOpinionGroupCount: conversationDraft.preferredOpinionGroupCount,
       surveyConfig: normalizedSurveyConfigResult.surveyConfig,
@@ -143,7 +169,7 @@ export function usePublishConversationDraft() {
   );
   const { handleAxiosErrorStatusCodes } = useCommonApi();
   const { createNewPost } = useBackendPostApi();
-  const { syncMaxDiff } = useMaxDiffApi();
+  const { syncComparisonSource } = useComparisonApi();
   const { invalidateFeedTab } = useInvalidateFeedQuery();
 
   async function publishConversationDraft({
@@ -213,10 +239,11 @@ export function usePublishConversationDraft() {
       }
 
       if (
-        conversationDraft.conversationType === "ranking" &&
+        conversationDraft.conversationType === "prioritizing" &&
+        conversationDraft.prioritizationType === "comparisons" &&
         conversationDraft.externalSourceConfig !== null
       ) {
-        await syncMaxDiff({
+        await syncComparisonSource({
           conversationSlugId: response.data.conversationSlugId,
         });
       }

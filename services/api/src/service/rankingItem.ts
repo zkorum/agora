@@ -4,24 +4,25 @@ import {
     rankingItemExternalSourceTable,
     rankingScoreEntityTable,
     conversationTable,
+    userTable,
 } from "@/shared-backend/schema.js";
+import { currentRankingItemSourceCondition } from "@/shared-backend/opinionEligibility.js";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
-import { eq, and, inArray, isNotNull } from "drizzle-orm";
+import { eq, and, inArray, isNotNull, isNull, asc } from "drizzle-orm";
 import { encode } from "html-entities";
 import { generateRandomSlugId } from "@/crypto.js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
-import { computeItemSnapshot, lockRankingScoringConfig } from "./maxdiff.js";
+import { computeItemSnapshot, lockRankingScoringConfig } from "./comparison.js";
 import type {
-    MaxDiffItem,
-    MaxDiffItemsFetchResponse,
+    PrioritizationItem,
+    PrioritizationItemsFetchResponse,
 } from "@/shared/types/dto.js";
-import type { MaxdiffLifecycleStatus } from "@/shared/types/zod.js";
+import type { RankingItemLifecycleStatus } from "@/shared/types/zod.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
 import { log } from "@/app.js";
 import type { Valkey } from "@/shared-backend/valkey.js";
 import { VALKEY_QUEUE_KEYS } from "@/shared-backend/valkeyQueues.js";
-import { requireProjectCapability } from "@/service/projectAccess.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
 import {
     contentLanguageMetadataUpdateValues,
@@ -104,7 +105,7 @@ export async function normalizeFrontendRankingItemContent({
     const normalizedTitlePlainText = normalizedTitleResult.content.plainText;
     let sanitizedBodyHtml: string | null = null;
     let bodyPlainText: string | null = null;
-    if (bodyHtml != null) {
+    if (bodyHtml != null && bodyHtml.trim() !== "") {
         const normalizationResult = normalizeUserRichTextInput({
             html: bodyHtml,
             validationMode: "ranking_item",
@@ -118,7 +119,9 @@ export async function normalizeFrontendRankingItemContent({
     }
 
     const normalizedBodyHtml =
-        sanitizedBodyHtml !== null && sanitizedBodyHtml.trim() !== ""
+        sanitizedBodyHtml !== null &&
+        bodyPlainText !== null &&
+        bodyPlainText.trim() !== ""
             ? sanitizedBodyHtml
             : null;
     const normalizedBodyPlainText =
@@ -212,6 +215,7 @@ interface CreateRankingItemCommonProps {
     conversationContentId: number;
     authorId: string;
     isSeed: boolean;
+    position?: number;
     googleCloudCredentials?: GoogleCloudCredentials;
     useGoogleLanguageDetection?: boolean;
 }
@@ -261,6 +265,7 @@ async function createRankingItemInTx({
     authorId,
     normalizedContent,
     isSeed,
+    position,
     now,
 }: {
     tx: PostgresDatabase;
@@ -270,6 +275,7 @@ async function createRankingItemInTx({
     authorId: string;
     normalizedContent: NormalizedRankingItemContent;
     isSeed: boolean;
+    position: number | undefined;
     now: Date;
 }): Promise<{ itemId: number; contentId: number; contentPublicId: string }> {
     const itemRows = await tx
@@ -279,6 +285,7 @@ async function createRankingItemInTx({
             authorId,
             conversationId,
             isSeed,
+            position,
             lifecycleStatus: "active",
             createdAt: now,
             updatedAt: now,
@@ -338,6 +345,7 @@ export async function createRankingItem(
         conversationContentId,
         authorId,
         isSeed,
+        position,
     } = props;
     const slugId = generateRandomSlugId();
     const now = new Date();
@@ -351,6 +359,7 @@ export async function createRankingItem(
         authorId,
         normalizedContent,
         isSeed,
+        position,
         now,
     };
 
@@ -389,7 +398,7 @@ export async function createRankingItem(
     };
 }
 
-type LifecycleFilter = MaxdiffLifecycleStatus | "all";
+type LifecycleFilter = RankingItemLifecycleStatus | "all";
 
 interface FetchRankingItemsProps {
     db: PostgresDatabase;
@@ -403,14 +412,14 @@ export async function fetchRankingItems({
     conversationSlugId,
     displayPreferences,
     lifecycleFilter = "active",
-}: FetchRankingItemsProps): Promise<MaxDiffItemsFetchResponse> {
+}: FetchRankingItemsProps): Promise<PrioritizationItemsFetchResponse> {
     const { id: conversationId } =
         await useCommonPost().getPostMetadataFromSlugId({
             db,
             conversationSlugId,
         });
 
-    const activeStatuses: MaxdiffLifecycleStatus[] =
+    const activeStatuses: RankingItemLifecycleStatus[] =
         lifecycleFilter === "all"
             ? ["active", "completed", "in_progress", "canceled"]
             : lifecycleFilter === "active"
@@ -439,6 +448,7 @@ export async function fetchRankingItems({
             createdAt: rankingItemTable.createdAt,
         })
         .from(rankingItemTable)
+        .leftJoin(userTable, eq(userTable.id, rankingItemTable.authorId))
         .innerJoin(
             rankingItemContentTable,
             eq(rankingItemContentTable.id, rankingItemTable.currentContentId),
@@ -466,10 +476,11 @@ export async function fetchRankingItems({
         .where(
             and(
                 eq(rankingItemTable.conversationId, conversationId),
-                isNotNull(rankingItemTable.currentContentId),
+                currentRankingItemSourceCondition(),
                 inArray(rankingItemTable.lifecycleStatus, activeStatuses),
             ),
-        );
+        )
+        .orderBy(asc(rankingItemTable.position), asc(rankingItemTable.id));
 
     const sources = rows.map((r) => ({
         conversationSlugId,
@@ -490,7 +501,7 @@ export async function fetchRankingItems({
             preferences: displayPreferences,
         });
 
-    const items: MaxDiffItem[] = rows.map((r) => {
+    const items: PrioritizationItem[] = rows.map((r) => {
         const displayContent = displayContentByContentId.get(r.contentId);
         if (displayContent === undefined) {
             throw httpErrors.internalServerError(
@@ -516,7 +527,7 @@ interface UpdateRankingItemLifecycleProps {
     db: PostgresDatabase;
     conversationSlugId: string;
     itemSlugId: string;
-    newStatus: MaxdiffLifecycleStatus;
+    newStatus: RankingItemLifecycleStatus;
     requestingUserId: string;
     valkey?: Valkey;
 }
@@ -526,7 +537,6 @@ export async function updateRankingItemLifecycle({
     conversationSlugId,
     itemSlugId,
     newStatus,
-    requestingUserId,
     valkey,
 }: UpdateRankingItemLifecycleProps): Promise<void> {
     const { id: conversationId } =
@@ -535,23 +545,20 @@ export async function updateRankingItemLifecycle({
             conversationSlugId,
         });
 
-    const [conversation] = await db
-        .select({
-            projectId: conversationTable.projectId,
-        })
-        .from(conversationTable)
-        .where(eq(conversationTable.id, conversationId));
-
-    await requireProjectCapability({
-        db,
-        userId: requestingUserId,
-        projectId: conversation.projectId,
-        capability: "conversation_edit",
-        message: "Missing conversation_edit capability",
-    });
 
     const now = new Date();
     const transition = await db.transaction(async (tx) => {
+        const activities = await tx
+            .select({
+                prioritizationType: conversationTable.prioritizationType,
+            })
+            .from(conversationTable)
+            .where(eq(conversationTable.id, conversationId))
+            .for("share");
+        if (activities.at(0)?.prioritizationType !== "comparisons")
+            throw httpErrors.badRequest(
+                "Item lifecycle changes require a comparison activity",
+            );
         await lockRankingScoringConfig({ db: tx, conversationId });
         const itemRows = await tx
             .select({
@@ -564,6 +571,8 @@ export async function updateRankingItemLifecycle({
                     eq(rankingItemTable.slugId, itemSlugId),
                     eq(rankingItemTable.conversationId, conversationId),
                     isNotNull(rankingItemTable.currentContentId),
+                    isNull(rankingItemTable.deletedAt),
+                    isNull(rankingItemTable.accountHiddenAt),
                 ),
             )
             .for("update");

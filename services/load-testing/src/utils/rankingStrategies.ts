@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { MaxDiffSaveRequest } from "../shared/types/dto.js";
+import type { ComparisonSaveRequest } from "../shared/types/dto.js";
 import { stableFraction as fraction } from "./deterministicRandom.ts";
 
 export const rankingStrategySchema = z.enum([
@@ -97,7 +97,7 @@ export function createRankingVoter({
     }: {
         candidateSet: readonly string[];
         comparisonIndex: number;
-    }): MaxDiffSaveRequest["comparisons"][number] => {
+    }): ComparisonSaveRequest["comparisons"][number] => {
         const noisy =
             strategy === "noisy" &&
             fraction(

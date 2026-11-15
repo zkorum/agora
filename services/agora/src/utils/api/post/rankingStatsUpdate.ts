@@ -6,6 +6,12 @@ const updatesByQueryClient = new WeakMap<
   Map<string, SSEConversationRankingStatsUpdatedData>
 >();
 
+export function clearAllRetainedConversationRankingStatsUpdates(
+  queryClient: QueryClient
+): void {
+  updatesByQueryClient.delete(queryClient);
+}
+
 export function retainConversationRankingStatsUpdate({
   queryClient,
   data,

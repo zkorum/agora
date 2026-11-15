@@ -1,4 +1,6 @@
+import { useQueryClient } from "@tanstack/vue-query";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { ProjectManagementPermissions } from "src/shared/organizationAccess";
 import { PROJECT_DOCUMENT_UPLOAD_FIELD_NAMES } from "src/shared/projectDocument";
 import type {
   AdminProject,
@@ -18,6 +20,7 @@ import type {
   UpdateProjectSlugRequest,
 } from "src/shared/types/dto";
 import { Dto } from "src/shared/types/dto";
+import { invalidateManagementPermissions } from "src/utils/api/invalidateManagementPermissions";
 import {
   buildAuthorizationHeader,
   FILE_UPLOAD_UCAN_LIFETIME_SECONDS,
@@ -55,6 +58,7 @@ const updateProjectLanguageSettingsFailureTranslationKeys: Record<
 };
 
 export function useBackendAdministratorProjectApi() {
+  const queryClient = useQueryClient();
   const { buildEncodedUcan, createRawAxiosRequestConfig } = useCommonApi();
   const { showNotifyMessage } = useNotify();
   const { t } = useComponentI18n<AdministratorProjectApiTranslations>(
@@ -125,7 +129,9 @@ export function useBackendAdministratorProjectApi() {
 
   async function getProjectDetails(
     request: GetProjectDetailsRequest
-  ): Promise<AdminProject | undefined> {
+  ): Promise<
+    (AdminProject & { permissions: ProjectManagementPermissions }) | undefined
+  > {
     try {
       const params = Dto.getProjectDetailsRequest.parse(request);
       const url = "/api/v1/administrator/project/get-project-details";
@@ -138,7 +144,9 @@ export function useBackendAdministratorProjectApi() {
       });
 
       const data = Dto.getProjectDetailsResponse.parse(response.data);
-      return data.project;
+      return data.project === undefined
+        ? undefined
+        : { ...data.project, permissions: data.permissions };
     } catch (error) {
       console.error(error);
       showNotifyMessage(t("failedToFetchProjects"));
@@ -228,6 +236,7 @@ export function useBackendAdministratorProjectApi() {
         },
       });
       showNotifyMessage(t("deletedProject"));
+      await invalidateManagementPermissions(queryClient);
       return true;
     } catch (error) {
       console.error(error);
@@ -253,6 +262,7 @@ export function useBackendAdministratorProjectApi() {
       const data = Dto.updateProjectResponse.parse(response.data);
       if (data.success) {
         showNotifyMessage(t("updatedProject"));
+        await invalidateManagementPermissions(queryClient);
         return data.projectSlug;
       }
 

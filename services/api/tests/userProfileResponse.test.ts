@@ -17,7 +17,6 @@ describe("user profile response schema", () => {
                         description: "",
                     },
                 ],
-                verifiedEventTickets: [],
             }),
         ).not.toThrow();
     });

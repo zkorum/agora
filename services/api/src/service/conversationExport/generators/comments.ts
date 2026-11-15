@@ -173,7 +173,7 @@ export const commentsGenerator: CsvGenerator = {
                 moderationAction: opinionModerationTable.moderationAction,
             })
             .from(opinionTable)
-            .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
+            .leftJoin(userTable, eq(userTable.id, opinionTable.authorId))
             .innerJoin(
                 opinionContentTable,
                 eq(opinionTable.currentContentId, opinionContentTable.id),
@@ -243,7 +243,7 @@ export const commentsGenerator: CsvGenerator = {
                 ...opinion,
                 authorId: opinion.isAuthorDeleted
                     ? undefined
-                    : opinion.authorId,
+                    : opinion.authorId ?? undefined,
                 numAgrees: counts?.numAgrees ?? 0,
                 numDisagrees: counts?.numDisagrees ?? 0,
                 numPasses: counts?.numPasses ?? 0,

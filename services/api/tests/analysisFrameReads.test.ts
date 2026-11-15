@@ -41,7 +41,7 @@ describe("published analysis frame reads", () => {
             password: "postgres",
             database: "agora_test",
         });
-        db = drizzle(client);
+        db = drizzle({ client });
         await client.unsafe(readDbFixtureSql("analysis-frame-reads.sql"));
         await client.unsafe('CREATE DATABASE "agora_replica"');
         replicaClient = postgres({
@@ -51,7 +51,7 @@ describe("published analysis frame reads", () => {
             password: "postgres",
             database: "agora_replica",
         });
-        replicaDb = drizzle(replicaClient);
+        replicaDb = drizzle({ client: replicaClient });
         await replicaClient.unsafe(
             readDbFixtureSql("analysis-frame-reads.sql"),
         );
@@ -108,7 +108,8 @@ describe("published analysis frame reads", () => {
             },
         ]);
         const statements: string[] = [];
-        const measuredDb = drizzle(client, {
+        const measuredDb = drizzle({
+            client,
             logger: {
                 logQuery(query) {
                     statements.push(query);
@@ -163,7 +164,8 @@ describe("published analysis frame reads", () => {
 
     it("does not query descriptions when system labels are disabled and no admin label exists", async () => {
         const statements: string[] = [];
-        const measuredDb = drizzle(client, {
+        const measuredDb = drizzle({
+            client,
             logger: {
                 logQuery(query) {
                     statements.push(query);

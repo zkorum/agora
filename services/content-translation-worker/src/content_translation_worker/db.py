@@ -981,15 +981,17 @@ def _fetch_opinion_source(
         )
         .select_from(OpinionContent)
         .join(Opinion, Opinion.id == OpinionContent.opinion_id)
-        .join(User, User.id == Opinion.author_id)
+        .outerjoin(User, User.id == Opinion.author_id)
         .join(Conversation, Conversation.id == Opinion.conversation_id)
         .where(
             and_(
                 OpinionContent.id == opinion_content_id,
                 Opinion.current_content_id.is_not(None),
+                Opinion.deleted_at.is_(None),
+                Opinion.account_hidden_at.is_(None),
                 Conversation.current_content_id.is_not(None),
                 Conversation.is_importing.is_(False),
-                User.is_deleted.is_(False),
+                or_(Opinion.is_seed.is_(True), User.is_deleted.is_(False)),
                 ~select(OpinionModeration.id)
                 .where(
                     and_(
@@ -1043,6 +1045,9 @@ def _get_opinion_source_eligibility(
 ) -> OpinionSourceEligibility:
     row = session.execute(
         select(
+            Opinion.is_seed,
+            Opinion.deleted_at,
+            Opinion.account_hidden_at,
             User.is_deleted,
             select(OpinionModeration.id)
             .where(
@@ -1057,13 +1062,17 @@ def _get_opinion_source_eligibility(
         )
         .select_from(OpinionContent)
         .join(Opinion, Opinion.id == OpinionContent.opinion_id)
-        .join(User, User.id == Opinion.author_id)
+        .outerjoin(User, User.id == Opinion.author_id)
         .where(OpinionContent.id == opinion_content_id)
         .limit(1)
     ).one_or_none()
     if row is None:
         return "missing"
-    if row.is_deleted:
+    if (
+        row.deleted_at is not None
+        or row.account_hidden_at is not None
+        or (not row.is_seed and row.is_deleted is not False)
+    ):
         return "deleted_author"
     if row.is_hidden:
         return "hidden"
@@ -1169,10 +1178,16 @@ def _fetch_ranking_item_source(
         )
         .join(RankingItem, RankingItem.id == RankingItemContent.ranking_item_id)
         .join(Conversation, Conversation.id == RankingItem.conversation_id)
+        .outerjoin(User, User.id == RankingItem.author_id)
         .where(
             and_(
                 RankingItemContent.id == ranking_item_content_id,
                 RankingItem.current_content_id == RankingItemContent.id,
+                RankingItem.deleted_at.is_(None),
+                RankingItem.account_hidden_at.is_(None),
+                or_(RankingItem.is_seed.is_(True), User.is_deleted.is_(False)),
+                Conversation.current_content_id.is_not(None),
+                Conversation.deleted_at.is_(None),
             )
         )
         .limit(1)

@@ -31,6 +31,8 @@ import {
 } from "vue";
 
 import { useBackendPostApi } from "./post";
+import { reconcileQvCalculationLifecycle } from "./qvCalculationState";
+import { reconcileQvStats } from "./qvStatsUpdate";
 import {
   clearRetainedConversationRankingStatsUpdate,
   getRetainedConversationRankingStatsUpdate,
@@ -67,7 +69,10 @@ export function applyConversationRankingStatsUpdate({
   conversation: ConversationCacheData;
   data: SSEConversationRankingStatsUpdatedData;
 }): ConversationCacheData {
-  if (conversation.metadata.conversationType !== "ranking") {
+  if (
+    conversation.metadata.conversationType !== "prioritizing" ||
+    conversation.metadata.prioritizationType !== "comparisons"
+  ) {
     return conversation;
   }
   const previousSnapshotId = conversation.metadata.rankingStatsSnapshotId;
@@ -119,8 +124,32 @@ function preserveNewerSnapshotMetadata({
   const cachedMetadata = cachedConversation.conversationData.metadata;
   const fetchedMetadata = fetchedConversation.conversationData.metadata;
   if (
-    cachedMetadata.conversationType === "ranking" &&
-    fetchedMetadata.conversationType === "ranking"
+    cachedMetadata.conversationType === "prioritizing" &&
+    cachedMetadata.prioritizationType === "qv" &&
+    fetchedMetadata.conversationType === "prioritizing" &&
+    fetchedMetadata.prioritizationType === "qv" &&
+    cachedMetadata.qvGeneration !== undefined &&
+    (fetchedMetadata.qvGeneration === undefined ||
+      cachedMetadata.qvGeneration > fetchedMetadata.qvGeneration)
+  ) {
+    return {
+      ...fetchedConversation,
+      conversationData: {
+        ...fetchedConversation.conversationData,
+        metadata: {
+          ...fetchedMetadata,
+          qvGeneration: cachedMetadata.qvGeneration,
+          isClosed: cachedMetadata.isClosed,
+          isFinalizing: cachedMetadata.isFinalizing,
+        },
+      },
+    };
+  }
+  if (
+    cachedMetadata.conversationType === "prioritizing" &&
+    cachedMetadata.prioritizationType === "comparisons" &&
+    fetchedMetadata.conversationType === "prioritizing" &&
+    fetchedMetadata.prioritizationType === "comparisons"
   ) {
     const cachedSnapshotId = cachedMetadata.rankingStatsSnapshotId;
     const fetchedSnapshotId = fetchedMetadata.rankingStatsSnapshotId;
@@ -206,7 +235,8 @@ function mergeRetainedRankingStatsUpdate({
   const metadata = conversation.conversationData.metadata;
   if (
     update === undefined ||
-    metadata.conversationType !== "ranking" ||
+    metadata.conversationType !== "prioritizing" ||
+    metadata.prioritizationType !== "comparisons" ||
     (metadata.rankingStatsSnapshotId !== undefined &&
       metadata.rankingStatsSnapshotId >= update.rankingStatsSnapshotId)
   ) {
@@ -348,7 +378,8 @@ export function useConversationQuery({
         queryClient.getQueryData<ConversationDetail>(queryKey);
       const fetchedMetadata = fetchedConversation.conversationData.metadata;
       if (
-        fetchedMetadata.conversationType === "ranking" &&
+        fetchedMetadata.conversationType === "prioritizing" &&
+        fetchedMetadata.prioritizationType === "comparisons" &&
         fetchedMetadata.rankingStatsSnapshotId !== undefined
       ) {
         clearRetainedConversationRankingStatsUpdate({
@@ -383,13 +414,29 @@ export function useConversationQuery({
         cachedConversation,
         cachedConversationBeforeFetch,
       });
-      return mergeRetainedRankingStatsUpdate({
+      const reconciled = mergeRetainedRankingStatsUpdate({
         conversation: conversationWithPreservedCache,
         update: getRetainedConversationRankingStatsUpdate({
           queryClient,
           conversationSlugId: slugId,
         }),
       });
+      if (cachedConversation !== undefined) {
+        reconcileQvStats({
+          queryClient,
+          conversation: cachedConversation.conversationData,
+        });
+      }
+      return {
+        ...reconciled,
+        conversationData: reconcileQvCalculationLifecycle({
+          queryClient,
+          conversation: reconcileQvStats({
+            queryClient,
+            conversation: reconciled.conversationData,
+          }),
+        }),
+      };
     },
     enabled: computed(() => toValue(enabled) && isActive.value),
     placeholderData: (previousData, previousQuery) =>

@@ -1,8 +1,14 @@
-import { useMutation, useQueryClient } from "@tanstack/vue-query";
+import {
+  type QueryClient,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/vue-query";
 import { storeToRefs } from "pinia";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { UpdateConversationRequest } from "src/shared/types/dto";
 import type { ExtendedConversation } from "src/shared/types/zod";
+import { applyConversationTypeConfig } from "src/shared/utils/conversationTypeConfig";
+import { applyParticipantStatements } from "src/shared/utils/participantStatements";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLanguageStore } from "src/stores/language";
 import { useUserStore } from "src/stores/user";
@@ -21,12 +27,147 @@ import {
   type ConversationDetail,
   updateConversationQueryCache,
 } from "src/utils/api/post/useConversationQuery";
-import { useViewerQueryScope } from "src/utils/query/viewerScope";
+import {
+  isQueryForViewerScope,
+  useViewerQueryScope,
+  type ViewerQueryScope,
+} from "src/utils/query/viewerScope";
 import { useNotify } from "src/utils/ui/notify";
 import { onScopeDispose, watch } from "vue";
 
+import {
+  beginQvLifecycleChange,
+  getQvCalculationFrontier,
+  settleQvLifecycleChange,
+} from "./qvCalculationState";
+
+async function beginConversationLifecycleMutation({
+  queryClient,
+  conversationSlugId,
+  scope,
+  isClosed,
+}: {
+  queryClient: QueryClient;
+  conversationSlugId: string;
+  scope: ViewerQueryScope;
+  isClosed: boolean;
+}) {
+  const filter = {
+    queryKey: ["conversation", conversationSlugId],
+    predicate: (query: { queryKey: readonly unknown[] }) =>
+      isQueryForViewerScope({ queryKey: query.queryKey, viewerScope: scope }),
+  };
+  const isQv = queryClient
+    .getQueriesData<ExtendedConversation | ConversationDetail>(filter)
+    .some(([, data]) => {
+      const metadata =
+        data === undefined
+          ? undefined
+          : "conversationData" in data
+            ? data.conversationData.metadata
+            : data.metadata;
+      return (
+        metadata?.conversationType === "prioritizing" &&
+        metadata.prioritizationType === "qv"
+      );
+    });
+  const qvChange = isQv
+    ? beginQvLifecycleChange({ queryClient, slug: conversationSlugId })
+    : undefined;
+  if (qvChange !== undefined) {
+    await queryClient.cancelQueries({
+      queryKey: ["qv-results", conversationSlugId],
+    });
+    await queryClient.cancelQueries({
+      queryKey: ["qv-load", conversationSlugId],
+    });
+  }
+  await queryClient.cancelQueries(filter);
+  const previous = queryClient.getQueriesData<
+    ExtendedConversation | ConversationDetail
+  >(filter);
+  updateConversationQueryCache({
+    queryClient,
+    conversationSlugId,
+    viewerScope: scope,
+    updateConversation: (data) => ({
+      metadata: { ...data.metadata, isClosed },
+      interaction: {
+        ...data.interaction,
+        conversationCapabilities: {
+          ...data.interaction.conversationCapabilities,
+          canClose: false,
+          canReopen: false,
+        },
+      },
+    }),
+  });
+  const snapshots = previous.map(([queryKey, data]) => ({
+    queryKey,
+    previous: data,
+    optimistic: queryClient.getQueryData<
+      ExtendedConversation | ConversationDetail
+    >(queryKey),
+  }));
+  return {
+    scope,
+    qvChange,
+    rollback: () => {
+      if (
+        qvChange !== undefined &&
+        getQvCalculationFrontier({ queryClient, slug: conversationSlugId })
+          .epoch !== qvChange.epoch
+      )
+        return;
+      for (const snapshot of snapshots) {
+        // A newer SSE/read/command wins over this rollback. Never repopulate
+        // cleared caches or restore old counts/permissions over newer data.
+        queryClient.setQueryData<ExtendedConversation | ConversationDetail>(
+          snapshot.queryKey,
+          (current) =>
+            current !== undefined && current === snapshot.optimistic
+              ? snapshot.previous
+              : current
+        );
+      }
+    },
+  };
+}
+
+function settleConversationLifecycleMutation({
+  queryClient,
+  conversationSlugId,
+  context,
+}: {
+  queryClient: QueryClient;
+  conversationSlugId: string;
+  context:
+    | Awaited<ReturnType<typeof beginConversationLifecycleMutation>>
+    | undefined;
+}) {
+  if (context?.qvChange !== undefined) {
+    settleQvLifecycleChange({
+      queryClient,
+      slug: conversationSlugId,
+      change: context.qvChange,
+    });
+    // Re-enabling a fresh cached query alone does not fetch. Every settlement,
+    // including transport uncertainty, must cross the writer-read barrier.
+    void queryClient.invalidateQueries({
+      queryKey: ["qv-results", conversationSlugId],
+    });
+    void queryClient.invalidateQueries({
+      queryKey: ["qv-load", conversationSlugId],
+    });
+  }
+  void queryClient.invalidateQueries({
+    queryKey: ["conversation", conversationSlugId],
+  });
+}
+
 export function useCloseConversationMutation() {
   const queryClient = useQueryClient();
+  const viewerScope = useViewerQueryScope();
   const { closeConversation } = useBackendPostApi();
   const { showNotifyMessage } = useNotify();
   const { t } = useComponentI18n<ConversationMutationsTranslations>(
@@ -38,33 +179,15 @@ export function useCloseConversationMutation() {
       return closeConversation({ conversationSlugId });
     },
 
-    // Optimistic update: update cache BEFORE backend responds
-    onMutate: async ({ conversationSlugId }) => {
-      // Cancel outgoing refetches to prevent them from overwriting optimistic update
-      await queryClient.cancelQueries({
-        queryKey: ["conversation", conversationSlugId],
-      });
-
-      // Snapshot previous values for rollback
-      const previousConversations = queryClient.getQueriesData({
-        queryKey: ["conversation", conversationSlugId],
-      });
-
-      updateConversationQueryCache({
+    onMutate: ({ conversationSlugId }) =>
+      beginConversationLifecycleMutation({
         queryClient,
         conversationSlugId,
-        updateConversation: (oldData) => ({
-          metadata: {
-            ...oldData.metadata,
-            isClosed: true,
-          },
-        }),
-      });
+        scope: viewerScope.value,
+        isClosed: true,
+      }),
 
-      return { previousConversations };
-    },
-
-    onSuccess: (data, { conversationSlugId }) => {
+    onSuccess: (data, _variables, context) => {
       if (data.success) {
         showNotifyMessage(t("closeSuccess"));
 
@@ -74,30 +197,33 @@ export function useCloseConversationMutation() {
           refetchType: "none",
         });
       } else {
+        if (context?.scope.userId === viewerScope.value.userId)
+          context?.rollback();
         // Handle error reasons
         if (data.reason === "not_allowed") {
           showNotifyMessage(t("closeNotAllowed"));
         } else if (data.reason === "already_closed") {
           showNotifyMessage(t("alreadyClosed"));
         }
-
-        // Invalidate conversation to get fresh state from server
-        void queryClient.invalidateQueries({
-          queryKey: ["conversation", conversationSlugId],
-        });
       }
     },
 
     onError: (_error, _variables, context) => {
-      // Rollback optimistic update on error
-      if (context?.previousConversations) {
-        for (const [queryKey, data] of context.previousConversations) {
-          queryClient.setQueryData(queryKey, data);
-        }
+      if (
+        context !== undefined &&
+        context.scope.userId === viewerScope.value.userId
+      ) {
+        context.rollback();
       }
 
       showNotifyMessage(t("closeError"));
     },
+    onSettled: (_data, _error, { conversationSlugId }, context) =>
+      settleConversationLifecycleMutation({
+        queryClient,
+        conversationSlugId,
+        context,
+      }),
 
     retry: false,
   });
@@ -105,6 +231,7 @@ export function useCloseConversationMutation() {
 
 export function useOpenConversationMutation() {
   const queryClient = useQueryClient();
+  const viewerScope = useViewerQueryScope();
   const { openConversation } = useBackendPostApi();
   const { showNotifyMessage } = useNotify();
   const { t } = useComponentI18n<ConversationMutationsTranslations>(
@@ -116,33 +243,15 @@ export function useOpenConversationMutation() {
       return openConversation({ conversationSlugId });
     },
 
-    // Optimistic update: update cache BEFORE backend responds
-    onMutate: async ({ conversationSlugId }) => {
-      // Cancel outgoing refetches to prevent them from overwriting optimistic update
-      await queryClient.cancelQueries({
-        queryKey: ["conversation", conversationSlugId],
-      });
-
-      // Snapshot previous values for rollback
-      const previousConversations = queryClient.getQueriesData({
-        queryKey: ["conversation", conversationSlugId],
-      });
-
-      updateConversationQueryCache({
+    onMutate: ({ conversationSlugId }) =>
+      beginConversationLifecycleMutation({
         queryClient,
         conversationSlugId,
-        updateConversation: (oldData) => ({
-          metadata: {
-            ...oldData.metadata,
-            isClosed: false,
-          },
-        }),
-      });
+        scope: viewerScope.value,
+        isClosed: false,
+      }),
 
-      return { previousConversations };
-    },
-
-    onSuccess: (data, { conversationSlugId }) => {
+    onSuccess: (data, _variables, context) => {
       if (data.success) {
         showNotifyMessage(t("openSuccess"));
 
@@ -152,30 +261,33 @@ export function useOpenConversationMutation() {
           refetchType: "none",
         });
       } else {
+        if (context?.scope.userId === viewerScope.value.userId)
+          context?.rollback();
         // Handle error reasons
         if (data.reason === "not_allowed") {
           showNotifyMessage(t("openNotAllowed"));
         } else if (data.reason === "already_open") {
           showNotifyMessage(t("alreadyOpen"));
         }
-
-        // Invalidate conversation to get fresh state from server
-        void queryClient.invalidateQueries({
-          queryKey: ["conversation", conversationSlugId],
-        });
       }
     },
 
     onError: (_error, _variables, context) => {
-      // Rollback optimistic update on error
-      if (context?.previousConversations) {
-        for (const [queryKey, data] of context.previousConversations) {
-          queryClient.setQueryData(queryKey, data);
-        }
+      if (
+        context !== undefined &&
+        context.scope.userId === viewerScope.value.userId
+      ) {
+        context.rollback();
       }
 
       showNotifyMessage(t("openError"));
     },
+    onSettled: (_data, _error, { conversationSlugId }, context) =>
+      settleConversationLifecycleMutation({
+        queryClient,
+        conversationSlugId,
+        context,
+      }),
 
     retry: false,
   });
@@ -289,7 +401,6 @@ export function useUpdateConversationMutation() {
                   ? oldData.metadata.preferredOpinionGroupCount
                   : polisSettings.preferredOpinionGroupCount,
               participationMode: variables.participationMode,
-              requiresEventTicket: variables.requiresEventTicket,
             },
           };
 
@@ -315,7 +426,32 @@ export function useUpdateConversationMutation() {
             // A failed request must not repopulate caches cleared during logout.
             queryClient.setQueryData<ExtendedConversation | ConversationDetail>(
               queryKey,
-              (current) => (current === undefined ? undefined : previous)
+              (current) => {
+                if (current === undefined || previous === undefined)
+                  return undefined;
+                const participantStatements =
+                  "conversationData" in current
+                    ? current.conversationData.metadata.participantStatements
+                    : current.metadata.participantStatements;
+                if ("conversationData" in previous)
+                  return {
+                    ...previous,
+                    conversationData: {
+                      ...previous.conversationData,
+                      metadata: applyParticipantStatements({
+                        metadata: previous.conversationData.metadata,
+                        participantStatements,
+                      }),
+                    },
+                  };
+                return {
+                  ...previous,
+                  metadata: applyParticipantStatements({
+                    metadata: previous.metadata,
+                    participantStatements,
+                  }),
+                };
+              }
             );
           }
         },
@@ -330,6 +466,39 @@ export function useUpdateConversationMutation() {
 
     onSuccess: async (data, variables, context) => {
       if (data.success) {
+        if (
+          context !== undefined &&
+          context.viewerUserId === auth.userId &&
+          context.generation === seedSaveGeneration
+        )
+          updateConversationQueryCache({
+            queryClient,
+            conversationSlugId: variables.conversationSlugId,
+            updateConversation: (conversation) => ({
+              metadata: applyParticipantStatements({
+                metadata: conversation.metadata,
+                participantStatements: data.participantStatements,
+              }),
+            }),
+          });
+        if (data.conversationTypeConfig !== undefined) {
+          const config = data.conversationTypeConfig;
+          updateConversationQueryCache({
+            queryClient,
+            conversationSlugId: variables.conversationSlugId,
+            updateConversation: (conversation) => ({
+              metadata: applyConversationTypeConfig({
+                metadata: conversation.metadata,
+                config,
+              }),
+            }),
+          });
+        }
+        if (variables.qvStatementUpdate !== undefined) {
+          void queryClient.invalidateQueries({
+            queryKey: ["prioritization-items", variables.conversationSlugId],
+          });
+        }
         await cacheCreatedSeedOpinions({
           queryClient,
           conversationSlugId: variables.conversationSlugId,
@@ -345,8 +514,8 @@ export function useUpdateConversationMutation() {
           for (const family of [
             "commentStats",
             "analysisFrameManifest",
-            "maxdiff-items",
-            "maxdiff-load",
+            "comparison-items",
+            "comparison-load",
             "ranking-stats-checkpoints",
           ]) {
             void queryClient.invalidateQueries({

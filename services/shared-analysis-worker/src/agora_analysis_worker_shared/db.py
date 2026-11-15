@@ -9,7 +9,7 @@ from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Literal, TypedDict
 
 from pydantic import TypeAdapter, ValidationError
-from sqlalchemy import and_, case, func, or_, select, true, tuple_, update
+from sqlalchemy import and_, case, func, or_, select, tuple_, update
 from sqlalchemy import insert as sqlalchemy_insert
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
@@ -31,6 +31,7 @@ from agora_analysis_worker_shared.generated_models import (
     AnalysisSnapshotResult,
     AnalysisWorkState,
     Conversation,
+    ConversationParticipant,
     ConversationType,
     ConversationViewSnapshot,
     ConversationViewSnapshotCheckpointReason,
@@ -997,6 +998,7 @@ def _fetch_vote_input_rows_batch(
     if not conversation_ids:
         return {}
 
+    voter = aliased(User)
     query = (
         select(
             Opinion.conversation_id,
@@ -1012,7 +1014,16 @@ def _fetch_vote_input_rows_batch(
         .join(Opinion, Opinion.id == Vote.opinion_id)
         .join(Conversation, Conversation.id == Opinion.conversation_id)
         .join(PolisConversationConfig, PolisConversationConfig.id == Conversation.polis_config_id)
-        .join(User, User.id == Opinion.author_id)
+        .outerjoin(User, User.id == Opinion.author_id)
+        .join(voter, and_(voter.id == Vote.author_id, voter.is_deleted.is_(False)))
+        .join(
+            ConversationParticipant,
+            and_(
+                ConversationParticipant.id == Vote.participant_id,
+                ConversationParticipant.conversation_id == Opinion.conversation_id,
+                ConversationParticipant.user_id == Vote.author_id,
+            ),
+        )
         .outerjoin(
             OpinionModeration,
             and_(
@@ -1936,7 +1947,7 @@ def _fetch_conversation_view_snapshot_counters_by_id(
             .label("hidden_opinion_count"),
         )
         .select_from(Opinion)
-        .join(User, User.id == Opinion.author_id)
+        .outerjoin(User, User.id == Opinion.author_id)
         .outerjoin(
             OpinionModeration,
             and_(
@@ -1958,6 +1969,7 @@ def _fetch_conversation_view_snapshot_counters_by_id(
         values["moderated_opinion_count"] = int(row.moderated_opinion_count)
         values["hidden_opinion_count"] = int(row.hidden_opinion_count)
 
+    voter = aliased(User)
     vote_rows = session.execute(
         select(
             Opinion.conversation_id,
@@ -1966,7 +1978,8 @@ def _fetch_conversation_view_snapshot_counters_by_id(
         )
         .select_from(Vote)
         .join(Opinion, Opinion.id == Vote.opinion_id)
-        .join(User, User.id == Opinion.author_id)
+        .outerjoin(User, User.id == Opinion.author_id)
+        .join(voter, and_(voter.id == Vote.author_id, voter.is_deleted.is_(False)))
         .where(
             and_(
                 Opinion.conversation_id.in_(unique_conversation_ids),
@@ -3253,7 +3266,7 @@ def _fetch_survey_responses(
         .where(
             and_(
                 SurveyResponse.conversation_id.in_(sorted(set(conversation_ids))),
-                true() if analysis_voters_only else User.is_deleted.is_(False),
+                User.is_deleted.is_(False),
             )
         )
     )

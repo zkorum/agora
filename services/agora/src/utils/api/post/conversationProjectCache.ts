@@ -48,7 +48,16 @@ export async function applyConversationProjectAssignment({
       viewerScope: freshConversation === undefined ? undefined : viewerScope,
       updateConversation: (conversation) => ({
         ...conversation,
-        interaction: freshConversation?.interaction ?? conversation.interaction,
+        interaction: freshConversation?.interaction ?? {
+          ...conversation.interaction,
+          conversationCapabilities: {
+            canEdit: false,
+            canDelete: false,
+            canModerate: false,
+            canClose: false,
+            canReopen: false,
+          },
+        },
         metadata: freshConversation?.metadata ?? {
           ...conversation.metadata,
           currentProjectSlug: assignment.projectSlug,

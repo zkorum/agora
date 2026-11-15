@@ -8,6 +8,7 @@ import {
     dispatchRealtimeEventBatch,
     fetchDeliveredEventUpperBound,
 } from "../src/service/realtimeEventDispatch.js";
+import { readWithinRealtimeReplayWindow } from "../src/service/realtimeReplayWindow.js";
 import {
     realtimeEventDispatchStateTable,
     realtimeEventOutboxTable,
@@ -42,7 +43,7 @@ describe("realtime delivery migration and dispatch", () => {
             username: "postgres",
             password: "postgres",
         });
-        db = drizzle(client);
+        db = drizzle({ client });
         // Exercise the real generated migration against the previous table shape.
         await client.unsafe(`
             CREATE TABLE realtime_event_outbox (
@@ -85,6 +86,11 @@ describe("realtime delivery migration and dispatch", () => {
                 ),
             );
         });
+        // Stage 3 schema additions are intentionally not migration-generated yet.
+        await client.unsafe(`
+            ALTER TABLE realtime_event_outbox ADD COLUMN delivered_at timestamp(3);
+            ALTER TABLE realtime_event_dispatch_state ADD COLUMN replay_floor_delivery_id integer NOT NULL DEFAULT 0;
+        `);
     }, 120_000);
     afterAll(async () => {
         await client?.end({ timeout: 5 });
@@ -153,5 +159,114 @@ describe("realtime delivery migration and dispatch", () => {
         } finally {
             await listener.unlisten();
         }
+    });
+
+    it("uses delivery time rather than an old business timestamp for retention", async () => {
+        const [event] = await db
+            .insert(realtimeEventOutboxTable)
+            .values({
+                eventType: "late_commit",
+                payload: {},
+                createdAt: new Date("2000-01-01"),
+            })
+            .returning();
+        expect(event).toBeDefined();
+        await dispatchRealtimeEventBatch(db);
+        const rows = await db
+            .select()
+            .from(realtimeEventOutboxTable)
+            .where(eq(realtimeEventOutboxTable.eventType, "late_commit"));
+        expect(rows[0].deliveredAt?.getFullYear()).toBeGreaterThan(2025);
+    });
+
+    it("requests resync below the durable floor and above the restored upper bound", async () => {
+        await db
+            .update(realtimeEventDispatchStateTable)
+            .set({ replayFloorDeliveryId: 10 })
+            .where(eq(realtimeEventDispatchStateTable.id, 1));
+        let readCount = 0;
+        const read = async () => {
+            readCount += 1;
+            return [];
+        };
+        expect(
+            (await readWithinRealtimeReplayWindow({ db, lastEventId: 9, read }))
+                .status,
+        ).toBe("resync_required");
+        expect(
+            (
+                await readWithinRealtimeReplayWindow({
+                    db,
+                    lastEventId: 2_000_000,
+                    read,
+                })
+            ).status,
+        ).toBe("resync_required");
+        expect(readCount).toBe(0);
+        expect(
+            (
+                await readWithinRealtimeReplayWindow({
+                    db,
+                    lastEventId: 10,
+                    read,
+                })
+            ).status,
+        ).toBe("available");
+    });
+
+    it("holds the retention boundary throughout replay reads", async () => {
+        const entered = latch();
+        const release = latch();
+        const reading = readWithinRealtimeReplayWindow({
+            db,
+            lastEventId: 10,
+            read: async () => {
+                entered.release();
+                await release.promise;
+                return [];
+            },
+        });
+        await entered.promise;
+        try {
+            await expect(
+                db.transaction(
+                    async (tx) =>
+                        await tx
+                            .select()
+                            .from(realtimeEventDispatchStateTable)
+                            .where(eq(realtimeEventDispatchStateTable.id, 1))
+                            .for("update", { noWait: true }),
+                ),
+            ).rejects.toMatchObject({ cause: { code: "55P03" } });
+        } finally {
+            release.release();
+            await reading;
+        }
+    });
+
+    it("preserves the replay floor when all retained events are gone", async () => {
+        const [state] = await db.select().from(realtimeEventDispatchStateTable);
+        await client.begin(async (tx) => {
+            await tx`UPDATE realtime_event_dispatch_state SET replay_floor_delivery_id = last_delivery_id WHERE id = 1`;
+            await tx`TRUNCATE realtime_event_outbox`;
+        });
+        expect(
+            (
+                await readWithinRealtimeReplayWindow({
+                    db,
+                    lastEventId: 0,
+                    read: async () => [],
+                })
+            ).status,
+        ).toBe("resync_required");
+        expect(
+            (
+                await readWithinRealtimeReplayWindow({
+                    db,
+                    lastEventId: state.lastDeliveryId,
+                    read: async () => [],
+                })
+            ).status,
+        ).toBe("available");
     });
 });

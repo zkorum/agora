@@ -36,7 +36,21 @@ function captureServer() {
 }
 
 describe("API logging privacy", () => {
-    it("retains a useful ticket-verification event without proof details", async () => {
+    it("preserves the registered explicit replica-routing message", async () => {
+        const capture = captureServer();
+        try {
+            capture.server.log.info(
+                "Connected to read replica - explicit reads use replica, writes use primary",
+            );
+            expect(capture.records()).toHaveLength(1);
+            expect(capture.records()[0]?.msg).toBe(
+                "Connected to read replica - explicit reads use replica, writes use primary",
+            );
+        } finally {
+            await capture.server.close();
+        }
+    });
+    it("drops obsolete provider events without exposing proof details", async () => {
         const capture = captureServer();
         try {
             capture.server.log.info(
@@ -48,30 +62,26 @@ describe("API logging privacy", () => {
                 },
                 "[Zupass] Event ticket verified",
             );
-            expect(capture.records()[0]).toMatchObject({
-                event: "event_ticket_verified",
-                userId: "00000000-0000-4000-8000-000000000001",
-                msg: "[Zupass] Event ticket verified",
-            });
+            expect(capture.records()[0]).not.toHaveProperty("event");
+            expect(capture.records()[0]?.msg).not.toContain("Zupass");
             expect(capture.lines.join("")).not.toContain("private-");
         } finally {
             await capture.server.close();
         }
     });
 
-    it("labels unexpected ticket failures without exposing provider messages", async () => {
+    it("labels unexpected failures without exposing provider messages", async () => {
         const capture = captureServer();
         try {
             logApiError({
                 logger: capture.server.log,
                 level: "error",
-                event: { event: "event_ticket_verification_failed" },
+                event: { event: "application_error" },
                 error: new Error("private-proof-provider-error"),
             });
             expect(capture.records()[0]).toMatchObject({
                 level: 50,
-                event: "event_ticket_verification_failed",
-                msg: "[Zupass] Event ticket verification failed",
+                event: "application_error",
             });
             expect(capture.lines.join("")).not.toContain("private-");
         } finally {

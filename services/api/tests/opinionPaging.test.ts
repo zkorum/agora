@@ -56,7 +56,7 @@ describe("opinion paging and unanswered progress", () => {
             password: "postgres",
             max: 4,
         });
-        db = drizzle(sqlClient);
+        db = drizzle({ client: sqlClient });
         await sqlClient.unsafe(readDbFixtureSql("opinion-paging.sql"));
     }, 120_000);
 

@@ -94,12 +94,6 @@
       <p v-if="errors.has(opinion.slugId)" class="statement-error" role="alert">
         {{ errors.get(opinion.slugId) }}
       </p>
-      <p
-        v-if="editable && !opinion.editing.allowed && !opinion.deleted"
-        class="editing-restricted"
-      >
-        {{ restrictionMessage(opinion.editing.reason) }}
-      </p>
       <Editor
         v-if="
           editable &&

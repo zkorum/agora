@@ -57,7 +57,7 @@
 
       <template #conversation-toolbar>
         <CommentSortingSelector
-          v-if="currentTab === 'comment' && !isMaxDiffConversation"
+          v-if="currentTab === 'comment' && !isPrioritizingConversation"
           :filter-value="commentFilter"
           :moderated-opinion-count="
             loadedConversationData.metadata.moderatedOpinionCount
@@ -96,11 +96,12 @@
       v-if="
         hasConversationData &&
         projectConversationData !== undefined &&
-        !isMaxDiffConversation
+        !isPrioritizingConversation
       "
       :anchor-element="actionBarElement ?? undefined"
     >
       <CommentComposer
+        :participant-statements="loadedConversationData.metadata.participantStatements"
         :editing-target="editingTarget"
         :action-bar-element="
           conversationScrollContext.actionBarElement ?? undefined
@@ -335,11 +336,9 @@ const isActionBarLoading = computed(
     isLoadingCheckpointStats.value ||
     isLoadingCommentStats.value
 );
-const isMaxDiffConversation = computed(() => {
+const isPrioritizingConversation = computed(() => {
   const metadata = loadedConversationData.value.metadata;
-  return (
-    metadata.conversationType === "ranking" && metadata.rankingMode === "bws"
-  );
+  return metadata.conversationType === "prioritizing";
 });
 const isInitialLoading = computed(
   () =>

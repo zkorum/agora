@@ -34,6 +34,7 @@ interface SendSmsCodeProps {
 }
 
 interface VerifyPhoneOtpProps {
+  recoverAccount?: boolean;
   code: number;
   phoneNumber: string;
   defaultCallingCode: SupportedCountryCallingCode;
@@ -103,6 +104,7 @@ export function useAuthPhoneApi() {
     | AxiosErrorResponse;
 
   async function verifyPhoneOtp({
+    recoverAccount = false,
     code,
     phoneNumber,
     defaultCallingCode,
@@ -115,10 +117,13 @@ export function useAuthPhoneApi() {
     }
 
     try {
-      const params: ApiV1AuthPhoneVerifyOtpPostRequest = {
+      const params = {
         code: code,
         phoneNumber: phoneNumber,
         defaultCallingCode: defaultCallingCode,
+        recoverAccount,
+      } satisfies ApiV1AuthPhoneVerifyOtpPostRequest & {
+        recoverAccount: boolean;
       };
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1AuthPhoneVerifyOtpPost(params);

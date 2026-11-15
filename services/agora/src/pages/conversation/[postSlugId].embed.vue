@@ -7,7 +7,6 @@
           :initial-display-content="loadedConversationDisplayContent"
           :compact-mode="false"
           @open-moderation-history="openModerationHistory()"
-          @verified="(payload) => handleTicketVerified(payload)"
         />
 
         <div ref="sentinelElement"></div>
@@ -62,10 +61,11 @@
         </div>
 
         <FloatingBottomContainer
-          v-if="!isMaxDiffConversation"
+          v-if="!isPrioritizingConversation"
           :anchor-element="undefined"
         >
           <CommentComposer
+            :participant-statements="loadedConversationData.metadata.participantStatements"
             :editing-target="undefined"
             :action-bar-element="
               conversationScrollContext.actionBarElement ?? undefined
@@ -121,7 +121,6 @@ const {
   onViewAnalysis,
   navigateToDiscoverTab,
   openModerationHistory,
-  handleTicketVerified,
   handleSubmittedComment,
   scrollToActionBar,
   conversationScrollContext,
@@ -169,11 +168,9 @@ const isActionBarLoading = computed(
     isLoadingCommentStats.value
 );
 
-const isMaxDiffConversation = computed(() => {
+const isPrioritizingConversation = computed(() => {
   const metadata = loadedConversationData.value.metadata;
-  return (
-    metadata.conversationType === "ranking" && metadata.rankingMode === "bws"
-  );
+  return metadata.conversationType === "prioritizing";
 });
 
 function getActionBarStatsFromMetadata(): ConversationActionBarStats {

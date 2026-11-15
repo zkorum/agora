@@ -1,4 +1,10 @@
 import { z } from "zod";
+import {
+    zodOrganizationRole,
+    zodOrganizationManagementPermissions,
+    zodProjectManagementPermissions,
+} from "../organizationAccess.js";
+import { CREDIT_VOTING_BUDGET } from "../utils/qv.js";
 import { MAX_SEED_OPINIONS_PER_SUBMISSION } from "../seedOpinions.js";
 import { zodEmailBranding } from "../branding/emailBranding.js";
 import {
@@ -42,7 +48,6 @@ import {
     zodLinkType,
     zodPolisUrl,
     zodLanguagePreferences,
-    zodEventSlug,
     zodExportStatus,
     zodExportFileInfo,
     zodExportBundleInfo,
@@ -53,20 +58,24 @@ import {
     zodParticipationBlockedReason,
     zodRichTextValidationFailureReason,
     zodRichTextSizeValidationFailureReason,
-    zodMaxdiffComparison,
+    zodComparisonAnswer,
+    zodComparisonSessionState,
     zodConversationType,
     zodConversationTypeConfig,
+    zodParticipantStatements,
+    zodKnownDeviceLoginStatus,
     zodPolisConversationTypeConfig,
     zodRankingConversationTypeConfig,
-    zodPolisVotingPresentation,
     zodRankingMode,
+    zodQvConversationTypeConfig,
+    zodPolisVotingPresentation,
     zodConversationEffectiveMultilingualSetting,
     zodConversationLanguageSettingOutput,
     zodContentLanguageMetadataOutput,
     zodConversationMultilingualSetting,
     zodProjectLanguageSettings,
     zodConversationViewSnapshotCheckpointReason,
-    zodMaxdiffLifecycleStatus,
+    zodRankingItemLifecycleStatus,
     zodExternalSourceConfig,
     zodSurveyConfig,
     zodSurveyConfigInput,
@@ -112,6 +121,7 @@ import {
     ZodSupportedDisplayLanguageCodes,
 } from "../languages.js";
 import {
+    MAX_BYTES_RICH_TEXT_HTML,
     MAX_BYTES_CONVERSATION_EMAIL_UPDATE_HTML,
     MAX_LENGTH_CONVERSATION_EMAIL_UPDATE,
     MAX_LENGTH_DESCRIPTION_CREATOR,
@@ -130,9 +140,6 @@ const zodConversationEditPermissions = z
         canEditConversationContent: z.boolean(),
         canEditSurvey: z.boolean(),
         canDeleteSurvey: z.boolean(),
-        canAddEventTicket: z.boolean(),
-        canChangeEventTicket: z.boolean(),
-        canRemoveEventTicket: z.boolean(),
         canUseAnalysisVariantsPreference: z.boolean(),
         canUseDynamicTranslation: z.boolean(),
         restrictedPremiumFeatures: z.array(zodPremiumFeature),
@@ -589,6 +596,8 @@ const zodProjectPageActivityAlternateContent = z
 const zodProjectPageActivityBase = z
     .object({
         conversationType: zodConversationType,
+        qvGeneration: z.number().int().nonnegative().optional(),
+        prioritizationType: z.enum(["comparisons", "qv"]).optional(),
         isClosed: z.boolean(),
         createdAt: zodDateTimeFlexible,
         isEdited: z.boolean(),
@@ -598,6 +607,7 @@ const zodProjectPageActivityBase = z
                 opinionCount: z.number().int().nonnegative(),
                 participantCount: z.number().int().nonnegative(),
                 voteCount: z.number().int().nonnegative(),
+                qvStatsRevision: z.number().int().nonnegative().optional(),
             })
             .strict(),
     })
@@ -1269,6 +1279,14 @@ const zodFeedItem = z
     })
     .strict();
 
+const comparisonResultMetadata = z.object({
+    itemSlugId: z.string(),
+    avgRank: z.number().nullable(),
+    score: z.number().nullable(),
+    participantCount: z.number(),
+    lifecycleStatus: zodRankingItemLifecycleStatus,
+});
+
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Dto {
     static fetchFeedRequest = z.discriminatedUnion("sortAlgorithm", [
@@ -1611,8 +1629,56 @@ export class Dto {
             seedOpinionList: z
                 .array(zodOpinionContentInput)
                 .max(MAX_SEED_OPINIONS_PER_SUBMISSION),
-            requiresEventTicket: zodEventSlug.optional(),
             conversationEmailUpdateEnabledOverride: z.boolean().optional(),
+        })
+        .strict();
+    static qvStatementInput = z
+        .object({
+            title: z.string().trim().min(1).max(MAX_BYTES_RICH_TEXT_HTML),
+            description: z.string().max(MAX_BYTES_RICH_TEXT_HTML).optional(),
+        })
+        .strict();
+    static qvStatementChange = z.discriminatedUnion("action", [
+        z
+            .object({ action: z.literal("add"), content: Dto.qvStatementInput })
+            .strict(),
+        z
+            .object({
+                action: z.literal("edit"),
+                slugId: zodSlugId,
+                sourceVersion: z.uuid(),
+                content: Dto.qvStatementInput,
+            })
+            .strict(),
+        z
+            .object({
+                action: z.literal("delete"),
+                slugId: zodSlugId,
+                sourceVersion: z.uuid(),
+            })
+            .strict(),
+    ]);
+    static qvStatementList = z
+        .object({
+            revision: z.number().int().nonnegative(),
+            editing: z.discriminatedUnion("allowed", [
+                z.object({ allowed: z.literal(true) }).strict(),
+                z
+                    .object({
+                        allowed: z.literal(false),
+                        reason: z.enum([
+                            "participation_started",
+                            "closed",
+                            "not_allowed",
+                        ]),
+                    })
+                    .strict(),
+            ]),
+            items: z.array(
+                Dto.qvStatementInput
+                    .extend({ slugId: zodSlugId, sourceVersion: z.uuid() })
+                    .strict(),
+            ),
         })
         .strict();
     static createNewConversationRequest = z.discriminatedUnion(
@@ -1623,21 +1689,38 @@ export class Dto {
                     conversationType: z.literal("polis"),
                     votingPresentation:
                         zodPolisVotingPresentation.default("list"),
+                    allowParticipantStatements: z.boolean().default(true),
                     aiLabelingEnabled: z.boolean().default(true),
                     preferredOpinionGroupCount:
                         zodPreferredOpinionGroupCount.default(null),
                     surveyConfig: zodSurveyConfigInput.nullable().optional(),
                 })
                 .strict(),
-            Dto.createNewConversationBaseRequest
-                .extend({
-                    conversationType: z.literal("ranking"),
-                    rankingMode: zodRankingMode,
-                    externalSourceConfig: zodExternalSourceConfig
-                        .nullable()
-                        .optional(),
-                })
-                .strict(),
+            z.discriminatedUnion("prioritizationType", [
+                Dto.createNewConversationBaseRequest
+                    .extend(zodRankingConversationTypeConfig.shape)
+                    .extend({
+                        allowParticipantStatements: z.boolean().default(false),
+                        externalSourceConfig: zodExternalSourceConfig
+                            .nullable()
+                            .optional(),
+                    })
+                    .strict(),
+                Dto.createNewConversationBaseRequest
+                    .extend(zodQvConversationTypeConfig.shape)
+                    .extend({
+                        allowOpposition: z.boolean().default(true),
+                        seedOpinionList: z.array(z.string()).max(0).default([]),
+                        seedStatements: z
+                            .array(Dto.qvStatementInput)
+                            .min(1)
+                            .max(MAX_SEED_OPINIONS_PER_SUBMISSION),
+                        surveyConfig: zodSurveyConfigInput
+                            .nullable()
+                            .optional(),
+                    })
+                    .strict(),
+            ]),
         ],
     );
     static generateSeedSuggestionsRequest = z
@@ -1743,7 +1826,6 @@ export class Dto {
                 additionalLanguageCodes: [],
                 dynamicTranslationEnabled: false,
             }),
-            requiresEventTicket: zodEventSlug.optional(),
             aiLabelingEnabled: z.boolean().default(true),
             preferredOpinionGroupCount:
                 zodPreferredOpinionGroupCount.default(null),
@@ -1824,10 +1906,6 @@ export class Dto {
                     additionalLanguageCodes: [],
                     dynamicTranslationEnabled: false,
                 }),
-            ),
-            requiresEventTicket: z.preprocess(
-                (val) => (val === "" || val === undefined ? undefined : val),
-                zodEventSlug.optional(),
             ),
             aiLabelingEnabled: z.preprocess(
                 (val) => val === "true" || val === true,
@@ -2004,6 +2082,7 @@ export class Dto {
                 conversationBody: zodConversationBodyOutput,
                 conversationTypeConfig: zodConversationTypeConfig,
                 contentLanguageMetadata: zodContentLanguageMetadataOutput,
+                participantStatements: zodParticipantStatements,
                 languageSetting: zodConversationLanguageSettingOutput,
                 multilingualSetting: zodConversationMultilingualSetting,
                 languageSettingsSource: zodConversationLanguageSettingsSource,
@@ -2014,7 +2093,6 @@ export class Dto {
                 projectOptions: z.array(zodConversationProjectOption),
                 isIndexed: z.boolean(),
                 participationMode: zodParticipationMode,
-                requiresEventTicket: zodEventSlug.optional(),
                 aiLabelingEnabled: z.boolean(),
                 preferredOpinionGroupCount: zodPreferredOpinionGroupCount,
                 postAsOrganizationSlug: zodOrganizationSlug.optional(),
@@ -2024,6 +2102,7 @@ export class Dto {
                 isLocked: z.boolean(),
                 editPermissions: zodConversationEditPermissions,
                 seedOpinions: z.array(Dto.editableConversationSeedOpinion),
+                qvStatements: Dto.qvStatementList.optional(),
                 canAddSeedOpinions: z.boolean(),
                 externalSourceConfig: zodExternalSourceConfig.nullable(),
             })
@@ -2045,7 +2124,10 @@ export class Dto {
                         zodPreferredOpinionGroupCount.optional(),
                 })
                 .strict(),
-            zodRankingConversationTypeConfig,
+            z.discriminatedUnion("prioritizationType", [
+                zodRankingConversationTypeConfig,
+                zodQvConversationTypeConfig,
+            ]),
         ],
     );
     static updateConversationRequest = z
@@ -2067,8 +2149,16 @@ export class Dto {
                 zodConversationLanguageSettingsSource.default(
                     "conversation_override",
                 ),
-            requiresEventTicket: zodEventSlug.optional(),
             conversationTypeConfig: Dto.updateConversationTypeConfig,
+            expectedConversationTypeConfig:
+                zodConversationTypeConfig.optional(),
+            participantStatementsChange: z
+                .object({
+                    expectedEnabled: z.boolean(),
+                    enabled: z.boolean(),
+                })
+                .strict()
+                .optional(),
             surveyConfig: zodSurveyConfigInput.nullable().optional(),
             newSeedOpinionList: z
                 .array(zodOpinionContentInput)
@@ -2095,6 +2185,19 @@ export class Dto {
                     ]),
                 )
                 .max(MAX_SEED_OPINIONS_PER_SUBMISSION)
+                .optional(),
+            qvStatementUpdate: z
+                .object({
+                    expectedRevision: z.number().int().nonnegative(),
+                    changes: z
+                        .array(Dto.qvStatementChange)
+                        .max(MAX_SEED_OPINIONS_PER_SUBMISSION),
+                    order: z
+                        .array(zodSlugId)
+                        .max(MAX_SEED_OPINIONS_PER_SUBMISSION)
+                        .optional(),
+                })
+                .strict()
                 .optional(),
             conversationEmailUpdateEnabledOverride: z
                 .boolean()
@@ -2128,9 +2231,34 @@ export class Dto {
                     .optional(),
                 addedOpinions: z.array(zodDisplayedOpinionItem).optional(),
                 updatedOpinions: z.array(zodDisplayedOpinionItem).optional(),
+                qvStatements: Dto.qvStatementList.optional(),
+                conversationTypeConfig: zodConversationTypeConfig.optional(),
+                participantStatements: zodParticipantStatements,
             })
             .strict(),
         z.discriminatedUnion("reason", [
+            z
+                .object({
+                    success: z.literal(false),
+                    reason: z.enum([
+                        "participant_statements_unsupported",
+                        "participant_statements_changed",
+                    ]),
+                })
+                .strict(),
+            z
+                .object({
+                    success: z.literal(false),
+                    reason: z.literal("qv_statement_change_rejected"),
+                    changeFailure: z.enum([
+                        "closed",
+                        "participation_started",
+                        "version_conflict",
+                        "not_found",
+                        "invalid_changes",
+                    ]),
+                })
+                .strict(),
             z
                 .object({
                     success: z.literal(false),
@@ -2140,6 +2268,8 @@ export class Dto {
                             "not_author",
                             "conversation_locked",
                             "invalid_access_settings",
+                            "conversation_type_fixed",
+                            "conversation_type_changed",
                             "premium_access_expired",
                             "premium_access_required",
                             "feature_not_available",
@@ -2283,9 +2413,6 @@ export class Dto {
                 kind: z.enum(["account", "email", "identity"]),
                 purpose: z.enum(["login", "credential"]),
             })
-            .strict(),
-        z
-            .object({ kind: z.literal("ticket"), eventSlug: zodEventSlug })
             .strict(),
         z
             .object({
@@ -2474,6 +2601,37 @@ export class Dto {
             opinionBody: zodOpinionContentInput,
         })
         .strict();
+    static createComparisonStatementRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+            statementBody: zodOpinionContentInput,
+        })
+        .strict();
+    static createComparisonStatementResponse = z.discriminatedUnion("success", [
+        z
+            .object({
+                success: z.literal(true),
+                itemSlugId: zodSlugId,
+                sourceVersion: z.uuid(),
+                loginStatus: zodKnownDeviceLoginStatus,
+            })
+            .strict(),
+        z.discriminatedUnion("reason", [
+            Dto.conversationParticipationRejection,
+            z
+                .object({
+                    success: z.literal(false),
+                    reason: z.union([
+                        zodRichTextValidationFailureReason,
+                        z.enum([
+                            "participant_statements_disabled",
+                            "participant_statements_unsupported",
+                        ]),
+                    ]),
+                })
+                .strict(),
+        ]),
+    ]);
     static createOpinionResponse = z.discriminatedUnion("success", [
         z
             .object({
@@ -2481,9 +2639,19 @@ export class Dto {
                 opinionSlugId: z.string(),
                 opinionItem: zodOpinionItem,
                 displayedOpinionItem: zodDisplayedOpinionItem,
+                loginStatus: zodKnownDeviceLoginStatus,
             })
             .strict(),
         z.discriminatedUnion("reason", [
+            z
+                .object({
+                    success: z.literal(false),
+                    reason: z.enum([
+                        "participant_statements_disabled",
+                        "participant_statements_unsupported",
+                    ]),
+                })
+                .strict(),
             Dto.conversationParticipationRejection,
             z
                 .object({
@@ -2576,7 +2744,6 @@ export class Dto {
             isSiteModerator: z.boolean(),
             isSiteOrgAdmin: z.boolean(),
             organizationList: z.array(zodOrganization),
-            verifiedEventTickets: z.array(zodEventSlug), // User's verified event tickets (always returned by backend)
         })
         .strict();
     static fetchUserConversationsRequest = z
@@ -2659,6 +2826,16 @@ export class Dto {
             username: zodUsername,
         })
         .strict();
+
+    static deleteUserAccountResponse = z.discriminatedUnion("success", [
+        z.object({ success: z.literal(true) }).strict(),
+        z
+            .object({
+                success: z.literal(false),
+                reason: z.literal("last_active_organization_admin"),
+            })
+            .strict(),
+    ]);
 
     static muteUserByUsernameRequest = z
         .object({
@@ -2829,6 +3006,28 @@ export class Dto {
             organizationList: z.array(zodAdminOrganization),
         })
         .strict();
+    static getManagementAccessResponse = z
+        .object({
+            organizations: z.array(
+                z
+                    .object({
+                        slug: zodOrganizationSlug,
+                        name: z.string(),
+                        role: zodOrganizationRole,
+                    })
+                    .strict(),
+            ),
+            permissions: z
+                .object({
+                    canManageOrganizations: z.boolean(),
+                    canManageProjects: z.boolean(),
+                    canCreateProjects: z.boolean(),
+                    canCreateOrganizations: z.boolean(),
+                    canManagePremiumEntitlements: z.boolean(),
+                })
+                .strict(),
+        })
+        .strict();
     static getOrganizationOptionsResponse = z
         .object({
             organizationList: z.array(zodAdminOrganizationOption),
@@ -2842,6 +3041,7 @@ export class Dto {
     static getOrganizationDetailsResponse = z
         .object({
             organization: zodAdminOrganization.optional(),
+            permissions: zodOrganizationManagementPermissions,
         })
         .strict();
     static getAdminNoProjectEmailUpdatesRequest = z
@@ -2912,6 +3112,7 @@ export class Dto {
     static organizationMember = z
         .object({
             username: zodUsername,
+            role: zodOrganizationRole,
         })
         .strict();
     static getOrganizationMembersResponse = z
@@ -2923,6 +3124,7 @@ export class Dto {
         .object({
             username: zodUsername,
             organizationName: zodOrganizationSlug,
+            role: zodOrganizationRole,
         })
         .strict();
     static removeUserOrganizationMappingRequest = z
@@ -3172,6 +3374,7 @@ export class Dto {
     static getProjectDetailsResponse = z
         .object({
             project: zodAdminProject.optional(),
+            permissions: zodProjectManagementPermissions,
         })
         .strict();
     static projectDocumentUploadMetadata = zodProjectDocumentUploadMetadata;
@@ -3408,52 +3611,43 @@ export class Dto {
             reason: z.enum([
                 "already_has_credential",
                 "associated_with_another_user",
+                "recovery_required",
+                "recovery_unavailable",
             ]),
         }),
     ]);
 
-    // Zupass event ticket verification
-    static verifyEventTicketRequest = z
+    static recoverGuestAccountRequest = z
         .object({
-            proof: z.unknown(), // GPC proof data - validated by @pcd/gpc library at runtime
-            eventSlug: zodEventSlug, // Which event to verify for
+            freshDidWrite: z
+                .string()
+                .regex(/^did:key:z[1-9A-HJ-NP-Za-km-z]+$/)
+                .max(1000),
         })
         .strict();
-    static verifyEventTicket200 = z.discriminatedUnion("success", [
+
+    // Signed inside the original guest key's UCAN, not merely supplied in its body.
+    static recoverGuestAccountAuthorization =
+        Dto.recoverGuestAccountRequest.extend({
+            action: z.literal("recover_guest_account"),
+        });
+
+    static recoverAccountResponse = z.discriminatedUnion("success", [
         z
             .object({
                 success: z.literal(true),
-                accountMerged: z.boolean(), // true when guest merged into verified, false otherwise
-                userId: z.string(), // User ID (for tracking account merges in frontend)
+                accountMerged: z.literal(false),
+                userId: zodUserId,
             })
             .strict(),
-        z.object({
-            success: z.literal(false),
-            reason: z.enum([
-                "deserialization_error",
-                "invalid_proof",
-                "invalid_signer",
-                "wrong_event",
-                "ticket_already_used",
-            ]),
-        }),
+        z
+            .object({
+                success: z.literal(false),
+                reason: z.literal("recovery_unavailable"),
+            })
+            .strict(),
     ]);
 
-    static conversationOnboardingTicketVerifyRequest =
-        Dto.verifyEventTicketRequest.extend({
-            conversationSlugId: zodSlugId,
-            skipEmailUpdateConsent: z.boolean().optional().default(false),
-        });
-    static conversationOnboardingTicketVerifyResponse = z.discriminatedUnion(
-        "success",
-        [
-            Dto.verifyEventTicket200.options[0].extend({
-                participationStatus:
-                    Dto.conversationParticipationStatusResponse,
-            }),
-            Dto.verifyEventTicket200.options[1],
-        ],
-    );
     static zodGetMathRequest = z.object({
         conversation_slug_id: z.string(),
         conversation_id: z.number(),
@@ -3611,16 +3805,15 @@ export class Dto {
         })
         .strict();
 
-    // MaxDiff (Best-Worst Scaling)
-    static maxdiffSaveRequest = z
+    // Comparison responses (BWS and binary pairwise).
+    static comparisonSaveRequest = z
         .object({
             conversationSlugId: z.string(),
-            ranking: z.array(z.string()).nullable(),
-            comparisons: z.array(zodMaxdiffComparison),
-            isComplete: z.boolean(),
+            comparisonMethod: zodRankingMode.default("bws"),
+            ...zodComparisonSessionState.shape,
         })
         .strict();
-    static maxdiffSaveResponse = z.discriminatedUnion("success", [
+    static comparisonSaveResponse = z.discriminatedUnion("success", [
         z
             .object({
                 success: z.literal(true),
@@ -3629,14 +3822,14 @@ export class Dto {
             .strict(),
         Dto.conversationParticipationRejection,
     ]);
-    static maxdiffLoadRequest = z
+    static comparisonLoadRequest = z
         .object({
             conversationSlugId: z.string(),
         })
         .strict();
-    static maxdiffLoadResponse = z.object({
+    static comparisonLoadResponse = z.object({
         ranking: z.array(z.string()).nullable(),
-        comparisons: z.array(zodMaxdiffComparison).nullable(),
+        comparisons: z.array(zodComparisonAnswer).nullable(),
         isComplete: z.boolean(),
         candidateSets: z.array(z.array(z.string())),
         perUserScores: z
@@ -3648,10 +3841,10 @@ export class Dto {
             )
             .nullable(),
     });
-    static maxdiffResultsRequest = z
+    static comparisonResultsRequest = z
         .object({
             conversationSlugId: z.string(),
-            lifecycleFilter: zodMaxdiffLifecycleStatus
+            lifecycleFilter: zodRankingItemLifecycleStatus
                 .or(z.literal("all"))
                 .optional()
                 .default("active"),
@@ -3691,17 +3884,20 @@ export class Dto {
                 });
             }
         });
-    static maxdiffResultItem = z.object({
-        itemSlugId: z.string(),
-        displayContent: zodRankingItemDisplayedContent,
-        avgRank: z.number().nullable(),
-        score: z.number().nullable(),
-        participantCount: z.number(),
-        lifecycleStatus: zodMaxdiffLifecycleStatus,
-        externalUrl: z.string().nullable(),
-    });
-    static maxdiffResultsResponse = z.object({
-        rankings: z.array(Dto.maxdiffResultItem),
+    static comparisonResultItem = z.discriminatedUnion("isDeleted", [
+        comparisonResultMetadata.extend({
+            isDeleted: z.literal(false),
+            displayContent: zodRankingItemDisplayedContent,
+            externalUrl: z.string().nullable(),
+        }),
+        comparisonResultMetadata.extend({
+            isDeleted: z.literal(true),
+            displayContent: z.null(),
+            externalUrl: z.null(),
+        }),
+    ]);
+    static comparisonResultsResponse = z.object({
+        rankings: z.array(Dto.comparisonResultItem),
     });
     static rankingStatsCheckpointsRequest = z
         .object({
@@ -3752,66 +3948,210 @@ export class Dto {
     static rankingStatsCheckpointsResponse = z.array(
         Dto.rankingStatsCheckpoint,
     );
-    // MaxDiff item CRUD
-    static maxdiffItemsFetchRequest = z
+    // Shared prioritization items.
+    static qvAllocation = z
+        .object({
+            itemId: zodSlugId,
+            sourceVersion: z.uuid(),
+            votes: z
+                .number()
+                .int()
+                .min(-Math.floor(Math.sqrt(CREDIT_VOTING_BUDGET)))
+                .max(Math.floor(Math.sqrt(CREDIT_VOTING_BUDGET)))
+                .refine((v) => v !== 0),
+        })
+        .strict();
+    static qvSavedResponse = z
+        .object({
+            revision: z.number().int().nonnegative(),
+            saved: z
+                .object({
+                    savedAt: zodDateTimeFlexible,
+                    creditsSpent: z
+                        .number()
+                        .int()
+                        .min(1)
+                        .max(CREDIT_VOTING_BUDGET),
+                    allocations: z
+                        .array(Dto.qvAllocation)
+                        .min(1)
+                        .max(CREDIT_VOTING_BUDGET),
+                })
+                .strict()
+                .optional(),
+        })
+        .strict();
+    static qvLoadRequest = z.object({ conversationSlugId: zodSlugId }).strict();
+    static qvResultsRequest = z
+        .object({ conversationSlugId: zodSlugId })
+        .strict();
+    static qvResultsResponse = z.discriminatedUnion("status", [
+        z
+            .object({
+                status: z.literal("open"),
+                generation: z.number().int().nonnegative(),
+            })
+            .strict(),
+        z
+            .object({
+                status: z.literal("calculating"),
+                generation: z.number().int().positive(),
+            })
+            .strict(),
+        z
+            .object({
+                status: z.literal("failed"),
+                generation: z.number().int().positive(),
+            })
+            .strict(),
+        z
+            .object({
+                status: z.literal("ready"),
+                generation: z.number().int().positive(),
+                calculationId: z.uuid(),
+                capturedAt: zodDateTimeFlexible,
+                participantCount: z.number().int().nonnegative(),
+                items: z.array(
+                    z
+                        .object({
+                            itemSlugId: zodSlugId,
+                            sourceVersion: z.uuid(),
+                            title: z.string(),
+                            body: z.string().optional(),
+                            supportUnits: z.number().int().nonnegative(),
+                            oppositionUnits: z.number().int().nonnegative(),
+                            netUnits: z.number().int(),
+                            supportingParticipantCount: z
+                                .number()
+                                .int()
+                                .nonnegative(),
+                            opposingParticipantCount: z
+                                .number()
+                                .int()
+                                .nonnegative(),
+                            rank: z.number().int().positive(),
+                        })
+                        .strict(),
+                ),
+            })
+            .strict(),
+    ]);
+    static qvLoadResponse = z
+        .object({
+            viewerId: z.uuid().optional(),
+            statementSetRevision: z.number().int().nonnegative(),
+            allowOpposition: z.boolean(),
+            isClosed: z.boolean(),
+            items: z.array(
+                z
+                    .object({
+                        slugId: zodSlugId,
+                        displayContent: zodRankingItemDisplayedContent,
+                    })
+                    .strict(),
+            ),
+            response: Dto.qvSavedResponse,
+        })
+        .strict();
+    static qvWithdrawRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+            expectedViewerId: z.uuid().optional(),
+            commandId: z.uuid(),
+            expectedResponseRevision: z.number().int().nonnegative(),
+        })
+        .strict();
+    static qvSaveRequest = Dto.qvWithdrawRequest
+        .extend({
+            expectedStatementSetRevision: z.number().int().nonnegative(),
+            allocations: z
+                .array(Dto.qvAllocation)
+                .min(1)
+                .max(CREDIT_VOTING_BUDGET),
+        })
+        .strict();
+    static qvMutationResponse = z.union([
+        z
+            .object({
+                success: z.literal(true),
+                response: Dto.qvSavedResponse,
+                loginStatus: zodKnownDeviceLoginStatus,
+            })
+            .strict(),
+        Dto.conversationParticipationRejection,
+        z
+            .object({
+                success: z.literal(false),
+                reason: z.enum([
+                    "statement_conflict",
+                    "response_conflict",
+                    "idempotency_conflict",
+                    "identity_conflict",
+                    "invalid_allocations",
+                ]),
+            })
+            .strict(),
+    ]);
+
+    static prioritizationItemsFetchRequest = z
         .object({
             conversationSlugId: z.string(),
-            lifecycleFilter: zodMaxdiffLifecycleStatus
+            lifecycleFilter: zodRankingItemLifecycleStatus
                 .or(z.literal("all"))
                 .optional()
                 .default("active"),
         })
         .strict();
-    static maxdiffItem = z.object({
+    static prioritizationItem = z.object({
         slugId: z.string(),
         displayContent: zodRankingItemDisplayedContent,
-        lifecycleStatus: zodMaxdiffLifecycleStatus,
+        lifecycleStatus: zodRankingItemLifecycleStatus,
         externalUrl: z.string().nullable(),
         snapshotScore: z.number().nullable(),
         snapshotRank: z.number().nullable(),
         snapshotParticipantCount: z.number().nullable(),
         createdAt: z.string(),
     });
-    static maxdiffItemsFetchResponse = z.object({
-        items: z.array(Dto.maxdiffItem),
+    static prioritizationItemsFetchResponse = z.object({
+        items: z.array(Dto.prioritizationItem),
     });
 
-    // MaxDiff item lifecycle update
-    static maxdiffItemLifecycleUpdateRequest = z
+    // Prioritization item lifecycle update.
+    static prioritizationItemLifecycleUpdateRequest = z
         .object({
             conversationSlugId: z.string(),
             itemSlugId: z.string(),
-            newStatus: zodMaxdiffLifecycleStatus,
+            newStatus: zodRankingItemLifecycleStatus,
         })
         .strict();
 
-    // MaxDiff external source sync
-    static maxdiffSyncRequest = z
+    // Comparison external source sync.
+    static comparisonSyncRequest = z
         .object({
             conversationSlugId: z.string(),
         })
         .strict();
-    static maxdiffSyncResponse = z.object({
+    static comparisonSyncResponse = z.object({
         created: z.number(),
         updated: z.number(),
     });
 
-    // MaxDiff GitHub preview (before conversation creation)
-    static maxdiffGitHubPreviewRequest = z
+    // Comparison GitHub preview (before conversation creation).
+    static comparisonGitHubPreviewRequest = z
         .object({
             repository: z.string(), // "owner/repo"
             label: z.string(),
         })
         .strict();
-    static maxdiffGitHubPreviewItem = z.object({
+    static comparisonGitHubPreviewItem = z.object({
         number: z.number(),
         title: z.string(),
         body: z.string().nullable(),
         state: z.enum(["open", "closed"]),
         htmlUrl: z.string(),
     });
-    static maxdiffGitHubPreviewResponse = z.object({
-        issues: z.array(Dto.maxdiffGitHubPreviewItem),
+    static comparisonGitHubPreviewResponse = z.object({
+        issues: z.array(Dto.comparisonGitHubPreviewItem),
     });
 
     static conversationEmailUpdateSelection =
@@ -4941,10 +5281,6 @@ export type GenerateVerificationLink200 = z.infer<
 export type VerifyUserStatusAndAuthenticate200 = z.infer<
     typeof Dto.verifyUserStatusAndAuthenticate200
 >;
-export type VerifyEventTicketRequest = z.infer<
-    typeof Dto.verifyEventTicketRequest
->;
-export type VerifyEventTicket200 = z.infer<typeof Dto.verifyEventTicket200>;
 export type FetchUserReportsByPostSlugIdResponse = z.infer<
     typeof Dto.fetchConversationReportsResponse
 >;
@@ -5205,12 +5541,6 @@ export type FetchAnalysisCheckpointsResponse = z.infer<
     typeof Dto.fetchAnalysisCheckpointsResponse
 >;
 export type CastVoteResponse = z.infer<typeof Dto.castVoteResponse>;
-export type ConversationOnboardingTicketVerifyRequest = z.infer<
-    typeof Dto.conversationOnboardingTicketVerifyRequest
->;
-export type ConversationOnboardingTicketVerifyResponse = z.infer<
-    typeof Dto.conversationOnboardingTicketVerifyResponse
->;
 export type ConversationOnboardingStep = z.infer<
     typeof Dto.conversationOnboardingStep
 >;
@@ -5320,22 +5650,24 @@ export type DeleteConversationExportRequest = z.infer<
 export type ConversationExportHistoryItem = z.infer<
     typeof Dto.conversationExportHistoryItem
 >;
-export type MaxDiffSaveRequest = z.infer<typeof Dto.maxdiffSaveRequest>;
-export type MaxDiffLoadResponse = z.infer<typeof Dto.maxdiffLoadResponse>;
-export type MaxDiffResultItem = z.infer<typeof Dto.maxdiffResultItem>;
-export type MaxDiffResultsResponse = z.infer<typeof Dto.maxdiffResultsResponse>;
+export type ComparisonSaveRequest = z.infer<typeof Dto.comparisonSaveRequest>;
+export type ComparisonLoadResponse = z.infer<typeof Dto.comparisonLoadResponse>;
+export type ComparisonResultItem = z.infer<typeof Dto.comparisonResultItem>;
+export type ComparisonResultsResponse = z.infer<
+    typeof Dto.comparisonResultsResponse
+>;
 export type RankingStatsCheckpointsResponse = z.infer<
     typeof Dto.rankingStatsCheckpointsResponse
 >;
 export type RankingStatsCheckpointReason = z.infer<
     typeof Dto.rankingStatsCheckpointReason
 >;
-export type MaxDiffSaveResponse = z.infer<typeof Dto.maxdiffSaveResponse>;
-export type MaxDiffItem = z.infer<typeof Dto.maxdiffItem>;
-export type MaxDiffItemsFetchResponse = z.infer<
-    typeof Dto.maxdiffItemsFetchResponse
+export type ComparisonSaveResponse = z.infer<typeof Dto.comparisonSaveResponse>;
+export type PrioritizationItem = z.infer<typeof Dto.prioritizationItem>;
+export type PrioritizationItemsFetchResponse = z.infer<
+    typeof Dto.prioritizationItemsFetchResponse
 >;
-export type MaxDiffSyncResponse = z.infer<typeof Dto.maxdiffSyncResponse>;
+export type ComparisonSyncResponse = z.infer<typeof Dto.comparisonSyncResponse>;
 export type ConversationEmailUpdateWorkspaceRequest = z.infer<
     typeof Dto.conversationEmailUpdateWorkspaceRequest
 >;

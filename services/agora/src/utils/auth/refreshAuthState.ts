@@ -4,6 +4,7 @@ import {
   type DeviceLoginStatus,
   zodDeviceLoginStatus,
 } from "src/shared/types/zod";
+import { useAuthenticationStore } from "src/stores/authentication";
 import { api } from "src/utils/api/client";
 import {
   buildAuthorizationHeader,
@@ -21,6 +22,7 @@ export interface AuthStateRefreshResult {
 export interface BackendDeviceLoginStatus {
   didWrite: string;
   loginStatus: DeviceLoginStatus;
+  isCurrent: () => boolean;
 }
 
 const unknownDeviceLoginStatus = {
@@ -51,47 +53,59 @@ async function requestDeviceLoginStatus({
 async function buildBackendAuthRequest(): Promise<{
   didWrite: string;
   encodedUcan: string;
+  isCurrent: () => boolean;
 }> {
+  const auth = useAuthenticationStore();
+  const revision = auth.statusRevision;
   const { url, options } =
     await DefaultApiAxiosParamCreator().apiV1AuthCheckLoginStatusPost();
-  return await buildUcanForRequestWithDid({
+  const signed = await buildUcanForRequestWithDid({
     pathname: url,
     method: options.method,
   });
+  return { ...signed, isCurrent: () => auth.statusRevision === revision };
 }
 
 export async function requestBackendDeviceLoginStatus(): Promise<BackendDeviceLoginStatus> {
-  const { didWrite, encodedUcan } = await buildBackendAuthRequest();
+  const { didWrite, encodedUcan, isCurrent } = await buildBackendAuthRequest();
   return {
     didWrite,
     loginStatus: await requestDeviceLoginStatus({ encodedUcan }),
+    isCurrent,
   };
 }
 
 export async function requestBackendAuthStatus(): Promise<BackendDeviceLoginStatus> {
-  const { didWrite, encodedUcan } = await buildBackendAuthRequest();
+  const { didWrite, encodedUcan, isCurrent } = await buildBackendAuthRequest();
   try {
     return {
       didWrite,
       loginStatus: await requestDeviceLoginStatus({ encodedUcan }),
+      isCurrent,
     };
   } catch (error) {
     if (!isAxiosError(error) || error.response?.status !== 401) {
       throw error;
     }
 
-    return { didWrite, loginStatus: unknownDeviceLoginStatus };
+    return { didWrite, loginStatus: unknownDeviceLoginStatus, isCurrent };
   }
 }
 
 async function applyRefreshedAuthState({
   loginStatus,
   didWrite,
+  isCurrent,
 }: {
   loginStatus: DeviceLoginStatus;
   didWrite: string;
+  isCurrent: () => boolean;
 }): Promise<AuthStateRefreshResult> {
-  const application = await applyBackendAuthStatus({ loginStatus, didWrite });
+  const application = await applyBackendAuthStatus({
+    loginStatus,
+    didWrite,
+    isCurrent,
+  });
   if (application.type === "ignored") {
     return { authStateChanged: false, needsCacheRefresh: false };
   }
@@ -120,6 +134,6 @@ async function applyRefreshedAuthState({
 }
 
 export async function refreshAuthStateFromBackend(): Promise<AuthStateRefreshResult> {
-  const { loginStatus, didWrite } = await requestBackendAuthStatus();
-  return await applyRefreshedAuthState({ loginStatus, didWrite });
+  const { loginStatus, didWrite, isCurrent } = await requestBackendAuthStatus();
+  return await applyRefreshedAuthState({ loginStatus, didWrite, isCurrent });
 }

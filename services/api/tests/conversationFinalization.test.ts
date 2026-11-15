@@ -1,6 +1,8 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { eq, sql } from "drizzle-orm";
+import { zstdCompressSync } from "node:zlib";
+import { setTimeout as delay } from "node:timers/promises";
+import { and, eq, sql } from "drizzle-orm";
 import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { GenericContainer, type StartedTestContainer } from "testcontainers";
@@ -17,8 +19,14 @@ import {
 import { Decoder, GlideClient } from "@valkey/valkey-glide";
 import { finalizeCurrentPolisConversation } from "../src/service/conversationFinalization.js";
 import { getAnalysisEligibleOpinionVotes } from "../src/service/opinionVoteEligibility.js";
-import { calculateConversationCounters } from "../src/shared-backend/conversationCounters.js";
+import {
+    calculateConversationCounters,
+    reconcileOpinionVoteCounters,
+} from "../src/shared-backend/conversationCounters.js";
+import { mergeGuestIntoVerifiedUser } from "../src/service/merge.js";
+import { lockAccountConversations } from "../src/shared-backend/accountContributions.js";
 import { deleteUserAccount } from "../src/service/account.js";
+import { restoreAccountAfterVerification } from "../src/service/accountRecovery.js";
 import {
     createVoteBuffer,
     type VoteBuffer,
@@ -43,15 +51,15 @@ function first<T>(rows: T[]): T {
     return row;
 }
 
-function createBarrier() {
-    let resolve = () => {};
-    const promise = new Promise<void>((complete) => {
+function createBarrier<T = void>() {
+    let resolve: (value: T) => void = () => {};
+    const promise = new Promise<T>((complete) => {
         resolve = complete;
     });
     return { promise, resolve };
 }
 
-describe("Valkey vote acceptance and closing publication", () => {
+describe("vote ownership, live eligibility and closing publication", () => {
     let container: StartedTestContainer;
     let client: postgres.Sql;
     let db: PostgresJsDatabase;
@@ -90,7 +98,7 @@ describe("Valkey vote acceptance and closing publication", () => {
             password: "postgres",
             database: "agora_test",
         });
-        db = drizzle(client);
+        db = drizzle({ client });
         cacheContainer = await new GenericContainer("valkey/valkey:8-alpine")
             .withExposedPorts(6379)
             .start();
@@ -102,8 +110,19 @@ describe("Valkey vote acceptance and closing publication", () => {
                 },
             ],
             defaultDecoder: Decoder.String,
+            requestTimeout: 2_000,
         });
         await client.unsafe(readDbFixtureSql("conversation-finalization.sql"));
+        // The lightweight fixture omits ALTER TABLE FKs. Exercise the new
+        // canonical composite ownership constraint against real PostgreSQL too.
+        await client.unsafe(
+            "ALTER TABLE vote ADD CONSTRAINT vote_current_content_owner_fk FOREIGN KEY (current_content_id, id) REFERENCES vote_content (id, vote_id)",
+        );
+        await client.unsafe(
+            'ALTER TABLE vote ADD CONSTRAINT vote_author_user_fk FOREIGN KEY (author_id) REFERENCES "user" (id)',
+        );
+        // Install the historical ownership triggers against the current schema.
+        // Only its empty-fixture backfill needs the renamed comparison-family predicate.
         await client.unsafe(
             readFileSync(
                 new URL(
@@ -111,7 +130,12 @@ describe("Valkey vote acceptance and closing publication", () => {
                     import.meta.url,
                 ),
                 "utf8",
-            ),
+            )
+                .replaceAll("maxdiff_result", "comparison_response")
+                .replaceAll(
+                    "c.conversation_type = 'ranking'",
+                    "c.prioritization_type = 'comparisons'",
+                ),
         );
     }, 120_000);
 
@@ -125,7 +149,7 @@ describe("Valkey vote acceptance and closing publication", () => {
     beforeEach(async () => {
         await valkey.flushall();
         await client.unsafe(
-            'TRUNCATE conversation, "user", opinion, opinion_content, opinion_moderation, conversation_content, polis_conversation_config, conversation_participant, vote, vote_content, analysis_spec, opinion_group_spec, analysis_input_snapshot, analysis_snapshot, analysis_snapshot_result, conversation_view_snapshot, conversation_view_snapshot_checkpoint_reason, realtime_event_outbox RESTART IDENTITY CASCADE',
+            'TRUNCATE conversation, "user", opinion, opinion_content, opinion_moderation, conversation_content, polis_conversation_config, conversation_participant, vote, vote_content, analysis_spec, opinion_group_spec, analysis_input_snapshot, analysis_snapshot, analysis_snapshot_result, conversation_view_snapshot, conversation_view_snapshot_checkpoint_reason, realtime_event_outbox, realtime_event_outbox_topic, notification, followed_topic, user_spoken_languages, user_display_language, organization_membership, survey_response, comparison_response, phone, email, zk_passport, event_ticket, device RESTART IDENTITY CASCADE',
         );
         const userId = randomUUID();
         await db
@@ -187,6 +211,7 @@ describe("Valkey vote acceptance and closing publication", () => {
             .where(eq(schema.opinionTable.id, opinionId));
         vote = {
             userId,
+            contributionRevision: 0,
             conversationId,
             opinionId,
             opinionContentId,
@@ -194,6 +219,1309 @@ describe("Valkey vote acceptance and closing publication", () => {
             timestamp: new Date("2026-10-26T12:00:00Z"),
         };
     });
+
+    it("does not replay pre-deletion buffered votes after account recovery", async () => {
+        const buffer = createBuffer();
+        const email = "recover-buffer@example.org";
+        await db
+            .insert(schema.emailTable)
+            .values({ userId: vote.userId, email, type: "primary" });
+        await buffer.add({ vote });
+        await deleteUserAccount({ db, userId: vote.userId });
+        const restored = await db.transaction(
+            async (tx) =>
+                await restoreAccountAfterVerification({
+                    db: tx,
+                    userId: vote.userId,
+                    didWrite: "did:key:zRecoveredBuffer",
+                    userAgent: "test",
+                    sessionLifetimeDays: 30,
+                    proof: { method: "email", email },
+                }),
+        );
+        expect(restored.success).toBe(true);
+        expect(
+            await buffer.hasBlockingVotes({
+                db,
+                opinionId: vote.opinionId,
+                authorId: null,
+                isSeed: false,
+            }),
+        ).toBe(false);
+        await buffer.flush();
+        expect(await db.select().from(schema.voteTable)).toEqual([]);
+        await buffer.add({
+            vote: { ...vote, contributionRevision: 1, vote: "disagree" },
+        });
+        await buffer.flush();
+        expect(
+            first(await db.select().from(schema.voteContentTable)).vote,
+        ).toBe("disagree");
+    });
+
+    async function persistVote({
+        userId,
+        choice,
+    }: {
+        userId: string;
+        choice: "agree" | "disagree" | "pass" | "cancel";
+    }) {
+        const root = first(
+            await db
+                .insert(schema.voteTable)
+                .values({ authorId: userId, opinionId: vote.opinionId })
+                .returning(),
+        );
+        const content = first(
+            await db
+                .insert(schema.voteContentTable)
+                .values({
+                    voteId: root.id,
+                    opinionContentId: vote.opinionContentId,
+                    vote: choice === "cancel" ? "agree" : choice,
+                })
+                .returning(),
+        );
+        return first(
+            await db
+                .update(schema.voteTable)
+                .set({
+                    currentContentId: choice === "cancel" ? null : content.id,
+                })
+                .where(eq(schema.voteTable.id, root.id))
+                .returning(),
+        );
+    }
+
+    async function createMergePair() {
+        const guestUserId = randomUUID();
+        const verifiedUserId = randomUUID();
+        await db.insert(schema.userTable).values([
+            { id: guestUserId, username: "guest" },
+            { id: verifiedUserId, username: "verified" },
+        ]);
+        return { guestUserId, verifiedUserId };
+    }
+
+    async function waitForBlockedTransaction(
+        blockerPid: number,
+    ): Promise<void> {
+        for (let attempt = 0; attempt < 250; attempt++) {
+            const state = z.array(z.object({ waiting: z.boolean() })).parse(
+                await client`
+                SELECT EXISTS (
+                    SELECT pid FROM pg_stat_activity
+                    WHERE ${blockerPid} = ANY(pg_blocking_pids(pid))
+                ) AS waiting
+            `,
+            );
+            if (state.some((row) => row.waiting)) return;
+            await delay(10);
+        }
+        throw new Error("Account mutation did not reach the conversation lock");
+    }
+
+    it("orders account hiding after conversation locks, avoiding an AI-fence deadlock with statement edits", async () => {
+        const locked = createBarrier<number>();
+        const editAllowed = createBarrier();
+        const editing = db.transaction(async (tx) => {
+            const scope = first(
+                await tx
+                    .select({
+                        pid: sql<number>`pg_backend_pid()`.mapWith(Number),
+                    })
+                    .from(schema.conversationTable)
+                    .where(eq(schema.conversationTable.id, vote.conversationId))
+                    .for("no key update"),
+            );
+            locked.resolve(scope.pid);
+            await editAllowed.promise;
+            await tx
+                .select({
+                    timeout: sql`set_config('lock_timeout', '500ms', true)`,
+                })
+                .from(schema.conversationTable)
+                .where(eq(schema.conversationTable.id, vote.conversationId));
+            // Updating this source acquires the real AI advisory fence trigger.
+            await tx
+                .update(schema.opinionTable)
+                .set({ authorId: vote.userId })
+                .where(eq(schema.opinionTable.id, vote.opinionId));
+        });
+        const editorPid = await locked.promise;
+        const deleting = deleteUserAccount({ db, userId: vote.userId });
+        try {
+            await waitForBlockedTransaction(editorPid);
+            editAllowed.resolve();
+            await Promise.all([editing, deleting]);
+        } finally {
+            editAllowed.resolve();
+            await Promise.allSettled([editing, deleting]);
+        }
+        expect(first(await db.select().from(schema.userTable))).toMatchObject({
+            isDeleted: true,
+            deletionReason: "account_deletion",
+        });
+    }, 10_000);
+
+    it("leaves late buffered participation in an unlocked conversation with the retired guest", async () => {
+        const pair = await createMergePair();
+        await persistVote({ userId: pair.guestUserId, choice: "agree" });
+        const locked = createBarrier<number>();
+        const release = createBarrier();
+        const blocker = db.transaction(async (tx) => {
+            const scope = first(
+                await tx
+                    .select({
+                        pid: sql<number>`pg_backend_pid()`.mapWith(Number),
+                    })
+                    .from(schema.conversationTable)
+                    .where(eq(schema.conversationTable.id, vote.conversationId))
+                    .for("no key update"),
+            );
+            locked.resolve(scope.pid);
+            await release.promise;
+        });
+        const blockerPid = await locked.promise;
+        const merging = db.transaction(
+            async (tx) =>
+                await mergeGuestIntoVerifiedUser({
+                    db: tx,
+                    ...pair,
+                    now: vote.timestamp,
+                }),
+        );
+        try {
+            await waitForBlockedTransaction(blockerPid);
+            const config = first(
+                await db
+                    .insert(schema.polisConversationConfigTable)
+                    .values({ votingPresentation: "list" })
+                    .returning(),
+            );
+            const conversation = first(
+                await db
+                    .insert(schema.conversationTable)
+                    .values({
+                        slugId: "lateconv",
+                        projectId: 1,
+                        polisConfigId: config.id,
+                    })
+                    .returning(),
+            );
+            const content = first(
+                await db
+                    .insert(schema.conversationContentTable)
+                    .values({
+                        conversationId: conversation.id,
+                        title: "Late participation",
+                    })
+                    .returning(),
+            );
+            await db
+                .update(schema.conversationTable)
+                .set({ currentContentId: content.id })
+                .where(eq(schema.conversationTable.id, conversation.id));
+            const opinion = first(
+                await db
+                    .insert(schema.opinionTable)
+                    .values({
+                        slugId: "lateop01",
+                        authorId: vote.userId,
+                        conversationId: conversation.id,
+                    })
+                    .returning(),
+            );
+            const source = first(
+                await db
+                    .insert(schema.opinionContentTable)
+                    .values({
+                        opinionId: opinion.id,
+                        conversationContentId: content.id,
+                        content: "Late statement",
+                    })
+                    .returning(),
+            );
+            await db
+                .update(schema.opinionTable)
+                .set({ currentContentId: source.id })
+                .where(eq(schema.opinionTable.id, opinion.id));
+            const root = first(
+                await db
+                    .insert(schema.voteTable)
+                    .values({
+                        authorId: pair.guestUserId,
+                        opinionId: opinion.id,
+                    })
+                    .returning(),
+            );
+            const voteContent = first(
+                await db
+                    .insert(schema.voteContentTable)
+                    .values({
+                        voteId: root.id,
+                        opinionContentId: source.id,
+                        vote: "agree",
+                    })
+                    .returning(),
+            );
+            await db
+                .update(schema.voteTable)
+                .set({ currentContentId: voteContent.id })
+                .where(eq(schema.voteTable.id, root.id));
+            release.resolve();
+            await Promise.all([blocker, merging]);
+            expect(
+                first(
+                    await db
+                        .select()
+                        .from(schema.voteTable)
+                        .where(eq(schema.voteTable.id, root.id)),
+                ),
+            ).toMatchObject({
+                authorId: pair.guestUserId,
+                currentContentId: voteContent.id,
+            });
+            expect(
+                await calculateConversationCounters({
+                    db,
+                    conversationId: conversation.id,
+                }),
+            ).toMatchObject({ voteCount: 0, participantCount: 0 });
+        } finally {
+            release.resolve();
+            await Promise.allSettled([blocker, merging]);
+        }
+    }, 10_000);
+
+    it("bounds counter rebuild parameters beyond PostgreSQL's single-query limit", async () => {
+        await persistVote({ userId: vote.userId, choice: "agree" });
+        await db
+            .update(schema.opinionTable)
+            .set({ numAgrees: 100 })
+            .where(eq(schema.opinionTable.id, vote.opinionId));
+        await db.transaction(async (tx) => {
+            await lockAccountConversations({ db: tx, userId: vote.userId });
+            await reconcileOpinionVoteCounters({
+                db: tx,
+                opinionIds: Array.from(
+                    { length: 70_000 },
+                    (_, index) => index + 1,
+                ),
+            });
+        });
+        expect(
+            first(await db.select().from(schema.opinionTable)),
+        ).toMatchObject({ numAgrees: 1, numDisagrees: 0, numPasses: 0 });
+    });
+
+    it("allows vote foreign-key checks while merge waits for the conversation lock", async () => {
+        const pair = await createMergePair();
+        await persistVote({ userId: pair.guestUserId, choice: "agree" });
+        const otherOpinion = first(
+            await db
+                .insert(schema.opinionTable)
+                .values({
+                    slugId: "fkcheck1",
+                    authorId: vote.userId,
+                    conversationId: vote.conversationId,
+                })
+                .returning(),
+        );
+        const locked = createBarrier<number>();
+        const insertAllowed = createBarrier();
+        const inserting = db.transaction(async (tx) => {
+            const scope = first(
+                await tx
+                    .select({
+                        pid: sql<number>`pg_backend_pid()`.mapWith(Number),
+                    })
+                    .from(schema.conversationTable)
+                    .where(eq(schema.conversationTable.id, vote.conversationId))
+                    .for("no key update"),
+            );
+            locked.resolve(scope.pid);
+            await insertAllowed.promise;
+            await tx
+                .select({
+                    timeout: sql`set_config('lock_timeout', '500ms', true)`,
+                })
+                .from(schema.conversationTable)
+                .where(eq(schema.conversationTable.id, vote.conversationId));
+            return first(
+                await tx
+                    .insert(schema.voteTable)
+                    .values({
+                        authorId: pair.guestUserId,
+                        opinionId: otherOpinion.id,
+                    })
+                    .returning(),
+            );
+        });
+        const blockerPid = await locked.promise;
+        const merging = db.transaction(
+            async (tx) =>
+                await mergeGuestIntoVerifiedUser({
+                    db: tx,
+                    ...pair,
+                    now: vote.timestamp,
+                }),
+        );
+        try {
+            await waitForBlockedTransaction(blockerPid);
+            insertAllowed.resolve();
+            const [inserted] = await Promise.all([inserting, merging]);
+            expect(
+                first(
+                    await db
+                        .select()
+                        .from(schema.voteTable)
+                        .where(eq(schema.voteTable.id, inserted.id)),
+                ),
+            ).toMatchObject({ authorId: pair.verifiedUserId });
+        } finally {
+            insertAllowed.resolve();
+            await Promise.allSettled([inserting, merging]);
+        }
+    }, 10_000);
+
+    it("rejects automatic guest merge for a source with a deleted phone credential", async () => {
+        const pair = await createMergePair();
+        await persistVote({ userId: pair.guestUserId, choice: "agree" });
+        const roots = await db.select().from(schema.voteTable);
+        await db.insert(schema.phoneTable).values({
+            userId: pair.guestUserId,
+            lastTwoDigits: 12,
+            countryCallingCode: "1",
+            phoneHash: randomUUID(),
+            isDeleted: true,
+        });
+        await expect(
+            db.transaction(
+                async (tx) =>
+                    await mergeGuestIntoVerifiedUser({
+                        db: tx,
+                        ...pair,
+                        now: vote.timestamp,
+                    }),
+            ),
+        ).rejects.toThrow("Cannot merge a source user with credentials");
+        expect(await db.select().from(schema.voteTable)).toEqual(roots);
+        expect(
+            first(
+                await db
+                    .select()
+                    .from(schema.userTable)
+                    .where(eq(schema.userTable.id, pair.guestUserId)),
+            ),
+        ).toMatchObject({ isDeleted: false, deletionReason: null });
+    });
+
+    it.each([false, true])(
+        "moves preference roots, preserves tombstones, and expires inherited sessions (display conflict=%s)",
+        async (displayConflict) => {
+            const pair = await createMergePair();
+            await db.insert(schema.followedTopicTable).values([
+                { userId: pair.guestUserId, topicId: 1 },
+                { userId: pair.guestUserId, topicId: 2 },
+                {
+                    userId: pair.guestUserId,
+                    topicId: 3,
+                    deletedAt: vote.timestamp,
+                },
+                { userId: pair.verifiedUserId, topicId: 2 },
+            ]);
+            await db.insert(schema.userSpokenLanguagesTable).values([
+                { userId: pair.guestUserId, languageCode: "en" },
+                { userId: pair.guestUserId, languageCode: "fr" },
+                {
+                    userId: pair.guestUserId,
+                    languageCode: "de",
+                    isDeleted: true,
+                    deletedAt: vote.timestamp,
+                },
+                {
+                    userId: pair.verifiedUserId,
+                    languageCode: "en",
+                    isDeleted: true,
+                    deletedAt: vote.timestamp,
+                },
+            ]);
+            await db
+                .insert(schema.userDisplayLanguageTable)
+                .values({ userId: pair.guestUserId, languageCode: "fr" });
+            if (displayConflict)
+                await db.insert(schema.userDisplayLanguageTable).values({
+                    userId: pair.verifiedUserId,
+                    languageCode: "en",
+                });
+            const didWrite = "did:test:merge:preferences";
+            await db.insert(schema.deviceTable).values({
+                userId: pair.guestUserId,
+                didWrite,
+                userAgent: "test",
+                sessionExpiry: new Date(vote.timestamp.getTime() + 60_000),
+            });
+            await db.transaction(
+                async (tx) =>
+                    await mergeGuestIntoVerifiedUser({
+                        db: tx,
+                        ...pair,
+                        now: vote.timestamp,
+                    }),
+            );
+            expect(
+                await db
+                    .select({ topicId: schema.followedTopicTable.topicId })
+                    .from(schema.followedTopicTable)
+                    .where(
+                        eq(
+                            schema.followedTopicTable.userId,
+                            pair.verifiedUserId,
+                        ),
+                    )
+                    .orderBy(schema.followedTopicTable.topicId),
+            ).toEqual([{ topicId: 1 }, { topicId: 2 }]);
+            expect(
+                await db
+                    .select({
+                        code: schema.userSpokenLanguagesTable.languageCode,
+                        deleted: schema.userSpokenLanguagesTable.isDeleted,
+                    })
+                    .from(schema.userSpokenLanguagesTable)
+                    .where(
+                        eq(
+                            schema.userSpokenLanguagesTable.userId,
+                            pair.verifiedUserId,
+                        ),
+                    )
+                    .orderBy(schema.userSpokenLanguagesTable.languageCode),
+            ).toEqual([
+                { code: "en", deleted: true },
+                { code: "fr", deleted: false },
+            ]);
+            expect(
+                first(
+                    await db
+                        .select()
+                        .from(schema.userDisplayLanguageTable)
+                        .where(
+                            eq(
+                                schema.userDisplayLanguageTable.userId,
+                                pair.verifiedUserId,
+                            ),
+                        ),
+                ),
+            ).toMatchObject({ languageCode: displayConflict ? "en" : "fr" });
+            expect(
+                first(await db.select().from(schema.deviceTable)),
+            ).toMatchObject({
+                userId: pair.verifiedUserId,
+                sessionExpiry: vote.timestamp,
+            });
+            expect(
+                await db.select().from(schema.realtimeEventOutboxTable),
+            ).toMatchObject([
+                {
+                    eventType: "auth_state_changed",
+                    payload: {
+                        userIds: [pair.guestUserId, pair.verifiedUserId],
+                        reason: "identity_changed",
+                    },
+                },
+            ]);
+        },
+    );
+
+    it("moves a guest vote root with its history and rebinds only its working participant", async () => {
+        const pair = await createMergePair();
+        const guest = await persistVote({
+            userId: pair.guestUserId,
+            choice: "agree",
+        });
+        const changedContent = first(
+            await db
+                .insert(schema.voteContentTable)
+                .values({
+                    voteId: guest.id,
+                    opinionContentId: vote.opinionContentId,
+                    vote: "disagree",
+                })
+                .returning(),
+        );
+        await db
+            .update(schema.voteTable)
+            .set({ currentContentId: changedContent.id })
+            .where(eq(schema.voteTable.id, guest.id));
+        const history = await db.select().from(schema.voteContentTable);
+        const originalParticipant = first(
+            await db.select().from(schema.conversationParticipantTable),
+        );
+        await db.transaction(
+            async (tx) =>
+                await mergeGuestIntoVerifiedUser({
+                    db: tx,
+                    ...pair,
+                    now: vote.timestamp,
+                }),
+        );
+        const transferred = first(await db.select().from(schema.voteTable));
+        expect(transferred).toMatchObject({
+            id: guest.id,
+            authorId: pair.verifiedUserId,
+            currentContentId: changedContent.id,
+        });
+        expect(transferred.participantId).not.toBe(originalParticipant.id);
+        expect(await db.select().from(schema.voteContentTable)).toEqual(
+            history,
+        );
+        expect(
+            first(
+                await db
+                    .select()
+                    .from(schema.conversationParticipantTable)
+                    .where(
+                        eq(
+                            schema.conversationParticipantTable.id,
+                            originalParticipant.id,
+                        ),
+                    ),
+            ),
+        ).toEqual(originalParticipant);
+        expect(
+            first(
+                await db
+                    .select()
+                    .from(schema.userTable)
+                    .where(eq(schema.userTable.id, pair.guestUserId)),
+            ),
+        ).toMatchObject({
+            isDeleted: true,
+            deletionReason: "guest_merge",
+            deletedAt: vote.timestamp,
+        });
+        expect(
+            first(await db.select().from(schema.opinionTable)),
+        ).toMatchObject({ numAgrees: 0, numDisagrees: 1, numPasses: 0 });
+        const eligible = await getAnalysisEligibleOpinionVotes({
+            db,
+            conversationId: vote.conversationId,
+            opinionIds: [vote.opinionId],
+        });
+        expect(await db.select().from(eligible)).toEqual([
+            {
+                opinionId: vote.opinionId,
+                authorId: pair.verifiedUserId,
+                vote: "disagree",
+            },
+        ]);
+    });
+
+    it.each(["disagree", "cancel"] satisfies Array<"disagree" | "cancel">)(
+        "keeps the destination's %s and retires the conflicting guest without rewriting content",
+        async (choice) => {
+            const pair = await createMergePair();
+            const guest = await persistVote({
+                userId: pair.guestUserId,
+                choice: "agree",
+            });
+            const destination = await persistVote({
+                userId: pair.verifiedUserId,
+                choice,
+            });
+            const history = await db.select().from(schema.voteContentTable);
+            await db.transaction(
+                async (tx) =>
+                    await mergeGuestIntoVerifiedUser({
+                        db: tx,
+                        ...pair,
+                        now: vote.timestamp,
+                    }),
+            );
+            expect(
+                first(
+                    await db
+                        .select()
+                        .from(schema.voteTable)
+                        .where(eq(schema.voteTable.id, guest.id)),
+                ),
+            ).toMatchObject({
+                authorId: pair.guestUserId,
+                currentContentId: null,
+            });
+            expect(
+                first(
+                    await db
+                        .select()
+                        .from(schema.voteTable)
+                        .where(eq(schema.voteTable.id, destination.id)),
+                ),
+            ).toEqual(destination);
+            expect(await db.select().from(schema.voteContentTable)).toEqual(
+                history,
+            );
+            expect(
+                first(await db.select().from(schema.opinionTable)),
+            ).toMatchObject({
+                numAgrees: 0,
+                numDisagrees: choice === "disagree" ? 1 : 0,
+                numPasses: 0,
+            });
+            expect(
+                await calculateConversationCounters({
+                    db,
+                    conversationId: vote.conversationId,
+                }),
+            ).toMatchObject({
+                voteCount: choice === "disagree" ? 1 : 0,
+                participantCount: choice === "disagree" ? 1 : 0,
+            });
+        },
+    );
+
+    it("transfers a guest withdrawal without reviving it", async () => {
+        const pair = await createMergePair();
+        const root = await persistVote({
+            userId: pair.guestUserId,
+            choice: "cancel",
+        });
+        await db.transaction(
+            async (tx) =>
+                await mergeGuestIntoVerifiedUser({
+                    db: tx,
+                    ...pair,
+                    now: vote.timestamp,
+                }),
+        );
+        expect(first(await db.select().from(schema.voteTable))).toMatchObject({
+            id: root.id,
+            authorId: pair.verifiedUserId,
+            currentContentId: null,
+        });
+        expect(await db.select().from(schema.voteContentTable)).toHaveLength(1);
+        expect(
+            await calculateConversationCounters({
+                db,
+                conversationId: vote.conversationId,
+            }),
+        ).toMatchObject({ voteCount: 0, participantCount: 0 });
+    });
+
+    it.each([false, true])(
+        "keeps complete response/session roots with destination conflict=%s",
+        async (conflict) => {
+            const pair = await createMergePair();
+            const response = first(
+                await db
+                    .insert(schema.surveyResponseTable)
+                    .values({
+                        participantId: pair.guestUserId,
+                        conversationId: vote.conversationId,
+                        withdrawnAt: vote.timestamp,
+                    })
+                    .returning(),
+            );
+            const ranking = first(
+                await db
+                    .insert(schema.comparisonResponseTable)
+                    .values({
+                        participantId: pair.guestUserId,
+                        conversationId: vote.conversationId,
+                        comparisons: [],
+                    })
+                    .returning(),
+            );
+            if (conflict) {
+                await db.insert(schema.surveyResponseTable).values({
+                    participantId: pair.verifiedUserId,
+                    conversationId: vote.conversationId,
+                });
+                await db.insert(schema.comparisonResponseTable).values({
+                    participantId: pair.verifiedUserId,
+                    conversationId: vote.conversationId,
+                    comparisons: [],
+                });
+            }
+            await db.transaction(
+                async (tx) =>
+                    await mergeGuestIntoVerifiedUser({
+                        db: tx,
+                        ...pair,
+                        now: vote.timestamp,
+                    }),
+            );
+            const expectedOwner = conflict
+                ? pair.guestUserId
+                : pair.verifiedUserId;
+            expect(
+                first(
+                    await db
+                        .select()
+                        .from(schema.surveyResponseTable)
+                        .where(eq(schema.surveyResponseTable.id, response.id)),
+                ),
+            ).toMatchObject({
+                participantId: expectedOwner,
+                withdrawnAt: vote.timestamp,
+            });
+            expect(
+                first(
+                    await db
+                        .select()
+                        .from(schema.comparisonResponseTable)
+                        .where(
+                            eq(schema.comparisonResponseTable.id, ranking.id),
+                        ),
+                ),
+            ).toMatchObject({ participantId: expectedOwner, comparisons: [] });
+            expect(
+                first(
+                    await db.select().from(schema.polisConversationConfigTable),
+                ).analysisDataGeneration,
+            ).toBe(2);
+        },
+    );
+
+    it("rolls back account retirement, root transfer, counters and analysis scheduling together", async () => {
+        const pair = await createMergePair();
+        await persistVote({ userId: pair.guestUserId, choice: "agree" });
+        const before = {
+            votes: await db.select().from(schema.voteTable),
+            users: await db.select().from(schema.userTable),
+            opinions: await db.select().from(schema.opinionTable),
+            config: await db.select().from(schema.polisConversationConfigTable),
+            participants: await db
+                .select()
+                .from(schema.conversationParticipantTable),
+        };
+        await expect(
+            db.transaction(async (tx) => {
+                await mergeGuestIntoVerifiedUser({
+                    db: tx,
+                    ...pair,
+                    now: vote.timestamp,
+                });
+                throw new Error("rollback merge");
+            }),
+        ).rejects.toThrow("rollback merge");
+        expect(await db.select().from(schema.voteTable)).toEqual(before.votes);
+        expect(await db.select().from(schema.userTable)).toEqual(before.users);
+        expect(await db.select().from(schema.opinionTable)).toEqual(
+            before.opinions,
+        );
+        expect(
+            await db.select().from(schema.polisConversationConfigTable),
+        ).toEqual(before.config);
+        expect(
+            await db.select().from(schema.conversationParticipantTable),
+        ).toEqual(before.participants);
+    });
+
+    it("rejects cross-owned current content in PostgreSQL", async () => {
+        const pair = await createMergePair();
+        const guest = await persistVote({
+            userId: pair.guestUserId,
+            choice: "agree",
+        });
+        const destination = await persistVote({
+            userId: pair.verifiedUserId,
+            choice: "disagree",
+        });
+        await expect(
+            db
+                .update(schema.voteTable)
+                .set({ currentContentId: guest.currentContentId })
+                .where(eq(schema.voteTable.id, destination.id)),
+        ).rejects.toMatchObject({ cause: { code: "23503" } });
+    });
+
+    it("repairs legacy shared pointers without guessing merge provenance or changing original history", async () => {
+        const pair = await createMergePair();
+        const guest = await persistVote({
+            userId: pair.guestUserId,
+            choice: "agree",
+        });
+        const destination = await persistVote({
+            userId: pair.verifiedUserId,
+            choice: "cancel",
+        });
+        await client.unsafe(
+            "ALTER TABLE vote DROP CONSTRAINT vote_current_content_owner_fk",
+        );
+        try {
+            await db
+                .update(schema.voteTable)
+                .set({ currentContentId: guest.currentContentId })
+                .where(eq(schema.voteTable.id, destination.id));
+            const original = await db
+                .select()
+                .from(schema.voteContentTable)
+                .where(eq(schema.voteContentTable.voteId, guest.id));
+            const repair = readFileSync(
+                new URL(
+                    "../scripts/repair-guest-merge-vote-ownership.sql",
+                    import.meta.url,
+                ),
+                "utf8",
+            );
+            await db.transaction(async (tx) => {
+                await tx.execute(sql.raw(repair));
+            });
+            const repaired = first(
+                await db
+                    .select({
+                        voteId: schema.voteContentTable.voteId,
+                        choice: schema.voteContentTable.vote,
+                    })
+                    .from(schema.voteTable)
+                    .innerJoin(
+                        schema.voteContentTable,
+                        eq(
+                            schema.voteContentTable.id,
+                            schema.voteTable.currentContentId,
+                        ),
+                    )
+                    .where(eq(schema.voteTable.id, destination.id)),
+            );
+            expect(repaired).toEqual({
+                voteId: destination.id,
+                choice: "agree",
+            });
+            expect(
+                await db
+                    .select()
+                    .from(schema.voteContentTable)
+                    .where(eq(schema.voteContentTable.voteId, guest.id)),
+            ).toEqual(original);
+            expect(
+                first(
+                    await db
+                        .select()
+                        .from(schema.userTable)
+                        .where(eq(schema.userTable.id, pair.guestUserId)),
+                ),
+            ).toMatchObject({ isDeleted: false, deletionReason: null });
+            const contents = await db.select().from(schema.voteContentTable);
+            await db.transaction(async (tx) => {
+                await tx.execute(sql.raw(repair));
+            });
+            expect(await db.select().from(schema.voteContentTable)).toEqual(
+                contents,
+            );
+        } finally {
+            await client.unsafe(
+                "ALTER TABLE vote ADD CONSTRAINT vote_current_content_owner_fk FOREIGN KEY (current_content_id, id) REFERENCES vote_content (id, vote_id)",
+            );
+        }
+    });
+
+    it("rejects legacy cross-statement content even when the vote root owns that content", async () => {
+        const root = await persistVote({
+            userId: vote.userId,
+            choice: "agree",
+        });
+        const otherOpinion = first(
+            await db
+                .insert(schema.opinionTable)
+                .values({
+                    slugId: "other001",
+                    authorId: vote.userId,
+                    conversationId: vote.conversationId,
+                })
+                .returning(),
+        );
+        const conversationContent = first(
+            await db.select().from(schema.conversationContentTable),
+        );
+        const otherContent = first(
+            await db
+                .insert(schema.opinionContentTable)
+                .values({
+                    opinionId: otherOpinion.id,
+                    conversationContentId: conversationContent.id,
+                    content: "Different statement",
+                })
+                .returning(),
+        );
+        const wrongVoteContent = first(
+            await db
+                .insert(schema.voteContentTable)
+                .values({
+                    voteId: root.id,
+                    opinionContentId: otherContent.id,
+                    vote: "disagree",
+                })
+                .returning(),
+        );
+        await db
+            .update(schema.voteTable)
+            .set({ currentContentId: wrongVoteContent.id })
+            .where(eq(schema.voteTable.id, root.id));
+        const contents = await db.select().from(schema.voteContentTable);
+        const repair = readFileSync(
+            new URL(
+                "../scripts/repair-guest-merge-vote-ownership.sql",
+                import.meta.url,
+            ),
+            "utf8",
+        );
+        await expect(
+            db.transaction(async (tx) => {
+                await tx.execute(sql.raw(repair));
+            }),
+        ).rejects.toMatchObject({ cause: { code: "P0001" } });
+        expect(await db.select().from(schema.voteContentTable)).toEqual(
+            contents,
+        );
+    });
+
+    it("drops pending guest actions after merge without changing the transferred persisted choice", async () => {
+        const pair = await createMergePair();
+        const persisted = await persistVote({
+            userId: pair.guestUserId,
+            choice: "agree",
+        });
+        const buffer = createBuffer();
+        await buffer.add({
+            vote: { ...vote, userId: pair.guestUserId, vote: "disagree" },
+        });
+        await db.transaction(
+            async (tx) =>
+                await mergeGuestIntoVerifiedUser({
+                    db: tx,
+                    ...pair,
+                    now: vote.timestamp,
+                }),
+        );
+        await buffer.flush();
+        expect(await valkey.hlen(VALKEY_QUEUE_KEYS.VOTE_BUFFER_DATA)).toBe(0);
+        expect(await db.select().from(schema.voteTable)).toMatchObject([
+            {
+                id: persisted.id,
+                authorId: pair.verifiedUserId,
+                currentContentId: persisted.currentContentId,
+            },
+        ]);
+        expect(
+            first(await db.select().from(schema.opinionTable)),
+        ).toMatchObject({ numAgrees: 1, numDisagrees: 0 });
+        // Further actions under the destination identity still use ordinary voting.
+        await buffer.add({
+            vote: { ...vote, userId: pair.verifiedUserId, vote: "pass" },
+        });
+        await buffer.flush();
+        expect(
+            first(await db.select().from(schema.opinionTable)),
+        ).toMatchObject({ numAgrees: 0, numDisagrees: 0, numPasses: 1 });
+    });
+
+    it("refreshes vote-only account deletion once, drops pending actions, and preserves recovery sources", async () => {
+        const pair = await createMergePair();
+        await persistVote({ userId: pair.guestUserId, choice: "agree" });
+        await db.transaction(
+            async (tx) =>
+                await reconcileOpinionVoteCounters({
+                    db: tx,
+                    opinionIds: [vote.opinionId],
+                }),
+        );
+        const roots = await db.select().from(schema.voteTable);
+        const contents = await db.select().from(schema.voteContentTable);
+        const buffer = createBuffer();
+        await buffer.add({
+            vote: { ...vote, userId: pair.guestUserId, vote: "disagree" },
+        });
+        await deleteUserAccount({ db, userId: pair.guestUserId });
+        await buffer.flush();
+        expect(await db.select().from(schema.voteTable)).toEqual(roots);
+        expect(await db.select().from(schema.voteContentTable)).toEqual(
+            contents,
+        );
+        expect(
+            first(await db.select().from(schema.opinionTable)),
+        ).toMatchObject({ numAgrees: 0, numDisagrees: 0, numPasses: 0 });
+        expect(
+            first(await db.select().from(schema.polisConversationConfigTable))
+                .analysisDataGeneration,
+        ).toBe(2);
+        expect(
+            await calculateConversationCounters({
+                db,
+                conversationId: vote.conversationId,
+            }),
+        ).toMatchObject({
+            voteCount: 0,
+            totalVoteCount: 0,
+            participantCount: 0,
+        });
+        await deleteUserAccount({ db, userId: pair.guestUserId });
+        expect(
+            first(await db.select().from(schema.polisConversationConfigTable))
+                .analysisDataGeneration,
+        ).toBe(2);
+        expect(await valkey.hlen(VALKEY_QUEUE_KEYS.VOTE_BUFFER_DATA)).toBe(0);
+        expect(
+            first(
+                await db
+                    .select()
+                    .from(schema.userTable)
+                    .where(
+                        and(
+                            eq(schema.userTable.id, pair.guestUserId),
+                            eq(schema.userTable.isDeleted, true),
+                        ),
+                    ),
+            ),
+        ).toMatchObject({ deletionReason: "account_deletion" });
+    });
+
+    it("refreshes survey-only account deletion without erasing recovery responses", async () => {
+        const pair = await createMergePair();
+        const response = first(
+            await db
+                .insert(schema.surveyResponseTable)
+                .values({
+                    participantId: pair.guestUserId,
+                    conversationId: vote.conversationId,
+                    completedAt: vote.timestamp,
+                })
+                .returning(),
+        );
+        await deleteUserAccount({ db, userId: pair.guestUserId });
+        expect(
+            first(await db.select().from(schema.polisConversationConfigTable))
+                .analysisDataGeneration,
+        ).toBe(2);
+        expect(await db.select().from(schema.surveyResponseTable)).toEqual([
+            response,
+        ]);
+    });
+
+    it.each(["open", "closing", "finalized"])(
+        "backfills stale live counts and refreshes only eligible %s conversations",
+        async (state) => {
+            const pair = await createMergePair();
+            await persistVote({ userId: pair.guestUserId, choice: "agree" });
+            await persistVote({
+                userId: pair.verifiedUserId,
+                choice: "disagree",
+            });
+            await db.transaction(
+                async (tx) =>
+                    await reconcileOpinionVoteCounters({
+                        db: tx,
+                        opinionIds: [vote.opinionId],
+                    }),
+            );
+            await db
+                .update(schema.userTable)
+                .set({ isDeleted: true, deletedAt: vote.timestamp })
+                .where(eq(schema.userTable.id, pair.guestUserId));
+            await db
+                .update(schema.conversationTable)
+                .set({
+                    isClosed: state !== "open",
+                    closingTargetRevision: state === "open" ? null : 1,
+                    closedFinalizedAt:
+                        state === "finalized" ? vote.timestamp : null,
+                })
+                .where(eq(schema.conversationTable.id, vote.conversationId));
+            expect(
+                first(await db.select().from(schema.opinionTable)),
+            ).toMatchObject({ numAgrees: 1, numDisagrees: 1 });
+            const backfill = readFileSync(
+                new URL(
+                    "../scripts/refresh-deleted-account-live-inputs.sql",
+                    import.meta.url,
+                ),
+                "utf8",
+            );
+            await db.transaction(async (tx) => {
+                await tx.execute(sql.raw(backfill));
+            });
+            expect(
+                first(await db.select().from(schema.opinionTable)),
+            ).toMatchObject({ numAgrees: 0, numDisagrees: 1 });
+            expect(
+                first(
+                    await db.select().from(schema.polisConversationConfigTable),
+                ).analysisDataGeneration,
+            ).toBe(state === "finalized" ? 1 : 2);
+            expect(
+                first(await db.select().from(schema.conversationTable)),
+            ).toMatchObject({
+                closingTargetRevision:
+                    state === "open" ? null : state === "closing" ? 2 : 1,
+            });
+            expect(
+                first(
+                    await db
+                        .select()
+                        .from(schema.userTable)
+                        .where(eq(schema.userTable.id, pair.guestUserId)),
+                ),
+            ).toMatchObject({
+                deletionReason: null,
+                deletedAt: vote.timestamp,
+            });
+            expect(
+                await db.select().from(schema.voteContentTable),
+            ).toHaveLength(2);
+        },
+    );
+
+    it.each(["account_deletion", "guest_merge"])(
+        "preserves the frozen matrix, results and checkpoint counts during %s",
+        async (operation) => {
+            const pair = await createMergePair();
+            await persistVote({ userId: pair.guestUserId, choice: "agree" });
+            await persistVote({
+                userId: pair.verifiedUserId,
+                choice: "disagree",
+            });
+            const specFamily = first(
+                await db
+                    .insert(schema.analysisSpecTable)
+                    .values({ analysisFamily: "opinion_groups" })
+                    .returning(),
+            );
+            const spec = first(
+                await db
+                    .insert(schema.opinionGroupSpecTable)
+                    .values({
+                        analysisSpecId: specFamily.id,
+                        key: "frozen",
+                        version: 1,
+                        reducer: "pca",
+                        clusterer: "kmeans",
+                        selectionPolicy: "silhouette_size_balance",
+                        minClusterableParticipants: 2,
+                        minVotesPerParticipant: 1,
+                        maxGroupCount: 6,
+                    })
+                    .returning(),
+            );
+            const matrix = Buffer.from(
+                JSON.stringify({
+                    schema_version: 1,
+                    conversation_id: vote.conversationId,
+                    data_generation: 1,
+                    opinion_count: 1,
+                    participant_count: 2,
+                    votes: [
+                        { participant_index: 0, opinion_index: 0, vote: 1 },
+                        { participant_index: 1, opinion_index: 0, vote: -1 },
+                    ],
+                }),
+            );
+            const input = first(
+                await db
+                    .insert(schema.analysisInputSnapshotTable)
+                    .values({
+                        conversationId: vote.conversationId,
+                        dataGeneration: 1,
+                        inputHash: createHash("sha256")
+                            .update(matrix)
+                            .digest("hex"),
+                        opinionCount: 1,
+                        participantCount: 2,
+                        voteCount: 2,
+                        compression: "zstd",
+                        payload: zstdCompressSync(matrix).toString("base64url"),
+                    })
+                    .returning(),
+            );
+            const snapshot = first(
+                await db
+                    .insert(schema.analysisSnapshotTable)
+                    .values({
+                        conversationId: vote.conversationId,
+                        inputSnapshotId: input.id,
+                        dataGeneration: 1,
+                        computedAt: vote.timestamp,
+                    })
+                    .returning(),
+            );
+            const result = first(
+                await db
+                    .insert(schema.analysisSnapshotResultTable)
+                    .values({
+                        conversationId: vote.conversationId,
+                        analysisSnapshotId: snapshot.id,
+                        opinionGroupSpecId: spec.id,
+                        outcome: "success",
+                    })
+                    .returning(),
+            );
+            const frame = first(
+                await db
+                    .insert(schema.conversationViewSnapshotTable)
+                    .values({
+                        conversationId: vote.conversationId,
+                        analysisSnapshotId: snapshot.id,
+                        opinionGroupSpecId: spec.id,
+                        viewReason: "analysis_completed",
+                        isClosed: false,
+                        activatedAt: vote.timestamp,
+                        opinionCount: 1,
+                        totalOpinionCount: 1,
+                        voteCount: 2,
+                        totalVoteCount: 2,
+                        participantCount: 2,
+                        totalParticipantCount: 2,
+                        moderatedOpinionCount: 0,
+                        hiddenOpinionCount: 0,
+                    })
+                    .returning(),
+            );
+            const checkpoint = first(
+                await db
+                    .insert(
+                        schema.conversationViewSnapshotCheckpointReasonTable,
+                    )
+                    .values({
+                        conversationViewSnapshotId: frame.id,
+                        conversationId: vote.conversationId,
+                        opinionGroupSpecId: spec.id,
+                        reason: "first_displayable_analysis",
+                    })
+                    .returning(),
+            );
+            if (operation === "guest_merge")
+                await db.transaction(
+                    async (tx) =>
+                        await mergeGuestIntoVerifiedUser({
+                            db: tx,
+                            ...pair,
+                            now: vote.timestamp,
+                        }),
+                );
+            else await deleteUserAccount({ db, userId: pair.guestUserId });
+            expect(
+                await calculateConversationCounters({
+                    db,
+                    conversationId: vote.conversationId,
+                }),
+            ).toMatchObject({ participantCount: 1, voteCount: 1 });
+            expect(
+                await db.select().from(schema.analysisInputSnapshotTable),
+            ).toEqual([input]);
+            expect(
+                await db.select().from(schema.analysisSnapshotTable),
+            ).toEqual([snapshot]);
+            expect(
+                await db.select().from(schema.analysisSnapshotResultTable),
+            ).toEqual([result]);
+            expect(
+                await db.select().from(schema.conversationViewSnapshotTable),
+            ).toEqual([frame]);
+            expect(
+                await db
+                    .select()
+                    .from(schema.conversationViewSnapshotCheckpointReasonTable),
+            ).toEqual([checkpoint]);
+        },
+    );
 
     it("accepts into Valkey without writing a vote and drains the cache before closing analysis", async () => {
         const buffer = createBuffer();
@@ -536,7 +1864,10 @@ describe("Valkey vote acceptance and closing publication", () => {
             config: await db.select().from(schema.polisConversationConfigTable),
             events: await db.select().from(schema.realtimeEventOutboxTable),
         };
-        expect(state.events).toMatchObject([{ eventType: "opinion_redacted" }]);
+        expect(state.events.map((event) => event.eventType).sort()).toEqual([
+            "opinion_redacted",
+            "sources_invalidated",
+        ]);
         const originalDeletionTime = new Date("2026-10-25T10:00:00Z");
         await db
             .update(schema.userTable)
@@ -578,7 +1909,7 @@ describe("Valkey vote acceptance and closing publication", () => {
         ).toEqual(new Set([vote.userId, otherUserId]));
     });
 
-    it("removes deleted personal statement columns while retaining permitted voter rows", async () => {
+    it("removes deleted live voter rows and personal statement columns", async () => {
         const bob = randomUUID();
         const carol = randomUUID();
         await db.insert(schema.userTable).values([
@@ -661,7 +1992,7 @@ describe("Valkey vote acceptance and closing publication", () => {
             ),
         ).toEqual(
             new Set(
-                [vote.userId, bob, carol].flatMap((authorId) =>
+                [bob, carol].flatMap((authorId) =>
                     opinions
                         .slice(1)
                         .map((opinion) => `${authorId}:${String(opinion.id)}`),
@@ -673,7 +2004,13 @@ describe("Valkey vote acceptance and closing publication", () => {
                 db,
                 conversationId: vote.conversationId,
             }),
-        ).toMatchObject({ opinionCount: 2, voteCount: 6, participantCount: 3 });
+        ).toMatchObject({
+            opinionCount: 2,
+            voteCount: 4,
+            participantCount: 2,
+            totalVoteCount: 4,
+            totalParticipantCount: 2,
+        });
     });
 
     it.each(["account", "statement", "moderation", "conversation"])(

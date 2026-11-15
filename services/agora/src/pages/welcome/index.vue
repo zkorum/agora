@@ -5,6 +5,7 @@
   >
     <img src="/images/onboarding/brand.webp" class="welcomeImage" />
     <div v-if="!isLoggedIn" class="buttonFlex">
+      <SpaLink to="/recover/">{{ tRecovery("title") }}</SpaLink>
       <ZKGradientButton :label="t('signUp')" @click="gotoNextRoute(false)" />
 
       <ZKGradientButton
@@ -37,7 +38,9 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import SpaLink from "src/components/ui-library/SpaLink.vue";
 import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
+import { accountRecoveryTranslations } from "src/components/verification/AccountRecovery.i18n";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
@@ -47,6 +50,7 @@ import { useRouter } from "vue-router";
 import { type WelcomeTranslations, welcomeTranslations } from "./index.i18n";
 
 const { t } = useComponentI18n<WelcomeTranslations>(welcomeTranslations);
+const { t: tRecovery } = useComponentI18n(accountRecoveryTranslations);
 
 const router = useRouter();
 

@@ -3,8 +3,10 @@ import type { ConversationTypeConfig } from "src/shared/types/zod";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { createEmptySurveyQuestion } from "src/utils/survey/config";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { effectScope } from "vue";
+import { effectScope, watch } from "vue";
 
+import { zodSerializableConversationDraft } from "./conversationDraft.schema";
+import { createEmptyDraft } from "./conversationDraft.utils";
 import { useConversationDraft } from "./useConversationDraft";
 
 vi.mock("src/composables/ui/useComponentI18n", () => ({
@@ -15,6 +17,119 @@ describe("conversation family state", () => {
   beforeEach(() => {
     localStorage.clear();
     setActivePinia(createPinia());
+  });
+
+  it("preserves a saved draft while discarding its retired ticket requirement", () => {
+    localStorage.setItem(
+      "conversationDraft",
+      JSON.stringify({
+        ...createEmptyDraft(),
+        title: "Keep my draft",
+        content: "<p>Keep my text</p>",
+        participationMode: "email_verification",
+        requiresEventTicket: "devconnect-2025",
+      })
+    );
+    const store = useNewPostDraftsStore();
+    expect(store.conversationDraft).toMatchObject({
+      title: "Keep my draft",
+      content: "<p>Keep my text</p>",
+      participationMode: "email_verification",
+    });
+    expect(store.conversationDraft).not.toHaveProperty("requiresEventTicket");
+  });
+
+  it("uses family defaults, preserves comparison choices, and keeps QV unsupported", () => {
+    const draft = useConversationDraft({ syncToStore: false });
+    expect(draft.participantStatements.value).toEqual({
+      supported: true,
+      enabled: true,
+    });
+    draft.participantStatements.value = { supported: true, enabled: false };
+    expect(draft.isDraftModified()).toBe(true);
+    draft.conversationTypeConfig.value = {
+      conversationType: "prioritizing",
+      prioritizationType: "comparisons",
+      comparisonMethod: "bws",
+    };
+    expect(draft.participantStatements.value).toEqual({
+      supported: true,
+      enabled: false,
+    });
+    draft.participantStatements.value = { supported: true, enabled: true };
+    draft.conversationTypeConfig.value = {
+      conversationType: "prioritizing",
+      prioritizationType: "comparisons",
+      comparisonMethod: "pairwise",
+    };
+    expect(draft.participantStatements.value).toEqual({
+      supported: true,
+      enabled: true,
+    });
+    draft.conversationTypeConfig.value = {
+      conversationType: "prioritizing",
+      prioritizationType: "qv",
+      creditPricing: "quadratic",
+      allowOpposition: true,
+    };
+    expect(draft.participantStatements.value).toEqual({ supported: false });
+    draft.conversationTypeConfig.value = {
+      conversationType: "polis",
+      votingPresentation: "list",
+    };
+    expect(draft.participantStatements.value).toEqual({
+      supported: true,
+      enabled: true,
+    });
+    const snapshot = draft.getDraftSnapshot();
+    if (snapshot.participantStatements.supported)
+      snapshot.participantStatements.enabled = false;
+    expect(draft.participantStatements.value).toEqual({
+      supported: true,
+      enabled: true,
+    });
+  });
+  it("never publishes an invalid family/policy pair to synchronous persistence watchers", () => {
+    const scope = effectScope();
+    const invalidSnapshots: unknown[] = [];
+    try {
+      scope.run(() => {
+        const draft = useConversationDraft({ syncToStore: true });
+        const store = useNewPostDraftsStore();
+        draft.title.value = "Keep this title";
+        watch(
+          () => store.conversationDraft,
+          (value) => {
+            if (!zodSerializableConversationDraft.safeParse(value).success)
+              invalidSnapshots.push(value);
+          },
+          { flush: "sync", deep: true }
+        );
+        draft.conversationTypeConfig.value = {
+          conversationType: "prioritizing",
+          prioritizationType: "qv",
+          creditPricing: "quadratic",
+          allowOpposition: true,
+        };
+        draft.participantStatements.value = { supported: true, enabled: true };
+        expect(store.conversationDraft.participantStatements).toEqual({
+          supported: false,
+        });
+        draft.conversationTypeConfig.value = {
+          conversationType: "prioritizing",
+          prioritizationType: "comparisons",
+          comparisonMethod: "pairwise",
+        };
+        expect(store.conversationDraft.participantStatements).toEqual({
+          supported: true,
+          enabled: false,
+        });
+        expect(store.conversationDraft.title).toBe("Keep this title");
+        expect(invalidSnapshots).toEqual([]);
+      });
+    } finally {
+      scope.stop();
+    }
   });
 
   it("keeps snapshots and initialization inputs from mutating the owned variant", () => {
@@ -39,18 +154,20 @@ describe("conversation family state", () => {
       if (draft === undefined) throw new Error("Draft scope did not run");
       const store = useNewPostDraftsStore();
       draft.conversationTypeConfig.value = {
-        conversationType: "ranking",
-        rankingMode: "bws",
+        conversationType: "prioritizing",
+        prioritizationType: "comparisons",
+        comparisonMethod: "bws",
       };
       expect(store.conversationDraft).toMatchObject({
-        conversationType: "ranking",
-        rankingMode: "bws",
+        conversationType: "prioritizing",
+        prioritizationType: "comparisons",
+        comparisonMethod: "bws",
       });
       expect(store.conversationDraft).not.toHaveProperty("votingPresentation");
       draft.title.value = "New title";
       expect(store.conversationDraft).toMatchObject({
         title: "New title",
-        rankingMode: "bws",
+        comparisonMethod: "bws",
       });
       draft.conversationTypeConfig.value = {
         conversationType: "polis",
@@ -60,7 +177,7 @@ describe("conversation family state", () => {
         conversationType: "polis",
         votingPresentation: "one_at_a_time",
       });
-      expect(store.conversationDraft).not.toHaveProperty("rankingMode");
+      expect(store.conversationDraft).not.toHaveProperty("comparisonMethod");
       draft.resetDraft();
       expect(draft.conversationTypeConfig.value).toEqual({
         conversationType: "polis",
@@ -69,6 +186,47 @@ describe("conversation family state", () => {
     } finally {
       scope.stop();
     }
+  });
+
+  it("preserves QV statement descriptions across mode switches and resets the structured draft", () => {
+    const draft = useConversationDraft({ syncToStore: false });
+    draft.seedOpinions.value = ["Existing BWS title"];
+    draft.conversationTypeConfig.value = {
+      conversationType: "prioritizing",
+      prioritizationType: "qv",
+      creditPricing: "quadratic",
+      allowOpposition: false,
+    };
+    expect(draft.qvStatements.value.at(0)?.title).toBe("Existing BWS title");
+    draft.qvStatements.value = [
+      {
+        localKey: "qv-1",
+        title: "Structured title",
+        description: "<p>Keep these details</p>",
+      },
+    ];
+    draft.conversationTypeConfig.value = {
+      conversationType: "prioritizing",
+      prioritizationType: "comparisons",
+      comparisonMethod: "bws",
+    };
+    draft.conversationTypeConfig.value = {
+      conversationType: "prioritizing",
+      prioritizationType: "qv",
+      creditPricing: "quadratic",
+      allowOpposition: false,
+    };
+    expect(draft.qvStatements.value).toEqual([
+      {
+        localKey: "qv-1",
+        title: "Structured title",
+        description: "<p>Keep these details</p>",
+      },
+    ]);
+    expect(draft.isDraftModified()).toBe(true);
+    draft.resetDraft();
+    expect(draft.qvStatements.value).toEqual([]);
+    expect(draft.isDraftModified()).toBe(false);
   });
 
   it("owns configs assigned by form controls instead of retaining their mutable input", () => {

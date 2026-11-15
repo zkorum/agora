@@ -16,6 +16,11 @@ type RedactionAction =
 export const useOpinionRedactionStore = defineStore("opinionRedaction", () => {
   const actions = ref(new Map<string, RedactionAction>());
   const revision = ref(0);
+  const resyncRevision = ref(0);
+
+  function requireResync(): void {
+    resyncRevision.value += 1;
+  }
 
   function record(
     opinions: SSEEventDataByType["opinion_redacted"]["opinions"]
@@ -110,6 +115,8 @@ export const useOpinionRedactionStore = defineStore("opinionRedaction", () => {
     projectOpinion,
     projectGroups,
     projectAnalysis,
+    requireResync,
+    resyncVersion: computed(() => resyncRevision.value),
     version: computed(() => revision.value),
   };
 });

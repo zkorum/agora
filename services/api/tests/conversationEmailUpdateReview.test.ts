@@ -17,8 +17,14 @@ import {
 import {
     createConversationEmailUpdateService,
     type ConversationEmailUpdateService,
-} from "../src/service/conversationEmailUpdate.js";
+} from "./conversationEmailUpdateController.js";
 import { lockConversationEmailUpdateProject } from "../src/service/conversationEmailUpdateProjectLock.js";
+import { hasScopedProjectCapability } from "../src/service/organizationAuthorization.js";
+import { createConversationEmailUpdateService as createCoreService } from "../src/service/conversationEmailUpdate.js";
+import {
+    getConversationEmailUpdateActor,
+    getOwnedEmailUpdateReviewId,
+} from "../src/service/conversationEmailUpdateAuthorization.js";
 import {
     userTable,
     userDisplayLanguageTable,
@@ -47,6 +53,7 @@ import {
     Dto,
     type ConversationEmailUpdateDevComparisonRequest,
     type ConversationEmailUpdatePrepareDraftRequest,
+    type ConversationEmailUpdateConfigurationUpdateRequest,
 } from "../src/shared/types/dto.js";
 import { readDbFixtureSql } from "./dbFixture.js";
 
@@ -88,7 +95,8 @@ describe("locked Conversation Email Update reviews", () => {
             password: "postgres",
             max: 8,
         });
-        db = drizzle(client, {
+        db = drizzle({
+            client,
             logger: {
                 logQuery: (query) => {
                     queries.push(query);
@@ -135,7 +143,7 @@ describe("locked Conversation Email Update reviews", () => {
         });
         await db
             .insert(organizationMembershipTable)
-            .values({ organizationId: 1, userId: owner });
+            .values({ organizationId: 1, userId: owner, role: "admin" });
         await db
             .insert(organizationMembershipAllProjectCapabilityTable)
             .values({
@@ -206,6 +214,60 @@ describe("locked Conversation Email Update reviews", () => {
         if (!result.success) throw new Error(JSON.stringify(result));
         return result.review;
     }
+
+    it.each([
+        { target: "project", projectSlug: "river", defaultEnabled: false },
+        {
+            target: "conversation",
+            conversationSlugId: "convo001",
+            setting: "disabled",
+        },
+    ] satisfies ConversationEmailUpdateConfigurationUpdateRequest[])(
+        "authorizes $target configuration before core work without membership rechecks or locks",
+        async (request) => {
+            const target =
+                request.target === "project"
+                    ? ({
+                          kind: "project",
+                          projectSlug: request.projectSlug,
+                      } as const)
+                    : ({
+                          kind: "conversation",
+                          conversationSlugId: request.conversationSlugId,
+                      } as const);
+            expect(
+                await hasScopedProjectCapability({
+                    db,
+                    userId: owner,
+                    target,
+                    capability: "conversation_email_update",
+                }),
+            ).toBe(true);
+            await db
+                .update(organizationMembershipTable)
+                .set({ role: "moderator" });
+            queries.length = 0;
+            expect(
+                await service.updateConfiguration({ userId: owner, request }),
+            ).toMatchObject({
+                success: true,
+                configuration: { target: request.target, canConfigure: true },
+            });
+            expect(
+                queries.some((query) =>
+                    query.includes('"organization_membership"'),
+                ),
+            ).toBe(false);
+            expect(
+                await hasScopedProjectCapability({
+                    db,
+                    userId: owner,
+                    target,
+                    capability: "conversation_email_update",
+                }),
+            ).toBe(false);
+        },
+    );
     it("snapshots real project owners, sponsors and partners and detects attribution changes", async () => {
         await db.insert(projectExternalOrganizationTable).values([
             {
@@ -350,7 +412,7 @@ describe("locked Conversation Email Update reviews", () => {
                 /\b(insert into|update |delete from|for update|for no key update|for share|for key share)\b/i,
             );
             expect(comparisonQueries.join("\n")).not.toMatch(
-                /\b(from|join) "(email|opinion|vote|maxdiff_result|conversation_email_update|conversation_email_update_recipient|conversation_email_update_test_attempt|conversation_email_update_delivery|conversation_email_update_user_\w+)"/i,
+                /\b(from|join) "(email|opinion|vote|comparison_response|conversation_email_update|conversation_email_update_recipient|conversation_email_update_test_attempt|conversation_email_update_delivery|conversation_email_update_user_\w+)"/i,
             );
             expect(result.metadata).toEqual({
                 senderName: "River District",
@@ -528,7 +590,7 @@ describe("locked Conversation Email Update reviews", () => {
         });
 
         it.each([
-            "capability",
+            "role",
             "entitlement",
             "expired",
             "future",
@@ -538,10 +600,10 @@ describe("locked Conversation Email Update reviews", () => {
         ])(
             "returns scope_not_found for inactive %s authorization",
             async (kind) => {
-                if (kind === "capability")
+                if (kind === "role")
                     await db
-                        .update(organizationMembershipAllProjectCapabilityTable)
-                        .set({ deletedAt: new Date(), revokedByUserId: owner });
+                        .update(organizationMembershipTable)
+                        .set({ role: "moderator" });
                 if (kind === "entitlement")
                     await db
                         .update(premiumFeatureEntitlementTable)
@@ -623,10 +685,20 @@ describe("locked Conversation Email Update reviews", () => {
             "\u2028Our next steps",
             " ",
         ])("validates the raw subject %j before rendering", async (subject) => {
+            const actor = await getConversationEmailUpdateActor({
+                db,
+                userId: owner,
+            });
+            const core = createCoreService({
+                db,
+                sendingEnabled: true,
+                baseImageServiceUrl: "https://images.example.com/",
+                siteBaseUrl: "https://agora.example.com",
+            });
             queries.length = 0;
             expect(
-                await service.compareDev({
-                    userId: owner,
+                await core.compareDev({
+                    ...actor,
                     request: { ...draft, language: "en", subject },
                 }),
             ).toEqual({
@@ -637,10 +709,20 @@ describe("locked Conversation Email Update reviews", () => {
         });
 
         it("rejects normalized-empty content without any database access", async () => {
+            const actor = await getConversationEmailUpdateActor({
+                db,
+                userId: owner,
+            });
+            const core = createCoreService({
+                db,
+                sendingEnabled: true,
+                baseImageServiceUrl: "https://images.example.com/",
+                siteBaseUrl: "https://agora.example.com",
+            });
             queries.length = 0;
             expect(
-                await service.compareDev({
-                    userId: owner,
+                await core.compareDev({
+                    ...actor,
                     request: {
                         ...draft,
                         language: "en",
@@ -914,9 +996,7 @@ describe("locked Conversation Email Update reviews", () => {
     it("allows sender cancellation after capability revocation, idempotently", async () => {
         const review = await prepare();
         const request = await acceptedTest(review.updateId);
-        await db
-            .update(organizationMembershipAllProjectCapabilityTable)
-            .set({ deletedAt: new Date(), revokedByUserId: owner });
+        await db.update(organizationMembershipTable).set({ role: "moderator" });
         expect(await service.cancelDraft({ userId: owner, request })).toEqual({
             success: true,
         });
@@ -942,6 +1022,54 @@ describe("locked Conversation Email Update reviews", () => {
         expect(await service.getTestStatus({ userId: owner, request })).toEqual(
             { success: false, reason: "review_cancelled" },
         );
+    });
+
+    it("uses controller-authorized review access without rechecking membership in the test transaction", async () => {
+        const review = await prepare();
+        const actor = await getConversationEmailUpdateActor({
+            db,
+            userId: owner,
+        });
+        const ownedReviewId = await getOwnedEmailUpdateReviewId({
+            db,
+            userId: owner,
+            updateId: review.updateId,
+        });
+        await db.update(organizationMembershipTable).set({ role: "moderator" });
+        const core = createCoreService({
+            db,
+            sendingEnabled: true,
+            baseImageServiceUrl: "https://images.example.com/",
+            siteBaseUrl: "https://agora.example.com",
+        });
+        queries.length = 0;
+        expect(
+            await core.sendTest({
+                ...actor,
+                ownedReviewId,
+                request: { updateId: review.updateId, requestId: randomUUID() },
+            }),
+        ).toMatchObject({ success: true });
+        expect(
+            queries.some((query) =>
+                query.includes('"organization_membership"'),
+            ),
+        ).toBe(false);
+    });
+
+    it("does not take entitlement authorization locks when accepting a send", async () => {
+        const review = await prepare();
+        const request = await acceptedTest(review.updateId);
+        await db.transaction(async (tx) => {
+            await tx
+                .select({ id: premiumFeatureEntitlementTable.id })
+                .from(premiumFeatureEntitlementTable)
+                .where(eq(premiumFeatureEntitlementTable.id, 1))
+                .for("update");
+            expect(
+                await service.send({ userId: owner, request }),
+            ).toMatchObject({ success: true });
+        });
     });
 
     it("rejects expired reviews and old template versions", async () => {
@@ -1234,8 +1362,8 @@ describe("locked Conversation Email Update reviews", () => {
                 | undefined;
             try {
                 await db.transaction(async (tx) => {
-                    const [session] = await tx
-                        .select({ pid: sql<number>`pg_backend_pid()` })
+                    await tx
+                        .select({ id: userTable.id })
                         .from(userTable)
                         .where(eq(userTable.id, owner))
                         .for("update");
@@ -1255,7 +1383,9 @@ describe("locked Conversation Email Update reviews", () => {
                                 })
                               : service.send({ userId: owner, request });
                     outcome = Promise.allSettled([pending]);
-                    await waitForBlockedTransaction(session.pid);
+                    await expect(outcome).resolves.toMatchObject([
+                        { status: "fulfilled", value: { success: true } },
+                    ]);
                     await tx
                         .insert(
                             conversationEmailUpdateUserProjectPreferenceTable,
@@ -1304,7 +1434,7 @@ describe("locked Conversation Email Update reviews", () => {
         },
     );
 
-    it.each(["owner", "entitlement"] as const)(
+    it.each(["owner"] as const)(
         "lock audit: final send rejects entitlement expiry while waiting for %s locks",
         async (lockedResource) => {
             const review = await prepare();
@@ -1672,6 +1802,7 @@ describe("locked Conversation Email Update reviews", () => {
         await db
             .update(organizationMembershipAllProjectCapabilityTable)
             .set({ deletedAt: new Date(), revokedByUserId: owner });
+        await db.update(organizationMembershipTable).set({ role: "moderator" });
         expect(
             await primaryOnlyService.previewHistory({
                 userId: owner,
@@ -1680,15 +1811,15 @@ describe("locked Conversation Email Update reviews", () => {
         ).toEqual({ success: false, reason: "update_not_found" });
     });
 
-    it.each(["capability", "entitlement", "url"] as const)(
+    it.each(["role", "entitlement", "url"] as const)(
         "follow-up: rejects stale %s review authorization for new tests and sends",
         async (kind) => {
             const review = await prepare();
             const request = await acceptedTest(review.updateId);
-            if (kind === "capability")
+            if (kind === "role")
                 await db
-                    .update(organizationMembershipAllProjectCapabilityTable)
-                    .set({ deletedAt: new Date(), revokedByUserId: owner });
+                    .update(organizationMembershipTable)
+                    .set({ role: "moderator" });
             if (kind === "entitlement")
                 await db
                     .update(premiumFeatureEntitlementTable)

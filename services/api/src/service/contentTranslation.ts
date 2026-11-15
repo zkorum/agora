@@ -1,4 +1,8 @@
 import {
+    currentOpinionSourceCondition,
+    currentRankingItemSourceCondition,
+} from "@/shared-backend/opinionEligibility.js";
+import {
     and,
     asc,
     eq,
@@ -787,7 +791,7 @@ async function fetchOpinionSource({
             conversationTable,
             eq(conversationTable.id, opinionTable.conversationId),
         )
-        .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
+        .leftJoin(userTable, eq(userTable.id, opinionTable.authorId))
         .innerJoin(
             opinionContentTable,
             and(
@@ -808,8 +812,7 @@ async function fetchOpinionSource({
                 eq(conversationTable.isImporting, false),
                 isNotNull(conversationTable.currentContentId),
                 eq(opinionTable.slugId, opinionSlugId),
-                isNotNull(opinionTable.currentContentId),
-                eq(userTable.isDeleted, false),
+                currentOpinionSourceCondition(),
                 or(
                     eq(opinionTable.currentContentId, opinionContentTable.id),
                     exists(
@@ -976,6 +979,7 @@ async function fetchRankingItemSource({
                 rankingItemContentTable.sourceLanguageConfidence,
         })
         .from(rankingItemTable)
+        .leftJoin(userTable, eq(userTable.id, rankingItemTable.authorId))
         .innerJoin(
             conversationTable,
             eq(conversationTable.id, rankingItemTable.conversationId),
@@ -990,6 +994,7 @@ async function fetchRankingItemSource({
                 eq(conversationTable.isImporting, false),
                 isNotNull(conversationTable.currentContentId),
                 eq(rankingItemTable.slugId, itemSlugId),
+                currentRankingItemSourceCondition(),
                 eq(rankingItemContentTable.publicId, sourceVersion),
                 or(
                     eq(
@@ -1538,7 +1543,7 @@ export async function fetchSeedOpinionSources({
             conversationTable,
             eq(conversationTable.id, opinionTable.conversationId),
         )
-        .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
+        .leftJoin(userTable, eq(userTable.id, opinionTable.authorId))
         .innerJoin(
             opinionContentTable,
             eq(opinionContentTable.id, opinionTable.currentContentId),
@@ -1550,8 +1555,7 @@ export async function fetchSeedOpinionSources({
                 eq(conversationTable.isImporting, false),
                 isNotNull(conversationTable.currentContentId),
                 eq(opinionTable.isSeed, true),
-                isNotNull(opinionTable.currentContentId),
-                eq(userTable.isDeleted, false),
+                currentOpinionSourceCondition(),
             ),
         )
         .orderBy(asc(opinionTable.id));

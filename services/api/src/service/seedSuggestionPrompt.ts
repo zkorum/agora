@@ -104,7 +104,7 @@ export function buildSeedSuggestionMessages({
                 "{{target_count}}",
                 String(input.targetCount),
             ) +
-            (input.conversationType === "ranking"
+            (input.conversationType === "prioritizing"
                 ? "\nFor this prioritization conversation, generate concrete, independently actionable proposals to rank by priority. Replace the agree/disagree and pro/against framing with a diverse set of actionable options."
                 : ""),
         // One pass, so that author text containing a placeholder is never substituted.

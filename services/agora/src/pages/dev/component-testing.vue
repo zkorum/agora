@@ -66,7 +66,7 @@
     <SpaLink to="/dev/maxdiff-translation" class="route-card">
       <div class="route-card-header">
         <i class="pi pi-language section-icon"></i>
-        <span>MaxDiff translation</span>
+        <span>Comparison translation</span>
       </div>
       <p class="route-card-description">
         Test ranking-item display content, translated result updates, item
@@ -85,6 +85,7 @@
       </p>
     </SpaLink>
 
+    <QvAllocationTest />
     <AnalysisVariantLoadingTest />
     <CreateConversationProjectLanguageTest />
     <ConversationLanguageSettingDialogTest />
@@ -114,6 +115,7 @@ import CreateConversationProjectLanguageTest from "./test-components/CreateConve
 import EmbeddedBrowserWarningTest from "./test-components/EmbeddedBrowserWarningTest.vue";
 import OpinionGroupVisualizationTest from "./test-components/OpinionGroupVisualizationTest.vue";
 import PreferencesDialogTest from "./test-components/PreferencesDialogTest.vue";
+import QvAllocationTest from "./test-components/QvAllocationTest.vue";
 
 const { isActive } = usePageLayout({
   enableFooter: false,

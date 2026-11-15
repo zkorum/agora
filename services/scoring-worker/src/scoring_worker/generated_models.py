@@ -192,7 +192,7 @@ class ParticipationMode(StrEnum):
 
 class ConversationType(StrEnum):
     polis = "polis"
-    ranking = "ranking"
+    prioritizing = "prioritizing"
 
 
 class EventSlug(StrEnum):
@@ -206,6 +206,7 @@ class DirectoryVisibility(StrEnum):
 
 class RankingMode(StrEnum):
     bws = "bws"
+    pairwise = "pairwise"
 
 
 class RankingStatsCheckpointReasonEnum(StrEnum):
@@ -234,6 +235,46 @@ class SurveyChoiceDisplay(StrEnum):
     auto = "auto"
     list = "list"
     dropdown = "dropdown"
+
+
+class ComparisonAnswer(Base):
+    __tablename__ = "comparison_answer"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    comparison_response_id: Mapped[int] = mapped_column(Integer)
+    position: Mapped[int] = mapped_column(Integer)
+    best_slug_id: Mapped[str] = mapped_column(String(8))
+    worst_slug_id: Mapped[str] = mapped_column(String(8))
+    candidate_set: Mapped[list[str]] = mapped_column(ARRAY(Text))
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class ComparisonResponse(Base):
+    __tablename__ = "comparison_response"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    participant_id: Mapped[uuid_pkg.UUID | None] = mapped_column(Uuid, nullable=True)
+    conversation_id: Mapped[int] = mapped_column(Integer)
+    ranking: Mapped[Any | None] = mapped_column(JSON(none_as_null=True), nullable=True)
+    comparisons: Mapped[Any] = mapped_column(JSON(none_as_null=True))
+    detached_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    is_complete: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class ComparisonUserEntityScore(Base):
+    __tablename__ = "comparison_user_entity_score"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    comparison_response_id: Mapped[int] = mapped_column(Integer)
+    entity_slug_id: Mapped[str] = mapped_column(String(8))
+    score: Mapped[float] = mapped_column(Float)
+    display_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    uncertainty_left: Mapped[float] = mapped_column(Float)
+    uncertainty_right: Mapped[float] = mapped_column(Float)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class ConversationContent(Base):
@@ -275,8 +316,11 @@ class Conversation(Base):
     slug_id: Mapped[str] = mapped_column(String(8))
     project_id: Mapped[int] = mapped_column(Integer)
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     polis_config_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     ranking_config_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    credit_voting_config_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    prioritization_type: Mapped[str | None] = mapped_column(Text, nullable=True)
     dynamic_translation_enabled: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     conversation_email_update_enabled_override: Mapped[bool | None] = mapped_column(
         Boolean,
@@ -333,43 +377,16 @@ class Conversation(Base):
     last_reacted_at: Mapped[datetime] = mapped_column(DateTime)
 
 
-class MaxdiffComparison(Base):
-    __tablename__ = "maxdiff_comparison"
+class CreditVotingConfig(Base):
+    __tablename__ = "credit_voting_config"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    maxdiff_result_id: Mapped[int] = mapped_column(Integer)
-    position: Mapped[int] = mapped_column(Integer)
-    best_slug_id: Mapped[str] = mapped_column(String(8))
-    worst_slug_id: Mapped[str] = mapped_column(String(8))
-    candidate_set: Mapped[list[str]] = mapped_column(ARRAY(Text))
+    credit_budget: Mapped[int] = mapped_column(Integer, server_default="100")
+    allow_opposition: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
+    item_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    statement_set_revision: Mapped[int] = mapped_column(Integer, server_default="0")
+    statements_locked_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
-    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-
-
-class MaxdiffResult(Base):
-    __tablename__ = "maxdiff_result"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    participant_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
-    conversation_id: Mapped[int] = mapped_column(Integer)
-    ranking: Mapped[Any | None] = mapped_column(JSON(none_as_null=True), nullable=True)
-    comparisons: Mapped[Any] = mapped_column(JSON(none_as_null=True))
-    is_complete: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
-    created_at: Mapped[datetime] = mapped_column(DateTime)
-    updated_at: Mapped[datetime] = mapped_column(DateTime)
-
-
-class MaxdiffUserEntityScore(Base):
-    __tablename__ = "maxdiff_user_entity_score"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    maxdiff_result_id: Mapped[int] = mapped_column(Integer)
-    entity_slug_id: Mapped[str] = mapped_column(String(8))
-    score: Mapped[float] = mapped_column(Float)
-    display_score: Mapped[float | None] = mapped_column(Float, nullable=True)
-    uncertainty_left: Mapped[float] = mapped_column(Float)
-    uncertainty_right: Mapped[float] = mapped_column(Float)
-    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class ProjectOrganizationOwnership(Base):
@@ -416,6 +433,10 @@ class Project(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    retired_for_account_deletion_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True,
+    )
 
 
 class RankingConversationConfig(Base):
@@ -424,6 +445,10 @@ class RankingConversationConfig(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     ranking_mode: Mapped[RankingMode] = mapped_column(
         SaEnum(RankingMode, name="ranking_mode", values_callable=_enum_values, native_enum=True),
+    )
+    allow_participant_statements: Mapped[bool] = mapped_column(
+        Boolean,
+        server_default=text("false"),
     )
     current_ranking_score_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     external_source_config: Mapped[Any | None] = mapped_column(
@@ -469,7 +494,7 @@ class RankingConversationStatsItem(Base):
     stats_snapshot_id: Mapped[int] = mapped_column(Integer)
     conversation_id: Mapped[int] = mapped_column(Integer)
     ranking_item_id: Mapped[int] = mapped_column(Integer)
-    ranking_item_content_id: Mapped[int] = mapped_column(Integer)
+    ranking_item_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     lifecycle_status: Mapped[RankingItemLifecycleStatus] = mapped_column(
         SaEnum(
             RankingItemLifecycleStatus,
@@ -501,6 +526,53 @@ class RankingConversationStatsSnapshot(Base):
     is_closed: Mapped[bool] = mapped_column(Boolean)
     created_at: Mapped[datetime] = mapped_column(DateTime)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class RankingInputAnswer(Base):
+    __tablename__ = "ranking_input_answer"
+
+    input_snapshot_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid, primary_key=True)
+    participant_index: Mapped[int] = mapped_column(Integer, primary_key=True)
+    position: Mapped[int] = mapped_column(Integer, primary_key=True)
+    best_slug_id: Mapped[str] = mapped_column(String(8))
+    worst_slug_id: Mapped[str] = mapped_column(String(8))
+    candidate_set: Mapped[list[str]] = mapped_column(ARRAY(Text))
+    effective_candidate_set: Mapped[list[str]] = mapped_column(ARRAY(Text))
+
+
+class RankingInputItem(Base):
+    __tablename__ = "ranking_input_item"
+
+    input_snapshot_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid, primary_key=True)
+    item_slug_id: Mapped[str] = mapped_column(String(8), primary_key=True)
+    position: Mapped[int] = mapped_column(Integer)
+
+
+class RankingInputParticipant(Base):
+    __tablename__ = "ranking_input_participant"
+
+    input_snapshot_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid, primary_key=True)
+    participant_index: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+
+class RankingInputSnapshot(Base):
+    __tablename__ = "ranking_input_snapshot"
+
+    id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid, primary_key=True, default=uuid_pkg.uuid4)
+    stats_snapshot_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    conversation_id: Mapped[int] = mapped_column(Integer)
+    comparison_method: Mapped[RankingMode] = mapped_column(
+        SaEnum(RankingMode, name="ranking_mode", values_callable=_enum_values, native_enum=True),
+    )
+    scoring_input_revision: Mapped[int] = mapped_column(BigInteger)
+    algorithm_version: Mapped[int] = mapped_column(Integer)
+    solidago_version: Mapped[str] = mapped_column(String(100))
+    pipeline_config: Mapped[Any] = mapped_column(JSON(none_as_null=True))
+    participant_count: Mapped[int] = mapped_column(Integer)
+    item_count: Mapped[int] = mapped_column(Integer)
+    answer_count: Mapped[int] = mapped_column(Integer)
+    sealed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
 
 
 class RankingItemContent(Base):
@@ -562,9 +634,11 @@ class RankingItem(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     slug_id: Mapped[str] = mapped_column(String(8))
-    author_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
+    author_id: Mapped[uuid_pkg.UUID | None] = mapped_column(Uuid, nullable=True)
     conversation_id: Mapped[int] = mapped_column(Integer)
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    account_hidden_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     is_seed: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     lifecycle_status: Mapped[RankingItemLifecycleStatus] = mapped_column(
         SaEnum(
@@ -574,6 +648,7 @@ class RankingItem(Base):
             native_enum=True,
         ),
     )
+    position: Mapped[int] = mapped_column(Integer, server_default="0")
     snapshot_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     snapshot_ranking_score_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     snapshot_rank: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -621,6 +696,7 @@ class RealtimeEventOutbox(Base):
     event_type: Mapped[str] = mapped_column(String(100))
     payload: Mapped[Any] = mapped_column(JSON(none_as_null=True))
     delivery_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    delivered_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
 
 
@@ -794,7 +870,12 @@ class User(Base):
     is_site_org_admin: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     is_imported: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     is_deleted: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
+    contribution_revision: Mapped[int] = mapped_column(Integer, server_default="0")
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    deletion_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    deletion_requested_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    recoverable_until: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    purge_started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     auth_restricted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     auth_restriction_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     active_conversation_count: Mapped[int] = mapped_column(Integer, server_default="0")

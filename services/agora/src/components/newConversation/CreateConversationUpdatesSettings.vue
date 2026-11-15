@@ -44,7 +44,6 @@ import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogCon
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { computed, ref } from "vue";
 
-import { conversationProjectEditTranslations } from "./conversationProjectEdit.i18n";
 import {
   type CreateConversationUpdatesSettingsTranslations,
   createConversationUpdatesSettingsTranslations,
@@ -77,14 +76,6 @@ const override = defineModel<boolean | undefined>({ required: true });
 const showDialog = ref(false);
 const { t } = useComponentI18n<CreateConversationUpdatesSettingsTranslations>(
   createConversationUpdatesSettingsTranslations
-);
-const { t: tProjectEdit } = useComponentI18n(
-  conversationProjectEditTranslations
-);
-const unavailableDescription = computed(() =>
-  props.access === "configure"
-    ? t("missingContact")
-    : tProjectEdit("emailUpdatesUnavailableError")
 );
 
 const shouldShow = computed(
@@ -126,22 +117,18 @@ const settingOptions = computed<readonly SettingOption[]>(() => {
   });
   const inheritEnabled = canSelectSetting(undefined);
   const onEnabled = canSelectSetting(true);
-  return [
+  const options: SettingOption[] = [
     {
       id: "inherit",
       title: t("useDefault", { source: defaultSource }),
-      description: inheritEnabled
-        ? t("inheritsDescription", { defaultValue, scopeLabel })
-        : unavailableDescription.value,
+      description: t("inheritsDescription", { defaultValue, scopeLabel }),
       value: undefined,
       enabled: inheritEnabled,
     },
     {
       id: "on",
       title: t("on"),
-      description: onEnabled
-        ? overrideDescription
-        : unavailableDescription.value,
+      description: overrideDescription,
       value: true,
       enabled: onEnabled,
     },
@@ -153,6 +140,7 @@ const settingOptions = computed<readonly SettingOption[]>(() => {
       enabled: canSelectSetting(false),
     },
   ];
+  return options.filter((option) => option.enabled);
 });
 
 function canSelectSetting(value: boolean | undefined): boolean {

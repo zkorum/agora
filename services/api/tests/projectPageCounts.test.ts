@@ -24,6 +24,7 @@ import {
     conversationTable,
     conversationTranslationTargetLanguageTable,
     conversationViewSnapshotTable,
+    creditVotingConfigTable,
     organizationTable,
     projectContactTable,
     projectExternalOrganizationTable,
@@ -33,9 +34,10 @@ import {
     projectTranslationTargetLanguageTable,
     rankingConversationConfigTable,
     rankingConversationStatsSnapshotTable,
+    qvLiveStatsTable,
 } from "../src/shared-backend/schema.js";
-import { Dto } from "../src/shared/types/dto.js";
-import type { ConversationLanguageSettingsSource } from "../src/shared/types/dto.js";
+import { Dto, type ConversationLanguageSettingsSource } from "../src/shared/types/dto.js";
+import { fetchConversationDisplayCountsByConversationId } from "../src/service/conversationDisplayCounts.js";
 import { readDbFixtureSql } from "./dbFixture.js";
 
 vi.mock("../src/app.js", () => ({
@@ -65,7 +67,7 @@ describe("project published participation counts", () => {
             username: "postgres",
             password: "postgres",
         });
-        db = drizzle(client);
+        db = drizzle({ client });
         // Intentionally no vote, participant, or survey tables: project reads
         // must depend only on the same persisted counters as conversation pages.
         await db.execute(sql.raw(readDbFixtureSql("project-page-counts.sql")));
@@ -342,7 +344,8 @@ describe("project published participation counts", () => {
                 await addTranslatedActivity(languageSettingsSource);
                 let projectReads = 0;
                 let projectTargetReads = 0;
-                const measuredDb = drizzle(client, {
+                const measuredDb = drizzle({
+                    client,
                     logger: {
                         logQuery(query) {
                             if (query.includes('from "project" '))
@@ -760,7 +763,8 @@ describe("project published participation counts", () => {
         await db
             .update(conversationTable)
             .set({
-                conversationType: "ranking",
+                conversationType: "prioritizing",
+                prioritizationType: "comparisons",
                 polisConfigId: null,
                 rankingConfigId: config.id,
             })
@@ -788,6 +792,54 @@ describe("project published participation counts", () => {
             activityCount: 1,
             participationCount: 3,
             voteCount: 12,
+        });
+    });
+
+    it("uses the independent QV participant projection for conversation and project totals", async () => {
+        const config = (
+            await db
+                .insert(creditVotingConfigTable)
+                .values({ itemCount: 2 })
+                .returning()
+        ).at(0);
+        if (config === undefined) throw new Error("Missing QV fixture");
+        const conversationId = await addConversation({ slugId: "1" });
+        await db
+            .update(conversationTable)
+            .set({
+                conversationType: "prioritizing",
+                prioritizationType: "qv",
+                polisConfigId: null,
+                creditVotingConfigId: config.id,
+            })
+            .where(eq(conversationTable.id, conversationId));
+        await addSnapshot({
+            conversationId,
+            participantCount: 1,
+            voteCount: 30,
+        });
+        await db
+            .insert(qvLiveStatsTable)
+            .values({ conversationId, participantCount: 8, revision: 4 });
+        const counts = (
+            await fetchConversationDisplayCountsByConversationId({
+                db,
+                conversationIds: [conversationId],
+            })
+        ).get(conversationId);
+        expect(counts).toMatchObject({
+            participantCount: 8,
+            totalParticipantCount: 8,
+            qvStatsRevision: 4,
+            voteCount: 0,
+            opinionCount: 2,
+        });
+        await expect(
+            fetchProjectAggregateCounts({ db, projectId: 1 }),
+        ).resolves.toEqual({
+            activityCount: 1,
+            participationCount: 8,
+            voteCount: 0,
         });
     });
 });

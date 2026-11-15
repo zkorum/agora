@@ -501,6 +501,16 @@ const pausedLiveSurveyResults = ref<
   SurveyResultsAggregatedResponse | undefined
 >();
 const lastLoadedAnalysisViewState = ref<AnalysisViewState | undefined>();
+watch(
+  () => sourceRedactions.resyncVersion,
+  () => {
+    // A missing replay prefix may contain source redactions. Re-anchor a paused
+    // frame instead of retaining a private copy that cannot be revalidated.
+    clearLivePause();
+    lastLoadedAnalysisViewState.value = undefined;
+  },
+  { flush: "sync" }
+);
 
 const { currentTab, handleSameTabClick } = useTabNavigation({
   schema: shortcutItemSchema,

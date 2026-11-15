@@ -147,7 +147,6 @@ declare module 'vue-router/auto-routes' {
       | '/conversation/[postSlugId].onboarding/verify/passport'
       | '/conversation/[postSlugId].onboarding/verify/phone'
       | '/conversation/[postSlugId].onboarding/verify/phone-code'
-      | '/conversation/[postSlugId].onboarding/verify/ticket'
     >,
     '/conversation/[postSlugId].onboarding/': RouteRecordInfo<
       '/conversation/[postSlugId].onboarding/',
@@ -189,7 +188,6 @@ declare module 'vue-router/auto-routes' {
       | '/conversation/[postSlugId].onboarding/verify/passport'
       | '/conversation/[postSlugId].onboarding/verify/phone'
       | '/conversation/[postSlugId].onboarding/verify/phone-code'
-      | '/conversation/[postSlugId].onboarding/verify/ticket'
     >,
     '/conversation/[postSlugId].onboarding/verify/email': RouteRecordInfo<
       '/conversation/[postSlugId].onboarding/verify/email',
@@ -236,13 +234,6 @@ declare module 'vue-router/auto-routes' {
     '/conversation/[postSlugId].onboarding/verify/phone-code': RouteRecordInfo<
       '/conversation/[postSlugId].onboarding/verify/phone-code',
       '/conversation/:postSlugId/onboarding/verify/phone-code',
-      { postSlugId: ParamValue<true> },
-      { postSlugId: ParamValue<false> },
-      | never
-    >,
-    '/conversation/[postSlugId].onboarding/verify/ticket': RouteRecordInfo<
-      '/conversation/[postSlugId].onboarding/verify/ticket',
-      '/conversation/:postSlugId/onboarding/verify/ticket',
       { postSlugId: ParamValue<true> },
       { postSlugId: ParamValue<false> },
       | never
@@ -436,6 +427,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/dev/test-components/QvAllocationTest': RouteRecordInfo<
+      '/dev/test-components/QvAllocationTest',
+      '/dev/test-components/QvAllocationTest',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/email-updates/': RouteRecordInfo<
       '/email-updates/',
       '/email-updates',
@@ -607,6 +605,13 @@ declare module 'vue-router/auto-routes' {
       '/project/:projectSlug/conversation/:postSlugId/report',
       { projectSlug: ParamValue<true>, postSlugId: ParamValue<true> },
       { projectSlug: ParamValue<false>, postSlugId: ParamValue<false> },
+      | never
+    >,
+    '/recover/': RouteRecordInfo<
+      '/recover/',
+      '/recover',
+      Record<never, never>,
+      Record<never, never>,
       | never
     >,
     '/reports/[reportType]/[conversationSlugId]/[[opinionSlugId]]': RouteRecordInfo<
@@ -908,7 +913,6 @@ declare module 'vue-router/auto-routes' {
         | '/conversation/[postSlugId].onboarding/verify/passport'
         | '/conversation/[postSlugId].onboarding/verify/phone'
         | '/conversation/[postSlugId].onboarding/verify/phone-code'
-        | '/conversation/[postSlugId].onboarding/verify/ticket'
       views:
         | 'default'
     }
@@ -946,7 +950,6 @@ declare module 'vue-router/auto-routes' {
         | '/conversation/[postSlugId].onboarding/verify/passport'
         | '/conversation/[postSlugId].onboarding/verify/phone'
         | '/conversation/[postSlugId].onboarding/verify/phone-code'
-        | '/conversation/[postSlugId].onboarding/verify/ticket'
       views:
         | 'default'
     }
@@ -989,12 +992,6 @@ declare module 'vue-router/auto-routes' {
     'src/pages/conversation/[postSlugId].onboarding/verify/phone-code.vue': {
       routes:
         | '/conversation/[postSlugId].onboarding/verify/phone-code'
-      views:
-        | never
-    }
-    'src/pages/conversation/[postSlugId].onboarding/verify/ticket.vue': {
-      routes:
-        | '/conversation/[postSlugId].onboarding/verify/ticket'
       views:
         | never
     }
@@ -1160,6 +1157,12 @@ declare module 'vue-router/auto-routes' {
       views:
         | never
     }
+    'src/pages/dev/test-components/QvAllocationTest.vue': {
+      routes:
+        | '/dev/test-components/QvAllocationTest'
+      views:
+        | never
+    }
     'src/pages/email-updates/index.vue': {
       routes:
         | '/email-updates/'
@@ -1308,6 +1311,12 @@ declare module 'vue-router/auto-routes' {
     'src/pages/project/[projectSlug]/conversation/[postSlugId]/report.vue': {
       routes:
         | '/project/[projectSlug]/conversation/[postSlugId]/report'
+      views:
+        | never
+    }
+    'src/pages/recover/index.vue': {
+      routes:
+        | '/recover/'
       views:
         | never
     }

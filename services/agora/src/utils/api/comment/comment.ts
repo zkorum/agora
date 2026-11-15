@@ -28,6 +28,7 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useOpinionRedactionStore } from "src/stores/opinionRedaction";
 import type { ParticipationRequestResult } from "src/utils/api/participation/requestResult";
 import { waitForAuthInitialization } from "src/utils/auth/waitForAuthInitialization";
+import { buildUcanForRequestWithDid } from "src/utils/crypto/ucan/operation";
 import type { z } from "zod";
 
 import { useBackendAuthApi } from "../auth";
@@ -58,7 +59,7 @@ export function useBackendCommentApi() {
   const redactions = useOpinionRedactionStore();
   const { buildEncodedUcan, createRawAxiosRequestConfig } = useCommonApi();
   const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
-  const { ensureParticipationAuthState } = useBackendAuthApi();
+  const { applyAcceptedParticipationAuth } = useBackendAuthApi();
 
   async function fetchOpinionPage(
     request: OpinionPageRequest & { signal?: AbortSignal }
@@ -187,7 +188,10 @@ export function useBackendCommentApi() {
 
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1OpinionCreatePost(params);
-      const encodedUcan = await buildEncodedUcan(url, options);
+      const { encodedUcan, didWrite } = await buildUcanForRequestWithDid({
+        pathname: url,
+        method: options.method,
+      });
       if (!isCurrent()) return { status: "cancelled" };
       const response = await DefaultApiFactory(
         undefined,
@@ -203,7 +207,11 @@ export function useBackendCommentApi() {
 
       if (data.success) {
         const { authStateChanged, needsCacheRefresh } =
-          await ensureParticipationAuthState();
+          await applyAcceptedParticipationAuth({
+            loginStatus: data.loginStatus,
+            didWrite,
+            isCurrent,
+          });
         if (!isCurrent()) return { status: "cancelled" };
         return {
           status: "completed",

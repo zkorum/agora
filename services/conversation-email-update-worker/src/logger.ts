@@ -138,7 +138,7 @@ function knownDependencyEvent({
 
     if (
         message ===
-        "Connected to read replica - SELECTs will use replica, writes use primary"
+        "Connected to read replica - explicit reads use replica, writes use primary"
     ) {
         return {
             event: "dependency_status",

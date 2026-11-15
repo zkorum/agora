@@ -11,8 +11,10 @@ if TYPE_CHECKING:
 
 
 def current_opinion_source_condition() -> ColumnElement[bool]:
-    """User must be joined through Opinion.author_id, not the voter."""
+    """Use the statement-author join here; check live voter eligibility separately."""
     return and_(
         Opinion.current_content_id.is_not(None),
+        Opinion.deleted_at.is_(None),
+        Opinion.account_hidden_at.is_(None),
         or_(Opinion.is_seed.is_(True), User.is_deleted.is_(False)),
     )

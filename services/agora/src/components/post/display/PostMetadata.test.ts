@@ -129,8 +129,8 @@ vi.mock("src/utils/ui/embedMode", () => ({
   useEmbedMode: () => ({ isEmbeddedMode: () => false }),
 }));
 
-vi.mock("src/utils/api/maxdiff/maxdiff", () => ({
-  useMaxDiffApi: () => ({ syncMaxDiff: vi.fn() }),
+vi.mock("src/utils/api/comparison/comparison", () => ({
+  useComparisonApi: () => ({ syncComparisonSource: vi.fn() }),
 }));
 
 vi.mock("src/utils/api/muteUser", () => ({
@@ -540,6 +540,7 @@ function mountMetadata(postSlugId = ref("conversation-one")): HTMLElement {
         conversationCapabilities: {
           canEdit: false,
           canDelete: false,
+          canModerate: false, canClose: false, canReopen: false,
         },
         showIdentityCard: false,
       })

@@ -3,9 +3,10 @@ import {
     deviceTable,
     realtimeEventOutboxTable,
     userTable,
+    retiredDeviceKeyTable,
 } from "@/shared-backend/schema.js";
 import type { AuthSession } from "@/shared/types/dto-auth.js";
-import { and, desc, eq, gt, isNull, lte, ne } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, lte, ne, notExists } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { z } from "zod";
 
@@ -265,6 +266,17 @@ export async function revokeAllSessionsWithinTransaction({
             and(
                 eq(deviceTable.userId, userId),
                 gt(deviceTable.sessionExpiry, now),
+                notExists(
+                    db
+                        .select({ key: retiredDeviceKeyTable.didWrite })
+                        .from(retiredDeviceKeyTable)
+                        .where(
+                            eq(
+                                retiredDeviceKeyTable.didWrite,
+                                deviceTable.didWrite,
+                            ),
+                        ),
+                ),
             ),
         )
         .returning({ userId: deviceTable.userId });
@@ -360,7 +372,23 @@ async function startSessionWithinTransaction({
         const inherited = await db
             .update(deviceTable)
             .set({ sessionExpiry: now, updatedAt: now })
-            .where(eq(deviceTable.userId, userId))
+            .where(
+                and(
+                    eq(deviceTable.userId, userId),
+                    gt(deviceTable.sessionExpiry, now),
+                    notExists(
+                        db
+                            .select({ key: retiredDeviceKeyTable.didWrite })
+                            .from(retiredDeviceKeyTable)
+                            .where(
+                                eq(
+                                    retiredDeviceKeyTable.didWrite,
+                                    deviceTable.didWrite,
+                                ),
+                            ),
+                    ),
+                ),
+            )
             .returning({ userId: deviceTable.userId });
         await recordAuthStateChange({
             db,

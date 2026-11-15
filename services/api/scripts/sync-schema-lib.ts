@@ -145,6 +145,14 @@ export function parseSqlTables(
     while ((match = tableRegex.exec(sql)) !== null) {
         const tableName = match[1];
         if (!allowedTables.has(tableName)) continue;
+        const compositePrimaryKeys = new Set(
+            [...match[2].matchAll(/PRIMARY KEY\s*\(([^)]+)\)/gi)].flatMap(
+                (constraint) =>
+                    [...constraint[1].matchAll(/"(\w+)"/g)].map(
+                        (column) => column[1],
+                    ),
+            ),
+        );
         const columns: Column[] = [];
         for (const line of match[2].split("\n")) {
             const trimmed = line.trim().replace(/,$/, "");
@@ -160,7 +168,9 @@ export function parseSqlTables(
                 rest,
             );
             if (defaultMatch) defaultValue = defaultMatch[1].trim();
-            const isPrimaryKey = /PRIMARY KEY/i.test(rest);
+            const isPrimaryKey =
+                /PRIMARY KEY/i.test(rest) ||
+                compositePrimaryKeys.has(colMatch[1]);
             let sqlType = rest
                 .replace(/\s+NOT NULL/g, "")
                 .replace(/\s+NULL/g, "")

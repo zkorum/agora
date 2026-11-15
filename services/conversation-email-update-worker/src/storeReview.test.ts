@@ -1,6 +1,5 @@
-import { PgDialect } from "drizzle-orm/pg-core";
+import { PgAsyncPreparedQuery, PgDialect } from "drizzle-orm/pg-core";
 import {
-    PostgresJsPreparedQuery,
     PostgresJsSession,
     PostgresJsTransaction,
 } from "drizzle-orm/postgres-js";
@@ -28,15 +27,14 @@ function database() {
     const dialect = new PgDialect();
     const session = new PostgresJsSession<
         typeof transactionClient,
-        Record<string, never>,
         Record<string, never>
-    >(transactionClient, dialect, undefined);
-    const db = new PostgresJsTransaction(dialect, session, undefined);
+    >(transactionClient, dialect, {});
+    const db = new PostgresJsTransaction(dialect, session, {});
     vi.spyOn(db, "transaction").mockImplementation(
         async (run) => await run(db),
     );
     const queries = vi.spyOn(session, "prepareQuery");
-    const execute = vi.spyOn(PostgresJsPreparedQuery.prototype, "execute");
+    const execute = vi.spyOn(PgAsyncPreparedQuery.prototype, "execute");
     return { db, queries, execute };
 }
 
@@ -47,7 +45,7 @@ const work: ClaimedTestWork = {
     updateId: 2,
     destinationEmail: "owner@example.com",
     destinationEmailCredentialId: 3,
-    requestedByUserId: "owner-id",
+    requestedByUserId: "00000000-0000-4000-8000-000000000001",
     subject: "Reviewed subject",
     bodyHtml: "<p>Reviewed body</p>",
     bodyPlainText: "Reviewed body",

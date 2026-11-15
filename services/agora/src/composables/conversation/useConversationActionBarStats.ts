@@ -9,7 +9,7 @@ import {
   pickCommentStatsForActionBar,
   useCommentStatsQuery,
 } from "src/utils/api/comment/useCommentStatsQuery";
-import { useRankingStatsCheckpointsQuery } from "src/utils/api/maxdiff/useMaxDiffQueries";
+import { useRankingStatsCheckpointsQuery } from "src/utils/api/comparison/useComparisonQueries";
 import type { MaybeRefOrGetter } from "vue";
 import { computed, toValue } from "vue";
 import type { LocationQuery } from "vue-router";
@@ -58,8 +58,8 @@ export function useConversationActionBarStats({
   const shouldLoadRankingCheckpointStats = computed(() => {
     const conversation = toValue(conversationData);
     return (
-      conversation?.metadata.conversationType === "ranking" &&
-      conversation.metadata.rankingMode === "bws" &&
+      conversation?.metadata.conversationType === "prioritizing" &&
+      conversation.metadata.prioritizationType === "comparisons" &&
       toValue(currentTab) === "analysis" &&
       checkpointViewSnapshotId.value !== undefined &&
       conversationSlugId.value !== ""
@@ -67,14 +67,11 @@ export function useConversationActionBarStats({
   });
   const shouldLoadCommentStats = computed(() => {
     const conversation = toValue(conversationData);
-    const isMaxDiffConversation =
-      conversation?.metadata.conversationType === "ranking" &&
-      conversation.metadata.rankingMode === "bws";
     return (
       toValue(currentTab) === "comment" &&
       toValue(enableCommentStats) &&
       conversationSlugId.value !== "" &&
-      !isMaxDiffConversation
+      conversation?.metadata.conversationType === "polis"
     );
   });
 
@@ -88,7 +85,8 @@ export function useConversationActionBarStats({
       const checkpointId = checkpointViewSnapshotId.value;
       const conversation = toValue(conversationData);
       const liveSnapshotId =
-        conversation?.metadata.conversationType === "ranking"
+        conversation?.metadata.conversationType === "prioritizing" &&
+        conversation.metadata.prioritizationType === "comparisons"
           ? conversation.metadata.rankingStatsSnapshotId
           : undefined;
       if (checkpointId === undefined) {

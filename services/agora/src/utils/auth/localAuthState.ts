@@ -1,4 +1,3 @@
-import { resetZupassModuleState } from "src/composables/zupass/useZupassVerification";
 import type { DeviceLoginStatus } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLanguageStore } from "src/stores/language";
@@ -53,7 +52,6 @@ export function clearAccountScopedState(): void {
   clearTopicsData();
   resetEmailVerification();
   resetPhoneVerification();
-  resetZupassModuleState();
 }
 
 export async function resetLocalAuthState({

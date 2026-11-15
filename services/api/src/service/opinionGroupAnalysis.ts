@@ -1233,19 +1233,17 @@ export async function getSelectedOpinionGroupMembershipsByParticipantId({
         includeSystemDescriptions: selectedCandidate.useSystemDescriptions,
     });
 
-    return new Map(
-        membershipRows.map((row) => {
-            const description = descriptionsByGroupId.get(row.groupId);
-            return [
-                row.participantId,
-                {
-                    groupId: row.groupId,
-                    groupKey: row.groupKey,
-                    groupLabel: description?.label ?? `Group ${row.groupKey}`,
-                },
-            ];
-        }),
-    );
+    const memberships = new Map<string, SelectedOpinionGroupMembership>();
+    for (const row of membershipRows) {
+        if (row.participantId === null) continue;
+        const description = descriptionsByGroupId.get(row.groupId);
+        memberships.set(row.participantId, {
+            groupId: row.groupId,
+            groupKey: row.groupKey,
+            groupLabel: description?.label ?? `Group ${row.groupKey}`,
+        });
+    }
+    return memberships;
 }
 
 export async function isUserInSelectedOpinionGroup({

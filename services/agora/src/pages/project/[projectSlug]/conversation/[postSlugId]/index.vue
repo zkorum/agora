@@ -1,9 +1,23 @@
 <template>
-  <MaxDiffVotingTab
+  <QvVotingTab
     v-if="
+      conversationData?.metadata.conversationType === 'prioritizing' &&
+      conversationData.metadata.prioritizationType === 'qv'
+    "
+    :key="conversationData.metadata.conversationSlugId"
+    :conversation-metadata="conversationData.metadata"
+  />
+  <ComparisonVotingTab
+    v-else-if="
       conversationData !== undefined &&
-      conversationData.metadata.conversationType === 'ranking' &&
-      conversationData.metadata.rankingMode === 'bws'
+      conversationData.metadata.conversationType === 'prioritizing' &&
+      conversationData.metadata.prioritizationType === 'comparisons'
+    "
+    :key="
+      conversationData?.metadata.conversationType === 'prioritizing' &&
+      conversationData.metadata.prioritizationType === 'comparisons'
+        ? conversationData.metadata.comparisonMethod
+        : 'comparisons'
     "
     :conversation-data="conversationData"
     :on-view-analysis="onViewAnalysis"
@@ -20,8 +34,9 @@
 </template>
 
 <script setup lang="ts">
+import ComparisonVotingTab from "src/components/post/comparison/ComparisonVotingTab.vue";
 import ConversationCommentTab from "src/components/post/ConversationCommentTab.vue";
-import MaxDiffVotingTab from "src/components/post/maxdiff/MaxDiffVotingTab.vue";
+import QvVotingTab from "src/components/post/qv/QvVotingTab.vue";
 import type { OpinionEditRequest } from "src/composables/opinion/types";
 import type { OpinionListState } from "src/composables/opinion/useOpinionListState";
 import type {

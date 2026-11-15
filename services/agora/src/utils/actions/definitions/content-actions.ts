@@ -92,6 +92,7 @@ export function useContentActions() {
       shareOpinionCallback: () => void | Promise<void>;
       edit: CommentEditAction | undefined;
       canDelete: boolean;
+      canModerate: boolean;
     };
   }): void => {
     const currentUser = profileData.value.userName;
@@ -131,6 +132,7 @@ export function useContentActions() {
       management: {
         edit: callbacks.edit,
         canDelete: callbacks.canDelete,
+        canModerate: callbacks.canModerate,
         editLabel: t("edit"),
       },
     });

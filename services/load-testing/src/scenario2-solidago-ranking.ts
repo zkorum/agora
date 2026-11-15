@@ -14,10 +14,10 @@ import {
 } from "./crypto/ucan/operation.js";
 import {
     Dto,
-    type MaxDiffSaveRequest,
-    type MaxDiffResultItem,
+    type ComparisonSaveRequest,
+    type ComparisonResultItem,
 } from "./shared/types/dto.js";
-import { recordMaxDiffVote, restoreMaxDiff } from "./shared/utils/maxdiff.js";
+import { recordComparisonAnswer, restoreComparisonEngine } from "./shared/utils/comparisonEngine.js";
 import { logLoadEvent } from "./utils/semanticLog.js";
 import {
     buildSolidagoScenarios,
@@ -89,7 +89,7 @@ type RequestContext = { conversationSlugId: string } & (
 );
 
 // Reuse the canonical DTOs, including business failures returned with HTTP 200.
-const successfulSave = Dto.maxdiffSaveResponse.transform(
+const successfulSave = Dto.comparisonSaveResponse.transform(
     (response, context) => {
         if (!response.success) {
             context.addIssue({ code: "custom", message: response.reason });
@@ -270,16 +270,16 @@ export async function setup(): Promise<SetupData> {
             }
             const { metadata, interaction } = conversation.conversationData;
             if (
-                metadata.conversationType !== "ranking" ||
+                metadata.conversationType !== "prioritizing" ||
+                metadata.prioritizationType !== "comparisons" ||
                 metadata.participationMode !== "guest" ||
-                metadata.requiresEventTicket !== undefined ||
                 metadata.isClosed ||
                 metadata.moderation.status !== "unmoderated" ||
                 (interaction.surveyGate?.hasSurvey === true &&
                     !interaction.surveyGate.isOptional)
             ) {
                 throw new Error(
-                    "Use an open, unmoderated guest BWS ranking conversation without ticket or required survey gates",
+                    "Use an open, unmoderated guest BWS ranking conversation without required survey gates",
                 );
             }
             const {
@@ -289,7 +289,7 @@ export async function setup(): Promise<SetupData> {
                 operation: "items",
                 pathname: "/api/v1/ranking/bws/items/fetch",
                 body: { conversationSlugId, lifecycleFilter: "active" },
-                schema: Dto.maxdiffItemsFetchResponse,
+                schema: Dto.prioritizationItemsFetchResponse,
             });
             if (items.length < 4) {
                 throw new Error(
@@ -393,7 +393,7 @@ export default async function rankingParticipant(
             operation: "items",
             pathname: "/api/v1/ranking/bws/items/fetch",
             body: { conversationSlugId, lifecycleFilter: "active" },
-            schema: Dto.maxdiffItemsFetchResponse,
+            schema: Dto.prioritizationItemsFetchResponse,
         });
         const itemSlugIds = items.map((item) => item.slugId);
         const activeItems = new Set(itemSlugIds);
@@ -424,11 +424,11 @@ export default async function rankingParticipant(
             operation: "load",
             pathname: "/api/v1/ranking/bws/load",
             body: { conversationSlugId },
-            schema: Dto.maxdiffLoadResponse,
+            schema: Dto.comparisonLoadResponse,
         });
         let candidateSets = loaded.candidateSets;
         const restoreStarted = Date.now();
-        const instance = restoreMaxDiff({
+        const instance = restoreComparisonEngine({
             items: itemSlugIds,
             comparisons: loaded.comparisons ?? [],
         });
@@ -464,7 +464,7 @@ export default async function rankingParticipant(
                 candidateSet,
                 comparisonIndex: index,
             });
-            recordMaxDiffVote({
+            recordComparisonAnswer({
                 instance,
                 candidates: comparison.set,
                 best: comparison.best,
@@ -484,10 +484,11 @@ export default async function rankingParticipant(
                 pathname: "/api/v1/ranking/bws/save",
                 body: {
                     conversationSlugId,
+                    comparisonMethod: "bws",
                     ranking: instance.result ?? null,
                     comparisons,
                     isComplete: instance.complete,
-                } satisfies MaxDiffSaveRequest,
+                } satisfies ComparisonSaveRequest,
                 schema: successfulSave,
             });
             candidateSets = saved.candidateSets;
@@ -568,7 +569,7 @@ export default async function rankingParticipant(
 
 async function observeResults(
     context: RequestContext,
-): Promise<MaxDiffResultItem[]> {
+): Promise<ComparisonResultItem[]> {
     const {
         data: { rankings },
         responseTimeMs,
@@ -580,7 +581,7 @@ async function observeResults(
             conversationSlugId: context.conversationSlugId,
             lifecycleFilter: "active",
         },
-        schema: Dto.maxdiffResultsResponse,
+        schema: Dto.comparisonResultsResponse,
     });
     let scoredItems = 0;
     let maxParticipantCount = 0;

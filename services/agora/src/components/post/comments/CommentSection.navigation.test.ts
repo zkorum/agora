@@ -80,9 +80,6 @@ vi.mock("src/stores/language", () => ({
 vi.mock("src/utils/api/auth", () => ({
   useBackendAuthApi: () => ({ loadAuthenticatedModules: vi.fn() }),
 }));
-vi.mock("src/composables/zupass/useZupassVerification", () => ({
-  resetZupassModuleState: vi.fn(),
-}));
 vi.mock("src/stores/newConversationDrafts", () => ({
   useNewPostDraftsStore: () => ({ resetDraft: vi.fn() }),
 }));
@@ -110,7 +107,7 @@ vi.mock("src/utils/query/client", () => ({
     return mocks.queryClient();
   },
 }));
-vi.mock("src/utils/api/maxdiff/useMaxDiffQueries", () => ({
+vi.mock("src/utils/api/comparison/useComparisonQueries", () => ({
   useRankingStatsCheckpointsQuery: () => ({
     data: ref(),
     isPending: ref(true),
@@ -226,6 +223,7 @@ function conversation(
 ): ExtendedConversationDisplayData {
   return {
     metadata: {
+      participantStatements: { supported: true, enabled: true },
       conversationSlugId: "conversa",
       conversationType: "polis",
       votingPresentation,
@@ -275,6 +273,7 @@ function conversation(
       conversationCapabilities: {
         canEdit: false,
         canDelete: false,
+        canModerate: false, canClose: false, canReopen: false,
       },
     },
   };

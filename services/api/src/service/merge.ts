@@ -1,45 +1,53 @@
 import {
-    conversationTable,
     deviceTable,
+    retiredDeviceKeyTable,
     emailTable,
-    eventTicketTable,
     followedTopicTable,
     notificationTable,
     opinionTable,
     organizationMembershipTable,
     phoneTable,
-    projectOrganizationOwnershipTable,
+    surveyResponseTable,
+    comparisonResponseTable,
     userDisplayLanguageTable,
     userSpokenLanguagesTable,
     userTable,
     voteTable,
     zkPassportTable,
 } from "@/shared-backend/schema.js";
-import { and, eq, inArray, isNull } from "drizzle-orm";
-import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
+import {
+    and,
+    eq,
+    exists,
+    inArray,
+    isNull,
+    isNotNull,
+    notExists,
+    sql,
+} from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
+import type { PostgresTransaction } from "@/shared-backend/db.js";
 import { log } from "@/app.js";
-import { scheduleConversationAnalysisRefresh } from "@/shared-backend/conversationCounters.js";
+import { reconcileOpinionVoteCounters } from "@/shared-backend/conversationCounters.js";
+import { scheduleAnalysisUpdate } from "@/shared-backend/analysisScheduler.js";
+import { lockAccountConversations } from "@/shared-backend/accountContributions.js";
+import { mergeQvResponses } from "@/shared-backend/qvAccountLifecycle.js";
+import type { LogContext } from "@/shared-backend/logPrivacy.js";
 import { recordIdentityChangedUsers } from "./authSession.js";
-import { ensureOrganizationMembershipBaselineCapabilities } from "./projectAccess.js";
+import { setOrganizationMembershipRole } from "./projectAccess.js";
 
 interface MergeGuestIntoVerifiedUserProps {
-    db: PostgresDatabase;
+    db: PostgresTransaction;
     verifiedUserId: string;
     guestUserId: string;
     now: Date;
 }
 
 /**
- * Merge a guest user account into a verified user account
- *
- * Strategy:
- * 1. Transfer mergeable data from guest to verified user by updating userId/authorId
- * 2. For records with unique constraints that conflict: do nothing (keep verified user's data)
- * 3. Soft-delete the guest user (cleanup scripts will eventually delete guest's remaining data)
- *
- * Authentication credentials are identity records and are never transferred.
- *
- * This function should be called within a transaction for atomicity.
+ * Shares the authentication transaction so ownership and the new session commit
+ * together. Persisted destination choices win; pending cache actions may be lost.
+ * Phone/email/passport credentials and retired signing keys never transfer.
+ * The deletion worker owns residual guest cleanup.
  */
 export async function mergeGuestIntoVerifiedUser({
     db,
@@ -59,7 +67,7 @@ export async function mergeGuestIntoVerifiedUser({
         .from(userTable)
         .where(inArray(userTable.id, [verifiedUserId, guestUserId]))
         .orderBy(userTable.id)
-        .for("update");
+        .for("no key update");
     if (
         lockedUsers.length !== 2 ||
         lockedUsers.some(
@@ -69,40 +77,63 @@ export async function mergeGuestIntoVerifiedUser({
         throw new Error("Cannot merge inactive users");
     }
 
-    const sourcePhones = await db
-        .select({ id: phoneTable.id })
-        .from(phoneTable)
-        .where(
-            and(
-                eq(phoneTable.userId, guestUserId),
-                eq(phoneTable.isDeleted, false),
-            ),
-        )
-        .limit(1);
-    const sourceEmails = await db
-        .select({ id: emailTable.id })
-        .from(emailTable)
-        .where(eq(emailTable.userId, guestUserId))
-        .limit(1);
-    const sourcePassports = await db
-        .select({ id: zkPassportTable.id })
-        .from(zkPassportTable)
-        .where(eq(zkPassportTable.userId, guestUserId))
-        .limit(1);
+    // Read after locking users: a credential writer may have committed while
+    // these locks were being acquired. Deleted credentials still identify a
+    // formerly verified account, not a source eligible for automatic guest merge.
+    const credentials = await db
+        .select({
+            phone: exists(
+                db
+                    .select({ id: phoneTable.id })
+                    .from(phoneTable)
+                    .where(eq(phoneTable.userId, guestUserId)),
+            ).mapWith(Boolean),
+            email: exists(
+                db
+                    .select({ id: emailTable.id })
+                    .from(emailTable)
+                    .where(eq(emailTable.userId, guestUserId)),
+            ).mapWith(Boolean),
+            passport: exists(
+                db
+                    .select({ id: zkPassportTable.id })
+                    .from(zkPassportTable)
+                    .where(eq(zkPassportTable.userId, guestUserId)),
+            ).mapWith(Boolean),
+        })
+        .from(userTable)
+        .where(eq(userTable.id, guestUserId));
     if (
-        sourcePhones.length > 0 ||
-        sourceEmails.length > 0 ||
-        sourcePassports.length > 0
+        credentials.some(
+            (source) => source.phone || source.email || source.passport,
+        )
     ) {
         throw new Error("Cannot merge a source user with credentials");
     }
 
+    const conversationIds = await lockAccountConversations({
+        db,
+        userId: guestUserId,
+    });
+    // A late buffered write may introduce another conversation. Leave it with
+    // the retired guest instead of mutating a scope we did not lock. ANY binds
+    // the complete scope as one array parameter, without an unbounded IN list.
+    const lockedScope = sql`ANY(${sql.param(conversationIds)}::integer[])`;
+    const lockedOpinionIds = db
+        .select({ id: opinionTable.id })
+        .from(opinionTable)
+        .where(sql`${opinionTable.conversationId} = ${lockedScope}`);
+
     log.info(
-        { verifiedUserId, guestUserId },
+        {
+            event: "application_event",
+            verifiedUserId,
+            guestUserId,
+            count: conversationIds.length,
+        } satisfies LogContext,
         "[Merge] Starting guest-to-verified user merge",
     );
 
-    // 1. Transfer devices (no unique constraint on userId)
     const movedSessions = await db
         .update(deviceTable)
         .set({
@@ -110,106 +141,126 @@ export async function mergeGuestIntoVerifiedUser({
             sessionExpiry: now,
             updatedAt: now,
         })
-        .where(eq(deviceTable.userId, guestUserId))
-        .returning({ didWrite: deviceTable.didWrite });
+        .where(
+            and(
+                eq(deviceTable.userId, guestUserId),
+                notExists(
+                    db
+                        .select({ key: retiredDeviceKeyTable.didWrite })
+                        .from(retiredDeviceKeyTable)
+                        .where(
+                            eq(
+                                retiredDeviceKeyTable.didWrite,
+                                deviceTable.didWrite,
+                            ),
+                        ),
+                ),
+            ),
+        );
     await recordIdentityChangedUsers({
         db,
-        userIds:
-            movedSessions.length === 0 ? [] : [guestUserId, verifiedUserId],
+        userIds: movedSessions.count === 0 ? [] : [guestUserId, verifiedUserId],
     });
 
-    // 2. Transfer event tickets (no unique constraint, multiple tickets per user allowed)
-    await db
-        .update(eventTicketTable)
-        .set({ userId: verifiedUserId })
-        .where(eq(eventTicketTable.userId, guestUserId));
-
-    // 3. Transfer phone verification (no unique constraint on userId)
-    await db
-        .update(phoneTable)
-        .set({ userId: verifiedUserId })
-        .where(eq(phoneTable.userId, guestUserId));
-
-    // 4. Transfer zkPassport/Rarimo (no unique constraint on userId)
-    await db
-        .update(zkPassportTable)
-        .set({ userId: verifiedUserId })
-        .where(eq(zkPassportTable.userId, guestUserId));
-
-    // 5. Transfer opinions (uses authorId, not userId)
     await db
         .update(opinionTable)
         .set({ authorId: verifiedUserId })
-        .where(eq(opinionTable.authorId, guestUserId));
+        .where(
+            and(
+                eq(opinionTable.authorId, guestUserId),
+                sql`${opinionTable.conversationId} = ${lockedScope}`,
+            ),
+        );
 
-    // 6. Transfer notifications (uses userId)
     await db
         .update(notificationTable)
         .set({ userId: verifiedUserId })
         .where(eq(notificationTable.userId, guestUserId));
 
-    // 7. Transfer followed topics (unique constraint: userId + topicId)
-    // Get guest topics, insert as verified user, skip conflicts
-    const guestFollowedTopics = await db
-        .select()
-        .from(followedTopicTable)
+    // Move nonconflicting preference roots; never reactivate deleted preferences.
+    const destinationTopic = alias(
+        followedTopicTable,
+        "merge_destination_topic",
+    );
+    await db
+        .update(followedTopicTable)
+        .set({ userId: verifiedUserId })
         .where(
             and(
                 eq(followedTopicTable.userId, guestUserId),
                 isNull(followedTopicTable.deletedAt),
+                notExists(
+                    db
+                        .select({ id: destinationTopic.id })
+                        .from(destinationTopic)
+                        .where(
+                            and(
+                                eq(destinationTopic.userId, verifiedUserId),
+                                eq(
+                                    destinationTopic.topicId,
+                                    followedTopicTable.topicId,
+                                ),
+                                isNull(destinationTopic.deletedAt),
+                            ),
+                        ),
+                ),
             ),
         );
 
-    for (const topic of guestFollowedTopics) {
-        await db
-            .insert(followedTopicTable)
-            .values({
-                userId: verifiedUserId,
-                topicId: topic.topicId,
-                createdAt: topic.createdAt,
-            })
-            .onConflictDoNothing();
-    }
+    const destinationLanguage = alias(
+        userSpokenLanguagesTable,
+        "merge_destination_language",
+    );
+    await db
+        .update(userSpokenLanguagesTable)
+        .set({ userId: verifiedUserId })
+        .where(
+            and(
+                eq(userSpokenLanguagesTable.userId, guestUserId),
+                eq(userSpokenLanguagesTable.isDeleted, false),
+                notExists(
+                    db
+                        .select({ id: destinationLanguage.id })
+                        .from(destinationLanguage)
+                        .where(
+                            and(
+                                eq(destinationLanguage.userId, verifiedUserId),
+                                eq(
+                                    destinationLanguage.languageCode,
+                                    userSpokenLanguagesTable.languageCode,
+                                ),
+                            ),
+                        ),
+                ),
+            ),
+        );
 
-    // 8. Transfer user spoken languages (unique constraint: userId + languageCode)
-    const guestSpokenLanguages = await db
-        .select()
-        .from(userSpokenLanguagesTable)
-        .where(eq(userSpokenLanguagesTable.userId, guestUserId));
+    const destinationDisplayLanguage = alias(
+        userDisplayLanguageTable,
+        "merge_destination_display_language",
+    );
+    await db
+        .update(userDisplayLanguageTable)
+        .set({ userId: verifiedUserId, updatedAt: now })
+        .where(
+            and(
+                eq(userDisplayLanguageTable.userId, guestUserId),
+                notExists(
+                    db
+                        .select({ userId: destinationDisplayLanguage.userId })
+                        .from(destinationDisplayLanguage)
+                        .where(
+                            eq(
+                                destinationDisplayLanguage.userId,
+                                verifiedUserId,
+                            ),
+                        ),
+                ),
+            ),
+        );
 
-    for (const lang of guestSpokenLanguages) {
-        await db
-            .insert(userSpokenLanguagesTable)
-            .values({
-                userId: verifiedUserId,
-                languageCode: lang.languageCode,
-            })
-            .onConflictDoNothing();
-    }
-
-    // 9. Transfer user display language if the verified user has none.
-    const guestDisplayLanguage = await db
-        .select()
-        .from(userDisplayLanguageTable)
-        .where(eq(userDisplayLanguageTable.userId, guestUserId))
-        .limit(1);
-
-    const displayLanguage = guestDisplayLanguage.at(0);
-    if (displayLanguage !== undefined) {
-        await db
-            .insert(userDisplayLanguageTable)
-            .values({
-                userId: verifiedUserId,
-                languageCode: displayLanguage.languageCode,
-                createdAt: displayLanguage.createdAt,
-                updatedAt: now,
-            })
-            .onConflictDoNothing();
-    }
-
-    // 10. Transfer organization memberships (unique constraint: userId + organizationId)
     const guestOrgMappings = await db
-        .select()
+        .select({ organizationId: organizationMembershipTable.organizationId, role: organizationMembershipTable.role })
         .from(organizationMembershipTable)
         .where(
             and(
@@ -218,117 +269,141 @@ export async function mergeGuestIntoVerifiedUser({
             ),
         );
 
+    const destinationMemberships = await db.select({ organizationId: organizationMembershipTable.organizationId, role: organizationMembershipTable.role })
+        .from(organizationMembershipTable)
+        .where(and(eq(organizationMembershipTable.userId, verifiedUserId), isNull(organizationMembershipTable.deletedAt)));
     for (const mapping of guestOrgMappings) {
-        await ensureOrganizationMembershipBaselineCapabilities({
+        const destination = destinationMemberships.find((membership) => membership.organizationId === mapping.organizationId);
+        const role = mapping.role === "admin" || destination?.role === "admin" ? "admin"
+            : mapping.role === "manager" || destination?.role === "manager" ? "manager" : "moderator";
+        await setOrganizationMembershipRole({
             db,
             userId: verifiedUserId,
             organizationId: mapping.organizationId,
+            role,
         });
     }
 
-    // 11. Transfer votes (uses authorId, unique constraint: authorId + opinionId)
-    const guestVotes = await db
-        .select()
-        .from(voteTable)
-        .where(eq(voteTable.authorId, guestUserId));
-
-    for (const vote of guestVotes) {
-        await db
-            .insert(voteTable)
-            .values({
-                authorId: verifiedUserId,
-                opinionId: vote.opinionId,
-                currentContentId: vote.currentContentId,
-                createdAt: vote.createdAt,
-                updatedAt: vote.updatedAt,
-            })
-            .onConflictDoNothing();
-    }
-
-    // 12. Reconcile conversation counters for all affected conversations
-    // This ensures vote counts, opinion counts, and participant counts are updated
-    const conversationIdsSet = new Set<number>();
-
-    log.info(
-        `[Merge] Finding affected conversations for guest user: ${guestUserId}`,
-    );
-
-    // From transferred votes
+    // Move roots, not pointers. A destination root wins even when withdrawn.
+    const destinationVote = alias(voteTable, "merge_destination_vote");
     const transferredVotes = await db
-        .select()
-        .from(voteTable)
-        .innerJoin(opinionTable, eq(voteTable.opinionId, opinionTable.id))
-        .where(eq(voteTable.authorId, verifiedUserId));
-    transferredVotes.forEach((row) =>
-        conversationIdsSet.add(row.opinion.conversationId),
-    );
-
-    // From transferred opinions
-    const transferredOpinions = await db
-        .select()
-        .from(opinionTable)
-        .where(eq(opinionTable.authorId, verifiedUserId));
-    transferredOpinions.forEach((opinion) =>
-        conversationIdsSet.add(opinion.conversationId),
-    );
-
-    // From conversations owned through transferred memberships
-    const transferredConversations = await db
-        .select({ conversationId: conversationTable.id })
-        .from(conversationTable)
-        .innerJoin(
-            projectOrganizationOwnershipTable,
+        .update(voteTable)
+        .set({ authorId: verifiedUserId })
+        .where(
             and(
-                eq(
-                    projectOrganizationOwnershipTable.projectId,
-                    conversationTable.projectId,
+                eq(voteTable.authorId, guestUserId),
+                inArray(voteTable.opinionId, lockedOpinionIds),
+                notExists(
+                    db
+                        .select({ id: destinationVote.id })
+                        .from(destinationVote)
+                        .where(
+                            and(
+                                eq(destinationVote.authorId, verifiedUserId),
+                                eq(
+                                    destinationVote.opinionId,
+                                    voteTable.opinionId,
+                                ),
+                            ),
+                        ),
                 ),
-                isNull(projectOrganizationOwnershipTable.deletedAt),
             ),
         )
-        .innerJoin(
-            organizationMembershipTable,
+        .returning({ opinionId: voteTable.opinionId });
+    const retiredVotes = await db
+        .update(voteTable)
+        .set({ currentContentId: null, retiredAt: now, updatedAt: now })
+        .where(
             and(
-                eq(
-                    organizationMembershipTable.organizationId,
-                    projectOrganizationOwnershipTable.organizationId,
-                ),
-                isNull(organizationMembershipTable.deletedAt),
+                eq(voteTable.authorId, guestUserId),
+                inArray(voteTable.opinionId, lockedOpinionIds),
+                isNotNull(voteTable.currentContentId),
             ),
         )
-        .where(eq(organizationMembershipTable.userId, verifiedUserId));
-    transferredConversations.forEach((conversation) =>
-        conversationIdsSet.add(conversation.conversationId),
+        .returning({ opinionId: voteTable.opinionId });
+
+    // Keep whole private response/session roots. Never synthesize survey answers
+    // or concatenate adaptive ranking sessions across conflicting accounts.
+    const destinationResponse = alias(
+        surveyResponseTable,
+        "merge_destination_response",
     );
-
-    log.info(
-        `[Merge] Found ${String(conversationIdsSet.size)} affected conversations`,
+    await db
+        .update(surveyResponseTable)
+        .set({ participantId: verifiedUserId })
+        .where(
+            and(
+                eq(surveyResponseTable.participantId, guestUserId),
+                sql`${surveyResponseTable.conversationId} = ${lockedScope}`,
+                notExists(
+                    db
+                        .select({ id: destinationResponse.id })
+                        .from(destinationResponse)
+                        .where(
+                            and(
+                                eq(
+                                    destinationResponse.participantId,
+                                    verifiedUserId,
+                                ),
+                                eq(
+                                    destinationResponse.conversationId,
+                                    surveyResponseTable.conversationId,
+                                ),
+                            ),
+                        ),
+                ),
+            ),
+        );
+    const destinationRanking = alias(
+        comparisonResponseTable,
+        "merge_destination_ranking",
     );
+    await db
+        .update(comparisonResponseTable)
+        .set({ participantId: verifiedUserId })
+        .where(
+            and(
+                eq(comparisonResponseTable.participantId, guestUserId),
+                sql`${comparisonResponseTable.conversationId} = ${lockedScope}`,
+                notExists(
+                    db
+                        .select({ id: destinationRanking.id })
+                        .from(destinationRanking)
+                        .where(
+                            and(
+                                eq(
+                                    destinationRanking.participantId,
+                                    verifiedUserId,
+                                ),
+                                eq(
+                                    destinationRanking.conversationId,
+                                    comparisonResponseTable.conversationId,
+                                ),
+                            ),
+                        ),
+                ),
+            ),
+        );
 
-    for (const conversationId of conversationIdsSet) {
-        await scheduleConversationAnalysisRefresh({
-            db,
-            conversationId,
-            log,
-        });
-    }
+    await mergeQvResponses({ db, guestUserId, verifiedUserId, now });
 
-    // 13. Soft-delete the guest user
     await db
         .update(userTable)
         .set({
             isDeleted: true,
             deletedAt: now,
+            deletionReason: "guest_merge",
             updatedAt: now,
         })
         .where(eq(userTable.id, guestUserId));
 
-    log.info(
-        {
-            verifiedUserId,
-            guestUserId,
-            affectedConversations: conversationIdsSet.size,
-        },
-        "[Merge] Successfully merged guest into verified user",
-    );
+    await reconcileOpinionVoteCounters({
+        db,
+        opinionIds: [...transferredVotes, ...retiredVotes].map(
+            (vote) => vote.opinionId,
+        ),
+    });
+    for (const conversationId of conversationIds) {
+        await scheduleAnalysisUpdate({ db, conversationId, log });
+    }
 }

@@ -458,6 +458,7 @@ const conversationData = computed<ExtendedConversation>(() => {
 
   return {
     metadata: {
+      participantStatements: { supported: true, enabled: true },
       conversationSlugId: "share01",
       createdAt: now,
       updatedAt: now,
@@ -514,6 +515,7 @@ const conversationData = computed<ExtendedConversation>(() => {
       conversationCapabilities: {
         canEdit: false,
         canDelete: false,
+        canModerate: false, canClose: false, canReopen: false,
       },
     },
   };

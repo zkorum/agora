@@ -1,4 +1,5 @@
 import { and, count, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import { organizationRolesWithCapability } from "@/shared/organizationAccess.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
     conversationContentTable,
@@ -18,7 +19,6 @@ import {
     emailTable,
     opinionContentTable,
     opinionTable,
-    organizationMembershipAllProjectCapabilityTable,
     organizationMembershipTable,
     projectOrganizationOwnershipTable,
     projectTable,
@@ -664,26 +664,11 @@ async function allowedOwnerUserIds({
                 isNull(organizationMembershipTable.deletedAt),
             ),
         )
-        .innerJoin(
-            organizationMembershipAllProjectCapabilityTable,
-            and(
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
-                    organizationMembershipTable.id,
-                ),
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.capability,
-                    "conversation_email_update",
-                ),
-                isNull(
-                    organizationMembershipAllProjectCapabilityTable.deletedAt,
-                ),
-            ),
-        )
         .where(
             and(
                 eq(projectOrganizationOwnershipTable.projectId, projectId),
                 isNull(projectOrganizationOwnershipTable.deletedAt),
+                inArray(organizationMembershipTable.role, organizationRolesWithCapability("conversation_email_update")),
             ),
         );
     return new Set(rows.map((row) => row.userId));
@@ -864,6 +849,7 @@ async function observeDatabase({
                       : [recipient.userId],
             ),
             ...tests.flatMap((test) =>
+                test.requestedByUserId === null ||
                 ownerIds.has(test.requestedByUserId)
                     ? []
                     : [test.requestedByUserId],
@@ -1518,7 +1504,8 @@ async function deleteOwnedUpdateArtifacts({
             );
             const attempts = await tx
                 .select({
-                    publicId: conversationEmailUpdateDeliveryAttemptTable.publicId,
+                    publicId:
+                        conversationEmailUpdateDeliveryAttemptTable.publicId,
                 })
                 .from(conversationEmailUpdateDeliveryAttemptTable)
                 .where(

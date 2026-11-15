@@ -66,10 +66,9 @@ const props = withDefaults(defineProps<{
 const { t } = useComponentI18n<ConversationTitleTranslations>(
   conversationTitleTranslations,
 );
-const isMaxDiffConversation = computed(
+const isPrioritizingConversation = computed(
   () =>
-    props.conversationTypeConfig.conversationType === "ranking" &&
-    props.conversationTypeConfig.rankingMode === "bws"
+    props.conversationTypeConfig.conversationType === "prioritizing"
 );
 const showProjectContextRow = computed(
   () => props.showChips && props.projectContext !== undefined
@@ -89,7 +88,7 @@ const conversationChips = computed<ConversationTitleChip[]>(() => {
     });
   }
 
-  if (isMaxDiffConversation.value) {
+  if (isPrioritizingConversation.value) {
     chips.push({
       label: t("prioritizationLabel"),
       backgroundColor: "var(--q-primary)",

@@ -42,11 +42,6 @@ vi.mock("src/shared-app-api/featureAccess", () => ({
   DEFAULT_FEATURE_ALLOWED_USERS: "",
 }));
 
-vi.mock("src/shared-app-api/maxdiffLogic", () => ({
-  DEFAULT_MAXDIFF_GITHUB_ALLOWED_ORGS: "",
-  DEFAULT_MAXDIFF_GITHUB_ALLOWED_USERS: "",
-}));
-
 vi.mock("src/utils/processEnv", () => ({
   processEnv: {},
 }));
@@ -59,9 +54,10 @@ vi.mock("src/components/newConversation/ConversationControlButton.vue", () => ({
   default: {
     props: {
       label: { type: String, required: true },
+      disabled: Boolean,
     },
-    setup(props: { label: string }) {
-      return () => h("button", props.label);
+    setup(props: { label: string; disabled: boolean }) {
+      return () => h("button", { disabled: props.disabled }, props.label);
     },
   },
 }));
@@ -83,10 +79,6 @@ vi.mock(
   () => ({ default: () => null })
 );
 vi.mock(
-  "src/components/newConversation/dialog/EventTicketRequirementDialog.vue",
-  () => ({ default: () => null })
-);
-vi.mock(
   "src/components/newConversation/dialog/LoginRequirementDialog.vue",
   () => ({
     default: () => null,
@@ -94,7 +86,25 @@ vi.mock(
 );
 vi.mock(
   "src/components/newConversation/dialog/ModeChangeConfirmationDialog.vue",
-  () => ({ default: () => null })
+  () => ({
+    default: defineComponent({
+      props: { modelValue: Boolean },
+      emits: ["confirm", "cancel"],
+      setup:
+        (props, { emit }) =>
+        () =>
+          props.modelValue
+            ? h("div", [
+                h(
+                  "button",
+                  { onClick: () => emit("confirm") },
+                  "Confirm import"
+                ),
+                h("button", { onClick: () => emit("cancel") }, "Cancel import"),
+              ])
+            : null,
+    }),
+  })
 );
 vi.mock(
   "src/components/newConversation/dialog/PostAsAccountDialog.vue",
@@ -108,8 +118,29 @@ vi.mock(
     default: () => null,
   })
 );
-vi.mock("./dialog/MaxDiffSourceDialog.vue", () => ({ default: () => null }));
-vi.mock("./dialog/PostTypeDialog.vue", () => ({ default: () => null }));
+vi.mock("./dialog/ComparisonSourceDialog.vue", () => ({ default: () => null }));
+vi.mock("./dialog/PostTypeDialog.vue", () => ({
+  default: defineComponent({
+    emits: ["modeChangeRequested"],
+    setup:
+      (_, { emit }) =>
+      () =>
+        h(
+          "button",
+          {
+            onClick: () =>
+              emit("modeChangeRequested", {
+                importType: "polis-url",
+                conversationTypeConfig: {
+                  conversationType: "polis",
+                  votingPresentation: "list",
+                },
+              }),
+          },
+          "Request import"
+        ),
+  }),
+}));
 
 import NewConversationControlBar from "./NewConversationControlBar.vue";
 
@@ -123,6 +154,78 @@ afterEach(() => {
 });
 
 describe("NewConversationControlBar", () => {
+  it.each(["cancel", "confirm"] as const)(
+    "keeps QV settings intact until an import switch is confirmed: %s",
+    async (decision) => {
+      const originalConfig = {
+        conversationType: "prioritizing",
+        prioritizationType: "qv",
+        creditPricing: "quadratic",
+        allowOpposition: false,
+      } as const;
+      const conversationTypeConfig =
+        ref<ConversationTypeConfig>(originalConfig);
+      const importSettings = ref<ConversationImportSettings>({
+        importType: null,
+        polisUrl: "",
+        csvFileMetadata: { summary: null, comments: null, votes: null },
+      });
+      const container = document.createElement("div");
+      document.body.append(container);
+      const app = createApp(
+        defineComponent(
+          () => () =>
+            h(NewConversationControlBar, {
+              isEditMode: false,
+              allowedPostAs: undefined,
+              conversationTypeConfig: conversationTypeConfig.value,
+              "onUpdate:conversationTypeConfig": (value) => {
+                conversationTypeConfig.value = value;
+              },
+              importSettings: importSettings.value,
+              "onUpdate:importSettings": (value) => {
+                importSettings.value = value;
+              },
+              isPrivate: false,
+              participationMode: "account_required",
+              postAs: { postAsOrganization: false, organizationName: "" },
+              externalSourceConfig: null,
+              aiLabelingEnabled: true,
+              preferredOpinionGroupCount: null,
+              multilingualSetting: {
+                additionalLanguageCodes: [],
+                dynamicTranslationEnabled: false,
+              },
+              title: "Keep the QV draft",
+              content: "Keep its description",
+            })
+        )
+      );
+      mountedApps.push(app);
+      app.mount(container);
+      function click(label: string): void {
+        const button = [...container.querySelectorAll("button")].find(
+          (candidate) => candidate.textContent === label
+        );
+        if (button === undefined) throw new Error(`Missing button: ${label}`);
+        button.click();
+      }
+      click("Request import");
+      await nextTick();
+      expect(conversationTypeConfig.value).toEqual(originalConfig);
+      expect(importSettings.value.importType).toBeNull();
+      click(decision === "cancel" ? "Cancel import" : "Confirm import");
+      await nextTick();
+      expect(conversationTypeConfig.value).toEqual(
+        decision === "cancel"
+          ? originalConfig
+          : { conversationType: "polis", votingPresentation: "list" }
+      );
+      expect(importSettings.value.importType).toBe(
+        decision === "cancel" ? null : "polis-url"
+      );
+    }
+  );
   it("does not clear existing premium settings when mounting an edit without creation access", async () => {
     const updateAnalysis = vi.fn();
     const updateLanguages = vi.fn();
@@ -138,7 +241,6 @@ describe("NewConversationControlBar", () => {
             canUseDynamicTranslation: false,
             isPrivate: false,
             participationMode: "account_required",
-            requiresEventTicket: undefined,
             postAs: { postAsOrganization: false, organizationName: "" },
             conversationTypeConfig: {
               conversationType: "polis",
@@ -169,6 +271,14 @@ describe("NewConversationControlBar", () => {
     expect(updateAnalysis).not.toHaveBeenCalled();
     expect(updateLanguages).not.toHaveBeenCalled();
     expect(container.textContent).toContain("groupsLabel");
+    expect(container.textContent).not.toContain("Request import");
+    const buttons = [...container.querySelectorAll("button")];
+    expect(
+      buttons.find((button) => button.textContent === "newConversation")
+    ).toBeUndefined();
+    expect(
+      buttons.find((button) => button.textContent === "list")?.disabled
+    ).toBe(false);
   });
 
   it("only shows opinion-group controls for Polis conversations", async () => {
@@ -180,10 +290,10 @@ describe("NewConversationControlBar", () => {
       setup() {
         return () =>
           h(NewConversationControlBar, {
+            isEditMode: false,
             allowedPostAs: undefined,
             isPrivate: false,
             participationMode: "account_required",
-            requiresEventTicket: undefined,
             postAs: {
               postAsOrganization: false,
               organizationName: "",
@@ -220,8 +330,9 @@ describe("NewConversationControlBar", () => {
     expect(container.textContent).toContain("recommendedDefault");
 
     conversationTypeConfig.value = {
-      conversationType: "ranking",
-      rankingMode: "bws",
+      conversationType: "prioritizing",
+      prioritizationType: "comparisons",
+      comparisonMethod: "bws",
     };
     await nextTick();
 
@@ -229,3 +340,4 @@ describe("NewConversationControlBar", () => {
     expect(container.textContent).not.toContain("recommendedDefault");
   });
 });
+import type { ConversationImportSettings } from "src/composables/conversation/draft";

@@ -26,7 +26,72 @@
         project-context-title-mode="original"
       />
 
-      <section class="statement-section">
+      <section v-if="participantPolicyNeedsRefresh" role="alert">
+        <p>{{ participantT("changed") }}</p>
+        <PrimeButton
+          :label="participantT('reload')"
+          :loading="isSaving"
+          @click="reloadParticipantPolicy"
+        />
+      </section>
+      <ParticipantStatementsSetting
+        v-model="session.form.participantStatements"
+        :disabled="
+          isSaving ||
+          participantPolicyNeedsRefresh ||
+          session.original.isLocked ||
+          !session.original.editPermissions.canEditNormalSettings
+        "
+      />
+      <section
+        v-if="session.original.qvStatements !== undefined"
+        class="statement-section"
+      >
+        <p class="description">
+          {{ qvT("budget", { credits: CREDIT_VOTING_BUDGET }) }}
+        </p>
+        <div v-if="session.qvStatementsNeedRefresh" role="alert">
+          <p>{{ qvT("conflict") }}</p>
+          <PrimeButton
+            :label="qvT('reloadStatements')"
+            :loading="isSaving"
+            @click="reloadQvStatements"
+          />
+        </div>
+        <q-toggle
+          v-if="
+            session.form.conversationTypeConfig.conversationType ===
+              'prioritizing' &&
+            session.form.conversationTypeConfig.prioritizationType === 'qv'
+          "
+          :model-value="session.form.conversationTypeConfig.allowOpposition"
+          :label="qvT('opposition')"
+          disable
+        />
+        <p
+          v-if="!session.original.qvStatements.editing.allowed"
+          role="status"
+          class="description"
+        >
+          {{
+            qvT(
+              session.original.qvStatements.editing.reason === "closed"
+                ? "closed"
+                : session.original.qvStatements.editing.reason ===
+                    "participation_started"
+                  ? "locked"
+                  : "notAllowed"
+            )
+          }}
+        </p>
+        <QvStatementListEditor
+          ref="qvEditor"
+          v-model="qvStatements"
+          :disabled="isSaving || !session.original.qvStatements.editing.allowed"
+          :allow-add="false"
+        />
+      </section>
+      <section v-else class="statement-section">
         <h2>{{ t("existingTitle") }}</h2>
         <p class="description">
           {{
@@ -50,7 +115,10 @@
       </section>
 
       <section
-        v-if="session.original.canAddSeedOpinions"
+        v-if="
+          session.original.qvStatements === undefined &&
+          session.original.canAddSeedOpinions
+        "
         class="statement-section"
       >
         <h2>{{ t("newTitle") }}</h2>
@@ -96,21 +164,30 @@ import ConversationTitle from "src/components/features/conversation/Conversation
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import { conversationProjectEditTranslations } from "src/components/newConversation/conversationProjectEdit.i18n";
+import { conversationTypeEditingTranslations } from "src/components/newConversation/conversationTypeEditing.i18n";
 import { createConversationUpdatesSettingsTranslations } from "src/components/newConversation/CreateConversationUpdatesSettings.i18n";
 import EditConversationRouteGuard from "src/components/newConversation/EditConversationRouteGuard.vue";
 import ExistingSeedOpinionListEditor from "src/components/newConversation/ExistingSeedOpinionListEditor.vue";
 import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
+import { participantStatementsTranslations } from "src/components/newConversation/ParticipantStatements.i18n";
+import ParticipantStatementsSetting from "src/components/newConversation/ParticipantStatementsSetting.vue";
+import QvStatementListEditor from "src/components/newConversation/QvStatementListEditor.vue";
+import { qvStatementsTranslations } from "src/components/newConversation/QvStatements.i18n";
 import SeedOpinionEditor from "src/components/newConversation/SeedOpinionEditor.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
+import type { QvStatementDraft } from "src/composables/conversation/draft/conversationDraft.types";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { UpdateConversationResponse } from "src/shared/types/dto";
+import { CREDIT_VOTING_BUDGET } from "src/shared/utils/qv";
 import { useAuthenticationStore } from "src/stores/authentication";
 import {
   buildEditConversationRequest,
+  buildQvStatementUpdate,
   buildSeedOpinionChanges,
   type ExistingSeedOpinionDraft,
   useEditConversationStore,
 } from "src/stores/editConversation";
+import { useBackendPostEditApi } from "src/utils/api/post/postEdit";
 import { useUpdateConversationMutation } from "src/utils/api/post/useConversationMutations";
 import {
   isHistoryBackToPath,
@@ -127,6 +204,10 @@ import { editSeedOpinionsTranslations } from "./index.i18n";
 
 defineOptions({ components: { PrimeButton: Button } });
 const { t } = useComponentI18n(editSeedOpinionsTranslations);
+const { t: qvT } = useComponentI18n(qvStatementsTranslations);
+const { t: participantT } = useComponentI18n(participantStatementsTranslations);
+const { getConversationForEdit } = useBackendPostEditApi();
+const qvEditor = ref<InstanceType<typeof QvStatementListEditor>>();
 const { t: editT } = useComponentI18n(editConversationTranslations);
 const { t: projectT } = useComponentI18n(conversationProjectEditTranslations);
 const { t: updatesT } = useComponentI18n(
@@ -139,12 +220,20 @@ const conversationSlugId = computed(() =>
 );
 const store = useEditConversationStore();
 const auth = useAuthenticationStore();
+const { t: typeT } = useComponentI18n(conversationTypeEditingTranslations);
 const { session: storedSession } = storeToRefs(store);
 const session = computed(() =>
   storedSession.value?.original.conversationSlugId === conversationSlugId.value
     ? storedSession.value
     : undefined
 );
+const participantPolicyNeedsRefresh = computed({
+  get: () => session.value?.participantPolicyNeedsRefresh ?? false,
+  set: (value: boolean) => {
+    if (session.value !== undefined)
+      session.value.participantPolicyNeedsRefresh = value;
+  },
+});
 const { showNotifyMessage } = useNotify();
 const mutation = useUpdateConversationMutation();
 const isSaving = computed(() => session.value?.isSaving ?? false);
@@ -178,8 +267,21 @@ const hasUnsavedChanges = computed(
   () => session.value !== undefined && store.hasUnsavedChanges
 );
 const isSaveDisabled = computed(
-  () => isSaving.value || !hasUnsavedChanges.value
+  () =>
+    isSaving.value ||
+    participantPolicyNeedsRefresh.value ||
+    session.value?.qvStatementsNeedRefresh === true ||
+    !hasUnsavedChanges.value ||
+    (session.value?.original.qvStatements !== undefined &&
+      !session.value.original.qvStatements.editing.allowed &&
+      buildQvStatementUpdate(session.value) !== undefined)
 );
+const qvStatements = computed({
+  get: () => session.value?.qvStatements ?? [],
+  set: (value: QvStatementDraft[]) => {
+    if (session.value !== undefined) session.value.qvStatements = value;
+  },
+});
 
 watch(
   [conversationSlugId, () => auth.userId],
@@ -211,6 +313,21 @@ function showSaveFailure(
   response: Extract<UpdateConversationResponse, { success: false }>
 ): void {
   switch (response.reason) {
+    case "participant_statements_changed":
+      showNotifyMessage(participantT("changed"));
+      return;
+    case "participant_statements_unsupported":
+      showNotifyMessage(participantT("disabled"));
+      return;
+    case "conversation_type_fixed":
+      showNotifyMessage(typeT("fixed"));
+      return;
+    case "conversation_type_changed":
+      showNotifyMessage(typeT("changed"));
+      return;
+    case "qv_statement_change_rejected":
+      showNotifyMessage(qvT("conflict"));
+      return;
     case "project_not_available":
       showNotifyMessage(projectT("projectUnavailableError"));
       return;
@@ -269,6 +386,12 @@ async function save(): Promise<void> {
   const current = session.value;
   if (current === undefined || isSaveDisabled.value) return;
   if (
+    current.original.qvStatements !== undefined &&
+    qvEditor.value?.validate() !== true
+  )
+    return;
+  if (
+    current.original.qvStatements === undefined &&
     current.original.canAddSeedOpinions &&
     (existingSeedEditor.value?.validate() !== true ||
       seedEditor.value?.validate() !== true)
@@ -280,10 +403,26 @@ async function save(): Promise<void> {
       ...buildEditConversationRequest(current),
       newSeedOpinionList: [...current.newSeedOpinions],
       seedOpinionChanges: buildSeedOpinionChanges(current),
+      qvStatementUpdate: buildQvStatementUpdate(current),
     });
     if (session.value !== current) return;
     if (!response.success) {
+      if (response.reason === "participant_statements_changed")
+        participantPolicyNeedsRefresh.value = true;
       showSaveFailure(response);
+      if (response.reason === "qv_statement_change_rejected") {
+        current.qvStatementsNeedRefresh = true;
+        const fresh = await getConversationForEdit(
+          current.original.conversationSlugId
+        );
+        if (
+          session.value === current &&
+          fresh.success &&
+          fresh.qvStatements !== undefined &&
+          current.original.qvStatements !== undefined
+        )
+          current.original.qvStatements.editing = fresh.qvStatements.editing;
+      }
       return;
     }
     showNotifyMessage(editT("updateSuccess"));
@@ -298,6 +437,57 @@ async function save(): Promise<void> {
     );
   } catch {
     if (session.value === current) showNotifyMessage(editT("updateError"));
+  } finally {
+    current.isSaving = false;
+  }
+}
+
+async function reloadParticipantPolicy(): Promise<void> {
+  const current = session.value;
+  if (current === undefined || isSaving.value) return;
+  current.isSaving = true;
+  try {
+    const fresh = await getConversationForEdit(
+      current.original.conversationSlugId
+    );
+    if (session.value !== current) return;
+    if (!fresh.success) {
+      showSaveFailure(fresh);
+      return;
+    }
+    current.original.participantStatements = { ...fresh.participantStatements };
+    current.form.participantStatements = { ...fresh.participantStatements };
+    participantPolicyNeedsRefresh.value = false;
+  } catch {
+    if (session.value === current) showNotifyMessage(editT("updateError"));
+  } finally {
+    current.isSaving = false;
+  }
+}
+
+async function reloadQvStatements(): Promise<void> {
+  const current = session.value;
+  if (current === undefined || isSaving.value) return;
+  current.isSaving = true;
+  try {
+    const fresh = await getConversationForEdit(
+      current.original.conversationSlugId
+    );
+    if (session.value !== current) return;
+    if (!fresh.success) {
+      showSaveFailure(fresh);
+      return;
+    }
+    if (fresh.qvStatements === undefined) return;
+    current.original.qvStatements = fresh.qvStatements;
+    current.qvStatements = fresh.qvStatements.items.map((item) => ({
+      localKey: item.slugId,
+      title: item.title,
+      description: item.description ?? "",
+    }));
+    current.qvStatementsNeedRefresh = false;
+  } catch {
+    if (session.value === current) showNotifyMessage(qvT("loadError"));
   } finally {
     current.isSaving = false;
   }

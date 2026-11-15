@@ -365,6 +365,54 @@ describe("language store", () => {
     expect(api.defaults.headers.common["Accept-Language"]).toBe("es");
   });
 
+  it("retains the active conversation fallback when clearing saved preferences", async () => {
+    mockUnsupportedBrowserLanguages();
+    localStorage.setItem("displayLanguage", "es");
+    const store = useLanguageStore();
+    await store.setConversationLanguageFallback("fr");
+
+    await expect(store.clearLanguagePreferences()).resolves.toBe(true);
+
+    expect(store.displayLanguage).toBe("fr");
+    expect(localStorage.getItem("displayLanguage")).toBeNull();
+    expect(api.defaults.headers.common["Accept-Language"]).toBe("fr");
+    expect(mocks.setI18nLanguage).toHaveBeenLastCalledWith("fr");
+    expect(mocks.updateLanguagePreferences).not.toHaveBeenCalled();
+  });
+
+  it("does not apply an obsolete clear-preferences locale after conversation data arrives", async () => {
+    mockUnsupportedBrowserLanguages();
+    const store = useLanguageStore();
+    const pending = createDeferred<void>();
+    mocks.loadLocaleResources.mockReturnValueOnce(pending.promise);
+    const clearing = store.clearLanguagePreferences();
+
+    await store.setConversationLanguageFallback("fr");
+    pending.resolve();
+    await clearing;
+
+    expect(store.displayLanguage).toBe("fr");
+    expect(api.defaults.headers.common["Accept-Language"]).toBe("fr");
+    expect(mocks.setI18nLanguage).toHaveBeenCalledExactlyOnceWith("fr");
+    expect(localStorage.getItem("displayLanguage")).toBeNull();
+  });
+
+  it("does not let a pending conversation fallback override a manual choice", async () => {
+    mockUnsupportedBrowserLanguages();
+    const pending = createDeferred<void>();
+    mocks.loadLocaleResources.mockReturnValueOnce(pending.promise);
+    const store = useLanguageStore();
+    const fallback = store.setConversationLanguageFallback("fr");
+
+    await store.changeDisplayLanguage({ newLanguage: "es" });
+    pending.resolve();
+
+    await expect(fallback).resolves.toBe(false);
+    expect(store.displayLanguage).toBe("es");
+    expect(mocks.setI18nLanguage).toHaveBeenCalledExactlyOnceWith("es");
+    expect(localStorage.getItem("displayLanguage")).toBe("es");
+  });
+
   it("does not persist an automatic display fallback when only spoken languages change", async () => {
     mockUnsupportedBrowserLanguages();
     mocks.updateLanguagePreferences.mockResolvedValueOnce({

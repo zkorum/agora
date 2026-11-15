@@ -58,6 +58,7 @@ export const authenticateRequestBody = z
     .strict();
 
 export const verifyOtpReqBody = z.object({
+    recoverAccount: z.boolean().optional(),
     code: zodCode,
     phoneNumber: zodPhoneNumber,
     defaultCallingCode: zodSupportedCountryCallingCode,
@@ -96,6 +97,8 @@ export const authenticate200 = z.discriminatedUnion("success", [
 ]);
 
 const verifyOtpFailureReasons = [
+    "recovery_required",
+    "recovery_unavailable",
     "expired_code",
     "wrong_guess",
     "already_has_credential",
@@ -143,6 +146,8 @@ const verifyPhoneOtpFailure200 = z.discriminatedUnion("reason", [
         .object({
             success: z.literal(false),
             reason: z.enum([
+                "recovery_required",
+                "recovery_unavailable",
                 "expired_code",
                 "wrong_guess",
                 "already_has_credential",
@@ -167,6 +172,7 @@ export const authenticateEmailRequestBody = z
     .strict();
 
 export const verifyEmailOtpReqBody = z.object({
+    recoverAccount: z.boolean().optional(),
     code: zodCode,
     email: zodEmail,
 });

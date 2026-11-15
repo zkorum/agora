@@ -198,7 +198,8 @@ const en: AdministratorProjectTranslations = {
   confirmSlugChangeButton: "Change slug",
   deleteProjectButton: "Delete project",
   deleteProjectTitle: "Delete project?",
-  deleteProjectDescription: "This will delete this project.",
+  deleteProjectDescription:
+    "This will delete the project and make its conversations, documents, and historical reports inaccessible. This action cannot be undone.",
   confirmDeleteProjectButton: "Confirm delete",
   cancelButton: "Cancel",
   requiredSuffix: "required",
@@ -208,7 +209,8 @@ const en: AdministratorProjectTranslations = {
   changeSlugDangerDescription:
     "Changing this slug can break public links that were already visited or shared.",
   deleteDangerTitle: "Delete this project",
-  deleteDangerDescription: "Delete this project.",
+  deleteDangerDescription:
+    "Delete the project and its conversations, documents, and historical reports.",
 };
 
 const ar: AdministratorProjectTranslations = {
@@ -311,7 +313,8 @@ const ar: AdministratorProjectTranslations = {
   confirmSlugChangeButton: "تغيير المعرّف النصي",
   deleteProjectButton: "حذف المشروع",
   deleteProjectTitle: "هل تريد حذف المشروع؟",
-  deleteProjectDescription: "سيؤدي هذا إلى حذف هذا المشروع.",
+  deleteProjectDescription:
+    "سيؤدي هذا إلى حذف المشروع ومنع الوصول إلى محادثاته ومستنداته وتقاريره السابقة. لا يمكن التراجع عن هذا الإجراء.",
   confirmDeleteProjectButton: "تأكيد الحذف",
   cancelButton: "إلغاء",
   requiredSuffix: "مطلوب",
@@ -321,7 +324,7 @@ const ar: AdministratorProjectTranslations = {
   changeSlugDangerDescription:
     "قد يؤدي تغيير هذا المعرّف النصي إلى تعطيل الروابط العامة التي تمت زيارتها أو مشاركتها بالفعل.",
   deleteDangerTitle: "حذف هذا المشروع",
-  deleteDangerDescription: "احذف هذا المشروع.",
+  deleteDangerDescription: "احذف المشروع ومحادثاته ومستنداته وتقاريره السابقة.",
 };
 
 const es: AdministratorProjectTranslations = {
@@ -428,7 +431,8 @@ const es: AdministratorProjectTranslations = {
   confirmSlugChangeButton: "Cambiar slug",
   deleteProjectButton: "Eliminar proyecto",
   deleteProjectTitle: "¿Eliminar proyecto?",
-  deleteProjectDescription: "Esto eliminará este proyecto.",
+  deleteProjectDescription:
+    "Esto eliminará el proyecto e impedirá acceder a sus conversaciones, documentos e informes históricos. Esta acción no se puede deshacer.",
   confirmDeleteProjectButton: "Confirmar eliminación",
   cancelButton: "Cancelar",
   requiredSuffix: "obligatorio",
@@ -438,7 +442,8 @@ const es: AdministratorProjectTranslations = {
   changeSlugDangerDescription:
     "Cambiar este slug puede romper enlaces públicos que ya se hayan visitado o compartido.",
   deleteDangerTitle: "Eliminar este proyecto",
-  deleteDangerDescription: "Elimine este proyecto.",
+  deleteDangerDescription:
+    "Elimine el proyecto y sus conversaciones, documentos e informes históricos.",
 };
 
 const fa: AdministratorProjectTranslations = {
@@ -543,7 +548,8 @@ const fa: AdministratorProjectTranslations = {
   confirmSlugChangeButton: "تغییر نامک",
   deleteProjectButton: "حذف پروژه",
   deleteProjectTitle: "پروژه حذف شود؟",
-  deleteProjectDescription: "این کار پروژه را حذف می‌کند.",
+  deleteProjectDescription:
+    "این کار پروژه را حذف می‌کند و گفتگوها، اسناد و گزارش‌های پیشین آن را از دسترس خارج می‌کند. این کار قابل بازگشت نیست.",
   confirmDeleteProjectButton: "تأیید حذف",
   cancelButton: "لغو",
   requiredSuffix: "الزامی",
@@ -553,7 +559,8 @@ const fa: AdministratorProjectTranslations = {
   changeSlugDangerDescription:
     "تغییر این نامک ممکن است پیوندهای عمومی را که قبلاً بازدید یا هم‌رسانی شده‌اند از کار بیندازد.",
   deleteDangerTitle: "حذف این پروژه",
-  deleteDangerDescription: "این پروژه را حذف کنید.",
+  deleteDangerDescription:
+    "پروژه و گفتگوها، اسناد و گزارش‌های پیشین آن را حذف کنید.",
 };
 
 const fr: AdministratorProjectTranslations = {
@@ -661,7 +668,8 @@ const fr: AdministratorProjectTranslations = {
   confirmSlugChangeButton: "Modifier le slug",
   deleteProjectButton: "Supprimer le projet",
   deleteProjectTitle: "Supprimer le projet ?",
-  deleteProjectDescription: "Cette action supprimera ce projet.",
+  deleteProjectDescription:
+    "Cette action supprimera le projet et rendra ses conversations, documents et rapports historiques inaccessibles. Elle est irréversible.",
   confirmDeleteProjectButton: "Confirmer la suppression",
   cancelButton: "Annuler",
   requiredSuffix: "obligatoire",
@@ -671,7 +679,8 @@ const fr: AdministratorProjectTranslations = {
   changeSlugDangerDescription:
     "La modification de ce slug peut rompre les liens publics déjà consultés ou partagés.",
   deleteDangerTitle: "Supprimer ce projet",
-  deleteDangerDescription: "Supprimez ce projet.",
+  deleteDangerDescription:
+    "Supprimez le projet ainsi que ses conversations, documents et rapports historiques.",
 };
 
 const he: AdministratorProjectTranslations = {
@@ -773,7 +782,8 @@ const he: AdministratorProjectTranslations = {
   confirmSlugChangeButton: "שינוי המזהה",
   deleteProjectButton: "מחיקת הפרויקט",
   deleteProjectTitle: "למחוק את הפרויקט?",
-  deleteProjectDescription: "פעולה זו תמחק את הפרויקט.",
+  deleteProjectDescription:
+    "פעולה זו תמחק את הפרויקט ותחסום את הגישה לשיחות, למסמכים ולדוחות ההיסטוריים שלו. לא ניתן לבטל פעולה זו.",
   confirmDeleteProjectButton: "אישור המחיקה",
   cancelButton: "ביטול",
   requiredSuffix: "חובה",
@@ -783,7 +793,8 @@ const he: AdministratorProjectTranslations = {
   changeSlugDangerDescription:
     "שינוי המזהה הזה עלול לשבור קישורים ציבוריים שכבר נפתחו או שותפו.",
   deleteDangerTitle: "מחיקת הפרויקט הזה",
-  deleteDangerDescription: "מחקו את הפרויקט הזה.",
+  deleteDangerDescription:
+    "מחקו את הפרויקט ואת השיחות, המסמכים והדוחות ההיסטוריים שלו.",
 };
 
 const ja: AdministratorProjectTranslations = {
@@ -886,7 +897,8 @@ const ja: AdministratorProjectTranslations = {
   confirmSlugChangeButton: "スラッグを変更",
   deleteProjectButton: "プロジェクトを削除",
   deleteProjectTitle: "プロジェクトを削除しますか？",
-  deleteProjectDescription: "このプロジェクトが削除されます。",
+  deleteProjectDescription:
+    "プロジェクトが削除され、その会話、ドキュメント、過去のレポートにアクセスできなくなります。この操作は取り消せません。",
   confirmDeleteProjectButton: "削除を確定",
   cancelButton: "キャンセル",
   requiredSuffix: "必須",
@@ -896,7 +908,8 @@ const ja: AdministratorProjectTranslations = {
   changeSlugDangerDescription:
     "このスラッグを変更すると、すでにアクセスまたは共有された公開リンクが機能しなくなる可能性があります。",
   deleteDangerTitle: "このプロジェクトを削除",
-  deleteDangerDescription: "このプロジェクトを削除します。",
+  deleteDangerDescription:
+    "プロジェクトとその会話、ドキュメント、過去のレポートを削除します。",
 };
 
 const zhHans: AdministratorProjectTranslations = {
@@ -995,7 +1008,8 @@ const zhHans: AdministratorProjectTranslations = {
   confirmSlugChangeButton: "更改标识符",
   deleteProjectButton: "删除项目",
   deleteProjectTitle: "删除项目？",
-  deleteProjectDescription: "这将删除此项目。",
+  deleteProjectDescription:
+    "这将删除项目，并使其对话、文档和历史报告无法访问。此操作无法撤销。",
   confirmDeleteProjectButton: "确认删除",
   cancelButton: "取消",
   requiredSuffix: "必填",
@@ -1005,7 +1019,7 @@ const zhHans: AdministratorProjectTranslations = {
   changeSlugDangerDescription:
     "更改此标识符可能会导致已访问或已分享的公开链接失效。",
   deleteDangerTitle: "删除此项目",
-  deleteDangerDescription: "删除此项目。",
+  deleteDangerDescription: "删除项目及其对话、文档和历史报告。",
 };
 
 const zhHant: AdministratorProjectTranslations = {
@@ -1104,7 +1118,8 @@ const zhHant: AdministratorProjectTranslations = {
   confirmSlugChangeButton: "變更識別字串",
   deleteProjectButton: "刪除專案",
   deleteProjectTitle: "刪除專案？",
-  deleteProjectDescription: "這將刪除此專案。",
+  deleteProjectDescription:
+    "這將刪除專案，並使其對話、文件和歷史報告無法存取。此操作無法復原。",
   confirmDeleteProjectButton: "確認刪除",
   cancelButton: "取消",
   requiredSuffix: "必填",
@@ -1114,7 +1129,7 @@ const zhHant: AdministratorProjectTranslations = {
   changeSlugDangerDescription:
     "變更此識別字串可能會使已造訪或分享的公開連結失效。",
   deleteDangerTitle: "刪除此專案",
-  deleteDangerDescription: "刪除此專案。",
+  deleteDangerDescription: "刪除專案及其對話、文件和歷史報告。",
 };
 
 const ky: AdministratorProjectTranslations = {
@@ -1219,7 +1234,8 @@ const ky: AdministratorProjectTranslations = {
   confirmSlugChangeButton: "Слагды өзгөртүү",
   deleteProjectButton: "Долбоорду өчүрүү",
   deleteProjectTitle: "Долбоор өчүрүлсүнбү?",
-  deleteProjectDescription: "Бул долбоор өчүрүлөт.",
+  deleteProjectDescription:
+    "Долбоор өчүрүлүп, анын талкуулары, документтери жана мурунку отчёттору жеткиликсиз болот. Бул аракетти артка кайтаруу мүмкүн эмес.",
   confirmDeleteProjectButton: "Өчүрүүнү ырастоо",
   cancelButton: "Жокко чыгаруу",
   requiredSuffix: "милдеттүү",
@@ -1229,7 +1245,8 @@ const ky: AdministratorProjectTranslations = {
   changeSlugDangerDescription:
     "Бул слагды өзгөртүү буга чейин ачылган же бөлүшүлгөн жалпыга ачык шилтемелерди иштен чыгарышы мүмкүн.",
   deleteDangerTitle: "Бул долбоорду өчүрүү",
-  deleteDangerDescription: "Бул долбоорду өчүрүңүз.",
+  deleteDangerDescription:
+    "Долбоорду, анын талкууларын, документтерин жана мурунку отчётторун өчүрүңүз.",
 };
 
 const ru: AdministratorProjectTranslations = {
@@ -1337,7 +1354,8 @@ const ru: AdministratorProjectTranslations = {
   confirmSlugChangeButton: "Изменить слаг",
   deleteProjectButton: "Удалить проект",
   deleteProjectTitle: "Удалить проект?",
-  deleteProjectDescription: "Этот проект будет удален.",
+  deleteProjectDescription:
+    "Проект будет удалён, а его обсуждения, документы и исторические отчёты станут недоступны. Это действие нельзя отменить.",
   confirmDeleteProjectButton: "Подтвердить удаление",
   cancelButton: "Отмена",
   requiredSuffix: "обязательно",
@@ -1347,7 +1365,8 @@ const ru: AdministratorProjectTranslations = {
   changeSlugDangerDescription:
     "Изменение этого слага может нарушить работу публичных ссылок, которые уже открывали или которыми делились.",
   deleteDangerTitle: "Удалить этот проект",
-  deleteDangerDescription: "Удалите этот проект.",
+  deleteDangerDescription:
+    "Удалите проект, его обсуждения, документы и исторические отчёты.",
 };
 
 export const administratorProjectTranslations: Record<

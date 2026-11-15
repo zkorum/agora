@@ -10,9 +10,10 @@
 import type {
   ConversationMultilingualSetting,
   ConversationTypeConfig,
-  EventSlug,
+  ConversationStatementSettings,
   ExternalSourceConfig,
   ParticipationMode,
+  ParticipantStatements,
   PreferredOpinionGroupCount,
   SurveyConfig,
 } from "src/shared/types/zod";
@@ -66,6 +67,7 @@ export interface ConversationDraftBase {
   conversationEmailUpdateEnabledOverride?: boolean;
   /** Initial opinion responses to seed the conversation */
   seedOpinions: string[];
+  qvStatements: QvStatementDraft[];
   /** Random identifier renewed for each new draft; only sent with AI suggestion requests, for usage counts. */
   aiSuggestionDraftId: string;
 
@@ -78,17 +80,13 @@ export interface ConversationDraftBase {
   /** Controls the participation mode for this conversation (applies to both public and private conversations) */
   participationMode: ParticipationMode;
 
-  // Event Ticket Verification
-  /** If set, requires users to verify ownership of the specified event ticket. If undefined, no verification required. */
-  requiresEventTicket?: EventSlug;
-
   // AI labeling
   aiLabelingEnabled: boolean;
 
   // Facilitator analysis preference
   preferredOpinionGroupCount: PreferredOpinionGroupCount;
 
-  // External Source (GitHub integration for MaxDiff)
+  // External source (GitHub integration for comparisons).
   externalSourceConfig: ExternalSourceConfig | null;
 
   // Survey configuration
@@ -98,7 +96,14 @@ export interface ConversationDraftBase {
   importSettings: ConversationImportSettings;
 }
 
-export type ConversationDraft = ConversationDraftBase & ConversationTypeConfig;
+export interface QvStatementDraft {
+  localKey: string;
+  title: string;
+  description: string;
+}
+
+export type ConversationDraft = ConversationDraftBase &
+  ConversationStatementSettings;
 
 /**
  * Type for conversation import method
@@ -173,6 +178,7 @@ export interface ValidationResult {
  * Form state data structure (for loading/exporting draft data)
  */
 export interface ConversationFormState {
+  participantStatements: ParticipantStatements;
   conversationTypeConfig: ConversationTypeConfig;
   // Basic content
   title: string;
@@ -184,7 +190,6 @@ export interface ConversationFormState {
   // Privacy settings
   isPrivate: boolean;
   participationMode: ParticipationMode;
-  requiresEventTicket?: EventSlug;
   aiLabelingEnabled: boolean;
   preferredOpinionGroupCount: PreferredOpinionGroupCount;
 

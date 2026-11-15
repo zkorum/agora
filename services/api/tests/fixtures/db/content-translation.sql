@@ -7,7 +7,7 @@ CREATE TYPE "public"."content_translation_work_status" AS ENUM('pending', 'runni
 
 CREATE TYPE "public"."conversation_language_settings_source" AS ENUM('conversation_override', 'project_inherited');
 
-CREATE TYPE "public"."conversation_type" AS ENUM('polis', 'ranking');
+CREATE TYPE "public"."conversation_type" AS ENUM('polis', 'prioritizing');
 
 CREATE TYPE "public"."conversation_view_snapshot_reason_enum" AS ENUM('analysis_completed', 'survey_refreshed', 'conversation_content_updated', 'conversation_lifecycle_updated');
 
@@ -64,8 +64,8 @@ CREATE TABLE "content_translation_work" (
 	"failed_at" timestamp (0),
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
-	CONSTRAINT "content_translation_work_source_check" CHECK ((("content_translation_work"."source_kind" = 'conversation' AND "content_translation_work"."conversation_id" is not null AND "content_translation_work"."project_content_id" is null AND "content_translation_work"."conversation_content_id" is not null AND "content_translation_work"."opinion_content_id" is null AND "content_translation_work"."survey_question_content_id" is null AND "content_translation_work"."survey_question_option_content_ids" is null AND "content_translation_work"."ranking_item_content_id" is null) OR ("content_translation_work"."source_kind" = 'project' AND "content_translation_work"."conversation_id" is null AND "content_translation_work"."project_content_id" is not null AND "content_translation_work"."conversation_content_id" is null AND "content_translation_work"."opinion_content_id" is null AND "content_translation_work"."survey_question_content_id" is null AND "content_translation_work"."survey_question_option_content_ids" is null AND "content_translation_work"."ranking_item_content_id" is null) OR ("content_translation_work"."source_kind" = 'opinion' AND "content_translation_work"."conversation_id" is not null AND "content_translation_work"."project_content_id" is null AND "content_translation_work"."conversation_content_id" is null AND "content_translation_work"."opinion_content_id" is not null AND "content_translation_work"."survey_question_content_id" is null AND "content_translation_work"."survey_question_option_content_ids" is null AND "content_translation_work"."ranking_item_content_id" is null) OR ("content_translation_work"."source_kind" = 'survey_question' AND "content_translation_work"."conversation_id" is not null AND "content_translation_work"."project_content_id" is null AND "content_translation_work"."conversation_content_id" is null AND "content_translation_work"."opinion_content_id" is null AND "content_translation_work"."survey_question_content_id" is not null AND "content_translation_work"."survey_question_option_content_ids" is not null AND "content_translation_work"."ranking_item_content_id" is null) OR ("content_translation_work"."source_kind" = 'ranking_item' AND "content_translation_work"."conversation_id" is not null AND "content_translation_work"."project_content_id" is null AND "content_translation_work"."conversation_content_id" is null AND "content_translation_work"."opinion_content_id" is null AND "content_translation_work"."survey_question_content_id" is null AND "content_translation_work"."survey_question_option_content_ids" is null AND "content_translation_work"."ranking_item_content_id" is not null))),
-	CONSTRAINT "content_translation_work_running_lease_check" CHECK ((("content_translation_work"."status" <> 'running' AND "content_translation_work"."lease_owner" is null AND "content_translation_work"."lease_token" is null AND "content_translation_work"."lease_expires_at" is null) OR ("content_translation_work"."status" = 'running' AND "content_translation_work"."lease_owner" is not null AND "content_translation_work"."lease_token" is not null AND "content_translation_work"."lease_expires_at" is not null))),
+	CONSTRAINT "content_translation_work_source_check" CHECK ((("content_translation_work"."source_kind" = 'conversation' and "content_translation_work"."conversation_id" is not null and "content_translation_work"."project_content_id" is null and "content_translation_work"."conversation_content_id" is not null and "content_translation_work"."opinion_content_id" is null and "content_translation_work"."survey_question_content_id" is null and "content_translation_work"."survey_question_option_content_ids" is null and "content_translation_work"."ranking_item_content_id" is null) or ("content_translation_work"."source_kind" = 'project' and "content_translation_work"."conversation_id" is null and "content_translation_work"."project_content_id" is not null and "content_translation_work"."conversation_content_id" is null and "content_translation_work"."opinion_content_id" is null and "content_translation_work"."survey_question_content_id" is null and "content_translation_work"."survey_question_option_content_ids" is null and "content_translation_work"."ranking_item_content_id" is null) or ("content_translation_work"."source_kind" = 'opinion' and "content_translation_work"."conversation_id" is not null and "content_translation_work"."project_content_id" is null and "content_translation_work"."conversation_content_id" is null and "content_translation_work"."opinion_content_id" is not null and "content_translation_work"."survey_question_content_id" is null and "content_translation_work"."survey_question_option_content_ids" is null and "content_translation_work"."ranking_item_content_id" is null) or ("content_translation_work"."source_kind" = 'survey_question' and "content_translation_work"."conversation_id" is not null and "content_translation_work"."project_content_id" is null and "content_translation_work"."conversation_content_id" is null and "content_translation_work"."opinion_content_id" is null and "content_translation_work"."survey_question_content_id" is not null and "content_translation_work"."survey_question_option_content_ids" is not null and "content_translation_work"."ranking_item_content_id" is null) or ("content_translation_work"."source_kind" = 'ranking_item' and "content_translation_work"."conversation_id" is not null and "content_translation_work"."project_content_id" is null and "content_translation_work"."conversation_content_id" is null and "content_translation_work"."opinion_content_id" is null and "content_translation_work"."survey_question_content_id" is null and "content_translation_work"."survey_question_option_content_ids" is null and "content_translation_work"."ranking_item_content_id" is not null))),
+	CONSTRAINT "content_translation_work_running_lease_check" CHECK ((("content_translation_work"."status" <> 'running' and "content_translation_work"."lease_owner" is null and "content_translation_work"."lease_token" is null and "content_translation_work"."lease_expires_at" is null) or ("content_translation_work"."status" = 'running' and "content_translation_work"."lease_owner" is not null and "content_translation_work"."lease_token" is not null and "content_translation_work"."lease_expires_at" is not null))),
 	CONSTRAINT "content_translation_work_priority_rank_check" CHECK ("content_translation_work"."priority_rank" >= 0 AND "content_translation_work"."priority_rank" <= 2)
 );
 
@@ -108,8 +108,11 @@ CREATE TABLE "conversation" (
 	"slug_id" varchar(8) NOT NULL,
 	"project_id" integer NOT NULL,
 	"current_content_id" integer,
+	"deleted_at" timestamp (3),
 	"polis_config_id" integer,
 	"ranking_config_id" integer,
+	"credit_voting_config_id" integer,
+	"prioritization_type" text,
 	"dynamic_translation_enabled" boolean DEFAULT false NOT NULL,
 	"conversation_email_update_enabled_override" boolean,
 	"conversation_email_update_override_updated_at" timestamp (0),
@@ -133,10 +136,12 @@ CREATE TABLE "conversation" (
 	CONSTRAINT "conversation_current_content_id_unique" UNIQUE("current_content_id"),
 	CONSTRAINT "conversation_polis_config_id_unique" UNIQUE("polis_config_id"),
 	CONSTRAINT "conversation_ranking_config_id_unique" UNIQUE("ranking_config_id"),
+	CONSTRAINT "conversation_credit_voting_config_id_unique" UNIQUE("credit_voting_config_id"),
 	CONSTRAINT "conversation_project_id_id_unique" UNIQUE("project_id","id"),
+	CONSTRAINT "conversation_deletion_intent_check" CHECK (("conversation"."deleted_at" is null or "conversation"."current_content_id" is null)),
 	CONSTRAINT "conversation_closing_state_check" CHECK (("conversation"."is_closed" OR ("conversation"."closing_target_revision" IS NULL AND "conversation"."closed_finalized_at" IS NULL)) AND ("conversation"."closed_finalized_at" IS NULL OR "conversation"."closing_target_revision" IS NOT NULL)),
-	CONSTRAINT "conversation_subtype_config_check" CHECK ((("conversation"."conversation_type" = 'polis' AND "conversation"."polis_config_id" IS NOT NULL AND "conversation"."ranking_config_id" IS NULL) OR ("conversation"."conversation_type" = 'ranking' AND "conversation"."ranking_config_id" IS NOT NULL AND "conversation"."polis_config_id" IS NULL))),
-	CONSTRAINT "conversation_email_update_override_audit_check" CHECK (("conversation"."conversation_email_update_override_updated_at" IS NULL) = ("conversation"."conversation_email_update_override_updated_by_user_id" IS NULL))
+	CONSTRAINT "conversation_subtype_config_check" CHECK ((("conversation"."conversation_type" = 'polis' AND "conversation"."polis_config_id" IS NOT NULL AND "conversation"."ranking_config_id" IS NULL AND "conversation"."credit_voting_config_id" IS NULL AND "conversation"."prioritization_type" IS NULL) OR ("conversation"."conversation_type" = 'prioritizing' AND "conversation"."polis_config_id" IS NULL AND "conversation"."prioritization_type" IS NOT NULL AND (("conversation"."prioritization_type" = 'comparisons' AND "conversation"."ranking_config_id" IS NOT NULL AND "conversation"."credit_voting_config_id" IS NULL) OR ("conversation"."prioritization_type" = 'qv' AND "conversation"."credit_voting_config_id" IS NOT NULL AND "conversation"."ranking_config_id" IS NULL))))),
+	CONSTRAINT "conversation_email_update_override_audit_check" CHECK (("conversation"."conversation_email_update_override_updated_by_user_id" is null or "conversation"."conversation_email_update_override_updated_at" is not null))
 );
 
 CREATE TABLE "conversation_translation_target_language" (
@@ -171,6 +176,19 @@ CREATE TABLE "conversation_view_snapshot" (
 	CONSTRAINT "conversation_view_snapshot_preferred_opinion_group_count_check" CHECK ("conversation_view_snapshot"."preferred_opinion_group_count" IS NULL OR ("conversation_view_snapshot"."preferred_opinion_group_count" >= 2 AND "conversation_view_snapshot"."preferred_opinion_group_count" <= 6))
 );
 
+CREATE TABLE "credit_voting_config" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "credit_voting_config_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"credit_budget" integer DEFAULT 100 NOT NULL,
+	"allow_opposition" boolean DEFAULT true NOT NULL,
+	"item_count" integer DEFAULT 0 NOT NULL,
+	"statement_set_revision" integer DEFAULT 0 NOT NULL,
+	"statements_locked_at" timestamp (3),
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "credit_voting_fixed_budget_check" CHECK ("credit_voting_config"."credit_budget" = 100),
+	CONSTRAINT "credit_voting_statement_revision_check" CHECK ("credit_voting_config"."statement_set_revision" >= 0),
+	CONSTRAINT "credit_voting_item_count_check" CHECK ("credit_voting_config"."item_count" >= 0)
+);
+
 CREATE TABLE "opinion_content" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "opinion_content_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"public_id" uuid DEFAULT gen_random_uuid() NOT NULL,
@@ -186,7 +204,7 @@ CREATE TABLE "opinion_content" (
 	"source_language_confidence" real,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	CONSTRAINT "opinion_content_public_id_unique" UNIQUE("public_id"),
-	CONSTRAINT "opinion_content_edit_attribution_check" CHECK ("opinion_content"."is_edited" = ("opinion_content"."edited_by_user_id" IS NOT NULL)),
+	CONSTRAINT "opinion_content_edit_attribution_check" CHECK (("opinion_content"."edited_by_user_id" is null or "opinion_content"."is_edited" = true)),
 	CONSTRAINT "opinion_content_content_byte_length_check" CHECK (octet_length("opinion_content"."content") <= 16384),
 	CONSTRAINT "opinion_content_source_metadata_check" CHECK ((("opinion_content"."source_language_provider" IS NULL AND "opinion_content"."source_raw_language_code" IS NULL) OR ("opinion_content"."source_language_provider" IS NOT NULL AND "opinion_content"."source_raw_language_code" IS NOT NULL)))
 );
@@ -222,9 +240,11 @@ CREATE TABLE "opinion_moderation" (
 CREATE TABLE "opinion" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "opinion_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"slug_id" varchar(8) NOT NULL,
-	"author_id" uuid NOT NULL,
+	"author_id" uuid,
 	"conversation_id" integer NOT NULL,
 	"current_content_id" integer,
+	"deleted_at" timestamp (3),
+	"account_hidden_at" timestamp (3),
 	"is_seed" boolean DEFAULT false NOT NULL,
 	"num_agrees" integer DEFAULT 0 NOT NULL,
 	"num_disagrees" integer DEFAULT 0 NOT NULL,
@@ -232,7 +252,9 @@ CREATE TABLE "opinion" (
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
 	"last_reacted_at" timestamp (0) DEFAULT now() NOT NULL,
-	CONSTRAINT "opinion_slug_id_unique" UNIQUE("slug_id")
+	CONSTRAINT "opinion_slug_id_unique" UNIQUE("slug_id"),
+	CONSTRAINT "opinion_source_owner_check" CHECK (("opinion"."author_id" is not null or "opinion"."is_seed" = true or "opinion"."deleted_at" is not null or "opinion"."account_hidden_at" is not null)),
+	CONSTRAINT "opinion_deletion_intent_check" CHECK (("opinion"."deleted_at" is null or "opinion"."current_content_id" is null))
 );
 
 CREATE TABLE "user" (
@@ -243,7 +265,12 @@ CREATE TABLE "user" (
 	"is_site_org_admin" boolean DEFAULT false NOT NULL,
 	"is_imported" boolean DEFAULT false NOT NULL,
 	"is_deleted" boolean DEFAULT false NOT NULL,
+	"contribution_revision" integer DEFAULT 0 NOT NULL,
 	"deleted_at" timestamp (0),
+	"deletion_reason" text,
+	"deletion_requested_at" timestamp (3),
+	"recoverable_until" timestamp (3),
+	"purge_started_at" timestamp (3),
 	"auth_restricted_at" timestamp (0),
 	"auth_restriction_reason" text,
 	"active_conversation_count" integer DEFAULT 0 NOT NULL,
@@ -252,22 +279,27 @@ CREATE TABLE "user" (
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
 	CONSTRAINT "user_username_unique" UNIQUE("username"),
-	CONSTRAINT "user_auth_restriction_reason_check" CHECK (("user"."auth_restricted_at" IS NULL) = ("user"."auth_restriction_reason" IS NULL))
+	CONSTRAINT "user_contribution_revision_check" CHECK ("user"."contribution_revision" >= 0),
+	CONSTRAINT "user_recovery_lifecycle_check" CHECK (((("user"."deletion_requested_at" is null and "user"."recoverable_until" is null) or ("user"."is_deleted" = true and "user"."deletion_reason" is not null and "user"."deletion_reason" = 'account_deletion' and "user"."deletion_requested_at" is not null and "user"."recoverable_until" is not null and "user"."recoverable_until" = "user"."deletion_requested_at" + interval '15 days')) and ("user"."purge_started_at" is null or "user"."is_deleted" = true))),
+	CONSTRAINT "user_auth_restriction_reason_check" CHECK (("user"."auth_restricted_at" IS NULL) = ("user"."auth_restriction_reason" IS NULL)),
+	CONSTRAINT "user_deletion_reason_check" CHECK (("user"."deletion_reason" is null or ("user"."is_deleted" = true and "user"."deleted_at" is not null and "user"."deletion_reason" in ('account_deletion', 'guest_merge'))))
 );
 
-CREATE UNIQUE INDEX "content_translation_work_conversation_unique" ON "content_translation_work" USING btree ("conversation_content_id","display_language_code") WHERE ("content_translation_work"."source_kind" = 'conversation' AND "content_translation_work"."conversation_content_id" is not null);
+CREATE UNIQUE INDEX "content_translation_work_conversation_unique" ON "content_translation_work" USING btree ("conversation_content_id","display_language_code") WHERE ("content_translation_work"."source_kind" = 'conversation' and "content_translation_work"."conversation_content_id" is not null);
 
-CREATE UNIQUE INDEX "content_translation_work_project_unique" ON "content_translation_work" USING btree ("project_content_id","display_language_code") WHERE ("content_translation_work"."source_kind" = 'project' AND "content_translation_work"."project_content_id" is not null);
+CREATE UNIQUE INDEX "content_translation_work_project_unique" ON "content_translation_work" USING btree ("project_content_id","display_language_code") WHERE ("content_translation_work"."source_kind" = 'project' and "content_translation_work"."project_content_id" is not null);
 
-CREATE UNIQUE INDEX "content_translation_work_opinion_unique" ON "content_translation_work" USING btree ("opinion_content_id","display_language_code") WHERE ("content_translation_work"."source_kind" = 'opinion' AND "content_translation_work"."opinion_content_id" is not null);
+CREATE UNIQUE INDEX "content_translation_work_opinion_unique" ON "content_translation_work" USING btree ("opinion_content_id","display_language_code") WHERE ("content_translation_work"."source_kind" = 'opinion' and "content_translation_work"."opinion_content_id" is not null);
 
-CREATE UNIQUE INDEX "content_translation_work_survey_question_unique" ON "content_translation_work" USING btree ("survey_question_content_id","survey_question_option_content_ids","display_language_code") WHERE ("content_translation_work"."source_kind" = 'survey_question' AND "content_translation_work"."survey_question_content_id" is not null AND "content_translation_work"."survey_question_option_content_ids" is not null);
+CREATE UNIQUE INDEX "content_translation_work_survey_question_unique" ON "content_translation_work" USING btree ("survey_question_content_id","survey_question_option_content_ids","display_language_code") WHERE ("content_translation_work"."source_kind" = 'survey_question' and "content_translation_work"."survey_question_content_id" is not null and "content_translation_work"."survey_question_option_content_ids" is not null);
 
-CREATE UNIQUE INDEX "content_translation_work_ranking_item_unique" ON "content_translation_work" USING btree ("ranking_item_content_id","display_language_code") WHERE ("content_translation_work"."source_kind" = 'ranking_item' AND "content_translation_work"."ranking_item_content_id" is not null);
+CREATE UNIQUE INDEX "content_translation_work_ranking_item_unique" ON "content_translation_work" USING btree ("ranking_item_content_id","display_language_code") WHERE ("content_translation_work"."source_kind" = 'ranking_item' and "content_translation_work"."ranking_item_content_id" is not null);
 
 CREATE INDEX "content_translation_work_claim_idx" ON "content_translation_work" USING btree ("priority_rank","updated_at","id") WHERE "content_translation_work"."status" = 'pending';
 
 CREATE INDEX "content_translation_work_lease_expiry_idx" ON "content_translation_work" USING btree ("lease_expires_at","id") WHERE "content_translation_work"."status" = 'running';
+
+CREATE INDEX "conversation_deleted_idx" ON "conversation" USING btree ("deleted_at","id") WHERE "conversation"."deleted_at" is not null;
 
 CREATE INDEX "conversation_feed_idx" ON "conversation" USING btree ("created_at" DESC,"id" DESC) WHERE "conversation"."is_indexed" = true AND "conversation"."is_importing" = false;
 
@@ -290,6 +322,8 @@ CREATE INDEX "conversation_view_snapshot_latest_spec_active_idx" ON "conversatio
 CREATE INDEX "conversation_view_snapshot_analysis_snapshot_idx" ON "conversation_view_snapshot" USING btree ("analysis_snapshot_id") WHERE "conversation_view_snapshot"."analysis_snapshot_id" is not null;
 
 CREATE UNIQUE INDEX "opinion_moderation_active_opinion_unique" ON "opinion_moderation" USING btree ("opinion_id") WHERE "opinion_moderation"."deleted_at" is null;
+
+CREATE INDEX "opinion_deleted_idx" ON "opinion" USING btree ("deleted_at","id") WHERE "opinion"."deleted_at" is not null;
 
 CREATE INDEX "opinion_authorId_idx" ON "opinion" USING btree ("author_id");
 

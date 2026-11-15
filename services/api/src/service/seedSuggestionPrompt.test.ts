@@ -14,7 +14,7 @@ describe("seed suggestion prompt", () => {
         const messages = buildSeedSuggestionMessages({
             systemPrompt: DEFAULT_SEED_SUGGESTION_SYSTEM_PROMPT,
             input: {
-                conversationType: "ranking",
+                conversationType: "prioritizing",
                 conversationTitle: "Night buses",
                 conversationBody: "Which actions should we prioritize?",
                 existingStatements: [],

@@ -1,15 +1,8 @@
 import { httpErrors } from "@fastify/sensible";
 import { Dto } from "@/shared/types/dto.js";
-import {
-    and,
-    eq,
-    inArray,
-    isNotNull,
-    isNull,
-    type TablesRelationalConfig,
-} from "drizzle-orm";
-import type { PgQueryResultHKT, PgTransaction } from "drizzle-orm/pg-core";
+import { and, asc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { queueSourceInvalidationEvent } from "../realtimeEventOutbox.js";
 import {
     conversationTable,
     conversationTranslationTargetLanguageTable,
@@ -74,6 +67,15 @@ import {
 } from "../contentTranslation.js";
 import { log } from "@/app.js";
 import { optionalHttpsUrl } from "@/utils/url.js";
+import {
+    getPrimaryDatabase,
+    type PostgresTransaction,
+} from "@/shared-backend/db.js";
+import {
+    lockListedProjectOrganizations,
+    withProjectOwnershipTransaction,
+    type ProjectOwnershipDatabase,
+} from "../projectOwnership.js";
 
 type ProjectOrganizationAttributionRole =
     CreateProjectAttributionRequest["role"];
@@ -151,14 +153,6 @@ interface SanitizedProjectContentLocalization {
 interface SanitizedProjectContentTextLocalization extends SanitizedProjectContentLocalization {
     projectTitle: string;
 }
-type ProjectDatabase =
-    | PostgresJsDatabase
-    | PgTransaction<
-          PgQueryResultHKT,
-          Record<string, unknown>,
-          TablesRelationalConfig
-      >;
-
 type AttributionToInsert = RealAttribution | ExternalAttribution;
 
 function getStringErrorProperty({
@@ -220,7 +214,7 @@ async function insertProjectContact({
     contact,
     organizationsBySlug,
 }: {
-    db: ProjectDatabase;
+    db: PostgresTransaction;
     projectId: number;
     contact: CreateProjectContactRequest | undefined;
     organizationsBySlug: Map<string, OrganizationRecord>;
@@ -425,7 +419,7 @@ async function hasCompleteStoredManualProjectContentLocalizations({
     sourceSubtitleRequired,
     sourceBodyRequired,
 }: {
-    db: ProjectDatabase;
+    db: PostgresJsDatabase;
     projectContentId: number;
     targetLanguageCodes: readonly SupportedDisplayLanguageCodes[];
     sourceSubtitleRequired: boolean;
@@ -487,7 +481,7 @@ async function syncProjectContentLocalizations({
     sourceLanguageMetadata,
     now,
 }: {
-    db: ProjectDatabase;
+    db: PostgresTransaction;
     projectContentId: number;
     localizations: readonly SanitizedProjectContentLocalization[];
     targetLanguageCodes: readonly SupportedDisplayLanguageCodes[];
@@ -593,7 +587,7 @@ async function deleteMachineProjectContentTranslations({
     projectContentId,
     now,
 }: {
-    db: ProjectDatabase;
+    db: PostgresTransaction;
     projectContentId: number;
     now: Date;
 }): Promise<void> {
@@ -619,7 +613,7 @@ async function syncProjectBannerLocalizations({
     targetLanguageCodes,
     now,
 }: {
-    db: ProjectDatabase;
+    db: PostgresTransaction;
     projectContentId: number;
     localizations: readonly SanitizedProjectContentLocalization[];
     targetLanguageCodes: readonly SupportedDisplayLanguageCodes[];
@@ -748,7 +742,7 @@ async function refreshInheritedConversationLanguageSettings({
     targetLanguageCodes,
     now,
 }: {
-    db: ProjectDatabase;
+    db: PostgresTransaction;
     projectId: number;
     dynamicTranslationEnabled: boolean;
     targetLanguageCodes: readonly SupportedDisplayLanguageCodes[];
@@ -993,7 +987,7 @@ export async function createProject({
     data,
     googleCloudCredentials,
 }: {
-    db: PostgresJsDatabase;
+    db: ProjectOwnershipDatabase;
     data: CreateProjectRequest;
     googleCloudCredentials: GoogleCloudCredentials | undefined;
 }): Promise<CreateProjectServiceResponse> {
@@ -1107,7 +1101,25 @@ export async function createProject({
     }
 
     try {
-        return await db.transaction(async (tx) => {
+        const persistProject = async (
+            tx: PostgresTransaction,
+        ): Promise<CreateProjectServiceResponse> => {
+            if (
+                !(await lockListedProjectOrganizations({
+                    db: tx,
+                    organizationIds: [
+                        ...organizationLookup.organizationsBySlug.values(),
+                    ].map((organization) => organization.id),
+                }))
+            ) {
+                return {
+                    success: false,
+                    reason: "unknown_organization_slug",
+                    organizationSlugs: [
+                        ...organizationLookup.organizationsBySlug.keys(),
+                    ],
+                };
+            }
             const insertedProjects = await tx
                 .insert(projectTable)
                 .values({
@@ -1331,6 +1343,10 @@ export async function createProject({
                 projectSlug: data.projectSlug,
                 eagerContentTranslationWorkIds,
             };
+        };
+        return await withProjectOwnershipTransaction({
+            db,
+            operation: persistProject,
         });
     } catch (error) {
         if (isUniqueViolation(error)) {
@@ -1347,9 +1363,11 @@ export async function createProject({
 export async function getAllProjects({
     db,
     projectSlug,
+    projectIds: allowedProjectIds,
 }: {
     db: PostgresJsDatabase;
     projectSlug?: string;
+    projectIds?: readonly number[];
 }): Promise<GetAllProjectsResponse> {
     const projectWhereClause =
         projectSlug === undefined
@@ -1380,7 +1398,14 @@ export async function getAllProjects({
             projectContentTable,
             eq(projectContentTable.id, projectTable.currentContentId),
         )
-        .where(projectWhereClause);
+        .where(
+            and(
+                projectWhereClause,
+                allowedProjectIds === undefined
+                    ? undefined
+                    : inArray(projectTable.id, [...allowedProjectIds]),
+            ),
+        );
 
     const projectIds = projectRows.map((project) => project.projectId);
     const projectContentIds = projectRows.flatMap((project) =>
@@ -1876,8 +1901,10 @@ export async function getAllProjects({
 
 export async function getProjectOptions({
     db,
+    projectIds,
 }: {
     db: PostgresJsDatabase;
+    projectIds?: readonly number[];
 }): Promise<GetProjectOptionsResponse> {
     const projectList: AdminProjectOption[] = await db
         .select({
@@ -1889,6 +1916,9 @@ export async function getProjectOptions({
             and(
                 eq(projectTable.directoryVisibility, "listed"),
                 isNull(projectTable.deletedAt),
+                projectIds === undefined
+                    ? undefined
+                    : inArray(projectTable.id, [...projectIds]),
             ),
         );
 
@@ -1901,7 +1931,7 @@ export async function getProjectDetails({
 }: {
     db: PostgresJsDatabase;
     projectSlug: string;
-}): Promise<GetProjectDetailsResponse> {
+}): Promise<Omit<GetProjectDetailsResponse, "permissions">> {
     const response = await getAllProjects({ db, projectSlug });
     return { project: response.projectList.at(0) };
 }
@@ -1944,31 +1974,62 @@ export async function updateProjectSlug({
     }
 }
 
-export async function archiveProject({
+export async function deleteProject({
     db,
     projectSlug,
 }: {
     db: PostgresJsDatabase;
     projectSlug: string;
 }): Promise<void> {
-    const now = new Date();
-    const updatedProjects = await db
-        .update(projectTable)
-        .set({
-            directoryVisibility: "unlisted",
-            deletedAt: now,
-            updatedAt: now,
-        })
-        .where(
-            and(
-                eq(projectTable.slug, projectSlug),
-                isNull(projectTable.deletedAt),
-            ),
-        )
-        .returning({ projectId: projectTable.id });
-    if (updatedProjects.length === 0) {
-        throw httpErrors.notFound("Project not found");
-    }
+    await getPrimaryDatabase(db).transaction(async (tx) => {
+        const now = new Date();
+        const updatedProjects = await tx
+            .update(projectTable)
+            .set({
+                directoryVisibility: "unlisted",
+                deletedAt: now,
+                updatedAt: now,
+            })
+            .where(
+                and(
+                    eq(projectTable.slug, projectSlug),
+                    isNull(projectTable.deletedAt),
+                ),
+            )
+            .returning({ projectId: projectTable.id });
+        const project = updatedProjects.at(0);
+        if (project === undefined) {
+            throw httpErrors.notFound("Project not found");
+        }
+        // Parent deletion follows conversation deletion's visibility contract. Keep
+        // content/history rows privately for the future parent-graph purge.
+        const conversations = tx.$with("project_conversations_to_delete").as(
+            tx
+                .select({ id: conversationTable.id })
+                .from(conversationTable)
+                .where(
+                    and(
+                        eq(conversationTable.projectId, project.projectId),
+                        isNotNull(conversationTable.currentContentId),
+                    ),
+                )
+                .orderBy(asc(conversationTable.id))
+                .for("no key update"),
+        );
+        // A row-locking CTE stays materialized: lock children in ID order without
+        // sending their IDs to the application or touching existing tombstones.
+        await tx
+            .with(conversations)
+            .update(conversationTable)
+            .set({ currentContentId: null, deletedAt: now, updatedAt: now })
+            .where(
+                inArray(
+                    conversationTable.id,
+                    tx.select({ id: conversations.id }).from(conversations),
+                ),
+            );
+        await queueSourceInvalidationEvent(tx);
+    });
 }
 
 export async function updateProject({
@@ -1976,7 +2037,7 @@ export async function updateProject({
     data,
     googleCloudCredentials,
 }: {
-    db: PostgresJsDatabase;
+    db: ProjectOwnershipDatabase;
     data: UpdateProjectRequest;
     googleCloudCredentials: GoogleCloudCredentials | undefined;
 }): Promise<UpdateProjectServiceResponse> {
@@ -2125,400 +2186,396 @@ export async function updateProject({
     });
 
     try {
-        const eagerContentTranslationWorkIds = await db.transaction(
-            async (tx) => {
-                const now = new Date();
-                const updatedProjects = await tx
-                    .update(projectTable)
-                    .set({
-                        slug: data.projectSlug,
-                        title: data.projectTitle,
-                        dynamicTranslationEnabled:
-                            normalizedLanguageSettings.dynamicTranslationEnabled,
-                        updatedAt: now,
-                    })
-                    .where(eq(projectTable.id, project.projectId))
-                    .returning({ projectId: projectTable.id });
-                if (updatedProjects.length === 0) {
-                    throw httpErrors.notFound("Project not found");
-                }
-
-                let projectContentId = project.currentContentId;
-                let projectContentPublicId = project.currentContentPublicId;
-                if (project.currentContentId === null) {
-                    const insertedContents = await tx
-                        .insert(projectContentTable)
-                        .values({
-                            projectId: project.projectId,
-                            title: data.projectTitle,
-                            subtitle: normalizeOptionalString(data.subtitle),
-                            body: sanitizedProjectBody.body ?? null,
-                            bodyPlainText,
-                            bannerPath: normalizeOptionalString(
-                                data.bannerPath,
-                            ),
-                            bannerIsFullPath: data.bannerIsFullPath,
-                            ...contentLanguageMetadataUpdateValues(
-                                projectLanguageMetadata ??
-                                    UNKNOWN_CONTENT_LANGUAGE_METADATA,
-                            ),
-                        })
-                        .returning({
-                            contentId: projectContentTable.id,
-                            publicId: projectContentTable.publicId,
-                        });
-                    const insertedContent = insertedContents.at(0);
-                    if (insertedContent === undefined) {
-                        throw httpErrors.internalServerError(
-                            "Failed to create project content",
-                        );
-                    }
-                    projectContentId = insertedContent.contentId;
-                    projectContentPublicId = insertedContent.publicId;
-                    await tx
-                        .update(projectTable)
-                        .set({ currentContentId: insertedContent.contentId })
-                        .where(eq(projectTable.id, project.projectId));
-
-                    await syncProjectBannerLocalizations({
-                        db: tx,
-                        projectContentId: insertedContent.contentId,
-                        localizations: contentLocalizations,
-                        targetLanguageCodes:
-                            normalizedLanguageSettings.targetLanguageCodes,
-                        now,
-                    });
-
-                    await syncProjectContentLocalizations({
-                        db: tx,
-                        projectContentId: insertedContent.contentId,
-                        localizations: contentLocalizations,
-                        targetLanguageCodes:
-                            normalizedLanguageSettings.targetLanguageCodes,
-                        sourceLanguageMetadata:
-                            projectLanguageMetadata ??
-                            UNKNOWN_CONTENT_LANGUAGE_METADATA,
-                        now,
-                    });
-                } else {
-                    await tx
-                        .update(projectContentTable)
-                        .set({
-                            title: data.projectTitle,
-                            subtitle: normalizeOptionalString(data.subtitle),
-                            body: sanitizedProjectBody.body ?? null,
-                            bodyPlainText,
-                            bannerPath: normalizeOptionalString(
-                                data.bannerPath,
-                            ),
-                            bannerIsFullPath: data.bannerIsFullPath,
-                            ...(projectLanguageMetadata === undefined
-                                ? {}
-                                : contentLanguageMetadataUpdateValues(
-                                      projectLanguageMetadata,
-                                  )),
-                        })
-                        .where(
-                            eq(
-                                projectContentTable.id,
-                                project.currentContentId,
-                            ),
-                        );
-
-                    if (languageTextChanged) {
-                        await deleteMachineProjectContentTranslations({
-                            db: tx,
-                            projectContentId: project.currentContentId,
-                            now,
-                        });
-                    }
-
-                    await syncProjectBannerLocalizations({
-                        db: tx,
-                        projectContentId: project.currentContentId,
-                        localizations: contentLocalizations,
-                        targetLanguageCodes:
-                            normalizedLanguageSettings.targetLanguageCodes,
-                        now,
-                    });
-
-                    await syncProjectContentLocalizations({
-                        db: tx,
-                        projectContentId: project.currentContentId,
-                        localizations: contentLocalizations,
-                        targetLanguageCodes:
-                            normalizedLanguageSettings.targetLanguageCodes,
-                        sourceLanguageMetadata,
-                        now,
-                    });
-                }
-
-                if (
-                    projectContentId === null ||
-                    projectContentPublicId === null
-                ) {
-                    throw httpErrors.internalServerError(
-                        "Project content was not persisted",
-                    );
-                }
-
-                const projectSource: ProjectContentSource = {
+        const persistProject = async (
+            tx: PostgresTransaction,
+        ): Promise<number[]> => {
+            if (
+                !(await lockListedProjectOrganizations({
+                    db: tx,
                     projectId: project.projectId,
-                    projectSlug: data.projectSlug,
-                    dynamicTranslationEnabled:
-                        targetLanguagePolicy.dynamicTranslationEnabled,
-                    contentId: projectContentId,
-                    publicId: projectContentPublicId,
-                    title: data.projectTitle,
-                    subtitle: normalizeOptionalString(data.subtitle),
-                    body: sanitizedProjectBody.body ?? null,
-                    sourceLanguageCode:
-                        sourceLanguageMetadata.sourceLanguageCode,
-                    sourceRawLanguageCode:
-                        sourceLanguageMetadata.sourceRawLanguageCode,
-                    sourceLanguageProvider:
-                        sourceLanguageMetadata.sourceLanguageProvider,
-                    sourceLanguageConfidence:
-                        sourceLanguageMetadata.sourceLanguageConfidence,
-                };
-
-                await tx
-                    .update(projectOrganizationOwnershipTable)
-                    .set({ deletedAt: now })
-                    .where(
-                        and(
-                            eq(
-                                projectOrganizationOwnershipTable.projectId,
-                                project.projectId,
-                            ),
-                            isNull(projectOrganizationOwnershipTable.deletedAt),
-                        ),
-                    );
-                await tx.insert(projectOrganizationOwnershipTable).values(
-                    ownerOrganizationSlugs.map((organizationSlug) => ({
-                        projectId: project.projectId,
-                        organizationId: getOrganizationId({
-                            organizationsBySlug:
-                                organizationLookup.organizationsBySlug,
-                            slug: organizationSlug,
-                        }),
-                    })),
+                    organizationIds: [
+                        ...organizationLookup.organizationsBySlug.values(),
+                    ].map((organization) => organization.id),
+                }))
+            ) {
+                throw httpErrors.conflict(
+                    "Project organization is no longer available",
                 );
+            }
+            const now = new Date();
+            const updatedProjects = await tx
+                .update(projectTable)
+                .set({
+                    slug: data.projectSlug,
+                    title: data.projectTitle,
+                    dynamicTranslationEnabled:
+                        normalizedLanguageSettings.dynamicTranslationEnabled,
+                    updatedAt: now,
+                })
+                .where(
+                    and(
+                        eq(projectTable.id, project.projectId),
+                        isNull(projectTable.deletedAt),
+                    ),
+                )
+                .returning({ projectId: projectTable.id });
+            if (updatedProjects.length === 0) {
+                throw httpErrors.notFound("Project not found");
+            }
 
+            let projectContentId = project.currentContentId;
+            let projectContentPublicId = project.currentContentPublicId;
+            if (project.currentContentId === null) {
+                const insertedContents = await tx
+                    .insert(projectContentTable)
+                    .values({
+                        projectId: project.projectId,
+                        title: data.projectTitle,
+                        subtitle: normalizeOptionalString(data.subtitle),
+                        body: sanitizedProjectBody.body ?? null,
+                        bodyPlainText,
+                        bannerPath: normalizeOptionalString(data.bannerPath),
+                        bannerIsFullPath: data.bannerIsFullPath,
+                        ...contentLanguageMetadataUpdateValues(
+                            projectLanguageMetadata ??
+                                UNKNOWN_CONTENT_LANGUAGE_METADATA,
+                        ),
+                    })
+                    .returning({
+                        contentId: projectContentTable.id,
+                        publicId: projectContentTable.publicId,
+                    });
+                const insertedContent = insertedContents.at(0);
+                if (insertedContent === undefined) {
+                    throw httpErrors.internalServerError(
+                        "Failed to create project content",
+                    );
+                }
+                projectContentId = insertedContent.contentId;
+                projectContentPublicId = insertedContent.publicId;
                 await tx
-                    .update(projectTranslationTargetLanguageTable)
-                    .set({ deletedAt: now })
+                    .update(projectTable)
+                    .set({ currentContentId: insertedContent.contentId })
+                    .where(eq(projectTable.id, project.projectId));
+
+                await syncProjectBannerLocalizations({
+                    db: tx,
+                    projectContentId: insertedContent.contentId,
+                    localizations: contentLocalizations,
+                    targetLanguageCodes:
+                        normalizedLanguageSettings.targetLanguageCodes,
+                    now,
+                });
+
+                await syncProjectContentLocalizations({
+                    db: tx,
+                    projectContentId: insertedContent.contentId,
+                    localizations: contentLocalizations,
+                    targetLanguageCodes:
+                        normalizedLanguageSettings.targetLanguageCodes,
+                    sourceLanguageMetadata:
+                        projectLanguageMetadata ??
+                        UNKNOWN_CONTENT_LANGUAGE_METADATA,
+                    now,
+                });
+            } else {
+                await tx
+                    .update(projectContentTable)
+                    .set({
+                        title: data.projectTitle,
+                        subtitle: normalizeOptionalString(data.subtitle),
+                        body: sanitizedProjectBody.body ?? null,
+                        bodyPlainText,
+                        bannerPath: normalizeOptionalString(data.bannerPath),
+                        bannerIsFullPath: data.bannerIsFullPath,
+                        ...(projectLanguageMetadata === undefined
+                            ? {}
+                            : contentLanguageMetadataUpdateValues(
+                                  projectLanguageMetadata,
+                              )),
+                    })
+                    .where(
+                        eq(projectContentTable.id, project.currentContentId),
+                    );
+
+                if (languageTextChanged) {
+                    await deleteMachineProjectContentTranslations({
+                        db: tx,
+                        projectContentId: project.currentContentId,
+                        now,
+                    });
+                }
+
+                await syncProjectBannerLocalizations({
+                    db: tx,
+                    projectContentId: project.currentContentId,
+                    localizations: contentLocalizations,
+                    targetLanguageCodes:
+                        normalizedLanguageSettings.targetLanguageCodes,
+                    now,
+                });
+
+                await syncProjectContentLocalizations({
+                    db: tx,
+                    projectContentId: project.currentContentId,
+                    localizations: contentLocalizations,
+                    targetLanguageCodes:
+                        normalizedLanguageSettings.targetLanguageCodes,
+                    sourceLanguageMetadata,
+                    now,
+                });
+            }
+
+            if (projectContentId === null || projectContentPublicId === null) {
+                throw httpErrors.internalServerError(
+                    "Project content was not persisted",
+                );
+            }
+
+            const projectSource: ProjectContentSource = {
+                projectId: project.projectId,
+                projectSlug: data.projectSlug,
+                dynamicTranslationEnabled:
+                    targetLanguagePolicy.dynamicTranslationEnabled,
+                contentId: projectContentId,
+                publicId: projectContentPublicId,
+                title: data.projectTitle,
+                subtitle: normalizeOptionalString(data.subtitle),
+                body: sanitizedProjectBody.body ?? null,
+                sourceLanguageCode: sourceLanguageMetadata.sourceLanguageCode,
+                sourceRawLanguageCode:
+                    sourceLanguageMetadata.sourceRawLanguageCode,
+                sourceLanguageProvider:
+                    sourceLanguageMetadata.sourceLanguageProvider,
+                sourceLanguageConfidence:
+                    sourceLanguageMetadata.sourceLanguageConfidence,
+            };
+
+            await tx
+                .update(projectOrganizationOwnershipTable)
+                .set({ deletedAt: now })
+                .where(
+                    and(
+                        eq(
+                            projectOrganizationOwnershipTable.projectId,
+                            project.projectId,
+                        ),
+                        isNull(projectOrganizationOwnershipTable.deletedAt),
+                    ),
+                );
+            await tx.insert(projectOrganizationOwnershipTable).values(
+                ownerOrganizationSlugs.map((organizationSlug) => ({
+                    projectId: project.projectId,
+                    organizationId: getOrganizationId({
+                        organizationsBySlug:
+                            organizationLookup.organizationsBySlug,
+                        slug: organizationSlug,
+                    }),
+                })),
+            );
+
+            await tx
+                .update(projectTranslationTargetLanguageTable)
+                .set({ deletedAt: now })
+                .where(
+                    and(
+                        eq(
+                            projectTranslationTargetLanguageTable.projectId,
+                            project.projectId,
+                        ),
+                        isNull(projectTranslationTargetLanguageTable.deletedAt),
+                    ),
+                );
+            if (normalizedLanguageSettings.targetLanguageCodes.length > 0) {
+                await tx.insert(projectTranslationTargetLanguageTable).values(
+                    normalizedLanguageSettings.targetLanguageCodes.map(
+                        (languageCode) => ({
+                            projectId: project.projectId,
+                            languageCode,
+                        }),
+                    ),
+                );
+            }
+
+            const existingExternalOrganizationRows = await tx
+                .select({ id: projectExternalOrganizationTable.id })
+                .from(projectExternalOrganizationTable)
+                .where(
+                    and(
+                        eq(
+                            projectExternalOrganizationTable.projectId,
+                            project.projectId,
+                        ),
+                        isNull(projectExternalOrganizationTable.deletedAt),
+                    ),
+                );
+            const existingExternalOrganizationIds =
+                existingExternalOrganizationRows.map(
+                    (externalOrganization) => externalOrganization.id,
+                );
+            await tx
+                .update(projectOrganizationAttributionTable)
+                .set({ deletedAt: now })
+                .where(
+                    and(
+                        eq(
+                            projectOrganizationAttributionTable.projectId,
+                            project.projectId,
+                        ),
+                        isNull(projectOrganizationAttributionTable.deletedAt),
+                    ),
+                );
+            if (existingExternalOrganizationIds.length > 0) {
+                await tx
+                    .update(projectExternalOrganizationLocalizationTable)
+                    .set({ deletedAt: now, updatedAt: now })
                     .where(
                         and(
-                            eq(
-                                projectTranslationTargetLanguageTable.projectId,
-                                project.projectId,
+                            inArray(
+                                projectExternalOrganizationLocalizationTable.externalOrganizationId,
+                                existingExternalOrganizationIds,
                             ),
                             isNull(
-                                projectTranslationTargetLanguageTable.deletedAt,
+                                projectExternalOrganizationLocalizationTable.deletedAt,
                             ),
                         ),
                     );
-                if (normalizedLanguageSettings.targetLanguageCodes.length > 0) {
-                    await tx
-                        .insert(projectTranslationTargetLanguageTable)
-                        .values(
-                            normalizedLanguageSettings.targetLanguageCodes.map(
-                                (languageCode) => ({
-                                    projectId: project.projectId,
-                                    languageCode,
-                                }),
-                            ),
-                        );
-                }
-
-                const existingExternalOrganizationRows = await tx
-                    .select({ id: projectExternalOrganizationTable.id })
-                    .from(projectExternalOrganizationTable)
+                await tx
+                    .update(projectExternalOrganizationTable)
+                    .set({ deletedAt: now, updatedAt: now })
                     .where(
                         and(
-                            eq(
-                                projectExternalOrganizationTable.projectId,
-                                project.projectId,
+                            inArray(
+                                projectExternalOrganizationTable.id,
+                                existingExternalOrganizationIds,
                             ),
                             isNull(projectExternalOrganizationTable.deletedAt),
                         ),
                     );
-                const existingExternalOrganizationIds =
-                    existingExternalOrganizationRows.map(
-                        (externalOrganization) => externalOrganization.id,
-                    );
-                await tx
-                    .update(projectOrganizationAttributionTable)
-                    .set({ deletedAt: now })
-                    .where(
-                        and(
-                            eq(
-                                projectOrganizationAttributionTable.projectId,
-                                project.projectId,
-                            ),
-                            isNull(
-                                projectOrganizationAttributionTable.deletedAt,
-                            ),
-                        ),
-                    );
-                if (existingExternalOrganizationIds.length > 0) {
-                    await tx
-                        .update(projectExternalOrganizationLocalizationTable)
-                        .set({ deletedAt: now, updatedAt: now })
-                        .where(
-                            and(
-                                inArray(
-                                    projectExternalOrganizationLocalizationTable.externalOrganizationId,
-                                    existingExternalOrganizationIds,
-                                ),
-                                isNull(
-                                    projectExternalOrganizationLocalizationTable.deletedAt,
-                                ),
-                            ),
-                        );
-                    await tx
-                        .update(projectExternalOrganizationTable)
-                        .set({ deletedAt: now, updatedAt: now })
-                        .where(
-                            and(
-                                inArray(
-                                    projectExternalOrganizationTable.id,
-                                    existingExternalOrganizationIds,
-                                ),
-                                isNull(
-                                    projectExternalOrganizationTable.deletedAt,
-                                ),
-                            ),
-                        );
-                }
+            }
 
-                const sortOrdersByRole = new Map<
-                    ProjectOrganizationAttributionRole,
-                    number
-                >();
-                for (const attribution of attributions) {
-                    const sortOrder = getNextSortOrder({
-                        role: attribution.role,
-                        sortOrdersByRole,
-                    });
+            const sortOrdersByRole = new Map<
+                ProjectOrganizationAttributionRole,
+                number
+            >();
+            for (const attribution of attributions) {
+                const sortOrder = getNextSortOrder({
+                    role: attribution.role,
+                    sortOrdersByRole,
+                });
 
-                    if (attribution.source === "organization") {
-                        await tx
-                            .insert(projectOrganizationAttributionTable)
-                            .values({
-                                projectId: project.projectId,
-                                role: attribution.role,
-                                sortOrder,
-                                organizationId: attribution.organizationId,
-                                externalOrganizationId: null,
-                            });
-                        continue;
-                    }
-
-                    const insertedExternalOrganizations = await tx
-                        .insert(projectExternalOrganizationTable)
-                        .values({
-                            projectId: project.projectId,
-                            displayName: attribution.displayName,
-                            defaultLanguageCode:
-                                attribution.defaultLanguageCode,
-                            description: attribution.description,
-                            imagePath: attribution.imagePath,
-                            isFullImagePath: attribution.isFullImagePath,
-                            websiteUrl: attribution.websiteUrl,
-                        })
-                        .returning({
-                            externalOrganizationId:
-                                projectExternalOrganizationTable.id,
-                        });
-                    const insertedExternalOrganization =
-                        insertedExternalOrganizations.at(0);
-                    if (insertedExternalOrganization === undefined) {
-                        throw httpErrors.internalServerError(
-                            "Failed to create external organization",
-                        );
-                    }
-
-                    await tx
-                        .insert(projectExternalOrganizationLocalizationTable)
-                        .values({
-                            externalOrganizationId:
-                                insertedExternalOrganization.externalOrganizationId,
-                            languageCode: attribution.defaultLanguageCode,
-                            displayName: attribution.displayName,
-                            description: attribution.description ?? "",
-                            websiteUrl: attribution.websiteUrl,
-                            imagePath: attribution.imagePath,
-                            isFullImagePath: attribution.isFullImagePath,
-                        });
-
-                    const additionalLocalizations =
-                        attribution.additionalLocalizations
-                            .filter(
-                                (localization) =>
-                                    localization.languageCode !==
-                                    attribution.defaultLanguageCode,
-                            )
-                            .map((localization) => ({
-                                externalOrganizationId:
-                                    insertedExternalOrganization.externalOrganizationId,
-                                languageCode: localization.languageCode,
-                                displayName: localization.displayName,
-                                description: localization.description,
-                                websiteUrl: localization.websiteUrl,
-                                imagePath: localization.imagePath,
-                                isFullImagePath: localization.isFullImagePath,
-                            }));
-                    if (additionalLocalizations.length > 0) {
-                        await tx
-                            .insert(
-                                projectExternalOrganizationLocalizationTable,
-                            )
-                            .values(additionalLocalizations)
-                            .onConflictDoNothing();
-                    }
-
+                if (attribution.source === "organization") {
                     await tx
                         .insert(projectOrganizationAttributionTable)
                         .values({
                             projectId: project.projectId,
                             role: attribution.role,
                             sortOrder,
-                            organizationId: null,
-                            externalOrganizationId:
-                                insertedExternalOrganization.externalOrganizationId,
+                            organizationId: attribution.organizationId,
+                            externalOrganizationId: null,
                         });
+                    continue;
+                }
+
+                const insertedExternalOrganizations = await tx
+                    .insert(projectExternalOrganizationTable)
+                    .values({
+                        projectId: project.projectId,
+                        displayName: attribution.displayName,
+                        defaultLanguageCode: attribution.defaultLanguageCode,
+                        description: attribution.description,
+                        imagePath: attribution.imagePath,
+                        isFullImagePath: attribution.isFullImagePath,
+                        websiteUrl: attribution.websiteUrl,
+                    })
+                    .returning({
+                        externalOrganizationId:
+                            projectExternalOrganizationTable.id,
+                    });
+                const insertedExternalOrganization =
+                    insertedExternalOrganizations.at(0);
+                if (insertedExternalOrganization === undefined) {
+                    throw httpErrors.internalServerError(
+                        "Failed to create external organization",
+                    );
                 }
 
                 await tx
-                    .update(projectContactTable)
-                    .set({ deletedAt: now, updatedAt: now })
-                    .where(
-                        and(
-                            eq(
-                                projectContactTable.projectId,
-                                project.projectId,
-                            ),
-                            isNull(projectContactTable.deletedAt),
-                        ),
-                    );
-                await insertProjectContact({
-                    db: tx,
-                    projectId: project.projectId,
-                    contact: data.contact,
-                    organizationsBySlug: organizationLookup.organizationsBySlug,
-                });
+                    .insert(projectExternalOrganizationLocalizationTable)
+                    .values({
+                        externalOrganizationId:
+                            insertedExternalOrganization.externalOrganizationId,
+                        languageCode: attribution.defaultLanguageCode,
+                        displayName: attribution.displayName,
+                        description: attribution.description ?? "",
+                        websiteUrl: attribution.websiteUrl,
+                        imagePath: attribution.imagePath,
+                        isFullImagePath: attribution.isFullImagePath,
+                    });
 
-                return await createEagerContentTranslationWorkForKnownProject({
-                    db: tx,
-                    source: projectSource,
-                    targetLanguagePolicy,
-                    now,
-                    log,
+                const additionalLocalizations =
+                    attribution.additionalLocalizations
+                        .filter(
+                            (localization) =>
+                                localization.languageCode !==
+                                attribution.defaultLanguageCode,
+                        )
+                        .map((localization) => ({
+                            externalOrganizationId:
+                                insertedExternalOrganization.externalOrganizationId,
+                            languageCode: localization.languageCode,
+                            displayName: localization.displayName,
+                            description: localization.description,
+                            websiteUrl: localization.websiteUrl,
+                            imagePath: localization.imagePath,
+                            isFullImagePath: localization.isFullImagePath,
+                        }));
+                if (additionalLocalizations.length > 0) {
+                    await tx
+                        .insert(projectExternalOrganizationLocalizationTable)
+                        .values(additionalLocalizations)
+                        .onConflictDoNothing();
+                }
+
+                await tx.insert(projectOrganizationAttributionTable).values({
+                    projectId: project.projectId,
+                    role: attribution.role,
+                    sortOrder,
+                    organizationId: null,
+                    externalOrganizationId:
+                        insertedExternalOrganization.externalOrganizationId,
                 });
-            },
-        );
+            }
+
+            await tx
+                .update(projectContactTable)
+                .set({ deletedAt: now, updatedAt: now })
+                .where(
+                    and(
+                        eq(projectContactTable.projectId, project.projectId),
+                        isNull(projectContactTable.deletedAt),
+                    ),
+                );
+            await insertProjectContact({
+                db: tx,
+                projectId: project.projectId,
+                contact: data.contact,
+                organizationsBySlug: organizationLookup.organizationsBySlug,
+            });
+
+            return await createEagerContentTranslationWorkForKnownProject({
+                db: tx,
+                source: projectSource,
+                targetLanguagePolicy,
+                now,
+                log,
+            });
+        };
+        const eagerContentTranslationWorkIds =
+            await withProjectOwnershipTransaction({
+                db,
+                operation: persistProject,
+            });
 
         return {
             success: true,

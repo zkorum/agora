@@ -114,6 +114,21 @@ export function parseRealtimeSubscriptionRequest(
 type ConversationSubscriptionEvent =
     | {
           id: number | undefined;
+          event: "conversation_qv_calculation_updated";
+          data: SSEEventDataByType["conversation_qv_calculation_updated"];
+      }
+    | {
+          id: number | undefined;
+          event: "conversation_qv_stats_updated";
+          data: SSEEventDataByType["conversation_qv_stats_updated"];
+      }
+    | {
+          id: number | undefined;
+          event: "opinion_source_changed";
+          data: SSEEventDataByType["opinion_source_changed"];
+      }
+    | {
+          id: number | undefined;
           event: "opinion_vote_counts_updated";
           data: SSEEventDataByType["opinion_vote_counts_updated"];
       }
@@ -146,6 +161,11 @@ type ConversationSubscriptionEvent =
           id: number | undefined;
           event: "conversation_settings_updated";
           data: SSEEventDataByType["conversation_settings_updated"];
+      }
+    | {
+          event: "comparison_items_updated";
+          data: SSEEventDataByType["comparison_items_updated"];
+          id?: number;
       }
     | {
           id: number | undefined;
@@ -519,6 +539,16 @@ export class RealtimeSSEManager {
     /**
      * Broadcast a global event to ALL connected clients (both authenticated and anonymous)
      */
+    public closeAllForResync(): void {
+        // Reconnect rechecks authorization, including auth events lost to pruning.
+        for (const replies of [...this.connections.values()]) {
+            for (const reply of [...replies])
+                this.closeAuthenticatedConnection(reply);
+        }
+        for (const reply of [...this.anonymousConnections])
+            this.closeAnonymousConnection(reply);
+    }
+
     public broadcastToAll<TEvent extends SSEEventType>({
         event,
         data,

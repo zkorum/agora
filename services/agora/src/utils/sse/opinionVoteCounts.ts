@@ -11,6 +11,10 @@ export function createOpinionVoteCountsTracker() {
   let trackedConversation: string | undefined;
 
   return {
+    clear(): void {
+      latestDeliveryByOpinion.clear();
+      trackedConversation = undefined;
+    },
     retain({
       data,
       eventId,

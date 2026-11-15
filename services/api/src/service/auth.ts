@@ -11,7 +11,7 @@ import {
     type ReacherIsReachable,
 } from "@/service/emailVerification.js";
 import type { AxiosInstance } from "axios";
-import type { CredentialAuthState, AuthResult } from "./auth/core/types.js";
+import type { AuthResult } from "./auth/core/types.js";
 import {
     authAttemptPhoneTable,
     authAttemptEmailTable,
@@ -25,7 +25,10 @@ import {
     userDisplayLanguageTable,
     userSpokenLanguagesTable,
 } from "@/shared-backend/schema.js";
-import { getPrimaryDatabase } from "@/shared-backend/db.js";
+import {
+    getPrimaryDatabase,
+    type PostgresTransaction,
+} from "@/shared-backend/db.js";
 import { nowZeroMs } from "@/shared/util.js";
 import type {
     AuthenticateRequestBody,
@@ -71,6 +74,7 @@ import { setTimeout as sleep } from "node:timers/promises";
 import { isBlockedPhoneNumber } from "./blockedPhoneNumber.js";
 import type { PhoneSmsBudget } from "./phoneSmsBudget.js";
 import { logApiError } from "@/logging/privacy.js";
+import { restoreAccountAfterVerification } from "./accountRecovery.js";
 
 const OTP_DESTINATION_STREAK_RESET_MS = 24 * 60 * 60 * 1000;
 
@@ -228,6 +232,7 @@ function buildTooManyWrongGuessResponse(nextCodeSoonestTime: Date): {
 }
 
 async function finalizeVerifiedPhoneOtp({
+    recoverAccount,
     db,
     didWrite,
     resultOtp,
@@ -238,6 +243,7 @@ async function finalizeVerifiedPhoneOtp({
     sessionLifetimeDays,
     currentDisplayLanguage,
 }: {
+    recoverAccount: boolean;
     db: PostgresDatabase;
     didWrite: string;
     resultOtp: {
@@ -310,9 +316,28 @@ async function finalizeVerifiedPhoneOtp({
         const authResult = await getPhoneAuthenticationTypeByHash({
             db: tx,
             phoneHash: resultOtp.phoneHash,
-            didWrite,
             deviceStatus,
         });
+
+        if (authResult.type === "restore_deleted") {
+            if (!recoverAccount)
+                return { success: false, reason: "recovery_required" };
+            if (
+                resultOtp.authType !== "restore_deleted" ||
+                resultOtp.userId !== authResult.userId
+            )
+                return { success: false, reason: "verification_failed" };
+            return await restoreAccountAfterVerification({
+                db: tx,
+                userId: authResult.userId,
+                didWrite,
+                userAgent: resultOtp.userAgent,
+                sessionLifetimeDays,
+                proof: { method: "phone", phoneHash: resultOtp.phoneHash },
+            });
+        }
+        if (recoverAccount)
+            return { success: false, reason: "recovery_unavailable" };
 
         if (authResult.type === "associated_with_another_user") {
             return { success: false, reason: "verification_failed" };
@@ -336,9 +361,7 @@ async function finalizeVerifiedPhoneOtp({
             return { success: false, reason: "verification_failed" };
         }
 
-        if (authResult.type === "register") {
-            authResult.userId = resultOtp.userId;
-        } else {
+        if (authResult.type !== "register") {
             const currentUserId =
                 authResult.type === "merge"
                     ? authResult.toUserId
@@ -357,7 +380,9 @@ async function finalizeVerifiedPhoneOtp({
         }
 
         return await registerOrLoginWithPhoneNumber({
-            ...authResult,
+            ...(authResult.type === "register"
+                ? { ...authResult, userId: resultOtp.userId }
+                : authResult),
             db: tx,
             didWrite,
             lastTwoDigits: resultOtp.lastTwoDigits,
@@ -375,6 +400,7 @@ async function finalizeVerifiedPhoneOtp({
 }
 
 async function finalizeVerifiedEmailOtp({
+    recoverAccount,
     db,
     didWrite,
     resultOtp,
@@ -383,6 +409,7 @@ async function finalizeVerifiedEmailOtp({
     sessionLifetimeDays,
     currentDisplayLanguage,
 }: {
+    recoverAccount: boolean;
     db: PostgresDatabase;
     didWrite: string;
     resultOtp: {
@@ -432,9 +459,28 @@ async function finalizeVerifiedEmailOtp({
         const authResult = await getEmailAuthTypeWithDeviceStatus({
             db: tx,
             email: resultOtp.email,
-            didWrite,
             deviceStatus,
         });
+
+        if (authResult.type === "restore_deleted") {
+            if (!recoverAccount)
+                return { success: false, reason: "recovery_required" };
+            if (
+                resultOtp.authType !== "restore_deleted" ||
+                resultOtp.userId !== authResult.userId
+            )
+                return { success: false, reason: "verification_failed" };
+            return await restoreAccountAfterVerification({
+                db: tx,
+                userId: authResult.userId,
+                didWrite,
+                userAgent: resultOtp.userAgent,
+                sessionLifetimeDays,
+                proof: { method: "email", email: resultOtp.email },
+            });
+        }
+        if (recoverAccount)
+            return { success: false, reason: "recovery_unavailable" };
 
         if (authResult.type === "associated_with_another_user") {
             return { success: false, reason: "verification_failed" };
@@ -458,9 +504,7 @@ async function finalizeVerifiedEmailOtp({
             return { success: false, reason: "verification_failed" };
         }
 
-        if (authResult.type === "register") {
-            authResult.userId = resultOtp.userId;
-        } else {
+        if (authResult.type !== "register") {
             const currentUserId =
                 authResult.type === "merge"
                     ? authResult.toUserId
@@ -479,7 +523,9 @@ async function finalizeVerifiedEmailOtp({
         }
 
         return await registerOrLoginWithEmail({
-            ...authResult,
+            ...(authResult.type === "register"
+                ? { ...authResult, userId: resultOtp.userId }
+                : authResult),
             db: tx,
             didWrite,
             email: resultOtp.email,
@@ -493,6 +539,7 @@ async function finalizeVerifiedEmailOtp({
 }
 
 interface VerifyOtpProps {
+    recoverAccount?: boolean;
     db: PostgresDatabase;
     maxAttempt: number;
     didWrite: string;
@@ -700,14 +747,12 @@ export async function createUserWithInitialLanguagePreferencesIfMissing({
 interface GetPhoneAuthenticationTypeByHash {
     db: PostgresDatabase;
     phoneHash: string;
-    didWrite: string;
     deviceStatus: DeviceLoginStatusExtended;
 }
 
 interface GetZKPAuthenticationType {
     db: PostgresDatabase;
     nullifier: string;
-    didWrite: string;
     deviceStatus: DeviceLoginStatusExtended;
 }
 
@@ -760,7 +805,7 @@ interface SendOtpPhoneNumberProps {
 }
 
 interface RegisterOrLoginWithPhoneNumberBaseProps {
-    db: PostgresDatabase;
+    db: PostgresTransaction;
     didWrite: string;
     lastTwoDigits: number;
     countryCallingCode: string;
@@ -1074,6 +1119,7 @@ export async function verifyPhoneOtp(
 }
 
 async function verifyPhoneOtpWithoutTimingProtection({
+    recoverAccount = false,
     db,
     maxAttempt,
     didWrite,
@@ -1174,6 +1220,7 @@ async function verifyPhoneOtpWithoutTimingProtection({
         });
     }
     return await finalizeVerifiedPhoneOtp({
+        recoverAccount,
         db: primaryDb,
         didWrite,
         resultOtp: {
@@ -1485,6 +1532,7 @@ export async function loginKnownDeviceWithZKP({
 // !WARNING: manually update DB enum value if changing this
 // TODO: automatically sync them - use one type only
 const authenticateTypeSchema = z.enum([
+    "restore_deleted",
     "register",
     "login_known_device",
     "login_new_device",
@@ -1571,253 +1619,61 @@ export async function getDidWriteAssociationWithNullifier({
     }
 }
 
-/**
- * Phone-specific credential auth state
- * Maps phone authentication data to generic CredentialAuthState
- */
-type PhoneAuthState = CredentialAuthState & {
-    metadata?: { phoneHash: string };
-};
-
-interface GetPhoneAuthStateParams {
-    db: PostgresDatabase;
-    phoneHash: string;
-    didWrite: string;
-}
-
-async function getPhoneAuthState({
+async function getPhoneAuthenticationTypeByHash({
     db,
     phoneHash,
-    didWrite,
-}: GetPhoneAuthStateParams): Promise<PhoneAuthState> {
-    // Query 1: Check device association with phone (only active/non-deleted phone credentials)
-    const didAssociationResult = await db
-        .select({
-            phoneHash: phoneTable.phoneHash,
-        })
-        .from(deviceTable)
-        .leftJoin(
-            phoneTable,
-            and(
-                eq(phoneTable.userId, deviceTable.userId),
-                eq(phoneTable.phoneHash, phoneHash),
-                eq(phoneTable.isDeleted, false),
-            ),
-        )
-        .where(eq(deviceTable.didWrite, didWrite));
-
-    const deviceExists = didAssociationResult.length > 0;
-    const isAssociated =
-        deviceExists && didAssociationResult[0].phoneHash !== null;
-
-    // Query 2: Check phone user status (only active users, deleted users are ignored)
+    deviceStatus,
+}: GetPhoneAuthenticationTypeByHash): Promise<AuthResult> {
     const phoneResults = await db
         .select({
             userId: phoneTable.userId,
+            isDeleted: userTable.isDeleted,
         })
         .from(phoneTable)
         .innerJoin(userTable, eq(userTable.id, phoneTable.userId))
         .where(
             and(
                 eq(phoneTable.phoneHash, phoneHash),
-                eq(phoneTable.isDeleted, false),
+                or(
+                    eq(phoneTable.isDeleted, false),
+                    eq(phoneTable.reservedForRecovery, true),
+                ),
             ),
         )
         .limit(1);
-
-    const activeUser = phoneResults.at(0);
-
-    // Handle "device_owns_credential" case first - it guarantees a user exists
-    if (isAssociated) {
-        // Device is associated, so phoneResults MUST have at least one entry
-        if (activeUser) {
-            return {
-                deviceCredentialAssociation: "device_owns_credential",
-                userId: activeUser.userId,
-                metadata: { phoneHash },
-            };
-        }
-        // If we reach here, phone row was deleted - shouldn't happen with FK
-        // Fall through to treat as not associated
-    }
-
-    // For non-associated cases, check active user
-    if (activeUser) {
-        const userId = activeUser.userId;
-        // Phone is a hard credential - user with phone is always registered
-        const isRegistered = true;
-
-        if (!deviceExists) {
-            return {
-                deviceCredentialAssociation: "device_unknown_credential_owned",
-                userId,
-                isRegistered,
-                metadata: { phoneHash },
-            };
-        } else {
-            return {
-                deviceCredentialAssociation: "device_missing_credential_owned",
-                userId,
-                isRegistered,
-                metadata: { phoneHash },
-            };
-        }
-    }
-
-    // Phone is available (no active user, deleted users ignored)
-    if (!deviceExists) {
-        return {
-            deviceCredentialAssociation: "device_unknown_credential_available",
-            metadata: { phoneHash },
-        };
-    } else {
-        return {
-            deviceCredentialAssociation: "device_missing_credential_available",
-            metadata: { phoneHash },
-        };
-    }
-}
-
-/**
- * Rarimo nullifier-specific credential auth state
- * Maps Rarimo nullifier authentication data to generic CredentialAuthState
- */
-type NullifierAuthState = CredentialAuthState & {
-    metadata?: { nullifier: string };
-};
-
-interface GetNullifierAuthStateParams {
-    db: PostgresDatabase;
-    nullifier: string;
-    didWrite: string;
-}
-
-async function getNullifierAuthState({
-    db,
-    nullifier,
-    didWrite,
-}: GetNullifierAuthStateParams): Promise<NullifierAuthState> {
-    // Query 1: Check device association with nullifier (only active, non-deleted entries)
-    const didAssociationResult = await db
-        .select({
-            nullifier: zkPassportTable.nullifier,
-        })
-        .from(deviceTable)
-        .leftJoin(
-            zkPassportTable,
-            and(
-                eq(zkPassportTable.userId, deviceTable.userId),
-                eq(zkPassportTable.nullifier, nullifier),
-                eq(zkPassportTable.isDeleted, false),
-            ),
-        )
-        .where(eq(deviceTable.didWrite, didWrite));
-
-    const deviceExists = didAssociationResult.length > 0;
-    const isAssociated =
-        deviceExists && didAssociationResult[0].nullifier !== null;
-
-    // Query 2: Check nullifier user status (only active users, deleted users ignored)
-    const nullifierResults = await db
-        .select({
-            userId: zkPassportTable.userId,
-        })
-        .from(zkPassportTable)
-        .innerJoin(userTable, eq(userTable.id, zkPassportTable.userId))
-        .where(
-            and(
-                eq(zkPassportTable.nullifier, nullifier),
-                eq(zkPassportTable.isDeleted, false),
-            ),
-        )
-        .limit(1);
-
-    const activeUser = nullifierResults.at(0);
-
-    // Handle "device_owns_credential" case first
-    if (isAssociated) {
-        if (activeUser) {
-            return {
-                deviceCredentialAssociation: "device_owns_credential",
-                userId: activeUser.userId,
-                metadata: { nullifier },
-            };
-        }
-        // Fall through if no user found (shouldn't happen with FK)
-    }
-
-    // Check active user
-    if (activeUser) {
-        const userId = activeUser.userId;
-        // Rarimo is a hard credential - user with Rarimo is always registered
-        const isRegistered = true;
-
-        if (!deviceExists) {
-            return {
-                deviceCredentialAssociation: "device_unknown_credential_owned",
-                userId,
-                isRegistered,
-                metadata: { nullifier },
-            };
-        } else {
-            return {
-                deviceCredentialAssociation: "device_missing_credential_owned",
-                userId,
-                isRegistered,
-                metadata: { nullifier },
-            };
-        }
-    }
-
-    // Nullifier is available (no active user, deleted users ignored)
-    if (!deviceExists) {
-        return {
-            deviceCredentialAssociation: "device_unknown_credential_available",
-            metadata: { nullifier },
-        };
-    } else {
-        return {
-            deviceCredentialAssociation: "device_missing_credential_available",
-            metadata: { nullifier },
-        };
-    }
-}
-
-export async function getPhoneAuthenticationTypeByHash({
-    db,
-    phoneHash,
-    didWrite,
-    deviceStatus,
-}: GetPhoneAuthenticationTypeByHash): Promise<AuthResult> {
-    const credentialAuthState = await getPhoneAuthState({
-        db,
-        phoneHash,
-        didWrite,
-    });
 
     return determineAuthType({
-        credentialAuthState,
+        credentialOwner: phoneResults.at(0),
         deviceStatus,
-        authMethod: "phone",
     });
 }
 
 export async function getZKPAuthenticationType({
     db,
     nullifier,
-    didWrite,
     deviceStatus,
 }: GetZKPAuthenticationType): Promise<AuthResult> {
-    const credentialAuthState = await getNullifierAuthState({
-        db,
-        nullifier,
-        didWrite,
-    });
+    const nullifierResults = await db
+        .select({
+            userId: zkPassportTable.userId,
+            isDeleted: userTable.isDeleted,
+        })
+        .from(zkPassportTable)
+        .innerJoin(userTable, eq(userTable.id, zkPassportTable.userId))
+        .where(
+            and(
+                eq(zkPassportTable.nullifier, nullifier),
+                or(
+                    eq(zkPassportTable.isDeleted, false),
+                    eq(zkPassportTable.reservedForRecovery, true),
+                ),
+            ),
+        )
+        .limit(1);
 
     return determineAuthType({
-        credentialAuthState,
+        credentialOwner: nullifierResults.at(0),
         deviceStatus,
-        authMethod: "rarimo",
     });
 }
 
@@ -1879,7 +1735,6 @@ async function authenticateAttemptWithoutTimingProtection({
     const authResult = await getPhoneAuthenticationTypeByHash({
         db: primaryDb,
         phoneHash: requestedPhoneHash,
-        didWrite,
         deviceStatus,
     });
     // Never disclose credential ownership before the caller proves phone control.
@@ -2737,140 +2592,40 @@ async function updateAuthAttemptCode({
 // Email Authentication
 // ============================================================================
 
-/**
- * Email-specific credential auth state
- * Maps email authentication data to generic CredentialAuthState
- */
-type EmailAuthState = CredentialAuthState & {
-    metadata?: { email: string };
-};
-
-interface GetEmailAuthStateParams {
+interface GetEmailAuthTypeWithDeviceStatusParams {
     db: PostgresDatabase;
     email: string;
-    didWrite: string;
+    deviceStatus: DeviceLoginStatusExtended;
 }
 
-async function getEmailAuthState({
+async function getEmailAuthTypeWithDeviceStatus({
     db,
     email,
-    didWrite,
-}: GetEmailAuthStateParams): Promise<EmailAuthState> {
+    deviceStatus,
+}: GetEmailAuthTypeWithDeviceStatusParams): Promise<AuthResult> {
     const canonicalEmail = normalizeEmail(email);
 
-    // Query 1: Check device association with email (only active/non-deleted email credentials)
-    const didAssociationResult = await db
-        .select({
-            email: emailTable.email,
-        })
-        .from(deviceTable)
-        .leftJoin(
-            emailTable,
-            and(
-                eq(emailTable.userId, deviceTable.userId),
-                eq(emailTable.email, canonicalEmail),
-                eq(emailTable.isDeleted, false),
-            ),
-        )
-        .where(eq(deviceTable.didWrite, didWrite));
-
-    const deviceExists = didAssociationResult.length > 0;
-    const isAssociated = deviceExists && didAssociationResult[0].email !== null;
-
-    // Query 2: Check email user status (only active users, deleted users are ignored)
     const emailResults = await db
         .select({
             userId: emailTable.userId,
+            isDeleted: userTable.isDeleted,
         })
         .from(emailTable)
         .innerJoin(userTable, eq(userTable.id, emailTable.userId))
         .where(
             and(
                 eq(emailTable.email, canonicalEmail),
-                eq(emailTable.isDeleted, false),
+                or(
+                    eq(emailTable.isDeleted, false),
+                    eq(emailTable.reservedForRecovery, true),
+                ),
             ),
         )
         .limit(1);
 
-    const activeUser = emailResults.at(0);
-
-    // Handle "device_owns_credential" case first - it guarantees a user exists
-    if (isAssociated) {
-        if (activeUser) {
-            return {
-                deviceCredentialAssociation: "device_owns_credential",
-                userId: activeUser.userId,
-                metadata: { email: canonicalEmail },
-            };
-        }
-        // Fall through if no user found (shouldn't happen with FK)
-    }
-
-    // For non-associated cases, check active user
-    if (activeUser) {
-        const userId = activeUser.userId;
-        // Email is a hard credential - user with email is always registered
-        const isRegistered = true;
-
-        if (!deviceExists) {
-            return {
-                deviceCredentialAssociation: "device_unknown_credential_owned",
-                userId,
-                isRegistered,
-                metadata: { email: canonicalEmail },
-            };
-        } else {
-            return {
-                deviceCredentialAssociation: "device_missing_credential_owned",
-                userId,
-                isRegistered,
-                metadata: { email: canonicalEmail },
-            };
-        }
-    }
-
-    // Email is available (no active user, deleted users ignored)
-    if (!deviceExists) {
-        return {
-            deviceCredentialAssociation: "device_unknown_credential_available",
-            metadata: { email: canonicalEmail },
-        };
-    } else {
-        return {
-            deviceCredentialAssociation: "device_missing_credential_available",
-            metadata: { email: canonicalEmail },
-        };
-    }
-}
-
-interface GetEmailAuthTypeWithDeviceStatusParams {
-    db: PostgresDatabase;
-    email: string;
-    didWrite: string;
-    deviceStatus: DeviceLoginStatusExtended;
-}
-
-/**
- * Get email authentication type with pre-computed deviceStatus.
- * Used by verifyEmailOtp() which already has deviceStatus.
- * Mirrors getPhoneAuthenticationTypeByHash().
- */
-export async function getEmailAuthTypeWithDeviceStatus({
-    db,
-    email,
-    didWrite,
-    deviceStatus,
-}: GetEmailAuthTypeWithDeviceStatusParams): Promise<AuthResult> {
-    const credentialAuthState = await getEmailAuthState({
-        db,
-        email,
-        didWrite,
-    });
-
     return determineAuthType({
-        credentialAuthState,
+        credentialOwner: emailResults.at(0),
         deviceStatus,
-        authMethod: "email",
     });
 }
 
@@ -2899,7 +2654,6 @@ export async function getEmailAuthType({
     return getEmailAuthTypeWithDeviceStatus({
         db,
         email,
-        didWrite,
         deviceStatus,
     });
 }
@@ -3468,7 +3222,7 @@ async function registerWithEmail({
 }
 
 interface RegisterOrLoginWithEmailBaseProps {
-    db: PostgresDatabase;
+    db: PostgresTransaction;
     didWrite: string;
     email: string;
     userAgent: string;
@@ -3608,6 +3362,7 @@ async function registerOrLoginWithEmail(
 }
 
 interface VerifyEmailOtpProps {
+    recoverAccount?: boolean;
     db: PostgresDatabase;
     maxAttempt: number;
     didWrite: string;
@@ -3619,6 +3374,7 @@ interface VerifyEmailOtpProps {
 }
 
 export async function verifyEmailOtp({
+    recoverAccount = false,
     db,
     maxAttempt,
     didWrite,
@@ -3661,6 +3417,7 @@ export async function verifyEmailOtp({
         return { success: false, reason: "expired_code" };
     } else if (otpCodesEqual({ a: resultOtp[0].code, b: code })) {
         return await finalizeVerifiedEmailOtp({
+            recoverAccount,
             db: primaryDb,
             didWrite,
             resultOtp: {

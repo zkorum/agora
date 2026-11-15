@@ -1,22 +1,22 @@
 # Scoring Worker
 
-Background worker that runs [Solidago](https://solidago.tournesol.app/) to produce community rankings from BWS (Best-Worst Scaling) comparisons.
+Background worker that runs [Solidago](https://solidago.tournesol.app/) to produce community rankings from BWS (Best-Worst Scaling) and binary pairwise comparisons.
 
 ## How It Works
 
 When a user submits a BWS comparison, the API:
 
-1. Upserts `maxdiff_result` JSONB and diffs normalized `maxdiff_comparison` rows under the participant's result-row lock. Appends insert only new rows; edits/removals soft-delete changed rows; retries preserve unchanged rows.
+1. Saves `comparison_response` and diffs canonical `comparison_answer` rows under the participant's response-row lock. Appends insert only new rows; edits/removals soft-delete changed rows; retries preserve unchanged rows. Both BWS and binary pairwise use these method-neutral tables; personal scores are stored in `comparison_user_entity_score`.
 2. Marks the conversation "dirty" in a Valkey sorted set (score = comparison count, used as priority heuristic)
 
 The worker polls that set and processes conversations in batches:
 
 1. **ZPOPMIN** a batch of dirty conversation IDs
 2. **Acquire advisory locks** so only one worker processes each conversation
-3. **Batch SELECT** revisions, current items, survey-eligible comparisons, and totals from one short repeatable-read snapshot on PostgreSQL primary
+3. **Prepare pending inputs** from one repeatable-read snapshot on PostgreSQL primary, skipping already-processed revisions before bulk reads/copies; commit complete sealed captures outside lifecycle/config write locks
 4. **Parallel Solidago** via `ThreadPoolExecutor` (no DB during scoring)
 5. **Recheck invalidations** under a brief configuration-row lock. New votes may follow the captured input revision; edits, removals, item changes, and eligibility changes invalidate older computations.
-6. **Publish each conversation atomically**: scores, immutable item/count snapshots, checkpoints, processed revision, and SSE outbox event commit together. Invalidating one conversation does not reject the other conversations in the batch. Already-processed revisions are skipped.
+6. **Publish each conversation atomically**: scores, immutable item/count snapshots, result-owned numerical inputs, checkpoints, processed revision, and SSE outbox event commit together. Invalidating one conversation does not reject the other conversations in the batch. Already-processed revisions are skipped.
 7. **Prune unpublished history** while retaining the baseline, latest snapshot, and every checkpoint
 
 Failed computations are re-added to the dirty set with the configured per-conversation retry delay. A periodic reconciliation pass (default 300s) catches any conversations missed after a crash.
@@ -33,6 +33,50 @@ does not hold a long-running database transaction or block voting.
 Deploy migrations `V0089` and `V0089.1` before starting the updated API and worker.
 `V0089.2` repairs older double-encoded JSON score backups; new writes pass native
 JSON values to SQLAlchemy. Scores themselves are unchanged by this backfill.
+
+### Result-owned comparison evidence (source prepared; rollout gated)
+
+Every existing statistics/checkpoint publication, including an empty result, owns
+`ranking_input_snapshot` plus local participants, ordered entity catalogue and
+answers. The evidence contains the original candidate order and the effective
+subset used by the shared scoring normalizer, distinct local participant indices,
+BWS/pairwise identity and versioned numerical pipeline provenance. It uses the
+already captured repeatable-read inputs, not mutable source reads after scoring.
+The complete graph seals and commits before computation; publication attaches it with one
+fenced update, rather than holding voting/lifecycle locks during a bulk copy.
+Sealing validates participant/item/task counts, local ordering and catalogue
+references. Later child inserts/updates are rejected, and active published evidence
+cannot be deleted. Unsealed graphs cannot commit. One immutable prepared-input
+record per conversation supplies the same normalized tasks to evidence, scoring
+and participant counts. `ComparisonRecipe` is the frozen, parsed numerical recipe
+used both to construct the pipeline and emit provenance; descriptive privacy/display
+labels are not Agora policy guarantees.
+
+Already-processed revisions do not create captures. A retry may reuse a sealed,
+unbound capture only for the exact conversation, revision, method, algorithm,
+Solidago version and recipe under the worker's session advisory lock.
+Input payload/provenance and published bindings cannot be rewritten. Unbound
+captures left by a crash/invalidated computation remain private orphan-cleanup
+candidates; future cleanup must acquire the conversation's scoring advisory lock
+and recheck publication roots before discarding them.
+There are no account, response or source-answer FKs in this graph.
+
+Account deletion excludes future live input without changing retained evidence.
+The future purge caller can retire/detach private resumable sources only after
+the existing close has finalized and retained checkpoints/current scores have
+captured inputs. Missing legacy evidence is an explicit blocker, never a guessed
+backfill. Detached sessions cannot reattach or re-enter live scoring. Existing
+checkpoint roots, current/baseline retention and parent-deletion intent govern
+later cleanup; this adds neither a history API nor a hard-delete executor.
+Unclassified non-null legacy trust blobs (including unrooted copies) are a global
+unlink quarantine until reviewed cleanup/classification: an account with no response
+must not bypass that safeguard. SQL NULL and JSON null are absent context. Old
+writers must be drained before enabling this purge-phase handoff.
+
+Canonical schema/model generation is prepared, but migration generation,
+populated-data validation, the staged comparison binding trigger and coordinated
+API/worker deployment still require approval. Do not start this source version
+against an older schema merely because the historical migrations above exist.
 
 ## Architecture
 
@@ -57,23 +101,25 @@ API (Fastify) ──sync upsert──▸ PostgreSQL
 ### Native Best-Worst Learning
 
 The live BWS worker fits each participant's observed best-worst tasks using
-`SequentialMaxDiffLearning`: choose the best item from the set, then the worst
-from the remaining items. It does not expand transitive inferences into synthetic
-votes. The fitted per-user scores and uncertainties feed Solidago's voting-rights
-and aggregation stages. The separate pairwise scoring entry point consumes
-explicit `PairwiseObservation` values.
+`JointMaxDiffLearning`: select the best and worst together from all distinct
+ordered pairs in the candidate set. A pair has probability proportional to
+`exp((score_best - score_worst) / 2)`. The factor of one half makes a two-item
+task exactly one binary logistic choice on the same utility scale. No transitive
+inferences are expanded into synthetic votes. The fitted per-user scores and
+uncertainties feed Solidago's voting-rights and aggregation stages. The existing
+graded-pairwise entry point remains separate from these binary choice tasks.
 
 ### Solidago Configuration
 
 The pipeline (`scoring.py`) uses these parameters:
 
-| Stage               | Implementation                                           | Key Parameters                                                    |
-| ------------------- | -------------------------------------------------------- | ----------------------------------------------------------------- |
-| Trust propagation   | Identity (pass-through)                                  | Preserves pre-set trust scores (default 1.0)                      |
-| Preference learning | `SequentialMaxDiffLearning` | `prior_std_dev=7.0`, `convergence_error=1e-5`                     |
-| Voting rights       | AffineOvertrust                                          | `privacy_penalty=0.5`, `min_overtrust=2.0`, `overtrust_ratio=0.1` |
-| Scaling             | None                                                     |                                                                   |
-| Aggregation         | EntitywiseQrQuantile                                     | `quantile=0.5` (median), `lipschitz=0.1`                          |
+| Stage               | Implementation          | Key Parameters                                                    |
+| ------------------- | ----------------------- | ----------------------------------------------------------------- |
+| Trust propagation   | Identity (pass-through) | Preserves pre-set trust scores (default 1.0)                      |
+| Preference learning | `JointMaxDiffLearning`  | `prior_std_dev=7.0`, `convergence_error=1e-5`, `choice_scale=0.5` |
+| Voting rights       | AffineOvertrust         | `privacy_penalty=0.5`, `min_overtrust=2.0`, `overtrust_ratio=0.1` |
+| Scaling             | None                    |                                                                   |
+| Aggregation         | EntitywiseQrQuantile    | `quantile=0.5` (median), `lipschitz=0.1`                          |
 
 `ranking_score`, `ranking_score_entity.score`, and per-user `score` retain raw
 model units and uncertainties. The worker also stores `display_score` for both
@@ -105,6 +151,7 @@ commands, replica verification, service order, and historical compatibility.
    missing display values in bounded batches using the native Solidago transform,
    and links current snapshots while holding their configuration-row locks.
    Raw values, votes, ranks, and scoring input revisions are preserved.
+
 3. Verify the backfill and replica, start the updated scoring worker and API,
    and deploy/reload the rebuilt Agora frontend.
 
@@ -117,17 +164,17 @@ old min–max values alone; the backfill does not guess it from timestamps or ra
 
 ## Modules
 
-| Module                | Purpose                                                    |
-| --------------------- | ---------------------------------------------------------- |
-| `worker.py`           | Main loop: poll, batch, score, write                       |
-| `config.py`           | Settings via `pydantic-settings` (env vars)                |
-| `db.py`               | SQLAlchemy queries (batch reads + writes)                  |
-| `scoring.py`          | Native BWS and pairwise Solidago pipelines |
-| `maxdiff_sequential.py` | Per-user sequential MaxDiff fitting |
+| Module                | Purpose                                                        |
+| --------------------- | -------------------------------------------------------------- |
+| `worker.py`           | Main loop: poll, batch, score, write                           |
+| `config.py`           | Settings via `pydantic-settings` (env vars)                    |
+| `db.py`               | SQLAlchemy queries (batch reads + writes)                      |
+| `scoring.py`          | Native BWS and pairwise Solidago pipelines                     |
+| `maxdiff_joint.py`    | Per-user joint MaxDiff and binary pairwise fitting             |
 | `observations.py`     | Filter native BWS tasks and map explicit pairwise observations |
-| `entity_mapping.py`   | Map slug IDs to contiguous integer indices for Solidago    |
-| `valkey_client.py`    | Valkey sorted set operations (ZPOPMIN, mark dirty)         |
-| `generated_models.py` | SQLAlchemy models auto-generated from Drizzle schema       |
+| `entity_mapping.py`   | Map slug IDs to contiguous integer indices for Solidago        |
+| `valkey_client.py`    | Valkey sorted set operations (ZPOPMIN, mark dirty)             |
+| `generated_models.py` | SQLAlchemy models auto-generated from Drizzle schema           |
 
 ## Prerequisites
 

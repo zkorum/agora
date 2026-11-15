@@ -11,9 +11,8 @@ const mocks = vi.hoisted(() => ({
   checkLoginStatus: vi.fn(),
   clearAccountScopedState: vi.fn(),
   resetLocalAuthStateIfDidMatches: vi.fn(() => Promise.resolve(true)),
-  runIfCurrentDid: vi.fn(
-    ({ operation }: { operation: () => unknown }) =>
-      Promise.resolve({ matched: true, result: operation() })
+  runIfCurrentDid: vi.fn(({ operation }: { operation: () => unknown }) =>
+    Promise.resolve({ matched: true, result: operation() })
   ),
 }));
 
@@ -174,5 +173,39 @@ describe("refreshAuthStateFromBackend account switching", () => {
 
     expect(mocks.resetLocalAuthStateIfDidMatches).not.toHaveBeenCalled();
     expect(mocks.clearAccountScopedState).not.toHaveBeenCalled();
+  });
+  it("does not overwrite accepted-write identity with an older in-flight auth response", async () => {
+    const pending = Promise.withResolvers<{
+      data: { loggedInStatus: unknown };
+    }>();
+    mocks.checkLoginStatus.mockReturnValueOnce(pending.promise);
+    const refreshing = refreshAuthStateFromBackend();
+    await vi.waitFor(() =>
+      expect(mocks.checkLoginStatus).toHaveBeenCalledOnce()
+    );
+    const authStore = useAuthenticationStore();
+    authStore.setLoginStatus({
+      isKnown: true,
+      isRegistered: false,
+      isLoggedIn: false,
+      userId: "accepted-guest",
+      credentials,
+    });
+    pending.resolve({
+      data: {
+        loggedInStatus: {
+          isKnown: false,
+          isRegistered: false,
+          isLoggedIn: false,
+          credentials,
+        },
+      },
+    });
+    await expect(refreshing).resolves.toEqual({
+      authStateChanged: false,
+      needsCacheRefresh: false,
+    });
+    expect(authStore.userId).toBe("accepted-guest");
+    expect(mocks.resetLocalAuthStateIfDidMatches).not.toHaveBeenCalled();
   });
 });

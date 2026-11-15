@@ -1,6 +1,6 @@
 <template>
   <q-banner
-    v-if="shouldShowBanner"
+    v-if="hasSurvey"
     rounded
     inline-actions
     class="survey-banner"
@@ -17,7 +17,6 @@
 
     <template #action>
       <q-btn
-        v-if="showActionButton"
         class="survey-banner__action-btn"
         flat
         no-caps
@@ -34,7 +33,7 @@
 import { storeToRefs } from "pinia";
 import { useParticipationGate } from "src/composables/conversation/useParticipationGate";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type { EventSlug, SurveyGateSummary } from "src/shared/types/zod";
+import type { SurveyGateSummary } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useSurveyStatusQuery } from "src/utils/api/survey/useSurveyQueries";
 import { computed, ref } from "vue";
@@ -47,7 +46,6 @@ import { resolveRequirementBannerCopy } from "./conversationRequirementBannerLog
 
 const props = defineProps<{
   conversationSlugId: string;
-  requiresEventTicket?: EventSlug;
   surveyGate: SurveyGateSummary;
 }>();
 
@@ -56,8 +54,9 @@ const { t } = useComponentI18n<ConversationRequirementBannerTranslations>(
 );
 const { isAuthInitialized } = storeToRefs(useAuthenticationStore());
 
-const { needsAuth, needsTicket, openParticipationOnboarding } =
-  useParticipationGate(() => props.conversationSlugId);
+const { needsAuth, openParticipationOnboarding } = useParticipationGate(
+  () => props.conversationSlugId
+);
 
 const isNavigating = ref(false);
 
@@ -74,26 +73,8 @@ const effectiveSurveyGate = computed(() => {
 
 const hasSurvey = computed(() => effectiveSurveyGate.value.hasSurvey);
 
-const shouldShowBanner = computed(() => {
-  return hasSurvey.value || props.requiresEventTicket !== undefined;
-});
-
-const showActionButton = computed(() => {
-  if (hasSurvey.value) {
-    return true;
-  }
-
-  return needsAuth.value || needsTicket.value;
-});
-
 const bannerClass = computed(() => {
-  if (!hasSurvey.value) {
-    return needsTicket.value || needsAuth.value
-      ? "survey-banner--required"
-      : "survey-banner--complete";
-  }
-
-  if (needsAuth.value || needsTicket.value) {
+  if (needsAuth.value) {
     return "survey-banner--required";
   }
 
@@ -111,32 +92,19 @@ const bannerClass = computed(() => {
   return "survey-banner--required";
 });
 
-const bannerIcon = computed(() => {
-  if (!hasSurvey.value) {
-    return needsTicket.value || needsAuth.value
-      ? "verified_user"
-      : "check_circle";
-  }
+const surveyStatusIcons = {
+  complete_valid: "check_circle",
+  needs_update: "edit",
+  in_progress: "assignment",
+  not_started: "quiz",
+  no_survey: "info",
+} satisfies Record<SurveyGateSummary["status"], string>;
 
-  if (needsAuth.value || needsTicket.value) {
-    return "verified_user";
-  }
-
-  switch (effectiveSurveyGate.value.status) {
-    case "complete_valid":
-      return "check_circle";
-    case "needs_update":
-      return "edit";
-    case "in_progress":
-      return "assignment";
-    case "not_started":
-      return "quiz";
-    case "no_survey":
-      return "info";
-  }
-
-  return "info";
-});
+const bannerIcon = computed(() =>
+  needsAuth.value
+    ? "verified_user"
+    : surveyStatusIcons[effectiveSurveyGate.value.status]
+);
 
 const buttonColor = computed<"warning" | "primary" | "positive">(() => {
   if (bannerClass.value === "survey-banner--complete") {
@@ -155,7 +123,6 @@ const bannerCopy = computed(() => {
     hasSurvey: hasSurvey.value,
     isOptional: effectiveSurveyGate.value.isOptional,
     needsAuth: needsAuth.value,
-    needsTicket: needsTicket.value,
     surveyGateStatus: effectiveSurveyGate.value.status,
     canParticipate: effectiveSurveyGate.value.canParticipate,
   });

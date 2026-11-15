@@ -126,9 +126,9 @@ import type {
 import { useAuthenticationStore } from "src/stores/authentication";
 import type { ContentAction } from "src/utils/actions/core/types";
 import { useContentActions } from "src/utils/actions/definitions/content-actions";
+import { useComparisonApi } from "src/utils/api/comparison/comparison";
 import { useBackendConversationEmailUpdatesApi } from "src/utils/api/conversationUpdates/conversationEmailUpdates";
 import { useInvalidateParticipationAfterPreference } from "src/utils/api/conversationUpdates/useConversationEmailUpdateQueries";
-import { useMaxDiffApi } from "src/utils/api/maxdiff/maxdiff";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 import {
   useCloseConversationMutation,
@@ -213,13 +213,8 @@ const $q = useQuasar();
 const notify = useNotify();
 const { getEmbedUrl, getConversationUrl } = useConversationUrl();
 const shareActions = useShareActions();
-const isMaxDiffConversation = computed(
-  () =>
-    props.conversationTypeConfig.conversationType === "ranking" &&
-    props.conversationTypeConfig.rankingMode === "bws"
-);
-const isRankingConversation = computed(
-  () => props.conversationTypeConfig.conversationType === "ranking"
+const isPrioritizingConversation = computed(
+  () => props.conversationTypeConfig.conversationType === "prioritizing"
 );
 
 const conversationRouteContext = computed<ConversationRouteContext>(() => {
@@ -378,10 +373,12 @@ function shareCallback() {
   });
 }
 
-const { syncMaxDiff } = useMaxDiffApi();
+const { syncComparisonSource } = useComparisonApi();
 
 async function syncGitHubCallback(): Promise<void> {
-  const result = await syncMaxDiff({ conversationSlugId: props.postSlugId });
+  const result = await syncComparisonSource({
+    conversationSlugId: props.postSlugId,
+  });
   if (result.status === "success") {
     notify.showNotifyMessage({
       message: t("syncSuccess"),
@@ -427,7 +424,7 @@ let conversationEmailUpdateMutationGeneration = 0;
 
 async function clickedMoreIcon(): Promise<void> {
   const showSyncGitHub =
-    isMaxDiffConversation.value &&
+    isPrioritizingConversation.value &&
     props.externalSourceConfig?.sourceType === "github_issue";
 
   postActions.showPostActions({
@@ -456,7 +453,7 @@ async function clickedMoreIcon(): Promise<void> {
         showCloseDialog.value = true;
       },
       isConversationClosed: props.isClosed,
-      isConversationExportAvailable: !isRankingConversation.value,
+      isConversationExportAvailable: !isPrioritizingConversation.value,
       conversationDeletedCallback,
     },
   });

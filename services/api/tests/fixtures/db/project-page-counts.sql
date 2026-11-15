@@ -3,7 +3,7 @@
 
 CREATE TYPE "public"."conversation_language_settings_source" AS ENUM('conversation_override', 'project_inherited');
 
-CREATE TYPE "public"."conversation_type" AS ENUM('polis', 'ranking');
+CREATE TYPE "public"."conversation_type" AS ENUM('polis', 'prioritizing');
 
 CREATE TYPE "public"."conversation_view_snapshot_reason_enum" AS ENUM('analysis_completed', 'survey_refreshed', 'conversation_content_updated', 'conversation_lifecycle_updated');
 
@@ -27,7 +27,7 @@ CREATE TYPE "public"."project_document_file_status" AS ENUM('pending', 'availabl
 
 CREATE TYPE "public"."project_organization_attribution_role" AS ENUM('project_owner', 'sponsor', 'partner');
 
-CREATE TYPE "public"."ranking_mode" AS ENUM('bws');
+CREATE TYPE "public"."ranking_mode" AS ENUM('bws', 'pairwise');
 
 CREATE TYPE "public"."spoken_language_code" AS ENUM('af', 'ak', 'am', 'ar', 'as', 'ay', 'az', 'be', 'bg', 'bho', 'bm', 'bn', 'bs', 'ca', 'ceb', 'ckb', 'co', 'cs', 'cy', 'da', 'de', 'doi', 'dv', 'ee', 'el', 'en', 'eo', 'es', 'et', 'eu', 'fa', 'fi', 'fil', 'fr', 'fy', 'ga', 'gd', 'gl', 'gn', 'gom', 'gu', 'ha', 'haw', 'he', 'hi', 'hmn', 'hr', 'ht', 'hu', 'hy', 'id', 'ig', 'ilo', 'is', 'it', 'ja', 'jv', 'ka', 'kk', 'km', 'kn', 'ko', 'kri', 'ku', 'ky', 'la', 'lb', 'lg', 'ln', 'lo', 'lt', 'lus', 'lv', 'mai', 'mg', 'mi', 'mk', 'ml', 'mn', 'mni-Mtei', 'mr', 'ms', 'mt', 'my', 'nb', 'ne', 'nl', 'nn', 'no', 'nso', 'ny', 'om', 'or', 'pa', 'pl', 'ps', 'pt', 'qu', 'ro', 'ru', 'rw', 'sa', 'sd', 'si', 'sk', 'sl', 'sm', 'sn', 'so', 'sq', 'sr', 'st', 'su', 'sv', 'sw', 'ta', 'te', 'tg', 'th', 'ti', 'tk', 'tn', 'tr', 'ts', 'tt', 'ug', 'uk', 'ur', 'uz', 'vi', 'xh', 'yi', 'yo', 'zh-Hans', 'zh-Hant', 'zu');
 
@@ -70,8 +70,11 @@ CREATE TABLE "conversation" (
 	"slug_id" varchar(8) NOT NULL,
 	"project_id" integer NOT NULL,
 	"current_content_id" integer,
+	"deleted_at" timestamp (3),
 	"polis_config_id" integer,
 	"ranking_config_id" integer,
+	"credit_voting_config_id" integer,
+	"prioritization_type" text,
 	"dynamic_translation_enabled" boolean DEFAULT false NOT NULL,
 	"conversation_email_update_enabled_override" boolean,
 	"conversation_email_update_override_updated_at" timestamp (0),
@@ -95,10 +98,12 @@ CREATE TABLE "conversation" (
 	CONSTRAINT "conversation_current_content_id_unique" UNIQUE("current_content_id"),
 	CONSTRAINT "conversation_polis_config_id_unique" UNIQUE("polis_config_id"),
 	CONSTRAINT "conversation_ranking_config_id_unique" UNIQUE("ranking_config_id"),
+	CONSTRAINT "conversation_credit_voting_config_id_unique" UNIQUE("credit_voting_config_id"),
 	CONSTRAINT "conversation_project_id_id_unique" UNIQUE("project_id","id"),
+	CONSTRAINT "conversation_deletion_intent_check" CHECK (("conversation"."deleted_at" is null or "conversation"."current_content_id" is null)),
 	CONSTRAINT "conversation_closing_state_check" CHECK (("conversation"."is_closed" OR ("conversation"."closing_target_revision" IS NULL AND "conversation"."closed_finalized_at" IS NULL)) AND ("conversation"."closed_finalized_at" IS NULL OR "conversation"."closing_target_revision" IS NOT NULL)),
-	CONSTRAINT "conversation_subtype_config_check" CHECK ((("conversation"."conversation_type" = 'polis' AND "conversation"."polis_config_id" IS NOT NULL AND "conversation"."ranking_config_id" IS NULL) OR ("conversation"."conversation_type" = 'ranking' AND "conversation"."ranking_config_id" IS NOT NULL AND "conversation"."polis_config_id" IS NULL))),
-	CONSTRAINT "conversation_email_update_override_audit_check" CHECK (("conversation"."conversation_email_update_override_updated_at" IS NULL) = ("conversation"."conversation_email_update_override_updated_by_user_id" IS NULL))
+	CONSTRAINT "conversation_subtype_config_check" CHECK ((("conversation"."conversation_type" = 'polis' AND "conversation"."polis_config_id" IS NOT NULL AND "conversation"."ranking_config_id" IS NULL AND "conversation"."credit_voting_config_id" IS NULL AND "conversation"."prioritization_type" IS NULL) OR ("conversation"."conversation_type" = 'prioritizing' AND "conversation"."polis_config_id" IS NULL AND "conversation"."prioritization_type" IS NOT NULL AND (("conversation"."prioritization_type" = 'comparisons' AND "conversation"."ranking_config_id" IS NOT NULL AND "conversation"."credit_voting_config_id" IS NULL) OR ("conversation"."prioritization_type" = 'qv' AND "conversation"."credit_voting_config_id" IS NOT NULL AND "conversation"."ranking_config_id" IS NULL))))),
+	CONSTRAINT "conversation_email_update_override_audit_check" CHECK (("conversation"."conversation_email_update_override_updated_by_user_id" is null or "conversation"."conversation_email_update_override_updated_at" is not null))
 );
 
 CREATE TABLE "conversation_translation_target_language" (
@@ -133,6 +138,19 @@ CREATE TABLE "conversation_view_snapshot" (
 	CONSTRAINT "conversation_view_snapshot_preferred_opinion_group_count_check" CHECK ("conversation_view_snapshot"."preferred_opinion_group_count" IS NULL OR ("conversation_view_snapshot"."preferred_opinion_group_count" >= 2 AND "conversation_view_snapshot"."preferred_opinion_group_count" <= 6))
 );
 
+CREATE TABLE "credit_voting_config" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "credit_voting_config_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"credit_budget" integer DEFAULT 100 NOT NULL,
+	"allow_opposition" boolean DEFAULT true NOT NULL,
+	"item_count" integer DEFAULT 0 NOT NULL,
+	"statement_set_revision" integer DEFAULT 0 NOT NULL,
+	"statements_locked_at" timestamp (3),
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "credit_voting_fixed_budget_check" CHECK ("credit_voting_config"."credit_budget" = 100),
+	CONSTRAINT "credit_voting_statement_revision_check" CHECK ("credit_voting_config"."statement_set_revision" >= 0),
+	CONSTRAINT "credit_voting_item_count_check" CHECK ("credit_voting_config"."item_count" >= 0)
+);
+
 CREATE TABLE "organization_localization" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "organization_localization_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"organization_id" integer NOT NULL,
@@ -161,7 +179,9 @@ CREATE TABLE "organization" (
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
 	"deleted_at" timestamp (0),
-	CONSTRAINT "organization_auto_provisioned_for_user_id_unique" UNIQUE("auto_provisioned_for_user_id")
+	"retired_for_account_deletion_at" timestamp (3),
+	CONSTRAINT "organization_auto_provisioned_for_user_id_unique" UNIQUE("auto_provisioned_for_user_id"),
+	CONSTRAINT "organization_account_retirement_check" CHECK (("organization"."retired_for_account_deletion_at" is null or ("organization"."auto_provisioned_for_user_id" is not null and "organization"."deleted_at" is not null and "organization"."deleted_at" = "organization"."retired_for_account_deletion_at"::timestamp(0))))
 );
 
 CREATE TABLE "project_contact" (
@@ -179,9 +199,9 @@ CREATE TABLE "project_contact" (
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
 	"deleted_at" timestamp (0),
-	CONSTRAINT "project_contact_name_or_affiliation_check" CHECK ((("project_contact"."first_name" is not null AND "project_contact"."first_name" ~ U&'[^\0009-\000d \00a0\1680\2000-\200a\2028\2029\202f\205f\3000\feff]') OR ("project_contact"."last_name" is not null AND "project_contact"."last_name" ~ U&'[^\0009-\000d \00a0\1680\2000-\200a\2028\2029\202f\205f\3000\feff]') OR "project_contact"."organization_id" is not null)),
+	CONSTRAINT "project_contact_name_or_affiliation_check" CHECK ((("project_contact"."first_name" is not null and "project_contact"."first_name" ~ U&'[^\0009-\000d \00a0\1680\2000-\200a\2028\2029\202f\205f\3000\feff]') or ("project_contact"."last_name" is not null and "project_contact"."last_name" ~ U&'[^\0009-\000d \00a0\1680\2000-\200a\2028\2029\202f\205f\3000\feff]') or "project_contact"."organization_id" is not null)),
 	CONSTRAINT "project_contact_affiliation_source_check" CHECK (num_nonnulls("project_contact"."organization_id", "project_contact"."external_organization_id") <= 1),
-	CONSTRAINT "project_contact_email_or_website_check" CHECK ((("project_contact"."email" is not null AND "project_contact"."email" ~ U&'[^\0009-\000d \00a0\1680\2000-\200a\2028\2029\202f\205f\3000\feff]') OR ("project_contact"."website_url" is not null AND "project_contact"."website_url" ~ U&'[^\0009-\000d \00a0\1680\2000-\200a\2028\2029\202f\205f\3000\feff]')))
+	CONSTRAINT "project_contact_email_or_website_check" CHECK ((("project_contact"."email" is not null and "project_contact"."email" ~ U&'[^\0009-\000d \00a0\1680\2000-\200a\2028\2029\202f\205f\3000\feff]') or ("project_contact"."website_url" is not null and "project_contact"."website_url" ~ U&'[^\0009-\000d \00a0\1680\2000-\200a\2028\2029\202f\205f\3000\feff]')))
 );
 
 CREATE TABLE "project_content_banner_localization" (
@@ -333,9 +353,10 @@ CREATE TABLE "project" (
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
 	"deleted_at" timestamp (0),
-	CONSTRAINT "project_auto_provisioned_for_organization_id_unique" UNIQUE("auto_provisioned_for_organization_id"),
+	"retired_for_account_deletion_at" timestamp (3),
 	CONSTRAINT "project_current_content_id_unique" UNIQUE("current_content_id"),
-	CONSTRAINT "project_email_update_default_audit_check" CHECK (("project"."conversation_email_update_default_updated_at" IS NULL) = ("project"."conversation_email_update_default_updated_by_user_id" IS NULL))
+	CONSTRAINT "project_account_retirement_check" CHECK (("project"."retired_for_account_deletion_at" is null or ("project"."auto_provisioned_for_organization_id" is not null and "project"."deleted_at" is not null and "project"."deleted_at" = "project"."retired_for_account_deletion_at"::timestamp(0)))),
+	CONSTRAINT "project_email_update_default_audit_check" CHECK (("project"."conversation_email_update_default_updated_by_user_id" is null or "project"."conversation_email_update_default_updated_at" is not null))
 );
 
 CREATE TABLE "project_translation_target_language" (
@@ -346,9 +367,49 @@ CREATE TABLE "project_translation_target_language" (
 	"deleted_at" timestamp (0)
 );
 
+CREATE TABLE "qv_calculation_state" (
+	"conversation_id" integer PRIMARY KEY NOT NULL,
+	"generation" integer DEFAULT 0 NOT NULL,
+	"current_calculation_id" uuid,
+	CONSTRAINT "qv_calculation_state_generation_check" CHECK ("qv_calculation_state"."generation" >= 0)
+);
+
+CREATE TABLE "qv_calculation" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"conversation_id" integer NOT NULL,
+	"generation" integer NOT NULL,
+	"status" text DEFAULT 'queued' NOT NULL,
+	"input_snapshot_id" uuid,
+	"lease_token" uuid,
+	"lease_expires_at" timestamp (3),
+	"attempt_count" integer DEFAULT 0 NOT NULL,
+	"next_attempt_at" timestamp (3) DEFAULT now() NOT NULL,
+	"error_code" text,
+	"created_at" timestamp (3) DEFAULT now() NOT NULL,
+	"ready_at" timestamp (3),
+	CONSTRAINT "qv_calculation_generation_unique" UNIQUE("conversation_id","generation"),
+	CONSTRAINT "qv_calculation_id_conversation_unique" UNIQUE("id","conversation_id"),
+	CONSTRAINT "qv_calculation_generation_check" CHECK ("qv_calculation"."generation" >= 1),
+	CONSTRAINT "qv_calculation_attempt_check" CHECK ("qv_calculation"."attempt_count" >= 0),
+	CONSTRAINT "qv_calculation_status_check" CHECK ("qv_calculation"."status" in ('queued', 'running', 'ready', 'failed')),
+	CONSTRAINT "qv_calculation_lease_check" CHECK ((("qv_calculation"."status" = 'running' and "qv_calculation"."lease_token" is not null and "qv_calculation"."lease_expires_at" is not null) or ("qv_calculation"."status" <> 'running' and "qv_calculation"."lease_token" is null and "qv_calculation"."lease_expires_at" is null))),
+	CONSTRAINT "qv_calculation_ready_check" CHECK ((("qv_calculation"."status" = 'ready' and "qv_calculation"."input_snapshot_id" is not null and "qv_calculation"."ready_at" is not null) or ("qv_calculation"."status" <> 'ready' and "qv_calculation"."ready_at" is null)))
+);
+
+CREATE TABLE "qv_live_stats" (
+	"conversation_id" integer PRIMARY KEY NOT NULL,
+	"participant_count" integer DEFAULT 0 NOT NULL,
+	"revision" bigint DEFAULT 0 NOT NULL,
+	"refreshed_at" timestamp (3),
+	"retry_after" timestamp (3),
+	CONSTRAINT "qv_live_stats_count_check" CHECK ("qv_live_stats"."participant_count" >= 0),
+	CONSTRAINT "qv_live_stats_revision_check" CHECK ("qv_live_stats"."revision" >= 0)
+);
+
 CREATE TABLE "ranking_conversation_config" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "ranking_conversation_config_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"ranking_mode" "ranking_mode" NOT NULL,
+	"allow_participant_statements" boolean DEFAULT false NOT NULL,
 	"current_ranking_score_id" integer,
 	"external_source_config" jsonb,
 	"item_count" integer DEFAULT 0 NOT NULL,
@@ -385,6 +446,8 @@ CREATE TABLE "ranking_conversation_stats_snapshot" (
 	CONSTRAINT "ranking_conversation_stats_snapshot_counts_check" CHECK ("ranking_conversation_stats_snapshot"."item_count" >= 0 AND "ranking_conversation_stats_snapshot"."item_count" <= "ranking_conversation_stats_snapshot"."total_item_count" AND "ranking_conversation_stats_snapshot"."vote_count" >= 0 AND "ranking_conversation_stats_snapshot"."vote_count" <= "ranking_conversation_stats_snapshot"."total_vote_count" AND "ranking_conversation_stats_snapshot"."participant_count" >= 0 AND "ranking_conversation_stats_snapshot"."participant_count" <= "ranking_conversation_stats_snapshot"."total_participant_count" AND "ranking_conversation_stats_snapshot"."scoring_input_revision" >= 0)
 );
 
+CREATE INDEX "conversation_deleted_idx" ON "conversation" USING btree ("deleted_at","id") WHERE "conversation"."deleted_at" is not null;
+
 CREATE INDEX "conversation_feed_idx" ON "conversation" USING btree ("created_at" DESC,"id" DESC) WHERE "conversation"."is_indexed" = true AND "conversation"."is_importing" = false;
 
 CREATE INDEX "conversation_type_importing_idx" ON "conversation" USING btree ("is_importing","conversation_type");
@@ -409,6 +472,8 @@ CREATE UNIQUE INDEX "organization_active_slug_unique" ON "organization" USING bt
 
 CREATE UNIQUE INDEX "project_contact_project_active_unique" ON "project_contact" USING btree ("project_id") WHERE "project_contact"."deleted_at" is null;
 
+CREATE INDEX "project_contact_organization_idx" ON "project_contact" USING btree ("organization_id") WHERE "project_contact"."organization_id" is not null;
+
 CREATE UNIQUE INDEX "project_content_banner_localization_active_unique" ON "project_content_banner_localization" USING btree ("project_content_id","language_code") WHERE "project_content_banner_localization"."deleted_at" is null;
 
 CREATE UNIQUE INDEX "project_content_translation_active_unique" ON "project_content_translation" USING btree ("project_content_id","display_language_code") WHERE "project_content_translation"."deleted_at" is null;
@@ -429,13 +494,21 @@ CREATE UNIQUE INDEX "project_external_org_loc_active_unique" ON "project_externa
 
 CREATE UNIQUE INDEX "project_organization_attribution_order_active_unique" ON "project_organization_attribution" USING btree ("project_id","role","sort_order") WHERE "project_organization_attribution"."deleted_at" is null;
 
-CREATE UNIQUE INDEX "project_organization_attribution_real_active_unique" ON "project_organization_attribution" USING btree ("project_id","role","organization_id") WHERE ("project_organization_attribution"."organization_id" is not null AND "project_organization_attribution"."deleted_at" is null);
+CREATE INDEX "project_organization_attribution_organization_idx" ON "project_organization_attribution" USING btree ("organization_id") WHERE "project_organization_attribution"."organization_id" is not null;
 
-CREATE UNIQUE INDEX "project_organization_attribution_external_active_unique" ON "project_organization_attribution" USING btree ("project_id","role","external_organization_id") WHERE ("project_organization_attribution"."external_organization_id" is not null AND "project_organization_attribution"."deleted_at" is null);
+CREATE UNIQUE INDEX "project_organization_attribution_real_active_unique" ON "project_organization_attribution" USING btree ("project_id","role","organization_id") WHERE ("project_organization_attribution"."organization_id" is not null and "project_organization_attribution"."deleted_at" is null);
 
-CREATE UNIQUE INDEX "project_active_slug_unique" ON "project" USING btree ("slug") WHERE "project"."deleted_at" IS NULL;
+CREATE UNIQUE INDEX "project_organization_attribution_external_active_unique" ON "project_organization_attribution" USING btree ("project_id","role","external_organization_id") WHERE ("project_organization_attribution"."external_organization_id" is not null and "project_organization_attribution"."deleted_at" is null);
+
+CREATE UNIQUE INDEX "project_active_slug_unique" ON "project" USING btree ("slug") WHERE "project"."deleted_at" is null;
+
+CREATE UNIQUE INDEX "project_active_default_organization_unique" ON "project" USING btree ("auto_provisioned_for_organization_id") WHERE "project"."deleted_at" is null;
 
 CREATE UNIQUE INDEX "project_translation_target_language_active_unique" ON "project_translation_target_language" USING btree ("project_id","language_code") WHERE "project_translation_target_language"."deleted_at" is null;
+
+CREATE INDEX "qv_calculation_claim_idx" ON "qv_calculation" USING btree ("next_attempt_at","created_at") WHERE "qv_calculation"."status" in ('queued', 'running');
+
+CREATE INDEX "qv_live_stats_refresh_idx" ON "qv_live_stats" USING btree ("refreshed_at","conversation_id");
 
 CREATE INDEX "ranking_conversation_stats_snapshot_latest_idx" ON "ranking_conversation_stats_snapshot" USING btree ("conversation_id","created_at" DESC,"id" DESC) WHERE "ranking_conversation_stats_snapshot"."deleted_at" IS NULL;
 

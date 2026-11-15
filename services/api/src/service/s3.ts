@@ -81,7 +81,7 @@ export async function uploadToS3({
                 ? `attachment; filename="${fileName}"`
                 : undefined,
         }),
-        { abortSignal },
+        { abortSignal: abortSignal ?? AbortSignal.timeout(60_000) },
     );
 }
 
@@ -162,5 +162,6 @@ export async function deleteFromS3({
             Bucket: bucketName,
             Key: s3Key,
         }),
+        { abortSignal: AbortSignal.timeout(30_000) },
     );
 }

@@ -52,7 +52,7 @@ export async function getExportReadinessForConversation({
         }
 
         const conversationRecord = conversation[0];
-        if (conversationRecord.conversationType === "ranking") {
+        if (conversationRecord.conversationType === "prioritizing") {
             throw httpErrors.badRequest(
                 "Conversation export is not supported for prioritization conversations",
             );

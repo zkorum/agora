@@ -9,7 +9,6 @@ import {
     projectOrganizationOwnershipTable,
     userTable,
     voteTable,
-    eventTicketTable,
 } from "@/shared-backend/schema.js";
 import type { GetUserProfileResponse } from "@/shared/types/dto.js";
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
@@ -470,23 +469,6 @@ export async function getUserProfile({
                 userId,
             });
 
-            // Fetch verified event tickets for this user
-            const ticketsResponse = await db
-                .select({
-                    eventSlug: eventTicketTable.eventSlug,
-                })
-                .from(eventTicketTable)
-                .where(
-                    and(
-                        eq(eventTicketTable.userId, userId),
-                        eq(eventTicketTable.isDeleted, false),
-                    ),
-                );
-
-            const verifiedEventTickets = ticketsResponse.map(
-                (row) => row.eventSlug,
-            );
-
             return {
                 activePostCount,
                 createdAt: userTableResponse[0].createdAt,
@@ -496,7 +478,6 @@ export async function getUserProfile({
                 organizationList: organizationMemberships.map(
                     (membership) => membership.organization,
                 ),
-                verifiedEventTickets: verifiedEventTickets,
             };
         }
     } catch (err: unknown) {

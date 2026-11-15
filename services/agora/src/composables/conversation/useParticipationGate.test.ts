@@ -1,14 +1,11 @@
 import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { CanceledError } from "axios";
 import { createPinia } from "pinia";
-import { useTicketVerificationFlow } from "src/composables/zupass/useTicketVerificationFlow";
-import type { useZupassVerification } from "src/composables/zupass/useZupassVerification";
 import type {
   ConversationOnboardingPreferenceSaveRequest,
   ConversationOnboardingPreferenceSaveResponse,
   ConversationParticipationStatus,
 } from "src/shared/types/dto";
-import type { EventSlug } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useConversationOnboardingStore } from "src/stores/conversationOnboarding";
 import type { useBackendAuthApi } from "src/utils/api/auth";
@@ -41,9 +38,6 @@ const mocks = vi.hoisted(() => ({
     vi.fn<ReturnType<typeof useBackendSurveyApi>["saveSurveyAnswer"]>(),
   ensureAuth: vi.fn<() => Promise<void>>(),
   updateAuth: vi.fn<ReturnType<typeof useBackendAuthApi>["updateAuthState"]>(),
-  proof:
-    vi.fn<ReturnType<typeof useZupassVerification>["requestTicketProof"]>(),
-  verifyTicket: vi.fn<() => Promise<{ data: unknown }>>(),
   savePreference:
     vi.fn<
       (
@@ -59,11 +53,6 @@ const route = {
 
 vi.mock("src/api", () => ({
   DefaultApiAxiosParamCreator: () => ({
-    apiV1ConversationOnboardingTicketVerifyPost: () =>
-      Promise.resolve({
-        url: "/api/v1/conversation/onboarding/ticket/verify",
-        options: { method: "POST" },
-      }),
     apiV1ConversationOnboardingPreferenceSavePost: () =>
       Promise.resolve({
         url: "/api/v1/conversation/onboarding/preference/save",
@@ -76,7 +65,6 @@ vi.mock("src/api", () => ({
       }),
   }),
   DefaultApiFactory: () => ({
-    apiV1ConversationOnboardingTicketVerifyPost: mocks.verifyTicket,
     apiV1ConversationOnboardingPreferenceSavePost: mocks.savePreference,
     apiV1ConversationParticipationStatusPost: async (
       request: { conversationSlugId: string; skipEmailUpdateConsent?: boolean },
@@ -102,13 +90,6 @@ vi.mock("src/utils/api/auth", () => ({
     updateAuthState: mocks.updateAuth,
   }),
 }));
-vi.mock("src/composables/zupass/useZupassVerification", () => ({
-  useZupassVerification: () => ({
-    requestTicketProof: mocks.proof,
-    setOnIframeReady: () => {},
-    isVerifying: ref(false),
-  }),
-}));
 vi.mock("src/utils/ui/notify", () => ({
   useNotify: () => ({ showNotifyMessage: mocks.notify }),
 }));
@@ -127,23 +108,6 @@ vi.mock("src/stores/language", async () => {
 vi.mock("src/composables/conversation/useSurveyNavigation", () => ({
   useSurveyNavigation: () => ({ navigateToSurveyRoot: mocks.navigate }),
 }));
-vi.mock("src/stores/user", async () => {
-  const { defineStore } = await import("pinia");
-  return {
-    useUserStore: defineStore("test-user", () => {
-      const verifiedEventTickets = ref(new Set<EventSlug>());
-      return {
-        verifiedEventTickets,
-        addVerifiedTicket: (eventSlug: EventSlug) => {
-          verifiedEventTickets.value.add(eventSlug);
-        },
-        clearTicketState: () => {},
-        setTicketVerifying: () => {},
-        setTicketError: () => {},
-      };
-    }),
-  };
-});
 vi.mock("vue-router", () => ({ useRoute: () => route }));
 
 import { useParticipationGate } from "./useParticipationGate";
@@ -154,7 +118,6 @@ beforeEach(() => {
   mocks.sign.mockResolvedValue("signed-request");
   mocks.navigate.mockResolvedValue(undefined);
   mocks.ensureAuth.mockResolvedValue(undefined);
-  mocks.proof.mockResolvedValue({ success: true, proof: {} });
   route.name = "/project/[projectSlug]/conversation/[postSlugId]/analysis";
 });
 afterEach(() => {
@@ -167,13 +130,11 @@ function mountGate({
   initialized = true,
   withSurveySave = false,
   withPreferenceSave = false,
-  withTicketVerification = false,
 }: {
   count?: number;
   initialized?: boolean;
   withSurveySave?: boolean;
   withPreferenceSave?: boolean;
-  withTicketVerification?: boolean;
 } = {}) {
   const pinia = createPinia();
   const auth = useAuthenticationStore(pinia);
@@ -182,7 +143,6 @@ function mountGate({
   const gates: Array<ReturnType<typeof useParticipationGate>> = [];
   let saveSurvey: ReturnType<typeof useSurveyAnswerSaveMutation> | undefined;
   let preference: ReturnType<typeof useSaveOnboardingPreference> | undefined;
-  let ticket: ReturnType<typeof useTicketVerificationFlow> | undefined;
   const app: App = createApp(
     defineComponent(() => {
       for (let index = 0; index < count; index++)
@@ -192,7 +152,6 @@ function mountGate({
           conversationSlugId: "example",
         });
       if (withPreferenceSave) preference = useSaveOnboardingPreference();
-      if (withTicketVerification) ticket = useTicketVerificationFlow();
       return () => null;
     })
   );
@@ -212,7 +171,6 @@ function mountGate({
     queryClient,
     saveSurvey,
     preference,
-    ticket,
     onboarding: useConversationOnboardingStore(pinia),
   };
 }
@@ -262,65 +220,6 @@ describe("preloaded backend participation status", () => {
     expect(mocks.navigate).toHaveBeenCalledOnce();
     expect(mocks.notify).not.toHaveBeenCalled();
   });
-  it.each([false, true])(
-    "uses the ticket transaction's snapshot despite replica lag and an account transition (merge=%s)",
-    async (accountMerged) => {
-      mocks.getStatus.mockResolvedValue({
-        data: participationRejectionFixture("event_ticket_required")
-          .participationStatus,
-      });
-      const { gate, auth, ticket } = mountGate({
-        initialized: false,
-        withTicketVerification: true,
-      });
-      if (ticket === undefined)
-        throw new Error("Ticket verification was not mounted");
-      if (accountMerged)
-        auth.setLoginStatus({
-          isKnown: true,
-          userId: "old-guest",
-          isRegistered: false,
-          isLoggedIn: false,
-        });
-      auth.isAuthInitialized = true;
-      await vi.waitFor(() =>
-        expect(gate.participationStatus.value.status).toBe(
-          "onboarding_required"
-        )
-      );
-      mocks.updateAuth.mockImplementation(({ partialLoginStatus }) => {
-        if (partialLoginStatus.isKnown !== true)
-          throw new Error("Expected a verified identity");
-        auth.setLoginStatus({
-          isKnown: true,
-          userId: partialLoginStatus.userId,
-          isRegistered: accountMerged,
-          isLoggedIn: accountMerged,
-        });
-        return Promise.resolve({
-          authStateChanged: true,
-          needsCacheRefresh: false,
-        });
-      });
-      mocks.verifyTicket.mockResolvedValue({
-        data: {
-          success: true,
-          accountMerged,
-          userId: "verified-user",
-          participationStatus: { status: "ready" },
-        },
-      });
-      const result = await ticket.verifyTicket({
-        eventSlug: "devconnect-2025",
-        conversationSlugId: "example",
-      });
-      expect(result.success).toBe(true);
-      expect(auth.userId).toBe("verified-user");
-      expect(gate.participationStatus.value).toEqual({ status: "ready" });
-      expect(mocks.getStatus).toHaveBeenCalledOnce();
-      expect(mocks.verifyTicket).toHaveBeenCalledOnce();
-    }
-  );
   it("carries the saved snapshot into a newly created guest's cache without another status HTTP request", async () => {
     const { gate, auth, saveSurvey, queryClient } = mountGate({
       withSurveySave: true,
@@ -644,7 +543,6 @@ describe("preloaded backend participation status", () => {
     "account_required",
     "strong_verification_required",
     "email_verification_required",
-    "event_ticket_required",
   ] as const)(
     "records a %s rejection and cancels a stale ready read before opening",
     async (reason) => {

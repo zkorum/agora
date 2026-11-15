@@ -1,6 +1,6 @@
 """Community-ranking scoring pipelines.
 
-Uses Solidago end to end for pairwise comparisons and a native sequential
+Uses Solidago end to end for graded pairwise comparisons and a native joint
 MaxDiff learner for best-worst tasks, while keeping the shared trust,
 voting-rights, and aggregation stages aligned with Solidago.
 """
@@ -13,14 +13,8 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import pandas as pd
-from solidago.aggregation import EntitywiseQrQuantile
 from solidago.judgments import DataFrameJudgments
-from solidago.pipeline import Pipeline
-from solidago.post_process import NoPostProcess
 from solidago.privacy_settings import PrivacySettings
-from solidago.scaling import NoScaling
-from solidago.trust_propagation import TrustPropagation
-from solidago.voting_rights import AffineOvertrust
 
 from scoring_worker.display_scores import squash_display_scores
 from scoring_worker.entity_mapping import (
@@ -28,62 +22,36 @@ from scoring_worker.entity_mapping import (
     SolidagoEntityScore,
     map_scores_from_solidago,
 )
-from scoring_worker.maxdiff_sequential import SequentialMaxDiffJudgments
+from scoring_worker.maxdiff_joint import JointMaxDiffJudgments
 from scoring_worker.observations import (
-    MaxDiffObservation,
+    ComparisonObservation,
     PairwiseObservation,
-    comparison_rows_to_maxdiff_observations,
-    maxdiff_observations_to_tasks_frame,
+    comparison_observations_to_tasks_frame,
+    comparison_rows_to_observations,
     pairwise_observations_to_solidago_rows,
 )
 from scoring_worker.pipeline_config import (
+    COMPARISON_RECIPE,
     MAXDIFF_PREFERENCE_LEARNING_NAME,
     PAIRWISE_PREFERENCE_LEARNING_NAME,
-    create_maxdiff_preference_learning,
+    ComparisonRecipe,
     create_pairwise_preference_learning,
 )
 
 if TYPE_CHECKING:
-    from solidago.preference_learning import PreferenceLearning
+    from collections.abc import Sequence
+
+    from solidago.pipeline import Pipeline
 
     from scoring_worker.db import ComparisonRow
 
 log = logging.getLogger(__name__)
 
 
-class _IdentityTrustPropagation(TrustPropagation):
-    """Pass-through: preserves pre-set trust_score values."""
-
-    def __call__(self, users: pd.DataFrame, vouches: pd.DataFrame) -> pd.DataFrame:
-        if "trust_score" not in users.columns:
-            return users.assign(trust_score=1.0)
-        return users
-
-
-def _create_pipeline(
-    *,
-    preference_learning: PreferenceLearning,
-) -> Pipeline:
-    return Pipeline(
-        trust_propagation=_IdentityTrustPropagation(),
-        preference_learning=preference_learning,
-        voting_rights=AffineOvertrust(
-            privacy_penalty=0.5,
-            min_overtrust=2.0,
-            overtrust_ratio=0.1,
-        ),
-        scaling=NoScaling(),
-        aggregation=EntitywiseQrQuantile(quantile=0.5, lipschitz=0.1, error=1e-3),
-        post_process=NoPostProcess(),
-    )
-
-
-_pairwise_pipeline = _create_pipeline(
-    preference_learning=create_pairwise_preference_learning()
+_pairwise_pipeline = COMPARISON_RECIPE.create_pipeline(
+    learner=create_pairwise_preference_learning()
 )
-_maxdiff_pipeline = _create_pipeline(
-    preference_learning=create_maxdiff_preference_learning()
-)
+_comparison_pipeline = COMPARISON_RECIPE.create_pipeline()
 
 
 @dataclass(frozen=True)
@@ -105,7 +73,7 @@ def warmup() -> None:
     """Run tiny dummy scorings to initialize both preference-learning paths."""
 
     log.info(
-        "[Scoring] Warming up pairwise (%s) and maxdiff (%s) pipelines...",
+        "[Scoring] Warming up graded pairwise (%s) and comparison (%s) pipelines...",
         PAIRWISE_PREFERENCE_LEARNING_NAME,
         MAXDIFF_PREFERENCE_LEARNING_NAME,
     )
@@ -136,7 +104,7 @@ def warmup() -> None:
         _run_pipeline(
             mapper=EntityIdMapper(entity_ids=["max-a", "max-b", "max-c"]),
             user_ids=[0],
-            judgments=SequentialMaxDiffJudgments(
+            judgments=JointMaxDiffJudgments(
                 maxdiff_tasks=pd.DataFrame(
                     [
                         {
@@ -148,7 +116,7 @@ def warmup() -> None:
                     ]
                 )
             ),
-            pipeline=_maxdiff_pipeline,
+            pipeline=_comparison_pipeline,
             preference_learning_name=MAXDIFF_PREFERENCE_LEARNING_NAME,
         )
     finally:
@@ -182,26 +150,27 @@ def score_pairwise_observations(
     )
 
 
-def score_maxdiff_observations(
+def score_comparison_observations(
     *,
-    entity_ids: list[str],
-    observations: list[MaxDiffObservation],
+    entity_ids: Sequence[str],
+    observations: Sequence[ComparisonObservation],
     trust_scores: dict[int, float] | None = None,
+    recipe: ComparisonRecipe = COMPARISON_RECIPE,
 ) -> ConversationScoringOutput | None:
     if len(entity_ids) < 2 or not observations:
         return None
 
     mapper = EntityIdMapper(entity_ids=entity_ids)
-    tasks_df = maxdiff_observations_to_tasks_frame(observations=observations, mapper=mapper)
+    tasks_df = comparison_observations_to_tasks_frame(observations=observations, mapper=mapper)
     if tasks_df.empty:
         return None
 
     return _run_pipeline(
         mapper=mapper,
         user_ids=sorted(int(user_id) for user_id in tasks_df["user_id"].unique()),
-        judgments=SequentialMaxDiffJudgments(maxdiff_tasks=tasks_df),
-        pipeline=_maxdiff_pipeline,
-        preference_learning_name=MAXDIFF_PREFERENCE_LEARNING_NAME,
+        judgments=JointMaxDiffJudgments(maxdiff_tasks=tasks_df),
+        pipeline=recipe.create_pipeline(),
+        preference_learning_name=recipe.preference_learning,
         trust_scores=trust_scores,
     )
 
@@ -212,13 +181,13 @@ def score_comparisons(
     comparisons: list[ComparisonRow],
     trust_scores: dict[int, float] | None = None,
 ) -> ConversationScoringOutput | None:
-    """Compatibility wrapper for the current MaxDiff-only worker path."""
+    """Learn joint best/worst and binary pairwise tasks on a shared utility scale."""
 
-    observations = comparison_rows_to_maxdiff_observations(
+    observations = comparison_rows_to_observations(
         entity_ids=entity_ids,
         comparisons=comparisons,
     )
-    return score_maxdiff_observations(
+    return score_comparison_observations(
         entity_ids=entity_ids,
         observations=observations,
         trust_scores=trust_scores,
@@ -229,7 +198,7 @@ def _run_pipeline(
     *,
     mapper: EntityIdMapper,
     user_ids: list[int],
-    judgments: DataFrameJudgments | SequentialMaxDiffJudgments,
+    judgments: DataFrameJudgments | JointMaxDiffJudgments,
     pipeline: Pipeline,
     preference_learning_name: str,
     trust_scores: dict[int, float] | None = None,
@@ -291,11 +260,16 @@ def _build_users_dataframe(
     trust_scores: dict[int, float] | None,
 ) -> pd.DataFrame:
     user_trust_scores = [
-        trust_scores.get(int(user_id), 1.0) if trust_scores is not None else 1.0
+        trust_scores.get(int(user_id), COMPARISON_RECIPE.trust_score)
+        if trust_scores is not None
+        else COMPARISON_RECIPE.trust_score
         for user_id in user_ids
     ]
     return pd.DataFrame(
-        {"is_pretrusted": [True] * len(user_ids), "trust_score": user_trust_scores},
+        {
+            "is_pretrusted": [COMPARISON_RECIPE.is_pretrusted] * len(user_ids),
+            "trust_score": user_trust_scores,
+        },
         index=pd.Index(user_ids, name="user_id"),
     )
 

@@ -1,10 +1,19 @@
 <template>
   <!-- RouterView/KeepAlive can briefly clear route props while switching tabs. -->
   <template v-if="props.conversationData !== undefined">
-    <MaxDiffResultsTab
+    <QvAnalysisTab
       v-if="
-        props.conversationData.metadata.conversationType === 'ranking' &&
-        props.conversationData.metadata.rankingMode === 'bws'
+        props.conversationData.metadata.conversationType === 'prioritizing' &&
+        props.conversationData.metadata.prioritizationType === 'qv'
+      "
+      :conversation-slug-id="props.conversationData.metadata.conversationSlugId"
+      :is-closed="props.conversationData.metadata.isClosed"
+      :on-view-statements="props.navigateToDiscoverTab"
+    />
+    <ComparisonResultsTab
+      v-else-if="
+        props.conversationData.metadata.conversationType === 'prioritizing' &&
+        props.conversationData.metadata.prioritizationType === 'comparisons'
       "
       :conversation-data="props.conversationData"
       :navigate-to-voting-tab="props.navigateToDiscoverTab"
@@ -24,8 +33,9 @@
 </template>
 
 <script setup lang="ts">
+import ComparisonResultsTab from "src/components/post/comparison/ComparisonResultsTab.vue";
 import ConversationAnalysisTab from "src/components/post/ConversationAnalysisTab.vue";
-import MaxDiffResultsTab from "src/components/post/maxdiff/MaxDiffResultsTab.vue";
+import QvAnalysisTab from "src/components/post/qv/QvAnalysisTab.vue";
 import type { ConversationActionBarStats } from "src/composables/conversation/useConversationActionBarStats";
 import type { ConversationScrollContext } from "src/composables/conversation/useConversationParentState";
 import type { ExtendedConversationDisplayData } from "src/shared/types/zod";

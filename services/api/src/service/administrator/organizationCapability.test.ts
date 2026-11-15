@@ -43,7 +43,7 @@ describe("admin organization management and membership capabilities", () => {
             username: "postgres",
             password: "postgres",
         });
-        db = drizzle(sqlClient);
+        db = drizzle({ client: sqlClient });
         await sqlClient.unsafe(`
             CREATE TABLE "user" (
                 "id" uuid PRIMARY KEY,
@@ -94,6 +94,7 @@ describe("admin organization management and membership capabilities", () => {
                 "id" integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                 "user_id" uuid NOT NULL,
                 "organization_id" integer NOT NULL,
+                "role" text NOT NULL,
                 "created_at" timestamp NOT NULL DEFAULT now(),
                 "updated_at" timestamp NOT NULL DEFAULT now(),
                 "deleted_at" timestamp
@@ -148,11 +149,11 @@ describe("admin organization management and membership capabilities", () => {
             ) VALUES
                 (2, 'user-personal', 'Aaron', 'unlisted',
                     '00000000-0000-4000-8000-000000000001', NULL),
-                (3, 'archived-org', 'Aardvark', 'listed', NULL, now()),
+                (3, 'deleted-org', 'Aardvark', 'listed', NULL, now()),
                 (4, 'other-org', 'Beta', 'listed', NULL, NULL),
                 (5, 'user-other-personal', 'Zoe', 'unlisted',
                     '00000000-0000-4000-8000-000000000002', NULL),
-                (6, 'archived-personal', 'Abby', 'unlisted', NULL, now()),
+                (6, 'deleted-personal', 'Abby', 'unlisted', NULL, now()),
                 (7, 'promoted-org', 'Alpha', 'listed',
                     '00000000-0000-4000-8000-000000000003', NULL);
             INSERT INTO "organization_localization" (
@@ -161,6 +162,7 @@ describe("admin organization management and membership capabilities", () => {
             INSERT INTO "project_organization_ownership" (
                 "project_id", "organization_id"
             ) VALUES (1, 1), (2, 2), (4, 4), (5, 5);
+            INSERT INTO "project" ("id") VALUES (1), (2), (4), (5);
         `);
     }, 60_000);
 
@@ -173,7 +175,7 @@ describe("admin organization management and membership capabilities", () => {
         }
     });
 
-    it("grants Email Updates when adding an organization member", async () => {
+    it("assigns an explicit role without creating capability grants", async () => {
         const client = sqlClient;
         if (client === undefined) {
             throw new Error("Test database client was not initialized");
@@ -184,11 +186,13 @@ describe("admin organization management and membership capabilities", () => {
                 db,
                 username: "author",
                 organizationName: "test-org",
+                role: "admin",
             }),
             addUserOrganizationMapping({
                 db,
                 username: "author",
                 organizationName: "test-org",
+                role: "admin",
             }),
         ]);
 
@@ -198,7 +202,7 @@ describe("admin organization management and membership capabilities", () => {
             WHERE "capability" = 'conversation_email_update'
                 AND "deleted_at" IS NULL
         `;
-        expect(emailUpdateCapabilities).toHaveLength(1);
+        expect(emailUpdateCapabilities).toHaveLength(0);
         const now = new Date("2026-08-24T12:00:00.000Z");
         await expect(
             canConfigureConversationEmailUpdatesForOrganization({
@@ -229,10 +233,12 @@ describe("admin organization management and membership capabilities", () => {
                 db,
                 organizationName: "test-org",
             }),
-        ).resolves.toEqual({ memberList: [{ username: "author" }] });
+        ).resolves.toEqual({
+            memberList: [{ username: "author", role: "admin" }],
+        });
     });
 
-    it("lists personal organizations last without listing archived organizations", async () => {
+    it("lists personal organizations last without listing deleted organizations", async () => {
         const options = await getOrganizationOptions({ db });
         const allOrganizations = await getAllOrganizations({
             db,
@@ -294,7 +300,7 @@ describe("admin organization management and membership capabilities", () => {
         await expect(
             getAdminNoProjectEmailUpdates({
                 db,
-                organizationSlug: "archived-personal",
+                organizationSlug: "deleted-personal",
                 now: new Date(),
             }),
         ).resolves.toEqual({
@@ -343,6 +349,7 @@ describe("admin organization management and membership capabilities", () => {
             db,
             username: "organizer",
             organizationName: "user-personal",
+            role: "admin",
         });
         await expect(getPersonalConversationCapabilities()).resolves.toEqual(
             new Set(requestedCapabilities),
@@ -352,7 +359,9 @@ describe("admin organization management and membership capabilities", () => {
                 db,
                 organizationName: "user-personal",
             }),
-        ).resolves.toEqual({ memberList: [{ username: "organizer" }] });
+        ).resolves.toEqual({
+            memberList: [{ username: "organizer", role: "admin" }],
+        });
         await expect(
             hasProjectCapability({
                 db,
@@ -371,7 +380,6 @@ describe("admin organization management and membership capabilities", () => {
 
         await removeUserOrganizationMapping({
             db,
-            adminUserId: userId,
             username: "organizer",
             organizationName: "user-personal",
         });
@@ -389,19 +397,21 @@ describe("admin organization management and membership capabilities", () => {
             db,
             username: "organizer",
             organizationName: "user-personal",
+            role: "admin",
         });
         await expect(getPersonalConversationCapabilities()).resolves.toEqual(
             new Set(requestedCapabilities),
         );
     });
 
-    it("does not allow adding members to archived organizations", async () => {
-        for (const organizationName of ["archived-org", "archived-personal"]) {
+    it("does not allow adding members to deleted organizations", async () => {
+        for (const organizationName of ["deleted-org", "deleted-personal"]) {
             await expect(
                 addUserOrganizationMapping({
                     db,
                     username: "organizer",
                     organizationName,
+                    role: "admin",
                 }),
             ).rejects.toMatchObject({ statusCode: 404 });
             await expect(
@@ -411,6 +421,46 @@ describe("admin organization management and membership capabilities", () => {
                     organizationSlug: organizationName,
                 }),
             ).resolves.toEqual({ organization: undefined });
+        }
+    });
+
+    it("changes effective permissions solely by changing the organization role", async () => {
+        for (const role of ["moderator", "manager", "admin"] as const) {
+            await addUserOrganizationMapping({
+                db,
+                username: "organizer",
+                organizationName: "other-org",
+                role,
+            });
+            const capabilities = await getProjectCapabilitiesById({
+                db,
+                userId: "00000000-0000-4000-8000-000000000002",
+                projectIds: [4],
+                requestedCapabilities: [
+                    "conversation_moderate",
+                    "conversation_edit",
+                    "conversation_delete",
+                    "conversation_view_restricted_survey",
+                ],
+            });
+            expect(capabilities.get(4)).toEqual(
+                new Set(
+                    role === "admin"
+                        ? [
+                              "conversation_moderate",
+                              "conversation_edit",
+                              "conversation_delete",
+                              "conversation_view_restricted_survey",
+                          ]
+                        : role === "manager"
+                          ? [
+                                "conversation_moderate",
+                                "conversation_edit",
+                                "conversation_view_restricted_survey",
+                            ]
+                          : ["conversation_moderate"],
+                ),
+            );
         }
     });
 });

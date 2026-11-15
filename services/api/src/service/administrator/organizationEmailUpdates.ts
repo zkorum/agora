@@ -1,11 +1,15 @@
 import { and, eq, gt, isNotNull, isNull, lte, or } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { getPrimaryDatabase } from "@/shared-backend/db.js";
+import {
+    getPrimaryDatabase,
+    type PostgresTransaction,
+} from "@/shared-backend/db.js";
 import {
     conversationTable,
     organizationTable,
     premiumFeatureEntitlementTable,
     projectContactTable,
+    projectOrganizationOwnershipTable,
     projectTable,
 } from "@/shared-backend/schema.js";
 import type {
@@ -18,11 +22,6 @@ import { normalizeEmail } from "@/shared/types/zod-email.js";
 import { getOrCreateDefaultProjectForOrganization } from "../projectAccess.js";
 import { canDeleteConversationEmailUpdateContact } from "./organizationEmailUpdatesLogic.js";
 
-interface OrganizationEmailUpdateContext {
-    organizationId: number;
-    hasEntitlement: boolean;
-}
-
 interface NoProjectContainer {
     projectId: number;
     defaultEnabled: boolean;
@@ -31,7 +30,7 @@ interface NoProjectContainer {
     contactEmail: string | null;
 }
 
-async function getOrganizationEmailUpdateContext({
+function buildOrganizationEmailUpdateContextQuery({
     db,
     organizationSlug,
     now,
@@ -39,11 +38,13 @@ async function getOrganizationEmailUpdateContext({
     db: PostgresJsDatabase;
     organizationSlug: string;
     now: Date;
-}): Promise<OrganizationEmailUpdateContext | undefined> {
-    const rows = await db
+}) {
+    return db
         .select({
             organizationId: organizationTable.id,
-            entitlementId: premiumFeatureEntitlementTable.id,
+            hasEntitlement: isNotNull(
+                premiumFeatureEntitlementTable.id,
+            ).mapWith(Boolean),
         })
         .from(organizationTable)
         .leftJoin(
@@ -72,13 +73,6 @@ async function getOrganizationEmailUpdateContext({
             ),
         )
         .limit(1);
-    const row = rows.at(0);
-    return row === undefined
-        ? undefined
-        : {
-              organizationId: row.organizationId,
-              hasEntitlement: row.entitlementId !== null,
-          };
 }
 
 function buildNoProjectContainerQuery({
@@ -97,6 +91,20 @@ function buildNoProjectContainerQuery({
             contactEmail: projectContactTable.email,
         })
         .from(projectTable)
+        .innerJoin(
+            projectOrganizationOwnershipTable,
+            and(
+                eq(
+                    projectOrganizationOwnershipTable.projectId,
+                    projectTable.id,
+                ),
+                eq(
+                    projectOrganizationOwnershipTable.organizationId,
+                    organizationId,
+                ),
+                isNull(projectOrganizationOwnershipTable.deletedAt),
+            ),
+        )
         .leftJoin(
             projectContactTable,
             and(
@@ -131,13 +139,12 @@ async function lockNoProjectContainer({
     db,
     organizationId,
 }: {
-    db: PostgresJsDatabase;
+    db: PostgresTransaction;
     organizationId: number;
 }): Promise<NoProjectContainer | undefined> {
     const projectRows = await db
         .select({
             projectId: projectTable.id,
-            defaultEnabled: projectTable.conversationEmailUpdateDefaultEnabled,
         })
         .from(projectTable)
         .where(
@@ -155,27 +162,8 @@ async function lockNoProjectContainer({
     if (project === undefined) {
         return undefined;
     }
-    const contactRows = await db
-        .select({
-            contactId: projectContactTable.id,
-            contactName: projectContactTable.firstName,
-            contactEmail: projectContactTable.email,
-        })
-        .from(projectContactTable)
-        .where(
-            and(
-                eq(projectContactTable.projectId, project.projectId),
-                isNull(projectContactTable.deletedAt),
-            ),
-        )
-        .limit(1);
-    const contact = contactRows.at(0);
-    return {
-        ...project,
-        contactId: contact?.contactId ?? null,
-        contactName: contact?.contactName ?? null,
-        contactEmail: contact?.contactEmail ?? null,
-    };
+    // Read ownership/contact with a fresh snapshot after the project lock wait.
+    return await getNoProjectContainer({ db, organizationId });
 }
 
 async function hasExplicitlyEnabledConversation({
@@ -250,11 +238,13 @@ export async function getAdminNoProjectEmailUpdates({
     organizationSlug: string;
     now: Date;
 }): Promise<GetAdminNoProjectEmailUpdatesResponse> {
-    const context = await getOrganizationEmailUpdateContext({
-        db,
-        organizationSlug,
-        now,
-    });
+    const context = (
+        await buildOrganizationEmailUpdateContextQuery({
+            db,
+            organizationSlug,
+            now,
+        })
+    ).at(0);
     if (context === undefined) {
         return { success: false, reason: "organization_not_found" };
     }
@@ -284,11 +274,13 @@ export async function updateAdminNoProjectEmailUpdates({
     now: Date;
 }): Promise<UpdateAdminNoProjectEmailUpdatesResponse> {
     return await getPrimaryDatabase(db).transaction(async (tx) => {
-        const context = await getOrganizationEmailUpdateContext({
-            db: tx,
-            organizationSlug: request.organizationSlug,
-            now,
-        });
+        const context = (
+            await buildOrganizationEmailUpdateContextQuery({
+                db: tx,
+                organizationSlug: request.organizationSlug,
+                now,
+            }).for("share", { of: organizationTable })
+        ).at(0);
         if (context === undefined) {
             return { success: false, reason: "organization_not_found" };
         }

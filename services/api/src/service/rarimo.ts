@@ -31,6 +31,7 @@ import { ensureAddEmailSecurityNotification } from "./notification.js";
 import { httpErrors } from "@fastify/sensible";
 import { isUserLoggedIn } from "@/shared-backend/util.js";
 import { getPrimaryDatabase } from "@/shared-backend/db.js";
+import { restoreAccountAfterVerification } from "./accountRecovery.js";
 
 interface IsLoggedInOrExistsAndAssociatedWithNoNullifierProps {
     db: PostgresDatabase;
@@ -114,6 +115,7 @@ interface StatusResponse {
 }
 
 interface VerifyUserStatusProps {
+    recoverAccount?: boolean;
     db: PostgresDatabase;
     didWrite: string;
     axiosVerificatorSvc: AxiosInstance;
@@ -279,6 +281,7 @@ async function getUserProof({
 }
 
 export async function verifyUserStatusAndAuthenticate({
+    recoverAccount = false,
     db,
     didWrite,
     axiosVerificatorSvc,
@@ -337,9 +340,28 @@ export async function verifyUserStatusAndAuthenticate({
     const authResult = await getZKPAuthenticationType({
         db: primaryDb,
         nullifier,
-        didWrite,
         deviceStatus,
     });
+    if (authResult.type === "restore_deleted") {
+        if (!recoverAccount)
+            return { success: false, reason: "recovery_required" };
+        const result = await primaryDb.transaction(
+            async (tx) =>
+                await restoreAccountAfterVerification({
+                    db: tx,
+                    userId: authResult.userId,
+                    didWrite,
+                    userAgent,
+                    sessionLifetimeDays,
+                    proof: { method: "passport", nullifier },
+                }),
+        );
+        return result.success
+            ? { ...result, rarimoStatus: "verified" }
+            : result;
+    }
+    if (recoverAccount)
+        return { success: false, reason: "recovery_unavailable" };
     // log-in or register depending on the state
     const loginSessionExpiry = new Date(now);
     loginSessionExpiry.setDate(

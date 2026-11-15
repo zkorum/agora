@@ -50,6 +50,10 @@ import {
 import { getConversationProjectOptions } from "../src/service/conversationProject.js";
 import { getOrCreatePersonalOrganization } from "../src/service/projectAccess.js";
 import { updateConversation } from "../src/service/postEdit.js";
+import {
+    requireConversationCapabilityBySlug,
+    requireConversationDestination,
+} from "../src/service/organizationAuthorization.js";
 import { createEagerContentTranslationWorkForKnownConversation } from "../src/service/contentTranslation.js";
 import { readDbFixtureSql } from "./dbFixture.js";
 
@@ -82,7 +86,7 @@ describe("conversation project editing", () => {
             password: "postgres",
             max: 8,
         });
-        db = drizzle(client);
+        db = drizzle({ client });
         await db.execute(
             sql.raw(readDbFixtureSql("conversation-project-edit.sql")),
         );
@@ -155,7 +159,7 @@ describe("conversation project editing", () => {
             throw new Error("Missing organization fixture");
         const [membership] = await db
             .insert(organizationMembershipTable)
-            .values({ organizationId: organization.id, userId })
+            .values({ organizationId: organization.id, userId, role: "admin" })
             .returning({ id: organizationMembershipTable.id });
         if (membership === undefined)
             throw new Error("Missing membership fixture");
@@ -390,31 +394,47 @@ describe("conversation project editing", () => {
     );
 
     it("requires destination creation permission even when the source is editable", async () => {
+        const [destinationOwner] = await db
+            .insert(organizationTable)
+            .values({
+                slug: "destination-only",
+                displayName: "Destination",
+                defaultLanguageCode: "en",
+                directoryVisibility: "listed",
+                isFullImagePath: false,
+            })
+            .returning({ id: organizationTable.id });
+        if (destinationOwner === undefined)
+            throw new Error("Missing destination owner");
         await db
-            .update(organizationMembershipAllProjectCapabilityTable)
-            .set({ deletedAt: new Date(), revokedByUserId: userId })
+            .insert(organizationMembershipTable)
+            .values({
+                organizationId: destinationOwner.id,
+                userId,
+                role: "moderator",
+            });
+        await db
+            .update(projectOrganizationOwnershipTable)
+            .set({ organizationId: destinationOwner.id })
             .where(
-                and(
-                    eq(
-                        organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
-                        membershipId,
-                    ),
-                    eq(
-                        organizationMembershipAllProjectCapabilityTable.capability,
-                        "conversation_create",
-                    ),
+                eq(
+                    projectOrganizationOwnershipTable.projectId,
+                    destinationProjectId,
                 ),
             );
-        expect(
-            await updateConversation({
+        await requireConversationCapabilityBySlug({
+            db,
+            userId,
+            conversationSlugId: request().conversationSlugId,
+            capability: "conversation_edit",
+        });
+        await expect(
+            requireConversationDestination({
                 db,
                 userId,
-                data: request(),
+                target: { kind: "project", projectSlug: "destination" },
             }),
-        ).toMatchObject({
-            success: false,
-            reason: "missing_project_capability",
-        });
+        ).rejects.toMatchObject({ statusCode: 403 });
     });
 
     it("keeps the assignment when a survey/details save omits a move", async () => {
@@ -471,7 +491,7 @@ describe("conversation project editing", () => {
             throw new Error("Missing additional owner fixture");
         const [membership] = await db
             .insert(organizationMembershipTable)
-            .values({ organizationId: owner.id, userId })
+            .values({ organizationId: owner.id, userId, role: "admin" })
             .returning({ id: organizationMembershipTable.id });
         if (membership === undefined)
             throw new Error("Missing additional membership fixture");
@@ -592,23 +612,22 @@ describe("conversation project editing", () => {
 
     it("does not provision a personal scope for an unauthorized source editor", async () => {
         await db
-            .update(organizationMembershipAllProjectCapabilityTable)
-            .set({ deletedAt: new Date(), revokedByUserId: userId })
-            .where(
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.capability,
-                    "conversation_edit",
-                ),
-            );
+            .update(organizationMembershipTable)
+            .set({ role: "moderator" })
+            .where(eq(organizationMembershipTable.id, membershipId));
         const data = request();
         data.projectChange = {
             expectedProjectSlug: "source",
             target: { kind: "no_project" },
         };
-        expect(await updateConversation({ db, userId, data })).toEqual({
-            success: false,
-            reason: "not_author",
-        });
+        await expect(
+            requireConversationCapabilityBySlug({
+                db,
+                userId,
+                conversationSlugId: data.conversationSlugId,
+                capability: "conversation_edit",
+            }),
+        ).rejects.toMatchObject({ statusCode: 403 });
         expect(await db.select().from(organizationTable)).toHaveLength(1);
     });
 
@@ -664,7 +683,7 @@ describe("conversation project editing", () => {
             throw new Error("Missing personal scope");
         const [membership] = await db
             .insert(organizationMembershipTable)
-            .values({ organizationId: organization.id, userId })
+            .values({ organizationId: organization.id, userId, role: "admin" })
             .returning({ id: organizationMembershipTable.id });
         if (membership === undefined)
             throw new Error("Missing personal membership");
@@ -712,7 +731,7 @@ describe("conversation project editing", () => {
             throw new Error("Missing other personal organization");
         const [membership] = await db
             .insert(organizationMembershipTable)
-            .values({ organizationId: personal.id, userId })
+            .values({ organizationId: personal.id, userId, role: "admin" })
             .returning({ id: organizationMembershipTable.id });
         if (membership === undefined)
             throw new Error("Missing other personal membership");
@@ -741,10 +760,16 @@ describe("conversation project editing", () => {
             expectedProjectSlug: "source",
             target: { kind: "no_project", organizationSlug: "other-personal" },
         };
-        expect(await updateConversation({ db, userId, data })).toEqual({
-            success: false,
-            reason: "project_not_available",
-        });
+        await expect(
+            requireConversationDestination({
+                db,
+                userId,
+                target: {
+                    kind: "no_project",
+                    organizationSlug: "other-personal",
+                },
+            }),
+        ).rejects.toMatchObject({ statusCode: 403 });
         expect(
             (await db.select().from(conversationTable)).at(0)?.projectId,
         ).toBe(sourceProjectId);
@@ -752,14 +777,9 @@ describe("conversation project editing", () => {
 
     it("does not provision destination defaults for an unauthorized source editor", async () => {
         await db
-            .update(organizationMembershipAllProjectCapabilityTable)
-            .set({ deletedAt: new Date(), revokedByUserId: userId })
-            .where(
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.capability,
-                    "conversation_edit",
-                ),
-            );
+            .update(organizationMembershipTable)
+            .set({ role: "moderator" })
+            .where(eq(organizationMembershipTable.id, membershipId));
         const [organization] = await db
             .insert(organizationTable)
             .values({
@@ -774,7 +794,7 @@ describe("conversation project editing", () => {
             throw new Error("Missing organization fixture");
         const [membership] = await db
             .insert(organizationMembershipTable)
-            .values({ organizationId: organization.id, userId })
+            .values({ organizationId: organization.id, userId, role: "admin" })
             .returning({ id: organizationMembershipTable.id });
         if (membership === undefined)
             throw new Error("Missing membership fixture");
@@ -795,13 +815,14 @@ describe("conversation project editing", () => {
             expectedProjectSlug: "source",
             target: { kind: "no_project", organizationSlug: "other-owner" },
         };
-        expect(
-            await updateConversation({
+        await expect(
+            requireConversationCapabilityBySlug({
                 db,
                 userId,
-                data,
+                conversationSlugId: data.conversationSlugId,
+                capability: "conversation_edit",
             }),
-        ).toMatchObject({ success: false, reason: "not_author" });
+        ).rejects.toMatchObject({ statusCode: 403 });
         expect(
             await db
                 .select()
@@ -945,7 +966,8 @@ describe("conversation project editing", () => {
                 });
             }
             const queries: string[] = [];
-            const tracedDb = drizzle(client, {
+            const tracedDb = drizzle({
+                client,
                 logger: {
                     logQuery: (query) => {
                         queries.push(query);

@@ -359,18 +359,6 @@ export function useConversationParentState({
 
   const { loadAuthenticatedModules } = useBackendAuthApi();
 
-  async function handleTicketVerified(payload: {
-    userIdChanged: boolean;
-    needsCacheRefresh: boolean;
-  }): Promise<void> {
-    if (payload.needsCacheRefresh) {
-      await loadAuthenticatedModules();
-    }
-
-    // Refresh conversation data after ticket verification
-    await conversationQuery.refetch();
-  }
-
   async function handleSubmittedComment(
     data: SubmittedCommentData
   ): Promise<void> {
@@ -464,7 +452,6 @@ export function useConversationParentState({
     onViewAnalysis,
     navigateToDiscoverTab,
     openModerationHistory,
-    handleTicketVerified,
     handleSubmittedComment,
     handleRefresh,
     invalidateUserVotes,

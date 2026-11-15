@@ -7,11 +7,16 @@ import {
     organizationTable,
     polisConversationConfigTable,
     rankingConversationConfigTable,
+    creditVotingConfigTable,
     conversationImportSourceTable,
     projectOrganizationOwnershipTable,
     projectTable,
 } from "@/shared-backend/schema.js";
 import { getProjectCapabilitiesById } from "./projectAccess.js";
+import {
+    parseStoredConversationTypeConfig,
+    parseStoredParticipantStatements,
+} from "./conversationTypeConfig.js";
 import { toUnionUndefined } from "@/shared/shared.js";
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import type {
@@ -20,15 +25,18 @@ import type {
     ExtendedConversation,
     ConversationType,
     RankingMode,
-    EventSlug,
     ParticipationMode,
     ConversationCapabilities,
 } from "@/shared/types/zod.js";
 import type { AllProjectCapability } from "./projectAccessLogic.js";
-import { zodExternalSourceConfig } from "@/shared/types/zod.js";
+import {
+    zodExternalSourceConfig,
+    zodConversationMetadata,
+} from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
 import { eq, desc, SQL, and, isNotNull, isNull, or } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { getPrimaryDatabase, getReplicaDatabase } from "@/shared-backend/db.js";
 import sanitizeHtml from "sanitize-html";
 import { createPostModerationPropertyObject } from "./moderation.js";
 import { imagePathToUrl } from "@/utils/organizationLogic.js";
@@ -56,12 +64,24 @@ interface FetchedPostItem {
 
 type FetchedPostItemPerSlugId = Map<string, FetchedPostItem>;
 
-function getConversationCapabilities(
-    projectCapabilities: ReadonlySet<AllProjectCapability> | undefined,
-): ConversationCapabilities {
+function getConversationCapabilities({
+    projectCapabilities,
+    isClosed,
+    isImporting,
+    isLocked,
+}: {
+    projectCapabilities: ReadonlySet<AllProjectCapability> | undefined;
+    isClosed: boolean;
+    isImporting: boolean;
+    isLocked: boolean;
+}): ConversationCapabilities {
+    const canManage = projectCapabilities?.has("conversation_edit") ?? false;
     return {
-        canEdit: projectCapabilities?.has("conversation_edit") ?? false,
+        canEdit: canManage && !isImporting && !isLocked,
         canDelete: projectCapabilities?.has("conversation_delete") ?? false,
+        canModerate: projectCapabilities?.has("conversation_moderate") ?? false,
+        canClose: canManage && !isClosed && !isImporting,
+        canReopen: canManage && isClosed && !isImporting,
     };
 }
 
@@ -198,7 +218,7 @@ export function useCommonPost() {
             "personalOrganizationUser",
         );
 
-        const postItemsQuery = db
+        const postItemsQuery = getReplicaDatabase(db)
             .select({
                 title: conversationContentTable.title,
                 body: conversationContentTable.body,
@@ -228,10 +248,16 @@ export function useCommonPost() {
                 participationMode: conversationTable.participationMode,
                 conversationType: conversationTable.conversationType,
                 rankingMode: rankingConversationConfigTable.rankingMode,
+                prioritizationType: conversationTable.prioritizationType,
+                allowOpposition: creditVotingConfigTable.allowOpposition,
+                polisAllowParticipantStatements:
+                    polisConversationConfigTable.allowParticipantStatements,
+                comparisonAllowParticipantStatements:
+                    rankingConversationConfigTable.allowParticipantStatements,
                 isClosed: conversationTable.isClosed,
+                isImporting: conversationTable.isImporting,
                 closedFinalizedAt: conversationTable.closedFinalizedAt,
                 isEdited: conversationTable.isEdited,
-                requiresEventTicket: conversationTable.requiresEventTicket,
                 externalSourceConfig:
                     rankingConversationConfigTable.externalSourceConfig,
                 sourceLanguageCode: conversationContentTable.sourceLanguageCode,
@@ -313,6 +339,13 @@ export function useCommonPost() {
                 ),
             )
             .leftJoin(
+                creditVotingConfigTable,
+                eq(
+                    creditVotingConfigTable.id,
+                    conversationTable.creditVotingConfigId,
+                ),
+            )
+            .leftJoin(
                 conversationModerationTable,
                 and(
                     eq(
@@ -378,6 +411,7 @@ export function useCommonPost() {
                 requestedCapabilities: [
                     "conversation_edit",
                     "conversation_delete",
+                    "conversation_moderate",
                 ],
             }),
         ]);
@@ -402,6 +436,8 @@ export function useCommonPost() {
                 conversationId: postItem.conversationId,
             });
             const metadataBase = {
+                participantStatements:
+                    parseStoredParticipantStatements(postItem),
                 conversationSlugId: postItem.slugId,
                 currentProjectSlug: postItem.currentProjectSlug,
                 conversationViewSnapshotId:
@@ -443,11 +479,20 @@ export function useCommonPost() {
                         postItem.conversationId,
                     ) ?? DEFAULT_CONVERSATION_MULTILINGUAL_SETTING,
                 participationMode: postItem.participationMode,
-                isClosed: postItem.isClosed,
+                isClosed:
+                    postItem.prioritizationType === "qv"
+                        ? displayCounts.isClosed
+                        : postItem.isClosed,
                 isFinalizing:
-                    postItem.isClosed && postItem.closedFinalizedAt === null,
+                    postItem.prioritizationType === "qv"
+                        ? displayCounts.isClosed &&
+                          (displayCounts.qvLifecycle?.calculationStatus ===
+                              "queued" ||
+                              displayCounts.qvLifecycle?.calculationStatus ===
+                                  "running")
+                        : postItem.isClosed &&
+                          postItem.closedFinalizedAt === null,
                 isEdited: postItem.isEdited,
-                requiresEventTicket: postItem.requiresEventTicket ?? undefined,
                 organization:
                     postItem.authorName === null
                         ? (() => {
@@ -505,20 +550,28 @@ export function useCommonPost() {
                         : undefined,
             };
             const metadata: ConversationMetadata = (() => {
-                if (postItem.conversationType === "ranking") {
-                    const rankingMode = requireJoinedRankingMode({
-                        conversationId: postItem.conversationId,
-                        rankingMode: postItem.rankingMode,
-                    });
-                    return {
+                if (postItem.conversationType === "prioritizing") {
+                    const presentation =
+                        parseStoredConversationTypeConfig(postItem);
+                    return zodConversationMetadata.parse({
                         ...metadataBase,
-                        conversationType: "ranking",
-                        rankingMode,
-                        rankingStatsSnapshotId:
-                            displayCounts.rankingStatsSnapshotId,
+                        ...presentation,
+                        ...(presentation.conversationType === "prioritizing" &&
+                        presentation.prioritizationType === "comparisons"
+                            ? {
+                                  rankingStatsSnapshotId:
+                                      displayCounts.rankingStatsSnapshotId,
+                              }
+                            : {
+                                  qvStatsRevision:
+                                      displayCounts.qvStatsRevision,
+                                  qvGeneration:
+                                      displayCounts.qvLifecycle?.generation ??
+                                      0,
+                              }),
                         aiLabelingEnabled: false,
                         preferredOpinionGroupCount: null,
-                    };
+                    });
                 }
 
                 const aiLabelingEnabled = requireJoinedPolisConfig({
@@ -531,14 +584,14 @@ export function useCommonPost() {
                     );
                 }
 
-                return {
+                return zodConversationMetadata.parse({
                     ...metadataBase,
                     conversationType: "polis",
                     votingPresentation: postItem.votingPresentation,
                     aiLabelingEnabled,
                     preferredOpinionGroupCount:
                         postItem.preferredOpinionGroupCount,
-                };
+                });
             })();
 
             const payload: ExtendedConversationPayload = {
@@ -554,9 +607,17 @@ export function useCommonPost() {
                     interaction: {
                         hasVoted: false,
                         votedIndex: 0,
-                        conversationCapabilities: getConversationCapabilities(
-                            capabilitiesByProjectId.get(postItem.projectId),
-                        ),
+                        conversationCapabilities: getConversationCapabilities({
+                            projectCapabilities: capabilitiesByProjectId.get(
+                                postItem.projectId,
+                            ),
+                            isClosed:
+                                postItem.prioritizationType === "qv"
+                                    ? displayCounts.isClosed
+                                    : postItem.isClosed,
+                            isImporting: postItem.isImporting,
+                            isLocked: postItem.moderationAction === "lock",
+                        }),
                     },
                 },
             });
@@ -580,6 +641,7 @@ export function useCommonPost() {
         id: number;
         contentId: number | null;
         conversationType: ConversationType;
+        prioritizationType: "comparisons" | "qv" | null;
         rankingMode: RankingMode | null;
         participantCount: number;
         opinionCount: number;
@@ -592,7 +654,6 @@ export function useCommonPost() {
         isIndexed: boolean;
         participationMode: ParticipationMode;
         isClosed: boolean;
-        requiresEventTicket: EventSlug | null;
     }
 
     interface GetPostMetadataFromSlugIdProps {
@@ -612,10 +673,10 @@ export function useCommonPost() {
                 isIndexed: conversationTable.isIndexed,
                 participationMode: conversationTable.participationMode,
                 conversationType: conversationTable.conversationType,
+                prioritizationType: conversationTable.prioritizationType,
                 rankingMode: rankingConversationConfigTable.rankingMode,
                 isClosed: conversationTable.isClosed,
                 isEdited: conversationTable.isEdited,
-                requiresEventTicket: conversationTable.requiresEventTicket,
             })
             .from(conversationTable)
             .leftJoin(
@@ -638,7 +699,7 @@ export function useCommonPost() {
             throw httpErrors.notFound("Conversation slugId not found");
         }
         const rankingMode =
-            post.conversationType === "ranking"
+            post.prioritizationType === "comparisons"
                 ? requireJoinedRankingMode({
                       conversationId: post.id,
                       rankingMode: post.rankingMode,
@@ -650,9 +711,9 @@ export function useCommonPost() {
             isIndexed: post.isIndexed,
             participationMode: post.participationMode,
             conversationType: post.conversationType,
+            prioritizationType: post.prioritizationType,
             rankingMode,
             isClosed: post.isClosed,
-            requiresEventTicket: post.requiresEventTicket,
         };
     }
 
@@ -739,38 +800,26 @@ export function useCommonComment() {
         db,
         opinionSlugId,
     }: GetOpinionMetadataFromOpinionSlugIdProps) {
-        const queryOpinion = (dbInstance: typeof db) =>
-            dbInstance
-                .select({
-                    opinionId: opinionTable.id,
-                    conversationSlugId: conversationTable.slugId,
-                    conversationId: conversationTable.id,
-                    opinionCurrentContentId: opinionTable.currentContentId,
-                })
-                .from(opinionTable)
-                .innerJoin(
-                    conversationTable,
-                    eq(conversationTable.id, opinionTable.conversationId),
-                )
-                .where(
-                    and(
-                        eq(opinionTable.slugId, opinionSlugId),
-                        eq(conversationTable.isImporting, false),
-                        isNotNull(conversationTable.currentContentId),
-                    ),
-                );
-
-        // Try read replica first
-        let opinionTableResponse = await queryOpinion(db);
-
-        // If not found on replica, try primary (handles replication lag after creation)
-        if (opinionTableResponse.length === 0) {
-            if ("$primary" in db) {
-                opinionTableResponse = await queryOpinion(
-                    db.$primary as PostgresJsDatabase,
-                );
-            }
-        }
+        // Voting and newly created statements need a fresh source lookup.
+        const opinionTableResponse = await getPrimaryDatabase(db)
+            .select({
+                opinionId: opinionTable.id,
+                conversationSlugId: conversationTable.slugId,
+                conversationId: conversationTable.id,
+                opinionCurrentContentId: opinionTable.currentContentId,
+            })
+            .from(opinionTable)
+            .innerJoin(
+                conversationTable,
+                eq(conversationTable.id, opinionTable.conversationId),
+            )
+            .where(
+                and(
+                    eq(opinionTable.slugId, opinionSlugId),
+                    eq(conversationTable.isImporting, false),
+                    isNotNull(conversationTable.currentContentId),
+                ),
+            );
 
         if (opinionTableResponse.length === 0) {
             throw httpErrors.internalServerError(

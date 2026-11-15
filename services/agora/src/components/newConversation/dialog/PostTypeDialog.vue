@@ -1,9 +1,20 @@
 <template>
   <q-dialog v-model="showDialog" position="bottom">
     <ZKBottomDialogContainer>
+      <q-btn
+        v-if="choosingPrioritization"
+        flat
+        :icon="$q.lang.rtl ? 'mdi-chevron-right' : 'mdi-chevron-left'"
+        :label="qvT('chooseMethod')"
+        @click="choosingPrioritization = false"
+      />
       <ZKDialogOptionsList
-        :options="postTypeOptions"
-        :selected-value="selectedValue"
+        :options="
+          choosingPrioritization ? prioritizationOptions : postTypeOptions
+        "
+        :selected-value="
+          choosingPrioritization ? selectedMethod : selectedValue
+        "
         @option-selected="handleOptionSelected"
       />
     </ZKBottomDialogContainer>
@@ -16,8 +27,9 @@ import ZKDialogOptionsList from "src/components/ui-library/ZKDialogOptionsList.v
 import type { ConversationImportSettings } from "src/composables/conversation/draft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ConversationTypeConfig } from "src/shared/types/zod";
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 
+import { qvStatementsTranslations } from "../QvStatements.i18n";
 import {
   type PostTypeDialogTranslations,
   postTypeDialogTranslations,
@@ -29,7 +41,7 @@ interface ModeChangeConfig {
 }
 
 const props = defineProps<{
-  isMaxDiffAllowed: boolean;
+  isPrioritizingAllowed: boolean;
   isImportAllowed: boolean;
 }>();
 
@@ -42,6 +54,29 @@ const { t } = useComponentI18n<PostTypeDialogTranslations>(
 );
 
 const showDialog = defineModel<boolean>({ required: true });
+const choosingPrioritization = ref(false);
+const { t: qvT } = useComponentI18n(qvStatementsTranslations);
+watch(showDialog, (visible) => {
+  if (visible)
+    choosingPrioritization.value =
+      conversationTypeConfig.value.conversationType === "prioritizing";
+});
+const prioritizationOptions = computed(() => [
+  { title: qvT("bws"), description: qvT("bwsDescription"), value: "bws" },
+  {
+    title: qvT("pairwise"),
+    description: qvT("pairwiseDescription"),
+    value: "pairwise",
+  },
+  { title: qvT("qv"), description: qvT("qvDescription"), value: "qv" },
+]);
+const selectedMethod = computed(() =>
+  conversationTypeConfig.value.conversationType === "prioritizing"
+    ? conversationTypeConfig.value.prioritizationType === "qv"
+      ? "qv"
+      : conversationTypeConfig.value.comparisonMethod
+    : ""
+);
 const importSettings = defineModel<ConversationImportSettings>(
   "importSettings",
   { required: true }
@@ -62,8 +97,8 @@ const postTypeOptions = computed(() => {
     },
     {
       title: t("newPrioritization"),
-      description: t("newPrioritizationDescription"),
-      value: "maxdiff",
+      description: qvT("chooseMethod"),
+      value: "prioritizing",
     },
     {
       title: t("importFromPolis"),
@@ -77,8 +112,8 @@ const postTypeOptions = computed(() => {
     },
   ];
   return options.filter((option) => {
-    if (option.value === "maxdiff") {
-      return props.isMaxDiffAllowed;
+    if (option.value === "prioritizing") {
+      return props.isPrioritizingAllowed;
     }
 
     if (option.value === "polis-url" || option.value === "csv-import") {
@@ -92,9 +127,8 @@ const postTypeOptions = computed(() => {
 const selectedValue = computed(() => {
   if (importSettings.value.importType === "polis-url") return "polis-url";
   if (importSettings.value.importType === "csv-import") return "csv-import";
-  return conversationTypeConfig.value.conversationType === "ranking" &&
-    conversationTypeConfig.value.rankingMode === "bws"
-    ? "maxdiff"
+  return conversationTypeConfig.value.conversationType === "prioritizing"
+    ? "prioritizing"
     : "regular";
 });
 
@@ -106,9 +140,30 @@ const configMap: Record<string, ModeChangeConfig> = {
       votingPresentation: "list",
     },
   },
-  maxdiff: {
+  bws: {
     importType: null,
-    conversationTypeConfig: { conversationType: "ranking", rankingMode: "bws" },
+    conversationTypeConfig: {
+      conversationType: "prioritizing",
+      prioritizationType: "comparisons",
+      comparisonMethod: "bws",
+    },
+  },
+  pairwise: {
+    importType: null,
+    conversationTypeConfig: {
+      conversationType: "prioritizing",
+      prioritizationType: "comparisons",
+      comparisonMethod: "pairwise",
+    },
+  },
+  qv: {
+    importType: null,
+    conversationTypeConfig: {
+      conversationType: "prioritizing",
+      prioritizationType: "qv",
+      creditPricing: "quadratic",
+      allowOpposition: true,
+    },
   },
   "polis-url": {
     importType: "polis-url",
@@ -131,21 +186,18 @@ function handleOptionSelected(option: {
   description: string;
   value: string;
 }): void {
-  if (showDialog.value) {
-    showDialog.value = false;
+  if (option.value === "prioritizing") {
+    choosingPrioritization.value = true;
+    return;
   }
-
-  const nextConfig = configMap[option.value] ?? {
-    importType: null,
-    conversationTypeConfig: {
-      conversationType: "polis",
-      votingPresentation: "list",
-    },
-  };
+  const nextConfig = configMap[option.value];
+  if (nextConfig === undefined) return;
+  showDialog.value = false;
   emit(
     "modeChangeRequested",
-    option.value === "regular" &&
-      conversationTypeConfig.value.conversationType === "polis"
+    (option.value === "regular" &&
+      conversationTypeConfig.value.conversationType === "polis") ||
+      option.value === selectedMethod.value
       ? { ...nextConfig, conversationTypeConfig: conversationTypeConfig.value }
       : nextConfig
   );

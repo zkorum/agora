@@ -74,8 +74,6 @@ export type ConversationProjectAssignment = z.infer<
     typeof zodConversationProjectAssignment
 >;
 
-export const zodEventSlug = z.enum(["devconnect-2025"]);
-
 export const zodUserReportReason = z.enum([
     "misleading",
     "antisocial",
@@ -101,9 +99,25 @@ export const zodParticipationMode = z.enum([
     "email_verification",
     "guest",
 ]);
-export const zodConversationType = z.enum(["polis", "ranking"]);
+export const zodConversationType = z.enum(["polis", "prioritizing"]);
 export const zodPolisVotingPresentation = z.enum(["list", "one_at_a_time"]);
-export const zodRankingMode = z.enum(["bws"]);
+export const zodRankingMode = z.enum(["bws", "pairwise"]);
+export const zodSupportedParticipantStatements = z
+    .object({
+        supported: z.literal(true),
+        enabled: z.boolean(),
+    })
+    .strict();
+export const zodUnsupportedParticipantStatements = z
+    .object({
+        supported: z.literal(false),
+    })
+    .strict();
+export const zodParticipantStatements = z.discriminatedUnion("supported", [
+    zodSupportedParticipantStatements,
+    zodUnsupportedParticipantStatements,
+]);
+export type ParticipantStatements = z.infer<typeof zodParticipantStatements>;
 export const zodPolisConversationTypeConfig = z
     .object({
         conversationType: z.literal("polis"),
@@ -112,14 +126,46 @@ export const zodPolisConversationTypeConfig = z
     .strict();
 export const zodRankingConversationTypeConfig = z
     .object({
-        conversationType: z.literal("ranking"),
-        rankingMode: zodRankingMode,
+        conversationType: z.literal("prioritizing"),
+        prioritizationType: z.literal("comparisons"),
+        comparisonMethod: zodRankingMode,
     })
     .strict();
+export const zodQvConversationTypeConfig = z
+    .object({
+        conversationType: z.literal("prioritizing"),
+        prioritizationType: z.literal("qv"),
+        creditPricing: z.literal("quadratic"),
+        allowOpposition: z.boolean(),
+    })
+    .strict();
+export const zodPrioritizingConversationTypeConfig = z.discriminatedUnion(
+    "prioritizationType",
+    [zodRankingConversationTypeConfig, zodQvConversationTypeConfig],
+);
 export const zodConversationTypeConfig = z.discriminatedUnion(
     "conversationType",
-    [zodPolisConversationTypeConfig, zodRankingConversationTypeConfig],
+    [zodPolisConversationTypeConfig, zodPrioritizingConversationTypeConfig],
 );
+export const zodConversationStatementSettings = z.discriminatedUnion(
+    "conversationType",
+    [
+        zodPolisConversationTypeConfig.extend({
+            participantStatements: zodSupportedParticipantStatements,
+        }),
+        z.discriminatedUnion("prioritizationType", [
+            zodRankingConversationTypeConfig.extend({
+                participantStatements: zodSupportedParticipantStatements,
+            }),
+            zodQvConversationTypeConfig.extend({
+                participantStatements: zodUnsupportedParticipantStatements,
+            }),
+        ]),
+    ],
+);
+export type ConversationStatementSettings = z.infer<
+    typeof zodConversationStatementSettings
+>;
 export const zodProjectOrganizationAttributionRole = z.enum(
     projectOrganizationAttributionRoleValues,
 );
@@ -208,14 +254,12 @@ export const zodConversationViewSnapshotCheckpointReason = z.enum([
 ]);
 export const zodPremiumFeature = z.enum([
     "survey",
-    "event_ticket",
     "analysis_variants",
     "dynamic_translation",
     "conversation_email_update",
 ]);
 export const zodGrantablePremiumFeature = z.enum([
     "survey",
-    "event_ticket",
     "analysis_variants",
     "dynamic_translation",
     "conversation_email_update",
@@ -223,7 +267,6 @@ export const zodGrantablePremiumFeature = z.enum([
 export const zodParticipationBlockedReason = z.enum([
     "conversation_locked",
     "conversation_closed",
-    "event_ticket_required",
     "account_required",
     "strong_verification_required",
     "email_verification_required",
@@ -1402,7 +1445,6 @@ const zodConversationMetadataBase = z
         isEdited: z.boolean(),
         organization: zodOrganization.optional(),
         moderation: zodConversationModerationProperties,
-        requiresEventTicket: zodEventSlug.optional(),
         externalSourceConfig: zodExternalSourceConfig.nullable(),
         importInfo: zodImportInfo.optional(),
         projectContext: zodConversationProjectContext.optional(),
@@ -1415,15 +1457,30 @@ export const zodConversationMetadata = z.discriminatedUnion(
             .extend({
                 conversationType: z.literal("polis"),
                 votingPresentation: zodPolisVotingPresentation,
+                participantStatements: zodSupportedParticipantStatements,
             })
             .strict(),
-        zodConversationMetadataBase
-            .extend({
-                conversationType: z.literal("ranking"),
-                rankingMode: zodRankingMode,
-                rankingStatsSnapshotId: z.number().int().positive().optional(),
-            })
-            .strict(),
+        z.discriminatedUnion("prioritizationType", [
+            zodConversationMetadataBase
+                .extend(zodRankingConversationTypeConfig.shape)
+                .extend({
+                    participantStatements: zodSupportedParticipantStatements,
+                    rankingStatsSnapshotId: z
+                        .number()
+                        .int()
+                        .positive()
+                        .optional(),
+                })
+                .strict(),
+            zodConversationMetadataBase
+                .extend(zodQvConversationTypeConfig.shape)
+                .extend({
+                    participantStatements: zodUnsupportedParticipantStatements,
+                    qvStatsRevision: z.number().int().nonnegative().optional(),
+                    qvGeneration: z.number().int().nonnegative().optional(),
+                })
+                .strict(),
+        ]),
     ],
 );
 const zodConversationMetadataWithIdBase = z
@@ -1456,7 +1513,6 @@ const zodConversationMetadataWithIdBase = z
         isEdited: z.boolean(),
         organization: zodOrganization.optional(),
         moderation: zodConversationModerationProperties,
-        requiresEventTicket: zodEventSlug.optional(),
         externalSourceConfig: zodExternalSourceConfig.nullable(),
         importInfo: z
             .object({
@@ -1478,15 +1534,30 @@ export const zodConversationMetadataWithId = z.discriminatedUnion(
             .extend({
                 conversationType: z.literal("polis"),
                 votingPresentation: zodPolisVotingPresentation,
+                participantStatements: zodSupportedParticipantStatements,
             })
             .strict(),
-        zodConversationMetadataWithIdBase
-            .extend({
-                conversationType: z.literal("ranking"),
-                rankingMode: zodRankingMode,
-                rankingStatsSnapshotId: z.number().int().positive().optional(),
-            })
-            .strict(),
+        z.discriminatedUnion("prioritizationType", [
+            zodConversationMetadataWithIdBase
+                .extend(zodRankingConversationTypeConfig.shape)
+                .extend({
+                    participantStatements: zodSupportedParticipantStatements,
+                    rankingStatsSnapshotId: z
+                        .number()
+                        .int()
+                        .positive()
+                        .optional(),
+                })
+                .strict(),
+            zodConversationMetadataWithIdBase
+                .extend(zodQvConversationTypeConfig.shape)
+                .extend({
+                    participantStatements: zodUnsupportedParticipantStatements,
+                    qvStatsRevision: z.number().int().nonnegative().optional(),
+                    qvGeneration: z.number().int().nonnegative().optional(),
+                })
+                .strict(),
+        ]),
     ],
 );
 export const zodPolisKey = z.enum(["0", "1", "2", "3", "4", "5"]);
@@ -1586,6 +1657,7 @@ export const zodOpinionItem = z
             .object({
                 editing: zodOpinionEditingAvailability,
                 canDelete: z.boolean(),
+                canModerate: z.boolean(),
             })
             .strict()
             .optional(),
@@ -1679,6 +1751,9 @@ export const zodConversationCapabilities = z
     .object({
         canEdit: z.boolean(),
         canDelete: z.boolean(),
+        canModerate: z.boolean(),
+        canClose: z.boolean(),
+        canReopen: z.boolean(),
     })
     .strict();
 export type ConversationCapabilities = z.infer<
@@ -2163,7 +2238,7 @@ const zodNullCredentials = z.object({
     rarimo: z.literal(null),
 });
 
-const zodIsKnownTrueLoginStatus = z
+export const zodKnownDeviceLoginStatus = z
     .object({
         isKnown: z.literal(true),
         isRegistered: z.boolean(),
@@ -2182,12 +2257,12 @@ const zodIsKnownFalseLoginStatus = z.object({
 
 export const zodGetDeviceStatusResponse = z.discriminatedUnion("isKnown", [
     zodIsKnownFalseLoginStatus,
-    zodIsKnownTrueLoginStatus,
+    zodKnownDeviceLoginStatus,
 ]);
 
 export const zodDeviceLoginStatus = z.discriminatedUnion("isKnown", [
     zodIsKnownFalseLoginStatus,
-    zodIsKnownTrueLoginStatus, // Include userId so frontend can watch for user identity changes
+    zodKnownDeviceLoginStatus, // Include userId so frontend can watch for user identity changes
 ]);
 
 export const zodLanguagePreferences = z
@@ -2380,11 +2455,12 @@ export type SupportedCountryCallingCode = z.infer<
 >;
 export type OrganizationProperties = z.infer<typeof zodOrganization>;
 export type DeviceLoginStatus = z.infer<typeof zodDeviceLoginStatus>;
+export type KnownDeviceLoginStatus = z.infer<typeof zodKnownDeviceLoginStatus>;
 export type DeviceLoginStatusExtended = z.infer<
     typeof zodGetDeviceStatusResponse
 >;
 export type DeviceIsKnownTrueLoginStatus = z.infer<
-    typeof zodIsKnownTrueLoginStatus
+    typeof zodKnownDeviceLoginStatus
 >;
 export type ZodTopicObject = z.infer<typeof zodTopicObject>;
 export type FeedSortAlgorithm = z.infer<typeof zodFeedSortAlgorithm>;
@@ -2411,7 +2487,6 @@ export type ConversationMultilingualSetting = z.infer<
 export type ConversationEffectiveMultilingualSetting = z.infer<
     typeof zodConversationEffectiveMultilingualSetting
 >;
-export type EventSlug = z.infer<typeof zodEventSlug>;
 export type ExportStatus = z.infer<typeof zodExportStatus>;
 export type ExportFailureReason = z.infer<typeof zodExportFailureReason>;
 export type ImportFailureReason = z.infer<typeof zodImportFailureReason>;
@@ -2458,33 +2533,33 @@ export type GrantablePremiumFeature = z.infer<
     typeof zodGrantablePremiumFeature
 >;
 
-// MaxDiff (Best-Worst Scaling) types
-const zodMaxdiffEntityId = z
+// Comparison answers shared by BWS and binary pairwise.
+const zodComparisonEntityId = z
     .string()
     .min(1)
     .refine((id) => id.trim() === id, {
         message:
-            "MaxDiff entity IDs must not have leading or trailing whitespace",
+            "Comparison entity IDs must not have leading or trailing whitespace",
     });
 
-const zodMaxdiffCandidateSet = z
-    .array(zodMaxdiffEntityId)
+const zodComparisonCandidateSet = z
+    .array(zodComparisonEntityId)
     .min(2)
     .superRefine((candidateSet, ctx) => {
         if (new Set(candidateSet).size !== candidateSet.length) {
             ctx.addIssue({
                 code: "custom",
                 message:
-                    "MaxDiff candidate set must not contain duplicate items",
+                    "Comparison candidate set must not contain duplicate items",
             });
         }
     });
 
-export const zodMaxdiffComparison = z
+export const zodComparisonAnswer = z
     .object({
-        best: zodMaxdiffEntityId,
-        worst: zodMaxdiffEntityId,
-        set: zodMaxdiffCandidateSet,
+        best: zodComparisonEntityId,
+        worst: zodComparisonEntityId,
+        set: zodComparisonCandidateSet,
     })
     .strict()
     .superRefine((comparison, ctx) => {
@@ -2492,25 +2567,25 @@ export const zodMaxdiffComparison = z
             ctx.addIssue({
                 code: "custom",
                 path: ["worst"],
-                message: "MaxDiff best and worst choices must be different",
+                message: "Comparison best and worst choices must be different",
             });
         }
         if (!comparison.set.includes(comparison.best)) {
             ctx.addIssue({
                 code: "custom",
                 path: ["best"],
-                message: "MaxDiff best choice must be in the candidate set",
+                message: "Comparison best choice must be in the candidate set",
             });
         }
         if (!comparison.set.includes(comparison.worst)) {
             ctx.addIssue({
                 code: "custom",
                 path: ["worst"],
-                message: "MaxDiff worst choice must be in the candidate set",
+                message: "Comparison worst choice must be in the candidate set",
             });
         }
     });
-export type MaxDiffComparison = z.infer<typeof zodMaxdiffComparison>;
+export type ComparisonAnswer = z.infer<typeof zodComparisonAnswer>;
 
 // Pairwise comparison types
 export const zodPairwiseComparison = z
@@ -2530,20 +2605,22 @@ export const zodPairwiseComparison = z
     );
 export type PairwiseComparison = z.infer<typeof zodPairwiseComparison>;
 
-export const zodMaxdiffState = z.object({
+export const zodComparisonSessionState = z.object({
     ranking: z.array(z.string()).nullable(),
-    comparisons: z.array(zodMaxdiffComparison),
+    comparisons: z.array(zodComparisonAnswer),
     isComplete: z.boolean(),
 });
-export type MaxDiffState = z.infer<typeof zodMaxdiffState>;
+export type ComparisonSessionState = z.infer<typeof zodComparisonSessionState>;
 
-export const zodMaxdiffLifecycleStatus = z.enum([
+export const zodRankingItemLifecycleStatus = z.enum([
     "active",
     "completed",
     "in_progress",
     "canceled",
 ]);
-export type MaxdiffLifecycleStatus = z.infer<typeof zodMaxdiffLifecycleStatus>;
+export type RankingItemLifecycleStatus = z.infer<
+    typeof zodRankingItemLifecycleStatus
+>;
 
 // Ranking score output (stored in ranking_score.scores JSONB)
 export const zodSolidagoEntityScore = z.object({

@@ -1,7 +1,10 @@
 // Edit conversation functionality
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { log } from "@/app.js";
-import { getPrimaryDatabase } from "@/shared-backend/db.js";
+import {
+    getPrimaryDatabase,
+    type PostgresTransaction,
+} from "@/shared-backend/db.js";
 import {
     conversationContentTable,
     conversationTable,
@@ -10,6 +13,7 @@ import {
     organizationTable,
     polisConversationConfigTable,
     rankingConversationConfigTable,
+    creditVotingConfigTable,
     projectContentTable,
     projectOrganizationOwnershipTable,
     projectTable,
@@ -35,19 +39,13 @@ import type {
     UpdateConversationResponse,
 } from "@/shared/types/dto.js";
 import type {
-    ConversationTypeConfig,
     ConversationProjectAssignment,
     PremiumFeature,
 } from "@/shared/types/zod.js";
 import { zodExternalSourceConfig } from "@/shared/types/zod.js";
-import {
-    getProjectLanguageSettings,
-    getProjectCapabilitiesById,
-    hasProjectCapability,
-} from "@/service/projectAccess.js";
+import { getProjectLanguageSettings } from "@/service/projectAccess.js";
 import {
     buildConversationEditPermissions,
-    getConversationContentEditPremiumFeatures,
     getPremiumEntitlementSubjectForConversation,
     getPremiumFeaturesInConversation,
     getRestrictedPremiumFeatures,
@@ -101,7 +99,22 @@ import {
     assertSeedOpinionEditsHaveNoVotes,
     withSeedOpinionChangeRollback,
 } from "./conversationSeedOpinionChanges.js";
-import { projectConversationTypeConfig } from "@/shared/utils/conversationTypeConfig.js";
+import {
+    areConversationTypeConfigsEqual,
+    canEditPublishedConversationTypeConfig,
+    projectConversationTypeConfig,
+} from "@/shared/utils/conversationTypeConfig.js";
+import {
+    fetchCurrentConversationTypeSettings,
+    parseStoredParticipantStatements,
+    parseStoredConversationTypeConfig,
+} from "./conversationTypeConfig.js";
+import {
+    fetchQvStatements,
+    prepareQvStatementUpdate,
+    applyQvStatementUpdate,
+    normalizeQvStatementUpdate,
+} from "./qvStatements.js";
 import {
     updateConversationEmailUpdateOverrideInTransaction,
     hasActiveDelivery,
@@ -135,11 +148,12 @@ export async function getConversationForEdit({
     conversationSlugId,
     userId,
 }: GetConversationForEditProps): Promise<GetConversationForEditResponse> {
+    const primaryDb = getPrimaryDatabase(db);
     const defaultProjectOrganization = alias(
         organizationTable,
         "defaultProjectOrganization",
     );
-    const results = await db
+    const results = await primaryDb
         .select({
             conversationId: conversationTable.id,
             conversationSlugId: conversationTable.slugId,
@@ -161,12 +175,19 @@ export async function getConversationForEdit({
             participationMode: conversationTable.participationMode,
             conversationType: conversationTable.conversationType,
             rankingMode: rankingConversationConfigTable.rankingMode,
+            prioritizationType: conversationTable.prioritizationType,
+            creditVotingConfigId: conversationTable.creditVotingConfigId,
+            allowOpposition: creditVotingConfigTable.allowOpposition,
+            isClosed: conversationTable.isClosed,
             externalSourceConfig:
                 rankingConversationConfigTable.externalSourceConfig,
             isImporting: conversationTable.isImporting,
-            requiresEventTicket: conversationTable.requiresEventTicket,
             aiLabelingEnabled: polisConversationConfigTable.aiLabelingEnabled,
             votingPresentation: polisConversationConfigTable.votingPresentation,
+            polisAllowParticipantStatements:
+                polisConversationConfigTable.allowParticipantStatements,
+            comparisonAllowParticipantStatements:
+                rankingConversationConfigTable.allowParticipantStatements,
             preferredOpinionGroupCount:
                 polisConversationConfigTable.preferredOpinionGroupCount,
             postAsOrganizationSlug: organizationTable.slug,
@@ -238,6 +259,13 @@ export async function getConversationForEdit({
                 isNull(conversationModerationTable.deletedAt),
             ),
         )
+        .leftJoin(
+            creditVotingConfigTable,
+            eq(
+                creditVotingConfigTable.id,
+                conversationTable.creditVotingConfigId,
+            ),
+        )
         .where(
             and(
                 eq(conversationTable.slugId, conversationSlugId),
@@ -252,16 +280,6 @@ export async function getConversationForEdit({
 
     const conversation = results[0];
 
-    const canUpdateConversation = await hasProjectCapability({
-        db,
-        userId,
-        projectId: conversation.projectId,
-        capability: "conversation_edit",
-    });
-    if (!canUpdateConversation) {
-        return { success: false, reason: "not_author" };
-    }
-
     // Check if conversation is locked
     const isLocked = conversation.moderationAction === "lock";
     const externalSourceConfig = zodExternalSourceConfig
@@ -269,15 +287,15 @@ export async function getConversationForEdit({
         .parse(conversation.externalSourceConfig);
 
     const surveyConfig = await getSurveyConfigForConversation({
-        db,
+        db: primaryDb,
         conversationId: conversation.conversationId,
     });
     const multilingualSetting = await getConversationMultilingualSetting({
-        db,
+        db: primaryDb,
         conversationId: conversation.conversationId,
     });
     const projectLanguageSettings = await getProjectLanguageSettings({
-        db,
+        db: primaryDb,
         projectId: conversation.projectId,
     });
     const projectLanguageProject =
@@ -312,7 +330,10 @@ export async function getConversationForEdit({
                           ? conversation.defaultProjectOrganizationSlug
                           : undefined,
               };
-    const projectOptions = await getConversationProjectOptions({ db, userId });
+    const projectOptions = await getConversationProjectOptions({
+        db: primaryDb,
+        userId,
+    });
     const editMultilingualSetting =
         conversation.languageSettingsSource === "conversation_override"
             ? getManualMultilingualSettingsFromEffectiveTargets({
@@ -328,34 +349,28 @@ export async function getConversationForEdit({
               };
 
     const editPermissions = await buildConversationEditPermissions({
-        db,
+        db: primaryDb,
         conversation: {
             conversationId: conversation.conversationId,
             projectId: conversation.projectId,
             userId,
-            requiresEventTicket: conversation.requiresEventTicket,
         },
         hasSurvey: surveyConfig !== undefined,
         now: new Date(),
     });
-    let conversationTypeConfig: ConversationTypeConfig;
-    if (conversation.conversationType === "ranking") {
-        if (conversation.rankingMode === null) {
-            throw new Error("Ranking conversation is missing its ranking mode");
-        }
-        conversationTypeConfig = {
-            conversationType: "ranking",
-            rankingMode: conversation.rankingMode,
-        };
-    } else {
-        if (conversation.votingPresentation === null) {
-            throw new Error("Polis conversation has no voting configuration");
-        }
-        conversationTypeConfig = {
-            conversationType: "polis",
-            votingPresentation: conversation.votingPresentation,
-        };
-    }
+    const conversationTypeConfig =
+        parseStoredConversationTypeConfig(conversation);
+    const qvStatements =
+        conversation.creditVotingConfigId === null
+            ? undefined
+            : await fetchQvStatements({
+                  db: primaryDb,
+                  conversationId: conversation.conversationId,
+                  configId: conversation.creditVotingConfigId,
+                  isClosed: conversation.isClosed,
+                  canEdit:
+                      editPermissions.canEditConversationContent && !isLocked,
+              });
 
     return {
         success: true,
@@ -363,6 +378,7 @@ export async function getConversationForEdit({
         conversationTitle: conversation.conversationTitle,
         conversationBody: toUnionUndefined(conversation.conversationBody),
         conversationTypeConfig,
+        participantStatements: parseStoredParticipantStatements(conversation),
         contentLanguageMetadata:
             conversationContentSourceMetadataToContentLanguageMetadataOutput({
                 sourceLanguageCode: conversation.sourceLanguageCode,
@@ -383,7 +399,6 @@ export async function getConversationForEdit({
         projectOptions,
         isIndexed: conversation.isIndexed,
         participationMode: conversation.participationMode,
-        requiresEventTicket: toUnionUndefined(conversation.requiresEventTicket),
         aiLabelingEnabled: conversation.aiLabelingEnabled ?? false,
         preferredOpinionGroupCount:
             conversation.preferredOpinionGroupCount ?? null,
@@ -397,13 +412,18 @@ export async function getConversationForEdit({
         updatedAt: conversation.updatedAt,
         isLocked,
         editPermissions,
-        seedOpinions: await fetchConversationSeedOpinions({
-            db,
-            conversationId: conversation.conversationId,
-            conversationType: conversation.conversationType,
-            externalSourceManaged: externalSourceConfig !== null,
-        }),
+        qvStatements,
+        seedOpinions:
+            qvStatements === undefined
+                ? await fetchConversationSeedOpinions({
+                      db: primaryDb,
+                      conversationId: conversation.conversationId,
+                      conversationType: conversation.conversationType,
+                      externalSourceManaged: externalSourceConfig !== null,
+                  })
+                : [],
         canAddSeedOpinions:
+            qvStatements === undefined &&
             editPermissions.canEditConversationContent &&
             !isLocked &&
             !conversation.isImporting &&
@@ -447,7 +467,6 @@ export async function updateConversation({
         participationMode,
         languageSettingsSource,
         multilingualSetting,
-        requiresEventTicket,
         conversationTypeConfig,
         surveyConfig,
         conversationEmailUpdateEnabledOverride,
@@ -530,22 +549,13 @@ export async function updateConversation({
         ).at(0);
         if (source === undefined)
             return { success: false, reason: "not_found" };
-        if (
-            !(await hasProjectCapability({
-                db: primaryDb,
-                userId,
-                projectId: source.projectId,
-                capability: "conversation_edit",
-            }))
-        )
-            return { success: false, reason: "not_author" };
         if (source.moderationAction === "lock")
             return { success: false, reason: "conversation_locked" };
         if (source.projectSlug !== projectChange.expectedProjectSlug)
             return { success: false, reason: "project_assignment_changed" };
     }
-    // Default-project provisioning follows creation's lock order; the move itself
-    // rechecks capabilities and destination state under project/conversation locks.
+    // Authorization is performed by index.ts. Mutation locks protect destination
+    // state and assignment consistency, not the actor's role.
     const destination =
         projectChange === undefined
             ? undefined
@@ -556,6 +566,10 @@ export async function updateConversation({
               });
     if (projectChange !== undefined && destination === undefined)
         return { success: false, reason: "project_not_available" };
+    const normalizedQvUpdate =
+        data.qvStatementUpdate === undefined
+            ? undefined
+            : await normalizeQvStatementUpdate(data.qvStatementUpdate);
     const languagePreparation = await withSeedOpinionChangeRollback({
         operation: () =>
             prepareConversationEditLanguages({
@@ -568,11 +582,12 @@ export async function updateConversation({
                 bodyPlainText,
                 googleCloudCredentials,
                 voteBuffer,
+                qvStatementUpdate: normalizedQvUpdate,
             }),
     });
     if (!languagePreparation.success) return languagePreparation;
     const { resolveLanguageMetadata } = languagePreparation;
-    const updateInTransaction = async (tx: PostgresDatabase) => {
+    const updateInTransaction = async (tx: PostgresTransaction) => {
         const now = new Date();
         const initialConversation = (
             await tx
@@ -637,7 +652,7 @@ export async function updateConversation({
                 reason: "project_not_available",
             } satisfies UpdateConversationServiceResponse;
         }
-        // Get conversation and check authorization
+        // Reload mutable conversation state under the write lock.
         const conversationResults = await tx
             .select({
                 conversationId: conversationTable.id,
@@ -646,13 +661,15 @@ export async function updateConversation({
                 currentContentId: conversationTable.currentContentId,
                 conversationType: conversationTable.conversationType,
                 rankingMode: rankingConversationConfigTable.rankingMode,
+                prioritizationType: conversationTable.prioritizationType,
+                creditVotingConfigId: conversationTable.creditVotingConfigId,
+                allowOpposition: creditVotingConfigTable.allowOpposition,
                 externalSourceConfig:
                     rankingConversationConfigTable.externalSourceConfig,
                 isImporting: conversationTable.isImporting,
                 polisConfigId: conversationTable.polisConfigId,
                 isIndexed: conversationTable.isIndexed,
                 participationMode: conversationTable.participationMode,
-                requiresEventTicket: conversationTable.requiresEventTicket,
                 aiLabelingEnabled:
                     polisConversationConfigTable.aiLabelingEnabled,
                 votingPresentation:
@@ -713,6 +730,13 @@ export async function updateConversation({
                     isNull(conversationModerationTable.deletedAt),
                 ),
             )
+            .leftJoin(
+                creditVotingConfigTable,
+                eq(
+                    creditVotingConfigTable.id,
+                    conversationTable.creditVotingConfigId,
+                ),
+            )
             .where(and(eq(conversationTable.slugId, conversationSlugId)))
             // Editing currentContentId/projectId can upgrade the row lock too.
             // Take UPDATE up front, before participant KEY SHARE locks can race it.
@@ -735,35 +759,6 @@ export async function updateConversation({
             } satisfies UpdateConversationServiceResponse;
         }
         const projectChanged = destinationProjectId !== conversation.projectId;
-        const capabilities = await getProjectCapabilitiesById({
-            db: tx,
-            userId,
-            projectIds,
-            requestedCapabilities: ["conversation_edit", "conversation_create"],
-            lockAuthorization: true,
-        });
-
-        const canUpdateConversation =
-            capabilities
-                .get(conversation.projectId)
-                ?.has("conversation_edit") === true;
-        if (!canUpdateConversation) {
-            return { success: false, reason: "not_author" } as const;
-        }
-        if (
-            projectChanged &&
-            (!capabilities
-                .get(destinationProjectId)
-                ?.has("conversation_create") ||
-                !capabilities
-                    .get(destinationProjectId)
-                    ?.has("conversation_edit"))
-        ) {
-            return {
-                success: false,
-                reason: "missing_project_capability",
-            } satisfies UpdateConversationServiceResponse;
-        }
         if (projectChanged) {
             for (const projectId of projectIds) {
                 if (await hasActiveDelivery({ db: tx, projectId }))
@@ -792,6 +787,94 @@ export async function updateConversation({
         }
 
         const conversationId = conversation.conversationId;
+        // Read settings after the lock: joined configuration rows may have been
+        // read before waiting for a concurrent editor to commit.
+        const currentSettings = await fetchCurrentConversationTypeSettings({
+            db: tx,
+            conversationId,
+        });
+        const currentTypeConfig = currentSettings.presentation;
+        const policyChange = data.participantStatementsChange;
+        const currentPolicy = currentSettings.participantStatements;
+        if (policyChange !== undefined && !currentPolicy.supported)
+            return {
+                success: false,
+                reason: "participant_statements_unsupported",
+            } satisfies UpdateConversationServiceResponse;
+        if (
+            policyChange !== undefined &&
+            currentPolicy.supported &&
+            policyChange.expectedEnabled !== currentPolicy.enabled
+        )
+            return {
+                success: false,
+                reason: "participant_statements_changed",
+            } satisfies UpdateConversationServiceResponse;
+        const participantStatements = currentPolicy.supported
+            ? ({
+                  supported: true,
+                  enabled: policyChange?.enabled ?? currentPolicy.enabled,
+              } as const)
+            : currentPolicy;
+        const participantStatementsChanged =
+            currentPolicy.supported &&
+            participantStatements.supported &&
+            currentPolicy.enabled !== participantStatements.enabled;
+        if (
+            !canEditPublishedConversationTypeConfig({
+                current: currentTypeConfig,
+                requested: conversationTypeConfig,
+            })
+        )
+            return {
+                success: false,
+                reason: "conversation_type_fixed",
+            } satisfies UpdateConversationServiceResponse;
+        const configChanged = !areConversationTypeConfigsEqual({
+            left: currentTypeConfig,
+            right: conversationTypeConfig,
+        });
+        if (
+            data.expectedConversationTypeConfig !== undefined &&
+            !areConversationTypeConfigsEqual({
+                left: currentTypeConfig,
+                right: data.expectedConversationTypeConfig,
+            })
+        )
+            return {
+                success: false,
+                reason: "conversation_type_changed",
+            } satisfies UpdateConversationServiceResponse;
+        if (configChanged && data.expectedConversationTypeConfig === undefined)
+            return {
+                success: false,
+                reason: "conversation_type_changed",
+            } satisfies UpdateConversationServiceResponse;
+        if (
+            (conversation.prioritizationType === "qv" &&
+                (normalizedSeedOpinions.length > 0 ||
+                    seedOpinionChanges.length > 0)) ||
+            (data.qvStatementUpdate !== undefined &&
+                conversation.creditVotingConfigId === null)
+        ) {
+            return {
+                success: false,
+                reason: "seed_opinions_not_allowed",
+            } satisfies UpdateConversationServiceResponse;
+        }
+        const preparedQv =
+            normalizedQvUpdate === undefined ||
+            conversation.creditVotingConfigId === null
+                ? undefined
+                : await prepareQvStatementUpdate({
+                      db: tx,
+                      conversationId,
+                      configId: conversation.creditVotingConfigId,
+                      isClosed: conversation.isClosed,
+                      update: normalizedQvUpdate,
+                      lockConfig: true,
+                  });
+        if (preparedQv !== undefined && !preparedQv.success) return preparedQv;
         if (
             normalizedSeedOpinions.length > 0 ||
             seedOpinionChanges.length > 0
@@ -817,8 +900,11 @@ export async function updateConversation({
         if (!preparedChanges.success) return preparedChanges;
         const seedStatementsChanged =
             normalizedSeedOpinions.length > 0 ||
-            preparedChanges.changes.length > 0;
-        if (seedStatementsChanged) {
+            preparedChanges.changes.length > 0 ||
+            (preparedQv !== undefined &&
+                (preparedQv.changes.length > 0 ||
+                    preparedQv.positions.length > 0));
+        if (seedStatementsChanged && conversation.prioritizationType !== "qv") {
             const existingOpinions = await fetchConversationSeedOpinions({
                 db: tx,
                 conversationId,
@@ -862,8 +948,16 @@ export async function updateConversation({
         const surveyAnalysisRefreshContext = buildSurveyAnalysisRefreshContext({
             conversationId,
             slugId: data.conversationSlugId,
-            conversationType: conversation.conversationType,
-            rankingMode: conversation.rankingMode,
+            conversationType: conversationTypeConfig.conversationType,
+            rankingMode:
+                conversationTypeConfig.conversationType === "prioritizing" &&
+                conversationTypeConfig.prioritizationType === "comparisons"
+                    ? conversationTypeConfig.comparisonMethod
+                    : null,
+            prioritizationType:
+                conversationTypeConfig.conversationType === "prioritizing"
+                    ? conversationTypeConfig.prioritizationType
+                    : null,
         });
         const effectiveSurveyConfig =
             surveyConfig === undefined
@@ -904,8 +998,6 @@ export async function updateConversation({
             const resultingPremiumFeatures: PremiumFeature[] = [];
             if (effectiveSurveyConfig !== null)
                 resultingPremiumFeatures.push("survey");
-            if (requiresEventTicket !== undefined)
-                resultingPremiumFeatures.push("event_ticket");
             const resultingPreferredGroupCount =
                 preferredOpinionGroupCount === undefined
                     ? conversation.currentPreferredOpinionGroupCount
@@ -1013,14 +1105,12 @@ export async function updateConversation({
                 db: tx,
                 conversation: {
                     conversationId,
-                    requiresEventTicket: conversation.requiresEventTicket,
                 },
             });
             const restrictedFeatures = await getRestrictedPremiumFeatures({
                 db: tx,
                 subject,
-                features:
-                    getConversationContentEditPremiumFeatures(premiumFeatures),
+                features: premiumFeatures,
                 mode: "edit",
                 now,
             });
@@ -1030,20 +1120,6 @@ export async function updateConversation({
                     reason: "premium_access_expired",
                 } as const;
             }
-        }
-
-        const previousEventTicket = toUnionUndefined(
-            conversation.requiresEventTicket,
-        );
-        const eventTicketAdded =
-            previousEventTicket === undefined &&
-            requiresEventTicket !== undefined;
-
-        if (eventTicketAdded) {
-            return {
-                success: false,
-                reason: "invalid_access_settings",
-            } as const;
         }
 
         let existingSurveyConfig:
@@ -1084,15 +1160,6 @@ export async function updateConversation({
         const updatedAiLabelingEnabled =
             aiLabelingEnabled ?? conversation.aiLabelingEnabled ?? true;
         if (
-            conversationTypeConfig.conversationType !==
-            conversation.conversationType
-        ) {
-            return {
-                success: false,
-                reason: "invalid_access_settings",
-            } satisfies UpdateConversationServiceResponse;
-        }
-        if (
             conversation.conversationType === "polis" &&
             conversation.votingPresentation === null
         ) {
@@ -1105,11 +1172,11 @@ export async function updateConversation({
                 ? conversationTypeConfig.votingPresentation
                 : "list";
         const conversationSettingsChanged =
+            participantStatementsChanged ||
+            configChanged ||
             projectChanged ||
             isIndexed !== conversation.isIndexed ||
             participationMode !== conversation.participationMode ||
-            (requiresEventTicket ?? null) !==
-                conversation.requiresEventTicket ||
             updatedAiLabelingEnabled !==
                 (conversation.aiLabelingEnabled ?? true) ||
             updatedVotingPresentation !== currentVotingPresentation ||
@@ -1141,7 +1208,6 @@ export async function updateConversation({
             const emailUpdateResult =
                 await validateConversationEmailUpdateProjectMove({
                     db: tx,
-                    userId,
                     conversationSlugId,
                     projectId: destinationProjectId,
                     enabledOverride: conversationEmailUpdateEnabledOverride,
@@ -1216,13 +1282,49 @@ export async function updateConversation({
             isEdited: newContentId === undefined ? undefined : true,
             isIndexed,
             participationMode,
-            requiresEventTicket: requiresEventTicket ?? null,
             languageSettingsSource,
             updatedAt: now,
             ...emailOverrideUpdate,
         } satisfies Partial<typeof conversationTable.$inferInsert>;
 
         // Update conversation with new content and settings
+        if (participantStatementsChanged) {
+            if (
+                conversation.conversationType === "polis" &&
+                conversation.polisConfigId !== null
+            )
+                await tx
+                    .update(polisConversationConfigTable)
+                    .set({
+                        allowParticipantStatements:
+                            participantStatements.enabled,
+                        updatedAt: now,
+                    })
+                    .where(
+                        eq(
+                            polisConversationConfigTable.id,
+                            conversation.polisConfigId,
+                        ),
+                    );
+            else
+                await tx
+                    .update(rankingConversationConfigTable)
+                    .set({
+                        allowParticipantStatements:
+                            participantStatements.enabled,
+                        updatedAt: now,
+                    })
+                    .from(conversationTable)
+                    .where(
+                        and(
+                            eq(conversationTable.id, conversationId),
+                            eq(
+                                rankingConversationConfigTable.id,
+                                conversationTable.rankingConfigId,
+                            ),
+                        ),
+                    );
+        }
         await tx
             .update(conversationTable)
             .set(conversationUpdateValues)
@@ -1266,10 +1368,6 @@ export async function updateConversation({
                     slugId: conversationSlugId,
                     contentId: newContentId ?? conversation.currentContentId,
                     conversationType: conversation.conversationType,
-                    isIndexed,
-                    participationMode,
-                    isClosed: conversation.isClosed,
-                    requiresEventTicket,
                 },
             });
         rankingItemSources.push(
@@ -1287,6 +1385,28 @@ export async function updateConversation({
                 now,
             })),
         );
+        if (
+            preparedQv !== undefined &&
+            conversation.creditVotingConfigId !== null
+        ) {
+            rankingItemSources.push(
+                ...(await applyQvStatementUpdate({
+                    db: tx,
+                    prepared: preparedQv,
+                    conversation: {
+                        id: conversationId,
+                        slugId: conversationSlugId,
+                        contentId:
+                            newContentId ?? conversation.currentContentId,
+                    },
+                    configId: conversation.creditVotingConfigId,
+                    userId,
+                    now,
+                    resolveLanguageMetadata,
+                    useGoogleLanguageDetection: translationWorkEnabled,
+                })),
+            );
+        }
 
         let surveySources: SurveyQuestionContentSource[] = [];
         let analysisRefreshScheduled = false;
@@ -1496,9 +1616,9 @@ export async function updateConversation({
                   }
                 : undefined;
         const conversationSettings = {
+            participantStatements,
             isIndexed,
             participationMode,
-            requiresEventTicket: requiresEventTicket ?? null,
             aiLabelingEnabled: updatedAiLabelingEnabled,
             presentation: projectConversationTypeConfig(conversationTypeConfig),
             preferredOpinionGroupCount: updatedPreferredOpinionGroupCount,
@@ -1530,7 +1650,21 @@ export async function updateConversation({
         });
         return {
             success: true,
+            conversationTypeConfig: configChanged
+                ? projectConversationTypeConfig(conversationTypeConfig)
+                : undefined,
+            participantStatements,
             eagerContentTranslationWorkIds,
+            qvStatements:
+                conversation.creditVotingConfigId === null
+                    ? undefined
+                    : await fetchQvStatements({
+                          db: tx,
+                          conversationId,
+                          configId: conversation.creditVotingConfigId,
+                          isClosed: conversation.isClosed,
+                          canEdit: true,
+                      }),
             projectAssignment,
             addedSeedOpinions,
             addedOpinions,
@@ -1570,8 +1704,11 @@ export async function updateConversation({
 
     return {
         success: true,
+        conversationTypeConfig: result.conversationTypeConfig,
         eagerContentTranslationWorkIds: result.eagerContentTranslationWorkIds,
+        qvStatements: result.qvStatements,
         projectAssignment: result.projectAssignment,
+        participantStatements: result.participantStatements,
         addedSeedOpinions: result.addedSeedOpinions,
         addedOpinions: result.addedOpinions,
         updatedOpinions: result.updatedOpinions,

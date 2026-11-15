@@ -4,11 +4,11 @@ import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { GenericContainer, type StartedTestContainer } from "testcontainers";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { groupScopes } from "../src/service/conversationEmailUpdate.js";
 import {
     createConversationEmailUpdateService,
-    groupScopes,
     listAuthorizedConversations,
-} from "../src/service/conversationEmailUpdate.js";
+} from "./conversationEmailUpdateController.js";
 import { decideConversationEmailFinalSend } from "../src/service/conversationEmailUpdatePolicy.js";
 import {
     conversationContentTable,
@@ -96,7 +96,7 @@ describe("Conversation Email Update branding", () => {
             username: "postgres",
             password: "postgres",
         });
-        db = drizzle(sqlClient);
+        db = drizzle({ client: sqlClient });
         await db.execute(
             sql.raw(
                 readDbFixtureSql(
@@ -178,7 +178,11 @@ describe("Conversation Email Update branding", () => {
                 .returning({ id: projectTable.id });
             const [membership] = await db
                 .insert(organizationMembershipTable)
-                .values({ userId: USER_ID, organizationId: organization.id })
+                .values({
+                    userId: USER_ID,
+                    organizationId: organization.id,
+                    role: "admin",
+                })
                 .returning({ id: organizationMembershipTable.id });
             const [configuration] = await db
                 .insert(polisConversationConfigTable)
@@ -202,6 +206,7 @@ describe("Conversation Email Update branding", () => {
             await db.insert(projectContactTable).values({
                 projectId: project.id,
                 firstName: "",
+                organizationId: organization.id,
                 email: "updates@example.com",
             });
             const [conversation] = await db

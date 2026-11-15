@@ -84,6 +84,31 @@ describe("filterTablesForService", () => {
 // === parseSqlTables ===
 
 describe("parseSqlTables", () => {
+    it("preserves composite primary keys for sparse QV allocation ORM identity", () => {
+        const sql = `CREATE TABLE "qv_allocation" (
+            "version_id" uuid NOT NULL,
+            "item_id" integer NOT NULL,
+            "votes" smallint NOT NULL,
+            CONSTRAINT "qv_allocation_pk" PRIMARY KEY("version_id", "item_id")
+        );`;
+        const tables = parseSqlTables(sql, new Set(["qv_allocation"]));
+        expect(
+            getParsedColumns(tables, "qv_allocation")
+                .filter((column) => column.isPrimaryKey)
+                .map((column) => column.name),
+        ).toEqual(["version_id", "item_id"]);
+        const output = generateSqlAlchemyModels({
+            tables,
+            enums: new Map(),
+            service: "credit-voting-worker",
+        });
+        expect(output).toContain(
+            "version_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid, primary_key=True)",
+        );
+        expect(output).toContain(
+            "item_id: Mapped[int] = mapped_column(Integer, primary_key=True)",
+        );
+    });
     it("parses a simple table", () => {
         const sql = `CREATE TABLE "items" (
     "id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "items_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),

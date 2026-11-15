@@ -31,7 +31,6 @@
     <div class="container">
       <NewConversationControlBar
         v-model:is-private="isPrivate"
-        v-model:requires-event-ticket="requiresEventTicket"
         v-model:post-as="postAs"
         v-model:conversation-type-config="conversationTypeConfig"
         v-model:import-settings="importSettings"
@@ -41,6 +40,7 @@
         v-model:multilingual-setting="multilingualSetting"
         v-model:ai-labeling-enabled="aiLabelingEnabled"
         v-model:preferred-opinion-group-count="preferredOpinionGroupCount"
+        :is-edit-mode="false"
         :participation-mode="participationMode"
         :allowed-post-as="undefined"
         :hide-language-setting="selectedProjectSlug !== undefined"
@@ -98,10 +98,7 @@
 
       <!-- Active Import Banner -->
       <ActiveImportBanner
-        v-if="
-          hasActiveImport &&
-          activeImportQuery.data.value?.hasActiveImport
-        "
+        v-if="hasActiveImport && activeImportQuery.data.value?.hasActiveImport"
         :import-slug-id="activeImportQuery.data.value.importSlugId"
       />
 
@@ -305,7 +302,6 @@ const {
   conversationTypeConfig,
   isPrivate,
   participationMode,
-  requiresEventTicket,
   aiLabelingEnabled,
   preferredOpinionGroupCount,
   postAs,
@@ -838,7 +834,6 @@ async function handleImportSubmission(): Promise<void> {
         isIndexed: !conversationDraft.value.isPrivate,
         participationMode: conversationDraft.value.participationMode,
         multilingualSetting: conversationDraft.value.multilingualSetting,
-        requiresEventTicket: conversationDraft.value.requiresEventTicket,
         aiLabelingEnabled: conversationDraft.value.aiLabelingEnabled,
         preferredOpinionGroupCount:
           conversationDraft.value.preferredOpinionGroupCount,
@@ -875,7 +870,6 @@ async function handleImportSubmission(): Promise<void> {
       isIndexed: !conversationDraft.value.isPrivate,
       participationMode: conversationDraft.value.participationMode,
       multilingualSetting: conversationDraft.value.multilingualSetting,
-      requiresEventTicket: conversationDraft.value.requiresEventTicket,
       aiLabelingEnabled: conversationDraft.value.aiLabelingEnabled,
       preferredOpinionGroupCount:
         conversationDraft.value.preferredOpinionGroupCount,

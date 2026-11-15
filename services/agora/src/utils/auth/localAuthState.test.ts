@@ -19,13 +19,9 @@ const mocks = vi.hoisted(() => ({
   resetDraft: vi.fn(),
   resetEmailVerification: vi.fn(),
   resetPhoneVerification: vi.fn(),
-  resetZupassModuleState: vi.fn(),
   setLoginStatus: vi.fn(),
 }));
 
-vi.mock("src/composables/zupass/useZupassVerification", () => ({
-  resetZupassModuleState: mocks.resetZupassModuleState,
-}));
 vi.mock("src/stores/authentication", () => ({
   useAuthenticationStore: () => ({ setLoginStatus: mocks.setLoginStatus }),
 }));
@@ -107,7 +103,6 @@ describe("resetLocalAuthState", () => {
     expect(mocks.clearTopicsData).toHaveBeenCalledOnce();
     expect(mocks.resetEmailVerification).toHaveBeenCalledOnce();
     expect(mocks.resetPhoneVerification).toHaveBeenCalledOnce();
-    expect(mocks.resetZupassModuleState).toHaveBeenCalledOnce();
     expect(mocks.setLoginStatus).not.toHaveBeenCalled();
   });
 

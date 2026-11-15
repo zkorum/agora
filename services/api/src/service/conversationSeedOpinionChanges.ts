@@ -21,8 +21,11 @@ import {
     type ContentLanguageMetadataResolver,
 } from "./contentLanguageMetadata.js";
 import type { RankingItemContentSource } from "./contentTranslation.js";
-import { lockRankingScoringConfig } from "./maxdiff.js";
-import { queueOpinionUpdatedEvent } from "./realtimeEventOutbox.js";
+import { lockRankingScoringConfig } from "./comparison.js";
+import {
+    queueOpinionSourceChangedEvent,
+    queueSourceInvalidationEvent,
+} from "./realtimeEventOutbox.js";
 import {
     normalizeUserRichTextInput,
     type NormalizedUserRichText,
@@ -50,7 +53,7 @@ type Target = {
 } & (
     | {
           readonly kind: "polis";
-          readonly authorId: string;
+          readonly authorId: string | null;
           readonly isHidden: boolean;
       }
     | {
@@ -113,7 +116,7 @@ async function loadTargets({
     slugIds: string[];
     lockTargets: boolean;
 }): Promise<ReadonlyMap<string, Target>> {
-    if (conversationType === "ranking") {
+    if (conversationType === "prioritizing") {
         if (lockTargets) await lockRankingScoringConfig({ db, conversationId });
         const hasVotes = await rankingSeedHasVotes({
             db,
@@ -190,7 +193,7 @@ async function loadTargets({
             opinionContentTable,
             eq(opinionContentTable.id, opinionTable.currentContentId),
         )
-        .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
+        .leftJoin(userTable, eq(userTable.id, opinionTable.authorId))
         .where(
             and(
                 inArray(opinionTable.slugId, slugIds),
@@ -433,12 +436,13 @@ async function applyDeletions({
     const deleted = changes
         .filter((change) => change.action === "delete")
         .map((change) => change.target);
+    if (deleted.length > 0) await queueSourceInvalidationEvent(db);
     const polis = deleted.filter((target) => target.kind === "polis");
     const ranking = deleted.filter((target) => target.kind === "ranking");
     if (polis.length > 0) {
         await db
             .update(opinionTable)
-            .set({ currentContentId: null, updatedAt: now })
+            .set({ currentContentId: null, deletedAt: now, updatedAt: now })
             .where(
                 inArray(
                     opinionTable.id,
@@ -446,11 +450,13 @@ async function applyDeletions({
                 ),
             );
         const authorCounts = new Map<string, number>();
-        for (const target of polis)
+        for (const target of polis) {
+            if (target.authorId === null) continue;
             authorCounts.set(
                 target.authorId,
                 (authorCounts.get(target.authorId) ?? 0) + 1,
             );
+        }
         for (const [authorId, count] of authorCounts)
             await db
                 .update(userTable)
@@ -462,7 +468,7 @@ async function applyDeletions({
     if (ranking.length > 0) {
         await db
             .update(rankingItemTable)
-            .set({ currentContentId: null, updatedAt: now })
+            .set({ currentContentId: null, deletedAt: now, updatedAt: now })
             .where(
                 inArray(
                     rankingItemTable.id,
@@ -558,15 +564,13 @@ export async function applySeedOpinionChanges({
                 .update(opinionTable)
                 .set({ currentContentId: inserted.id, updatedAt: now })
                 .where(eq(opinionTable.id, target.id));
-            await queueOpinionUpdatedEvent({
+            await queueOpinionSourceChangedEvent({
                 db,
                 data: {
                     conversationSlugId: conversation.slugId,
                     opinionSlugId: target.slugId,
                     previousSourceVersion: target.sourceVersion,
                     sourceVersion: inserted.publicId,
-                    opinion: change.content.html,
-                    sourceLanguageCode: change.language.sourceLanguageCode,
                     timestamp: now.getTime(),
                 },
             });

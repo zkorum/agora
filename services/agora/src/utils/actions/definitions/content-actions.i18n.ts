@@ -91,7 +91,8 @@ export const actionsTranslations: Record<
     cancel: "Cancelar",
     confirm: "Confirmar",
     confirmDeletePost: "¿Está seguro de que desea eliminar esta conversación?",
-    confirmDeleteComment: "¿Está seguro de que desea eliminar esta proposición?",
+    confirmDeleteComment:
+      "¿Está seguro de que desea eliminar esta proposición?",
     confirmMuteUser:
       "¿Está seguro de que desea silenciar a este usuario? Ya no verá sus conversaciones y proposiciones.",
     confirmGenericAction: "¿Está seguro de que desea realizar esta acción?",
@@ -161,7 +162,8 @@ export const actionsTranslations: Record<
     confirm: "Confirmer",
     confirmDeletePost:
       "Êtes-vous sûr de vouloir supprimer cette conversation ?",
-    confirmDeleteComment: "Êtes-vous sûr de vouloir supprimer cette proposition ?",
+    confirmDeleteComment:
+      "Êtes-vous sûr de vouloir supprimer cette proposition ?",
     confirmMuteUser:
       "Êtes-vous sûr de vouloir mettre cet utilisateur en sourdine ? Vous ne verrez plus ses conversations et propositions.",
     confirmGenericAction: "Êtes-vous sûr de vouloir effectuer cette action ?",

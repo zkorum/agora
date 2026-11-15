@@ -13,8 +13,8 @@ from sqlalchemy.orm import Session
 from scoring_worker.config import Settings
 from scoring_worker.display_scores import squash_display_scores
 from scoring_worker.generated_models import (
+    ComparisonUserEntityScore,
     Conversation,
-    MaxdiffUserEntityScore,
     RankingConversationConfig,
     RankingConversationStatsItem,
     RankingConversationStatsSnapshot,
@@ -30,7 +30,7 @@ def backfill_display_scores(*, engine: Engine, batch_size: int = 500) -> dict[st
     """Fill derived scores without changing raw values, votes, ranks, or input revisions."""
     updated: dict[str, int] = {}
     # Normalize retained historical values too, without reactivating tombstones.
-    for model in (RankingScoreEntity, MaxdiffUserEntityScore):
+    for model in (RankingScoreEntity, ComparisonUserEntityScore):
         total = 0
         with Session(engine) as session:
             upper = session.scalar(select(func.max(model.id)))

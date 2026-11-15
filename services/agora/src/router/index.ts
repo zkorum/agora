@@ -8,6 +8,7 @@ import { withOnboardingAliases } from "src/utils/router/onboardingAliases";
 import { registerOnboardingNavigation } from "src/utils/router/onboardingNavigation";
 import { createOnboardingScrollPreservation } from "src/utils/router/onboardingScroll";
 import { getSingleRouteParam } from "src/utils/router/params";
+import { getRetiredConversationRoutes } from "src/utils/router/retiredConversationRoutes";
 import { getConversationSurveyOnboardingPath } from "src/utils/survey/navigation";
 import {
   createMemoryHistory,
@@ -124,7 +125,7 @@ export default defineRouter(function (/* { store, ssrContext } */) {
       }
       return { left: 0, top: 0 };
     },
-    routes: withOnboardingAliases(routes),
+    routes: [...withOnboardingAliases(routes), ...getRetiredConversationRoutes()],
     // Leave this as is and make changes in quasar.conf.js instead!
     // quasar.conf.js -> build -> vueRouterMode
     // quasar.conf.js -> build -> publicPath

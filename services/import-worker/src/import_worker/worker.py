@@ -210,7 +210,8 @@ def _handle_processed_import(vk: ImportValkeyClient, *, processed: ProcessedImpo
             vk,
             schedule=processed.content_translation_schedule,
         )
-        push_import_event(vk, event=processed.notification)
+        if processed.notification is not None:
+            push_import_event(vk, event=processed.notification)
     elif processed is not None:
         push_import_event(vk, event=processed)
 

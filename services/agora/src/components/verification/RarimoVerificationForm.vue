@@ -1,5 +1,9 @@
 <template>
   <div>
+    <AccountRecoveryNotice
+      v-if="recoveryReason !== undefined"
+      :unavailable="recoveryReason === 'recovery_unavailable'"
+    />
     <ZKCard padding="1rem" class="cardBackground">
       <div class="stepContainer">
         <div class="stepFlex">
@@ -116,6 +120,7 @@ import { useVerificationComplete } from "src/composables/verification/useVerific
 import { Dto } from "src/shared/types/dto";
 import type { LinkType, RarimoStatusAttributes } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { useAccountRecoveryApi } from "src/utils/api/accountRecovery";
 import { api } from "src/utils/api/client";
 import { useCommonApi } from "src/utils/api/common";
 import { getAuthenticationStartKeyAction } from "src/utils/auth/authKeyAction";
@@ -126,15 +131,18 @@ import { onUnmounted } from "vue";
 
 import ZKButton from "../ui-library/ZKButton.vue";
 import ZKCard from "../ui-library/ZKCard.vue";
+import AccountRecoveryNotice from "./AccountRecoveryNotice.vue";
 import {
   type RarimoVerificationFormTranslations,
   rarimoVerificationFormTranslations,
 } from "./RarimoVerificationForm.i18n";
 
+const props = defineProps<{ recoverAccount: boolean }>();
 const emit = defineEmits<{
   verified: [accountMerged: boolean];
 }>();
-
+const recoveryReason = ref<"recovery_required" | "recovery_unavailable">();
+const { recoverPassportAccount } = useAccountRecoveryApi();
 const { t } = useComponentI18n<RarimoVerificationFormTranslations>(
   rarimoVerificationFormTranslations
 );
@@ -323,15 +331,17 @@ async function isDeviceLoggedIn() {
     const { url, options } =
       await DefaultApiAxiosParamCreator().apiV1AuthZkpVerifyUserStatusAndAuthenticatePost();
     const encodedUcan = await buildEncodedUcan(url, options);
-    const response = await DefaultApiFactory(
-      undefined,
-      undefined,
-      api
-    ).apiV1AuthZkpVerifyUserStatusAndAuthenticatePost({
-      headers: {
-        ...buildAuthorizationHeader(encodedUcan),
-      },
-    });
+    const response = props.recoverAccount
+      ? { data: await recoverPassportAccount() }
+      : await DefaultApiFactory(
+          undefined,
+          undefined,
+          api
+        ).apiV1AuthZkpVerifyUserStatusAndAuthenticatePost({
+          headers: {
+            ...buildAuthorizationHeader(encodedUcan),
+          },
+        });
 
     if (isUnmounted || !requestGate.isCurrent(requestId)) return;
     const data = Dto.verifyUserStatusAndAuthenticate200.parse(response.data);
@@ -361,6 +371,11 @@ async function isDeviceLoggedIn() {
         case "already_has_credential":
           terminateFlow();
           qrcodeVerificationStatus.value = "verified";
+          break;
+        case "recovery_required":
+        case "recovery_unavailable":
+          terminateFlow();
+          recoveryReason.value = data.reason;
           break;
         case "associated_with_another_user":
           terminateFlow();

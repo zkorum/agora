@@ -1,13 +1,13 @@
 import { httpErrors } from "@fastify/sensible";
 import { and, eq, gt, inArray, isNotNull, isNull, lte, or } from "drizzle-orm";
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
-import { getPrimaryDatabase } from "@/shared-backend/db.js";
+import {
+    getPrimaryDatabase,
+    type PostgresTransaction,
+} from "@/shared-backend/db.js";
 import {
     conversationTable,
     organizationLocalizationTable,
-    organizationMembershipAllProjectCapabilityTable,
-    organizationMembershipCapabilityEnum,
-    organizationMembershipCapabilityTable,
     organizationMembershipTable,
     organizationTable,
     premiumFeatureEntitlementTable,
@@ -16,18 +16,21 @@ import {
     projectOrganizationOwnershipTable,
     projectTable,
     projectTranslationTargetLanguageTable,
-    projectCapabilityValues,
     userTable,
 } from "@/shared-backend/schema.js";
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import type { GetConversationCreateProjectOptionsResponse } from "@/shared/types/dto.js";
 import type { PremiumFeature } from "@/shared/types/zod.js";
+import {
+    organizationRoleHasCapability,
+    organizationRolesWithCapability,
+    type OrganizationRole,
+} from "@/shared/organizationAccess.js";
 import type { InheritableProjectLanguageSettingsInput } from "@/service/translationLanguageSetting.js";
 import {
     type AllProjectCapability,
     getConversationCreateEmailUpdateConfiguration,
     hasActivePremiumFeatureEntitlement,
-    isAllProjectCapability,
 } from "@/service/projectAccessLogic.js";
 import { getImplicitDefaultDisplayLanguage } from "./projectLanguage.js";
 import { sourceLanguageToDisplayLanguage } from "./translationLanguageSetting.js";
@@ -46,17 +49,6 @@ type ResolveConversationCreateTargetResult =
     | { success: true; target: ConversationCreateTarget }
     | { success: false; reason: ConversationCreateProjectTargetFailureReason };
 
-export type OrganizationCapability =
-    (typeof organizationMembershipCapabilityEnum.enumValues)[number];
-
-const baselineOrganizationCapabilities = [
-    "organization_manage_members",
-    "organization_manage_profile",
-    "project_create",
-] satisfies readonly OrganizationCapability[];
-
-const baselineAllProjectCapabilities = projectCapabilityValues;
-
 function personalOrganizationSlug(userId: string): string {
     return `user-${userId.replaceAll("-", "")}`;
 }
@@ -65,46 +57,20 @@ function defaultProjectSlug(organizationId: number): string {
     return `org-${String(organizationId)}-default`;
 }
 
-async function ensureBaselineCapabilities({
-    db,
-    organizationMembershipId,
-}: {
-    db: PostgresDatabase;
-    organizationMembershipId: number;
-}): Promise<void> {
-    await db
-        .insert(organizationMembershipCapabilityTable)
-        .values(
-            baselineOrganizationCapabilities.map((capability) => ({
-                organizationMembershipId,
-                capability,
-            })),
-        )
-        .onConflictDoNothing();
-
-    await db
-        .insert(organizationMembershipAllProjectCapabilityTable)
-        .values(
-            baselineAllProjectCapabilities.map((capability) => ({
-                organizationMembershipId,
-                capability,
-            })),
-        )
-        .onConflictDoNothing();
-}
-
 async function getOrCreateMembership({
     db,
     userId,
     organizationId,
+    role,
 }: {
     db: PostgresDatabase;
     userId: string;
     organizationId: number;
+    role: OrganizationRole;
 }): Promise<number> {
     const insertedRows = await db
         .insert(organizationMembershipTable)
-        .values({ userId, organizationId })
+        .values({ userId, organizationId, role })
         .onConflictDoNothing()
         .returning({ id: organizationMembershipTable.id });
     const inserted = insertedRows.at(0);
@@ -133,24 +99,27 @@ async function getOrCreateMembership({
     );
 }
 
-export async function ensureOrganizationMembershipBaselineCapabilities({
+export async function setOrganizationMembershipRole({
     db,
     userId,
     organizationId,
+    role,
 }: {
     db: PostgresDatabase;
     userId: string;
     organizationId: number;
+    role: OrganizationRole;
 }): Promise<void> {
     const membershipId = await getOrCreateMembership({
         db,
         userId,
         organizationId,
+        role,
     });
-    await ensureBaselineCapabilities({
-        db,
-        organizationMembershipId: membershipId,
-    });
+    await db
+        .update(organizationMembershipTable)
+        .set({ role, updatedAt: new Date() })
+        .where(eq(organizationMembershipTable.id, membershipId));
 }
 
 export async function getOrCreatePersonalOrganization({
@@ -179,22 +148,19 @@ export async function getOrCreatePersonalOrganization({
         if (user === undefined) throw httpErrors.notFound("User not found");
 
         const existingRows = await tx
-            .select({ organizationId: organizationTable.id })
+            .select({
+                organizationId: organizationTable.id,
+                deletedAt: organizationTable.deletedAt,
+            })
             .from(organizationTable)
             .where(eq(organizationTable.autoProvisionedForUserId, userId))
-            .limit(1);
+            .limit(1)
+            .for("share");
         const existing = existingRows.at(0);
         if (existing !== undefined) {
-            const membershipId = await getOrCreateMembership({
-                db: tx,
-                userId,
-                organizationId: existing.organizationId,
-            });
-            await ensureBaselineCapabilities({
-                db: tx,
-                organizationMembershipId: membershipId,
-            });
-            return existing;
+            if (existing.deletedAt !== null)
+                throw httpErrors.notFound("Organization not found");
+            return { organizationId: existing.organizationId };
         }
 
         const insertedRows = await tx
@@ -226,14 +192,11 @@ export async function getOrCreatePersonalOrganization({
             isFullImagePath: false,
         });
 
-        const membershipId = await getOrCreateMembership({
+        await getOrCreateMembership({
             db: tx,
             userId,
             organizationId: inserted.organizationId,
-        });
-        await ensureBaselineCapabilities({
-            db: tx,
-            organizationMembershipId: membershipId,
+            role: "admin",
         });
         return inserted;
     });
@@ -267,20 +230,56 @@ export async function getOrCreateDefaultProjectForOrganization({
             .select({
                 projectId: projectTable.id,
                 currentContentId: projectTable.currentContentId,
-                deletedAt: projectTable.deletedAt,
                 projectSlug: projectTable.slug,
                 projectTitle: projectTable.title,
             })
             .from(projectTable)
             .where(
-                eq(
-                    projectTable.autoProvisionedForOrganizationId,
-                    organizationId,
+                and(
+                    eq(
+                        projectTable.autoProvisionedForOrganizationId,
+                        organizationId,
+                    ),
+                    isNull(projectTable.deletedAt),
                 ),
             )
             .limit(1)
             .for("update");
         const existing = existingRows.at(0);
+        if (existing !== undefined) {
+            // A separate statement gets a fresh READ COMMITTED snapshot after
+            // any project-lock wait; a subquery in the locking read can be stale.
+            const ownership = await tx
+                .select({ id: projectOrganizationOwnershipTable.id })
+                .from(projectOrganizationOwnershipTable)
+                .where(
+                    and(
+                        eq(
+                            projectOrganizationOwnershipTable.projectId,
+                            existing.projectId,
+                        ),
+                        eq(
+                            projectOrganizationOwnershipTable.organizationId,
+                            organizationId,
+                        ),
+                        isNull(projectOrganizationOwnershipTable.deletedAt),
+                    ),
+                )
+                .limit(1);
+            if (ownership.length === 0)
+                throw httpErrors.conflict(
+                    "Default project ownership is unavailable",
+                );
+        }
+        if (existing === undefined) {
+            // Provisioning can run inside a READ COMMITTED caller. Change the
+            // parent row so a concurrent serializable deletion cannot use a
+            // snapshot from before this new ownership relationship existed.
+            await tx
+                .update(organizationTable)
+                .set({ updatedAt: new Date() })
+                .where(eq(organizationTable.id, organizationId));
+        }
         const project =
             existing ??
             (
@@ -295,7 +294,6 @@ export async function getOrCreateDefaultProjectForOrganization({
                     .returning({
                         projectId: projectTable.id,
                         currentContentId: projectTable.currentContentId,
-                        deletedAt: projectTable.deletedAt,
                         projectSlug: projectTable.slug,
                         projectTitle: projectTable.title,
                     })
@@ -304,17 +302,6 @@ export async function getOrCreateDefaultProjectForOrganization({
             throw httpErrors.internalServerError(
                 "Failed to create default project",
             );
-        }
-
-        if (project.deletedAt !== null) {
-            await tx
-                .update(projectTable)
-                .set({
-                    directoryVisibility: "unlisted",
-                    deletedAt: null,
-                    updatedAt: new Date(),
-                })
-                .where(eq(projectTable.id, project.projectId));
         }
 
         if (project.currentContentId === null) {
@@ -342,10 +329,11 @@ export async function getOrCreateDefaultProjectForOrganization({
                 .where(eq(projectTable.id, project.projectId));
         }
 
-        await tx
-            .insert(projectOrganizationOwnershipTable)
-            .values({ projectId: project.projectId, organizationId })
-            .onConflictDoNothing();
+        if (existing === undefined) {
+            await tx
+                .insert(projectOrganizationOwnershipTable)
+                .values({ projectId: project.projectId, organizationId });
+        }
 
         return {
             projectId: project.projectId,
@@ -353,6 +341,49 @@ export async function getOrCreateDefaultProjectForOrganization({
             projectTitle: project.projectTitle,
         };
     });
+}
+
+export async function lockConversationCreateTarget({
+    db,
+    userId,
+    target,
+}: {
+    db: PostgresTransaction;
+    userId: string;
+    target: Readonly<ConversationCreateTarget>;
+}): Promise<boolean> {
+    // Seed statements update the author's profile counters. Take their eventual
+    // write lock up front, before organization/project locks, to avoid upgrades
+    // and match personal-scope provisioning's lifecycle order.
+    const users = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .where(and(eq(userTable.id, userId), eq(userTable.isDeleted, false)))
+        .for("no key update");
+    if (users.length === 0) return false;
+    const organizations = await db
+        .select({ id: organizationTable.id })
+        .from(organizationTable)
+        .where(
+            and(
+                eq(organizationTable.id, target.organizationId),
+                isNull(organizationTable.deletedAt),
+            ),
+        )
+        .for("share");
+    if (organizations.length === 0) return false;
+    const projects = await db
+        .select({ id: projectTable.id })
+        .from(projectTable)
+        .where(
+            and(
+                eq(projectTable.id, target.projectId),
+                isNull(projectTable.deletedAt),
+            ),
+        )
+        .for("no key update");
+    if (projects.length === 0) return false;
+    return true;
 }
 
 export async function resolveConversationCreateTarget({
@@ -382,18 +413,72 @@ export async function resolveConversationCreateTarget({
         return result.target;
     }
 
-    if (postAsOrganizationSlug === undefined || postAsOrganizationSlug === "") {
-        const organization = await getOrCreatePersonalOrganization({
-            db,
-            userId,
-            autoProvisionedDefaultLanguage,
-        });
+    // Provisioning and the necessary capability read share the write boundary.
+    // A newly inserted membership/ownership must never be reread via a replica.
+    return await db.transaction(async (tx) => {
+        if (
+            postAsOrganizationSlug === undefined ||
+            postAsOrganizationSlug === ""
+        ) {
+            const organization = await getOrCreatePersonalOrganization({
+                db: tx,
+                userId,
+                autoProvisionedDefaultLanguage,
+            });
+            const project = await getOrCreateDefaultProjectForOrganization({
+                db: tx,
+                organizationId: organization.organizationId,
+            });
+            const canCreate = await hasProjectCapability({
+                db: tx,
+                userId,
+                projectId: project.projectId,
+                capability: "conversation_create",
+            });
+            if (!canCreate) {
+                throw httpErrors.forbidden(
+                    "Missing conversation_create capability",
+                );
+            }
+            return {
+                organizationId: organization.organizationId,
+                projectId: project.projectId,
+            };
+        }
+
+        const organizationRows = await tx
+            .select({ organizationId: organizationTable.id })
+            .from(organizationTable)
+            .innerJoin(
+                organizationMembershipTable,
+                eq(
+                    organizationMembershipTable.organizationId,
+                    organizationTable.id,
+                ),
+            )
+            .where(
+                and(
+                    eq(organizationTable.slug, postAsOrganizationSlug),
+                    isNull(organizationTable.deletedAt),
+                    eq(organizationMembershipTable.userId, userId),
+                    isNull(organizationMembershipTable.deletedAt),
+                ),
+            )
+            .limit(1);
+        const organization = organizationRows.at(0);
+        if (organization === undefined) {
+            throw httpErrors.forbidden(
+                `User '${userId}' is not part of the organization: '${postAsOrganizationSlug}'`,
+            );
+        }
+
         const project = await getOrCreateDefaultProjectForOrganization({
-            db,
+            db: tx,
             organizationId: organization.organizationId,
         });
+
         const canCreate = await hasProjectCapability({
-            db,
+            db: tx,
             userId,
             projectId: project.projectId,
             capability: "conversation_create",
@@ -403,57 +488,12 @@ export async function resolveConversationCreateTarget({
                 "Missing conversation_create capability",
             );
         }
+
         return {
             organizationId: organization.organizationId,
             projectId: project.projectId,
         };
-    }
-
-    const organizationRows = await db
-        .select({ organizationId: organizationTable.id })
-        .from(organizationTable)
-        .innerJoin(
-            organizationMembershipTable,
-            eq(
-                organizationMembershipTable.organizationId,
-                organizationTable.id,
-            ),
-        )
-        .where(
-            and(
-                eq(organizationTable.slug, postAsOrganizationSlug),
-                isNull(organizationTable.deletedAt),
-                eq(organizationMembershipTable.userId, userId),
-                isNull(organizationMembershipTable.deletedAt),
-            ),
-        )
-        .limit(1);
-    const organization = organizationRows.at(0);
-    if (organization === undefined) {
-        throw httpErrors.forbidden(
-            `User '${userId}' is not part of the organization: '${postAsOrganizationSlug}'`,
-        );
-    }
-
-    const project = await getOrCreateDefaultProjectForOrganization({
-        db,
-        organizationId: organization.organizationId,
     });
-
-    const canCreate = await hasProjectCapability({
-        db,
-        userId,
-        projectId: project.projectId,
-        capability: "conversation_create",
-    });
-    if (!canCreate) {
-        throw httpErrors.forbidden("Missing conversation_create capability");
-    }
-
-    return {
-        organizationId: organization.organizationId,
-        projectId: project.projectId,
-    };
 }
 
 export async function resolveConversationCreateTargetResult({
@@ -686,6 +726,20 @@ export async function getConversationCreateProjectOptions({
                 participantContactEmail: projectContactTable.email,
             })
             .from(projectTable)
+            .innerJoin(
+                projectOrganizationOwnershipTable,
+                and(
+                    eq(
+                        projectOrganizationOwnershipTable.projectId,
+                        projectTable.id,
+                    ),
+                    eq(
+                        projectOrganizationOwnershipTable.organizationId,
+                        organization.organizationId,
+                    ),
+                    isNull(projectOrganizationOwnershipTable.deletedAt),
+                ),
+            )
             .leftJoin(
                 projectContactTable,
                 and(
@@ -884,22 +938,6 @@ export async function canConfigureConversationEmailUpdatesForOrganization({
             ),
         )
         .innerJoin(
-            organizationMembershipAllProjectCapabilityTable,
-            and(
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
-                    organizationMembershipTable.id,
-                ),
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.capability,
-                    "conversation_email_update",
-                ),
-                isNull(
-                    organizationMembershipAllProjectCapabilityTable.deletedAt,
-                ),
-            ),
-        )
-        .innerJoin(
             premiumFeatureEntitlementTable,
             and(
                 eq(
@@ -923,113 +961,15 @@ export async function canConfigureConversationEmailUpdatesForOrganization({
                 eq(organizationMembershipTable.userId, userId),
                 eq(organizationMembershipTable.organizationId, organizationId),
                 isNull(organizationMembershipTable.deletedAt),
+                inArray(
+                    organizationMembershipTable.role,
+                    organizationRolesWithCapability(
+                        "conversation_email_update",
+                    ),
+                ),
             ),
         )
         .limit(1);
-
-    return rows.length === 1;
-}
-
-export async function lockConversationEmailUpdateConfigurationAccess({
-    db,
-    userId,
-    projectId,
-    organizationId,
-    now,
-}: {
-    db: PostgresDatabase;
-    userId: string;
-    projectId: number;
-    organizationId: number;
-    now: Date;
-}): Promise<boolean> {
-    const rows = await db
-        .select({ membershipId: organizationMembershipTable.id })
-        .from(projectOrganizationOwnershipTable)
-        .innerJoin(
-            organizationTable,
-            and(
-                eq(
-                    organizationTable.id,
-                    projectOrganizationOwnershipTable.organizationId,
-                ),
-                isNull(organizationTable.deletedAt),
-            ),
-        )
-        .innerJoin(
-            organizationMembershipTable,
-            and(
-                eq(
-                    organizationMembershipTable.organizationId,
-                    projectOrganizationOwnershipTable.organizationId,
-                ),
-                eq(organizationMembershipTable.userId, userId),
-                isNull(organizationMembershipTable.deletedAt),
-            ),
-        )
-        .innerJoin(
-            userTable,
-            and(
-                eq(userTable.id, organizationMembershipTable.userId),
-                eq(userTable.isDeleted, false),
-            ),
-        )
-        .innerJoin(
-            organizationMembershipAllProjectCapabilityTable,
-            and(
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
-                    organizationMembershipTable.id,
-                ),
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.capability,
-                    "conversation_email_update",
-                ),
-                isNull(
-                    organizationMembershipAllProjectCapabilityTable.deletedAt,
-                ),
-            ),
-        )
-        .innerJoin(
-            premiumFeatureEntitlementTable,
-            and(
-                eq(
-                    premiumFeatureEntitlementTable.organizationId,
-                    projectOrganizationOwnershipTable.organizationId,
-                ),
-                eq(
-                    premiumFeatureEntitlementTable.feature,
-                    "conversation_email_update",
-                ),
-                lte(premiumFeatureEntitlementTable.startsAt, now),
-                isNull(premiumFeatureEntitlementTable.revokedAt),
-                or(
-                    isNull(premiumFeatureEntitlementTable.expiresAt),
-                    gt(premiumFeatureEntitlementTable.expiresAt, now),
-                ),
-            ),
-        )
-        .where(
-            and(
-                eq(projectOrganizationOwnershipTable.projectId, projectId),
-                eq(
-                    projectOrganizationOwnershipTable.organizationId,
-                    organizationId,
-                ),
-                isNull(projectOrganizationOwnershipTable.deletedAt),
-            ),
-        )
-        .limit(1)
-        .for("update", {
-            of: [
-                projectOrganizationOwnershipTable,
-                organizationTable,
-                organizationMembershipTable,
-                userTable,
-                organizationMembershipAllProjectCapabilityTable,
-                premiumFeatureEntitlementTable,
-            ],
-        });
 
     return rows.length === 1;
 }
@@ -1059,7 +999,7 @@ export async function lockProjectParticipantContactEmail({
     db,
     projectId,
 }: {
-    db: PostgresDatabase;
+    db: PostgresTransaction;
     projectId: number;
 }): Promise<boolean> {
     const rows = await db
@@ -1073,7 +1013,7 @@ export async function lockProjectParticipantContactEmail({
             ),
         )
         .limit(1)
-        .for("update");
+        .for("share");
     return rows.length === 1;
 }
 
@@ -1130,7 +1070,6 @@ export async function getProjectCapabilitiesById({
     userId,
     projectIds,
     requestedCapabilities,
-    lockAuthorization = false,
 }: {
     db: PostgresDatabase;
     userId: string | undefined;
@@ -1139,7 +1078,6 @@ export async function getProjectCapabilitiesById({
         AllProjectCapability,
         ...AllProjectCapability[],
     ];
-    lockAuthorization?: boolean;
 }): Promise<ReadonlyMap<number, ReadonlySet<AllProjectCapability>>> {
     const capabilitiesByProjectId = new Map<
         number,
@@ -1149,11 +1087,10 @@ export async function getProjectCapabilitiesById({
         return capabilitiesByProjectId;
     }
 
-    let query = db
+    const query = db
         .select({
             projectId: projectOrganizationOwnershipTable.projectId,
-            capability:
-                organizationMembershipAllProjectCapabilityTable.capability,
+            role: organizationMembershipTable.role,
         })
         .from(organizationMembershipTable)
         .innerJoin(
@@ -1164,10 +1101,10 @@ export async function getProjectCapabilitiesById({
             ),
         )
         .innerJoin(
-            organizationMembershipAllProjectCapabilityTable,
-            eq(
-                organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
-                organizationMembershipTable.id,
+            userTable,
+            and(
+                eq(userTable.id, organizationMembershipTable.userId),
+                eq(userTable.isDeleted, false),
             ),
         )
         .innerJoin(
@@ -1180,6 +1117,16 @@ export async function getProjectCapabilitiesById({
                 isNull(projectOrganizationOwnershipTable.deletedAt),
             ),
         )
+        .innerJoin(
+            projectTable,
+            and(
+                eq(
+                    projectTable.id,
+                    projectOrganizationOwnershipTable.projectId,
+                ),
+                isNull(projectTable.deletedAt),
+            ),
+        )
         .where(
             and(
                 eq(organizationMembershipTable.userId, userId),
@@ -1189,40 +1136,32 @@ export async function getProjectCapabilitiesById({
                     projectOrganizationOwnershipTable.projectId,
                     projectIds,
                 ),
-                inArray(
-                    organizationMembershipAllProjectCapabilityTable.capability,
-                    requestedCapabilities,
-                ),
-                isNull(
-                    organizationMembershipAllProjectCapabilityTable.deletedAt,
-                ),
+                inArray(organizationMembershipTable.role, [
+                    ...new Set(
+                        requestedCapabilities.flatMap(
+                            organizationRolesWithCapability,
+                        ),
+                    ),
+                ]),
             ),
         )
         .$dynamic();
 
-    if (lockAuthorization) {
-        query = query.for("share", {
-            of: [
-                organizationMembershipTable,
-                organizationTable,
-                organizationMembershipAllProjectCapabilityTable,
-                projectOrganizationOwnershipTable,
-            ],
-        });
-    }
     const rows =
         projectIds.length === 1 && requestedCapabilities.length === 1
             ? await query.limit(1)
             : await query;
 
     for (const row of rows) {
-        if (!isAllProjectCapability(row.capability)) continue;
         let capabilities = capabilitiesByProjectId.get(row.projectId);
         if (capabilities === undefined) {
             capabilities = new Set<AllProjectCapability>();
             capabilitiesByProjectId.set(row.projectId, capabilities);
         }
-        capabilities.add(row.capability);
+        for (const capability of requestedCapabilities) {
+            if (organizationRoleHasCapability({ role: row.role, capability }))
+                capabilities.add(capability);
+        }
     }
     return capabilitiesByProjectId;
 }
@@ -1247,31 +1186,6 @@ export async function hasProjectCapability({
     return capabilitiesByProjectId.get(projectId)?.has(capability) ?? false;
 }
 
-export async function requireProjectCapability({
-    db,
-    userId,
-    projectId,
-    capability,
-    message = "Missing project capability",
-}: {
-    db: PostgresDatabase;
-    userId: string;
-    projectId: number;
-    capability: AllProjectCapability;
-    message?: string;
-}): Promise<void> {
-    const hasCapability = await hasProjectCapability({
-        db,
-        userId,
-        projectId,
-        capability,
-    });
-
-    if (!hasCapability) {
-        throw httpErrors.forbidden(message);
-    }
-}
-
 export async function getProjectIdsWithCapability({
     db,
     userId,
@@ -1294,10 +1208,10 @@ export async function getProjectIdsWithCapability({
             ),
         )
         .innerJoin(
-            organizationMembershipAllProjectCapabilityTable,
-            eq(
-                organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
-                organizationMembershipTable.id,
+            userTable,
+            and(
+                eq(userTable.id, organizationMembershipTable.userId),
+                eq(userTable.isDeleted, false),
             ),
         )
         .innerJoin(
@@ -1310,17 +1224,24 @@ export async function getProjectIdsWithCapability({
                 isNull(projectOrganizationOwnershipTable.deletedAt),
             ),
         )
+        .innerJoin(
+            projectTable,
+            and(
+                eq(
+                    projectTable.id,
+                    projectOrganizationOwnershipTable.projectId,
+                ),
+                isNull(projectTable.deletedAt),
+            ),
+        )
         .where(
             and(
                 eq(organizationMembershipTable.userId, userId),
                 isNull(organizationMembershipTable.deletedAt),
                 isNull(organizationTable.deletedAt),
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.capability,
-                    capability,
-                ),
-                isNull(
-                    organizationMembershipAllProjectCapabilityTable.deletedAt,
+                inArray(
+                    organizationMembershipTable.role,
+                    organizationRolesWithCapability(capability),
                 ),
             ),
         );
@@ -1397,5 +1318,9 @@ export async function isPremiumFeatureEnabledForProject({
         )
         .limit(1);
 
-    return hasActivePremiumFeatureEntitlement({ grants: rows, feature, now });
+    return hasActivePremiumFeatureEntitlement({
+        grants: rows.map((row) => ({ ...row, feature })),
+        feature,
+        now,
+    });
 }

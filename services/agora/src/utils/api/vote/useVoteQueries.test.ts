@@ -238,7 +238,6 @@ describe("immediate last-choice-wins voting", () => {
     "account_required",
     "strong_verification_required",
     "email_verification_required",
-    "event_ticket_required",
   ] as const)(
     "rolls back a backend %s rejection before opening onboarding",
     async (reason) => {

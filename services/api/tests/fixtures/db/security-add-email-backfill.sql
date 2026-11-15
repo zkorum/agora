@@ -16,10 +16,12 @@ CREATE TABLE "email" (
 	"user_id" uuid NOT NULL,
 	"is_deleted" boolean DEFAULT false NOT NULL,
 	"email_reachability" "email_reachability",
+	"reserved_for_recovery" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
 	CONSTRAINT "email_user_id_id_unique" UNIQUE("user_id","id"),
-	CONSTRAINT "email_canonical_check" CHECK ("email"."email" = lower(btrim("email"."email")))
+	CONSTRAINT "email_canonical_check" CHECK ("email"."email" = lower(btrim("email"."email"))),
+	CONSTRAINT "email_recovery_reservation_check" CHECK (("email"."reserved_for_recovery" = false or "email"."is_deleted" = true))
 );
 
 CREATE TABLE "phone" (
@@ -31,9 +33,11 @@ CREATE TABLE "phone" (
 	"phone_hash" text NOT NULL,
 	"pepper_version" integer DEFAULT 0 NOT NULL,
 	"is_deleted" boolean DEFAULT false NOT NULL,
+	"reserved_for_recovery" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
-	CONSTRAINT "check_two_digits" CHECK ("phone"."last_two_digits" BETWEEN 0 and 99)
+	CONSTRAINT "check_two_digits" CHECK ("phone"."last_two_digits" BETWEEN 0 and 99),
+	CONSTRAINT "phone_recovery_reservation_check" CHECK (("phone"."reserved_for_recovery" = false or "phone"."is_deleted" = true))
 );
 
 CREATE TABLE "user" (
@@ -44,7 +48,12 @@ CREATE TABLE "user" (
 	"is_site_org_admin" boolean DEFAULT false NOT NULL,
 	"is_imported" boolean DEFAULT false NOT NULL,
 	"is_deleted" boolean DEFAULT false NOT NULL,
+	"contribution_revision" integer DEFAULT 0 NOT NULL,
 	"deleted_at" timestamp (0),
+	"deletion_reason" text,
+	"deletion_requested_at" timestamp (3),
+	"recoverable_until" timestamp (3),
+	"purge_started_at" timestamp (3),
 	"auth_restricted_at" timestamp (0),
 	"auth_restriction_reason" text,
 	"active_conversation_count" integer DEFAULT 0 NOT NULL,
@@ -53,7 +62,10 @@ CREATE TABLE "user" (
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
 	CONSTRAINT "user_username_unique" UNIQUE("username"),
-	CONSTRAINT "user_auth_restriction_reason_check" CHECK (("user"."auth_restricted_at" IS NULL) = ("user"."auth_restriction_reason" IS NULL))
+	CONSTRAINT "user_contribution_revision_check" CHECK ("user"."contribution_revision" >= 0),
+	CONSTRAINT "user_recovery_lifecycle_check" CHECK (((("user"."deletion_requested_at" is null and "user"."recoverable_until" is null) or ("user"."is_deleted" = true and "user"."deletion_reason" is not null and "user"."deletion_reason" = 'account_deletion' and "user"."deletion_requested_at" is not null and "user"."recoverable_until" is not null and "user"."recoverable_until" = "user"."deletion_requested_at" + interval '15 days')) and ("user"."purge_started_at" is null or "user"."is_deleted" = true))),
+	CONSTRAINT "user_auth_restriction_reason_check" CHECK (("user"."auth_restricted_at" IS NULL) = ("user"."auth_restriction_reason" IS NULL)),
+	CONSTRAINT "user_deletion_reason_check" CHECK (("user"."deletion_reason" is null or ("user"."is_deleted" = true and "user"."deleted_at" is not null and "user"."deletion_reason" in ('account_deletion', 'guest_merge'))))
 );
 
 CREATE TABLE "zk_passport" (
@@ -63,20 +75,26 @@ CREATE TABLE "zk_passport" (
 	"nullifier" text NOT NULL,
 	"sex" varchar(50) NOT NULL,
 	"is_deleted" boolean DEFAULT false NOT NULL,
+	"reserved_for_recovery" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
-	"updated_at" timestamp (0) DEFAULT now() NOT NULL
+	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
+	CONSTRAINT "zk_passport_recovery_reservation_check" CHECK (("zk_passport"."reserved_for_recovery" = false or "zk_passport"."is_deleted" = true))
 );
 
-CREATE UNIQUE INDEX "email_active_unique" ON "email" USING btree ("email") WHERE "email"."is_deleted" = false;
+CREATE UNIQUE INDEX "email_active_unique" ON "email" USING btree ("email") WHERE ("email"."is_deleted" = false or "email"."reserved_for_recovery" = true);
 
 CREATE UNIQUE INDEX "email_active_primary_user_unique" ON "email" USING btree ("user_id") WHERE "email"."type" = 'primary' AND "email"."is_deleted" = false;
 
 CREATE INDEX "email_idx" ON "email" USING btree ("email");
 
-CREATE UNIQUE INDEX "phone_hash_active_unique" ON "phone" USING btree ("phone_hash") WHERE "phone"."is_deleted" = false;
+CREATE UNIQUE INDEX "phone_hash_active_unique" ON "phone" USING btree ("phone_hash") WHERE ("phone"."is_deleted" = false or "phone"."reserved_for_recovery" = true);
 
 CREATE INDEX "phone_hash_idx" ON "phone" USING btree ("phone_hash");
 
-CREATE UNIQUE INDEX "zk_passport_nullifier_active_unique" ON "zk_passport" USING btree ("nullifier") WHERE "zk_passport"."is_deleted" = false;
+CREATE INDEX "phone_user_idx" ON "phone" USING btree ("user_id");
+
+CREATE UNIQUE INDEX "zk_passport_nullifier_active_unique" ON "zk_passport" USING btree ("nullifier") WHERE ("zk_passport"."is_deleted" = false or "zk_passport"."reserved_for_recovery" = true);
 
 CREATE INDEX "zk_passport_nullifier_idx" ON "zk_passport" USING btree ("nullifier");
+
+CREATE INDEX "zk_passport_user_idx" ON "zk_passport" USING btree ("user_id");

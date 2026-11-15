@@ -11,8 +11,8 @@ export interface PostActionBarTranslations {
   moderatedParticipantsExplanation: string;
   surveyVotesExplanation: string;
   surveyParticipantsExplanation: string;
-  maxdiffVotesExplanation: string;
-  maxdiffParticipantsExplanation: string;
+  prioritizationVotesExplanation: string;
+  prioritizationParticipantsExplanation: string;
 }
 
 export const postActionBarTranslations: Record<
@@ -34,9 +34,9 @@ export const postActionBarTranslations: Record<
       "Votes from participants who have not completed the survey are excluded from analysis.",
     surveyParticipantsExplanation:
       "Participants who have not completed the survey are excluded from analysis.",
-    maxdiffVotesExplanation:
+    prioritizationVotesExplanation:
       "Votes on completed and canceled items are excluded from ranking.",
-    maxdiffParticipantsExplanation:
+    prioritizationParticipantsExplanation:
       "Participants who only voted on completed and canceled items are excluded from ranking.",
   },
   ar: {
@@ -54,9 +54,9 @@ export const postActionBarTranslations: Record<
       "يتم استبعاد أصوات المشاركين الذين لم يكملوا الاستبيان من التحليل.",
     surveyParticipantsExplanation:
       "يتم استبعاد المشاركين الذين لم يكملوا الاستبيان من التحليل.",
-    maxdiffVotesExplanation:
+    prioritizationVotesExplanation:
       "يتم استبعاد الأصوات على العناصر المكتملة والملغاة من الترتيب.",
-    maxdiffParticipantsExplanation:
+    prioritizationParticipantsExplanation:
       "يتم استبعاد المشاركين الذين صوتوا فقط على العناصر المكتملة والملغاة من الترتيب.",
   },
   es: {
@@ -74,9 +74,9 @@ export const postActionBarTranslations: Record<
       "Los votos de participantes que no completaron la encuesta se excluyen del análisis.",
     surveyParticipantsExplanation:
       "Los participantes que no completaron la encuesta se excluyen del análisis.",
-    maxdiffVotesExplanation:
+    prioritizationVotesExplanation:
       "Los votos sobre elementos completados y cancelados se excluyen del ranking.",
-    maxdiffParticipantsExplanation:
+    prioritizationParticipantsExplanation:
       "Los participantes que solo votaron sobre elementos completados y cancelados se excluyen del ranking.",
   },
   fa: {
@@ -94,9 +94,9 @@ export const postActionBarTranslations: Record<
       "رأی‌های شرکت‌کنندگانی که نظرسنجی را کامل نکرده‌اند از تحلیل حذف شده‌اند.",
     surveyParticipantsExplanation:
       "شرکت‌کنندگانی که نظرسنجی را کامل نکرده‌اند از تحلیل حذف شده‌اند.",
-    maxdiffVotesExplanation:
+    prioritizationVotesExplanation:
       "رأی‌های مربوط به موارد تکمیل‌شده و لغوشده از رتبه‌بندی حذف شده‌اند.",
-    maxdiffParticipantsExplanation:
+    prioritizationParticipantsExplanation:
       "شرکت‌کنندگانی که فقط به موارد تکمیل‌شده و لغوشده رأی داده‌اند از رتبه‌بندی حذف شده‌اند.",
   },
   fr: {
@@ -114,9 +114,9 @@ export const postActionBarTranslations: Record<
       "Les votes des participants n'ayant pas terminé le questionnaire sont exclus de l'analyse.",
     surveyParticipantsExplanation:
       "Les participants n'ayant pas terminé le questionnaire sont exclus de l'analyse.",
-    maxdiffVotesExplanation:
+    prioritizationVotesExplanation:
       "Les votes sur les éléments terminés et annulés sont exclus du classement.",
-    maxdiffParticipantsExplanation:
+    prioritizationParticipantsExplanation:
       "Les participants n'ayant voté que sur des éléments terminés et annulés sont exclus du classement.",
   },
   "zh-Hans": {
@@ -130,8 +130,8 @@ export const postActionBarTranslations: Record<
     moderatedParticipantsExplanation: "仅对已审核意见投票的参与者不计入分析。",
     surveyVotesExplanation: "未完成问卷的参与者所投的票不计入分析。",
     surveyParticipantsExplanation: "未完成问卷的参与者不计入分析。",
-    maxdiffVotesExplanation: "对已完成和已取消项目的投票不计入排名。",
-    maxdiffParticipantsExplanation:
+    prioritizationVotesExplanation: "对已完成和已取消项目的投票不计入排名。",
+    prioritizationParticipantsExplanation:
       "仅对已完成和已取消项目投票的参与者不计入排名。",
   },
   "zh-Hant": {
@@ -145,8 +145,8 @@ export const postActionBarTranslations: Record<
     moderatedParticipantsExplanation: "僅對已審核意見投票的參與者不計入分析。",
     surveyVotesExplanation: "未完成問卷的參與者所投的票不計入分析。",
     surveyParticipantsExplanation: "未完成問卷的參與者不計入分析。",
-    maxdiffVotesExplanation: "對已完成和已取消項目的投票不計入排名。",
-    maxdiffParticipantsExplanation:
+    prioritizationVotesExplanation: "對已完成和已取消項目的投票不計入排名。",
+    prioritizationParticipantsExplanation:
       "僅對已完成和已取消項目投票的參與者不計入排名。",
   },
   he: {
@@ -164,9 +164,9 @@ export const postActionBarTranslations: Record<
       "הצבעות של משתתפים שלא השלימו את הסקר מוחרגות מהניתוח.",
     surveyParticipantsExplanation:
       "משתתפים שלא השלימו את הסקר מוחרגים מהניתוח.",
-    maxdiffVotesExplanation:
+    prioritizationVotesExplanation:
       "הצבעות על פריטים שהושלמו או בוטלו מוחרגות מהדירוג.",
-    maxdiffParticipantsExplanation:
+    prioritizationParticipantsExplanation:
       "משתתפים שהצביעו רק על פריטים שהושלמו או בוטלו מוחרגים מהדירוג.",
   },
   ja: {
@@ -184,9 +184,9 @@ export const postActionBarTranslations: Record<
       "アンケートを完了していない参加者の投票は分析から除外されます。",
     surveyParticipantsExplanation:
       "アンケートを完了していない参加者は分析から除外されます。",
-    maxdiffVotesExplanation:
+    prioritizationVotesExplanation:
       "完了およびキャンセルされた項目への投票はランキングから除外されます。",
-    maxdiffParticipantsExplanation:
+    prioritizationParticipantsExplanation:
       "完了およびキャンセルされた項目にのみ投票した参加者はランキングから除外されます。",
   },
   ky: {
@@ -204,9 +204,9 @@ export const postActionBarTranslations: Record<
       "Сурамжылоону бүтүрө элек катышуучулардын добуштары анализден чыгарылат.",
     surveyParticipantsExplanation:
       "Сурамжылоону бүтүрө элек катышуучулар анализден чыгарылат.",
-    maxdiffVotesExplanation:
+    prioritizationVotesExplanation:
       "Аяктаган жана жокко чыгарылган элементтерге берилген добуштар рейтингден чыгарылат.",
-    maxdiffParticipantsExplanation:
+    prioritizationParticipantsExplanation:
       "Аяктаган жана жокко чыгарылган элементтерге гана добуш берген катышуучулар рейтингден чыгарылат.",
   },
   ru: {
@@ -224,9 +224,9 @@ export const postActionBarTranslations: Record<
       "Голоса участников, не завершивших опрос, исключены из анализа.",
     surveyParticipantsExplanation:
       "Участники, не завершившие опрос, исключены из анализа.",
-    maxdiffVotesExplanation:
+    prioritizationVotesExplanation:
       "Голоса за завершённые и отменённые элементы исключены из рейтинга.",
-    maxdiffParticipantsExplanation:
+    prioritizationParticipantsExplanation:
       "Участники, голосовавшие только за завершённые и отменённые элементы, исключены из рейтинга.",
   },
 };

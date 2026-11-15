@@ -96,6 +96,11 @@ $red-lighter: #ff9898;
 $red-light: #ff6d6d;
 $red-base: #ff5247;
 
+// Figma Green palette. Support is distinct from the purple agreement sentiment.
+$green-base: #23c16b;
+$green-darkest: #198155;
+$green-lightest: #ecfce5;
+
 .text-red-light { color: $red-light; }
 .bg-red-light { background: $red-light; }
 .text-red-base { color: $red-base; }

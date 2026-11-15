@@ -65,7 +65,7 @@ describe("opinion content translation boundary", () => {
             password: "postgres",
             max: 4,
         });
-        db = drizzle(sqlClient);
+        db = drizzle({ client: sqlClient });
         queueScript = new Script(ENQUEUE_CONTENT_TRANSLATION_WORK_SCRIPT);
 
         await sqlClient.unsafe(readDbFixtureSql("content-translation.sql"));

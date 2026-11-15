@@ -86,6 +86,7 @@ function conversationMetadata(
   const { contentLanguageMetadata, ...restOverrides } = overrides;
   return {
     conversationSlugId: "conversation-1",
+    participantStatements: { supported: true, enabled: true },
     conversationViewSnapshotId: 12,
     createdAt: new Date("2026-01-01T00:00:00.000Z"),
     lastReactedAt: new Date("2026-01-01T00:00:00.000Z"),

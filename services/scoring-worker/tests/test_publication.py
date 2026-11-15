@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import re
+import subprocess
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from json import dumps
@@ -9,6 +12,7 @@ from unittest.mock import patch
 from uuid import UUID, uuid4
 
 import pytest
+from psycopg.errors import CheckViolation
 from sqlalchemy import String, create_engine, func, insert, literal_column, select, update
 from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.orm import Session
@@ -16,28 +20,33 @@ from testcontainers.postgres import PostgresContainer
 
 from scoring_worker import db as scoring_db
 from scoring_worker.db import (
+    ComparisonRow,
     PublicationCallback,
     ScoredEntity,
     ScoringInputs,
     ScoringPublication,
     UserScoreEntry,
-    fetch_scoring_inputs,
     persist_scoring_batch,
+    prepare_scoring_inputs,
 )
 from scoring_worker.display_scores import squash_display_scores
 from scoring_worker.generated_models import (
+    ComparisonAnswer,
+    ComparisonResponse,
+    ComparisonUserEntityScore,
     Conversation,
     ConversationContent,
     ConversationType,
     DirectoryVisibility,
-    MaxdiffComparison,
-    MaxdiffResult,
-    MaxdiffUserEntityScore,
     Project,
     RankingConversationConfig,
     RankingConversationStatsCheckpoint,
     RankingConversationStatsItem,
     RankingConversationStatsSnapshot,
+    RankingInputAnswer,
+    RankingInputItem,
+    RankingInputParticipant,
+    RankingInputSnapshot,
     RankingItem,
     RankingItemContent,
     RankingItemLifecycleStatus,
@@ -49,6 +58,13 @@ from scoring_worker.generated_models import (
     SurveyConfig,
     User,
 )
+from scoring_worker.pipeline_config import (
+    SCORING_ALGORITHM_VERSION,
+    SOLIDAGO_VERSION,
+    ComparisonRecipe,
+)
+from scoring_worker.scoring import score_comparison_observations
+from scoring_worker.worker import build_participant_counts
 from scripts.backfill_display_scores import backfill_display_scores
 
 if TYPE_CHECKING:
@@ -141,22 +157,34 @@ def test_vote_buffer_migration_preserves_persisted_votes_and_closed_state() -> N
 
             with engine.connect() as connection:
                 assert connection.exec_driver_sql(snapshot_query).one() == before
-                assert connection.exec_driver_sql(
-                    "SELECT to_regclass('public.vote_submission')"
-                ).scalar_one() is None
-                assert connection.exec_driver_sql("""
+                assert (
+                    connection.exec_driver_sql(
+                        "SELECT to_regclass('public.vote_submission')"
+                    ).scalar_one()
+                    is None
+                )
+                assert (
+                    connection.exec_driver_sql("""
                     SELECT count(*) = 2 AND count(DISTINCT vote_buffer_epoch) = 2
                         AND bool_and(vote_buffer_drained)
                     FROM conversation
-                """).scalar_one() is True
-                assert connection.exec_driver_sql(
-                    "SELECT buffer_epoch IS NULL AND buffer_sequence = 0 FROM vote"
-                ).scalar_one() is True
-                assert connection.exec_driver_sql("""
+                """).scalar_one()
+                    is True
+                )
+                assert (
+                    connection.exec_driver_sql(
+                        "SELECT buffer_epoch IS NULL AND buffer_sequence = 0 FROM vote"
+                    ).scalar_one()
+                    is True
+                )
+                assert (
+                    connection.exec_driver_sql("""
                     SELECT i.indisvalid FROM pg_index i
                     JOIN pg_class c ON c.oid = i.indexrelid
                     WHERE c.relname = 'conversation_vote_buffer_drain_idx'
-                """).scalar_one() is True
+                """).scalar_one()
+                    is True
+                )
         finally:
             engine.dispose()
     finally:
@@ -165,18 +193,64 @@ def test_vote_buffer_migration_preserves_persisted_votes_and_closed_state() -> N
 
 @pytest.fixture(scope="module")
 def ranking_db() -> Generator[Engine]:
-    # Exercise the real constraints and trigger migrations, not a test-only schema.
-    migrations = Path(__file__).resolve().parents[2] / "api" / "database" / "flyway"
+    # Canonical DDL includes source changes whose production migration is deferred.
+    # Keep the migration-upgrade regression above on the real historical schema.
+    api = Path(__file__).resolve().parents[2] / "api"
+    migrations = api / "database" / "flyway"
     container = PostgresContainer("postgres:16-alpine", driver="psycopg")
     container.start()
     try:
         engine = create_engine(container.get_connection_url(), hide_parameters=True)
         try:
-            for path in sorted(migrations.glob("V*.sql"), key=migration_version):
+            subprocess.run(
+                [
+                    "node",
+                    "--import",
+                    "tsx",
+                    "tests/pushCurrentSchema.ts",
+                    container.get_connection_url().replace(
+                        "postgresql+psycopg://", "postgresql://"
+                    ),
+                ],
+                cwd=api,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            # Reuse production function/trigger definitions, adapting only renamed
+            # schema identifiers. Do not run historical DDL/backfills on new DDL.
+            for name in [
+                "V0082.1__track_ranking_scoring_inputs.sql",
+                "V0089.1__separate_ranking_scoring_invalidations.sql",
+                "V0105__exclude_survey_annotations_from_scoring.sql",
+                "V0111.1__backfill_conversation_participants.sql",
+            ]:
+                source = (migrations / name).read_text()
+                statements = re.findall(
+                    r"^CREATE (?:OR REPLACE )?FUNCTION\b.*?^\$\$;|^(?:CREATE|DROP) TRIGGER\b.*?;",
+                    source,
+                    re.MULTILINE | re.DOTALL,
+                )
                 with engine.begin() as connection:
-                    connection.exec_driver_sql(
-                        path.read_text(), execution_options={"no_parameters": True}
-                    )
+                    for statement in statements:
+                        connection.exec_driver_sql(
+                            statement.replace("maxdiff_result", "comparison_response")
+                            .replace("maxdiff_comparison", "comparison_answer")
+                            .replace(
+                                "conversation_type = 'ranking'",
+                                "prioritization_type = 'comparisons'",
+                            ),
+                            execution_options={"no_parameters": True},
+                        )
+            with engine.begin() as connection:
+                connection.exec_driver_sql(
+                    (api / "scripts/prepare-ranking-account-source-contract.sql").read_text(),
+                    execution_options={"no_parameters": True},
+                )
+                connection.exec_driver_sql(
+                    (api / "scripts/prepare-comparison-retention-contract.sql").read_text(),
+                    execution_options={"no_parameters": True},
+                )
             yield engine
         finally:
             engine.dispose()
@@ -219,7 +293,8 @@ def seed_ranking(engine: Engine) -> RankingFixture:
                 slug_id=slug,
                 project_id=project_id,
                 ranking_config_id=config_id,
-                conversation_type=ConversationType.ranking,
+                conversation_type=ConversationType.prioritizing,
+                prioritization_type="comparisons",
             )
             .returning(Conversation.id)
         ).scalar_one()
@@ -259,9 +334,9 @@ def seed_ranking(engine: Engine) -> RankingFixture:
             item_ids.append(item_id)
             slugs.append(item_slug)
         result_id = connection.execute(
-            insert(MaxdiffResult)
+            insert(ComparisonResponse)
             .values(participant_id=user_id, conversation_id=conversation_id, comparisons=[])
-            .returning(MaxdiffResult.id)
+            .returning(ComparisonResponse.id)
         ).scalar_one()
     fixture = RankingFixture(
         conversation_id=conversation_id,
@@ -278,8 +353,8 @@ def seed_ranking(engine: Engine) -> RankingFixture:
 def append_comparison(*, engine: Engine, fixture: RankingFixture, position: int) -> None:
     with engine.begin() as connection:
         connection.execute(
-            insert(MaxdiffComparison).values(
-                maxdiff_result_id=fixture.result_id,
+            insert(ComparisonAnswer).values(
+                comparison_response_id=fixture.result_id,
                 position=position,
                 best_slug_id=fixture.slugs[0],
                 worst_slug_id=fixture.slugs[-1],
@@ -290,7 +365,7 @@ def append_comparison(*, engine: Engine, fixture: RankingFixture, position: int)
 
 def capture(*, engine: Engine, fixtures: list[RankingFixture]) -> ScoringInputs:
     with engine.connect() as connection:
-        return fetch_scoring_inputs(
+        return prepare_scoring_inputs(
             connection, conversation_ids=[fixture.conversation_id for fixture in fixtures]
         )
 
@@ -308,10 +383,10 @@ def publish(
                 uncertainty_right=0.1,
                 participant_count=1,
             )
-            for index, item in enumerate(items)
+            for index, item in enumerate(prepared.ranking_items)
             if item.lifecycle_status == RankingItemLifecycleStatus.active
         ]
-        for cid, items in inputs.ranking_items.items()
+        for cid, prepared in inputs.items()
     }
     with engine.connect() as connection:
         return persist_scoring_batch(
@@ -323,15 +398,15 @@ def publish(
             },
             user_scores=[
                 UserScoreEntry(
-                    maxdiff_result_id=result_id,
+                    comparison_response_id=result_id,
                     entity_slug_id=entity.entity_slug_id,
                     score=entity.score,
                     display_score=entity.display_score,
                     uncertainty_left=0.1,
                     uncertainty_right=0.1,
                 )
-                for cid, result_ids in inputs.comparisons.user_idx_to_result_id.items()
-                for result_id in result_ids.values()
+                for cid, prepared in inputs.items()
+                for result_id in prepared.response_ids.values()
                 for entity in scores[cid]
             ],
             conversation_ids_to_clear=[],
@@ -354,10 +429,10 @@ def test_appended_votes_allow_coherent_progress_and_requeue(ranking_db: Engine) 
                 RankingConversationStatsSnapshot.conversation_id == cid
             )
         ).one()
-        assert config.processed_scoring_input_revision == old.revisions[cid]
+        assert config.processed_scoring_input_revision == old[cid].revision
         assert snapshot.ranking_score_id == config.current_ranking_score_id
-        assert config.scoring_input_revision > old.revisions[cid]
-        assert snapshot.scoring_input_revision == old.revisions[cid]
+        assert config.scoring_input_revision > old[cid].revision
+        assert snapshot.scoring_input_revision == old[cid].revision
         assert snapshot.vote_count == config.vote_count == 1
         assert snapshot.participant_count == 1
         assert (
@@ -373,8 +448,8 @@ def test_appended_votes_allow_coherent_progress_and_requeue(ranking_db: Engine) 
         assert (
             len(
                 session.scalars(
-                    select(MaxdiffUserEntityScore).where(
-                        MaxdiffUserEntityScore.maxdiff_result_id == fixture.result_id
+                    select(ComparisonUserEntityScore).where(
+                        ComparisonUserEntityScore.comparison_response_id == fixture.result_id
                     )
                 ).all()
             )
@@ -391,6 +466,445 @@ def test_appended_votes_allow_coherent_progress_and_requeue(ranking_db: Engine) 
     assert publish(engine=ranking_db, inputs=fresh)[cid].status == "superseded"
 
 
+@pytest.mark.parametrize("method", [RankingMode.bws, RankingMode.pairwise])
+def test_retained_tasks_replay_the_effective_inputs_without_account_or_response_keys(
+    ranking_db: Engine,
+    method: RankingMode,
+) -> None:
+    fixture = seed_ranking(ranking_db)
+    cid = fixture.conversation_id
+    accepted_candidates = fixture.slugs if method == RankingMode.bws else fixture.slugs[:2]
+    with ranking_db.begin() as connection:
+        connection.execute(
+            update(RankingConversationConfig)
+            .where(RankingConversationConfig.id == fixture.config_id)
+            .values(ranking_mode=method)
+        )
+        # The third accepted candidate subsequently becomes unavailable. Preserve
+        # the original task as well as the exact effective binary model input.
+        connection.execute(
+            update(ComparisonAnswer)
+            .where(ComparisonAnswer.comparison_response_id == fixture.result_id)
+            .values(worst_slug_id=fixture.slugs[1], candidate_set=accepted_candidates)
+        )
+        connection.execute(
+            update(RankingItem)
+            .where(RankingItem.id == fixture.item_ids[2])
+            .values(lifecycle_status=RankingItemLifecycleStatus.canceled)
+        )
+    inputs = capture(engine=ranking_db, fixtures=[fixture])
+    expected = score_comparison_observations(
+        entity_ids=inputs[cid].entity_ids,
+        observations=inputs[cid].observations,
+        recipe=inputs[cid].recipe,
+    )
+    assert expected is not None
+    counts = build_participant_counts(inputs[cid].observations)
+    with ranking_db.connect() as connection:
+        publication = persist_scoring_batch(
+            connection,
+            inputs=inputs,
+            scoring_results={
+                cid: (
+                    [
+                        ScoredEntity(
+                            entity_slug_id=score.entity_id,
+                            score=score.score,
+                            display_score=score.display_score,
+                            uncertainty_left=score.uncertainty_left,
+                            uncertainty_right=score.uncertainty_right,
+                            participant_count=counts[score.entity_id],
+                        )
+                        for score in expected.global_scores
+                    ],
+                    counts,
+                )
+            },
+            user_scores=[],
+            conversation_ids_to_clear=[],
+        )
+    assert publication[cid].status == "published"
+    with Session(ranking_db) as session:
+        root = session.scalars(
+            select(RankingInputSnapshot).where(RankingInputSnapshot.conversation_id == cid)
+        ).one()
+        assert root.comparison_method == method
+        assert root.scoring_input_revision == inputs[cid].revision
+        assert root.algorithm_version == SCORING_ALGORITHM_VERSION
+        assert root.solidago_version == SOLIDAGO_VERSION
+        assert root.pipeline_config["trust"] == "equal"
+        assert root.pipeline_config["choice_scale"] == 0.5
+        assert root.participant_count == 1
+        participants = session.scalars(
+            select(RankingInputParticipant.participant_index).where(
+                RankingInputParticipant.input_snapshot_id == root.id
+            )
+        ).all()
+        assert participants == [0]
+        catalogue = session.scalars(
+            select(RankingInputItem.item_slug_id)
+            .where(RankingInputItem.input_snapshot_id == root.id)
+            .order_by(RankingInputItem.position)
+        ).all()
+        answers = session.scalars(
+            select(RankingInputAnswer)
+            .where(RankingInputAnswer.input_snapshot_id == root.id)
+            .order_by(RankingInputAnswer.participant_index, RankingInputAnswer.position)
+        ).all()
+        assert answers[0].candidate_set == accepted_candidates
+        assert answers[0].effective_candidate_set == fixture.slugs[:2]
+        persisted_recipe = ComparisonRecipe.model_validate(root.pipeline_config)
+        from scoring_worker.observations import comparison_rows_to_observations
+
+        replay = score_comparison_observations(
+            entity_ids=list(catalogue),
+            recipe=persisted_recipe,
+            observations=comparison_rows_to_observations(
+                entity_ids=list(catalogue),
+                comparisons=[
+                    ComparisonRow(
+                        best_slug_id=answer.best_slug_id,
+                        worst_slug_id=answer.worst_slug_id,
+                        candidate_set=answer.effective_candidate_set,
+                        user_idx=answer.participant_index,
+                    )
+                    for answer in answers
+                ],
+            ),
+        )
+        assert replay is not None
+        stored_scores = dict(
+            session.execute(
+                select(RankingScoreEntity.entity_slug_id, RankingScoreEntity.score)
+                .join(
+                    RankingConversationStatsSnapshot,
+                    RankingConversationStatsSnapshot.ranking_score_id
+                    == RankingScoreEntity.ranking_score_id,
+                )
+                .where(RankingConversationStatsSnapshot.id == root.stats_snapshot_id)
+            )
+            .tuples()
+            .all()
+        )
+        assert {score.entity_id: score.score for score in replay.global_scores} == pytest.approx(
+            stored_scores
+        )
+        # Numerical tables contain no semantic or structural account lookup.
+        for model in [
+            RankingInputSnapshot,
+            RankingInputParticipant,
+            RankingInputItem,
+            RankingInputAnswer,
+        ]:
+            assert not {
+                "user_id",
+                "participant_id",
+                "comparison_response_id",
+                "comparison_answer_id",
+            } & set(model.__table__.columns.keys())
+
+
+def test_failed_publication_keeps_its_capture_private_and_unbound_for_retry(
+    ranking_db: Engine,
+) -> None:
+    fixture = seed_ranking(ranking_db)
+    inputs = capture(engine=ranking_db, fixtures=[fixture])
+    with (
+        patch.object(
+            scoring_db,
+            "_prune_unpublished_ranking_snapshots",
+            side_effect=RuntimeError("publication interrupted after capture"),
+        ),
+        pytest.raises(RuntimeError, match="interrupted after capture"),
+    ):
+        publish(engine=ranking_db, inputs=inputs)
+    with Session(ranking_db) as session:
+        prepared = session.get_one(
+            RankingInputSnapshot, inputs[fixture.conversation_id].input_snapshot_id
+        )
+        assert prepared.stats_snapshot_id is None
+        assert (
+            session.scalar(
+                select(func.count())
+                .select_from(RankingConversationStatsSnapshot)
+                .where(RankingConversationStatsSnapshot.conversation_id == fixture.conversation_id)
+            )
+            == 0
+        )
+        assert (
+            session.get_one(RankingConversationConfig, fixture.config_id).current_ranking_score_id
+            is None
+        )
+    assert publish(engine=ranking_db, inputs=inputs)[fixture.conversation_id].status == "published"
+
+
+def test_prepared_capture_is_sealed_before_computation(ranking_db: Engine) -> None:
+    fixture = seed_ranking(ranking_db)
+    inputs = capture(engine=ranking_db, fixtures=[fixture])
+    prepared = inputs[fixture.conversation_id]
+    with Session(ranking_db) as session:
+        root = session.get_one(RankingInputSnapshot, prepared.input_snapshot_id)
+        assert root.sealed_at is not None
+        assert root.stats_snapshot_id is None
+        assert root.answer_count == len(prepared.tasks)
+    with pytest.raises(IntegrityError) as error, ranking_db.begin() as connection:
+        connection.execute(
+            insert(RankingInputAnswer).values(
+                input_snapshot_id=prepared.input_snapshot_id,
+                participant_index=0,
+                position=99,
+                best_slug_id=fixture.slugs[0],
+                worst_slug_id=fixture.slugs[-1],
+                candidate_set=fixture.slugs,
+                effective_candidate_set=fixture.slugs,
+            )
+        )
+    assert isinstance(error.value.orig, CheckViolation)
+    assert error.value.orig.diag.constraint_name == "ranking_input_immutable"
+
+
+def test_processed_revisions_skip_evidence_copy_and_computation(ranking_db: Engine) -> None:
+    fixture = seed_ranking(ranking_db)
+    inputs = capture(engine=ranking_db, fixtures=[fixture])
+    assert publish(engine=ranking_db, inputs=inputs)[fixture.conversation_id].status == "published"
+    with patch.object(
+        scoring_db, "write_retained_inputs", side_effect=AssertionError("unexpected copy")
+    ):
+        assert capture(engine=ranking_db, fixtures=[fixture]) == {}
+    with Session(ranking_db) as session:
+        assert (
+            session.scalar(
+                select(func.count())
+                .select_from(RankingInputSnapshot)
+                .where(RankingInputSnapshot.conversation_id == fixture.conversation_id)
+            )
+            == 1
+        )
+
+
+def test_retry_reuses_a_complete_unbound_capture_for_the_exact_revision(ranking_db: Engine) -> None:
+    fixture = seed_ranking(ranking_db)
+    first = capture(engine=ranking_db, fixtures=[fixture])
+    with patch.object(
+        scoring_db, "write_retained_inputs", side_effect=AssertionError("unexpected retry copy")
+    ):
+        retry = capture(engine=ranking_db, fixtures=[fixture])
+    assert (
+        retry[fixture.conversation_id].input_snapshot_id
+        == first[fixture.conversation_id].input_snapshot_id
+    )
+    assert retry[fixture.conversation_id].tasks == first[fixture.conversation_id].tasks
+    assert publish(engine=ranking_db, inputs=retry)[fixture.conversation_id].status == "published"
+
+
+def test_evidence_preparation_does_not_take_lifecycle_or_config_write_locks(
+    ranking_db: Engine,
+) -> None:
+    fixture = seed_ranking(ranking_db)
+    with ThreadPoolExecutor(max_workers=1) as executor, ranking_db.begin() as writer:
+        writer.execute(
+            select(Conversation.id)
+            .where(Conversation.id == fixture.conversation_id)
+            .with_for_update(key_share=True)
+        ).all()
+        writer.execute(
+            select(RankingConversationConfig.id)
+            .where(RankingConversationConfig.id == fixture.config_id)
+            .with_for_update()
+        ).all()
+        future = executor.submit(capture, engine=ranking_db, fixtures=[fixture])
+        prepared = future.result(timeout=5)
+    with Session(ranking_db) as session:
+        root = session.get_one(
+            RankingInputSnapshot, prepared[fixture.conversation_id].input_snapshot_id
+        )
+        assert root.stats_snapshot_id is None
+        assert (
+            session.scalar(
+                select(func.count())
+                .select_from(RankingInputAnswer)
+                .where(RankingInputAnswer.input_snapshot_id == root.id)
+            )
+            == 1
+        )
+
+
+def test_distinct_retained_participants_survive_detaching_both_accounts(ranking_db: Engine) -> None:
+    fixture = seed_ranking(ranking_db)
+    other_user = uuid4()
+    with ranking_db.begin() as connection:
+        connection.execute(
+            update(RankingItem)
+            .where(RankingItem.conversation_id == fixture.conversation_id)
+            .values(is_seed=True)
+        )
+        connection.execute(
+            insert(User).values(id=other_user, username=f"other-{other_user.hex[:8]}")
+        )
+        other_response = connection.scalar(
+            insert(ComparisonResponse)
+            .values(
+                participant_id=other_user, conversation_id=fixture.conversation_id, comparisons=[]
+            )
+            .returning(ComparisonResponse.id)
+        )
+        assert other_response is not None
+        connection.execute(
+            insert(ComparisonAnswer).values(
+                comparison_response_id=other_response,
+                position=0,
+                best_slug_id=fixture.slugs[-1],
+                worst_slug_id=fixture.slugs[0],
+                candidate_set=list(reversed(fixture.slugs)),
+            )
+        )
+    inputs = capture(engine=ranking_db, fixtures=[fixture])
+    assert publish(engine=ranking_db, inputs=inputs)[fixture.conversation_id].status == "published"
+    with Session(ranking_db) as session:
+        root = session.scalars(
+            select(RankingInputSnapshot).where(
+                RankingInputSnapshot.conversation_id == fixture.conversation_id
+            )
+        ).one()
+        assert root.participant_count == 2
+        snapshot_id = root.id
+        columns = (
+            select(
+                RankingInputAnswer.participant_index,
+                RankingInputAnswer.best_slug_id,
+                RankingInputAnswer.candidate_set,
+            )
+            .where(RankingInputAnswer.input_snapshot_id == snapshot_id)
+            .order_by(RankingInputAnswer.participant_index)
+        )
+        before = session.execute(columns).all()
+        assert [row.participant_index for row in before] == [0, 1]
+    with ranking_db.begin() as connection:
+        now = datetime.now(UTC)
+        connection.execute(
+            update(User)
+            .where(User.id.in_([fixture.user_id, other_user]))
+            .values(is_deleted=True, purge_started_at=now)
+        )
+        connection.execute(
+            update(ComparisonAnswer)
+            .where(ComparisonAnswer.comparison_response_id.in_([fixture.result_id, other_response]))
+            .values(deleted_at=now)
+        )
+        connection.execute(
+            update(ComparisonUserEntityScore)
+            .where(
+                ComparisonUserEntityScore.comparison_response_id.in_(
+                    [fixture.result_id, other_response]
+                )
+            )
+            .values(deleted_at=now)
+        )
+        connection.execute(
+            update(ComparisonResponse)
+            .where(ComparisonResponse.id.in_([fixture.result_id, other_response]))
+            .values(
+                participant_id=None,
+                detached_at=now,
+                comparisons=[],
+                ranking=None,
+                is_complete=False,
+            )
+        )
+    assert capture(engine=ranking_db, fixtures=[fixture])[fixture.conversation_id].tasks == ()
+    with Session(ranking_db) as session:
+        assert session.execute(columns).all() == before
+        assert session.get_one(RankingInputSnapshot, snapshot_id).participant_count == 2
+
+
+def test_retained_checkpoint_survives_source_detachment_and_never_becomes_live_input(
+    ranking_db: Engine,
+) -> None:
+    fixture = seed_ranking(ranking_db)
+    with ranking_db.begin() as connection:
+        connection.execute(
+            update(Conversation)
+            .where(Conversation.id == fixture.conversation_id)
+            .values(is_closed=True)
+        )
+    inputs = capture(engine=ranking_db, fixtures=[fixture])
+    with ranking_db.begin() as connection:
+        connection.execute(
+            update(Conversation)
+            .where(Conversation.id == fixture.conversation_id)
+            .values(closing_target_revision=inputs[fixture.conversation_id].revision)
+        )
+    assert publish(engine=ranking_db, inputs=inputs)[fixture.conversation_id].status == "published"
+    with Session(ranking_db) as session:
+        root = session.scalars(
+            select(RankingInputSnapshot).where(
+                RankingInputSnapshot.conversation_id == fixture.conversation_id
+            )
+        ).one()
+        snapshot_id = root.stats_snapshot_id
+        assert snapshot_id is not None
+        select_evidence = select(
+            RankingInputAnswer.participant_index,
+            RankingInputAnswer.position,
+            RankingInputAnswer.best_slug_id,
+            RankingInputAnswer.worst_slug_id,
+            RankingInputAnswer.candidate_set,
+            RankingInputAnswer.effective_candidate_set,
+        ).where(RankingInputAnswer.input_snapshot_id == root.id)
+        before = session.execute(select_evidence).all()
+        counts = session.get_one(RankingConversationStatsSnapshot, snapshot_id)
+        before_counts = (counts.vote_count, counts.participant_count, counts.ranking_score_id)
+    with ranking_db.begin() as connection:
+        connection.execute(
+            update(User)
+            .where(User.id == fixture.user_id)
+            .values(is_deleted=True, purge_started_at=datetime.now(UTC))
+        )
+        connection.execute(
+            update(ComparisonAnswer)
+            .where(ComparisonAnswer.comparison_response_id == fixture.result_id)
+            .values(deleted_at=datetime.now(UTC))
+        )
+        connection.execute(
+            update(ComparisonUserEntityScore)
+            .where(ComparisonUserEntityScore.comparison_response_id == fixture.result_id)
+            .values(deleted_at=datetime.now(UTC))
+        )
+        connection.execute(
+            update(ComparisonResponse)
+            .where(ComparisonResponse.id == fixture.result_id)
+            .values(
+                participant_id=None,
+                detached_at=datetime.now(UTC),
+                ranking=None,
+                comparisons=[],
+                is_complete=False,
+            )
+        )
+    with ranking_db.begin() as connection:
+        connection.execute(
+            update(Conversation)
+            .where(Conversation.id == fixture.conversation_id)
+            .values(is_closed=False, closing_target_revision=None, closed_finalized_at=None)
+        )
+    fresh = capture(engine=ranking_db, fixtures=[fixture])
+    assert fresh[fixture.conversation_id].tasks == ()
+    with Session(ranking_db) as session:
+        assert session.execute(select_evidence).all() == before
+        counts = session.get_one(RankingConversationStatsSnapshot, snapshot_id)
+        assert (
+            counts.vote_count,
+            counts.participant_count,
+            counts.ranking_score_id,
+        ) == before_counts
+    with pytest.raises(IntegrityError), ranking_db.begin() as connection:
+        connection.execute(
+            update(ComparisonResponse)
+            .where(ComparisonResponse.id == fixture.result_id)
+            .values(participant_id=fixture.user_id, detached_at=None)
+        )
+
+
 def test_new_participant_does_not_invalidate_captured_votes(ranking_db: Engine) -> None:
     fixture = seed_ranking(ranking_db)
     inputs = capture(engine=ranking_db, fixtures=[fixture])
@@ -398,9 +912,9 @@ def test_new_participant_does_not_invalidate_captured_votes(ranking_db: Engine) 
     with ranking_db.begin() as connection:
         connection.execute(insert(User).values(id=user_id, username=f"test-{user_id.hex[:8]}"))
         result_id = connection.execute(
-            insert(MaxdiffResult)
+            insert(ComparisonResponse)
             .values(participant_id=user_id, conversation_id=fixture.conversation_id, comparisons=[])
-            .returning(MaxdiffResult.id)
+            .returning(ComparisonResponse.id)
         ).scalar_one()
     append_comparison(
         engine=ranking_db,
@@ -420,20 +934,32 @@ def test_personal_scores_update_in_place_and_reactivate_without_deleting(
     ranking_db: Engine,
 ) -> None:
     fixture = seed_ranking(ranking_db)
+    # Keep a real effective task after the first statement completes, so the
+    # remaining personal scores still have numerical inputs supporting them.
+    with ranking_db.begin() as connection:
+        connection.execute(
+            insert(ComparisonAnswer).values(
+                comparison_response_id=fixture.result_id,
+                position=1,
+                best_slug_id=fixture.slugs[1],
+                worst_slug_id=fixture.slugs[2],
+                candidate_set=fixture.slugs,
+            )
+        )
     publish(engine=ranking_db, inputs=capture(engine=ranking_db, fixtures=[fixture]))
     with Session(ranking_db) as session:
         original_ids = {
             row.entity_slug_id: row.id
             for row in session.scalars(
-                select(MaxdiffUserEntityScore).where(
-                    MaxdiffUserEntityScore.maxdiff_result_id == fixture.result_id
+                select(ComparisonUserEntityScore).where(
+                    ComparisonUserEntityScore.comparison_response_id == fixture.result_id
                 )
             )
         }
     with ranking_db.begin() as connection:
         connection.execute(
-            update(MaxdiffUserEntityScore)
-            .where(MaxdiffUserEntityScore.maxdiff_result_id == fixture.result_id)
+            update(ComparisonUserEntityScore)
+            .where(ComparisonUserEntityScore.comparison_response_id == fixture.result_id)
             .values(score=42, display_score=0.9)
         )
         connection.execute(
@@ -445,8 +971,8 @@ def test_personal_scores_update_in_place_and_reactivate_without_deleting(
     assert publish(engine=ranking_db, inputs=inputs)[fixture.conversation_id].status == "published"
     with Session(ranking_db) as session:
         rows = session.scalars(
-            select(MaxdiffUserEntityScore).where(
-                MaxdiffUserEntityScore.maxdiff_result_id == fixture.result_id
+            select(ComparisonUserEntityScore).where(
+                ComparisonUserEntityScore.comparison_response_id == fixture.result_id
             )
         ).all()
         assert {row.entity_slug_id: row.id for row in rows} == original_ids
@@ -467,8 +993,8 @@ def test_personal_scores_update_in_place_and_reactivate_without_deleting(
     publish(engine=ranking_db, inputs=capture(engine=ranking_db, fixtures=[fixture]))
     with Session(ranking_db) as session:
         rows = session.scalars(
-            select(MaxdiffUserEntityScore).where(
-                MaxdiffUserEntityScore.maxdiff_result_id == fixture.result_id
+            select(ComparisonUserEntityScore).where(
+                ComparisonUserEntityScore.comparison_response_id == fixture.result_id
             )
         ).all()
         assert {row.entity_slug_id: row.id for row in rows} == original_ids
@@ -498,8 +1024,8 @@ def test_empty_publications_soft_delete_scores_without_resetting_tombstones(
     assert publications[fixture.conversation_id].status == "published"
     with Session(ranking_db) as session:
         rows = session.scalars(
-            select(MaxdiffUserEntityScore).where(
-                MaxdiffUserEntityScore.maxdiff_result_id == fixture.result_id
+            select(ComparisonUserEntityScore).where(
+                ComparisonUserEntityScore.comparison_response_id == fixture.result_id
             )
         ).all()
         assert len(rows) == len(fixture.slugs)
@@ -511,15 +1037,15 @@ def test_empty_publications_soft_delete_scores_without_resetting_tombstones(
         )
     with ranking_db.begin() as connection:
         connection.execute(
-            update(MaxdiffUserEntityScore)
-            .where(MaxdiffUserEntityScore.id.in_(ids))
+            update(ComparisonUserEntityScore)
+            .where(ComparisonUserEntityScore.id.in_(ids))
             .values(deleted_at=datetime(2000, 1, 1, tzinfo=UTC))
         )
     with Session(ranking_db) as session:
         tombstones = {
             row.id: row.deleted_at
             for row in session.scalars(
-                select(MaxdiffUserEntityScore).where(MaxdiffUserEntityScore.id.in_(ids))
+                select(ComparisonUserEntityScore).where(ComparisonUserEntityScore.id.in_(ids))
             )
         }
     append_comparison(engine=ranking_db, fixture=fixture, position=1)
@@ -535,8 +1061,8 @@ def test_empty_publications_soft_delete_scores_without_resetting_tombstones(
         assert {
             row.id: row.deleted_at
             for row in session.scalars(
-                select(MaxdiffUserEntityScore).where(
-                    MaxdiffUserEntityScore.maxdiff_result_id == fixture.result_id
+                select(ComparisonUserEntityScore).where(
+                    ComparisonUserEntityScore.comparison_response_id == fixture.result_id
                 )
             )
         } == tombstones
@@ -606,8 +1132,8 @@ def test_removed_participation_leaves_only_inactive_personal_scores(
     with ranking_db.begin() as connection:
         if removed_input == "comparison":
             connection.execute(
-                update(MaxdiffComparison)
-                .where(MaxdiffComparison.maxdiff_result_id == fixture.result_id)
+                update(ComparisonAnswer)
+                .where(ComparisonAnswer.comparison_response_id == fixture.result_id)
                 .values(deleted_at=datetime.now(tz=UTC))
             )
         else:
@@ -617,8 +1143,8 @@ def test_removed_participation_leaves_only_inactive_personal_scores(
     publish(engine=ranking_db, inputs=capture(engine=ranking_db, fixtures=[fixture]))
     with Session(ranking_db) as session:
         rows = session.scalars(
-            select(MaxdiffUserEntityScore).where(
-                MaxdiffUserEntityScore.maxdiff_result_id == fixture.result_id
+            select(ComparisonUserEntityScore).where(
+                ComparisonUserEntityScore.comparison_response_id == fixture.result_id
             )
         ).all()
         assert len(rows) == len(fixture.slugs)
@@ -673,8 +1199,8 @@ def test_identical_personal_scores_do_not_rewrite_rows(ranking_db: Engine) -> No
     fixture = seed_ranking(ranking_db)
     publish(engine=ranking_db, inputs=capture(engine=ranking_db, fixtures=[fixture]))
     # PostgreSQL xmin reveals physical rewrites even when score values stay identical.
-    statement = select(MaxdiffUserEntityScore.id, literal_column("xmin").cast(String)).where(
-        MaxdiffUserEntityScore.maxdiff_result_id == fixture.result_id
+    statement = select(ComparisonUserEntityScore.id, literal_column("xmin").cast(String)).where(
+        ComparisonUserEntityScore.comparison_response_id == fixture.result_id
     )
     with Session(ranking_db) as session:
         original_versions = {
@@ -698,13 +1224,13 @@ def test_failed_publication_rolls_back_existing_scores_and_snapshot_tombstones(
         publish(engine=ranking_db, inputs=capture(engine=ranking_db, fixtures=[fixture]))
     personal_state = (
         select(
-            MaxdiffUserEntityScore.id,
-            MaxdiffUserEntityScore.score,
-            MaxdiffUserEntityScore.display_score,
-            MaxdiffUserEntityScore.deleted_at,
+            ComparisonUserEntityScore.id,
+            ComparisonUserEntityScore.score,
+            ComparisonUserEntityScore.display_score,
+            ComparisonUserEntityScore.deleted_at,
         )
-        .where(MaxdiffUserEntityScore.maxdiff_result_id == fixture.result_id)
-        .order_by(MaxdiffUserEntityScore.id)
+        .where(ComparisonUserEntityScore.comparison_response_id == fixture.result_id)
+        .order_by(ComparisonUserEntityScore.id)
     )
     snapshot_state = (
         select(RankingConversationStatsSnapshot.id, RankingConversationStatsSnapshot.deleted_at)
@@ -811,7 +1337,7 @@ def test_large_publication_does_not_exceed_postgres_parameter_limit(ranking_db: 
             [{"id": user_id, "username": f"bulk-{user_id.hex[:15]}"} for user_id in user_ids],
         )
         result_ids = connection.scalars(
-            insert(MaxdiffResult).returning(MaxdiffResult.id),
+            insert(ComparisonResponse).returning(ComparisonResponse.id),
             [
                 {
                     "participant_id": user_id,
@@ -822,10 +1348,10 @@ def test_large_publication_does_not_exceed_postgres_parameter_limit(ranking_db: 
             ],
         ).all()
         connection.execute(
-            insert(MaxdiffComparison),
+            insert(ComparisonAnswer),
             [
                 {
-                    "maxdiff_result_id": result_id,
+                    "comparison_response_id": result_id,
                     "position": 0,
                     "best_slug_id": fixture.slugs[0],
                     "worst_slug_id": fixture.slugs[-1],
@@ -840,9 +1366,12 @@ def test_large_publication_does_not_exceed_postgres_parameter_limit(ranking_db: 
     with Session(ranking_db) as session:
         count = session.scalar(
             select(func.count())
-            .select_from(MaxdiffUserEntityScore)
-            .join(MaxdiffResult, MaxdiffResult.id == MaxdiffUserEntityScore.maxdiff_result_id)
-            .where(MaxdiffResult.conversation_id == fixture.conversation_id)
+            .select_from(ComparisonUserEntityScore)
+            .join(
+                ComparisonResponse,
+                ComparisonResponse.id == ComparisonUserEntityScore.comparison_response_id,
+            )
+            .where(ComparisonResponse.conversation_id == fixture.conversation_id)
         )
         assert count == (len(user_ids) + 1) * len(fixture.slugs)
 
@@ -854,14 +1383,14 @@ def test_invalidations_reject_old_computation(ranking_db: Engine, change: str) -
     with ranking_db.begin() as connection:
         if change == "edit":
             connection.execute(
-                update(MaxdiffComparison)
-                .where(MaxdiffComparison.maxdiff_result_id == fixture.result_id)
+                update(ComparisonAnswer)
+                .where(ComparisonAnswer.comparison_response_id == fixture.result_id)
                 .values(best_slug_id=fixture.slugs[-1], worst_slug_id=fixture.slugs[0])
             )
         elif change == "remove":
             connection.execute(
-                update(MaxdiffComparison)
-                .where(MaxdiffComparison.maxdiff_result_id == fixture.result_id)
+                update(ComparisonAnswer)
+                .where(ComparisonAnswer.comparison_response_id == fixture.result_id)
                 .values(deleted_at=datetime.now(tz=UTC))
             )
         elif change == "item":
@@ -925,11 +1454,11 @@ def test_publication_callback_observes_each_committed_snapshot(ranking_db: Engin
                     RankingConversationStatsSnapshot.conversation_id == conversation_id
                 )
             ).one()
-            assert snapshot.scoring_input_revision == inputs.revisions[conversation_id]
+            assert snapshot.scoring_input_revision == inputs[conversation_id].revision
         observed.append(conversation_id)
 
     publish(engine=ranking_db, inputs=inputs, on_publication=observe)
-    assert observed == sorted(inputs.revisions)
+    assert observed == sorted(inputs)
 
 
 def test_inputs_share_one_snapshot_despite_interleaved_vote(
@@ -946,11 +1475,11 @@ def test_inputs_share_one_snapshot_despite_interleaved_vote(
     with monkeypatch.context() as patch:
         patch.setattr(scoring_db, "fetch_scoring_input_revisions", read_then_append)
         inputs = capture(engine=ranking_db, fixtures=[fixture])
-    assert len(inputs.comparisons.comparisons[fixture.conversation_id]) == 1
-    assert inputs.comparisons.total_vote_count_by_conversation[fixture.conversation_id] == 1
+    assert len(inputs[fixture.conversation_id].tasks) == 1
+    assert inputs[fixture.conversation_id].total_vote_count == 1
     current = capture(engine=ranking_db, fixtures=[fixture])
-    assert len(current.comparisons.comparisons[fixture.conversation_id]) == 2
-    assert current.revisions[fixture.conversation_id] > inputs.revisions[fixture.conversation_id]
+    assert len(current[fixture.conversation_id].tasks) == 2
+    assert current[fixture.conversation_id].revision > inputs[fixture.conversation_id].revision
 
 
 def test_failed_snapshot_rolls_back_scores_and_processed_revision(ranking_db: Engine) -> None:
@@ -970,8 +1499,8 @@ def test_failed_snapshot_rolls_back_scores_and_processed_revision(ranking_db: En
         assert config.processed_scoring_input_revision == -1
         assert (
             session.scalars(
-                select(MaxdiffUserEntityScore).where(
-                    MaxdiffUserEntityScore.maxdiff_result_id == fixture.result_id
+                select(ComparisonUserEntityScore).where(
+                    ComparisonUserEntityScore.comparison_response_id == fixture.result_id
                 )
             ).first()
             is None
@@ -992,6 +1521,7 @@ def test_publication_holds_invalidation_lock_until_commit(
         conversation_ids: list[int],
         results: dict[int, tuple[list[ScoredEntity], dict[str, int]]],
         user_scores: Sequence[UserScoreEntry],
+        inputs: ScoringInputs,
     ) -> dict[int, int]:
         nonlocal blocked
         with (
@@ -1000,8 +1530,8 @@ def test_publication_holds_invalidation_lock_until_commit(
         ):
             editing.exec_driver_sql("SET LOCAL lock_timeout = '100ms'")
             editing.execute(
-                update(MaxdiffComparison)
-                .where(MaxdiffComparison.maxdiff_result_id == fixture.result_id)
+                update(ComparisonAnswer)
+                .where(ComparisonAnswer.comparison_response_id == fixture.result_id)
                 .values(best_slug_id=fixture.slugs[-1], worst_slug_id=fixture.slugs[0])
             )
         blocked = True
@@ -1038,8 +1568,8 @@ def test_display_backfill_preserves_raw_values_and_does_not_guess_old_checkpoint
             .values(display_score=None)
         )
         session.execute(
-            update(MaxdiffUserEntityScore)
-            .where(MaxdiffUserEntityScore.maxdiff_result_id == fixture.result_id)
+            update(ComparisonUserEntityScore)
+            .where(ComparisonUserEntityScore.comparison_response_id == fixture.result_id)
             .values(display_score=None)
         )
         for snapshot in snapshots:
@@ -1078,5 +1608,5 @@ def test_display_backfill_preserves_raw_values_and_does_not_guess_old_checkpoint
         assert current_top == 0.5
     again = backfill_display_scores(engine=ranking_db, batch_size=2)
     assert again["ranking_score_entity"] == 0
-    assert again["maxdiff_user_entity_score"] == 0
+    assert again["comparison_user_entity_score"] == 0
     assert again["current_snapshots_linked"] == 0

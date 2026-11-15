@@ -17,7 +17,6 @@ function buildRequest(
             dynamicTranslationEnabled: false,
         },
         seedOpinionList: [],
-        requiresEventTicket: undefined,
         conversationEmailUpdateEnabledOverride,
         conversationType: "polis",
         aiLabelingEnabled: true,
@@ -27,6 +26,63 @@ function buildRequest(
 }
 
 describe("conversation creation DTO", () => {
+    const qvRequest = {
+        conversationTitle: "Priorities",
+        isIndexed: true,
+        participationMode: "guest",
+        multilingualSetting: {
+            additionalLanguageCodes: [],
+            dynamicTranslationEnabled: false,
+        },
+        conversationType: "prioritizing",
+        prioritizationType: "qv",
+        creditPricing: "quadratic",
+        seedStatements: [
+            { title: "A required title", description: "Optional details" },
+        ],
+    };
+    it("defaults QV opposition on and keeps structured statement content", () => {
+        expect(Dto.createNewConversationRequest.parse(qvRequest)).toMatchObject(
+            {
+                allowOpposition: true,
+                seedOpinionList: [],
+                seedStatements: qvRequest.seedStatements,
+            },
+        );
+        expect(
+            Dto.createNewConversationRequest.parse({
+                ...qvRequest,
+                allowOpposition: false,
+            }),
+        ).toMatchObject({ allowOpposition: false });
+    });
+    it.each([
+        {},
+        { title: "" },
+        { title: "   ", description: "Description alone" },
+    ])("requires a statement title: %j", (statement) => {
+        expect(
+            Dto.createNewConversationRequest.safeParse({
+                ...qvRequest,
+                seedStatements: [statement],
+            }).success,
+        ).toBe(false);
+    });
+    it("rejects custom budgets, comparison settings and unstructured QV seed content", () => {
+        for (const fields of [
+            { creditBudget: 200 },
+            { comparisonMethod: "bws" },
+            { externalSourceConfig: null },
+            { seedOpinionList: ["Text only"] },
+        ]) {
+            expect(
+                Dto.createNewConversationRequest.safeParse({
+                    ...qvRequest,
+                    ...fields,
+                }).success,
+            ).toBe(false);
+        }
+    });
     it.each([undefined, true, false])(
         "preserves the Email Updates override %s",
         (conversationEmailUpdateEnabledOverride) => {

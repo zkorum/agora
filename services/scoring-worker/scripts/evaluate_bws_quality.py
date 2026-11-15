@@ -20,7 +20,7 @@ from statistics import mean
 from pydantic import BaseModel, Field
 
 from scoring_worker.db import ComparisonRow
-from scoring_worker.pipeline_config import PIPELINE_CONFIG
+from scoring_worker.pipeline_config import COMPARISON_RECIPE
 from scoring_worker.scoring import score_comparisons
 
 
@@ -208,7 +208,7 @@ def main() -> None:
     report = {
         "config": config.model_dump(mode="json"),
         "solidago_version": version("solidago"),
-        "pipeline": PIPELINE_CONFIG,
+        "pipeline": COMPARISON_RECIPE.model_dump(mode="json"),
         "notes": [
             "Offline fixed random task sets: adaptive API routing is not exercised.",
             "Polarized populations have no single consensus reference; "

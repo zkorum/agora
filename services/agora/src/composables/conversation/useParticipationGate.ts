@@ -81,16 +81,10 @@ export function useParticipationGate(
         status.nextStep.kind === "identity")
     );
   });
-  const needsTicket = computed(
-    () =>
-      participationStatus.value.status === "onboarding_required" &&
-      participationStatus.value.nextStep.kind === "ticket"
-  );
 
   return {
     participationStatus,
     needsAuth,
-    needsTicket,
     openParticipationOnboarding,
     captureParticipationAction,
     recordParticipationRejection: recordRejection,

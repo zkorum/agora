@@ -1,7 +1,7 @@
 <template>
   <RoutedBottomSheet
     :dismissal="sheet"
-    :allow-focus-outside="isVerifying"
+    :allow-focus-outside="false"
     :label="t('dialogLabel')"
     :return-target="returnTarget"
   >
@@ -16,7 +16,6 @@ import RoutedBottomSheet from "src/components/ui-library/RoutedBottomSheet.vue";
 import { useConversationOnboardingExit } from "src/composables/conversation/useConversationOnboardingExit";
 import { useConversationOnboardingRoute } from "src/composables/conversation/useConversationOnboardingRoute";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { useZupassVerification } from "src/composables/zupass/useZupassVerification";
 import {
   type ConversationOnboardingLayoutTranslations,
   conversationOnboardingLayoutTranslations,
@@ -36,8 +35,6 @@ const sheet = createDismissalController({
     });
   },
 });
-// Parcnet owns a native dialog outside the Vue/Quasar dialog tree.
-const { isVerifying } = useZupassVerification();
 const { t } = useComponentI18n<ConversationOnboardingLayoutTranslations>(
   conversationOnboardingLayoutTranslations
 );

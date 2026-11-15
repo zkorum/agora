@@ -20,7 +20,7 @@ interface CreateDidReturn {
 
 export type KeyAction = "overwrite" | "get" | "create";
 
-const PREFIXED_KEY = "com.zkorum.agora/v1/sign";
+export const PREFIXED_KEY = "com.zkorum.agora/v1/sign";
 
 async function getDidForKeyAction({
   cryptoStore,

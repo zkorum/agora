@@ -367,6 +367,7 @@ describe("conversation translation completion", () => {
   it("uses read-only recovery after completion during a queue request", async () => {
     const conversationData: ExtendedConversationDisplayData = {
       metadata: {
+        participantStatements: { supported: true, enabled: true },
         conversationSlugId,
         conversationType: "polis",
         votingPresentation: "list",
@@ -416,6 +417,7 @@ describe("conversation translation completion", () => {
         conversationCapabilities: {
           canEdit: false,
           canDelete: false,
+          canModerate: false, canClose: false, canReopen: false,
         },
       },
     };

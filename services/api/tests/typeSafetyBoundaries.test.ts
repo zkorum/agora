@@ -62,7 +62,8 @@ describe("canonical boundary contracts", () => {
     it("rejects Polis-only settings on ranking edits", () => {
         expect(
             Dto.updateConversationTypeConfig.safeParse({
-                conversationType: "ranking",
+                conversationType: "prioritizing",
+                prioritizationType: "comparisons",
                 rankingMode: "bws",
                 aiLabelingEnabled: true,
             }).success,

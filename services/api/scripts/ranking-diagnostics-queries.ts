@@ -16,12 +16,12 @@ import {
     rankingConversationStatsItemTable,
     rankingScoreEntityTable,
     rankingItemTable,
-    maxdiffResultTable,
-    maxdiffComparisonTable,
+    comparisonResponseTable,
+    comparisonAnswerTable,
     userTable,
 } from "../src/shared-backend/schema.js";
 import type { RankingDiagnosticsRequest } from "../src/shared-backend/rankingDiagnosticsProtocol.js";
-import { buildMaxdiffAppearanceCountQuery } from "../src/service/maxdiffQueries.js";
+import { buildComparisonAppearanceCountQuery } from "../src/service/comparisonQueries.js";
 
 // The no-op predicate gives observer queries a separate fingerprint from normal
 // application reads; the marker excludes them from query-cost attribution.
@@ -89,24 +89,27 @@ export function buildRankingDiagnosticsQuery({
                 .select({
                     slug_id: conversationTable.slugId,
                     active_comparisons:
-                        sql<number>`count(*) filter (where ${isNull(maxdiffComparisonTable.deletedAt)})`.mapWith(
+                        sql<number>`count(*) filter (where ${isNull(comparisonAnswerTable.deletedAt)})`.mapWith(
                             Number,
                         ),
                     soft_deleted_comparisons:
-                        sql<number>`count(*) filter (where ${isNotNull(maxdiffComparisonTable.deletedAt)})`.mapWith(
+                        sql<number>`count(*) filter (where ${isNotNull(comparisonAnswerTable.deletedAt)})`.mapWith(
                             Number,
                         ),
                 })
                 .from(conversationTable)
                 .innerJoin(
-                    maxdiffResultTable,
-                    eq(maxdiffResultTable.conversationId, conversationTable.id),
+                    comparisonResponseTable,
+                    eq(
+                        comparisonResponseTable.conversationId,
+                        conversationTable.id,
+                    ),
                 )
                 .innerJoin(
-                    maxdiffComparisonTable,
+                    comparisonAnswerTable,
                     eq(
-                        maxdiffComparisonTable.maxdiffResultId,
-                        maxdiffResultTable.id,
+                        comparisonAnswerTable.comparisonResponseId,
+                        comparisonResponseTable.id,
                     ),
                 )
                 .where(
@@ -169,44 +172,44 @@ export function buildRankingDiagnosticsQuery({
             if (request.kind === "comparisons") {
                 return db
                     .select({
-                        conversationId: maxdiffResultTable.conversationId,
-                        resultId: maxdiffComparisonTable.maxdiffResultId,
-                        participantId: maxdiffResultTable.participantId,
-                        best: maxdiffComparisonTable.bestSlugId,
-                        worst: maxdiffComparisonTable.worstSlugId,
-                        candidateSet: maxdiffComparisonTable.candidateSet,
-                        position: maxdiffComparisonTable.position,
+                        conversationId: comparisonResponseTable.conversationId,
+                        resultId: comparisonAnswerTable.comparisonResponseId,
+                        participantId: comparisonResponseTable.participantId,
+                        best: comparisonAnswerTable.bestSlugId,
+                        worst: comparisonAnswerTable.worstSlugId,
+                        candidateSet: comparisonAnswerTable.candidateSet,
+                        position: comparisonAnswerTable.position,
                     })
-                    .from(maxdiffResultTable)
+                    .from(comparisonResponseTable)
                     .innerJoin(
-                        maxdiffComparisonTable,
+                        comparisonAnswerTable,
                         eq(
-                            maxdiffComparisonTable.maxdiffResultId,
-                            maxdiffResultTable.id,
+                            comparisonAnswerTable.comparisonResponseId,
+                            comparisonResponseTable.id,
                         ),
                     )
                     .innerJoin(
                         userTable,
-                        eq(userTable.id, maxdiffResultTable.participantId),
+                        eq(userTable.id, comparisonResponseTable.participantId),
                     )
                     .where(
                         and(
                             observerPredicate,
                             eq(
-                                maxdiffResultTable.conversationId,
+                                comparisonResponseTable.conversationId,
                                 request.conversationId,
                             ),
-                            isNull(maxdiffComparisonTable.deletedAt),
+                            isNull(comparisonAnswerTable.deletedAt),
                             eq(userTable.isDeleted, false),
                         ),
                     )
                     .orderBy(
-                        maxdiffResultTable.conversationId,
-                        maxdiffComparisonTable.maxdiffResultId,
-                        maxdiffComparisonTable.position,
+                        comparisonResponseTable.conversationId,
+                        comparisonAnswerTable.comparisonResponseId,
+                        comparisonAnswerTable.position,
                     );
             }
-            return buildMaxdiffAppearanceCountQuery({
+            return buildComparisonAppearanceCountQuery({
                 db,
                 conversationId: request.conversationId,
                 additionalFilter: observerPredicate,

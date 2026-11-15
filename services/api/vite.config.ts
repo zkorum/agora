@@ -7,6 +7,11 @@ export default defineConfig({
     test: {
         globals: true,
         environment: "node",
-        exclude: ["dist/**", "node_modules/**", "scripts/*.test.mjs"],
+        exclude: [
+            "dist/**",
+            "node_modules/**",
+            "scripts/*.test.mjs",
+            "eslint/*.test.mjs",
+        ],
     },
 });

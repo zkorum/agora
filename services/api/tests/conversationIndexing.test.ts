@@ -5,6 +5,7 @@ import postgres from "postgres";
 import { GenericContainer, type StartedTestContainer } from "testcontainers";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { isConversationIndexable } from "../src/service/conversationIndexing.js";
+import { getReplicaDatabase } from "../src/shared-backend/db.js";
 import {
     conversationContentTable,
     conversationTable,
@@ -81,7 +82,7 @@ describe("conversation indexing database policy", () => {
             username: "postgres",
             password: "postgres",
         });
-        db = drizzle(client);
+        db = drizzle({ client });
         await client.unsafe(readDbFixtureSql("content-translation.sql"));
         await createConversations(db);
         // Independent databases let the replica retain the old visibility without
@@ -94,7 +95,7 @@ describe("conversation indexing database policy", () => {
             username: "postgres",
             password: "postgres",
         });
-        replicaDb = drizzle(replicaClient);
+        replicaDb = drizzle({ client: replicaClient });
         await replicaClient.unsafe(readDbFixtureSql("content-translation.sql"));
         await createConversations(replicaDb);
     }, 120_000);
@@ -126,7 +127,7 @@ describe("conversation indexing database policy", () => {
             .update(conversationTable)
             .set({ isIndexed: false })
             .where(eq(conversationTable.slugId, "listed"));
-        const staleConversations = await replicatedDb
+        const staleConversations = await getReplicaDatabase(replicatedDb)
             .select({ isIndexed: conversationTable.isIndexed })
             .from(conversationTable)
             .where(eq(conversationTable.slugId, "listed"));

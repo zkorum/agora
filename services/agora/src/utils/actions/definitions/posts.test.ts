@@ -68,6 +68,9 @@ describe("conversation action capabilities", () => {
       conversationCapabilities: {
         canEdit: true,
         canDelete: true,
+        canModerate: true,
+        canClose: true,
+        canReopen: true,
       },
     });
 
@@ -86,6 +89,9 @@ describe("conversation action capabilities", () => {
       conversationCapabilities: {
         canEdit: true,
         canDelete: false,
+        canModerate: true,
+        canClose: true,
+        canReopen: true,
       },
     });
 
@@ -100,6 +106,9 @@ describe("conversation action capabilities", () => {
       conversationCapabilities: {
         canEdit: false,
         canDelete: false,
+        canModerate: false,
+        canClose: false,
+        canReopen: false,
       },
       actionContext: { ...context, isOwner: true },
     });

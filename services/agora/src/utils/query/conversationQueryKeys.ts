@@ -34,14 +34,14 @@ export function getConversationQueryKey({
   ] as const;
 }
 
-export function getMaxDiffLoadQueryKey({
+export function getComparisonLoadQueryKey({
   conversationSlugId,
   viewerScope,
 }: {
   conversationSlugId: string;
   viewerScope: ViewerQueryScope;
 }) {
-  return ["maxdiff-load", conversationSlugId, viewerScope] as const;
+  return ["comparison-load", conversationSlugId, viewerScope] as const;
 }
 
 export function getSurveyStatusQueryKey({

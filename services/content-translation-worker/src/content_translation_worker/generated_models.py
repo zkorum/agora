@@ -221,7 +221,7 @@ class ParticipationMode(StrEnum):
 
 class ConversationType(StrEnum):
     polis = "polis"
-    ranking = "ranking"
+    prioritizing = "prioritizing"
 
 
 class EventSlug(StrEnum):
@@ -425,8 +425,11 @@ class Conversation(Base):
     slug_id: Mapped[str] = mapped_column(String(8))
     project_id: Mapped[int] = mapped_column(Integer)
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     polis_config_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     ranking_config_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    credit_voting_config_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    prioritization_type: Mapped[str | None] = mapped_column(Text, nullable=True)
     dynamic_translation_enabled: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     conversation_email_update_enabled_override: Mapped[bool | None] = mapped_column(
         Boolean,
@@ -528,6 +531,18 @@ class ConversationViewSnapshot(Base):
     moderated_opinion_count: Mapped[int] = mapped_column(Integer)
     hidden_opinion_count: Mapped[int] = mapped_column(Integer)
     activated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class CreditVotingConfig(Base):
+    __tablename__ = "credit_voting_config"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    credit_budget: Mapped[int] = mapped_column(Integer, server_default="100")
+    allow_opposition: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
+    item_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    statement_set_revision: Mapped[int] = mapped_column(Integer, server_default="0")
+    statements_locked_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
 
 
@@ -637,9 +652,11 @@ class Opinion(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     slug_id: Mapped[str] = mapped_column(String(8))
-    author_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
+    author_id: Mapped[uuid_pkg.UUID | None] = mapped_column(Uuid, nullable=True)
     conversation_id: Mapped[int] = mapped_column(Integer)
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    account_hidden_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     is_seed: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     num_agrees: Mapped[int] = mapped_column(Integer, server_default="0")
     num_disagrees: Mapped[int] = mapped_column(Integer, server_default="0")
@@ -769,6 +786,10 @@ class Project(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    retired_for_account_deletion_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True,
+    )
 
 
 class ProjectTranslationTargetLanguage(Base):
@@ -866,9 +887,11 @@ class RankingItem(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     slug_id: Mapped[str] = mapped_column(String(8))
-    author_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
+    author_id: Mapped[uuid_pkg.UUID | None] = mapped_column(Uuid, nullable=True)
     conversation_id: Mapped[int] = mapped_column(Integer)
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    account_hidden_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     is_seed: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     lifecycle_status: Mapped[RankingItemLifecycleStatus] = mapped_column(
         SaEnum(
@@ -878,6 +901,7 @@ class RankingItem(Base):
             native_enum=True,
         ),
     )
+    position: Mapped[int] = mapped_column(Integer, server_default="0")
     snapshot_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     snapshot_ranking_score_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     snapshot_rank: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -893,6 +917,7 @@ class RealtimeEventOutbox(Base):
     event_type: Mapped[str] = mapped_column(String(100))
     payload: Mapped[Any] = mapped_column(JSON(none_as_null=True))
     delivery_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    delivered_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
 
 
@@ -1099,7 +1124,12 @@ class User(Base):
     is_site_org_admin: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     is_imported: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     is_deleted: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
+    contribution_revision: Mapped[int] = mapped_column(Integer, server_default="0")
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    deletion_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    deletion_requested_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    recoverable_until: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    purge_started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     auth_restricted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     auth_restriction_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     active_conversation_count: Mapped[int] = mapped_column(Integer, server_default="0")

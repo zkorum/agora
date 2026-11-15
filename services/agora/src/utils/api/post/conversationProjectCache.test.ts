@@ -21,6 +21,7 @@ import type { ConversationDetailData } from "./useConversationQuery";
 function freshConversation(currentProjectSlug: string): ConversationDetailData {
   return {
     metadata: {
+      participantStatements: { supported: true, enabled: true },
       conversationSlugId: "conv1234",
       currentProjectSlug,
       createdAt: new Date(),
@@ -77,6 +78,9 @@ function freshConversation(currentProjectSlug: string): ConversationDetailData {
       conversationCapabilities: {
         canEdit: true,
         canDelete: false,
+        canModerate: true,
+        canClose: true,
+        canReopen: false,
       },
     },
   };
@@ -91,6 +95,69 @@ const cachedDetail = z.object({
 });
 
 describe("conversation project cache updates", () => {
+  it("clears every management permission before destination permissions arrive, including on refresh failure", async () => {
+    const queryClient = new QueryClient();
+    const scope = { kind: "viewer", userId: "owner" } as const;
+    const key = ["conversation", "conv1234", "en", ["en"], scope];
+    const otherKey = [
+      "conversation",
+      "conv1234",
+      "en",
+      ["en"],
+      { kind: "viewer", userId: "another-owner" },
+    ];
+    const cached = freshConversation("source");
+    cached.interaction.conversationCapabilities = {
+      canEdit: true,
+      canDelete: true,
+      canModerate: true,
+      canClose: true,
+      canReopen: true,
+    };
+    queryClient.setQueryData(key, cached);
+    queryClient.setQueryData(otherKey, cached);
+    const refreshing = Promise.withResolvers<
+      ConversationDetailData | undefined
+    >();
+    const errorLog = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const applying = applyConversationProjectAssignment({
+      queryClient,
+      conversationSlugId: "conv1234",
+      assignment: {
+        previousProjectSlug: "source",
+        projectSlug: "destination",
+        projectTitle: "Destination",
+        target: { kind: "project", projectSlug: "destination" },
+      },
+      viewerScope: scope,
+      refreshMetadata: () => refreshing.promise,
+    });
+    const denied = {
+      canEdit: false,
+      canDelete: false,
+      canModerate: false,
+      canClose: false,
+      canReopen: false,
+    };
+    expect(
+      queryClient.getQueryData<ConversationDetailData>(key)?.interaction
+        .conversationCapabilities
+    ).toEqual(denied);
+    expect(
+      queryClient.getQueryData<ConversationDetailData>(otherKey)?.interaction
+        .conversationCapabilities
+    ).toEqual(denied);
+    refreshing.reject(new Error("Offline"));
+    await applying;
+    expect(
+      queryClient.getQueryData<ConversationDetailData>(key)?.interaction
+        .conversationCapabilities
+    ).toEqual(denied);
+    errorLog.mockRestore();
+    queryClient.clear();
+  });
   it("preserves feed snapshots, viewer interactions, and unrelated caches during assignment projection", async () => {
     const { applyFeedProjectAssignment } =
       await vi.importActual<typeof FeedQueryCache>("./feedQueryCache");
@@ -226,6 +293,9 @@ describe("conversation project cache updates", () => {
                   conversationCapabilities: {
                     canEdit: false,
                     canDelete: false,
+                    canModerate: false,
+                    canClose: false,
+                    canReopen: false,
                   },
                 },
               },

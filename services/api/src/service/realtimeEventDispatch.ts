@@ -46,7 +46,12 @@ export async function dispatchRealtimeEventBatch(
         );
         await tx
             .update(realtimeEventOutboxTable)
-            .set({ deliveryId: sql`CASE ${sql.join(assignments, sql` `)} END` })
+            .set({
+                deliveryId: sql`CASE ${sql.join(assignments, sql` `)} END`,
+                // Transaction-start time can predate delivery by hours. Retention
+                // starts at assignment, never at the business transaction's now().
+                deliveredAt: sql`clock_timestamp()`,
+            })
             .where(
                 inArray(
                     realtimeEventOutboxTable.id,

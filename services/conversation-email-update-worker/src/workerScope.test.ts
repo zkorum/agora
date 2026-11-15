@@ -95,7 +95,7 @@ function database() {
         "postgresql://postgres@127.0.0.1:1/not-used-by-mocked-store",
     );
     clients.push(client);
-    return drizzle(client);
+    return drizzle({ client });
 }
 
 const log = {

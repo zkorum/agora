@@ -463,3 +463,14 @@ export async function implementation({
     },
   };
 }
+
+/** Copies the existing CryptoKey handles, without exporting private key bytes. */
+export async function readExistingSigningKeyPair({ storeName, prefixedKey }: {
+  storeName: string; prefixedKey: string;
+}): Promise<CryptoKeyPair> {
+  const store = localforage.createInstance({ name: storeName });
+  const ks = await RSAKeyStore.init({ charSize: 8, hashAlg: HashAlg.SHA_256, storeName }, store);
+  const keyName = ksWriteIdentifier(ks, prefixedKey);
+  if (!(await ks.keypairExists(keyName))) throw new Error("Guest recovery key unavailable");
+  return await ks.writeKey(keyName);
+}

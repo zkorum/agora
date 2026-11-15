@@ -711,12 +711,6 @@ export function setup(): ScenarioSetupData {
             );
         }
 
-        if (metadataResult.requiresEventTicket !== undefined) {
-            throw new Error(
-                `Conversation ${conversationSlugId} requires event ticket ${metadataResult.requiresEventTicket}. Scenario 1 cannot satisfy event-ticket participation gates.`,
-            );
-        }
-
         conversations.push({
             conversationSlugId,
             hasSurvey: metadataResult.hasSurvey,
@@ -731,7 +725,6 @@ export function setup(): ScenarioSetupData {
             metadata: {
                 participationMode: metadataResult.participationMode,
                 hasSurvey: metadataResult.hasSurvey,
-                requiresEventTicket: null,
             },
         });
     }

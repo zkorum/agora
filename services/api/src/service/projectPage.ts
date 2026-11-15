@@ -169,7 +169,8 @@ interface ProjectActivityRow {
     isClosed: boolean;
     createdAt: Date;
     isEdited: boolean;
-    conversationType: "polis" | "ranking";
+    conversationType: "polis" | "prioritizing";
+    prioritizationType?: "comparisons" | "qv" | null;
     title: string;
     bodyPlainText: string | null;
     sourceLanguageCode: SupportedSpokenLanguageCodes | null;
@@ -1026,7 +1027,11 @@ export function toProjectPageActivity({
     });
     const activityBase = {
         conversationType: row.conversationType,
-        isClosed: row.isClosed,
+        prioritizationType: row.prioritizationType ?? undefined,
+        isClosed:
+            row.prioritizationType === "qv" && counts !== undefined
+                ? counts.isClosed
+                : row.isClosed,
         createdAt: row.createdAt,
         isEdited: row.isEdited,
         displayContent: presentation.displayContent,
@@ -1034,6 +1039,7 @@ export function toProjectPageActivity({
             opinionCount: counts?.opinionCount ?? 0,
             participantCount: counts?.participantCount ?? 0,
             voteCount: counts?.voteCount ?? 0,
+            qvStatsRevision: counts?.qvStatsRevision,
         },
     };
     if (row.isIndexed) {
@@ -1041,6 +1047,7 @@ export function toProjectPageActivity({
             ...activityBase,
             isIndexed: true,
             slugId: row.slugId,
+            qvGeneration: counts?.qvLifecycle?.generation,
         };
     }
     if (presentation.alternateContent === undefined) {
@@ -1233,6 +1240,7 @@ async function fetchProjectActivityRows({
             createdAt: conversationTable.createdAt,
             isEdited: conversationTable.isEdited,
             conversationType: conversationTable.conversationType,
+            prioritizationType: conversationTable.prioritizationType,
             title: conversationContentTable.title,
             bodyPlainText: conversationContentTable.bodyPlainText,
             sourceLanguageCode: conversationContentTable.sourceLanguageCode,

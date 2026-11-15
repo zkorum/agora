@@ -5,17 +5,34 @@
 
   <div class="container">
     <q-tabs
+      v-if="
+        managementAccess.data.value?.permissions.canCreateProjects ||
+        managementAccess.data.value?.permissions.canManageProjects
+      "
       v-model="activeTab"
       class="admin-tabs"
       align="justify"
       active-color="primary"
       indicator-color="primary"
     >
-      <q-tab name="create" :label="t('createTab')" />
-      <q-tab name="manage" :label="t('manageTab')" />
+      <q-tab
+        v-if="managementAccess.data.value?.permissions.canCreateProjects"
+        name="create"
+        :label="t('createTab')"
+      />
+      <q-tab
+        v-if="managementAccess.data.value?.permissions.canManageProjects"
+        name="manage"
+        :label="t('manageTab')"
+      />
     </q-tabs>
 
-    <template v-if="activeTab === 'create'">
+    <template
+      v-if="
+        activeTab === 'create' &&
+        managementAccess.data.value?.permissions.canCreateProjects
+      "
+    >
       <ZKCard padding="1rem" class="card-background">
         <div class="section-title">{{ t("basicsTitle") }}</div>
         <p class="section-description">{{ t("basicsDescription") }}</p>
@@ -317,7 +334,9 @@
       />
     </template>
 
-    <template v-else>
+    <template
+      v-else-if="managementAccess.data.value?.permissions.canManageProjects"
+    >
       <ZKCard padding="1rem" class="card-background">
         <AdminSectionHeader
           :title="t('manageTitle')"
@@ -365,6 +384,7 @@
 
       <template v-if="selectedProject !== undefined">
         <ProjectConversationUpdatesActivation
+          v-if="selectedProject.permissions.canConfigureEmailUpdates"
           v-model="selectedProjectConversationUpdatesEnabled"
           activation-kind="listed-project"
           :project-title="selectedProject.projectTitle"
@@ -401,6 +421,7 @@
               data-1p-ignore
             />
             <ZKSelect
+              v-if="selectedProject.permissions.canManageOwners"
               v-model="manageOwnerOrganizationSlugsSelectModel"
               multiple
               searchable
@@ -705,10 +726,18 @@
           />
         </div>
 
-        <ZKCard padding="0" class="card-background danger-zone-card">
+        <ZKCard
+          v-if="
+            selectedProject.permissions.canUpdate ||
+            selectedProject.permissions.canDelete
+          "
+          padding="0"
+          class="card-background danger-zone-card"
+        >
           <div class="danger-zone-title">{{ t("dangerZoneTitle") }}</div>
 
           <form
+            v-if="selectedProject.permissions.canUpdate"
             class="danger-zone-row"
             @submit.prevent="requestProjectSlugUpdate"
           >
@@ -741,7 +770,10 @@
             />
           </form>
 
-          <div class="danger-zone-row">
+          <div
+            v-if="selectedProject.permissions.canDelete"
+            class="danger-zone-row"
+          >
             <div class="danger-zone-content">
               <div class="danger-zone-row-title">
                 {{ t("deleteDangerTitle") }}
@@ -835,6 +867,7 @@ import ZKSelect from "src/components/ui-library/ZKSelect.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+import type { ProjectManagementPermissions } from "src/shared/organizationAccess";
 import {
   MAX_LENGTH_DESCRIPTION_CREATOR,
   MAX_LENGTH_NAME_CREATOR,
@@ -863,16 +896,11 @@ import { useLanguageStore } from "src/stores/language";
 import { useBackendAdministratorOrganizationApi } from "src/utils/api/administrator/organization";
 import { useBackendAdministratorProjectApi } from "src/utils/api/administrator/project";
 import { useBackendConversationEmailUpdatesApi } from "src/utils/api/conversationUpdates/conversationEmailUpdates";
+import { useManagementAccess } from "src/utils/api/useManagementAccess";
+import { useViewerQueryScope } from "src/utils/query/viewerScope";
 import { useNotify } from "src/utils/ui/notify";
 import { isOptionalHttpsUrl } from "src/utils/url";
-import {
-  computed,
-  onMounted,
-  type Ref,
-  ref,
-  watch,
-  type WritableComputedRef,
-} from "vue";
+import { computed, type Ref, ref, watch, type WritableComputedRef } from "vue";
 
 import { displayLanguageOptions } from "../organization/organizationAdminForm";
 import {
@@ -922,12 +950,16 @@ const {
   updateProjectSlug,
 } = useBackendAdministratorProjectApi();
 const languageStore = useLanguageStore();
+const managementAccess = useManagementAccess();
+const viewerScope = useViewerQueryScope();
 const $q = useQuasar();
 const { showNotifyMessage, showCopiedToClipboard } = useNotify();
 
 const organizationList = ref<AdminOrganizationOption[]>([]);
 const projectOptionList = ref<AdminProjectOption[]>([]);
-const selectedProject = ref<AdminProject | undefined>(undefined);
+const selectedProject = ref<
+  (AdminProject & { permissions: ProjectManagementPermissions }) | undefined
+>(undefined);
 type ProjectConversationUpdatesConfiguration = Extract<
   Extract<
     ConversationEmailUpdateConfigurationResponse,
@@ -991,7 +1023,7 @@ const contactImageIsFullPath = ref(true);
 const contactOrganizationSlug = ref<string | null>(null);
 const isCreating = ref(false);
 const isDeletingProject = ref(false);
-const activeTab = ref<"create" | "manage">("create");
+const activeTab = ref<"create" | "manage">("manage");
 const selectedProjectSlug = ref<string | undefined>(undefined);
 const selectedProjectSlugDraft = ref("");
 const manageProjectTitle = ref("");
@@ -1017,6 +1049,8 @@ const isSavingProject = ref(false);
 const editingManageAttributionIndex = ref<number | undefined>();
 let isPopulatingManageProject = false;
 let latestProjectDetailsRequest = 0;
+let latestProjectOptionsRequest = 0;
+let latestOrganizationOptionsRequest = 0;
 const showCreateLanguageSettingDialog = ref(false);
 const showManageLanguageSettingDialog = ref(false);
 const showProjectSlugConfirmDialog = ref(false);
@@ -1463,58 +1497,101 @@ watch(
   }
 );
 
-watch(activeTab, async (tab) => {
-  if (
-    tab === "manage" &&
-    projectOptionList.value.length === 0 &&
-    !isLoadingProjects.value
-  ) {
-    await refreshProjects();
-  }
-});
+watch(
+  viewerScope,
+  () => {
+    latestProjectDetailsRequest += 1;
+    latestProjectOptionsRequest += 1;
+    latestOrganizationOptionsRequest += 1;
+    conversationUpdatesConfigurationRequestId += 1;
+    conversationUpdatesMutationGeneration += 1;
+    selectedProject.value = undefined;
+    selectedProjectSlug.value = undefined;
+    selectedProjectConversationUpdatesConfiguration.value = undefined;
+    projectOptionList.value = [];
+    organizationList.value = [];
+    ownerOrganizationSlugs.value = [];
+    isLoadingProjects.value = false;
+    isLoadingOrganizations.value = false;
+  },
+  { flush: "sync" }
+);
+
+watch(
+  [activeTab, isActive, managementAccess.dataUpdatedAt],
+  async ([tab, active]) => {
+    const canManage =
+      managementAccess.data.value?.permissions.canManageProjects === true;
+    const canCreate =
+      managementAccess.data.value?.permissions.canCreateProjects === true;
+    if (tab === "create" && !canCreate && canManage) activeTab.value = "manage";
+    if (tab === "manage" && !canManage && canCreate) activeTab.value = "create";
+    if (!canManage) {
+      latestProjectDetailsRequest += 1;
+      latestProjectOptionsRequest += 1;
+      selectedProject.value = undefined;
+      projectOptionList.value = [];
+      isLoadingProjects.value = false;
+      return;
+    }
+    if (active && tab === "manage") {
+      await refreshProjects({ preserveDraft: true });
+    }
+  },
+  { immediate: true }
+);
 
 watch(selectedProjectSlug, async (projectSlug) => {
-  await refreshSelectedProjectDetails(projectSlug);
+  await refreshSelectedProjectDetails({ projectSlug });
 });
 
-watch(selectedProject, async (project) => {
-  const requestId = ++conversationUpdatesConfigurationRequestId;
-  conversationUpdatesMutationGeneration += 1;
-  isSavingProjectConversationUpdatesDefault.value = false;
-  selectedProjectConversationUpdatesConfiguration.value = undefined;
-  conversationUpdatesConfigurationError.value = undefined;
-  if (project === undefined) {
-    return;
-  }
-  try {
-    const response = await conversationEmailUpdatesApi.getConfiguration({
-      target: "project",
-      projectSlug: project.projectSlug,
-    });
-    if (requestId !== conversationUpdatesConfigurationRequestId) {
-      return;
-    }
+watch(
+  [
+    selectedProject,
+    () => selectedProject.value?.permissions.canConfigureEmailUpdates,
+  ],
+  async ([project]) => {
+    const requestId = ++conversationUpdatesConfigurationRequestId;
+    conversationUpdatesMutationGeneration += 1;
+    isSavingProjectConversationUpdatesDefault.value = false;
+    selectedProjectConversationUpdatesConfiguration.value = undefined;
+    conversationUpdatesConfigurationError.value = undefined;
     if (
-      !response.success ||
-      response.configuration.target !== "project" ||
-      response.configuration.projectSlug !== project.projectSlug
+      project === undefined ||
+      !project.permissions.canConfigureEmailUpdates
     ) {
-      conversationUpdatesConfigurationError.value = tConversationUpdates(
-        "configurationUnavailable"
-      );
       return;
     }
-    selectedProjectConversationUpdatesConfiguration.value =
-      response.configuration;
-  } catch (error) {
-    console.error("Failed to load project Email Update configuration", error);
-    if (requestId === conversationUpdatesConfigurationRequestId) {
-      conversationUpdatesConfigurationError.value = tConversationUpdates(
-        "configurationUnavailable"
-      );
+    try {
+      const response = await conversationEmailUpdatesApi.getConfiguration({
+        target: "project",
+        projectSlug: project.projectSlug,
+      });
+      if (requestId !== conversationUpdatesConfigurationRequestId) {
+        return;
+      }
+      if (
+        !response.success ||
+        response.configuration.target !== "project" ||
+        response.configuration.projectSlug !== project.projectSlug
+      ) {
+        conversationUpdatesConfigurationError.value = tConversationUpdates(
+          "configurationUnavailable"
+        );
+        return;
+      }
+      selectedProjectConversationUpdatesConfiguration.value =
+        response.configuration;
+    } catch (error) {
+      console.error("Failed to load project Email Update configuration", error);
+      if (requestId === conversationUpdatesConfigurationRequestId) {
+        conversationUpdatesConfigurationError.value = tConversationUpdates(
+          "configurationUnavailable"
+        );
+      }
     }
   }
-});
+);
 
 async function updateSelectedProjectConversationUpdatesDefault(
   enabled: boolean
@@ -1660,17 +1737,32 @@ watch(selectedProject, (project) => {
   isPopulatingManageProject = false;
 });
 
-onMounted(async () => {
-  isLoadingOrganizations.value = true;
-  try {
-    organizationList.value = await getOrganizationOptions();
-  } finally {
-    isLoadingOrganizations.value = false;
-  }
-  if (activeTab.value === "manage") {
-    await refreshProjects();
-  }
-});
+watch(
+  [isActive, managementAccess.dataUpdatedAt],
+  async ([active]) => {
+    const requestId = ++latestOrganizationOptionsRequest;
+    if (managementAccess.data.value?.permissions.canCreateProjects !== true) {
+      organizationList.value = [];
+      isLoadingOrganizations.value = false;
+      return;
+    }
+    if (!active) return;
+    isLoadingOrganizations.value = true;
+    try {
+      const organizations = await getOrganizationOptions({
+        forProjectCreation: true,
+      });
+      if (requestId === latestOrganizationOptionsRequest) {
+        organizationList.value = organizations;
+      }
+    } finally {
+      if (requestId === latestOrganizationOptionsRequest) {
+        isLoadingOrganizations.value = false;
+      }
+    }
+  },
+  { immediate: true }
+);
 
 function optionalString(value: string): string | undefined {
   const trimmed = value.trim();
@@ -1825,12 +1917,17 @@ function hasProjectOwnerDynamicTranslationEntitlement({
 
 async function refreshProjects({
   refreshSelectedDetails = true,
+  preserveDraft = false,
 }: {
   refreshSelectedDetails?: boolean;
+  preserveDraft?: boolean;
 } = {}): Promise<void> {
+  const requestId = ++latestProjectOptionsRequest;
   isLoadingProjects.value = true;
   try {
-    projectOptionList.value = await getProjectOptions();
+    const projects = await getProjectOptions();
+    if (requestId !== latestProjectOptionsRequest) return;
+    projectOptionList.value = projects;
     const shouldSelectFallbackProject =
       selectedProjectSlug.value === undefined ||
       !projectOptionList.value.some(
@@ -1845,21 +1942,34 @@ async function refreshProjects({
         return;
       }
 
-      await refreshSelectedProjectDetails(nextProjectSlug);
+      await refreshSelectedProjectDetails({
+        projectSlug: nextProjectSlug,
+        preserveDraft,
+      });
       return;
     }
 
     selectedProjectSlug.value = nextProjectSlug;
   } finally {
-    isLoadingProjects.value = false;
+    if (requestId === latestProjectOptionsRequest) {
+      isLoadingProjects.value = false;
+    }
   }
 }
 
-async function refreshSelectedProjectDetails(
-  projectSlug: string | undefined
-): Promise<void> {
+async function refreshSelectedProjectDetails({
+  projectSlug,
+  preserveDraft = false,
+}: {
+  projectSlug: string | undefined;
+  preserveDraft?: boolean;
+}): Promise<void> {
   latestProjectDetailsRequest += 1;
   const requestId = latestProjectDetailsRequest;
+
+  if (selectedProject.value?.projectSlug !== projectSlug) {
+    selectedProject.value = undefined;
+  }
 
   if (projectSlug === undefined) {
     selectedProject.value = undefined;
@@ -1868,7 +1978,15 @@ async function refreshSelectedProjectDetails(
 
   const project = await getProjectDetails({ projectSlug });
   if (requestId === latestProjectDetailsRequest) {
-    selectedProject.value = project;
+    if (
+      preserveDraft &&
+      project !== undefined &&
+      selectedProject.value?.projectSlug === project.projectSlug
+    ) {
+      selectedProject.value.permissions = project.permissions;
+    } else {
+      selectedProject.value = project;
+    }
   }
 }
 

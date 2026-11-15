@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { z } from "zod";
+import { organizationRolesWithCapability } from "@/shared/organizationAccess.js";
 import {
     and,
     asc,
@@ -44,7 +46,6 @@ import {
     conversationTable,
     conversationContentTable,
     emailTable,
-    organizationMembershipAllProjectCapabilityTable,
     organizationMembershipTable,
     organizationTable,
     premiumFeatureEntitlementTable,
@@ -277,26 +278,11 @@ export function activeOwnerAuthorizationQuery({
                 isNull(projectOrganizationOwnershipTable.deletedAt),
             ),
         )
-        .innerJoin(
-            organizationMembershipAllProjectCapabilityTable,
-            and(
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
-                    organizationMembershipTable.id,
-                ),
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.capability,
-                    "conversation_email_update",
-                ),
-                isNull(
-                    organizationMembershipAllProjectCapabilityTable.deletedAt,
-                ),
-            ),
-        )
         .where(
             and(
                 eq(organizationMembershipTable.userId, userId),
                 isNull(organizationMembershipTable.deletedAt),
+                inArray(organizationMembershipTable.role, organizationRolesWithCapability("conversation_email_update")),
             ),
         )
         .limit(1);
@@ -425,8 +411,14 @@ export async function claimTestAttempts({
                 asc(conversationEmailUpdateTestAttemptTable.createdAt),
                 asc(conversationEmailUpdateTestAttemptTable.id),
             );
+        const senderSchema = z.object({
+            requestedByUserId: z.uuid(),
+            destinationEmail: z.string().min(1),
+            destinationEmailCredentialId: z.number().int(),
+        });
         return workRows.map(({ userLanguage, ...row }) => ({
             ...row,
+            ...senderSchema.parse(row),
             language: userLanguage ?? ENGLISH_DISPLAY_LANGUAGE,
             branding: parseConversationEmailBranding(row),
             leaseToken,
@@ -773,22 +765,6 @@ export async function authorizeTestAttempt({
     const membershipCapability = db
         .select({ id: organizationMembershipTable.id })
         .from(organizationMembershipTable)
-        .innerJoin(
-            organizationMembershipAllProjectCapabilityTable,
-            and(
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
-                    organizationMembershipTable.id,
-                ),
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.capability,
-                    "conversation_email_update",
-                ),
-                isNull(
-                    organizationMembershipAllProjectCapabilityTable.deletedAt,
-                ),
-            ),
-        )
         .where(
             and(
                 eq(
@@ -800,6 +776,7 @@ export async function authorizeTestAttempt({
                     conversationEmailUpdateTestAttemptTable.requestedByUserId,
                 ),
                 isNull(organizationMembershipTable.deletedAt),
+                inArray(organizationMembershipTable.role, organizationRolesWithCapability("conversation_email_update")),
             ),
         );
     const scopedConversation = db
@@ -1343,7 +1320,7 @@ async function isScopeBlocked({
     updateId: number;
     projectId: number;
     organizationId: number;
-    facilitatorUserId: string;
+    facilitatorUserId: string | null;
 }): Promise<boolean> {
     const scopedConversation = db
         .select({
@@ -1390,16 +1367,18 @@ async function isScopeBlocked({
                             projectId,
                         ),
                     ),
-                    and(
-                        eq(
-                            conversationEmailUpdateScopeSafetyBlockTable.targetKind,
-                            "facilitator",
-                        ),
-                        eq(
-                            conversationEmailUpdateScopeSafetyBlockTable.facilitatorUserId,
-                            facilitatorUserId,
-                        ),
-                    ),
+                    facilitatorUserId === null
+                        ? undefined
+                        : and(
+                              eq(
+                                  conversationEmailUpdateScopeSafetyBlockTable.targetKind,
+                                  "facilitator",
+                              ),
+                              eq(
+                                  conversationEmailUpdateScopeSafetyBlockTable.facilitatorUserId,
+                                  facilitatorUserId,
+                              ),
+                          ),
                     and(
                         eq(
                             conversationEmailUpdateScopeSafetyBlockTable.targetKind,

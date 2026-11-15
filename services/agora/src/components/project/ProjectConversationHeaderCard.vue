@@ -187,7 +187,7 @@ const breadcrumbIcon = computed(() =>
     : "mdi-chevron-right"
 );
 const conversationTypeLabel = computed(() =>
-  props.conversationData.metadata.conversationType === "ranking"
+  props.conversationData.metadata.conversationType === "prioritizing"
     ? t({ key: "voteType" })
     : t({ key: "conversationType" })
 );

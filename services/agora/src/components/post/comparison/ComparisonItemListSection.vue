@@ -1,0 +1,302 @@
+<template>
+  <AnalysisSectionWrapper>
+    <template #header>
+      <AnalysisTitleHeader :title="sectionTitle" :show-star-in-title="false">
+        <template #action-button>
+          <AnalysisActionButton
+            v-if="compactMode"
+            type="viewMore"
+            @action-click="props.onSwitchTab()"
+          />
+          <AnalysisActionButton
+            v-else
+            type="learnMore"
+            @action-click="props.onLearnMore()"
+          />
+        </template>
+      </AnalysisTitleHeader>
+    </template>
+
+    <template #body>
+      <PageLoadingSpinner v-if="isLoading" />
+
+      <div v-else-if="items.length === 0" class="info-message">
+        {{ noItemsMessage }}
+      </div>
+
+      <template v-else>
+        <div v-if="subtitle !== null && !compactMode" class="subtitle">
+          {{ subtitle }}
+        </div>
+
+        <CompactFadeContainer :show-fade="compactMode && hasMore">
+          <ol class="item-list">
+            <li
+              v-for="(item, index) in displayItems"
+              :key="item.slugId"
+              class="item-row"
+              :class="{ 'item-row--clickable': canOpenItem(item) }"
+              @click="handleItemClick(item)"
+            >
+              <span class="item-number">{{ index + 1 }}</span>
+              <div class="item-details">
+                <ComparisonItemListContent
+                  v-if="item.displayContent !== undefined"
+                  class="item-content"
+                  :conversation-slug-id="conversationSlugId"
+                  :item-slug-id="item.slugId"
+                  :display-content="item.displayContent"
+                  :compact-mode="compactMode"
+                  @display-state-changed="updateItemDisplayState"
+                />
+                <span v-else class="deleted-statement">{{
+                  tSource("deletedStatement")
+                }}</span>
+                <div v-if="item.score !== null" class="item-meta">
+                  <div class="score-bar-container">
+                    <div class="score-bar">
+                      <div
+                        class="score-fill"
+                        :style="{ width: `${item.score * 100}%` }"
+                      ></div>
+                    </div>
+                  </div>
+                  <span class="score-text">
+                    {{ scoreFormatter.format(item.score) }}
+                  </span>
+                </div>
+                <div v-else class="item-meta">
+                  <span class="score-text unranked-text">—</span>
+                </div>
+              </div>
+            </li>
+          </ol>
+        </CompactFadeContainer>
+      </template>
+    </template>
+  </AnalysisSectionWrapper>
+</template>
+
+<script setup lang="ts">
+import AnalysisActionButton from "src/components/post/analysis/common/AnalysisActionButton.vue";
+import { analysisOpinionTextTranslations } from "src/components/post/analysis/common/AnalysisOpinionText.i18n";
+import AnalysisSectionWrapper from "src/components/post/analysis/common/AnalysisSectionWrapper.vue";
+import AnalysisTitleHeader from "src/components/post/analysis/common/AnalysisTitleHeader.vue";
+import CompactFadeContainer from "src/components/post/analysis/common/CompactFadeContainer.vue";
+import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { htmlToCountedText } from "src/shared/richText";
+import type { RankingItemDisplayedContent } from "src/shared/types/zod";
+import { computed, ref } from "vue";
+import { useI18n } from "vue-i18n";
+
+import type { ComparisonItemListDisplayState } from "./ComparisonItemListContent.types";
+import ComparisonItemListContent from "./ComparisonItemListContent.vue";
+
+export interface ComparisonListItem {
+  slugId: string;
+  title: string;
+  body: string | null;
+  displayContent: RankingItemDisplayedContent | undefined;
+  score: number | null;
+  externalUrl: string | null;
+}
+
+interface ClickItemData {
+  itemSlugId: string;
+  displayContent: RankingItemDisplayedContent;
+  externalUrl: string | null;
+}
+
+const props = defineProps<{
+  sectionTitle: string;
+  conversationSlugId: string;
+  subtitle: string | null;
+  items: ComparisonListItem[];
+  isLoading: boolean;
+  noItemsMessage: string;
+  compactMode: boolean;
+  onClickItem: (item: ClickItemData) => void;
+  onSwitchTab: () => void;
+  onLearnMore: () => void;
+}>();
+
+const COMPACT_LIMIT = 3;
+const { t: tSource } = useComponentI18n(analysisOpinionTextTranslations);
+const { locale } = useI18n();
+const scoreFormatter = computed(
+  () =>
+    new Intl.NumberFormat(locale.value, {
+      style: "percent",
+      maximumFractionDigits: 0,
+    })
+);
+const EXPANDABLE_COMPACT_TITLE_LENGTH = 220;
+
+const displayItems = computed(() =>
+  props.compactMode ? props.items.slice(0, COMPACT_LIMIT) : props.items
+);
+
+const hasMore = computed(() => props.items.length > COMPACT_LIMIT);
+
+const itemDisplayStateBySlugId = ref(
+  new Map<string, ComparisonItemListDisplayState>()
+);
+
+function getItemDisplayState(
+  item: ComparisonListItem
+): ComparisonItemListDisplayState | undefined {
+  if (item.displayContent === undefined) return undefined;
+  const state = itemDisplayStateBySlugId.value.get(item.slugId);
+  if (
+    state !== undefined &&
+    state.sourceVersion === item.displayContent.sourceVersion
+  ) {
+    return state;
+  }
+
+  return {
+    itemSlugId: item.slugId,
+    sourceVersion: item.displayContent.sourceVersion,
+    title: item.title,
+    body: item.body,
+    displayContent: item.displayContent,
+  };
+}
+
+function updateItemDisplayState(state: ComparisonItemListDisplayState): void {
+  const nextState = new Map(itemDisplayStateBySlugId.value);
+  nextState.set(state.itemSlugId, state);
+  itemDisplayStateBySlugId.value = nextState;
+}
+
+function hasBodyContent(body: string | null): boolean {
+  return body !== null && htmlToCountedText(body).trim().length > 0;
+}
+
+function canOpenItem(item: ComparisonListItem): boolean {
+  const displayState = getItemDisplayState(item);
+  if (displayState?.displayContent === undefined) {
+    return false;
+  }
+  if (hasBodyContent(displayState.body)) {
+    return true;
+  }
+  if (item.externalUrl !== null) {
+    return true;
+  }
+  return (
+    props.compactMode &&
+    htmlToCountedText(displayState.title).length >
+      EXPANDABLE_COMPACT_TITLE_LENGTH
+  );
+}
+
+function handleItemClick(item: ComparisonListItem): void {
+  if (!canOpenItem(item)) {
+    return;
+  }
+  const displayState = getItemDisplayState(item);
+  if (displayState?.displayContent === undefined) {
+    return;
+  }
+  props.onClickItem({
+    itemSlugId: displayState.itemSlugId,
+    displayContent: displayState.displayContent,
+    externalUrl: item.externalUrl,
+  });
+}
+</script>
+
+<style scoped lang="scss">
+.info-message {
+  text-align: center;
+  color: $color-text-weak;
+  padding: 1rem;
+  font-size: 0.9rem;
+}
+
+.subtitle {
+  font-size: 0.85rem;
+  color: $color-text-weak;
+  margin-bottom: 0.5rem;
+}
+
+.item-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.item-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: $app-background-color;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.item-row--clickable {
+  cursor: pointer;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+}
+
+.item-number {
+  font-weight: var(--font-weight-semibold);
+  color: $primary;
+  min-width: 1.5rem;
+  text-align: center;
+  padding-top: 2px;
+}
+
+.item-details {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.item-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.score-bar-container {
+  flex: 1;
+  max-width: 120px;
+}
+
+.score-bar {
+  height: 4px;
+  background: $color-border-weak;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.score-fill {
+  height: 100%;
+  background: $primary;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.score-text {
+  font-size: 0.75rem;
+  color: $color-text-weak;
+  white-space: nowrap;
+}
+
+.unranked-text {
+  font-style: italic;
+}
+</style>

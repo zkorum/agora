@@ -39,7 +39,6 @@
               :compact-mode="false"
               @open-moderation-history="openModerationHistory()"
               @conversation-deleted="handleConversationDeleted"
-              @verified="(payload) => handleTicketVerified(payload)"
             />
 
             <div ref="sentinelElement"></div>
@@ -78,7 +77,7 @@
             </ConversationStickyActionBar>
 
             <div
-              v-if="currentTab === 'comment' && !isMaxDiffConversation"
+              v-if="currentTab === 'comment' && !isPrioritizingConversation"
               class="dropdownSlot"
             >
               <CommentSortingSelector
@@ -115,10 +114,11 @@
             </div>
 
             <FloatingBottomContainer
-              v-if="!isMaxDiffConversation"
+              v-if="!isPrioritizingConversation"
               :anchor-element="undefined"
             >
               <CommentComposer
+                :participant-statements="loadedConversationData.metadata.participantStatements"
                 ref="commentComposerRef"
                 :editing-target="editingTarget"
                 :action-bar-element="
@@ -243,7 +243,6 @@ const {
   onViewAnalysis,
   navigateToDiscoverTab,
   openModerationHistory,
-  handleTicketVerified,
   handleSubmittedComment,
   handleRefresh,
   scrollToActionBar,
@@ -285,11 +284,9 @@ const isActionBarLoading = computed(
     isLoadingCommentStats.value
 );
 
-const isMaxDiffConversation = computed(() => {
+const isPrioritizingConversation = computed(() => {
   const metadata = loadedConversationData.value.metadata;
-  return (
-    metadata.conversationType === "ranking" && metadata.rankingMode === "bws"
-  );
+  return metadata.conversationType === "prioritizing";
 });
 
 function getActionBarStatsFromMetadata(): ConversationActionBarStats {

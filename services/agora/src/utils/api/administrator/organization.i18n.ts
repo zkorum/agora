@@ -9,6 +9,7 @@ export interface AdministratorOrganizationApiTranslations {
   failedToRemoveUserOrganizationMapping: string;
   deletedOrganization: string;
   failedToDeleteOrganization: string;
+  organizationHasSolelyOwnedProjects: string;
   createdUserOrganization: string;
   failedToCreateUserOrganization: string;
   updatedOrganization: string;
@@ -30,6 +31,8 @@ const en: AdministratorOrganizationApiTranslations = {
     "Failed to remove user organization mapping",
   deletedOrganization: "Deleted organization",
   failedToDeleteOrganization: "Failed to delete organization",
+  organizationHasSolelyOwnedProjects:
+    "Transfer projects owned only by this organization before deleting it.",
   createdUserOrganization: "Created organization",
   failedToCreateUserOrganization: "Failed to create organization",
   updatedOrganization: "Updated organization",
@@ -59,6 +62,8 @@ export const administratorOrganizationApiTranslations: Record<
       "No se pudo eliminar la asignación usuario-organización",
     deletedOrganization: "Organización eliminada",
     failedToDeleteOrganization: "No se pudo eliminar la organización",
+    organizationHasSolelyOwnedProjects:
+      "Transfiera los proyectos que pertenecen únicamente a esta organización antes de eliminarla.",
     createdUserOrganization: "Organización creada",
     failedToCreateUserOrganization: "No se pudo crear la organización",
     updatedOrganization: "Organización actualizada",
@@ -85,6 +90,8 @@ export const administratorOrganizationApiTranslations: Record<
       "Échec de la suppression de l’association utilisateur-organisation",
     deletedOrganization: "Organisation supprimée",
     failedToDeleteOrganization: "Échec de la suppression de l’organisation",
+    organizationHasSolelyOwnedProjects:
+      "Transférez les projets détenus uniquement par cette organisation avant de la supprimer.",
     createdUserOrganization: "Organisation créée",
     failedToCreateUserOrganization: "Échec de la création de l’organisation",
     updatedOrganization: "Organisation mise à jour",
@@ -106,6 +113,8 @@ export const administratorOrganizationApiTranslations: Record<
     failedToRemoveUserOrganizationMapping: "移除使用者組織對應失敗",
     deletedOrganization: "組織已刪除",
     failedToDeleteOrganization: "刪除組織失敗",
+    organizationHasSolelyOwnedProjects:
+      "刪除組織前，請先移轉僅由該組織擁有的專案。",
     createdUserOrganization: "組織已建立",
     failedToCreateUserOrganization: "建立組織失敗",
     updatedOrganization: "組織已更新",
@@ -125,6 +134,8 @@ export const administratorOrganizationApiTranslations: Record<
     failedToRemoveUserOrganizationMapping: "移除用户组织映射失败",
     deletedOrganization: "组织已删除",
     failedToDeleteOrganization: "删除组织失败",
+    organizationHasSolelyOwnedProjects:
+      "删除组织前，请先转移仅由该组织拥有的项目。",
     createdUserOrganization: "组织已创建",
     failedToCreateUserOrganization: "创建组织失败",
     updatedOrganization: "组织已更新",
@@ -146,6 +157,8 @@ export const administratorOrganizationApiTranslations: Record<
       "ユーザーと組織の関連付けを削除できませんでした",
     deletedOrganization: "組織を削除しました",
     failedToDeleteOrganization: "組織を削除できませんでした",
+    organizationHasSolelyOwnedProjects:
+      "この組織のみが所有するプロジェクトは、組織を削除する前に所有権を移譲してください。",
     createdUserOrganization: "組織を作成しました",
     failedToCreateUserOrganization: "組織を作成できませんでした",
     updatedOrganization: "組織を更新しました",
@@ -165,6 +178,8 @@ export const administratorOrganizationApiTranslations: Record<
     failedToRemoveUserOrganizationMapping: "فشل إزالة ربط المستخدم بالمؤسسة",
     deletedOrganization: "تم حذف المؤسسة",
     failedToDeleteOrganization: "فشل حذف المؤسسة",
+    organizationHasSolelyOwnedProjects:
+      "انقل ملكية المشاريع التي تملكها هذه المنظمة وحدها قبل حذفها.",
     createdUserOrganization: "تم إنشاء المؤسسة",
     failedToCreateUserOrganization: "فشل إنشاء المؤسسة",
     updatedOrganization: "تم تحديث المؤسسة",
@@ -186,6 +201,8 @@ export const administratorOrganizationApiTranslations: Record<
       "حذف نگاشت کاربر به سازمان ناموفق بود",
     deletedOrganization: "سازمان حذف شد",
     failedToDeleteOrganization: "حذف سازمان ناموفق بود",
+    organizationHasSolelyOwnedProjects:
+      "پیش از حذف سازمان، مالکیت پروژه‌هایی را که تنها متعلق به این سازمان هستند منتقل کنید.",
     createdUserOrganization: "سازمان ایجاد شد",
     failedToCreateUserOrganization: "ایجاد سازمان ناموفق بود",
     updatedOrganization: "سازمان به‌روزرسانی شد",
@@ -205,6 +222,8 @@ export const administratorOrganizationApiTranslations: Record<
     failedToRemoveUserOrganizationMapping: "הסרת שיוך המשתמש לארגון נכשלה",
     deletedOrganization: "הארגון נמחק",
     failedToDeleteOrganization: "מחיקת הארגון נכשלה",
+    organizationHasSolelyOwnedProjects:
+      "לפני מחיקת הארגון יש להעביר את הבעלות על פרויקטים שבבעלותו הבלעדית.",
     createdUserOrganization: "הארגון נוצר",
     failedToCreateUserOrganization: "יצירת הארגון נכשלה",
     updatedOrganization: "הארגון עודכן",
@@ -226,6 +245,8 @@ export const administratorOrganizationApiTranslations: Record<
       "Колдонуучу-уюм байланышын өчүрүү ишке ашкан жок",
     deletedOrganization: "Уюм өчүрүлдү",
     failedToDeleteOrganization: "Уюмду өчүрүү ишке ашкан жок",
+    organizationHasSolelyOwnedProjects:
+      "Уюмду өчүрүүдөн мурун ага гана таандык долбоорлорду башка ээсине өткөрүңүз.",
     createdUserOrganization: "Уюм түзүлдү",
     failedToCreateUserOrganization: "Уюм түзүү ишке ашкан жок",
     updatedOrganization: "Уюм жаңыртылды",
@@ -248,6 +269,8 @@ export const administratorOrganizationApiTranslations: Record<
       "Не удалось удалить связь пользователя с организацией",
     deletedOrganization: "Организация удалена",
     failedToDeleteOrganization: "Не удалось удалить организацию",
+    organizationHasSolelyOwnedProjects:
+      "Перед удалением организации передайте проекты, принадлежащие только ей, другому владельцу.",
     createdUserOrganization: "Организация создана",
     failedToCreateUserOrganization: "Не удалось создать организацию",
     updatedOrganization: "Организация обновлена",

@@ -71,7 +71,7 @@ describe("contact constraint predicates in PostgreSQL", () => {
             username: "postgres",
             password: "postgres",
         });
-        db = drizzle(client);
+        db = drizzle({ client });
         await db.execute(sql.raw(readDbFixtureSql("project-page-counts.sql")));
     }, 120_000);
 

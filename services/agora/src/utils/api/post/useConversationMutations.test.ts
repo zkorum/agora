@@ -9,33 +9,53 @@ import type {
   SupportedSpokenLanguageCodes,
 } from "src/shared/languages";
 import type {
+  CloseConversationResponse,
+  OpenConversationResponse,
   UpdateConversationRequest,
   UpdateConversationResponse,
 } from "src/shared/types/dto";
+import { Dto } from "src/shared/types/dto";
 import type {
   ConversationTypeConfig,
   ExtendedConversation,
   PolisVotingPresentation,
 } from "src/shared/types/zod";
+import { zodConversationMetadata } from "src/shared/types/zod";
+import { applyConversationTypeConfig } from "src/shared/utils/conversationTypeConfig";
+import {
+  applyParticipantStatements,
+  defaultConversationStatementSettings,
+} from "src/shared/utils/participantStatements";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { getConversationQueryKey } from "src/utils/query/conversationQueryKeys";
 import type { ViewerQueryScope } from "src/utils/query/viewerScope";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createApp, h } from "vue";
+import { createI18n } from "vue-i18n";
 
 const mocks = vi.hoisted(() => ({
   save: vi.fn<
     (request: UpdateConversationRequest) => Promise<UpdateConversationResponse>
   >(),
   fetch: vi.fn<() => Promise<ConversationDetail>>(),
+  close: vi.fn<() => Promise<CloseConversationResponse>>(),
+  open: vi.fn<() => Promise<OpenConversationResponse>>(),
+  results:
+    vi.fn<() => Promise<ReturnType<typeof Dto.qvResultsResponse.parse>>>(),
 }));
+vi.mock("./qv", () => ({ useQvApi: () => ({ results: mocks.results }) }));
 vi.mock("./postEdit", () => ({
   useBackendPostEditApi: () => ({ updateConversation: mocks.save }),
 }));
 vi.mock("./post", () => ({
   useBackendPostApi: () => ({
     fetchConversationBySlugIdWithDisplayContent: mocks.fetch,
+    closeConversation: mocks.close,
+    openConversation: mocks.open,
   }),
+}));
+vi.mock("src/utils/ui/notify", () => ({
+  useNotify: () => ({ showNotifyMessage: vi.fn() }),
 }));
 vi.mock("src/stores/user", () => ({
   useUserStore: () => ({ profileData: { userCommentList: [] } }),
@@ -51,11 +71,17 @@ vi.mock("src/stores/language", async () => {
   };
 });
 
-import { useUpdateConversationMutation } from "./useConversationMutations";
+import { getQvCalculationFrontier } from "./qvCalculationState";
+import {
+  useCloseConversationMutation,
+  useOpenConversationMutation,
+  useUpdateConversationMutation,
+} from "./useConversationMutations";
 import {
   type ConversationDetail,
   useConversationQuery,
 } from "./useConversationQuery";
+import { useQvResults } from "./useQvResults";
 
 const slug = "conv1234";
 const viewerScope = {
@@ -85,8 +111,10 @@ afterEach(() => {
 function conversation(config: ConversationTypeConfig): ConversationDetail {
   return {
     conversationData: {
-      metadata: {
+      metadata: zodConversationMetadata.parse({
         ...config,
+        participantStatements:
+          defaultConversationStatementSettings(config).participantStatements,
         conversationSlugId: slug,
         createdAt: new Date("2026-01-01"),
         lastReactedAt: new Date("2026-01-01"),
@@ -127,13 +155,16 @@ function conversation(config: ConversationTypeConfig): ConversationDetail {
           additionalLanguageCodes: [],
           dynamicTranslationEnabled: false,
         },
-      },
+      }),
       interaction: {
         hasVoted: false,
         votedIndex: 0,
         conversationCapabilities: {
           canEdit: true,
           canDelete: true,
+          canModerate: true,
+          canClose: true,
+          canReopen: false,
         },
       },
     },
@@ -148,7 +179,9 @@ function conversation(config: ConversationTypeConfig): ConversationDetail {
 }
 
 function mountMutation(config: ConversationTypeConfig) {
-  const queryClient = new QueryClient();
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { staleTime: 5 * 60 * 1000 } },
+  });
   const original = conversation(config);
   mocks.fetch.mockResolvedValue(original);
   queryClient.setQueryData<ConversationDetail>(key, original);
@@ -176,9 +209,26 @@ function mountMutation(config: ConversationTypeConfig) {
   const target = document.createElement("div");
   document.body.append(target);
   let mutation: ReturnType<typeof useUpdateConversationMutation> | undefined;
+  let lifecycle:
+    | {
+        close: ReturnType<typeof useCloseConversationMutation>;
+        open: ReturnType<typeof useOpenConversationMutation>;
+      }
+    | undefined;
+  let qvResults: ReturnType<typeof useQvResults> | undefined;
   const app = createApp({
     setup() {
       mutation = useUpdateConversationMutation();
+      lifecycle = {
+        close: useCloseConversationMutation(),
+        open: useOpenConversationMutation(),
+      };
+      if (
+        config.conversationType === "prioritizing" &&
+        config.prioritizationType === "qv"
+      ) {
+        qvResults = useQvResults(slug);
+      }
       const query = useConversationQuery({
         conversationSlugId: slug,
         enabled: () => auth.isLoggedIn,
@@ -197,6 +247,7 @@ function mountMutation(config: ConversationTypeConfig) {
     },
   });
   app.use(pinia);
+  app.use(createI18n({ legacy: false, locale: "en" }));
   app.use(VueQueryPlugin, { queryClient });
   app.mount(target);
   cleanups.push(() => {
@@ -205,8 +256,20 @@ function mountMutation(config: ConversationTypeConfig) {
     queryClient.clear();
   });
   if (mutation === undefined) throw new Error("Mutation did not mount");
+  if (lifecycle === undefined)
+    throw new Error("Lifecycle mutations did not mount");
 
-  return { mutation, queryClient, target, original, legacy, other, auth };
+  return {
+    mutation,
+    lifecycle,
+    queryClient,
+    target,
+    original,
+    legacy,
+    other,
+    auth,
+    qvResults,
+  };
 }
 
 function request(
@@ -228,9 +291,153 @@ function request(
 }
 
 describe("conversation lifecycle freshness", () => {
+  it.each(["close", "open"] as const)(
+    "reconciles a failed %s despite fresh ready results and preserves newer cache updates",
+    async (operation) => {
+      mocks.results.mockResolvedValue(
+        Dto.qvResultsResponse.parse({
+          status: "ready",
+          generation: 1,
+          calculationId: "00000000-0000-4000-8000-000000000003",
+          capturedAt: new Date(),
+          participantCount: 1,
+          items: [],
+        })
+      );
+      const { lifecycle, queryClient, qvResults } = mountMutation({
+        conversationType: "prioritizing",
+        prioritizationType: "qv",
+        creditPricing: "quadratic",
+        allowOpposition: true,
+      });
+      await vi.waitFor(() =>
+        expect(qvResults?.ready.value?.status).toBe("ready")
+      );
+      // Let the generation-key switch settle before checking request counts.
+      await vi.waitFor(() =>
+        expect(qvResults?.query.isFetching.value).toBe(false)
+      );
+      const readsBefore = mocks.results.mock.calls.length;
+      const response = Promise.withResolvers<{ success: true }>();
+      const refreshed = Promise.withResolvers<ConversationDetail>();
+      mocks.fetch.mockReturnValue(refreshed.promise);
+      mocks[operation].mockReturnValue(response.promise);
+      const saving = lifecycle[operation].mutateAsync({
+        conversationSlugId: slug,
+      });
+      const rejected = expect(saving).rejects.toThrow("Offline");
+      await vi.waitFor(() => expect(mocks[operation]).toHaveBeenCalledOnce());
+      expect(qvResults?.ready.value).toBeUndefined();
+      queryClient.setQueryData<ConversationDetail>(key, (data) =>
+        data === undefined
+          ? data
+          : {
+              ...data,
+              conversationData: {
+                ...data.conversationData,
+                metadata: {
+                  ...data.conversationData.metadata,
+                  participantCount: 7,
+                },
+                interaction: {
+                  ...data.conversationData.interaction,
+                  conversationCapabilities: {
+                    ...data.conversationData.interaction
+                      .conversationCapabilities,
+                    canEdit: false,
+                  },
+                },
+              },
+            }
+      );
+      response.reject(new Error("Offline"));
+      await rejected;
+      expect(
+        queryClient.getQueryData<ConversationDetail>(key)?.conversationData
+          .metadata.participantCount
+      ).toBe(7);
+      expect(
+        queryClient.getQueryData<ConversationDetail>(key)?.conversationData
+          .interaction.conversationCapabilities.canEdit
+      ).toBe(false);
+      await vi.waitFor(() => {
+        expect(mocks.results.mock.calls.length).toBeGreaterThan(readsBefore);
+        expect(qvResults?.ready.value?.status).toBe("ready");
+        expect(
+          getQvCalculationFrontier({ queryClient, slug }).requiresFreshRead
+        ).toBe(false);
+      });
+    }
+  );
+  it.each(["close", "open"] as const)(
+    "refreshes server permissions after %s without inventing the reverse permission",
+    async (operation) => {
+      const { lifecycle, queryClient } = mountMutation({
+        conversationType: "polis",
+        votingPresentation: "list",
+      });
+      const response = Promise.withResolvers<{ success: true }>();
+      mocks[operation].mockReturnValue(response.promise);
+      const saving = lifecycle[operation].mutateAsync({
+        conversationSlugId: slug,
+      });
+      await vi.waitFor(() => expect(mocks[operation]).toHaveBeenCalledOnce());
+      expect(
+        queryClient.getQueryData<ConversationDetail>(key)?.conversationData
+          .interaction.conversationCapabilities
+      ).toMatchObject({ canClose: false, canReopen: false });
+      const refreshed = conversation({
+        conversationType: "polis",
+        votingPresentation: "list",
+      });
+      refreshed.conversationData.metadata.isClosed = operation === "close";
+      refreshed.conversationData.interaction.conversationCapabilities = {
+        canEdit: false,
+        canDelete: false,
+        canModerate: false,
+        canClose: false,
+        canReopen: false,
+      };
+      mocks.fetch.mockResolvedValue(refreshed);
+      response.resolve({ success: true });
+      await saving;
+      await vi.waitFor(() =>
+        expect(
+          queryClient.getQueryData<ConversationDetail>(key)?.conversationData
+            .interaction.conversationCapabilities.canEdit
+        ).toBe(false)
+      );
+    }
+  );
+
+  it.each(["close", "open"] as const)(
+    "does not restore cleared account data after a failed %s",
+    async (operation) => {
+      const { lifecycle, queryClient, auth } = mountMutation({
+        conversationType: "polis",
+        votingPresentation: "list",
+      });
+      const response = Promise.withResolvers<{ success: true }>();
+      mocks[operation].mockReturnValue(response.promise);
+      const saving = lifecycle[operation].mutateAsync({
+        conversationSlugId: slug,
+      });
+      const rejection = expect(saving).rejects.toThrow("Offline");
+      await vi.waitFor(() => expect(mocks[operation]).toHaveBeenCalledOnce());
+      auth.setLoginStatus({ isKnown: false, isLoggedIn: false });
+      queryClient.clear();
+      response.reject(new Error("Offline"));
+      await rejection;
+      expect(queryClient.getQueryData(key)).toBeUndefined();
+    }
+  );
   it.each([
     { conversationType: "polis", votingPresentation: "list" },
-    { conversationType: "ranking", rankingMode: "bws" },
+    {
+      conversationType: "prioritizing",
+      prioritizationType: "comparisons",
+      comparisonMethod: "bws",
+    },
   ] satisfies ConversationTypeConfig[])(
     "does not restore finalizing state from an older $conversationType frame",
     async (config) => {
@@ -244,7 +451,8 @@ describe("conversation lifecycle freshness", () => {
         const metadata = value.conversationData.metadata;
         if (metadata.conversationType === "polis")
           metadata.conversationViewSnapshotId = id;
-        else metadata.rankingStatsSnapshotId = id;
+        else if (metadata.prioritizationType === "comparisons")
+          metadata.rankingStatsSnapshotId = id;
       }
       current.conversationData.metadata.isClosed = true;
       current.conversationData.metadata.isFinalizing = false;
@@ -265,6 +473,97 @@ describe("conversation lifecycle freshness", () => {
 });
 
 describe("conversation presentation edits", () => {
+  it.each([false, true])(
+    "rolls back a rejected published method change without restoring cleared account data (signOut=%s)",
+    async (signOut) => {
+      const config = {
+        conversationType: "prioritizing",
+        prioritizationType: "comparisons",
+        comparisonMethod: "bws",
+      } as const;
+      const { mutation, queryClient, auth } = mountMutation(config);
+      const response = Promise.withResolvers<UpdateConversationResponse>();
+      mocks.save.mockReturnValue(response.promise);
+      const saving = mutation.mutateAsync(
+        request({ ...config, comparisonMethod: "pairwise" })
+      );
+      await vi.waitFor(() => expect(mocks.save).toHaveBeenCalledOnce());
+      if (signOut) {
+        queryClient.clear();
+        auth.setLoginStatus({ isKnown: false });
+      }
+      response.resolve({
+        success: false,
+        reason: "conversation_type_fixed",
+      });
+      await saving;
+      const metadata =
+        queryClient.getQueryData<ConversationDetail>(key)?.conversationData
+          .metadata;
+      if (signOut) expect(metadata).toBeUndefined();
+      else expect(metadata).toMatchObject(config);
+    }
+  );
+
+  it("installs the committed Polis presentation setting", async () => {
+    const { mutation, queryClient } = mountMutation({
+      conversationType: "polis",
+      votingPresentation: "list",
+    });
+    const config = {
+      conversationType: "polis",
+      votingPresentation: "one_at_a_time",
+    } as const;
+    mocks.save.mockResolvedValue({
+      success: true,
+      participantStatements: { supported: true, enabled: true },
+      conversationTypeConfig: config,
+    });
+    await mutation.mutateAsync({
+      ...request(config),
+      expectedConversationTypeConfig: {
+        conversationType: "polis",
+        votingPresentation: "list",
+      },
+    });
+    const metadata =
+      queryClient.getQueryData<ConversationDetail>(key)?.conversationData
+        .metadata;
+    expect(metadata).toMatchObject(config);
+    expect(metadata).not.toHaveProperty("comparisonMethod");
+    expect(zodConversationMetadata.safeParse(metadata).success).toBe(true);
+    expect(
+      queryClient.getQueryData<ExtendedConversation>(legacyKey)?.metadata
+    ).toMatchObject(config);
+  });
+
+  it("keeps the score snapshot when refreshing an unchanged comparison config", () => {
+    const original = conversation({
+      conversationType: "prioritizing",
+      prioritizationType: "comparisons",
+      comparisonMethod: "bws",
+    });
+    const metadata = original.conversationData.metadata;
+    if (
+      metadata.conversationType !== "prioritizing" ||
+      metadata.prioritizationType !== "comparisons"
+    )
+      throw new Error("Missing comparison fixture");
+    metadata.rankingStatsSnapshotId = 42;
+    const refreshed = applyConversationTypeConfig({
+      metadata,
+      config: {
+        conversationType: "prioritizing",
+        prioritizationType: "comparisons",
+        comparisonMethod: "bws",
+      },
+    });
+    expect(refreshed).toMatchObject({
+      comparisonMethod: "bws",
+      rankingStatsSnapshotId: 42,
+    });
+    expect(zodConversationMetadata.safeParse(refreshed).success).toBe(true);
+  });
   it.each([
     { before: "list", after: "one_at_a_time" },
     { before: "one_at_a_time", after: "list" },
@@ -278,7 +577,10 @@ describe("conversation presentation edits", () => {
         conversationType: "polis",
         votingPresentation: before,
       });
-      mocks.save.mockResolvedValue({ success: true });
+      mocks.save.mockResolvedValue({
+        success: true,
+        participantStatements: { supported: true, enabled: true },
+      });
 
       expect(target.textContent).toBe(before);
       await mutation.mutateAsync(
@@ -344,14 +646,59 @@ describe("conversation presentation edits", () => {
 
   it("preserves ranking metadata without adding Polis settings", async () => {
     const config: ConversationTypeConfig = {
-      conversationType: "ranking",
-      rankingMode: "bws",
+      conversationType: "prioritizing",
+      prioritizationType: "comparisons",
+      comparisonMethod: "bws",
     };
     const { mutation, queryClient, original } = mountMutation(config);
-    mocks.save.mockResolvedValue({ success: true });
+    mocks.save.mockResolvedValue({
+      success: true,
+      participantStatements: { supported: true, enabled: false },
+    });
     await mutation.mutateAsync(request(config));
     expect(queryClient.getQueryData(key)).toEqual(original);
     expect(mocks.fetch).not.toHaveBeenCalled();
+  });
+  it("preserves a remotely updated participant policy when rolling back an unrelated edit", async () => {
+    const { mutation, queryClient, target } = mountMutation({
+      conversationType: "polis",
+      votingPresentation: "list",
+    });
+    const response = Promise.withResolvers<UpdateConversationResponse>();
+    mocks.save.mockReturnValue(response.promise);
+    const saving = mutation.mutateAsync(
+      request({
+        conversationType: "polis",
+        votingPresentation: "one_at_a_time",
+      })
+    );
+    await vi.waitFor(() => expect(target.textContent).toBe("one_at_a_time"));
+    queryClient.setQueryData<ConversationDetail>(key, (current) =>
+      current === undefined
+        ? undefined
+        : {
+            ...current,
+            conversationData: {
+              ...current.conversationData,
+              metadata: applyParticipantStatements({
+                metadata: current.conversationData.metadata,
+                participantStatements: { supported: true, enabled: false },
+              }),
+            },
+          }
+    );
+    response.resolve({
+      success: false,
+      reason: "participant_statements_changed",
+    });
+    await saving;
+    expect(
+      queryClient.getQueryData<ConversationDetail>(key)?.conversationData
+        .metadata
+    ).toMatchObject({
+      votingPresentation: "list",
+      participantStatements: { supported: true, enabled: false },
+    });
   });
 
   it.each([
@@ -405,7 +752,10 @@ describe("analysis settings edits", () => {
     const labelsKey = ["analysisFrameGroupLabels", slug];
     queryClient.setQueryData(manifestKey, "cached manifest");
     queryClient.setQueryData(labelsKey, "cached labels");
-    mocks.save.mockResolvedValue({ success: true });
+    mocks.save.mockResolvedValue({
+      success: true,
+      participantStatements: { supported: true, enabled: true },
+    });
 
     await mutation.mutateAsync(
       request({
@@ -453,7 +803,10 @@ describe("analysis settings edits", () => {
       staleTime: Infinity,
     });
     cleanups.push(observer.subscribe(() => undefined));
-    mocks.save.mockResolvedValue({ success: true });
+    mocks.save.mockResolvedValue({
+      success: true,
+      participantStatements: { supported: true, enabled: true },
+    });
 
     await mutation.mutateAsync(
       request({
@@ -480,7 +833,10 @@ describe("analysis settings edits", () => {
       const labelsKey = ["analysisFrameGroupLabels", slug];
       queryClient.setQueryData(manifestKey, "cached manifest");
       queryClient.setQueryData(labelsKey, "cached labels");
-      mocks.save.mockResolvedValue({ success: true });
+      mocks.save.mockResolvedValue({
+        success: true,
+        participantStatements: { supported: true, enabled: true },
+      });
 
       await mutation.mutateAsync(
         request({

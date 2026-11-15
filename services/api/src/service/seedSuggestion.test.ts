@@ -137,10 +137,10 @@ describe("generateSeedSuggestions", () => {
         const generate = vi.spyOn(source, "generate");
         await generateSeedSuggestions({
             source,
-            request: buildRequest({ conversationType: "ranking" }),
+            request: buildRequest({ conversationType: "prioritizing" }),
         });
         expect(generate).toHaveBeenCalledWith(
-            expect.objectContaining({ conversationType: "ranking" }),
+            expect.objectContaining({ conversationType: "prioritizing" }),
         );
     });
     it("uses Unicode character limits consistently in generation and response parsing", async () => {

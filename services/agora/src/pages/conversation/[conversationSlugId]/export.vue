@@ -149,7 +149,7 @@ const conversationQuery = useConversationQuery({
 const isPrioritizationConversation = computed(() => {
   return (
     conversationQuery.data.value?.conversationData.metadata.conversationType ===
-    "ranking"
+    "prioritizing"
   );
 });
 

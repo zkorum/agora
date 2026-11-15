@@ -73,7 +73,7 @@
               })
             }}
           </span>
-          <span>
+          <span v-if="activity.prioritizationType !== 'qv'">
             <q-icon name="mdi-check-circle-outline" size="1rem" />
             {{ t("votesCount", { count: activity.stats.voteCount }) }}
           </span>
@@ -160,7 +160,7 @@ const userIdentityText = computed<UserIdentityCardTranslations>(
 );
 
 const isRankingActivity = computed(
-  () => props.activity.conversationType === "ranking"
+  () => props.activity.conversationType === "prioritizing"
 );
 
 const activityTypeClass = computed(() =>

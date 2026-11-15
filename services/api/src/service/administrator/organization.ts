@@ -1,11 +1,16 @@
 import {
     organizationLocalizationTable,
-    organizationMembershipAllProjectCapabilityTable,
     organizationMembershipTable,
     organizationTable,
+    projectOrganizationOwnershipTable,
+    projectOrganizationAttributionTable,
+    projectContactTable,
     userTable,
 } from "@/shared-backend/schema.js";
-import { getPrimaryDatabase } from "@/shared-backend/db.js";
+import {
+    getPrimaryDatabase,
+    type PostgresTransaction,
+} from "@/shared-backend/db.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import { useCommonUser } from "../common.js";
@@ -27,8 +32,13 @@ import type { OrganizationProperties } from "@/shared/types/zod.js";
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import { imagePathToUrl } from "@/utils/organizationLogic.js";
 import { optionalHttpsUrl } from "@/utils/url.js";
-import { ensureOrganizationMembershipBaselineCapabilities } from "../projectAccess.js";
+import { setOrganizationMembershipRole } from "../projectAccess.js";
+import type { OrganizationRole } from "@/shared/organizationAccess.js";
 import { getOrganizationIdsWithActiveDynamicTranslationEntitlement } from "../premiumEntitlement.js";
+import {
+    withProjectOwnershipTransaction,
+    type ProjectOwnershipDatabase,
+} from "../projectOwnership.js";
 
 // Keep unlisted personal organizations after listed organizations in admin pickers.
 const adminOrganizationOrder = [
@@ -85,25 +95,18 @@ function isUniqueViolation(error: unknown): boolean {
     );
 }
 
-function hasHttpStatusCode(error: unknown): error is { statusCode: number } {
-    return (
-        typeof error === "object" &&
-        error !== null &&
-        "statusCode" in error &&
-        typeof error.statusCode === "number"
-    );
-}
-
 interface GetAllOrganizationsProps {
     db: PostgresJsDatabase;
     baseImageServiceUrl: string;
     organizationSlug?: string;
+    organizationIds?: readonly number[];
 }
 
 export async function getAllOrganizations({
     db,
     baseImageServiceUrl,
     organizationSlug,
+    organizationIds: allowedOrganizationIds,
 }: GetAllOrganizationsProps): Promise<GetAllOrganizationsResponse> {
     const organizationTableResponse = await db
         .select({
@@ -120,6 +123,11 @@ export async function getAllOrganizations({
         .where(
             and(
                 isNull(organizationTable.deletedAt),
+                allowedOrganizationIds === undefined
+                    ? undefined
+                    : inArray(organizationTable.id, [
+                          ...allowedOrganizationIds,
+                      ]),
                 organizationSlug === undefined
                     ? undefined
                     : eq(organizationTable.slug, organizationSlug),
@@ -217,7 +225,7 @@ export async function getOrganizationDetails({
     db: PostgresJsDatabase;
     baseImageServiceUrl: string;
     organizationSlug: string;
-}): Promise<GetOrganizationDetailsResponse> {
+}): Promise<Omit<GetOrganizationDetailsResponse, "permissions">> {
     const response = await getAllOrganizations({
         db,
         baseImageServiceUrl,
@@ -228,8 +236,10 @@ export async function getOrganizationDetails({
 
 export async function getOrganizationOptions({
     db,
+    organizationIds: allowedOrganizationIds,
 }: {
     db: PostgresJsDatabase;
+    organizationIds?: readonly number[];
 }): Promise<GetOrganizationOptionsResponse> {
     const organizationRows = await db
         .select({
@@ -238,7 +248,16 @@ export async function getOrganizationOptions({
             slug: organizationTable.slug,
         })
         .from(organizationTable)
-        .where(isNull(organizationTable.deletedAt))
+        .where(
+            and(
+                isNull(organizationTable.deletedAt),
+                allowedOrganizationIds === undefined
+                    ? undefined
+                    : inArray(organizationTable.id, [
+                          ...allowedOrganizationIds,
+                      ]),
+            ),
+        )
         .orderBy(...adminOrganizationOrder);
 
     const organizationIds = organizationRows.map(
@@ -274,6 +293,7 @@ export async function getOrganizationMembers({
     const memberRows = await getPrimaryDatabase(db)
         .select({
             username: userTable.username,
+            role: organizationMembershipTable.role,
         })
         .from(organizationMembershipTable)
         .innerJoin(
@@ -300,6 +320,7 @@ export async function getOrganizationMembers({
     return {
         memberList: memberRows.map((member) => ({
             username: member.username,
+            role: member.role,
         })),
     };
 }
@@ -482,25 +503,21 @@ export async function getOrganizationMembershipsByUserId({
 
 interface RemoveUserOrganizationMappingProps {
     db: PostgresJsDatabase;
-    adminUserId: string;
     username: string;
     organizationName: string;
 }
 
 export async function removeUserOrganizationMapping({
     db,
-    adminUserId,
     username,
     organizationName,
 }: RemoveUserOrganizationMappingProps): Promise<void> {
     const primaryDb = getPrimaryDatabase(db);
-    const { getUserIdFromUsername } = useCommonUser();
-    const targetUserId = await getUserIdFromUsername({
-        db: primaryDb,
-        username,
-    });
-
     await primaryDb.transaction(async (transaction) => {
+        const targetUserId = await lockMembershipAccount({
+            db: transaction,
+            username,
+        });
         const organizationId = await lockActiveOrganizationId({
             db: transaction,
             organizationSlug: organizationName,
@@ -531,24 +548,6 @@ export async function removeUserOrganizationMapping({
             .update(organizationMembershipTable)
             .set({ deletedAt: now, updatedAt: now })
             .where(eq(organizationMembershipTable.id, membership.id));
-        await transaction
-            .update(organizationMembershipAllProjectCapabilityTable)
-            .set({
-                revokedByUserId: adminUserId,
-                updatedAt: now,
-                deletedAt: now,
-            })
-            .where(
-                and(
-                    eq(
-                        organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
-                        membership.id,
-                    ),
-                    isNull(
-                        organizationMembershipAllProjectCapabilityTable.deletedAt,
-                    ),
-                ),
-            );
     });
 }
 
@@ -556,29 +555,30 @@ interface AddUserOrganizationMappingProps {
     db: PostgresJsDatabase;
     username: string;
     organizationName: string;
+    role: OrganizationRole;
 }
 
 export async function addUserOrganizationMapping({
     db,
     username,
     organizationName,
+    role,
 }: AddUserOrganizationMappingProps): Promise<void> {
     const primaryDb = getPrimaryDatabase(db);
-    const { getUserIdFromUsername } = useCommonUser();
-    const targetUserId = await getUserIdFromUsername({
-        db: primaryDb,
-        username,
-    });
-
     await primaryDb.transaction(async (transaction) => {
+        const targetUserId = await lockMembershipAccount({
+            db: transaction,
+            username,
+        });
         const organizationId = await lockActiveOrganizationId({
             db: transaction,
             organizationSlug: organizationName,
         });
-        await ensureOrganizationMembershipBaselineCapabilities({
+        await setOrganizationMembershipRole({
             db: transaction,
             userId: targetUserId,
             organizationId,
+            role,
         });
     });
 }
@@ -592,6 +592,7 @@ interface CreateOrganizationProps {
     isFullImagePath: boolean;
     websiteUrl: string | undefined;
     description: string;
+    adminUserId: string;
 }
 
 export async function createOrganization({
@@ -603,6 +604,7 @@ export async function createOrganization({
     isFullImagePath,
     websiteUrl,
     description,
+    adminUserId,
 }: CreateOrganizationProps) {
     try {
         await db.transaction(async (tx) => {
@@ -639,6 +641,11 @@ export async function createOrganization({
                 websiteUrl: normalizedWebsiteUrl,
                 imagePath: normalizedImagePath,
                 isFullImagePath,
+            });
+            await tx.insert(organizationMembershipTable).values({
+                organizationId: insertedOrganization.organizationId,
+                userId: adminUserId,
+                role: "admin",
             });
         });
     } catch (err: unknown) {
@@ -727,51 +734,121 @@ export async function updateOrganizationLocalization({
     return { success: true };
 }
 
-interface ArchiveOrganizationProps {
-    db: PostgresJsDatabase;
+interface DeleteOrganizationProps {
+    db: ProjectOwnershipDatabase;
     organizationName: string;
 }
 
-export async function archiveOrganization({
+export async function deleteOrganization({
     db,
     organizationName,
-}: ArchiveOrganizationProps) {
-    try {
-        const now = new Date();
-        const updatedOrganizations = await db
-            .update(organizationTable)
-            .set({
-                directoryVisibility: "unlisted",
-                deletedAt: now,
-                updatedAt: now,
-            })
-            .where(
-                and(
-                    eq(organizationTable.slug, organizationName),
-                    isNull(organizationTable.deletedAt),
-                ),
-            )
-            .returning({ organizationId: organizationTable.id });
-        if (updatedOrganizations.length === 0) {
-            throw httpErrors.notFound("Organization not found");
-        }
-    } catch (err: unknown) {
-        if (hasHttpStatusCode(err)) {
-            throw err;
-        }
+}: DeleteOrganizationProps): Promise<void> {
+    await withProjectOwnershipTransaction({
+        db,
+        operation: async (tx) => {
+            // Membership fences write accounts before organizations. Lock those
+            // parents before deletion takes the organization/project locks too.
+            await tx
+                .select({ id: userTable.id })
+                .from(userTable)
+                .innerJoin(
+                    organizationMembershipTable,
+                    eq(organizationMembershipTable.userId, userTable.id),
+                )
+                .innerJoin(
+                    organizationTable,
+                    eq(
+                        organizationTable.id,
+                        organizationMembershipTable.organizationId,
+                    ),
+                )
+                .where(
+                    and(
+                        eq(organizationTable.slug, organizationName),
+                        isNull(organizationTable.deletedAt),
+                        isNull(organizationMembershipTable.deletedAt),
+                    ),
+                )
+                .orderBy(userTable.id)
+                .for("update", { of: userTable });
+            const organization = (
+                await tx
+                    .select({ id: organizationTable.id })
+                    .from(organizationTable)
+                    .where(
+                        and(
+                            eq(organizationTable.slug, organizationName),
+                            isNull(organizationTable.deletedAt),
+                        ),
+                    )
+                    .for("update")
+            ).at(0);
+            if (organization === undefined)
+                throw httpErrors.notFound("Organization not found");
 
-        log.error(err);
-        throw httpErrors.internalServerError(
-            "Database error while archiving organization metadata",
-        );
-    }
+            const now = new Date();
+            await tx
+                .update(organizationTable)
+                .set({
+                    directoryVisibility: "unlisted",
+                    deletedAt: now,
+                    updatedAt: now,
+                })
+                .where(
+                    and(
+                        eq(organizationTable.id, organization.id),
+                        isNull(organizationTable.deletedAt),
+                    ),
+                );
+            await tx
+                .update(projectOrganizationOwnershipTable)
+                .set({ deletedAt: now })
+                .where(
+                    and(
+                        eq(
+                            projectOrganizationOwnershipTable.organizationId,
+                            organization.id,
+                        ),
+                        isNull(projectOrganizationOwnershipTable.deletedAt),
+                    ),
+                );
+            await tx
+                .update(projectOrganizationAttributionTable)
+                .set({ deletedAt: now })
+                .where(
+                    and(
+                        eq(
+                            projectOrganizationAttributionTable.organizationId,
+                            organization.id,
+                        ),
+                        isNull(projectOrganizationAttributionTable.deletedAt),
+                    ),
+                );
+            await tx
+                .update(projectContactTable)
+                .set({ organizationId: null, updatedAt: now })
+                .where(eq(projectContactTable.organizationId, organization.id));
+            await tx
+                .update(organizationMembershipTable)
+                .set({ deletedAt: now, updatedAt: now })
+                .where(
+                    and(
+                        eq(
+                            organizationMembershipTable.organizationId,
+                            organization.id,
+                        ),
+                        isNull(organizationMembershipTable.deletedAt),
+                    ),
+                );
+        },
+    });
 }
 
 async function lockActiveOrganizationId({
     db,
     organizationSlug,
 }: {
-    db: PostgresJsDatabase;
+    db: PostgresTransaction;
     organizationSlug: string;
 }): Promise<number> {
     const organizationTableResponse = await db
@@ -786,8 +863,9 @@ async function lockActiveOrganizationId({
             ),
         )
         .limit(1)
-        // Serialize membership changes with archiving without serializing concurrent grants.
-        .for("share");
+        // The membership fence writes this parent. Take its final lock mode now
+        // rather than upgrading concurrent SHARE locks inside the trigger.
+        .for("update");
 
     const organization = organizationTableResponse.at(0);
     if (organization === undefined) {
@@ -795,4 +873,22 @@ async function lockActiveOrganizationId({
     }
 
     return organization.organizationId;
+}
+
+async function lockMembershipAccount({
+    db,
+    username,
+}: {
+    db: PostgresTransaction;
+    username: string;
+}): Promise<string> {
+    const user = (
+        await db
+            .select({ id: userTable.id })
+            .from(userTable)
+            .where(eq(userTable.username, username))
+            .for("update")
+    ).at(0);
+    if (user === undefined) throw httpErrors.notFound("User not found");
+    return user.id;
 }

@@ -4,14 +4,14 @@ from scoring_worker.db import ComparisonRow
 from scoring_worker.entity_mapping import EntityIdMapper
 from scoring_worker.observations import (
     PairwiseObservation,
-    comparison_rows_to_maxdiff_observations,
-    maxdiff_observations_to_tasks_frame,
+    comparison_observations_to_tasks_frame,
+    comparison_rows_to_observations,
     pairwise_observations_to_solidago_rows,
 )
 
 
-def test_comparison_rows_to_maxdiff_observations_filters_and_deduplicates_candidates() -> None:
-    observations = comparison_rows_to_maxdiff_observations(
+def test_comparison_rows_to_observations_filters_and_deduplicates_candidates() -> None:
+    observations = comparison_rows_to_observations(
         entity_ids=["A", "B", "C"],
         comparisons=[
             ComparisonRow(
@@ -33,10 +33,10 @@ def test_comparison_rows_to_maxdiff_observations_filters_and_deduplicates_candid
     ]
 
 
-def test_maxdiff_observations_to_tasks_frame_maps_to_int_ids() -> None:
+def test_comparison_observations_to_tasks_frame_maps_to_int_ids() -> None:
     mapper = EntityIdMapper(entity_ids=["A", "B", "C"])
-    frame = maxdiff_observations_to_tasks_frame(
-        observations=comparison_rows_to_maxdiff_observations(
+    frame = comparison_observations_to_tasks_frame(
+        observations=comparison_rows_to_observations(
             entity_ids=["A", "B", "C"],
             comparisons=[
                 ComparisonRow(

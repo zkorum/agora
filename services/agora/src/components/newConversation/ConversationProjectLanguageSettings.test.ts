@@ -39,7 +39,10 @@ vi.mock(
   "src/components/newConversation/dialog/ConversationAdditionalLanguagesDialog.vue",
   () => ({
     default: defineComponent({
-      props: { showDialog: Boolean, multilingualSetting: Object },
+      props: {
+        showDialog: Boolean,
+        multilingualSetting: { type: Object, required: true },
+      },
       emits: ["update:multilingualSetting", "back"],
       setup(props, { emit, slots }) {
         return () =>

@@ -272,7 +272,8 @@ const conversation = computed<ProjectConversationPreview>(() => ({
 }));
 
 const conversationData = computed<ExtendedConversation>(() => ({
-  metadata: {
+    metadata: {
+      participantStatements: { supported: true, enabled: true },
     conversationSlugId: conversation.value.slugId,
     createdAt,
     updatedAt: createdAt,
@@ -329,6 +330,7 @@ const conversationData = computed<ExtendedConversation>(() => ({
     conversationCapabilities: {
       canEdit: false,
       canDelete: false,
+      canModerate: false, canClose: false, canReopen: false,
     },
   },
 }));

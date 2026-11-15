@@ -6,11 +6,17 @@
     dense-toggle
   >
     <div class="nested-form">
-      <p v-if="availableLanguageOptions.length === 0" class="section-description">
+      <p
+        v-if="availableLanguageOptions.length === 0"
+        class="section-description"
+      >
         {{ noLanguagesMessage }}
       </p>
       <template v-else>
-        <div v-if="availableMachineLocalizations.length > 0" class="machine-list">
+        <div
+          v-if="availableMachineLocalizations.length > 0"
+          class="machine-list"
+        >
           <div
             v-for="machineLocalization in availableMachineLocalizations"
             :key="machineLocalization.languageCode"
@@ -21,7 +27,9 @@
                 {{ machineTranslationPreviewTitle }} ·
                 {{ getLanguageLabel(machineLocalization.languageCode) }}
               </div>
-              <div class="summary-meta">{{ machineTranslationPreviewDescription }}</div>
+              <div class="summary-meta">
+                {{ machineTranslationPreviewDescription }}
+              </div>
               <div class="machine-card__preview">
                 <strong>{{ machineLocalization.projectTitle }}</strong>
                 <span v-if="machineLocalization.subtitle !== undefined">
@@ -98,7 +106,11 @@
           outline
           color="primary"
           :disable="!canSaveDraftLocalization"
-          :label="editingLanguageCode === undefined ? addButtonLabel : updateButtonLabel"
+          :label="
+            editingLanguageCode === undefined
+              ? addButtonLabel
+              : updateButtonLabel
+          "
           @click="saveDraftLocalization"
         />
         <q-btn
@@ -217,7 +229,8 @@ const selectedLanguageCodes = computed(
     new Set(
       localizations.value
         .filter(
-          (localization) => localization.languageCode !== editingLanguageCode.value
+          (localization) =>
+            localization.languageCode !== editingLanguageCode.value
         )
         .map((localization) => localization.languageCode)
     )
@@ -259,7 +272,9 @@ const bodyPlaceholder = computed(() =>
     : optionalLabel(props.bodyLabel)
 );
 
-const hasLocalizedTitle = computed(() => optionalString(draftTitle.value) !== undefined);
+const hasLocalizedTitle = computed(
+  () => optionalString(draftTitle.value) !== undefined
+);
 const hasLocalizedBanner = computed(
   () => optionalString(draftBannerPath.value) !== undefined
 );
@@ -339,7 +354,9 @@ function getLanguageLabel(languageCode: SupportedDisplayLanguageCodes): string {
   );
 }
 
-function isCompleteLocalization(localization: ProjectContentLocalization): boolean {
+function isCompleteLocalization(
+  localization: ProjectContentLocalization
+): boolean {
   const projectTitle = localization.projectTitle;
 
   return (
@@ -366,7 +383,8 @@ function saveDraftLocalization(): void {
 
   const nextLocalization = buildDraftLocalization();
   const existingIndex = localizations.value.findIndex(
-    (localization) => localization.languageCode === nextLocalization.languageCode
+    (localization) =>
+      localization.languageCode === nextLocalization.languageCode
   );
   if (existingIndex === -1) {
     localizations.value = [...localizations.value, nextLocalization];
@@ -546,14 +564,9 @@ function resetDraft(): void {
   font-size: 0.9rem;
 }
 </style>
-const hasLocalizedTitle = computed(() => draftTitle.value.trim() !== "");
-
-const hasLocalizedSubtitle = computed(() => draftSubtitle.value.trim() !== "");
-
-const hasLocalizedBody = computed(() => draftBodyPlainText.value.trim() !== "");
-
-const hasLocalizedBanner = computed(() => draftBannerPath.value.trim() !== "");
-
-const hasOrphanLocalizedContent = computed(
-  () => !hasLocalizedTitle.value && (hasLocalizedSubtitle.value || hasLocalizedBody.value)
-);
+const hasLocalizedTitle = computed(() => draftTitle.value.trim() !== ""); const
+hasLocalizedSubtitle = computed(() => draftSubtitle.value.trim() !== ""); const
+hasLocalizedBody = computed(() => draftBodyPlainText.value.trim() !== ""); const
+hasLocalizedBanner = computed(() => draftBannerPath.value.trim() !== ""); const
+hasOrphanLocalizedContent = computed( () => !hasLocalizedTitle.value &&
+(hasLocalizedSubtitle.value || hasLocalizedBody.value) );

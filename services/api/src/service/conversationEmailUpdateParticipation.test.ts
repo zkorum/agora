@@ -33,13 +33,13 @@ describe("buildConversationEmailParticipationQuery", () => {
             '"opinion_moderation"."moderation_action" <>',
         );
         expect(query.sql).toContain(
-            '"maxdiff_comparison"."deleted_at" is null',
+            '"comparison_answer"."deleted_at" is null',
         );
         expect(query.sql).toContain(
-            'from "maxdiff_comparison" "conversation_email_historical_maxdiff_comparison"',
+            'from "comparison_answer" "conversation_email_historical_comparison_answer"',
         );
         expect(query.sql).toContain(
-            '"conversation_email_historical_maxdiff_comparison"."created_at" <=',
+            '"conversation_email_historical_comparison_answer"."created_at" <=',
         );
         expect(query.sql.match(/ union all /g)).toHaveLength(2);
         expect(query.params.filter((param) => param === "hide")).toHaveLength(

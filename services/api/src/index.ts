@@ -1,3 +1,4 @@
+import { createComparisonStatement } from "./service/comparisonStatements.js";
 import {
     Dto,
     type GetConversationResponse,
@@ -88,17 +89,10 @@ import * as projectDocumentService from "@/service/projectDocument.js";
 import * as projectPageService from "@/service/projectPage.js";
 import * as postService from "@/service/post.js";
 import * as postEditService from "@/service/postEdit.js";
-import {
-    checkConversationParticipation,
-    getConversationParticipationStatus,
-} from "@/service/participationGate.js";
-import {
-    saveConversationOnboardingPreference,
-    verifyConversationOnboardingTicket,
-} from "@/service/conversationOnboarding.js";
+import { getConversationParticipationStatus } from "@/service/participationGate.js";
+import { saveConversationOnboardingPreference } from "@/service/conversationOnboarding.js";
 import * as premiumEntitlementService from "@/service/premiumEntitlement.js";
 import * as surveyService from "@/service/survey.js";
-import { useCommonPost } from "@/service/common.js";
 import { MAX_CSV_FILE_SIZE } from "@/shared-app-api/csvUpload.js";
 import {
     MAX_PROJECT_DOCUMENT_FILE_SIZE,
@@ -127,6 +121,10 @@ import { SEED_SUGGESTIONS_TURNSTILE_ACTION } from "@/shared/types/turnstile.js";
 import { createBedrockConverse } from "@/service/seedSuggestionModel.js";
 import { zodCsvFiles } from "@/service/csvImport.js";
 import * as conversationExportService from "@/service/conversationExport/index.js";
+import {
+    resolveConversationExportRequestAccess,
+    resolveConversationExportStatusAccess,
+} from "@/service/conversationExport/access.js";
 import * as conversationImportService from "@/service/conversationImport/index.js";
 import * as contentTranslationService from "@/service/contentTranslation.js";
 import * as conversationContentService from "@/service/conversationContent.js";
@@ -138,6 +136,7 @@ import {
     canConfigureConversationEmailUpdatesForOrganization,
     getConversationCreateProjectOptions,
     getProjectLanguageSettings,
+    getProjectIdsWithCapability,
     resolveConversationCreateTargetResult,
 } from "@/service/projectAccess.js";
 import {
@@ -168,18 +167,24 @@ import {
     postNewOpinion,
 } from "./service/comment.js";
 import {
-    saveMaxdiffResult,
-    loadMaxdiffResult,
-    getMaxdiffResults,
+    saveComparisonResponse,
+    loadComparisonSession,
+    getComparisonResults,
     fetchRankingStatsCheckpoints,
-    computeGlobalUncertainty,
-} from "./service/maxdiff.js";
-import { generateCandidateSets } from "./service/maxdiffRouting.js";
+} from "./service/comparison.js";
+import { generateCandidateSets } from "./service/comparisonRouting.js";
+import { getComparisonCandidateSetSize } from "./shared/utils/comparisonPresentation.js";
 import {
     fetchRankingItems,
     updateRankingItemLifecycle,
 } from "./service/rankingItem.js";
 import type { RankingItemDisplayPreferences } from "./service/rankingItemDisplay.js";
+import {
+    loadQvSession,
+    saveQvResponse,
+    withdrawQvResponse,
+} from "./service/qvResponses.js";
+import { fetchQvResults } from "./service/qvResults.js";
 import {
     verifyWebhookSignature,
     parseWebhookPayload,
@@ -201,13 +206,15 @@ import {
     generateVerificationLink,
     verifyUserStatusAndAuthenticate,
 } from "./service/rarimo.js";
-import { verifyEventTicket } from "./service/zupass.js";
 import {
     checkUserNameInUse,
     deleteUserAccount,
     generateUnusedRandomUsername,
     submitUsernameChange,
 } from "./service/account.js";
+import { restoreAccountAfterVerification } from "./service/accountRecovery.js";
+import { authorizesGuestRecoveryTarget } from "./service/guestRecoveryAuthorization.js";
+import { deviceTable } from "./shared-backend/schema.js";
 import {
     isSiteModeratorAccount,
     isSiteOrgAdminAccount,
@@ -239,8 +246,36 @@ import {
 import twilio from "twilio";
 import { initializeValkey } from "./shared-backend/valkey.js";
 import { createVoteBuffer } from "./service/voteBuffer.js";
-import { parseRealtimeCursor } from "./shared/utils/realtimeCursor.js";
+import {
+    parseRealtimeCursor,
+    formatRealtimeCursor,
+} from "./shared/utils/realtimeCursor.js";
+import { readWithinRealtimeReplayWindow } from "./service/realtimeReplayWindow.js";
+import type { PostgresTransaction } from "./shared-backend/db.js";
 import { editOpinion } from "./service/opinionEdit.js";
+import { getGovernanceConstraint } from "./service/organizationIntegrity.js";
+import {
+    requireOrganizationCapability,
+    requireProjectCapabilityBySlug,
+    requireConversationCapabilityBySlug,
+    hasConversationCapabilityBySlug,
+    hasScopedProjectCapability,
+    requireConversationDestination,
+    getOrganizationIdsWithCapability,
+    requireProjectCreation,
+    requireOpinionManagement,
+    getOrganizationManagementPermissions,
+    getProjectManagementPermissions,
+    getManagementAccess,
+} from "./service/organizationAuthorization.js";
+import {
+    organizationRoleCapabilities,
+    projectCapabilityValues,
+    type OrganizationAccessCapability,
+    type ProjectCapability,
+    type OrganizationManagementPermissions,
+    type ProjectManagementPermissions,
+} from "./shared/organizationAccess.js";
 import {
     consumeContentTranslationUserRateLimit,
     CONTENT_TRANSLATION_USER_RATE_LIMIT_SCRIPT,
@@ -273,7 +308,7 @@ import {
 import {
     addUserOrganizationMapping,
     createOrganization,
-    archiveOrganization,
+    deleteOrganization,
     getAllOrganizations,
     getOrganizationDetails,
     getOrganizationOptions,
@@ -288,7 +323,7 @@ import {
     updateAdminNoProjectEmailUpdates,
 } from "./service/administrator/organizationEmailUpdates.js";
 import {
-    archiveProject,
+    deleteProject,
     createProject,
     getAllProjects,
     getProjectDetails,
@@ -351,6 +386,11 @@ import {
     logConversationBodyLimitCompatibility,
 } from "./service/conversationTextMaintenance.js";
 import { createConversationEmailUpdateService } from "./service/conversationEmailUpdate.js";
+import {
+    getConversationEmailUpdateActor,
+    getOwnedEmailUpdateReviewId,
+    getOwnedEmailUpdateTestId,
+} from "./service/conversationEmailUpdateAuthorization.js";
 import {
     createConversationEmailUpdateActionService,
     registerConversationEmailUpdateActionRoutes,
@@ -494,15 +534,15 @@ const seedSuggestionTurnstile = turnstileConfig.enabled
           logError: logSeedSuggestionError,
       })
     : undefined;
-const maxdiffConnectorRateLimitConfig = {
+const comparisonConnectorRateLimitConfig = {
     max: 10,
     timeWindow: 60 * 1000,
-    groupId: "maxdiff-github-connector",
+    groupId: "comparison-github-connector",
 };
 const githubWebhookRateLimitConfig = {
     max: 60,
     timeWindow: 60 * 1000,
-    groupId: "maxdiff-github-webhook",
+    groupId: "comparison-github-webhook",
 };
 const conversationEmailUpdateSnsRateLimitConfig = {
     max: 60,
@@ -606,6 +646,11 @@ server.register(fastifySwagger, {
 
 // Custom error handler
 server.setErrorHandler((error: FastifyError, _request, reply) => {
+    const governanceConstraint = getGovernanceConstraint(error);
+    if (governanceConstraint !== undefined) {
+        reply.send(server.httpErrors.conflict(governanceConstraint));
+        return;
+    }
     // Check if the error has a status code of 500
     if (error.statusCode === undefined || error.statusCode >= 500) {
         // Modify the response message for status code 500
@@ -791,7 +836,7 @@ const conversationEmailUpdateSnsSimulator =
 logActiveConversationBodyLimits();
 void logConversationBodyLimitCompatibility({ db });
 
-function assertMaxdiffGitHubAllowed({
+function assertComparisonGitHubAllowed({
     userId,
     postAsOrganization,
 }: {
@@ -816,24 +861,24 @@ function assertMaxdiffGitHubAllowed({
     switch (access.reason) {
         case "disabled":
             throw server.httpErrors.serviceUnavailable(
-                "MaxDiff GitHub connector is currently unavailable",
+                "Comparison GitHub connector is currently unavailable",
             );
         case "org_required":
             throw server.httpErrors.forbidden(
-                "MaxDiff GitHub connector is restricted to organization conversations",
+                "Comparison GitHub connector is restricted to organization conversations",
             );
         case "org_not_in_whitelist":
             throw server.httpErrors.forbidden(
-                "This organization is not allowed to use the MaxDiff GitHub connector",
+                "This organization is not allowed to use the comparison GitHub connector",
             );
         case "user_not_in_whitelist":
             throw server.httpErrors.forbidden(
-                "This user is not allowed to use the MaxDiff GitHub connector",
+                "This user is not allowed to use the comparison GitHub connector",
             );
     }
 }
 
-async function assertMaxdiffGitHubAllowedForConversation({
+async function assertComparisonGitHubAllowedForConversation({
     conversationSlugId,
     userId,
 }: {
@@ -871,7 +916,7 @@ async function assertMaxdiffGitHubAllowedForConversation({
         )
         .limit(1);
 
-    assertMaxdiffGitHubAllowed({
+    assertComparisonGitHubAllowed({
         userId,
         postAsOrganization: rows[0]?.organizationName ?? undefined,
     });
@@ -1720,6 +1765,7 @@ interface VerifyUcanKnownDeviceReturn {
 
 interface VerifyUcanReturn {
     didWrite: string;
+    facts: readonly ucans.Fact[];
 }
 async function verifyUcan(request: FastifyRequest): Promise<VerifyUcanReturn> {
     const encodedUcan = getEncodedUcan(request);
@@ -1780,6 +1826,7 @@ async function verifyUcan(request: FastifyRequest): Promise<VerifyUcanReturn> {
 
     return {
         didWrite: rootIssuerDid,
+        facts: parsedUcan.payload.fct ?? [],
     };
 }
 
@@ -2022,41 +2069,76 @@ async function replaySubscribedRealtimeEvents({
 }): Promise<void> {
     const lastEventId = parseRealtimeCursor(reply.sse.lastEventId);
     if (lastEventId === undefined) {
+        if (reply.sse.lastEventId) {
+            await realtimeSSEManager.sendToConnection({
+                reply,
+                id: undefined,
+                event: "resync_required",
+                data: { cursor: "", reason: "cursor_expired" },
+            });
+        }
         return;
     }
 
     try {
-        let nextLastEventId = lastEventId;
-        let replayedEventCount = 0;
-        while (replayedEventCount < REALTIME_REPLAY_MAX_EVENTS) {
-            const events = await fetchSubscribedRealtimeEventsAfterId({
-                subscription,
-                lastEventId: nextLastEventId,
+        const replay = await readWithinRealtimeReplayWindow({
+            db,
+            lastEventId,
+            read: async ({ db: tx, window }) => {
+                const collected: Awaited<
+                    ReturnType<typeof fetchSubscribedRealtimeEventsAfterId>
+                > = [];
+                let cursor = lastEventId;
+                while (collected.length < REALTIME_REPLAY_MAX_EVENTS) {
+                    const events = await fetchSubscribedRealtimeEventsAfterId({
+                        db: tx,
+                        subscription,
+                        lastEventId: cursor,
+                        upperBound: window.upperBound,
+                    });
+                    collected.push(...events);
+                    const last = events.at(-1);
+                    if (
+                        last === undefined ||
+                        events.length < REALTIME_REPLAY_BATCH_LIMIT
+                    ) {
+                        return { events: collected, limited: false };
+                    }
+                    cursor = last.id;
+                }
+                return { events: collected, limited: true };
+            },
+        });
+        // Release the retention lock before any network writes.
+        if (replay.status === "resync_required" || replay.value.limited) {
+            await realtimeSSEManager.sendToConnection({
+                reply,
+                id: undefined,
+                event: "resync_required",
+                data: {
+                    cursor:
+                        replay.window.upperBound === 0
+                            ? ""
+                            : (formatRealtimeCursor(replay.window.upperBound) ??
+                              ""),
+                    reason:
+                        replay.status === "resync_required"
+                            ? "cursor_expired"
+                            : "replay_limit",
+                },
             });
-            if (events.length === 0) {
-                return;
-            }
-
-            for (const event of events) {
-                await realtimeSSEManager.sendToConnection({
-                    reply,
-                    id: event.id,
-                    event: event.event,
-                    data: event.data,
-                });
-                nextLastEventId = event.id;
-                replayedEventCount += 1;
-            }
-
-            if (events.length < REALTIME_REPLAY_BATCH_LIMIT) {
-                return;
-            }
+            return;
         }
-
-        log.warn(
-            `[RealtimeSSE] Replay event cap reached topics=${subscription.topics.join(",")} lastEventId=${String(lastEventId)} maxEvents=${String(REALTIME_REPLAY_MAX_EVENTS)}`,
-        );
+        for (const event of replay.value.events) {
+            await realtimeSSEManager.sendToConnection({ reply, ...event });
+        }
     } catch (error) {
+        await realtimeSSEManager.sendToConnection({
+            reply,
+            id: undefined,
+            event: "resync_required",
+            data: { cursor: "", reason: "replay_failed" },
+        });
         log.error(
             error,
             `[RealtimeSSE] Failed to replay events topics=${subscription.topics.join(",")} lastEventId=${String(lastEventId)}`,
@@ -2065,11 +2147,15 @@ async function replaySubscribedRealtimeEvents({
 }
 
 async function fetchSubscribedRealtimeEventsAfterId({
+    db,
     subscription,
     lastEventId,
+    upperBound,
 }: {
+    db: PostgresTransaction;
     subscription: RealtimeSubscriptionRequest;
     lastEventId: number;
+    upperBound: number;
 }): ReturnType<typeof fetchRealtimeTopicEventsAfterId> {
     const [conversationEvents, topicEvents] = await Promise.all([
         subscription.conversationSlugId === undefined
@@ -2078,12 +2164,14 @@ async function fetchSubscribedRealtimeEventsAfterId({
                   db,
                   conversationSlugId: subscription.conversationSlugId,
                   lastEventId,
+                  upperBound,
                   limit: REALTIME_REPLAY_BATCH_LIMIT,
               }),
         fetchRealtimeTopicEventsAfterId({
             db,
             topics: subscription.topics,
             lastEventId,
+            upperBound,
             limit: REALTIME_REPLAY_BATCH_LIMIT,
         }),
     ]);
@@ -2262,6 +2350,66 @@ function checkConversationExportEnabled(): void {
             "Conversation export feature is currently disabled",
         );
     }
+}
+
+async function requireOrganizationAccess({
+    request,
+    organizationSlug,
+    capability,
+}: {
+    request: FastifyRequest;
+    organizationSlug: string;
+    capability: OrganizationAccessCapability;
+}): Promise<{
+    userId: string;
+    permissions: OrganizationManagementPermissions;
+}> {
+    const userId = await requireAuthenticatedUserId(request);
+    const capabilities = (await isSiteOrgAdminAccount({
+        db: getPrimaryDatabase(db),
+        userId,
+    }))
+        ? new Set(organizationRoleCapabilities.admin)
+        : await requireOrganizationCapability({
+              db,
+              userId,
+              organizationSlug,
+              capability,
+          });
+    return {
+        userId,
+        permissions: getOrganizationManagementPermissions(capabilities),
+    };
+}
+
+async function requireProjectAccess({
+    request,
+    projectSlug,
+    capability,
+    ownerOrganizationSlugs,
+}: {
+    request: FastifyRequest;
+    projectSlug: string;
+    capability: ProjectCapability;
+    ownerOrganizationSlugs?: readonly string[];
+}): Promise<{ userId: string; permissions: ProjectManagementPermissions }> {
+    const userId = await requireAuthenticatedUserId(request);
+    const capabilities = (await isSiteOrgAdminAccount({
+        db: getPrimaryDatabase(db),
+        userId,
+    }))
+        ? new Set(projectCapabilityValues)
+        : await requireProjectCapabilityBySlug({
+              db,
+              userId,
+              projectSlug,
+              capability,
+              ownerOrganizationSlugs,
+          });
+    return {
+        userId,
+        permissions: getProjectManagementPermissions(capabilities),
+    };
 }
 
 function parseSnsRequestBody(rawPayload: unknown): unknown {
@@ -2487,6 +2635,7 @@ server.after(() => {
                 }
                 const now = nowZeroMs();
                 return await authService.verifyPhoneOtp({
+                    recoverAccount: request.body.recoverAccount,
                     db,
                     now,
                     maxAttempt: config.EMAIL_OTP_MAX_ATTEMPT_AMOUNT,
@@ -2598,6 +2747,7 @@ server.after(() => {
                 }
                 const now = nowZeroMs();
                 return await authService.verifyEmailOtp({
+                    recoverAccount: request.body.recoverAccount,
                     db,
                     now,
                     maxAttempt: config.EMAIL_OTP_MAX_ATTEMPT_AMOUNT,
@@ -3489,228 +3639,319 @@ server.after(() => {
         },
     });
 
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/prioritization/qv/load`,
+        schema: {
+            body: Dto.qvLoadRequest,
+            response: { 200: Dto.qvLoadResponse },
+        },
+        handler: async (request, reply) => {
+            reply.header("Cache-Control", "no-store");
+            const { didWrite } = await verifyUcanOptionalAuth(db, request);
+            const displayPreferences = await getRankingItemDisplayPreferences({
+                request,
+                conversationSlugId: request.body.conversationSlugId,
+            });
+            return await loadQvSession({
+                db,
+                conversationSlugId: request.body.conversationSlugId,
+                didWrite,
+                now: new Date(),
+                displayPreferences,
+            });
+        },
+    });
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/prioritization/qv/save`,
+        schema: {
+            body: Dto.qvSaveRequest,
+            response: { 200: Dto.qvMutationResponse },
+        },
+        handler: async (request, reply) => {
+            reply.header("Cache-Control", "no-store");
+            const { didWrite } = await verifyUcan(request);
+            return await saveQvResponse({
+                db,
+                request: request.body,
+                didWrite,
+                userAgent: request.headers["user-agent"] ?? "Unknown device",
+                now: new Date(),
+                currentDisplayLanguage: getRequestDisplayLanguage({ request }),
+            });
+        },
+    });
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/prioritization/qv/withdraw`,
+        schema: {
+            body: Dto.qvWithdrawRequest,
+            response: { 200: Dto.qvMutationResponse },
+        },
+        handler: async (request, reply) => {
+            reply.header("Cache-Control", "no-store");
+            const { didWrite } = await verifyUcan(request);
+            return await withdrawQvResponse({
+                db,
+                request: request.body,
+                didWrite,
+                userAgent: request.headers["user-agent"] ?? "Unknown device",
+                now: new Date(),
+                currentDisplayLanguage: getRequestDisplayLanguage({ request }),
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/prioritization/qv/results`,
+        schema: {
+            body: Dto.qvResultsRequest,
+            response: { 200: Dto.qvResultsResponse },
+        },
+        handler: async (request, reply) => {
+            reply.header("Cache-Control", "no-store");
+            await verifyUcanOptionalAuth(db, request);
+            return await fetchQvResults({
+                db,
+                conversationSlugId: request.body.conversationSlugId,
+            });
+        },
+    });
+
     // --- Ranking / Best-Worst Scaling ---
 
-    server.withTypeProvider<ZodTypeProvider>().route({
-        method: "POST",
-        url: `/api/${apiVersion}/ranking/bws/save`,
-        schema: {
-            body: Dto.maxdiffSaveRequest,
-            response: {
-                200: Dto.maxdiffSaveResponse,
+    for (const url of [
+        `/api/${apiVersion}/ranking/bws/save`,
+        `/api/${apiVersion}/prioritization/comparisons/save`,
+    ]) {
+        server.withTypeProvider<ZodTypeProvider>().route({
+            method: "POST",
+            url,
+            schema: {
+                body: Dto.comparisonSaveRequest,
+                response: {
+                    200: Dto.comparisonSaveResponse,
+                },
             },
-        },
-        handler: async (request) => {
-            const trace = createRankingPerformance({
-                enabled: config.API_RANKING_PERFORMANCE_ENABLED,
-                logger: request.log,
-                requestId: request.id,
-                conversationSlugId: request.body.conversationSlugId,
-                operation: "save",
-                historyLength: request.body.comparisons.length,
-            });
-            let outcome: "success" | "failure" | "blocked" = "failure";
-            try {
-                const { didWrite } = await trace.measure({
-                    phase: "authentication",
-                    run: () => verifyUcan(request),
-                });
-                const now = nowZeroMs();
-                const participationCheck = await trace.measure({
-                    phase: "participation",
-                    run: () =>
-                        checkConversationParticipation({
-                            db,
-                            conversationSlugId: request.body.conversationSlugId,
-                            didWrite,
-                            userAgent:
-                                request.headers["user-agent"] ??
-                                "Unknown device",
-                            now,
-                            currentDisplayLanguage: getRequestDisplayLanguage({
-                                request,
-                            }),
-                        }),
-                });
-                if (!participationCheck.success) {
-                    outcome = "blocked";
-                    return participationCheck;
-                }
-                const { items, uncertainty } = await saveMaxdiffResult({
-                    db,
+            handler: async (request) => {
+                const trace = createRankingPerformance({
+                    enabled: config.API_RANKING_PERFORMANCE_ENABLED,
+                    logger: request.log,
+                    requestId: request.id,
                     conversationSlugId: request.body.conversationSlugId,
-                    userId: participationCheck.participantId,
-                    ranking: request.body.ranking,
-                    comparisons: request.body.comparisons,
-                    isComplete: request.body.isComplete,
-                    valkey: queueValkeyRef.current,
-                    performance: trace,
+                    operation: "save",
+                    historyLength: request.body.comparisons.length,
                 });
-                const candidateSets = trace.measureSync({
-                    phase: "routing",
-                    run: () =>
-                        generateCandidateSets({
-                            userComparisons: request.body.comparisons,
-                            items,
-                            globalUncertainty: uncertainty,
-                            bufferSize: 1,
-                        }),
-                });
-                outcome = "success";
-                return { success: true as const, candidateSets };
-            } finally {
-                trace.finish(outcome);
-            }
-        },
-    });
-
-    server.withTypeProvider<ZodTypeProvider>().route({
-        method: "POST",
-        url: `/api/${apiVersion}/ranking/bws/load`,
-        schema: {
-            body: Dto.maxdiffLoadRequest,
-            response: {
-                200: Dto.maxdiffLoadResponse,
-            },
-        },
-        handler: async (request) => {
-            const trace = createRankingPerformance({
-                enabled: config.API_RANKING_PERFORMANCE_ENABLED,
-                logger: request.log,
-                requestId: request.id,
-                conversationSlugId: request.body.conversationSlugId,
-                operation: "load",
-                historyLength: undefined,
-            });
-            let outcome: "success" | "failure" = "failure";
-            try {
-                const { deviceStatus } = await trace.measure({
-                    phase: "authentication",
-                    run: () => verifyUcanOptionalAuth(db, request),
-                });
-                const { id: conversationId } =
-                    await useCommonPost().getPostMetadataFromSlugId({
+                let outcome: "success" | "failure" | "blocked" = "failure";
+                try {
+                    const { didWrite } = await trace.measure({
+                        phase: "authentication",
+                        run: () => verifyUcan(request),
+                    });
+                    const now = nowZeroMs();
+                    const saved = await saveComparisonResponse({
                         db,
+                        request: request.body,
+                        didWrite,
+                        userAgent:
+                            request.headers["user-agent"] ?? "Unknown device",
+                        now,
+                        currentDisplayLanguage: getRequestDisplayLanguage({
+                            request,
+                        }),
+                        valkey: queueValkeyRef.current,
+                        performance: trace,
+                    });
+                    if (!saved.success) {
+                        outcome = "blocked";
+                        return saved;
+                    }
+                    const { items, uncertainty, comparisonMethod } = saved;
+                    const candidateSets = trace.measureSync({
+                        phase: "routing",
+                        run: () =>
+                            generateCandidateSets({
+                                userComparisons: request.body.comparisons,
+                                items,
+                                globalUncertainty: uncertainty,
+                                bufferSize: 1,
+                                candidateSetSize:
+                                    getComparisonCandidateSetSize(
+                                        comparisonMethod,
+                                    ),
+                            }),
+                    });
+                    outcome = "success";
+                    return { success: true as const, candidateSets };
+                } finally {
+                    trace.finish(outcome);
+                }
+            },
+        });
+    }
+    for (const url of [
+        `/api/${apiVersion}/ranking/bws/load`,
+        `/api/${apiVersion}/prioritization/comparisons/load`,
+    ]) {
+        server.withTypeProvider<ZodTypeProvider>().route({
+            method: "POST",
+            url,
+            schema: {
+                body: Dto.comparisonLoadRequest,
+                response: {
+                    200: Dto.comparisonLoadResponse,
+                },
+            },
+            handler: async (request) => {
+                const trace = createRankingPerformance({
+                    enabled: config.API_RANKING_PERFORMANCE_ENABLED,
+                    logger: request.log,
+                    requestId: request.id,
+                    conversationSlugId: request.body.conversationSlugId,
+                    operation: "load",
+                    historyLength: undefined,
+                });
+                let outcome: "success" | "failure" = "failure";
+                try {
+                    const { deviceStatus } = await trace.measure({
+                        phase: "authentication",
+                        run: () => verifyUcanOptionalAuth(db, request),
+                    });
+                    const {
+                        items,
+                        uncertainty,
+                        comparisonMethod,
+                        ...loadData
+                    } = await trace.measure({
+                        phase: "load",
+                        run: () =>
+                            loadComparisonSession({
+                                db,
+                                conversationSlugId:
+                                    request.body.conversationSlugId,
+                                userId: deviceStatus.isKnown
+                                    ? deviceStatus.userId
+                                    : undefined,
+                            }),
+                    });
+                    const candidateSets = trace.measureSync({
+                        phase: "routing",
+                        run: () =>
+                            generateCandidateSets({
+                                userComparisons: loadData.comparisons ?? [],
+                                items,
+                                globalUncertainty: uncertainty,
+                                bufferSize: 1,
+                                candidateSetSize:
+                                    getComparisonCandidateSetSize(
+                                        comparisonMethod,
+                                    ),
+                            }),
+                    });
+                    outcome = "success";
+                    return { ...loadData, candidateSets };
+                } finally {
+                    trace.finish(outcome);
+                }
+            },
+        });
+    }
+    for (const url of [
+        `/api/${apiVersion}/ranking/bws/results`,
+        `/api/${apiVersion}/prioritization/comparisons/results`,
+    ]) {
+        server.withTypeProvider<ZodTypeProvider>().route({
+            method: "POST",
+            url,
+            schema: {
+                body: Dto.comparisonResultsRequest,
+                response: {
+                    200: Dto.comparisonResultsResponse,
+                },
+            },
+            handler: async (request) => {
+                const displayPreferences =
+                    await getRankingItemDisplayPreferences({
+                        request,
                         conversationSlugId: request.body.conversationSlugId,
                     });
-                const [loadData, { items, uncertainty }] = await trace.measure({
-                    phase: "load",
-                    run: () =>
-                        Promise.all([
-                            deviceStatus.isKnown
-                                ? loadMaxdiffResult({
-                                      db,
-                                      conversationId,
-                                      userId: deviceStatus.userId,
-                                  })
-                                : Promise.resolve({
-                                      ranking: null,
-                                      comparisons: null,
-                                      isComplete: false,
-                                      perUserScores: null,
-                                  }),
-                            trace.measure({
-                                phase: "uncertainty",
-                                run: () =>
-                                    computeGlobalUncertainty({
-                                        db,
-                                        conversationId,
-                                    }),
-                            }),
-                        ]),
+                return await getComparisonResults({
+                    db,
+                    conversationSlugId: request.body.conversationSlugId,
+                    displayPreferences,
+                    lifecycleFilter: request.body.lifecycleFilter,
+                    rankingStatsSnapshotId: request.body.rankingStatsSnapshotId,
+                    requestedRankingStatsSnapshotId:
+                        request.body.requestedRankingStatsSnapshotId,
+                    valkey: queueValkeyRef.current,
                 });
-                const candidateSets = trace.measureSync({
-                    phase: "routing",
-                    run: () =>
-                        generateCandidateSets({
-                            userComparisons: loadData.comparisons ?? [],
-                            items,
-                            globalUncertainty: uncertainty,
-                            bufferSize: 1,
-                        }),
+            },
+        });
+    }
+    for (const url of [
+        `/api/${apiVersion}/ranking/bws/stats/checkpoints`,
+        `/api/${apiVersion}/prioritization/comparisons/stats/checkpoints`,
+    ]) {
+        server.withTypeProvider<ZodTypeProvider>().route({
+            method: "POST",
+            url,
+            schema: {
+                body: Dto.rankingStatsCheckpointsRequest,
+                response: {
+                    200: Dto.rankingStatsCheckpointsResponse,
+                },
+            },
+            handler: async (request) => {
+                return await fetchRankingStatsCheckpoints({
+                    db,
+                    conversationSlugId: request.body.conversationSlugId,
+                    requestedRankingStatsSnapshotId:
+                        request.body.requestedRankingStatsSnapshotId,
                 });
-                outcome = "success";
-                return { ...loadData, candidateSets };
-            } finally {
-                trace.finish(outcome);
-            }
-        },
-    });
-
-    server.withTypeProvider<ZodTypeProvider>().route({
-        method: "POST",
-        url: `/api/${apiVersion}/ranking/bws/results`,
-        schema: {
-            body: Dto.maxdiffResultsRequest,
-            response: {
-                200: Dto.maxdiffResultsResponse,
             },
+        });
+    }
+    // The creation/edit preview needs current translated item versions, which the
+    // raw statement-maintenance response cannot reconstruct on the client.
+    for (const { url, itemsDb } of [
+        { url: `/api/${apiVersion}/ranking/bws/items/fetch`, itemsDb: db },
+        {
+            url: `/api/${apiVersion}/prioritization/items/fetch`,
+            itemsDb: getPrimaryDatabase(db),
         },
-        handler: async (request) => {
-            const displayPreferences = await getRankingItemDisplayPreferences({
-                request,
-                conversationSlugId: request.body.conversationSlugId,
-            });
-            return await getMaxdiffResults({
-                db,
-                conversationSlugId: request.body.conversationSlugId,
-                displayPreferences,
-                lifecycleFilter: request.body.lifecycleFilter,
-                rankingStatsSnapshotId: request.body.rankingStatsSnapshotId,
-                requestedRankingStatsSnapshotId:
-                    request.body.requestedRankingStatsSnapshotId,
-                valkey: queueValkeyRef.current,
-            });
-        },
-    });
-
-    server.withTypeProvider<ZodTypeProvider>().route({
-        method: "POST",
-        url: `/api/${apiVersion}/ranking/bws/stats/checkpoints`,
-        schema: {
-            body: Dto.rankingStatsCheckpointsRequest,
-            response: {
-                200: Dto.rankingStatsCheckpointsResponse,
+    ]) {
+        server.withTypeProvider<ZodTypeProvider>().route({
+            method: "POST",
+            url,
+            schema: {
+                body: Dto.prioritizationItemsFetchRequest,
+                response: {
+                    200: Dto.prioritizationItemsFetchResponse,
+                },
             },
-        },
-        handler: async (request) => {
-            return await fetchRankingStatsCheckpoints({
-                db,
-                conversationSlugId: request.body.conversationSlugId,
-                requestedRankingStatsSnapshotId:
-                    request.body.requestedRankingStatsSnapshotId,
-            });
-        },
-    });
-
-    server.withTypeProvider<ZodTypeProvider>().route({
-        method: "POST",
-        url: `/api/${apiVersion}/ranking/bws/items/fetch`,
-        schema: {
-            body: Dto.maxdiffItemsFetchRequest,
-            response: {
-                200: Dto.maxdiffItemsFetchResponse,
+            handler: async (request) => {
+                const displayPreferences =
+                    await getRankingItemDisplayPreferences({
+                        request,
+                        conversationSlugId: request.body.conversationSlugId,
+                    });
+                return await fetchRankingItems({
+                    db: itemsDb,
+                    conversationSlugId: request.body.conversationSlugId,
+                    displayPreferences,
+                    lifecycleFilter: request.body.lifecycleFilter,
+                });
             },
-        },
-        handler: async (request) => {
-            const displayPreferences = await getRankingItemDisplayPreferences({
-                request,
-                conversationSlugId: request.body.conversationSlugId,
-            });
-            return await fetchRankingItems({
-                db,
-                conversationSlugId: request.body.conversationSlugId,
-                displayPreferences,
-                lifecycleFilter: request.body.lifecycleFilter,
-            });
-        },
-    });
+        });
+    }
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
         url: `/api/${apiVersion}/ranking/bws/items/lifecycle/update`,
         schema: {
-            body: Dto.maxdiffItemLifecycleUpdateRequest,
+            body: Dto.prioritizationItemLifecycleUpdateRequest,
         },
         handler: async (request, reply) => {
             const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
@@ -3720,6 +3961,12 @@ server.after(() => {
                     expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
                 },
             );
+            await requireConversationCapabilityBySlug({
+                db,
+                userId: deviceStatus.userId,
+                conversationSlugId: request.body.conversationSlugId,
+                capability: "conversation_edit",
+            });
             await updateRankingItemLifecycle({
                 db,
                 conversationSlugId: request.body.conversationSlugId,
@@ -3736,12 +3983,12 @@ server.after(() => {
         method: "POST",
         url: `/api/${apiVersion}/ranking/bws/sync`,
         config: {
-            rateLimit: maxdiffConnectorRateLimitConfig,
+            rateLimit: comparisonConnectorRateLimitConfig,
         },
         schema: {
-            body: Dto.maxdiffSyncRequest,
+            body: Dto.comparisonSyncRequest,
             response: {
-                200: Dto.maxdiffSyncResponse,
+                200: Dto.comparisonSyncResponse,
             },
         },
         handler: async (request) => {
@@ -3757,9 +4004,15 @@ server.after(() => {
                     expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
                 },
             );
-            await assertMaxdiffGitHubAllowedForConversation({
+            await assertComparisonGitHubAllowedForConversation({
                 conversationSlugId: request.body.conversationSlugId,
                 userId: deviceStatus.userId,
+            });
+            await requireConversationCapabilityBySlug({
+                db,
+                userId: deviceStatus.userId,
+                conversationSlugId: request.body.conversationSlugId,
+                capability: "conversation_edit",
             });
             const githubClient = createGitHubClient({
                 accessToken: config.GITHUB_ACCESS_TOKEN,
@@ -3778,12 +4031,12 @@ server.after(() => {
         method: "POST",
         url: `/api/${apiVersion}/ranking/bws/github/preview`,
         config: {
-            rateLimit: maxdiffConnectorRateLimitConfig,
+            rateLimit: comparisonConnectorRateLimitConfig,
         },
         schema: {
-            body: Dto.maxdiffGitHubPreviewRequest,
+            body: Dto.comparisonGitHubPreviewRequest,
             response: {
-                200: Dto.maxdiffGitHubPreviewResponse,
+                200: Dto.comparisonGitHubPreviewResponse,
             },
         },
         handler: async (request) => {
@@ -3890,6 +4143,11 @@ server.after(() => {
                     }),
                 },
             });
+            await requireOpinionManagement({
+                db,
+                userId: deviceStatus.userId,
+                opinionSlugId: request.body.opinionSlugId,
+            });
             return await editOpinion({
                 db,
                 request: request.body,
@@ -3918,12 +4176,39 @@ server.after(() => {
                     expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
                 },
             );
+            await requireOpinionManagement({
+                db,
+                userId: deviceStatus.userId,
+                opinionSlugId: request.body.opinionSlugId,
+            });
             await deleteOpinionBySlugId({
                 db: db,
                 opinionSlugId: request.body.opinionSlugId,
                 userId: deviceStatus.userId,
             });
             reply.send();
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/prioritization/comparisons/statements/create`,
+        schema: {
+            body: Dto.createComparisonStatementRequest,
+            response: { 200: Dto.createComparisonStatementResponse },
+        },
+        handler: async (request) => {
+            const { didWrite } = await verifyUcan(request);
+            return await createComparisonStatement({
+                db,
+                request: request.body,
+                didWrite,
+                userAgent: request.headers["user-agent"] ?? "Unknown device",
+                now: nowZeroMs(),
+                currentDisplayLanguage: getRequestDisplayLanguage({ request }),
+                googleCloudCredentials,
+                valkey: queueValkeyRef.current,
+            });
         },
     });
 
@@ -4385,6 +4670,12 @@ server.after(() => {
                     expectedKnownDeviceStatus: { isLoggedIn: true },
                 },
             );
+            await requireConversationCapabilityBySlug({
+                db,
+                userId: deviceStatus.userId,
+                conversationSlugId: request.body.conversationSlugId,
+                capability: "conversation_delete",
+            });
             await postService.deletePostBySlugId({
                 db: db,
                 conversationSlugId: request.body.conversationSlugId,
@@ -4411,11 +4702,16 @@ server.after(() => {
                     expectedKnownDeviceStatus: { isLoggedIn: true },
                 },
             );
+            await requireConversationCapabilityBySlug({
+                db,
+                userId: deviceStatus.userId,
+                conversationSlugId: request.body.conversationSlugId,
+                capability: "conversation_edit",
+            });
             return await postService.closeConversation({
                 voteBuffer,
                 db: db,
                 conversationSlugId: request.body.conversationSlugId,
-                userId: deviceStatus.userId,
                 valkey: queueValkeyRef.current,
             });
         },
@@ -4438,10 +4734,15 @@ server.after(() => {
                     expectedKnownDeviceStatus: { isLoggedIn: true },
                 },
             );
+            await requireConversationCapabilityBySlug({
+                db,
+                userId: deviceStatus.userId,
+                conversationSlugId: request.body.conversationSlugId,
+                capability: "conversation_edit",
+            });
             return await postService.openConversation({
                 db: db,
                 conversationSlugId: request.body.conversationSlugId,
-                userId: deviceStatus.userId,
                 valkey: queueValkeyRef.current,
             });
         },
@@ -4459,7 +4760,7 @@ server.after(() => {
         handler: async (request, reply) => {
             const createConversationRequest =
                 Dto.createNewConversationRequest.parse(request.body);
-            const { didWrite, deviceStatus } =
+            const { deviceStatus } =
                 await verifyUcanAndKnownDeviceStatus(db, request, {
                     expectedKnownDeviceStatus: {
                         isLoggedIn: true,
@@ -4483,7 +4784,7 @@ server.after(() => {
                 });
 
             const hasSurvey =
-                createConversationRequest.conversationType === "polis" &&
+                "surveyConfig" in createConversationRequest &&
                 (createConversationRequest.surveyConfig?.questions.length ??
                     0) > 0;
             const createTargetResult =
@@ -4543,8 +4844,6 @@ server.after(() => {
                       });
             const premiumFeatures =
                 premiumEntitlementService.getPremiumFeaturesFromCreateRequest({
-                    requiresEventTicket:
-                        createConversationRequest.requiresEventTicket,
                     hasSurvey,
                     preferredOpinionGroupCount:
                         createConversationRequest.conversationType === "polis"
@@ -4554,10 +4853,12 @@ server.after(() => {
                 });
 
             if (
-                createConversationRequest.conversationType === "ranking" &&
+                createConversationRequest.conversationType === "prioritizing" &&
+                createConversationRequest.prioritizationType ===
+                    "comparisons" &&
                 createConversationRequest.externalSourceConfig != null
             ) {
-                assertMaxdiffGitHubAllowed({
+                assertComparisonGitHubAllowed({
                     userId: deviceStatus.userId,
                     postAsOrganization:
                         createConversationRequest.postAsOrganization,
@@ -4582,7 +4883,6 @@ server.after(() => {
                 request: createConversationRequest,
                 normalizedRichText: normalizedRichTextResult.content,
                 authorId: deviceStatus.userId,
-                didWrite: didWrite,
                 createTarget: createTargetResult.target,
                 autoProvisionedDefaultLanguage,
                 isImporting: false,
@@ -4844,7 +5144,6 @@ server.after(() => {
 
             const premiumFeatures =
                 premiumEntitlementService.getPremiumFeaturesFromCreateRequest({
-                    requiresEventTicket: request.body.requiresEventTicket,
                     hasSurvey: false,
                     preferredOpinionGroupCount:
                         request.body.preferredOpinionGroupCount,
@@ -4873,7 +5172,6 @@ server.after(() => {
                     formData: {
                         participationMode: request.body.participationMode,
                         isIndexed: request.body.isIndexed,
-                        requiresEventTicket: request.body.requiresEventTicket,
                         aiLabelingEnabled: request.body.aiLabelingEnabled,
                         preferredOpinionGroupCount:
                             request.body.preferredOpinionGroupCount,
@@ -5090,7 +5388,6 @@ server.after(() => {
 
             const premiumFeatures =
                 premiumEntitlementService.getPremiumFeaturesFromCreateRequest({
-                    requiresEventTicket: parsedFields.requiresEventTicket,
                     hasSurvey: false,
                     preferredOpinionGroupCount:
                         parsedFields.preferredOpinionGroupCount,
@@ -5119,7 +5416,6 @@ server.after(() => {
                     formData: {
                         participationMode: parsedFields.participationMode,
                         isIndexed: parsedFields.isIndexed,
-                        requiresEventTicket: parsedFields.requiresEventTicket,
                         aiLabelingEnabled: parsedFields.aiLabelingEnabled,
                         preferredOpinionGroupCount:
                             parsedFields.preferredOpinionGroupCount,
@@ -5332,6 +5628,12 @@ server.after(() => {
                     },
                 },
             );
+            await requireConversationCapabilityBySlug({
+                db,
+                userId: deviceStatus.userId,
+                conversationSlugId: request.body.conversationSlugId,
+                capability: "conversation_edit",
+            });
             return await postEditService.getConversationForEdit({
                 db: db,
                 conversationSlugId: request.body.conversationSlugId,
@@ -5362,6 +5664,29 @@ server.after(() => {
                 },
             );
 
+            await requireConversationCapabilityBySlug({
+                db,
+                userId: deviceStatus.userId,
+                conversationSlugId: request.body.conversationSlugId,
+                capability: "conversation_edit",
+            });
+            if (request.body.projectChange !== undefined)
+                await requireConversationDestination({
+                    db,
+                    userId: deviceStatus.userId,
+                    target: request.body.projectChange.target,
+                });
+            if (
+                request.body.conversationEmailUpdateEnabledOverride !==
+                undefined
+            ) {
+                await requireConversationCapabilityBySlug({
+                    db,
+                    userId: deviceStatus.userId,
+                    conversationSlugId: request.body.conversationSlugId,
+                    capability: "conversation_email_update",
+                });
+            }
             const preferences = (request.body.seedOpinionChanges ?? []).some(
                 (change) => change.action === "edit",
             )
@@ -5415,6 +5740,7 @@ server.after(() => {
                 reply.send({
                     success: true,
                     addedSeedOpinions: updateResult.addedSeedOpinions,
+                    participantStatements: updateResult.participantStatements,
                     addedOpinions: updateResult.addedOpinions,
                     updatedOpinions: updateResult.updatedOpinions,
                     projectAssignment: updateResult.projectAssignment,
@@ -5624,6 +5950,12 @@ server.after(() => {
                     },
                 },
             );
+            await requireConversationCapabilityBySlug({
+                db,
+                userId: deviceStatus.userId,
+                conversationSlugId: request.body.conversationSlugId,
+                capability: "conversation_edit",
+            });
             return await surveyService.updateSurveyConfigByAuthor({
                 db,
                 conversationSlugId: request.body.conversationSlugId,
@@ -5655,6 +5987,12 @@ server.after(() => {
                     },
                 },
             );
+            await requireConversationCapabilityBySlug({
+                db,
+                userId: deviceStatus.userId,
+                conversationSlugId: request.body.conversationSlugId,
+                capability: "conversation_edit",
+            });
             const surveyConfigDeleteResult =
                 await surveyService.deleteSurveyConfigByAuthor({
                     db,
@@ -5699,6 +6037,14 @@ server.after(() => {
                         : undefined,
                     headerDisplayLanguage,
                 });
+            const accessLevel = (await hasConversationCapabilityBySlug({
+                db,
+                conversationSlugId: request.body.conversationSlugId,
+                userId: deviceStatus.isKnown ? deviceStatus.userId : undefined,
+                capability: "conversation_view_restricted_survey",
+            }))
+                ? "owner"
+                : "public";
             const [surveyResults, surveyConfig] = await Promise.all([
                 surveyService.fetchSurveyAggregatedResults({
                     db,
@@ -5706,9 +6052,7 @@ server.after(() => {
                     analysisView: request.body.analysisView,
                     checkpointViewSnapshotId:
                         request.body.checkpointViewSnapshotId,
-                    userId: deviceStatus.isKnown
-                        ? deviceStatus.userId
-                        : undefined,
+                    accessLevel,
                     displayLanguage: displayContentPreferences.displayLanguage,
                 }),
                 surveyService.fetchSurveyConfig({
@@ -5752,6 +6096,12 @@ server.after(() => {
                     },
                 },
             );
+            await requireConversationCapabilityBySlug({
+                db,
+                userId: deviceStatus.userId,
+                conversationSlugId: request.body.conversationSlugId,
+                capability: "conversation_edit",
+            });
             return await surveyService.fetchSurveyCompletionCounts({
                 db,
                 conversationSlugId: request.body.conversationSlugId,
@@ -5805,70 +6155,78 @@ server.after(() => {
         },
     });
 
-    // Zupass event ticket verification
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/auth/ticket/verify`,
-        schema: {
-            body: Dto.verifyEventTicketRequest,
-            response: {
-                200: Dto.verifyEventTicket200,
-            },
-        },
+        url: `/api/${apiVersion}/user/recover/passport`,
+        schema: { response: { 200: Dto.verifyUserStatusAndAuthenticate200 } },
         handler: async (request) => {
             const { didWrite } = await verifyUcan(request);
-            const now = nowZeroMs();
-            const result = await verifyEventTicket({
+            return await verifyUserStatusAndAuthenticate({
                 db,
                 didWrite,
-                proofData: request.body.proof,
-                eventSlug: request.body.eventSlug,
+                axiosVerificatorSvc,
+                recoverAccount: true,
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
-                now,
                 sessionLifetimeDays: config.SESSION_LIFETIME_DAYS,
                 currentDisplayLanguage: getRequestDisplayLanguage({ request }),
-                afterVerified: () => Promise.resolve(undefined),
             });
-            if (!result.success) return result;
-            return {
-                success: true as const,
-                userId: result.userId,
-                accountMerged: result.accountMerged,
-            };
         },
     });
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
-        url: `/api/${apiVersion}/conversation/onboarding/ticket/verify`,
+        url: `/api/${apiVersion}/user/recover/guest`,
         schema: {
-            body: Dto.conversationOnboardingTicketVerifyRequest,
-            response: { 200: Dto.conversationOnboardingTicketVerifyResponse },
+            body: Dto.recoverGuestAccountRequest,
+            response: { 200: Dto.recoverAccountResponse },
         },
         handler: async (request) => {
-            const { didWrite } = await verifyUcan(request);
-            return await verifyConversationOnboardingTicket({
-                db,
-                request: request.body,
-                emailUpdateOptions: conversationEmailUpdateOptions,
-                verification: {
-                    didWrite,
-                    now: nowZeroMs(),
-                    userAgent:
-                        request.headers["user-agent"] ?? "Unknown device",
-                    sessionLifetimeDays: config.SESSION_LIFETIME_DAYS,
-                    currentDisplayLanguage: getRequestDisplayLanguage({
-                        request,
+            // Possession of the original key is checked independently of revoked sessions.
+            const { didWrite, facts } = await verifyUcan(request);
+            if (
+                !authorizesGuestRecoveryTarget({
+                    facts,
+                    freshDidWrite: request.body.freshDidWrite,
+                })
+            )
+                throw server.httpErrors.unauthorized(
+                    "Guest recovery target is not authorized",
+                );
+            const primary = getPrimaryDatabase(db);
+            const devices = await primary
+                .select({ userId: deviceTable.userId })
+                .from(deviceTable)
+                .where(eq(deviceTable.didWrite, didWrite));
+            const device = devices.at(0);
+            if (device === undefined)
+                return {
+                    success: false,
+                    reason: "recovery_unavailable",
+                } as const;
+            return await primary.transaction(
+                async (tx) =>
+                    await restoreAccountAfterVerification({
+                        db: tx,
+                        userId: device.userId,
+                        didWrite: request.body.freshDidWrite,
+                        proof: { method: "guest_device", didWrite },
+                        userAgent:
+                            request.headers["user-agent"] ?? "Unknown device",
+                        sessionLifetimeDays: config.SESSION_LIFETIME_DAYS,
                     }),
-                },
-            });
+            );
         },
     });
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
         url: `/api/${apiVersion}/user/delete`,
-        schema: {},
+        schema: {
+            response: {
+                200: Dto.deleteUserAccountResponse.options[0],
+                409: Dto.deleteUserAccountResponse.options[1],
+            },
+        },
         handler: async (request, reply) => {
             const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
                 db,
@@ -5877,11 +6235,27 @@ server.after(() => {
                     expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
                 },
             );
-            await deleteUserAccount({
-                db: db,
-                userId: deviceStatus.userId,
-            });
-            reply.send();
+            try {
+                const result = await deleteUserAccount({
+                    db,
+                    userId: deviceStatus.userId,
+                });
+                if (result.success) return result;
+                return await reply.code(409).send(result);
+            } catch (error) {
+                // A concurrent admin removal can invalidate the earlier eligibility
+                // result; the deferred database constraint is the final authority.
+                if (
+                    getGovernanceConstraint(error) ===
+                    "organization_active_admin_required"
+                ) {
+                    return reply.code(409).send({
+                        success: false,
+                        reason: "last_active_organization_admin",
+                    });
+                }
+                throw error;
+            }
         },
     });
 
@@ -6021,8 +6395,15 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            await requireSiteOrgAdmin(request);
-            return await getAllProjects({ db });
+            const userId = await requireAuthenticatedUserId(request);
+            const projectIds = (await isSiteOrgAdminAccount({ db, userId }))
+                ? undefined
+                : await getProjectIdsWithCapability({
+                      db: getPrimaryDatabase(db),
+                      userId,
+                      capability: "project_update",
+                  });
+            return await getAllProjects({ db, projectIds });
         },
     });
 
@@ -6035,8 +6416,15 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            await requireSiteOrgAdmin(request);
-            return await getProjectOptions({ db });
+            const userId = await requireAuthenticatedUserId(request);
+            const projectIds = (await isSiteOrgAdminAccount({ db, userId }))
+                ? undefined
+                : await getProjectIdsWithCapability({
+                      db: getPrimaryDatabase(db),
+                      userId,
+                      capability: "project_update",
+                  });
+            return await getProjectOptions({ db, projectIds });
         },
     });
 
@@ -6050,11 +6438,16 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            await requireSiteOrgAdmin(request);
-            return await getProjectDetails({
+            const { permissions } = await requireProjectAccess({
+                request,
+                projectSlug: request.body.projectSlug,
+                capability: "project_update",
+            });
+            const details = await getProjectDetails({
                 db,
                 projectSlug: request.body.projectSlug,
             });
+            return { ...details, permissions };
         },
     });
 
@@ -6068,7 +6461,13 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            await requireSiteOrgAdmin(request);
+            const userId = await requireAuthenticatedUserId(request);
+            if (!(await isSiteOrgAdminAccount({ db, userId })))
+                await requireProjectCreation({
+                    db,
+                    userId,
+                    ownerOrganizationSlugs: request.body.ownerOrganizationSlugs,
+                });
             const result = await createProject({
                 db,
                 data: request.body,
@@ -6111,7 +6510,11 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            await requireSiteOrgAdmin(request);
+            await requireProjectAccess({
+                request,
+                projectSlug: request.body.projectSlug,
+                capability: "project_update",
+            });
             const result = await updateProjectLanguageSettings({
                 db,
                 data: request.body,
@@ -6151,7 +6554,11 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            await requireSiteOrgAdmin(request);
+            await requireProjectAccess({
+                request,
+                projectSlug: request.body.currentProjectSlug,
+                capability: "project_update",
+            });
             return await updateProjectSlug({
                 db,
                 currentProjectSlug: request.body.currentProjectSlug,
@@ -6170,7 +6577,12 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            await requireSiteOrgAdmin(request);
+            await requireProjectAccess({
+                request,
+                projectSlug: request.body.projectSlug,
+                capability: "project_update",
+                ownerOrganizationSlugs: request.body.ownerOrganizationSlugs,
+            });
             const result = await updateProject({
                 db,
                 data: request.body,
@@ -6210,8 +6622,12 @@ server.after(() => {
             body: Dto.deleteProjectRequest,
         },
         handler: async (request) => {
-            await requireSiteOrgAdmin(request);
-            await archiveProject({
+            await requireProjectAccess({
+                request,
+                projectSlug: request.body.projectSlug,
+                capability: "project_delete",
+            });
+            await deleteProject({
                 db,
                 projectSlug: request.body.projectSlug,
             });
@@ -6239,7 +6655,11 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            await requireSiteOrgAdmin(request);
+            await requireProjectAccess({
+                request,
+                projectSlug: request.body.projectSlug,
+                capability: "project_update",
+            });
             return await projectDocumentService.listProjectDocuments({
                 db,
                 projectSlug: request.body.projectSlug,
@@ -6263,7 +6683,7 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const adminUserId = await requireSiteOrgAdmin(request);
+            const adminUserId = await requireAuthenticatedUserId(request);
             const parts = request.parts({
                 limits: {
                     fileSize: MAX_PROJECT_DOCUMENT_FILE_SIZE,
@@ -6344,6 +6764,14 @@ server.after(() => {
                     "Participant document file and metadata are required",
                 );
             }
+            if (!(await isSiteOrgAdminAccount({ db, userId: adminUserId }))) {
+                await requireProjectCapabilityBySlug({
+                    db,
+                    userId: adminUserId,
+                    projectSlug: metadata.projectSlug,
+                    capability: "project_update",
+                });
+            }
             return await projectDocumentService.uploadProjectDocument({
                 db,
                 metadata,
@@ -6361,7 +6789,11 @@ server.after(() => {
             body: Dto.deleteProjectDocumentRequest,
         },
         handler: async (request) => {
-            await requireSiteOrgAdmin(request);
+            await requireProjectAccess({
+                request,
+                projectSlug: request.body.projectSlug,
+                capability: "project_update",
+            });
             await projectDocumentService.deleteProjectDocument({
                 db,
                 projectSlug: request.body.projectSlug,
@@ -6395,12 +6827,17 @@ server.after(() => {
             body: Dto.addUserOrganizationMappingRequest,
         },
         handler: async (request) => {
-            await requireSiteOrgAdmin(request);
+            await requireOrganizationAccess({
+                request,
+                organizationSlug: request.body.organizationName,
+                capability: "organization_manage_members",
+            });
 
             await addUserOrganizationMapping({
                 db: db,
                 username: request.body.username,
                 organizationName: request.body.organizationName,
+                role: request.body.role,
             });
             return;
         },
@@ -6413,11 +6850,14 @@ server.after(() => {
             body: Dto.removeUserOrganizationMappingRequest,
         },
         handler: async (request) => {
-            const adminUserId = await requireSiteOrgAdmin(request);
+            await requireOrganizationAccess({
+                request,
+                organizationSlug: request.body.organizationName,
+                capability: "organization_manage_members",
+            });
 
             await removeUserOrganizationMapping({
                 db,
-                adminUserId,
                 username: request.body.username,
                 organizationName: request.body.organizationName,
             });
@@ -6474,7 +6914,11 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            await requireSiteOrgAdmin(request);
+            await requireOrganizationAccess({
+                request,
+                organizationSlug: request.body.organizationName,
+                capability: "organization_manage_members",
+            });
 
             return await getOrganizationMembers({
                 db,
@@ -6492,11 +6936,21 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            await requireSiteOrgAdmin(request);
-
+            const userId = await requireAuthenticatedUserId(request);
+            const organizationIds = (await isSiteOrgAdminAccount({
+                db,
+                userId,
+            }))
+                ? undefined
+                : await getOrganizationIdsWithCapability({
+                      db,
+                      userId,
+                      capability: "organization_manage_profile",
+                  });
             return await getAllOrganizations({
                 db: db,
                 baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
+                organizationIds,
             });
         },
     });
@@ -6510,8 +6964,38 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            await requireSiteOrgAdmin(request);
-            return await getOrganizationOptions({ db });
+            const userId = await requireAuthenticatedUserId(request);
+            const organizationIds = (await isSiteOrgAdminAccount({
+                db,
+                userId,
+            }))
+                ? undefined
+                : await getOrganizationIdsWithCapability({
+                      db,
+                      userId,
+                      capability: "organization_manage_profile",
+                  });
+            return await getOrganizationOptions({ db, organizationIds });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/administrator/organization/get-project-owner-options`,
+        schema: { response: { 200: Dto.getOrganizationOptionsResponse } },
+        handler: async (request) => {
+            const userId = await requireAuthenticatedUserId(request);
+            const organizationIds = (await isSiteOrgAdminAccount({
+                db,
+                userId,
+            }))
+                ? undefined
+                : await getOrganizationIdsWithCapability({
+                      db,
+                      userId,
+                      capability: "project_create",
+                  });
+            return await getOrganizationOptions({ db, organizationIds });
         },
     });
 
@@ -6525,12 +7009,17 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            await requireSiteOrgAdmin(request);
-            return await getOrganizationDetails({
+            const { permissions } = await requireOrganizationAccess({
+                request,
+                organizationSlug: request.body.organizationSlug,
+                capability: "organization_manage_profile",
+            });
+            const details = await getOrganizationDetails({
                 db,
                 baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
                 organizationSlug: request.body.organizationSlug,
             });
+            return { ...details, permissions };
         },
     });
 
@@ -6542,7 +7031,11 @@ server.after(() => {
             response: { 200: Dto.getAdminNoProjectEmailUpdatesResponse },
         },
         handler: async (request) => {
-            await requireSiteOrgAdmin(request);
+            await requireOrganizationAccess({
+                request,
+                organizationSlug: request.body.organizationSlug,
+                capability: "conversation_email_update",
+            });
             return await getAdminNoProjectEmailUpdates({
                 db: getPrimaryDatabase(db),
                 organizationSlug: request.body.organizationSlug,
@@ -6559,7 +7052,11 @@ server.after(() => {
             response: { 200: Dto.updateAdminNoProjectEmailUpdatesResponse },
         },
         handler: async (request) => {
-            const userId = await requireSiteOrgAdmin(request);
+            const { userId } = await requireOrganizationAccess({
+                request,
+                organizationSlug: request.body.organizationSlug,
+                capability: "conversation_email_update",
+            });
             return await updateAdminNoProjectEmailUpdates({
                 db,
                 userId,
@@ -6606,6 +7103,7 @@ server.after(() => {
                 isFullImagePath: request.body.isFullImagePath,
                 websiteUrl: request.body.websiteUrl,
                 description: request.body.description,
+                adminUserId: deviceStatus.userId,
             });
         },
     });
@@ -6620,7 +7118,11 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            await requireSiteOrgAdmin(request);
+            await requireOrganizationAccess({
+                request,
+                organizationSlug: request.body.organizationSlug,
+                capability: "organization_manage_profile",
+            });
             return await updateOrganizationLocalization({
                 db,
                 data: request.body,
@@ -6638,7 +7140,11 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            await requireSiteOrgAdmin(request);
+            await requireOrganizationAccess({
+                request,
+                organizationSlug: request.body.currentOrganizationSlug,
+                capability: "organization_manage_profile",
+            });
             return await updateOrganizationSlug({
                 db,
                 currentOrganizationSlug: request.body.currentOrganizationSlug,
@@ -6654,28 +7160,12 @@ server.after(() => {
             body: Dto.deleteOrganizationRequest,
         },
         handler: async (request) => {
-            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
-                db,
+            await requireOrganizationAccess({
                 request,
-                {
-                    expectedKnownDeviceStatus: {
-                        isRegistered: true,
-                        isLoggedIn: true,
-                    },
-                },
-            );
-            const isOrgAdmin = await isSiteOrgAdminAccount({
-                db: db,
-                userId: deviceStatus.userId,
+                organizationSlug: request.body.organizationName,
+                capability: "organization_delete",
             });
-
-            if (!isOrgAdmin) {
-                throw server.httpErrors.unauthorized(
-                    "User is not a site org admin",
-                );
-            }
-
-            await archiveOrganization({
+            await deleteOrganization({
                 db: db,
                 organizationName: request.body.organizationName,
             });
@@ -7413,6 +7903,16 @@ server.after(() => {
         },
     });
 
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/management/access`,
+        schema: { response: { 200: Dto.getManagementAccessResponse } },
+        handler: async (request) => {
+            const userId = await requireAuthenticatedUserId(request);
+            return await getManagementAccess({ db, userId });
+        },
+    });
+
     // Conversation Export Routes
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
@@ -7432,9 +7932,19 @@ server.after(() => {
                     expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
                 },
             );
+            const access = await resolveConversationExportRequestAccess({
+                db,
+                conversationSlugId: request.body.conversationSlugId,
+                userId: deviceStatus.userId,
+            });
+            if (access === undefined)
+                return Dto.requestConversationExportResponse.parse({
+                    success: false,
+                    reason: "conversation_not_found",
+                });
             return await conversationExportService.requestConversationExport({
                 db: db,
-                conversationSlugId: request.body.conversationSlugId,
+                access,
                 userId: deviceStatus.userId,
                 realtimeSSEManager,
             });
@@ -7461,8 +7971,11 @@ server.after(() => {
             );
             return await conversationExportService.getConversationExportStatus({
                 db: db,
-                exportSlugId: request.body.exportSlugId,
-                userId: deviceStatus.userId,
+                access: await resolveConversationExportStatusAccess({
+                    db,
+                    exportSlugId: request.body.exportSlugId,
+                    userId: deviceStatus.userId,
+                }),
             });
         },
     });
@@ -7570,7 +8083,10 @@ server.after(() => {
         handler: async (request, reply) => {
             reply.header("Cache-Control", "no-store");
             return await conversationEmailUpdateService.prepareDraft({
-                userId: await requireAuthenticatedUserId(request),
+                ...(await getConversationEmailUpdateActor({
+                    db,
+                    userId: await requireAuthenticatedUserId(request),
+                })),
                 request: Dto.conversationEmailUpdatePrepareDraftRequest.parse(
                     request.body,
                 ),
@@ -7586,8 +8102,11 @@ server.after(() => {
         },
         handler: async (request) =>
             conversationEmailUpdateService.cancelDraft({
-                userId: await requireAuthenticatedUserId(request),
-                request: request.body,
+                ownedReviewId: await getOwnedEmailUpdateReviewId({
+                    db,
+                    userId: await requireAuthenticatedUserId(request),
+                    updateId: request.body.updateId,
+                }),
             }),
     });
     server.withTypeProvider<ZodTypeProvider>().route({
@@ -7600,7 +8119,10 @@ server.after(() => {
         handler: async (request, reply) => {
             reply.header("Cache-Control", "no-store");
             return await conversationEmailUpdateService.previewHistory({
-                userId: await requireAuthenticatedUserId(request),
+                ...(await getConversationEmailUpdateActor({
+                    db,
+                    userId: await requireAuthenticatedUserId(request),
+                })),
                 request: request.body,
             });
         },
@@ -7619,7 +8141,10 @@ server.after(() => {
             handler: async (request, reply) => {
                 reply.header("Cache-Control", "no-store");
                 return await conversationEmailUpdateService.compareDev({
-                    userId: await requireAuthenticatedUserId(request),
+                    ...(await getConversationEmailUpdateActor({
+                        db,
+                        userId: await requireAuthenticatedUserId(request),
+                    })),
                     request:
                         Dto.conversationEmailUpdateDevComparisonRequest.parse(
                             request.body,
@@ -7655,7 +8180,7 @@ server.after(() => {
         handler: async (request) => {
             const userId = await requireAuthenticatedUserId(request);
             return conversationEmailUpdateService.getWorkspace({
-                userId,
+                ...(await getConversationEmailUpdateActor({ db, userId })),
                 request: request.body,
             });
         },
@@ -7673,7 +8198,7 @@ server.after(() => {
         handler: async (request) => {
             const userId = await requireAuthenticatedUserId(request);
             return conversationEmailUpdateService.listHistory({
-                userId,
+                ...(await getConversationEmailUpdateActor({ db, userId })),
                 request: request.body,
             });
         },
@@ -7691,7 +8216,7 @@ server.after(() => {
         handler: async (request) => {
             const userId = await requireAuthenticatedUserId(request);
             return conversationEmailUpdateService.getHistoryDetail({
-                userId,
+                ...(await getConversationEmailUpdateActor({ db, userId })),
                 request: request.body,
             });
         },
@@ -7709,7 +8234,7 @@ server.after(() => {
         handler: async (request) => {
             const userId = await requireAuthenticatedUserId(request);
             return conversationEmailUpdateService.estimateAudience({
-                userId,
+                ...(await getConversationEmailUpdateActor({ db, userId })),
                 request:
                     Dto.conversationEmailUpdateAudienceEstimateRequest.parse(
                         request.body,
@@ -7730,7 +8255,12 @@ server.after(() => {
         handler: async (request) => {
             const userId = await requireAuthenticatedUserId(request);
             return conversationEmailUpdateService.sendTest({
-                userId,
+                ...(await getConversationEmailUpdateActor({ db, userId })),
+                ownedReviewId: await getOwnedEmailUpdateReviewId({
+                    db,
+                    userId,
+                    updateId: request.body.updateId,
+                }),
                 request: Dto.conversationEmailUpdateSendTestRequest.parse(
                     request.body,
                 ),
@@ -7750,8 +8280,11 @@ server.after(() => {
         handler: async (request) => {
             const userId = await requireAuthenticatedUserId(request);
             return await conversationEmailUpdateService.getTestStatus({
-                userId,
-                request: request.body,
+                ownedTestId: await getOwnedEmailUpdateTestId({
+                    db,
+                    userId,
+                    testAttemptId: request.body.testAttemptId,
+                }),
             });
         },
     });
@@ -7768,7 +8301,12 @@ server.after(() => {
         handler: async (request) => {
             const userId = await requireAuthenticatedUserId(request);
             return conversationEmailUpdateService.send({
-                userId,
+                ...(await getConversationEmailUpdateActor({ db, userId })),
+                ownedReviewId: await getOwnedEmailUpdateReviewId({
+                    db,
+                    userId,
+                    updateId: request.body.updateId,
+                }),
                 request: request.body,
             });
         },
@@ -7866,7 +8404,22 @@ server.after(() => {
         handler: async (request) => {
             const userId = await requireAuthenticatedUserId(request);
             return conversationEmailUpdateService.getConfiguration({
-                userId,
+                canConfigure: await hasScopedProjectCapability({
+                    db,
+                    userId,
+                    capability: "conversation_email_update",
+                    target:
+                        request.body.target === "project"
+                            ? {
+                                  kind: "project",
+                                  projectSlug: request.body.projectSlug,
+                              }
+                            : {
+                                  kind: "conversation",
+                                  conversationSlugId:
+                                      request.body.conversationSlugId,
+                              },
+                }),
                 request: request.body,
             });
         },
@@ -7883,6 +8436,21 @@ server.after(() => {
         },
         handler: async (request) => {
             const userId = await requireAuthenticatedUserId(request);
+            if (request.body.target === "project") {
+                await requireProjectCapabilityBySlug({
+                    db,
+                    userId,
+                    projectSlug: request.body.projectSlug,
+                    capability: "conversation_email_update",
+                });
+            } else {
+                await requireConversationCapabilityBySlug({
+                    db,
+                    userId,
+                    conversationSlugId: request.body.conversationSlugId,
+                    capability: "conversation_email_update",
+                });
+            }
             return conversationEmailUpdateService.updateConfiguration({
                 userId,
                 request: request.body,
@@ -7902,7 +8470,7 @@ server.after(() => {
         handler: async (request) => {
             const userId = await requireAuthenticatedUserId(request);
             return conversationEmailUpdateService.getConversationSummary({
-                userId,
+                ...(await getConversationEmailUpdateActor({ db, userId })),
                 request: request.body,
             });
         },
@@ -7920,7 +8488,7 @@ server.after(() => {
         handler: async (request) => {
             const userId = await requireAuthenticatedUserId(request);
             return conversationEmailUpdateService.getProjectSummary({
-                userId,
+                ...(await getConversationEmailUpdateActor({ db, userId })),
                 request: request.body,
             });
         },

@@ -14,8 +14,8 @@ import { generateRandomSlugId } from "@/crypto.js";
 import {
     conversationContentTable,
     conversationTable,
-    maxdiffComparisonTable,
-    maxdiffResultTable,
+    comparisonAnswerTable,
+    comparisonResponseTable,
     opinionModerationTable,
     opinionGroupLineageTable,
     opinionGroupTable,
@@ -37,6 +37,7 @@ import {
     voteTable,
 } from "@/shared-backend/schema.js";
 import { scheduleConversationAnalysisRefresh } from "@/shared-backend/conversationCounters.js";
+import { scheduleQvStatsRefresh } from "@/shared-backend/qvStatsRefresh.js";
 import { getPrimaryDatabase } from "@/shared-backend/db.js";
 import {
     enqueueConversationForMathWork,
@@ -100,8 +101,6 @@ import type {
 import { log } from "@/app.js";
 import { logApiError } from "@/logging/privacy.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
-import { getConversationViewAccessLevelForConversation } from "@/service/conversationAccess.js";
-import { requireProjectCapability } from "@/service/projectAccess.js";
 import {
     buildSurveyAggregateResultRows,
     buildSurveyCompletionCounts,
@@ -147,9 +146,9 @@ interface ConversationAccessContext {
     participationMode: (typeof conversationTable.$inferSelect)["participationMode"];
     conversationType: (typeof conversationTable.$inferSelect)["conversationType"];
     rankingMode: RankingMode | null;
+    prioritizationType: "comparisons" | "qv" | null;
     currentContentId: number | null;
     isClosed: boolean;
-    requiresEventTicket: (typeof conversationTable.$inferSelect)["requiresEventTicket"];
 }
 
 interface SurveyConfigUpdateEffect {
@@ -228,26 +227,36 @@ interface SurveyAnalysisRefreshContextBase {
 }
 
 export type SurveyAnalysisRefreshContext = SurveyAnalysisRefreshContextBase &
-    ({ conversationType: "polis" } | { conversationType: "ranking" });
+    (
+        | { conversationType: "polis" }
+        | {
+              conversationType: "prioritizing";
+              prioritizationType: "comparisons" | "qv";
+          }
+    );
 
 export function buildSurveyAnalysisRefreshContext({
     conversationId,
     slugId,
     conversationType,
     rankingMode,
+    prioritizationType,
 }: SurveyAnalysisRefreshContextBase & {
     conversationType: ConversationType;
     rankingMode: RankingMode | null;
+    prioritizationType: "comparisons" | "qv" | null;
 }): SurveyAnalysisRefreshContext {
     if (conversationType === "polis") {
         return { conversationId, slugId, conversationType };
     }
-    if (rankingMode === null) {
+    if (prioritizationType === "qv")
+        return { conversationId, slugId, conversationType, prioritizationType };
+    if (rankingMode === null || prioritizationType !== "comparisons") {
         throw httpErrors.internalServerError(
             "Ranking conversation is missing its ranking mode",
         );
     }
-    return { conversationId, slugId, conversationType };
+    return { conversationId, slugId, conversationType, prioritizationType };
 }
 
 async function markRankingConversationDirty({
@@ -328,7 +337,14 @@ export async function scheduleConversationAnalysisForSurveyChange({
     db: PostgresJsDatabase;
     conversation: SurveyAnalysisRefreshContext;
 }): Promise<boolean> {
-    if (conversation.conversationType === "ranking") {
+    if (conversation.conversationType === "prioritizing") {
+        if (conversation.prioritizationType === "qv") {
+            await scheduleQvStatsRefresh({
+                db,
+                conversationIds: [conversation.conversationId],
+            });
+            return true;
+        }
         return true;
     }
 
@@ -360,7 +376,8 @@ export async function wakeScheduledConversationAnalysisForSurveyChange({
     conversation: SurveyAnalysisRefreshContext;
     valkey: Valkey | undefined;
 }): Promise<void> {
-    if (conversation.conversationType === "ranking") {
+    if (conversation.conversationType === "prioritizing") {
+        if (conversation.prioritizationType === "qv") return;
         await markRankingConversationDirty({
             conversationId: conversation.conversationId,
             conversationSlugId: conversation.slugId,
@@ -388,25 +405,26 @@ async function hasParticipantAnalysisInput({
     conversation: SurveyAnalysisRefreshContext;
     participantId: string;
 }): Promise<boolean> {
-    if (conversation.conversationType === "ranking") {
+    if (conversation.conversationType === "prioritizing") {
+        if (conversation.prioritizationType === "qv") return true;
         const rows = await db
-            .select({ id: maxdiffResultTable.id })
-            .from(maxdiffResultTable)
+            .select({ id: comparisonResponseTable.id })
+            .from(comparisonResponseTable)
             .innerJoin(
-                maxdiffComparisonTable,
+                comparisonAnswerTable,
                 eq(
-                    maxdiffComparisonTable.maxdiffResultId,
-                    maxdiffResultTable.id,
+                    comparisonAnswerTable.comparisonResponseId,
+                    comparisonResponseTable.id,
                 ),
             )
             .where(
                 and(
                     eq(
-                        maxdiffResultTable.conversationId,
+                        comparisonResponseTable.conversationId,
                         conversation.conversationId,
                     ),
-                    eq(maxdiffResultTable.participantId, participantId),
-                    isNull(maxdiffComparisonTable.deletedAt),
+                    eq(comparisonResponseTable.participantId, participantId),
+                    isNull(comparisonAnswerTable.deletedAt),
                 ),
             )
             .limit(1);
@@ -1356,9 +1374,9 @@ async function getConversationAccessContextBySlugId({
             participationMode: conversationTable.participationMode,
             conversationType: conversationTable.conversationType,
             rankingMode: rankingConversationConfigTable.rankingMode,
+            prioritizationType: conversationTable.prioritizationType,
             currentContentId: conversationTable.currentContentId,
             isClosed: conversationTable.isClosed,
-            requiresEventTicket: conversationTable.requiresEventTicket,
         })
         .from(conversationTable)
         .leftJoin(
@@ -2698,14 +2716,14 @@ export async function fetchSurveyAggregatedResults({
     conversationSlugId,
     analysisView,
     checkpointViewSnapshotId,
-    userId,
+    accessLevel,
     displayLanguage,
 }: {
     db: PostgresJsDatabase;
     conversationSlugId: string;
     analysisView: AnalysisView | undefined;
     checkpointViewSnapshotId: number | undefined;
-    userId: string | undefined;
+    accessLevel: SurveyResultsAccessLevel;
     displayLanguage: SupportedDisplayLanguageCodes;
 }): Promise<{
     hasSurvey: boolean;
@@ -2718,15 +2736,8 @@ export async function fetchSurveyAggregatedResults({
         db,
         conversationSlugId,
     });
-    if (conversation.conversationType === "ranking") {
+    if (conversation.conversationType === "prioritizing") {
         const primaryDb = getPrimaryDatabase(db);
-        const accessLevel = await getConversationViewAccessLevelForConversation(
-            {
-                db: primaryDb,
-                userId,
-                projectId: conversation.projectId,
-            },
-        );
         const context = await primaryDb.transaction(
             async (tx) =>
                 await loadSurveyExportContext({
@@ -2764,12 +2775,6 @@ export async function fetchSurveyAggregatedResults({
                     : undefined,
         };
     }
-
-    const accessLevel = await getConversationViewAccessLevelForConversation({
-        db,
-        userId,
-        projectId: conversation.projectId,
-    });
 
     const activeSurveyConfig = await getActiveSurveyConfigRecord({
         db,
@@ -2858,7 +2863,6 @@ export async function fetchSurveyAggregatedResults({
 export async function fetchSurveyCompletionCounts({
     db,
     conversationSlugId,
-    userId,
 }: {
     db: PostgresJsDatabase;
     conversationSlugId: string;
@@ -2871,14 +2875,6 @@ export async function fetchSurveyCompletionCounts({
         db,
         conversationSlugId,
     });
-    const accessLevel = await getConversationViewAccessLevelForConversation({
-        db,
-        userId,
-        projectId: conversation.projectId,
-    });
-    if (accessLevel !== "owner") {
-        throw httpErrors.forbidden("Missing conversation_edit capability");
-    }
 
     const context = await loadSurveyExportContext({
         db,
@@ -3189,6 +3185,7 @@ export async function saveSurveyAnswer({
         slugId: conversationSlugId,
         conversationType: participationCheck.conversationType,
         rankingMode: participationCheck.rankingMode,
+        prioritizationType: participationCheck.prioritizationType,
     });
 
     const surveyTransition = await db.transaction(async (tx) => {
@@ -3506,6 +3503,7 @@ export async function withdrawSurveyResponse({
         slugId: conversationSlugId,
         conversationType: participationCheck.conversationType,
         rankingMode: participationCheck.rankingMode,
+        prioritizationType: participationCheck.prioritizationType,
     });
 
     const surveyTransition = await db.transaction(async (tx) => {
@@ -3686,13 +3684,6 @@ export async function updateSurveyConfigByAuthor({
         db,
         conversationSlugId,
     });
-    await requireProjectCapability({
-        db,
-        userId,
-        projectId: conversation.projectId,
-        capability: "conversation_edit",
-        message: "Missing conversation_edit capability",
-    });
     const existingSurveyConfig = await getActiveSurveyConfigRecord({
         db,
         conversationId: conversation.conversationId,
@@ -3715,6 +3706,7 @@ export async function updateSurveyConfigByAuthor({
         slugId: conversation.slugId,
         conversationType: conversation.conversationType,
         rankingMode: conversation.rankingMode,
+        prioritizationType: conversation.prioritizationType,
     });
 
     const surveyConfigUpdate = await db.transaction(async (tx) => {
@@ -3800,18 +3792,12 @@ export async function deleteSurveyConfigByAuthor({
         db,
         conversationSlugId,
     });
-    await requireProjectCapability({
-        db,
-        userId,
-        projectId: conversation.projectId,
-        capability: "conversation_edit",
-        message: "Missing conversation_edit capability",
-    });
     const analysisRefreshContext = buildSurveyAnalysisRefreshContext({
         conversationId: conversation.conversationId,
         slugId: conversation.slugId,
         conversationType: conversation.conversationType,
         rankingMode: conversation.rankingMode,
+        prioritizationType: conversation.prioritizationType,
     });
     const surveyConfigDeleteResult = await db.transaction(async (tx) => {
         await lockConversationForSurveyEdit({

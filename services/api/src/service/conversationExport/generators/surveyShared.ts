@@ -1,7 +1,7 @@
 import { and, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import {
-    maxdiffComparisonTable,
-    maxdiffResultTable,
+    comparisonAnswerTable,
+    comparisonResponseTable,
     opinionModerationTable,
     opinionTable,
     surveyAnswerTable,
@@ -384,28 +384,31 @@ async function loadSurveyCountedParticipantIds({
     conversationType: ConversationType;
 }): Promise<Set<string>> {
     const participantRows =
-        conversationType === "ranking"
+        conversationType === "prioritizing"
             ? await db
                   .selectDistinct({
-                      participantId: maxdiffResultTable.participantId,
+                      participantId: userTable.id,
                   })
-                  .from(maxdiffResultTable)
+                  .from(comparisonResponseTable)
                   .innerJoin(
-                      maxdiffComparisonTable,
+                      comparisonAnswerTable,
                       eq(
-                          maxdiffComparisonTable.maxdiffResultId,
-                          maxdiffResultTable.id,
+                          comparisonAnswerTable.comparisonResponseId,
+                          comparisonResponseTable.id,
                       ),
                   )
                   .innerJoin(
                       userTable,
-                      eq(maxdiffResultTable.participantId, userTable.id),
+                      eq(comparisonResponseTable.participantId, userTable.id),
                   )
                   .where(
                       and(
-                          eq(maxdiffResultTable.conversationId, conversationId),
+                          eq(
+                              comparisonResponseTable.conversationId,
+                              conversationId,
+                          ),
                           eq(userTable.isDeleted, false),
-                          isNull(maxdiffComparisonTable.deletedAt),
+                          isNull(comparisonAnswerTable.deletedAt),
                       ),
                   )
             : await db

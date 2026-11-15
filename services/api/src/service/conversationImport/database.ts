@@ -3,6 +3,7 @@
  */
 
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
+import { getReplicaDatabase } from "@/shared-backend/db.js";
 import {
     conversationImportTable,
     conversationTable,
@@ -222,7 +223,7 @@ async function readImportStatus(
 ): Promise<ImportStatusResult | null> {
     const { db, importSlugId, userId } = params;
 
-    const result = await db
+    const result = await getReplicaDatabase(db)
         .select({
             status: conversationImportTable.status,
             conversationSlugId: conversationTable.slugId,
@@ -290,7 +291,7 @@ async function findActiveImportForUser(
 ): Promise<ActiveImportResult | null> {
     const { db, userId } = params;
 
-    const result = await db
+    const result = await getReplicaDatabase(db)
         .select({
             importSlugId: conversationImportTable.slugId,
             createdAt: conversationImportTable.createdAt,

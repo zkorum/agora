@@ -13,6 +13,7 @@ from agora_analysis_worker_shared.generated_models import (
     Base,
     Conversation,
     ConversationLanguageSettingsSource,
+    ConversationParticipant,
     ConversationType,
     Opinion,
     ParticipationMode,
@@ -142,10 +143,17 @@ def engine() -> Iterator[Engine]:
                     Vote(
                         id=participant,
                         author_id=UUID(int=participant),
+                        participant_id=UUID(int=1000 + participant),
                         opinion_id=1,
                         current_content_id=participant,
                         created_at=NOW,
                         updated_at=NOW,
+                    ),
+                    ConversationParticipant(
+                        id=UUID(int=1000 + participant),
+                        conversation_id=1,
+                        user_id=UUID(int=participant),
+                        created_at=NOW,
                     ),
                     VoteContent(
                         id=participant,
@@ -206,7 +214,7 @@ def test_required_survey_filters_votes_before_building_analysis_input(engine: En
 
 
 @pytest.mark.parametrize("seed", [False, True])
-def test_account_deletion_removes_personal_columns_not_retained_voter_rows(
+def test_account_deletion_removes_live_voter_rows_and_personal_columns(
     engine: Engine, seed: bool
 ) -> None:
     with Session(engine) as session:
@@ -232,6 +240,7 @@ def test_account_deletion_removes_personal_columns_not_retained_voter_rows(
                     Vote(
                         id=vote_id,
                         author_id=UUID(int=voter),
+                        participant_id=UUID(int=1000 + voter),
                         opinion_id=opinion_id,
                         current_content_id=vote_id,
                         created_at=NOW,
@@ -256,13 +265,13 @@ def test_account_deletion_removes_personal_columns_not_retained_voter_rows(
     after = fetch_vote_input_rows_batch(engine, conversation_ids=[1])[1]
     expected_opinions = (1, 2, 3) if seed else (2, 3)
     assert {(row.user_id, row.opinion_id) for row in after} == {
-        (UUID(int=voter), opinion_id) for voter in (1, 2, 3) for opinion_id in expected_opinions
+        (UUID(int=voter), opinion_id) for voter in (2, 3) for opinion_id in expected_opinions
     }
-    assert {
-        (row.opinion_id, row.vote)
-        for row in after
-        if row.user_id == UUID(int=1) and row.opinion_id != 1
-    } == {(2, "disagree"), (3, "disagree")}
+    assert all(row.user_id != UUID(int=1) for row in after)
+    with Session(engine) as session:
+        # Soft deletion keeps the original sources for recovery/history. Only
+        # fresh input eligibility changes; the original cells are not rewritten.
+        assert session.scalar(select(func.count()).select_from(VoteContent)) == 12
 
 
 def test_withdrawal_removes_last_eligible_voter_without_deleting_votes(engine: Engine) -> None:

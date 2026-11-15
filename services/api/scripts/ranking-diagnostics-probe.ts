@@ -61,8 +61,8 @@ async function main(): Promise<void> {
     );
     const primary = postgres(primaryUrl, options);
     const replica = postgres(replicaUrl, options);
-    const writer = drizzle(primary);
-    const reader = drizzle(replica);
+    const writer = drizzle({ client: primary });
+    const reader = drizzle({ client: replica });
     const db = withReplicas(writer, [reader]);
     let input: ReturnType<typeof createInterface> | undefined;
     try {

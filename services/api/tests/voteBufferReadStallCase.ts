@@ -49,6 +49,7 @@ export async function assertVoteReadSerialization({
         valkeyBatchLimit: 100,
     });
     const vote = {
+        contributionRevision: 0,
         userId: authorId,
         opinionId,
         opinionContentId,
@@ -206,6 +207,7 @@ export async function assertNativeValkeyTimeoutRecovery({
         await buffer.add({
             vote: {
                 userId: authorId,
+                contributionRevision: 0,
                 opinionId,
                 opinionContentId,
                 conversationId,
@@ -323,6 +325,7 @@ export async function assertValkeyStallSessionState({
         await buffer.add({
             vote: {
                 userId: authorId,
+                contributionRevision: 0,
                 opinionId,
                 opinionContentId,
                 conversationId,

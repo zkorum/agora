@@ -21,6 +21,7 @@ export const useAuthenticationStore = defineStore("authentication", () => {
     isKnown: false,
     credentials: nullCredentials,
   });
+  const statusRevision = ref(0);
 
   const isRegistered = computed(() => _loginStatus.value.isRegistered);
   const isKnown = computed(() => _loginStatus.value.isKnown);
@@ -89,7 +90,9 @@ export const useAuthenticationStore = defineStore("authentication", () => {
         userId: status.userId,
         credentials:
           status.credentials ??
-          (oldLoginStatus.isKnown ? oldLoginStatus.credentials : nullCredentials),
+          (oldLoginStatus.isKnown
+            ? oldLoginStatus.credentials
+            : nullCredentials),
       };
     } else if (oldLoginStatus.isKnown) {
       _loginStatus.value = {
@@ -100,6 +103,7 @@ export const useAuthenticationStore = defineStore("authentication", () => {
           : (status.isRegistered ?? oldLoginStatus.isRegistered),
       };
     }
+    statusRevision.value += 1;
     return {
       newLoginStatus: _loginStatus.value,
       oldLoginStatus: oldLoginStatus,
@@ -123,5 +127,6 @@ export const useAuthenticationStore = defineStore("authentication", () => {
     hasEmailVerification,
     setLoginStatus,
     isAuthInitialized,
+    statusRevision: computed(() => statusRevision.value),
   };
 });

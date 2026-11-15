@@ -13,6 +13,7 @@ import type {
 import type { ConversationContentFetchResponse } from "@/shared/types/dto.js";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
+import { getReplicaDatabase } from "@/shared-backend/db.js";
 
 import {
     buildLocalizedConversationContent,
@@ -40,7 +41,7 @@ export async function fetchConversationFeedDisplayContentBySlugId({
         return displayContentBySlugId;
     }
 
-    const rows = await db
+    const rows = await getReplicaDatabase(db)
         .select({
             conversationSlugId: conversationTable.slugId,
             publicId: conversationContentTable.publicId,

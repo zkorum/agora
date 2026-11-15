@@ -1,4 +1,5 @@
 from scoring_worker.db import ComparisonRow, checkpoint_milestones_at_or_below
+from scoring_worker.observations import comparison_rows_to_observations
 from scoring_worker.valkey_client import DirtyConversation
 from scoring_worker.worker import build_participant_counts, deduplicate_batch
 
@@ -66,6 +67,7 @@ def test_participant_counts_exclude_invalid_or_inactive_comparisons() -> None:
     ]
 
     assert build_participant_counts(
-        comparisons,
-        entity_ids=["active-a", "active-b"],
+        comparison_rows_to_observations(
+            comparisons=comparisons, entity_ids=["active-a", "active-b"]
+        ),
     ) == {"active-a": 1, "active-b": 1}

@@ -13,7 +13,6 @@ const mocks = vi.hoisted(() => ({
     strong: vi.fn(),
     email: vi.fn(),
     register: vi.fn(),
-    ticket: vi.fn(),
     survey: vi.fn(),
 }));
 vi.mock("./common.js", () => ({
@@ -28,7 +27,6 @@ vi.mock("./authUtil.js", () => ({
     hasEmailVerification: mocks.email,
     getOrRegisterUserIdFromDeviceStatus: mocks.register,
 }));
-vi.mock("./zupass.js", () => ({ hasEventTicket: mocks.ticket }));
 vi.mock("./survey.js", () => ({ getSurveyParticipationStatus: mocks.survey }));
 
 import {
@@ -63,7 +61,8 @@ const metadata = {
     isIndexed: true,
     participationMode: "guest",
     isClosed: false,
-    requiresEventTicket: null,
+    // Legacy stored settings must not influence any remaining participation rule.
+    requiresEventTicket: "devconnect-2025",
 } as const;
 const unknownDevice: DeviceLoginStatusExtended = {
     isKnown: false,
@@ -92,7 +91,6 @@ beforeEach(() => {
     mocks.strong.mockResolvedValue(false);
     mocks.email.mockResolvedValue(false);
     mocks.register.mockResolvedValue("guest-one");
-    mocks.ticket.mockResolvedValue(true);
     mocks.survey.mockResolvedValue(noSurvey);
 });
 
@@ -287,13 +285,12 @@ describe("backend-owned participation snapshot", () => {
             rankingMode: null,
             participantId: "guest-one",
             participationMode: "guest",
-            requiresEventTicket: null,
         });
         expect(mocks.survey).not.toHaveBeenCalled();
         expect(mocks.register).toHaveBeenCalledOnce();
     });
 
-    it("enforces tickets even when saving an incomplete survey", async () => {
+    it("ignores a legacy ticket requirement when saving an incomplete survey", async () => {
         mocks.metadata.mockResolvedValue({
             ...metadata,
             requiresEventTicket: "devconnect-2025",
@@ -308,14 +305,10 @@ describe("backend-owned participation snapshot", () => {
             requireCompletedSurvey: false,
         });
         expect(result).toMatchObject({
-            success: false,
-            reason: "event_ticket_required",
-            participationStatus: {
-                status: "onboarding_required",
-                nextStep: { kind: "ticket" },
-            },
+            success: true,
+            participantId: "guest-one",
         });
         expect(mocks.survey).not.toHaveBeenCalled();
-        expect(mocks.register).not.toHaveBeenCalled();
+        expect(mocks.register).toHaveBeenCalledOnce();
     });
 });

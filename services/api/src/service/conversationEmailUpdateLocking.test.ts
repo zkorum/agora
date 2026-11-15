@@ -55,7 +55,7 @@ describe("required owner lock hierarchy", () => {
             password: "postgres",
             max: 8,
         });
-        db = drizzle(sqlClient);
+        db = drizzle({ client: sqlClient });
         await sqlClient.unsafe(`
             CREATE TABLE "organization" (
                 "id" integer PRIMARY KEY,

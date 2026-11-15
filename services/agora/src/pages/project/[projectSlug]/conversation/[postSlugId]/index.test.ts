@@ -5,8 +5,8 @@ vi.mock("src/components/post/ConversationCommentTab.vue", () => ({
   default: { template: '<div data-testid="comment-tab"></div>' },
 }));
 
-vi.mock("src/components/post/maxdiff/MaxDiffVotingTab.vue", () => ({
-  default: { template: '<div data-testid="maxdiff-tab"></div>' },
+vi.mock("src/components/post/comparison/ComparisonVotingTab.vue", () => ({
+  default: { template: '<div data-testid="comparison-tab"></div>' },
 }));
 
 import ProjectConversationIndexRoute from "./index.vue";
@@ -42,7 +42,7 @@ describe("project conversation index route", () => {
     app.mount(container);
 
     expect(container.querySelector('[data-testid="comment-tab"]')).toBeNull();
-    expect(container.querySelector('[data-testid="maxdiff-tab"]')).toBeNull();
+    expect(container.querySelector('[data-testid="comparison-tab"]')).toBeNull();
     app.unmount();
   });
 });
