@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <link rel="icon" href="data:," />
+    <title>Agora · Project and activity settings</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Albert+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        font-family: "Albert Sans", system-ui, sans-serif;
+        color: #252437;
+        background: #f8f8fc;
+        font-synthesis: none;
+        --ink: #252437;
+        --muted: #636477;
+        --line: #e7e6f0;
+        --purple: #6b4eff;
+        --purple-soft: #f0edff;
+        --blue: #3576dc;
+        --blue-soft: #edf5ff;
+        --green: #14795f;
+        --green-soft: #e9f8f2;
+      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body { margin: 0; min-width: 320px; }
+      a { color: inherit; }
+      a:focus-visible, summary:focus-visible { outline: 3px solid #b3a5ff; outline-offset: 4px; }
+      .container { width: min(1200px, calc(100% - 56px)); margin-inline: auto; }
+      .topbar { background: white; border-bottom: 1px solid var(--line); }
+      .topbar-inner { min-height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+      .brand { display: inline-flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 800; letter-spacing: .08em; text-decoration: none; white-space: nowrap; }
+      .brand-mark { width: 29px; height: 29px; display: grid; place-items: center; border-radius: 9px; background: linear-gradient(135deg, #7959ff, #398ff1); color: #fff; font-size: 20px; letter-spacing: -.15em; padding-inline-end: 3px; }
+      .topbar nav { display: flex; gap: 26px; align-items: center; font-size: 13px; color: var(--muted); font-weight: 700; }
+      .topbar nav a { text-decoration: none; }
+      .topbar nav a:hover, .text-link:hover { color: var(--purple); }
+      .topbar nav .text-link { color: var(--purple); }
+      .hero { margin-top: 30px; min-height: 306px; padding: 43px 48px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, .9fr); align-items: center; gap: 28px; border-radius: 24px; overflow: hidden; position: relative; background: #241f4b; color: #fff; }
+      .hero::before { content: ""; position: absolute; width: 630px; height: 630px; border-radius: 50%; background: radial-gradient(circle, #704eff56, transparent 68%); inset: -360px -115px auto auto; pointer-events: none; }
+      .hero-copy, .flow { position: relative; z-index: 1; }
+      .eyebrow { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+      .hero .eyebrow { color: #c6bbff; }
+      .hero h1 { max-width: 580px; margin: 13px 0 14px; font-size: clamp(35px, 4.2vw, 56px); line-height: 1.05; letter-spacing: -.052em; }
+      .hero p { max-width: 510px; margin: 0; color: #d5d2e6; font-size: 16px; line-height: 1.62; }
+      .hero .minor { display: inline-block; margin-top: 22px; color: #bcb7d6; font-size: 12px; line-height: 1.5; }
+      .flow { display: grid; gap: 10px; }
+      .flow-top { display: flex; align-items: stretch; gap: 12px; }
+      .flow-tile { flex: 1; min-width: 0; padding: 17px 18px; border: 1px solid #8a7db27d; border-radius: 14px; background: #ffffff18; backdrop-filter: blur(8px); }
+      .flow-tile strong { display: block; font-size: 16px; margin: 6px 0 5px; }
+      .flow-tile span, .flow-result span { font-size: 12px; color: #d7d3ec; }
+      .flow-arrow { display: grid; place-items: center; flex: none; color: #cfc8ff; font-size: 23px; }
+      .flow-result { padding: 14px 17px; border-radius: 12px; border: 1px solid #9d85ff94; background: #6c52d347; }
+      .flow-result strong { display: block; margin-bottom: 4px; font-size: 14px; }
+      .flow-result b { color: #fff; }
+      .pulse { display: inline-block; width: 8px; height: 8px; margin-inline-end: 6px; border-radius: 50%; background: #9feaef; }
+      .intro-band { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; margin: 25px 0 39px; padding: 16px 20px; border: 1px solid #ddd8ff; background: #f1eeff; border-radius: 13px; }
+      .intro-band p { margin: 0; font-size: 13px; line-height: 1.5; }
+      .intro-band strong { color: #4431a4; }
+      .intro-band a { white-space: nowrap; font-weight: 800; color: #563dea; text-decoration: none; font-size: 12px; }
+      section { scroll-margin-top: 20px; }
+      .section-heading { display: flex; justify-content: space-between; align-items: end; gap: 18px; margin-bottom: 20px; }
+      .section-heading .eyebrow { color: var(--purple); }
+      h2 { margin: 8px 0 0; font-size: clamp(25px, 3vw, 34px); line-height: 1.18; letter-spacing: -.04em; }
+      .section-heading p { margin: 0; max-width: 440px; line-height: 1.5; font-size: 13px; color: var(--muted); }
+      .priority-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+      .priority { padding: 22px; min-height: 183px; border: 1px solid var(--line); border-radius: 16px; background: white; box-shadow: 0 5px 18px #27205b08; }
+      .priority-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+      .number { display: inline-grid; place-items: center; width: 31px; height: 31px; border-radius: 9px; color: #5e46e3; background: #ede9ff; font-size: 12px; font-weight: 800; }
+      .tag { display: inline-flex; align-items: center; gap: 5px; width: fit-content; padding: 5px 9px; border-radius: 100px; font-size: 10px; font-weight: 800; white-space: nowrap; letter-spacing: .015em; }
+      .tag.proposed { color: #5a43dc; background: #eeeaff; }
+      .tag.planned { color: #295fba; background: #edf5ff; }
+      .tag.current { color: var(--green); background: var(--green-soft); }
+      .tag.local { color: #646579; background: #f1f1f6; }
+      .priority h3 { margin: 20px 0 8px; font-size: 17px; letter-spacing: -.025em; }
+      .priority p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+      .legend { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; margin: 26px 0 40px; font-size: 12px; color: var(--muted); }
+      .legend strong { color: var(--ink); }
+      .legend-item { display: inline-flex; gap: 7px; align-items: center; }
+      .legend-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+      .legend-dot.proposed { background: var(--purple); }
+      .legend-dot.planned { background: var(--blue); }
+      .legend-dot.local { background: #747188; }
+      .map { padding: 38px 0 48px; background: #fff; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+      .map-grid { display: grid; grid-template-columns: .95fr 1.08fr 1.12fr; gap: 15px; align-items: start; }
+      .lane { min-width: 0; border: 1px solid var(--line); border-radius: 17px; overflow: hidden; background: #fff; }
+      .lane.shared { border-color: #d8d0ff; box-shadow: 0 12px 28px #5443b310; }
+      .lane-head { padding: 19px 19px 17px; border-bottom: 1px solid var(--line); background: #f8f8fc; }
+      .lane.shared .lane-head { background: #f0edff; border-color: #e1dbff; }
+      .lane-head .eyebrow { color: var(--purple); }
+      .lane-head h3 { margin: 5px 0 3px; font-size: 18px; letter-spacing: -.026em; }
+      .lane-head p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+      .setting { padding: 14px 18px; border-bottom: 1px solid #efedf5; }
+      .setting:last-child { border-bottom: none; }
+      .setting-title { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+      .setting-title strong { font-size: 13px; line-height: 1.35; }
+      .setting p { margin: 5px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+      .setting .tag { flex: none; }
+      .setting.featured { background: #faf9ff; }
+      .setting.featured strong { color: #5236c1; }
+      .note { margin-top: 14px; padding: 12px 16px; font-size: 12px; line-height: 1.5; color: #535367; border-radius: 11px; background: #f5f5fa; }
+      .note strong { color: var(--ink); }
+      .outer { padding-top: 44px; }
+      .other-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+      .other-card { border: 1px solid var(--line); border-radius: 14px; padding: 18px; background: white; }
+      .other-card h3 { margin: 0 0 8px; font-size: 14px; }
+      .other-card p { margin: 0; font-size: 12px; line-height: 1.55; color: var(--muted); }
+      .other-card ul { margin: 12px 0; padding-inline-start: 19px; font-size: 12px; line-height: 1.5; color: var(--muted); }
+      .other-card li + li { margin-top: 8px; }
+      .other-card .card-foot { border-top: 1px solid var(--line); padding-top: 11px; color: #4d3db7; font-weight: 700; }
+      .decision-box { margin: 39px 0 50px; padding: 29px 33px; border-radius: 18px; background: #22203e; color: white; display: grid; grid-template-columns: 230px 1fr; gap: 24px; }
+      .decision-box .eyebrow { color: #beb2ff; }
+      .decision-box h2 { margin: 8px 0 0; font-size: 25px; }
+      .decision-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 25px; }
+      .decision-list p { margin: 0; font-size: 12px; line-height: 1.55; color: #d0cde1; }
+      .decision-list strong { color: white; font-size: 13px; }
+      footer { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; padding: 0 0 32px; color: var(--muted); font-size: 12px; }
+      footer a { color: #5b42db; font-weight: 800; text-decoration: none; }
+      @media (max-width: 1000px) {
+        .hero { grid-template-columns: 1fr; }
+        .flow { max-width: 620px; }
+        .map-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .other-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .lane.shared { grid-row: 1; grid-column: 1 / -1; }
+      }
+      @media (max-width: 700px) {
+        .container { width: min(100% - 32px, 1200px); }
+        .topbar-inner { min-height: 64px; }
+        .topbar nav { gap: 13px; }
+        .topbar nav a:not(.text-link) { display: none; }
+        .hero { margin-top: 17px; padding: 30px 23px; border-radius: 18px; min-height: 0; }
+        .hero h1 { font-size: 38px; }
+        .hero p { font-size: 14px; }
+        .flow-top { gap: 6px; }
+        .flow-tile { padding: 12px; }
+        .flow-tile strong { font-size: 13px; }
+        .flow-tile span { font-size: 11px; }
+        .section-heading { display: block; }
+        .section-heading p { margin-top: 10px; }
+        .priority-grid, .map-grid, .other-grid, .decision-box, .decision-list { grid-template-columns: 1fr; }
+        .priority { min-height: 0; }
+        .lane.shared { grid-row: auto; grid-column: auto; }
+        .map { padding-block: 33px; }
+        .outer { padding-top: 34px; }
+        .decision-box { padding: 25px; gap: 18px; }
+      }
+      @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+      @media print {
+        :root { background: white; }
+        .topbar nav { display: none; }
+        .hero, .decision-box { print-color-adjust: exact; }
+        .map { break-before: page; }
+        .priority, .lane, .other-card, .decision-box { break-inside: avoid; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="container topbar-inner">
+        <a class="brand" href="#top" aria-label="Agora settings map, back to top"><span class="brand-mark" aria-hidden="true">a</span> AGORA <span style="color:#a3a0b4;font-weight:500">/ Settings map</span></a>
+        <nav aria-label="Page sections">
+          <a href="#priorities">Priorities</a>
+          <a href="#inventory">Inventory</a>
+          <a href="#decisions">Decisions</a>
+          <a class="text-link" href="./project-conversation-settings-inventory.md">Full notes ↗</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="top">
+      <div class="container">
+        <div class="hero">
+          <div class="hero-copy">
+            <span class="eyebrow">Product architecture · Review</span>
+            <h1>One project.<br />Many ways to participate.</h1>
+            <p>A clear map of settings at project and activity level—and what each choice changes for the people taking part.</p>
+            <span class="minor">Activity = conversation · Polis/mapping and ranking are separate formats</span>
+          </div>
+          <div class="flow" aria-label="Inheritance model: project default, activity choice, participant experience">
+            <div class="flow-top">
+              <div class="flow-tile"><span>01 · PROJECT</span><strong>Default</strong><span>e.g. Account required</span></div>
+              <span class="flow-arrow" aria-hidden="true">→</span>
+              <div class="flow-tile"><span>02 · ACTIVITY</span><strong>Inherit or override</strong><span>Override stays untouched</span></div>
+            </div>
+            <div class="flow-result"><strong><span class="pulse" aria-hidden="true"></span> 03 · PARTICIPANT</strong><span>Sees the <b>effective</b> rule before joining. Only inheriting activities change when a project default changes.</span></div>
+          </div>
+        </div>
+
+        <div class="intro-band" role="note">
+          <p><strong>Conversation-only:</strong> List / Wiki-survey, AI group labels and preferred group count belong to each Polis conversation. A response survey is a separate questionnaire.</p>
+          <a href="./project-conversation-settings-inventory.md">Read complete inventory ↗</a>
+        </div>
+
+        <section id="priorities" aria-labelledby="priorities-title">
+          <div class="section-heading">
+            <div><span class="eyebrow">Start here</span><h2 id="priorities-title">Two defaults to design first</h2></div>
+            <p>Today these participation and visibility choices live on the conversation. The proposal gives them a project default and an explicit activity override.</p>
+          </div>
+          <div class="priority-grid">
+            <article class="priority">
+              <div class="priority-head"><span class="number">01</span><span class="tag proposed">PROJECT DEFAULT · PROPOSED</span></div>
+              <h3>Visibility</h3>
+              <p><b>Listed</b> in the feed or <b>Unlisted</b> and accessible with a link. Unlisted is not restricted to invited accounts.</p>
+            </article>
+            <article class="priority">
+              <div class="priority-head"><span class="number">02</span><span class="tag proposed">PROJECT DEFAULT · PROPOSED</span></div>
+              <h3>Who can participate</h3>
+              <p>Guest, account, verified email or strong verification, plus an optional event ticket. Sets the steps before voting and contributing.</p>
+            </article>
+          </div>
+          <div class="legend" aria-label="Setting status legend">
+            <strong>Status key</strong>
+            <span class="legend-item"><span class="legend-dot"></span> Inheritance already exists</span>
+            <span class="legend-item"><span class="legend-dot proposed"></span> Project default proposed</span>
+            <span class="legend-item"><span class="legend-dot planned"></span> Polis presentation planned</span>
+            <span class="legend-item"><span class="legend-dot local"></span> Conversation-only</span>
+          </div>
+        </section>
+      </div>
+
+      <section class="map" id="inventory" aria-labelledby="inventory-title">
+        <div class="container">
+          <div class="section-heading">
+            <div><span class="eyebrow">Complete setting map</span><h2 id="inventory-title">What lives where?</h2></div>
+            <p>Every item below is a distinct choice or content area. “Shared” means a project default with a per-activity choice, now or proposed.</p>
+          </div>
+
+          <div class="map-grid">
+            <div class="lane" aria-label="Project-only settings">
+              <div class="lane-head"><span class="eyebrow">Project layer</span><h3>Belongs to the project</h3><p>Shared context, not copied into each activity.</p></div>
+              <div class="setting"><div class="setting-title"><strong>Identity &amp; page</strong></div><p>Title, slug, description, banner and localizations → project landing page.</p></div>
+              <div class="setting"><div class="setting-title"><strong>Owners &amp; attribution</strong></div><p>Owning organizations and displayed credits → who is behind the project.</p></div>
+              <div class="setting"><div class="setting-title"><strong>Contact</strong></div><p>Name, affiliation and email/website → a way to reach the team.</p></div>
+              <div class="setting"><div class="setting-title"><strong>Documents</strong></div><p>Localized participant files, optional owner versions → project resources.</p></div>
+              <div class="setting"><div class="setting-title"><strong>Administration</strong></div><p>Project URL, deletion, ownership and directory state. Admin-menu only today; authorized facilitators should see their projects.</p></div>
+            </div>
+
+            <div class="lane shared" aria-label="Settings with project defaults and activity overrides">
+              <div class="lane-head"><span class="eyebrow">Project default ⇢ Activity choice</span><h3>Can inherit or override</h3><p>Changing a default affects inherited activities only.</p></div>
+              <div class="setting featured"><div class="setting-title"><strong>Visibility</strong><span class="tag proposed">PROPOSED</span></div><p>Listed / Unlisted → discovery versus link-based access. Current: activity only.</p></div>
+              <div class="setting featured"><div class="setting-title"><strong>Who can participate</strong><span class="tag proposed">PROPOSED</span></div><p>Guest / account / verified email / strong verification, with optional event ticket → who can vote or contribute. Current: activity only; tickets cannot be added after publishing.</p></div>
+              <div class="setting"><div class="setting-title"><strong>Languages &amp; translation</strong><span class="tag current">CURRENT</span></div><p>Target languages and Dynamic Translation → localized project and activity content.</p></div>
+              <div class="setting"><div class="setting-title"><strong>Facilitator Email Updates</strong><span class="tag current">CURRENT</span></div><p>Inherit / on / off → whether manual updates may be sent; personal consent still rules.</p></div>
+            </div>
+
+            <div class="lane" aria-label="Activity-specific settings">
+              <div class="lane-head"><span class="eyebrow">Activity layer</span><h3>Specific to an activity</h3><p>Polis presentation and analysis live here, never at project level.</p></div>
+              <div class="setting"><div class="setting-title"><strong>Format</strong></div><p>Polis/mapping or ranking/MaxDiff → different ways to respond. Chosen at creation.</p></div>
+              <div class="setting featured"><div class="setting-title"><strong>Polis: List / Wiki-survey</strong><span class="tag planned">PLANNED</span></div><p>Main view: browse or answer one eligible statement at a time. Existing/imported conversations stay List; embeds always use the card.</p></div>
+              <div class="setting"><div class="setting-title"><strong>AI group labels</strong><span class="tag local">POLIS ONLY</span></div><p>LLM descriptions of opinion groups; no change to votes or clustering.</p></div>
+              <div class="setting"><div class="setting-title"><strong>Preferred group count</strong><span class="tag local">POLIS ONLY</span></div><p>Auto or 2–6 groups in facilitator-preference analysis.</p></div>
+              <div class="setting"><div class="setting-title"><strong>Prompt &amp; author</strong></div><p>Title, body and “post as” identity → what participants read and who published it.</p></div>
+              <div class="setting"><div class="setting-title"><strong>Statements &amp; sources</strong></div><p>Seed statements, Polis/CSV import or ranking item source → what can be answered.</p></div>
+              <div class="setting"><div class="setting-title"><strong>Response questionnaire</strong></div><p>Optional/required survey and question rules → optional input or gate before participation. Not Wiki-survey.</p></div>
+              <div class="setting"><div class="setting-title"><strong>Open / closed</strong></div><p>Facilitator action → pause/reopen voting and contributions, not an inherited default.</p></div>
+              <div class="setting"><div class="setting-title"><strong>Moderation</strong></div><p>Locks and hidden/moved statements → eligible content and ability to respond.</p></div>
+            </div>
+          </div>
+          <div class="note"><strong>Wiki-survey detail:</strong> Discover follows routing priority; New is newest-first. Both draw from the same visible unanswered pool. My votes, Moderated and moderator-only Hidden remain lists; Analysis and adding statements stay available in Polis embeds.</div>
+        </div>
+      </section>
+
+      <div class="container outer">
+        <section id="other" aria-labelledby="other-title">
+          <div class="section-heading">
+            <div><span class="eyebrow">Outside the inheritance model</span><h2 id="other-title">Personal spaces &amp; administration</h2></div>
+            <p>Participation history and created work are different lists. Project and organization management should be accessible to authorized facilitators.</p>
+          </div>
+          <div class="other-grid">
+            <article class="other-card">
+              <h3>Participant · what I joined</h3>
+              <ul>
+                <li>Conversations I participated in, not just visited <span class="tag planned">TARGET</span></li>
+                <li>Display and spoken languages</li>
+                <li>Email consent and preferences</li>
+                <li>Votes and questionnaire answers</li>
+                <li>Muted users, username, credentials and sessions</li>
+              </ul>
+              <p class="card-foot">No consolidated joined-conversations list in the current profile. Personal choices remain mine.</p>
+            </article>
+            <article class="other-card">
+              <h3>Facilitator · what I created</h3>
+              <ul>
+                <li>Conversations I created <span class="tag planned">TARGET</span></li>
+                <li>Other conversations I can manage, separately</li>
+                <li>Own projects and their activities <span class="tag planned">TARGET</span></li>
+                <li>Project settings in the facilitator workspace <span class="tag planned">TARGET</span></li>
+              </ul>
+              <p class="card-foot">Today's profile list includes conversations editable through a project, not strictly authored by me.</p>
+            </article>
+            <article class="other-card">
+              <h3>Organizations &amp; access</h3>
+              <ul>
+                <li>Organization identity and profile</li>
+                <li>Membership, ownership and permissions</li>
+                <li>Feature entitlements</li>
+                <li>Organization settings for authorized facilitators <span class="tag planned">TARGET</span></li>
+              </ul>
+              <p class="card-foot">Project and organization management live under the site-admin menu today.</p>
+            </article>
+            <article class="other-card">
+              <h3>Platform &amp; operations</h3>
+              <ul>
+                <li>Discover, New, My votes, Moderated / Hidden and Analysis views</li>
+                <li>Results access permissions</li>
+                <li>Moderation decisions and deletion</li>
+                <li>Imports and exports</li>
+                <li>Analysis, scores, translation and delivery jobs</li>
+              </ul>
+              <p class="card-foot">Views and operations are not inherited project defaults.</p>
+            </article>
+          </div>
+        </section>
+
+        <section id="decisions" class="decision-box" aria-labelledby="decisions-title">
+          <div><span class="eyebrow">To settle before rollout</span><h2 id="decisions-title">Five design decisions</h2></div>
+          <div class="decision-list">
+            <p><strong>01 · Existing activities</strong><br />Preserve effective visibility and participation requirements as explicit overrides when defaults are introduced. Existing Polis conversations remain List.</p>
+            <p><strong>02 · Ticket within participation</strong><br />A published activity cannot gain a ticket requirement today. Define how a project participation-default change respects that rule.</p>
+            <p><strong>03 · Conversation-only Polis</strong><br />List / Wiki-survey, AI group labels and preferred group count are set on each mapping conversation; none inherits from the project.</p>
+            <p><strong>04 · Live shared changes</strong><br />Project edits update inheritors, never overrides. Explain changes to access requirements to active participants; preserve their votes.</p>
+            <p><strong>05 · My work / my participation</strong><br />Define what counts as participation, distinguish authored from manageable conversations, and bring authorized project and organization settings into the facilitator workspace.</p>
+          </div>
+        </section>
+        <footer><span>Based on the current Agora frontend, API contracts and schema · Wiki-survey is planned, not shipped</span><a href="./project-conversation-settings-inventory.md">Full Markdown inventory ↗</a></footer>
+      </div>
+    </main>
+  </body>
+</html>

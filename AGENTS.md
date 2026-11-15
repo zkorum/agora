@@ -53,22 +53,49 @@ The main frontend (`services/agora`) is a web app that should **feel like a nati
 - **Background data refresh**: Refresh stale data silently in the background. Don't show loading states when cached data is available — show the cache immediately, refresh behind the scenes.
 - **No jank**: Avoid layout shifts, flash of empty content, or unnecessary re-renders. Use skeleton placeholders or `PageLoadingSpinner` to hold space while content loads.
 
-### Terminology: Comment / Opinion / Statement
+### Domain Language and Glossary
 
-The codebase uses `comment` and `opinion` interchangeably in variable names, database columns, and API endpoints for historical reasons. **Conceptually, comment = opinion = statement.** They all refer to the same thing: a user-submitted proposition that others vote on.
+Read [`GLOSSARY.md`](GLOSSARY.md) before introducing or changing domain terminology.
+Its entries distinguish canonical code names, existing/historical names and
+product/i18n wording. It is the source of truth for agreed meanings and naming,
+not an implementation plan. Use the project-local `domain-modeling` skill in
+`.agents/skills/domain-modeling/` when resolving terminology with the user.
 
-**In code:** Keep existing `comment`/`opinion` naming as-is. In doubt, use `opinion` for new code.
+- Before proposing terminology or a naming refactor, inspect actual definitions,
+  callers, schema/DTO relationships and UI usage. Explain current and historical
+  meanings; do not ask the user to choose names based only on intuition.
+- Use canonical code names for new domain identifiers, types, components, props,
+  filenames, mock data, stories and flow-specific i18n keys across both frontends
+  and backend. Translated message values use the agreed product wording, with
+  idiomatic equivalents in other languages.
+- Interpret names by their documented concept and flow, not by word matching.
+  Different labels can designate one entity; the same UI label can designate
+  different entities. Unrelated uses, such as code/feedback comments or an
+  activity log, are not domain aliases.
+- Name identifiers for the entity and scope they actually identify: a global
+  user ID is `userId`, not a conversation-participant ID. Qualify local participant
+  identifiers at mixed-scope boundaries; product roles such as participant or
+  facilitator do not change the underlying global identity.
+- Naming refactors need source evidence and an explicit scope. Do not treat every
+  historical spelling as a defect or replace accurate mathematical/upstream
+  terminology. Keep temporary cleanup priorities in the local refactor inventory,
+  not in glossary definitions.
+- When already working on historical code, small, directly related naming
+  improvements toward the canonical terms are allowed when they improve clarity
+  and affected callers/tests can be updated safely. Do not make unrelated
+  historical cleanup a prerequisite for normal work. Aggressive, broad or
+  repository-wide renaming requires an explicit request.
+- Record only agreed decisions in the glossary. Keep source inventories, proposed
+  renames and implementation sequencing out of it. No terminology-specific lint
+  rule is required.
+- A glossary update does not authorize bulk renaming of existing code, database
+  structures, API contracts, generated code or published URLs. Apply changes only
+  in deliberately scoped refactors; do not introduce parallel domain models
+  merely to match UI wording.
 
-**In user-facing text (UI labels, translations):**
-
-- English: **"statement"**
-- French: **"proposition"**
-- Other languages: use the idiomatic equivalent (not a literal translation)
-
-**Exceptions — these are different concepts:**
-
-- **"Opinion Group"**: refers to a cluster of users with similar voting patterns. Keep as-is.
-- **"Thanks for your comments!"**: in the context of user reports/feedback, "comment" means the user's free-text input, not a statement in a conversation.
+If the local, gitignored `AGENTS_NAMING_REFACTOR.md` exists, consult it when
+planning the naming-only cleanup. It is a scoped implementation inventory, not a
+second glossary or authorization to execute a refactor.
 
 ## Environment Variables (Frontend)
 
@@ -192,7 +219,7 @@ cd services/scoring-worker && make test && make lint && make typecheck
 
 When the user explicitly asks for `lint:fix`, run only that service's `lint:fix` command unless they also ask for `lint`, typechecking, tests, or broader verification.
 
-Ordinary API/worker database-row removal must use soft deletion or non-destructive updates/upserts. `make check-soft-deletes` enforces this boundary and runs in CI, API lint, and scoring-worker lint. The planned dedicated `services/deletion-worker/` is the intentional eventual hard-purge exception; see the scoring tombstone inventory and eligibility/coordination rules in `AGENTS_DELETION_SERVICE_PLAN.md` section 6.5.1. Tests, guarded production-excluded development-exercise cleanup, and exact hash-pinned historical destructive migrations are explicit exceptions.
+Ordinary API/worker database-row removal must use soft deletion or non-destructive updates/upserts. `make check-soft-deletes` enforces this boundary and runs in CI, API lint, and scoring-worker lint. The planned dedicated `services/deletion-worker/` is the intentional eventual hard-purge exception; see the scoring tombstone inventory and eligibility/coordination rules in `AGENTS_DELETION_SERVICE_PLAN.md` section 6.5.1. Tests, guarded production-excluded development-exercise cleanup, and exact hash-pinned historical destructive migrations are explicit exceptions. The explicitly approved, separately hash-pinned `V0113.1__retire_zupass.sql` migration may permanently remove only retired event-ticket premium entitlements; it does not authorize purging ticket/nullifier records or other application rows.
 
 ### Git Commits
 
@@ -348,11 +375,13 @@ Files generated from shared directories have warning comments at the top. Always
 ### Database Layer
 
 - **ORM**: Drizzle with canonical TypeScript schema in `services/shared-backend/src/schema.ts`; API and worker copies are generated
-- **Read replicas**: Automatic routing via `withReplicas()` - SELECTs use replica, writes use primary
+- **Read replicas**: Drizzle v1 is primary by default. Use `getReplicaDatabase(db)` for ordinary display reads; use `getPrimaryDatabase(db)` or the existing transaction for freshness-sensitive reads and writes. Do not recreate automatic SELECT routing.
 - **Migrations**: Flyway-based versioned migrations in `services/api/database/flyway/`
 - **Connection**: Supports both direct connection strings and AWS Secrets Manager
 
 Use Drizzle's schema-backed, typed query builder for application-table reads and writes. Prefer its `count`, `sum`, `eq`, `gte`, `returning`, transactions, and other query helpers over raw SQL or `db.execute(sql`...`)`. Do not fabricate a SQL `VALUES` or `SELECT 1` source just to make a query executable. When a PostgreSQL-specific expression has no Drizzle helper (for example, `clock_timestamp()` or a filtered aggregate), keep the `sql` fragment inside a Drizzle query over a real schema table, map its result to the correct runtime type, and explain why the exception is needed. Model absent rows explicitly; never invent a fallback value such as the application clock for a missing policy row.
+
+Apply this preference to schema definitions too: use `inArray`, `eq`, `isNull`, `isNotNull`, comparison and Boolean helpers in partial-index predicates and check constraints wherever they suffice. Do not write SQL strings for predicates Drizzle already supports. Keep any necessary clock, interval, JSON, or other unsupported expressions as small as possible, composing them with Drizzle's ordinary query helpers.
 
 ### OpenAPI-First API Development
 
@@ -458,8 +487,7 @@ Authorization headers built via `buildAuthorizationHeader(encodedUcan)` in front
 - `services/app/src/routes/`: SvelteKit pages and layouts (landing page)
 - `services/app/src/lib/logic/`: Pure TypeScript functions with colocated tests
 - `services/app/src/lib/components/`: Reusable Svelte components
-- `services/app/vite.config.ts`: Vite plugins (Tailwind, SvelteKit)
-- `services/app/svelte.config.js`: SvelteKit adapter configuration
+- `services/app/vite.config.ts`: Vite plugins and SvelteKit 3 configuration (adapter, aliases, preprocessing)
 - `services/api/src/index.ts`: Main backend entry point, route registration
 - `services/shared-backend/src/schema.ts`: Canonical database schema (all tables)
 - `services/shared-backend/src/db.ts`: Canonical database connection utilities with read replica routing
@@ -559,7 +587,11 @@ if (probabilities.length !== types.length) {
 
 ### Avoid Replica-Lag Read-After-Write Bugs
 
-The API uses read replicas for ordinary reads, so code that writes data and then immediately reads it back through the normal `db` handle can observe stale state. Prefer designs that avoid the follow-up read entirely:
+The API opts into read replicas for ordinary display reads. Drizzle v1's root `db` handle uses the primary; `getReplicaDatabase(db)` explicitly opts into a replica and returns a query-only `ReplicaDatabase` type. Passing a transaction or an explicit primary handle to this accessor preserves that same handle, so shared helpers cannot escape their caller's transaction. Choose routing at service boundaries, and accept `ReplicaDatabase` in query-only builders that must use the caller's selected reader.
+
+Keep writes, transactions, row-locking SELECTs (`.for(...)`), CTEs (including SELECTs with writable CTEs), raw execution, authorization/admission decisions requiring current state, and freshness-sensitive reads on `getPrimaryDatabase(db)` or the existing transaction. CTEs are conservatively primary-only because their outer SELECT does not establish that they are read-only. `ReplicaDatabase` deliberately omits CTE builders, writes, transactions, and raw execution; API ESLint rejects row locks originating from replica readers and direct `$replica` access outside the central accessor. These checks are guardrails, not a SQL purity proof: arbitrary SQL fragments can still call functions with side effects.
+
+Code that writes data and then reads it through a replica can observe stale state. Prefer designs that avoid the follow-up read entirely:
 
 - Use `.returning()` from inserts/updates for IDs, timestamps, and updated fields
 - Build downstream DTOs, queue payloads, notifications, and cache seeds from values already known in the request, transaction, or returned rows
@@ -991,14 +1023,14 @@ Key variables:
 
 ### Tech Stack
 
-- **Framework**: SvelteKit with Svelte 5 (runes: `$state`, `$derived`, `$effect`, `$props`)
+- **Framework**: SvelteKit 3 with Svelte 5 (runes: `$state`, `$derived`, `$effect`, `$props`)
 - **UI Library**: Bits UI (headless components) - **always use `$ui/` wrappers, never import directly**
 - **Styling**: Tailwind CSS v4 (CSS-first, `@import "tailwindcss"`)
 - **Testing**: Vitest + @testing-library/svelte for components, Playwright for E2E
 
 ### Key Rules
 
-- **Path aliases**: `$ui`, `$components`, `$logic`, `$state` (configured in `svelte.config.js`)
+- **Path aliases**: `$ui`, `$components`, `$logic`, `$state` (configured in `vite.config.ts`); `#lib/*` uses native package imports in `package.json` with explicit module extensions
 - **No barrel files** (`index.ts` re-exports) - breaks tree-shaking
 - **No cross-app imports** - only import from own app folder or `shared/`
 - **Component Hierarchy**: Routes → Components → UI (keep routes simple)
@@ -1031,6 +1063,16 @@ cd services/app && pnpm check       # Type check
 cd services/app && pnpm test:unit   # Vitest
 cd services/app && pnpm test:e2e    # Playwright
 ```
+
+### Optional Storybook MCP
+
+`agora-storybook` in the root `opencode.json` is disabled by default. It provides
+story-authoring guidance and previews for `services/app` Svelte components, not
+the Vue/Quasar application. Only when useful for the current task, run
+`pnpm storybook` in `services/app`, temporarily set that server's `disabled` field
+to `false`, and verify with `opencode mcp list`. Configuration reloads
+automatically. Restore `disabled: true` after use, and stop Storybook only if you
+started it. No separate skill is needed; see `services/app/README.md`.
 
 ## Prerequisites
 

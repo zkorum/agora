@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>Agora — Comprendre une priorité collective</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #252238; --muted: #696578; --purple: #6550ce; --purple-light: #f0edff;
+      --line: #e6e2ed; --paper: #fff; --bg: #f7f6fa; --teal: #247c72;
+      --top: #428f83; --middle: #b2b7c8; --bottom: #8773b7; --missing: #ececf2;
+      --amber: #956318;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: var(--bg); line-height: 1.55; }
+    button, select { font: inherit; }
+    button, summary, select { cursor: pointer; }
+    button { color: inherit; }
+    a { color: var(--purple); text-underline-offset: 3px; }
+    :focus-visible { outline: 3px solid var(--purple); outline-offset: 4px; }
+    [hidden] { display: none; }
+    .wrap { max-width: 1320px; margin-inline: auto; padding: 28px 32px 60px; }
+    .masthead { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 750; font-size: 21px; letter-spacing: -.6px; }
+    .mark { width: 34px; height: 34px; display: grid; place-items: center; background: var(--purple); color: white; border-radius: 11px; }
+    .prototype { font-size: 12px; color: var(--muted); padding: 6px 12px; background: white; border: 1px solid var(--line); border-radius: 30px; }
+    .intro { max-width: 800px; padding-block: 42px 28px; }
+    .eyebrow { text-transform: uppercase; letter-spacing: 1.8px; font-size: 11px; font-weight: 750; color: var(--purple); margin: 0 0 10px; }
+    h1 { font-size: clamp(29px, 4vw, 43px); line-height: 1.15; letter-spacing: -1.5px; margin: 0 0 15px; font-weight: 750; }
+    .intro > p:last-child { color: var(--muted); margin: 0; font-size: 17px; max-width: 690px; }
+    h2, h3, h4, p { margin-block-start: 0; }
+    .controls { background: white; border: 1px solid var(--line); border-radius: 18px; padding: 20px; margin-block-end: 24px; }
+    .control-row { display: flex; justify-content: space-between; align-items: center; gap: 18px; }
+    .field label { display: block; font-size: 12px; color: var(--muted); font-weight: 650; margin-block-end: 6px; }
+    select { border: 1px solid #d7d2e4; background: white; color: var(--ink); border-radius: 9px; padding: 9px 36px 9px 12px; max-width: 100%; }
+    .field { min-width: 0; }
+    .scenario-hint { color: var(--muted); font-size: 13px; max-width: 480px; margin: 0; }
+    .views { display: flex; gap: 6px; background: #f5f3f9; padding: 5px; border-radius: 12px; margin-block-start: 18px; }
+    .view-button { flex: 1; padding: 10px; border: 1px solid transparent; border-radius: 9px; background: transparent; font-weight: 600; font-size: 14px; }
+    .view-button[aria-pressed="true"] { background: white; color: var(--purple); border-color: #e3dcf5; box-shadow: 0 2px 5px #29223b08; }
+    .view-number { display: inline-grid; place-items: center; width: 22px; height: 22px; background: #e8e3f4; border-radius: 6px; margin-inline-end: 6px; font-size: 12px; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1fr) 310px; gap: 24px; align-items: start; }
+    .preview { border: 1px solid var(--line); border-radius: 20px; background: white; overflow: hidden; box-shadow: 0 8px 30px #24213304; }
+    .preview-head { padding: 26px 28px 20px; border-block-end: 1px solid var(--line); }
+    .preview-head h2 { font-size: 20px; margin-block-end: 10px; letter-spacing: -.3px; }
+    .small { font-size: 12px; color: var(--muted); }
+    .metadata { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 12px; color: var(--muted); }
+    .metadata span + span::before { content: "·"; padding-inline-end: 8px; }
+    .fiction { background: #faf9fc; font-size: 11px; color: var(--muted); padding: 10px 28px; border-block-end: 1px solid var(--line); }
+    .content { padding: 24px 28px 28px; }
+    .reading { border-radius: 13px; padding: 17px 18px; background: var(--purple-light); margin-block-end: 22px; border-inline-start: 3px solid var(--purple); }
+    .reading h3 { font-size: 16px; margin-block-end: 5px; }
+    .reading p { margin: 0; font-size: 13px; color: #59516f; }
+    .reading.sparse { background: #fbf5e9; border-color: #c9953f; }
+    .section-line { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-block-end: 14px; }
+    .section-line h3 { font-size: 15px; margin: 0; }
+    .section-line .small { white-space: nowrap; }
+    .list { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+    .item { border: 1px solid var(--line); border-radius: 13px; padding: 17px; }
+    .item.featured { border-color: #d2c8f0; }
+    .item-heading { display: flex; gap: 13px; align-items: flex-start; }
+    .rank { flex-shrink: 0; display: grid; place-items: center; width: 30px; height: 30px; background: #f0edf8; color: var(--purple); border-radius: 9px; font-size: 14px; font-weight: 700; }
+    .item-title { font-size: 14px; font-weight: 650; line-height: 1.4; margin-block: 3px 10px; }
+    .item-body { flex: 1; min-width: 0; }
+    .chip { display: inline-block; font-size: 11px; font-weight: 600; border-radius: 6px; padding: 4px 8px; margin-inline-end: 5px; margin-block-end: 5px; background: #efedf4; color: #675b80; }
+    .chip.shared { background: #e8f4ef; color: #21695b; }
+    .chip.middle { background: #edf0f6; color: #55627a; }
+    .chip.divided { background: #f0eafb; color: #6b4891; }
+    .chip.sparse { background: #fbf1dc; color: #855c1d; }
+    .evidence { font-size: 12px; color: var(--muted); margin: 6px 0 0; }
+    .evidence strong { color: var(--ink); font-weight: 650; }
+    .mini-detail { margin-block-start: 10px; }
+    summary { font-size: 12px; color: var(--purple); font-weight: 600; width: fit-content; }
+    details[open] > summary { margin-block-end: 12px; }
+    .detail-body { background: #faf9fc; border-radius: 9px; padding: 13px; font-size: 12px; }
+    .detail-body p { margin-block-end: 9px; }
+    .detail-body p:last-child { margin-block-end: 0; }
+    .stats { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-block: 8px 12px; }
+    .stat strong { display: block; font-size: 16px; font-weight: 700; }
+    .stat span { color: var(--muted); font-size: 11px; }
+    .bar { height: 12px; border-radius: 5px; overflow: hidden; display: flex; background: var(--missing); margin-block: 10px; }
+    .segment { flex-shrink: 0; height: 100%; }
+    .top { background: var(--top); }
+    .middle { background: var(--middle); }
+    .bottom { background: var(--bottom); }
+    .missing { background: repeating-linear-gradient(135deg, #eeeef3, #eeeef3 3px, #dedde7 3px, #dedde7 4px); }
+    .legend { display: flex; gap: 8px 16px; flex-wrap: wrap; font-size: 11px; color: var(--muted); }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .swatch { display: inline-block; width: 9px; height: 9px; border-radius: 2px; }
+    .chart-note { font-size: 11px; color: var(--muted); margin-block: 10px 0; }
+    .distribution { margin-block-start: 13px; }
+    .distribution-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); gap: 12px; }
+    .tiles { display: grid; grid-template-columns: repeat(20, minmax(0, 1fr)); gap: 4px; margin-block: 12px; }
+    .tile { aspect-ratio: 1; border-radius: 3px; }
+    .rank-histogram { display: grid; grid-template-columns: repeat(13, minmax(0, 1fr)); gap: 4px; margin-block: 12px; }
+    .rank-column { min-width: 0; text-align: center; font-size: 10px; }
+    .rank-track { height: 72px; display: flex; align-items: flex-end; background: #f1eff6; margin-block: 5px; border-radius: 3px; overflow: hidden; }
+    .rank-fill { width: 100%; min-height: 0; }
+    .side { display: grid; gap: 16px; }
+    .note-card { padding: 22px; border: 1px solid var(--line); border-radius: 16px; background: #fff; }
+    .note-card h2 { font-size: 16px; margin-block-end: 12px; }
+    .note-card h3 { font-size: 13px; margin-block: 17px 6px; }
+    .note-card p, .note-card li { font-size: 13px; color: var(--muted); }
+    .note-card p:last-child { margin-block-end: 0; }
+    .note-card ul { margin: 0; padding-inline-start: 18px; }
+    .note-card li + li { margin-block-start: 7px; }
+    .recommendation { background: #eeebf8; border-color: #ded6f3; }
+    .recommendation p { color: #5c506f; }
+    .axis { display: grid; grid-template-columns: 25px 1fr; gap: 7px; margin-block: 13px; }
+    .axis-num { color: var(--purple); font-size: 12px; font-weight: 700; padding-block-start: 2px; }
+    .axis strong { font-size: 13px; }
+    .axis p { font-size: 12px; margin: 2px 0 0; }
+    .pair-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-block-end: 18px; }
+    .pair-picker select { width: 100%; font-size: 12px; }
+    .pair-panel { border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+    .pair-panel h3 { font-size: 17px; margin-block-end: 8px; }
+    .duel { display: grid; gap: 13px; margin-block: 22px; }
+    .duel-row { display: grid; grid-template-columns: 125px 1fr 35px; gap: 12px; align-items: center; font-size: 12px; }
+    .duel-track { height: 16px; border-radius: 4px; background: #f0eef4; overflow: hidden; }
+    .duel-fill { height: 100%; }
+    .duel-row strong { text-align: end; }
+    .outline-button { border: 1px solid #d5cdeb; padding: 9px 12px; border-radius: 8px; background: white; font-size: 12px; color: var(--purple); font-weight: 600; }
+    .method { margin-block-start: 32px; border: 1px solid var(--line); border-radius: 18px; background: white; padding: 26px 28px; }
+    .method > h2 { font-size: 22px; letter-spacing: -.5px; margin-block-end: 8px; }
+    .method > p { font-size: 14px; color: var(--muted); max-width: 880px; }
+    .category-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-block: 20px; }
+    .category { background: #faf9fc; border: 1px solid var(--line); padding: 17px; border-radius: 12px; }
+    .category h3 { font-size: 14px; margin-block: 5px 7px; }
+    .category p { font-size: 12px; color: var(--muted); margin: 0; }
+    .info-strip { border-radius: 10px; padding: 13px 16px; background: #fbf5e9; font-size: 13px; color: #755b31; }
+    .method details { border-block-start: 1px solid var(--line); padding-block-start: 18px; margin-block-start: 20px; }
+    .method summary { font-size: 14px; }
+    .method details p, .method li { font-size: 13px; color: var(--muted); }
+    .method li + li { margin-block-start: 8px; }
+    .table-scroll { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; font-size: 12px; margin-block: 15px; }
+    th, td { text-align: start; padding: 10px; border-block-end: 1px solid var(--line); }
+    th { font-weight: 650; background: #f8f7fb; }
+    .footer { color: var(--muted); font-size: 12px; margin-block-start: 25px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    @media (max-width: 1000px) {
+      .layout { grid-template-columns: minmax(0, 1fr); }
+      .side { grid-template-columns: 1fr 1fr; }
+      .side .recommendation { grid-column: 1 / -1; }
+    }
+    @media (max-width: 600px) {
+      .wrap { padding: 18px 14px 35px; }
+      .masthead { align-items: flex-start; }
+      .prototype { font-size: 10px; max-width: 160px; text-align: center; }
+      .intro { padding-block: 30px 23px; }
+      .control-row { flex-direction: column; align-items: stretch; gap: 12px; }
+      .control-row select { width: 100%; }
+      .controls { padding: 14px; }
+      .view-button { padding: 9px 4px; font-size: 11px; }
+      .view-number { display: none; }
+      .preview-head, .content { padding: 20px 16px; }
+      .fiction { padding-inline: 16px; }
+      .item { padding: 13px 11px; }
+      .item-heading { gap: 10px; }
+      .rank { width: 25px; height: 25px; border-radius: 7px; }
+      .side, .category-grid, .pair-picker { grid-template-columns: 1fr; }
+      .method { padding: 22px 17px; }
+      .duel-row { grid-template-columns: 100px 1fr 24px; gap: 7px; }
+      .tiles { gap: 3px; }
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .preview { animation: appear .25s ease-out; }
+      @keyframes appear { from { opacity: .6; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    }
+    @media print {
+      body { background: white; }
+      .controls, .outline-button { display: none; }
+      .layout { grid-template-columns: 1fr; }
+      .item, .note-card { break-inside: avoid; }
+      .wrap { padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="masthead">
+      <div class="brand"><span class="mark" aria-hidden="true">a</span> agora<span class="small">/ atelier</span></div>
+      <span class="prototype">Prototypes interactifs · données fictives</span>
+    </header>
+    <section class="intro">
+      <p class="eyebrow">Comprendre les priorités collectives</p>
+      <h1>Le classement donne l’ordre.<br>Et les personnes, qu’en pensent-elles ?</h1>
+      <p>Trois pistes pour montrer les préférences derrière une priorité, sans transformer un score en promesse de consensus.</p>
+    </section>
+    <section class="controls" aria-label="Options de la maquette">
+      <div class="control-row">
+        <div class="field">
+          <label for="scenario">Explorer une situation</label>
+          <select id="scenario">
+            <option value="shared">Une priorité souvent placée en tête</option>
+            <option value="middle">Des positions surtout intermédiaires</option>
+            <option value="divided">Des positions fortement contrastées</option>
+            <option value="minority">Une majorité, mais une minorité à l’opposé</option>
+            <option value="sparse">Encore peu de données comparables</option>
+          </select>
+        </div>
+        <p id="scenario-hint" class="scenario-hint"></p>
+      </div>
+      <div class="views" role="group" aria-label="Choisir une proposition visuelle">
+        <button class="view-button" data-view="guided" aria-pressed="true" aria-controls="visual"><span class="view-number">A</span>Lecture guidée</button>
+        <button class="view-button" data-view="distribution" aria-pressed="false" aria-controls="visual"><span class="view-number">B</span>Répartition visible</button>
+        <button class="view-button" data-view="pair" aria-pressed="false" aria-controls="visual"><span class="view-number">C</span>Face-à-face</button>
+      </div>
+    </section>
+    <p id="announcement" class="sr-only" role="status" aria-live="polite"></p>
+    <div class="layout">
+      <main class="preview" id="visual" aria-label="Aperçu du résultat proposé">
+        <header class="preview-head">
+          <p class="eyebrow">Analyse · charte des usages de l’IA</p>
+          <h2>Quelles actions mettre en priorité&nbsp;?</h2>
+          <div class="metadata"><span>40 participants</span><span>13 propositions</span><span id="coverage"></span></div>
+        </header>
+        <div class="fiction">Maquette : valeurs fictives, profils illustratifs. Les nouveaux indicateurs ne sont pas calculés par l’application actuelle.</div>
+        <div class="content" id="preview-content"></div>
+      </main>
+      <aside class="side" aria-label="Comment lire et évaluer ce design">
+        <section class="note-card" id="design-notes"></section>
+        <section class="note-card">
+          <p class="eyebrow">Trois questions différentes</p>
+          <div class="axis"><span class="axis-num">01</span><div><strong>Que prioriser collectivement ?</strong><p>Le rang, calculé par Solidago.</p></div></div>
+          <div class="axis"><span class="axis-num">02</span><div><strong>Comment les positions se répartissent-elles ?</strong><p>Les préférences individuelles, y compris celles de la minorité.</p></div></div>
+          <div class="axis"><span class="axis-num">03</span><div><strong>Sur quelles données s’appuie-t-on ?</strong><p>Le nombre de personnes comparables et les informations manquantes.</p></div></div>
+        </section>
+        <section class="note-card recommendation">
+          <p class="eyebrow">Piste recommandée</p>
+          <h2>A en premier niveau, B dans le détail.</h2>
+          <p>Une phrase simple et les deux nombres utiles d’abord. La répartition complète au clic. Le face-à-face pour examiner un arbitrage particulier.</p>
+          <p><strong>Le score Squash reste accessible</strong>, mais il ne porte plus seul l’explication du résultat.</p>
+        </section>
+      </aside>
+    </div>
+    <section class="method" id="method">
+      <p class="eyebrow">Proposition de vocabulaire</p>
+      <h2>Des profils de préférence, pas des tranches de score.</h2>
+      <p>On décrit des positions observables. On ne découpe pas « 0–100 » en « rejet / ambivalence / adhésion » : le score ne permet pas de faire cette lecture.</p>
+      <div class="category-grid">
+        <article class="category"><span class="chip shared">Souvent en tête</span><h3>Une priorité fréquemment partagée</h3><p>De nombreuses personnes la placent parmi leurs premières priorités. Le nombre de personnes la plaçant en bas reste affiché.</p></article>
+        <article class="category"><span class="chip middle">Plutôt au milieu</span><h3>Des positions surtout intermédiaires</h3><p>La plupart des positions estimées sont au milieu des classements personnels. Cela ne signifie ni hésitation ni indifférence.</p></article>
+        <article class="category"><span class="chip divided">Positions contrastées</span><h3>Des préférences qui s’opposent</h3><p>Une partie la place en tête et une autre en bas. On montre les deux, sans réduire cela à une préférence « moyenne ».</p></article>
+      </div>
+      <div class="info-strip"><strong>« Peu de données comparables » est un état séparé.</strong> Il accompagne la lecture des préférences ; il ne qualifie pas l’opinion des personnes non comparables et ne constitue pas un intervalle de confiance.</div>
+      <details>
+        <summary>Ce qu’on peut dire aujourd’hui, et ce qu’il faudrait calculer</summary>
+        <ul>
+          <li><strong>Déjà disponible :</strong> classement collectif, scores collectifs et personnels, incertitudes du modèle, comparaisons et décomptes de participation. Le score Squash exprime le résultat du modèle sur une échelle bornée ; il ne mesure pas directement un taux d’adhésion, le consensus ou la fiabilité du classement.</li>
+          <li><strong>À construire pour A et B :</strong> une répartition des positions individuelles estimées sur un même ensemble de propositions. Ici : rangs 1–3, 4–10, 11–13. Si une personne a évalué trop peu de propositions, son rang relatif peut être trompeur : prévoir une règle explicite de couverture et d’incertitude, sinon afficher « non comparable ».</li>
+          <li><strong>À construire pour C :</strong> un décompte par personne des comparaisons directes de la paire. Dans une tâche BWS, les choix du meilleur et du pire donnent certaines relations ; les deux éléments intermédiaires ne sont pas ordonnés entre eux. Ne pas fabriquer de comparaisons à partir de leur simple présence dans le même groupe.</li>
+          <li><strong>Une personne, un décompte descriptif :</strong> pour la paire choisie, ranger chaque personne dans « A devant B », « B devant A », « choix variables » si les deux sens ont été exprimés, ou « aucune relation directe ». Ces comptes descriptifs ne reproduisent pas les pondérations et l’agrégation Solidago.</li>
+          <li><strong>Ne pas confondre trois choses :</strong> une position intermédiaire, des préférences individuelles proches en intensité, et une estimation incertaine. Pour mesurer les deux dernières, il faut examiner les écarts et les incertitudes des modèles individuels. Un histogramme de rangs ne suffit pas.</li>
+          <li><strong>Avant d’automatiser des catégories :</strong> calibrer et tester leurs règles sur des distributions variées, y compris des minorités fortes et des données partielles. Les libellés de cette page sont rédigés pour les exemples, pas produits par des seuils validés. Prévoir un état neutre « préférences réparties » si aucun profil ne domine.</li>
+          <li><strong>Si l’objectif est la stabilité du rang :</strong> calculer séparément sa sensibilité à un rééchantillonnage des participants. Ni un score de 80 ni un nombre de votes élevé ne prouvent, à eux seuls, que le premier restera premier.</li>
+        </ul>
+      </details>
+      <details id="data-details">
+        <summary>Voir les nombres derrière la présentation</summary>
+        <p>Les trois vues utilisent le même scénario fictif. Les scores et les profils sont illustratifs : ils ne sont pas recalculés par Solidago à partir de ces tableaux. Les 5 propositions montrées sont un aperçu d’une consultation à 13 propositions.</p>
+        <div id="data-table" class="table-scroll"></div>
+        <button class="outline-button" id="export-data">Exporter les données fictives du scénario (.json)</button>
+      </details>
+      <details>
+        <summary>Les compromis à discuter ensemble</summary>
+        <ul>
+          <li><strong>Score seul :</strong> compact et fidèle au modèle, mais difficile à interpréter. Le renommer « 80/100 » évite le faux pourcentage sans en faire un indicateur de consensus.</li>
+          <li><strong>Catégorie seule :</strong> lisible, mais peut masquer une minorité ou une limite de couverture. Toujours donner accès à la répartition et aux effectifs.</li>
+          <li><strong>Répartition :</strong> distingue plusieurs formes de préférence, mais le découpage en trois groupes réduit le détail. La maquette donne donc aussi accès aux 13 rangs dans chaque carte. En production, il faudrait compléter cette lecture par les incertitudes des estimations individuelles.</li>
+          <li><strong>Face-à-face :</strong> répond clairement à « A ou B ? », mais pas à « quelle est la priorité générale ? ». Des majorités par paire peuvent former des cycles.</li>
+        </ul>
+        <p><strong>Questions pour Gaëtan :</strong> quelle vue expliquerais-tu spontanément à un participant ? Le désaccord minoritaire est-il assez visible ? Quels détails souhaites-tu retrouver sans encombrer la lecture initiale ?</p>
+      </details>
+    </section>
+    <footer class="footer">
+      <span>Fichier autonome · aucune donnée réelle · aucun service externe appelé</span>
+      <a href="https://arxiv.org/html/2211.01179v3#S8" target="_blank" rel="noopener noreferrer">Solidago : post-traitement des scores</a>
+    </footer>
+  </div>
+  <script>
+    const items = [
+      { id: "protect", title: "Protéger les données confidentielles dans les usages de l’IA", short: "Protéger les données" },
+      { id: "sources", title: "Toujours remonter aux sources originales pour la veille", short: "Vérifier les sources" },
+      { id: "verify", title: "Vérifier une partie des résultats produits par l’IA", short: "Contrôler les résultats" },
+      { id: "rules", title: "Clarifier les règles d’usage de l’IA dans l’entreprise", short: "Clarifier les règles" },
+      { id: "train", title: "Former les équipes aux usages et aux limites de l’IA", short: "Former les équipes" },
+    ];
+    const scenarios = {
+      shared: {
+        name: "Une priorité souvent placée en tête", coverage: 40,
+        hint: "Score collectif de la première : 80/100. Regardez aussi les positions minoritaires.",
+        heading: "Une première priorité fréquemment partagée",
+        reading: "34 personnes sur 40 la placent dans leurs trois premières priorités. Deux la placent dans leurs trois dernières.",
+        scores: [80, 71, 67, 65, 61],
+        groups: [[34, 4, 2], [28, 9, 3], [24, 12, 4], [17, 19, 4], [16, 17, 7]],
+        profiles: ["shared", "shared", "shared", "middle", "spread"],
+        // Synthetic direct pair counts: A-first, B-first, variable, no direct relation.
+        pairs: [[31, 6, 1, 2], [30, 6, 2, 2], [32, 4, 1, 3], [29, 7, 2, 2], [26, 10, 2, 2], [28, 9, 1, 2], [27, 9, 2, 2], [24, 11, 2, 3], [25, 10, 2, 3], [21, 14, 2, 3]],
+      },
+      middle: {
+        name: "Des positions surtout intermédiaires", coverage: 40,
+        hint: "La première est à 52/100, comme dans le scénario « positions contrastées ». Le score seul ne raconte pas la répartition.",
+        heading: "Première collectivement, souvent au milieu individuellement",
+        reading: "28 personnes sur 40 la placent au milieu de leur classement. Cette position ne permet pas de conclure qu’elles hésitent.",
+        scores: [52, 51, 50, 49, 48],
+        groups: [[6, 28, 6], [8, 25, 7], [7, 25, 8], [5, 27, 8], [9, 22, 9]],
+        profiles: ["middle", "middle", "middle", "middle", "middle"],
+        pairs: [[17, 17, 2, 4], [18, 16, 3, 3], [19, 15, 2, 4], [18, 15, 3, 4], [17, 16, 3, 4], [18, 16, 2, 4], [18, 15, 4, 3], [17, 17, 2, 4], [16, 17, 4, 3], [18, 16, 3, 3]],
+      },
+      divided: {
+        name: "Des positions fortement contrastées", coverage: 40,
+        hint: "Même score collectif de 52/100 que dans le scénario précédent ; ici, deux positions opposées apparaissent.",
+        heading: "Première dans le classement, mais des préférences opposées",
+        reading: "20 personnes sur 40 la placent dans leurs trois premières priorités, et 20 dans leurs trois dernières.",
+        scores: [52, 51, 50, 49, 48],
+        groups: [[20, 0, 20], [18, 4, 18], [17, 6, 17], [16, 8, 16], [15, 10, 15]],
+        profiles: ["divided", "divided", "divided", "divided", "divided"],
+        pairs: [[19, 19, 0, 2], [20, 18, 0, 2], [19, 18, 1, 2], [20, 19, 0, 1], [18, 18, 1, 3], [19, 18, 1, 2], [18, 19, 0, 3], [19, 19, 0, 2], [18, 18, 2, 2], [19, 18, 1, 2]],
+      },
+      minority: {
+        name: "Une majorité, mais une minorité à l’opposé", coverage: 40,
+        hint: "La première est à 80/100, comme dans le premier scénario. Pourtant, 12 personnes la placent en bas.",
+        heading: "Une préférence majoritaire, avec une minorité à l’opposé",
+        reading: "26 personnes sur 40 la placent en tête de leurs priorités ; 12 la placent en bas. Le score collectif ne doit pas effacer cette minorité.",
+        scores: [80, 75, 70, 66, 62],
+        groups: [[26, 2, 12], [24, 8, 8], [23, 9, 8], [19, 14, 7], [15, 17, 8]],
+        profiles: ["minority", "shared", "shared", "spread", "spread"],
+        pairs: [[25, 12, 1, 2], [26, 11, 1, 2], [27, 10, 1, 2], [26, 10, 2, 2], [23, 13, 2, 2], [24, 12, 2, 2], [22, 13, 2, 3], [22, 14, 2, 2], [23, 13, 1, 3], [21, 15, 2, 2]],
+      },
+      sparse: {
+        name: "Encore peu de données comparables", coverage: 8,
+        hint: "Un score de 80/100 peut être affiché alors qu’on dispose de peu de classements individuels comparables.",
+        heading: "Une tendance à lire sur un petit nombre de positions",
+        reading: "7 des 8 personnes comparables la placent parmi leurs premières priorités. Pour 32 autres, les données ne permettent pas encore cette lecture.",
+        scores: [80, 71, 67, 65, 61],
+        groups: [[7, 0, 1], [5, 2, 1], [4, 3, 1], [3, 3, 2], [2, 3, 3]],
+        profiles: ["shared", "shared", "spread", "spread", "spread"],
+        pairs: [[5, 1, 0, 34], [4, 1, 0, 35], [5, 1, 1, 33], [4, 2, 0, 34], [4, 2, 0, 34], [3, 2, 1, 34], [4, 2, 0, 34], [3, 3, 0, 34], [3, 2, 1, 34], [3, 3, 0, 34]],
+      },
+    };
+    const profileLabels = {
+      shared: "Souvent en tête", middle: "Plutôt au milieu", divided: "Positions contrastées",
+      minority: "Majorité, avec une minorité à l’opposé", spread: "Préférences réparties",
+    };
+    const viewNotes = {
+      guided: { title: "A · Lecture guidée", benefit: "Une phrase et des effectifs compréhensibles immédiatement. Le rang garde sa place centrale.", limit: "Le libellé simplifie. Une minorité doit rester visible, même sous « souvent en tête ».", question: "Peut-on expliquer cette carte sans ouvrir le « ? » ?" },
+      distribution: { title: "B · Répartition visible", benefit: "Les groupes de positions deviennent visibles. Deux résultats au même score peuvent avoir des formes très différentes.", limit: "Le regroupement en trois zones masque les écarts fins. Les positions sont estimées, et doivent être comparables.", question: "La répartition est-elle lisible sans faire un cours de statistiques ?" },
+      pair: { title: "C · Face-à-face", benefit: "Une question concrète : entre ces deux propositions, dans quel sens les personnes ont-elles effectivement choisi ?", limit: "Une paire ne résume pas le classement global et ne mesure pas la force de la préférence. On conserve les choix variables et les absences.", question: "Est-ce le bon détail pour préparer un arbitrage ?" },
+    };
+    const state = { scenario: "shared", view: "guided", first: 0, second: 1 };
+    const totalPeople = 40;
+    const scenarioSelect = document.getElementById("scenario");
+    const content = document.getElementById("preview-content");
+    const number = new Intl.NumberFormat("fr-FR");
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
+    }
+    function distributionText({ groups, coverage }) {
+      return `${groups[0]} en tête, ${groups[1]} au milieu, ${groups[2]} en bas, ${totalPeople - coverage} non comparables, sur ${totalPeople} participants.`;
+    }
+    function distribution({ groups, coverage, tiles = false }) {
+      const entries = [
+        { label: "En tête", value: groups[0], className: "top" },
+        { label: "Au milieu", value: groups[1], className: "middle" },
+        { label: "En bas", value: groups[2], className: "bottom" },
+        { label: "Non comparable", value: totalPeople - coverage, className: "missing" },
+      ];
+      const visual = tiles
+        ? `<div class="tiles" aria-hidden="true">${entries.map(entry => Array.from({ length: entry.value }, () => `<span class="tile ${entry.className}"></span>`).join("")).join("")}</div>`
+        : `<div class="bar" aria-hidden="true">${entries.map(entry => `<span class="segment ${entry.className}" style="width:${entry.value / totalPeople * 100}%"></span>`).join("")}</div>`;
+      return `<div role="img" aria-label="${escapeHtml(distributionText({ groups, coverage }))}">${visual}</div>
+        <div class="legend">${entries.filter(entry => entry.value > 0).map(entry => `<span><i class="swatch ${entry.className}" aria-hidden="true"></i>${entry.value} ${entry.label.toLocaleLowerCase("fr")}</span>`).join("")}</div>`;
+    }
+    function profileChips({ scenario, index }) {
+      const profile = scenario.profiles[index];
+      return `<span class="chip ${profile}">${profileLabels[profile]}</span>${scenario.coverage < totalPeople ? '<span class="chip sparse">Peu de données comparables</span>' : ""}`;
+    }
+    // Expand fictional band counts into a consistent illustrative 13-rank histogram.
+    // A production view must use actual individual ranks, never this fixture expansion.
+    function rankCounts(groups) {
+      const counts = Array.from({ length: 13 }, () => 0);
+      const bands = [
+        { count: groups[0], ranks: [1, 2, 3] },
+        { count: groups[1], ranks: [7, 6, 8, 5, 9, 4, 10] },
+        { count: groups[2], ranks: [13, 12, 11] },
+      ];
+      for (const band of bands) {
+        for (let person = 0; person < band.count; person++) counts[band.ranks[person % band.ranks.length] - 1]++;
+      }
+      return counts;
+    }
+    function fullDistribution(groups) {
+      const counts = rankCounts(groups);
+      const maximum = Math.max(...counts, 1);
+      const description = counts.map((count, index) => `rang ${index + 1} : ${count} personne${count > 1 ? "s" : ""}`).join(" ; ");
+      return `<details class="mini-detail"><summary>Voir les 13 rangs, sans regroupement</summary>
+        <p class="chart-note">Nombre de personnes par rang estimé. Hauteur maximale : ${maximum} personnes. Les positions non comparables restent exclues.</p>
+        <div class="rank-histogram" role="img" aria-label="${escapeHtml(description)}">${counts.map((count, index) => `<div class="rank-column" aria-hidden="true"><strong>${count}</strong><div class="rank-track"><div class="rank-fill ${index < 3 ? "top" : index < 10 ? "middle" : "bottom"}" style="height:${count / maximum * 100}%"></div></div><span>${index + 1}</span></div>`).join("")}</div>
+        <p class="chart-note">Les nombres du bas sont les rangs personnels, pas une note. Répartition fine fictive pour explorer le visuel.</p>
+      </details>`;
+    }
+    function itemCard({ scenario, item, index }) {
+      const groups = scenario.groups[index];
+      const isDistribution = state.view === "distribution";
+      return `<li class="item ${index === 0 ? "featured" : ""}">
+        <div class="item-heading"><span class="rank" aria-label="Rang collectif ${index + 1}">${index + 1}</span><div class="item-body">
+          <h4 class="item-title">${escapeHtml(item.title)}</h4>
+          <div>${profileChips({ scenario, index })}</div>
+          ${isDistribution
+            ? `<div class="distribution"><div class="distribution-label"><span>Positions personnelles estimées</span><span>1 carré = 1 personne</span></div>${distribution({ groups, coverage: scenario.coverage, tiles: true })}</div>`
+            : `<p class="evidence"><strong>${groups[0]} / ${scenario.coverage}</strong> la placent dans leur top 3 · <strong>${groups[2]} / ${scenario.coverage}</strong> dans leurs 3 dernières.</p>`}
+          <details class="mini-detail"><summary>Comprendre ce résultat<span class="sr-only"> : ${escapeHtml(item.short)}</span></summary>
+            <div class="detail-body">
+              <p>Sur les <strong>${scenario.coverage} positions individuelles comparables</strong> parmi 40 participants :</p>
+              ${distribution({ groups, coverage: scenario.coverage })}
+              <p class="chart-note">En tête : rangs 1–3. Au milieu : 4–10. En bas : 11–13. Ces positions sont estimées par les modèles individuels ; ce ne sont pas des votes d’adhésion.</p>
+              ${fullDistribution(groups)}
+              <div class="stats"><div class="stat"><strong>${scenario.scores[index]} / 100</strong><span>Score collectif Squash</span></div><div class="stat"><strong>${totalPeople - scenario.coverage}</strong><span>Positions non comparables</span></div></div>
+              <p>Le score détermine l’ordre via le modèle Solidago. La répartition apporte une autre information. Ni l’un ni l’autre ne constitue à lui seul un niveau de confiance.</p>
+            </div>
+          </details>
+        </div></div>
+      </li>`;
+    }
+    function pairCounts({ scenario, first, second }) {
+      let index = 0;
+      for (let a = 0; a < items.length; a++) {
+        for (let b = a + 1; b < items.length; b++) {
+          if (Math.min(first, second) === a && Math.max(first, second) === b) {
+            const values = scenario.pairs[index];
+            return first < second ? [...values] : [values[1], values[0], values[2], values[3]];
+          }
+          index++;
+        }
+      }
+      return undefined;
+    }
+    function pairOptions({ selected, excluded }) {
+      return items.map((item, index) => `<option value="${index}" ${index === selected ? "selected" : ""} ${index === excluded ? "disabled" : ""}>${index + 1}. ${escapeHtml(item.short)}</option>`).join("");
+    }
+    function renderPairResult(scenario) {
+      const counts = pairCounts({ scenario, first: state.first, second: state.second });
+      const panel = document.getElementById("pair-result");
+      if (!counts || !panel) return;
+      const [a, b, variable, missing] = counts;
+      const rows = [
+        { label: "A devant B", value: a, className: "top" },
+        { label: "B devant A", value: b, className: "bottom" },
+        { label: "Choix variables", value: variable, className: "middle" },
+        { label: "Aucune relation directe", value: missing, className: "missing" },
+      ];
+      panel.innerHTML = `<h3>Que montrent les comparaisons de cette paire ?</h3>
+        <p class="small">A : ${escapeHtml(items[state.first].short)}<br>B : ${escapeHtml(items[state.second].short)}</p>
+        <div class="duel">${rows.map(row => `<div class="duel-row"><span>${row.label}</span><div class="duel-track" aria-hidden="true"><div class="duel-fill ${row.className}" style="width:${row.value / totalPeople * 100}%"></div></div><strong>${row.value}</strong></div>`).join("")}</div>
+        <p class="evidence"><strong>${a} personnes sur 40</strong> ont exprimé uniquement le sens A devant B dans les comparaisons directes disponibles ; <strong>${b}</strong> uniquement le sens inverse.</p>
+        <p class="chart-note">Chaque personne est comptée une fois. « Choix variables » ne veut pas dire « indifférent ». « Aucune relation directe » ne veut pas dire « neutre ».</p>
+        <details class="mini-detail"><summary>Comment lire ces nombres ?</summary><div class="detail-body"><p>On compte des personnes ayant exprimé une relation dans leurs tâches BWS, pas des clics accumulés. Les deux sens chez une même personne sont montrés à part.</p><p>Ce décompte décrit les choix recueillis pour A et B. Il ne reprend pas les pondérations de Solidago et n’est pas une estimation représentative de l’avis de toute la population. Il ne mesure pas l’intensité de chaque préférence.</p></div></details>`;
+    }
+    function renderData(scenario) {
+      document.getElementById("data-table").innerHTML = `<table><caption class="sr-only">Indicateurs fictifs des cinq propositions</caption><thead><tr><th>Rang</th><th>Proposition</th><th>Score /100</th><th>Top 3</th><th>Milieu</th><th>3 dernières</th><th>Non comparable</th></tr></thead><tbody>${items.map((item, index) => `<tr><td>${index + 1}</td><td>${escapeHtml(item.short)}</td><td>${number.format(scenario.scores[index])}</td>${scenario.groups[index].map(count => `<td>${count}</td>`).join("")}<td>${totalPeople - scenario.coverage}</td></tr>`).join("")}</tbody></table>`;
+    }
+    function render() {
+      const scenario = scenarios[state.scenario];
+      const notes = viewNotes[state.view];
+      document.getElementById("scenario-hint").textContent = scenario.hint;
+      document.getElementById("coverage").textContent = `${scenario.coverage} classements personnels comparables`;
+      document.querySelectorAll("[data-view]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.view === state.view)));
+      document.getElementById("design-notes").innerHTML = `<p class="eyebrow">Ce qu’on essaie ici</p><h2>${notes.title}</h2><h3>Ce que l’on gagne</h3><p>${notes.benefit}</p><h3>Le compromis</h3><p>${notes.limit}</p><h3>À discuter</h3><p>${notes.question}</p>`;
+      const reading = `<section class="reading ${state.scenario === "sparse" ? "sparse" : ""}"><h3>${scenario.heading}</h3><p>${scenario.reading}</p></section>`;
+      if (state.view === "pair") {
+        content.innerHTML = `${reading}<div class="pair-picker"><div class="field"><label for="first">Proposition A</label><select id="first">${pairOptions({ selected: state.first, excluded: state.second })}</select></div><div class="field"><label for="second">Proposition B</label><select id="second">${pairOptions({ selected: state.second, excluded: state.first })}</select></div></div><section class="pair-panel" id="pair-result" aria-live="polite"></section>`;
+        renderPairResult(scenario);
+        for (const key of ["first", "second"]) {
+          document.getElementById(key).addEventListener("change", event => {
+            state[key] = Number(event.target.value);
+            const other = key === "first" ? "second" : "first";
+            for (const option of document.getElementById(other).options) option.disabled = Number(option.value) === state[key];
+            renderPairResult(scenario);
+          });
+        }
+      } else {
+        content.innerHTML = `${reading}<div class="section-line"><h3>Classement collectif Solidago</h3><span class="small">Aperçu : 5 sur 13</span></div>${state.view === "distribution" ? '<p class="small">La couleur indique une zone du classement personnel, pas un avis favorable ou défavorable.</p>' : ""}<ol class="list">${items.map((item, index) => itemCard({ scenario, item, index })).join("")}</ol>`;
+      }
+      renderData(scenario);
+      document.getElementById("announcement").textContent = `${notes.title}. ${scenario.name}.`;
+    }
+    scenarioSelect.addEventListener("change", () => { state.scenario = scenarioSelect.value; render(); });
+    document.querySelectorAll("[data-view]").forEach(button => button.addEventListener("click", () => { state.view = button.dataset.view; render(); }));
+    document.getElementById("export-data").addEventListener("click", () => {
+      const scenario = scenarios[state.scenario];
+      const pairs = [];
+      for (let first = 0; first < items.length; first++) {
+        for (let second = first + 1; second < items.length; second++) {
+          pairs.push({ a: items[first].id, b: items[second].id, counts: pairCounts({ scenario, first, second }) });
+        }
+      }
+      const data = { prototype: true, warning: "Données fictives, catégories illustratives non calibrées, scores non recalculés à partir des comptes. La répartition fine est synthétique.", scenario: state.scenario, totalPeople, consultationItemCount: 13, rankBands: [[1, 3], [4, 10], [11, 13]], pairCountOrder: ["a_before_b", "b_before_a", "variable", "no_direct_relation"], ...scenario, rankCountsByItem: scenario.groups.map(rankCounts), items, pairComparisons: pairs };
+      const url = URL.createObjectURL(new Blob([JSON.stringify(data, undefined, 2)], { type: "application/json" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `agora-maquette-${state.scenario}.json`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
+    render();
+  </script>
+</body>
+</html>
