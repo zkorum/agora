@@ -1,0 +1,39 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "42337e48-2d6d-4ba7-9e26-7d0f7811c944",
+  "prevIds": [
+    "48c23fbe-e506-4e3b-ad75-d94285674c76"
+  ],
+  "footprints": [
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_content_translation",
+        "translated_title"
+      ],
+      "writes": [
+        "s|colprop|public.conversation_content_translation.translated_title.type",
+        "s|colprop|public.conversation_content_translation.translated_title.default"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_content_translation",
+        "n|sch|public",
+        "n|col|public.conversation_content_translation.translated_title"
+      ],
+      "sqlHash": "3532e4ae5b20ec3d"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"conversation_content_translation\",\"translated_title\"]",
+      "set": {
+        "type": "text"
+      }
+    }
+  ]
+}

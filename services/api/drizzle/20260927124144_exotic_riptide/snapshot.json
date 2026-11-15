@@ -1,0 +1,77 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "8eb71911-dcfb-4157-a121-48771cb6da05",
+  "prevIds": [
+    "d863b1d5-b72a-499f-bbb2-9adf9b0ad401"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "polis_voting_presentation"
+      ],
+      "writes": [
+        "s|enum|public.polis_voting_presentation",
+        "n|enum|public.polis_voting_presentation",
+        "e|enum|public.polis_voting_presentation",
+        "n|type|public.polis_voting_presentation"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "polis_conversation_config",
+        "voting_presentation"
+      ],
+      "writes": [
+        "s|col|public.polis_conversation_config.voting_presentation",
+        "n|col|public.polis_conversation_config.voting_presentation",
+        "e|col|public.polis_conversation_config.voting_presentation"
+      ],
+      "reads": [
+        "n|tbl|public.polis_conversation_config",
+        "n|sch|public",
+        "n|enum|public.polis_voting_presentation"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "polis_voting_presentation",
+        "values": [
+          "list",
+          "one_at_a_time"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "polis_conversation_config",
+        "name": "voting_presentation",
+        "type": "polis_voting_presentation",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'list'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

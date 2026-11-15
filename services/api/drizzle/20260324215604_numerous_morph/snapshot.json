@@ -1,0 +1,142 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "c7f41b27-4cbb-4f14-825e-183654686269",
+  "prevIds": [
+    "e592bb96-37c9-4ff7-94f7-3d380e745ef9"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "maxdiff_item_external_source",
+        "conversation_id"
+      ],
+      "writes": [
+        "s|col|public.maxdiff_item_external_source.conversation_id",
+        "n|col|public.maxdiff_item_external_source.conversation_id",
+        "e|col|public.maxdiff_item_external_source.conversation_id"
+      ],
+      "reads": [
+        "n|tbl|public.maxdiff_item_external_source",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "maxdiff_item_external_source",
+        "maxdiff_external_source_dedup_idx"
+      ],
+      "writes": [
+        "s|idx|public.maxdiff_external_source_dedup_idx",
+        "n|idx|public.maxdiff_external_source_dedup_idx",
+        "e|idx|public.maxdiff_external_source_dedup_idx",
+        "n|rel|public.maxdiff_external_source_dedup_idx"
+      ],
+      "reads": [
+        "n|tbl|public.maxdiff_item_external_source",
+        "n|sch|public",
+        "n|col|public.maxdiff_item_external_source.external_id",
+        "n|col|public.maxdiff_item_external_source.conversation_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "maxdiff_item_external_source"
+      ],
+      "writes": [
+        "s|fk|public.maxdiff_item_external_source.maxdiff_item_external_source_conversation_id_conversation_id_fk",
+        "n|fk|public.maxdiff_item_external_source.maxdiff_item_external_source_conversation_id_conversation_id_fk",
+        "e|fk|public.maxdiff_item_external_source.maxdiff_item_external_source_conversation_id_conversation_id_fk",
+        "n|con|public.maxdiff_item_external_source.maxdiff_item_external_source_conversation_id_conversation_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.maxdiff_item_external_source",
+        "n|sch|public",
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.maxdiff_item_external_source.conversation_id",
+        "n|col|public.conversation.id",
+        "e|uniqueness|public.conversation.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item_external_source",
+        "name": "conversation_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item_external_source",
+        "name": "maxdiff_external_source_dedup_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "external_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "conversation_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item_external_source",
+        "name": "maxdiff_item_external_source_conversation_id_conversation_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "conversation_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conversation",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    }
+  ]
+}

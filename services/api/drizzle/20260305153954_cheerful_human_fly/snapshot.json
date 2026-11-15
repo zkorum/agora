@@ -1,0 +1,114 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "2394a78f-7fec-4bcf-a81d-95853fddbf55",
+  "prevIds": [
+    "d0361063-45be-4fb0-a859-1a98abce4778"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "email_reachability"
+      ],
+      "writes": [
+        "s|enum|public.email_reachability",
+        "n|enum|public.email_reachability",
+        "e|enum|public.email_reachability",
+        "n|type|public.email_reachability"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "auth_attempt_email",
+        "email_reachability"
+      ],
+      "writes": [
+        "s|col|public.auth_attempt_email.email_reachability",
+        "n|col|public.auth_attempt_email.email_reachability",
+        "e|col|public.auth_attempt_email.email_reachability"
+      ],
+      "reads": [
+        "n|tbl|public.auth_attempt_email",
+        "n|sch|public",
+        "n|enum|public.email_reachability"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "email",
+        "email_reachability"
+      ],
+      "writes": [
+        "s|col|public.email.email_reachability",
+        "n|col|public.email.email_reachability",
+        "e|col|public.email.email_reachability"
+      ],
+      "reads": [
+        "n|tbl|public.email",
+        "n|sch|public",
+        "n|enum|public.email_reachability"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "email_reachability",
+        "values": [
+          "safe",
+          "risky",
+          "invalid",
+          "unknown"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "auth_attempt_email",
+        "name": "email_reachability",
+        "type": "email_reachability",
+        "typeSchema": "public",
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "email",
+        "name": "email_reachability",
+        "type": "email_reachability",
+        "typeSchema": "public",
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "301ed8aa-c90c-4a97-a25e-70ff1eaa71fe",
+  "prevIds": [
+    "1220364e-1b39-4dcd-94e2-0f25e827316e"
+  ],
+  "footprints": [
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "phone_sms_budget_policy",
+        "monthly_budget_cents"
+      ],
+      "writes": [
+        "s|colprop|public.phone_sms_budget_policy.monthly_budget_cents.default"
+      ],
+      "reads": [
+        "n|tbl|public.phone_sms_budget_policy",
+        "n|sch|public",
+        "n|col|public.phone_sms_budget_policy.monthly_budget_cents"
+      ],
+      "sqlHash": "3bcb56b224983aff"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"phone_sms_budget_policy\",\"monthly_budget_cents\"]",
+      "set": {
+        "default": "10000"
+      }
+    }
+  ]
+}

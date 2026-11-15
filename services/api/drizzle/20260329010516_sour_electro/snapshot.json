@@ -1,0 +1,649 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "b0091347-ab96-4671-980d-52c75dd0c719",
+  "prevIds": [
+    "d7c7ed21-b79c-4888-90ff-54276d4c5d99"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "maxdiff_comparison"
+      ],
+      "writes": [
+        "s|tbl|public.maxdiff_comparison",
+        "n|tbl|public.maxdiff_comparison",
+        "e|tbl|public.maxdiff_comparison",
+        "n|rel|public.maxdiff_comparison",
+        "n|type|public.maxdiff_comparison",
+        "n|rel|public.maxdiff_comparison_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "ranking_score_entity"
+      ],
+      "writes": [
+        "s|tbl|public.ranking_score_entity",
+        "n|tbl|public.ranking_score_entity",
+        "e|tbl|public.ranking_score_entity",
+        "n|rel|public.ranking_score_entity",
+        "n|type|public.ranking_score_entity",
+        "n|rel|public.ranking_score_entity_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "ranking_score",
+        "preference_learning"
+      ],
+      "writes": [
+        "s|col|public.ranking_score.preference_learning",
+        "n|col|public.ranking_score.preference_learning",
+        "e|col|public.ranking_score.preference_learning"
+      ],
+      "reads": [
+        "n|tbl|public.ranking_score",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "ranking_score",
+        "voting_rights"
+      ],
+      "writes": [
+        "s|col|public.ranking_score.voting_rights",
+        "n|col|public.ranking_score.voting_rights",
+        "e|col|public.ranking_score.voting_rights"
+      ],
+      "reads": [
+        "n|tbl|public.ranking_score",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "ranking_score",
+        "aggregation_config"
+      ],
+      "writes": [
+        "s|col|public.ranking_score.aggregation_config",
+        "n|col|public.ranking_score.aggregation_config",
+        "e|col|public.ranking_score.aggregation_config"
+      ],
+      "reads": [
+        "n|tbl|public.ranking_score",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "maxdiff_comparison",
+        "maxdiff_comparison_result_idx"
+      ],
+      "writes": [
+        "s|idx|public.maxdiff_comparison_result_idx",
+        "n|idx|public.maxdiff_comparison_result_idx",
+        "e|idx|public.maxdiff_comparison_result_idx",
+        "n|rel|public.maxdiff_comparison_result_idx"
+      ],
+      "reads": [
+        "n|tbl|public.maxdiff_comparison",
+        "n|sch|public",
+        "n|col|public.maxdiff_comparison.maxdiff_result_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "ranking_score_entity",
+        "ranking_score_entity_score_idx"
+      ],
+      "writes": [
+        "s|idx|public.ranking_score_entity_score_idx",
+        "n|idx|public.ranking_score_entity_score_idx",
+        "e|idx|public.ranking_score_entity_score_idx",
+        "n|rel|public.ranking_score_entity_score_idx"
+      ],
+      "reads": [
+        "n|tbl|public.ranking_score_entity",
+        "n|sch|public",
+        "n|col|public.ranking_score_entity.ranking_score_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "ranking_score_entity",
+        "ranking_score_entity_slug_idx"
+      ],
+      "writes": [
+        "s|idx|public.ranking_score_entity_slug_idx",
+        "n|idx|public.ranking_score_entity_slug_idx",
+        "e|idx|public.ranking_score_entity_slug_idx",
+        "n|rel|public.ranking_score_entity_slug_idx"
+      ],
+      "reads": [
+        "n|tbl|public.ranking_score_entity",
+        "n|sch|public",
+        "n|col|public.ranking_score_entity.ranking_score_id",
+        "n|col|public.ranking_score_entity.entity_slug_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "maxdiff_comparison"
+      ],
+      "writes": [
+        "s|fk|public.maxdiff_comparison.maxdiff_comparison_maxdiff_result_id_maxdiff_result_id_fk",
+        "n|fk|public.maxdiff_comparison.maxdiff_comparison_maxdiff_result_id_maxdiff_result_id_fk",
+        "e|fk|public.maxdiff_comparison.maxdiff_comparison_maxdiff_result_id_maxdiff_result_id_fk",
+        "n|con|public.maxdiff_comparison.maxdiff_comparison_maxdiff_result_id_maxdiff_result_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.maxdiff_comparison",
+        "n|sch|public",
+        "n|tbl|public.maxdiff_result",
+        "n|sch|public",
+        "n|col|public.maxdiff_comparison.maxdiff_result_id",
+        "n|col|public.maxdiff_result.id",
+        "e|uniqueness|public.maxdiff_result.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "ranking_score_entity"
+      ],
+      "writes": [
+        "s|fk|public.ranking_score_entity.ranking_score_entity_ranking_score_id_ranking_score_id_fk",
+        "n|fk|public.ranking_score_entity.ranking_score_entity_ranking_score_id_ranking_score_id_fk",
+        "e|fk|public.ranking_score_entity.ranking_score_entity_ranking_score_id_ranking_score_id_fk",
+        "n|con|public.ranking_score_entity.ranking_score_entity_ranking_score_id_ranking_score_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.ranking_score_entity",
+        "n|sch|public",
+        "n|tbl|public.ranking_score",
+        "n|sch|public",
+        "n|col|public.ranking_score_entity.ranking_score_id",
+        "n|col|public.ranking_score.id",
+        "e|uniqueness|public.ranking_score.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "maxdiff_comparison",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "ranking_score_entity",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_comparison",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "maxdiff_comparison_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_comparison",
+        "name": "maxdiff_result_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_comparison",
+        "name": "position",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_comparison",
+        "name": "best_slug_id",
+        "type": "varchar(8)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_comparison",
+        "name": "worst_slug_id",
+        "type": "varchar(8)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_comparison",
+        "name": "candidate_set",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 1,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_score_entity",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "ranking_score_entity_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_score_entity",
+        "name": "ranking_score_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_score_entity",
+        "name": "entity_slug_id",
+        "type": "varchar(8)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_score_entity",
+        "name": "score",
+        "type": "real",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_score_entity",
+        "name": "uncertainty_left",
+        "type": "real",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_score_entity",
+        "name": "uncertainty_right",
+        "type": "real",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_score_entity",
+        "name": "participant_count",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "0",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_score",
+        "name": "preference_learning",
+        "type": "varchar(100)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_score",
+        "name": "voting_rights",
+        "type": "varchar(100)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_score",
+        "name": "aggregation_config",
+        "type": "varchar(200)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_comparison",
+        "name": "maxdiff_comparison_result_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "maxdiff_result_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_score_entity",
+        "name": "ranking_score_entity_score_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "ranking_score_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_score_entity",
+        "name": "ranking_score_entity_slug_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "ranking_score_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "entity_slug_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_comparison",
+        "name": "maxdiff_comparison_maxdiff_result_id_maxdiff_result_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "maxdiff_result_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "maxdiff_result",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_score_entity",
+        "name": "ranking_score_entity_ranking_score_id_ranking_score_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "ranking_score_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "ranking_score",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_comparison",
+        "name": "maxdiff_comparison_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_score_entity",
+        "name": "ranking_score_entity_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    }
+  ]
+}

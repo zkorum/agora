@@ -1,0 +1,188 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "a5d1137d-3a05-403e-90e1-63feba359880",
+  "prevIds": [
+    "359900d5-6f7c-41c2-acc3-0f63fafd3894"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "export_failure_reason_enum"
+      ],
+      "writes": [
+        "s|enum|public.export_failure_reason_enum",
+        "n|enum|public.export_failure_reason_enum",
+        "e|enum|public.export_failure_reason_enum",
+        "n|type|public.export_failure_reason_enum"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "import_failure_reason_enum"
+      ],
+      "writes": [
+        "s|enum|public.import_failure_reason_enum",
+        "n|enum|public.import_failure_reason_enum",
+        "e|enum|public.import_failure_reason_enum",
+        "n|type|public.import_failure_reason_enum"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_export",
+        "failure_reason"
+      ],
+      "writes": [
+        "s|col|public.conversation_export.failure_reason",
+        "n|col|public.conversation_export.failure_reason",
+        "e|col|public.conversation_export.failure_reason"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_export",
+        "n|sch|public",
+        "n|enum|public.export_failure_reason_enum"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_import",
+        "failure_reason"
+      ],
+      "writes": [
+        "s|col|public.conversation_import.failure_reason",
+        "n|col|public.conversation_import.failure_reason",
+        "e|col|public.conversation_import.failure_reason"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_import",
+        "n|sch|public",
+        "n|enum|public.import_failure_reason_enum"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_export",
+        "error_message"
+      ],
+      "writes": [
+        "s|col|public.conversation_export.error_message",
+        "n|col|public.conversation_export.error_message",
+        "e|col|public.conversation_export.error_message"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_export",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_import",
+        "error_message"
+      ],
+      "writes": [
+        "s|col|public.conversation_import.error_message",
+        "n|col|public.conversation_import.error_message",
+        "e|col|public.conversation_import.error_message"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_import",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "export_failure_reason_enum",
+        "values": [
+          "processing_error",
+          "timeout",
+          "server_restart"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "import_failure_reason_enum",
+        "values": [
+          "processing_error",
+          "timeout",
+          "server_restart",
+          "invalid_data_format"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export",
+        "name": "failure_reason",
+        "type": "export_failure_reason_enum",
+        "typeSchema": "public",
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_import",
+        "name": "failure_reason",
+        "type": "import_failure_reason_enum",
+        "typeSchema": "public",
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_export\",\"error_message\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_import\",\"error_message\"]"
+    }
+  ]
+}

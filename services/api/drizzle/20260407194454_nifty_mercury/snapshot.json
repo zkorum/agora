@@ -1,0 +1,65 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "10f0e36f-c06b-401f-835b-b48e0c8997f0",
+  "prevIds": [
+    "5b45f3b6-83f3-4914-9243-3e1789c063ec"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "maxdiff_comparison",
+        "maxdiff_comparison_active_result_position_unique"
+      ],
+      "writes": [
+        "s|idx|public.maxdiff_comparison_active_result_position_unique",
+        "n|idx|public.maxdiff_comparison_active_result_position_unique",
+        "e|idx|public.maxdiff_comparison_active_result_position_unique",
+        "n|rel|public.maxdiff_comparison_active_result_position_unique"
+      ],
+      "reads": [
+        "n|tbl|public.maxdiff_comparison",
+        "n|sch|public",
+        "n|col|public.maxdiff_comparison.maxdiff_result_id",
+        "n|col|public.maxdiff_comparison.position"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_comparison",
+        "name": "maxdiff_comparison_active_result_position_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "maxdiff_result_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "position",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"maxdiff_comparison\".\"deleted_at\" IS NULL",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    }
+  ]
+}

@@ -1,0 +1,283 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "d18b7493-9eee-4352-98d5-1606029b3963",
+  "prevIds": [
+    "620e5964-362e-482b-92f8-81eabe5341a6"
+  ],
+  "footprints": [
+    {
+      "statementType": "drop_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "vote_submission"
+      ],
+      "writes": [
+        "s|tbl|public.vote_submission",
+        "n|tbl|public.vote_submission",
+        "e|tbl|public.vote_submission",
+        "n|rel|public.vote_submission",
+        "n|type|public.vote_submission"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "vote_buffer_epoch"
+      ],
+      "writes": [
+        "s|col|public.conversation.vote_buffer_epoch",
+        "n|col|public.conversation.vote_buffer_epoch",
+        "e|col|public.conversation.vote_buffer_epoch"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "vote_buffer_drained"
+      ],
+      "writes": [
+        "s|col|public.conversation.vote_buffer_drained",
+        "n|col|public.conversation.vote_buffer_drained",
+        "e|col|public.conversation.vote_buffer_drained"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "vote",
+        "buffer_epoch"
+      ],
+      "writes": [
+        "s|col|public.vote.buffer_epoch",
+        "n|col|public.vote.buffer_epoch",
+        "e|col|public.vote.buffer_epoch"
+      ],
+      "reads": [
+        "n|tbl|public.vote",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "vote",
+        "buffer_sequence"
+      ],
+      "writes": [
+        "s|col|public.vote.buffer_sequence",
+        "n|col|public.vote.buffer_sequence",
+        "e|col|public.vote.buffer_sequence"
+      ],
+      "reads": [
+        "n|tbl|public.vote",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation",
+        "conversation_vote_buffer_drain_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_vote_buffer_drain_idx",
+        "n|idx|public.conversation_vote_buffer_drain_idx",
+        "e|idx|public.conversation_vote_buffer_drain_idx",
+        "n|rel|public.conversation_vote_buffer_drain_idx"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.conversation.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "vote_buffer_epoch",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "gen_random_uuid()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "vote_buffer_drained",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "true",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "vote",
+        "name": "buffer_epoch",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "vote",
+        "name": "buffer_sequence",
+        "type": "bigint",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "0",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "conversation_vote_buffer_drain_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": "\"conversation\".\"conversation_type\" = 'polis' AND \"conversation\".\"is_closed\" = true AND \"conversation\".\"vote_buffer_drained\" = false AND \"conversation\".\"closed_finalized_at\" IS NULL",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "drop",
+      "key": "tables\u0000[\"public\",\"vote_submission\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"vote_submission\",\"id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"vote_submission\",\"conversation_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"vote_submission\",\"user_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"vote_submission\",\"opinion_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"vote_submission\",\"opinion_content_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"vote_submission\",\"action\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"vote_submission\",\"submitted_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"vote_submission\",\"pending\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"vote_submission_pending_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"vote_submission_conversation_pending_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"vote_submission\",\"vote_submission_conversation_id_conversation_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"vote_submission\",\"vote_submission_user_id_user_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"vote_submission\",\"vote_submission_opinion_id_opinion_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"vote_submission\",\"vote_submission_opinion_content_id_opinion_content_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "pks\u0000[\"public\",\"vote_submission\",\"vote_submission_pkey\"]"
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"vote_submission\",\"vote_submission_account_opinion_unique\"]"
+    },
+    {
+      "op": "drop",
+      "key": "checks\u0000[\"public\",\"vote_submission\",\"vote_submission_action_check\"]"
+    }
+  ]
+}

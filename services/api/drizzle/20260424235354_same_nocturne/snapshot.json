@@ -1,0 +1,430 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "3ea5a5be-c015-4f7c-b5cb-30aee3d54c3f",
+  "prevIds": [
+    "7b64e254-6088-419f-91c9-efbccda294c1"
+  ],
+  "footprints": [
+    {
+      "statementType": "drop_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_content"
+      ],
+      "writes": [
+        "s|fk|public.conversation_content.conversation_content_poll_id_poll_id_fk",
+        "n|fk|public.conversation_content.conversation_content_poll_id_poll_id_fk",
+        "e|fk|public.conversation_content.conversation_content_poll_id_poll_id_fk",
+        "n|con|public.conversation_content.conversation_content_poll_id_poll_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_content",
+        "n|sch|public",
+        "e|col|public.conversation_content.poll_id"
+      ]
+    },
+    {
+      "statementType": "drop_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "poll_response_content"
+      ],
+      "writes": [
+        "s|fk|public.poll_response_content.poll_response_content_poll_response_id_poll_response_id_fk",
+        "n|fk|public.poll_response_content.poll_response_content_poll_response_id_poll_response_id_fk",
+        "e|fk|public.poll_response_content.poll_response_content_poll_response_id_poll_response_id_fk",
+        "n|con|public.poll_response_content.poll_response_content_poll_response_id_poll_response_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.poll_response_content",
+        "n|sch|public",
+        "e|col|public.poll_response_content.poll_response_id"
+      ]
+    },
+    {
+      "statementType": "drop_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "poll_response_content"
+      ],
+      "writes": [
+        "s|fk|public.poll_response_content.poll_response_content_poll_response_proof_id_poll_response_proo",
+        "n|fk|public.poll_response_content.poll_response_content_poll_response_proof_id_poll_response_proo",
+        "e|fk|public.poll_response_content.poll_response_content_poll_response_proof_id_poll_response_proo",
+        "n|con|public.poll_response_content.poll_response_content_poll_response_proof_id_poll_response_proo"
+      ],
+      "reads": [
+        "n|tbl|public.poll_response_content",
+        "n|sch|public",
+        "e|col|public.poll_response_content.poll_response_proof_id"
+      ]
+    },
+    {
+      "statementType": "drop_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "poll_response"
+      ],
+      "writes": [
+        "s|fk|public.poll_response.poll_response_current_content_id_poll_response_content_id_fk",
+        "n|fk|public.poll_response.poll_response_current_content_id_poll_response_content_id_fk",
+        "e|fk|public.poll_response.poll_response_current_content_id_poll_response_content_id_fk",
+        "n|con|public.poll_response.poll_response_current_content_id_poll_response_content_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.poll_response",
+        "n|sch|public",
+        "e|col|public.poll_response.current_content_id"
+      ]
+    },
+    {
+      "statementType": "drop_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "poll_response"
+      ],
+      "writes": [
+        "s|fk|public.poll_response.poll_response_poll_id_poll_id_fk",
+        "n|fk|public.poll_response.poll_response_poll_id_poll_id_fk",
+        "e|fk|public.poll_response.poll_response_poll_id_poll_id_fk",
+        "n|con|public.poll_response.poll_response_poll_id_poll_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.poll_response",
+        "n|sch|public",
+        "e|col|public.poll_response.poll_id"
+      ]
+    },
+    {
+      "statementType": "drop_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "poll_response_content"
+      ],
+      "writes": [
+        "s|tbl|public.poll_response_content",
+        "n|tbl|public.poll_response_content",
+        "e|tbl|public.poll_response_content",
+        "n|rel|public.poll_response_content",
+        "n|type|public.poll_response_content"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "poll_response_proof"
+      ],
+      "writes": [
+        "s|tbl|public.poll_response_proof",
+        "n|tbl|public.poll_response_proof",
+        "e|tbl|public.poll_response_proof",
+        "n|rel|public.poll_response_proof",
+        "n|type|public.poll_response_proof"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "poll_response"
+      ],
+      "writes": [
+        "s|tbl|public.poll_response",
+        "n|tbl|public.poll_response",
+        "e|tbl|public.poll_response",
+        "n|rel|public.poll_response",
+        "n|type|public.poll_response"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "poll"
+      ],
+      "writes": [
+        "s|tbl|public.poll",
+        "n|tbl|public.poll",
+        "e|tbl|public.poll",
+        "n|rel|public.poll",
+        "n|type|public.poll"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_content",
+        "poll_id"
+      ],
+      "writes": [
+        "s|col|public.conversation_content.poll_id",
+        "n|col|public.conversation_content.poll_id",
+        "e|col|public.conversation_content.poll_id"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_content",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "drop",
+      "key": "tables\u0000[\"public\",\"poll_response_content\"]"
+    },
+    {
+      "op": "drop",
+      "key": "tables\u0000[\"public\",\"poll_response_proof\"]"
+    },
+    {
+      "op": "drop",
+      "key": "tables\u0000[\"public\",\"poll_response\"]"
+    },
+    {
+      "op": "drop",
+      "key": "tables\u0000[\"public\",\"poll\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_content\",\"poll_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll_response_content\",\"id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll_response_content\",\"poll_response_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll_response_content\",\"poll_response_proof_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll_response_content\",\"conversation_content_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll_response_content\",\"option_chosen\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll_response_content\",\"created_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll_response_proof\",\"id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll_response_proof\",\"proof_type\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll_response_proof\",\"conversation_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll_response_proof\",\"author_did\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll_response_proof\",\"proof\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll_response_proof\",\"proof_version\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll_response_proof\",\"created_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll_response\",\"id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll_response\",\"author_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll_response\",\"current_content_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll_response\",\"created_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll_response\",\"updated_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll\",\"id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll\",\"conversation_content_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll\",\"option1\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll\",\"option2\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll\",\"option3\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll\",\"option4\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll\",\"option5\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll\",\"option6\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll\",\"option1_response\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll\",\"option2_response\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll\",\"option3_response\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll\",\"option4_response\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll\",\"option5_response\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll\",\"option6_response\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll\",\"created_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll\",\"updated_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"poll_response\",\"poll_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"conversation_content\",\"conversation_content_poll_id_poll_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"poll_response_content\",\"poll_response_content_poll_response_id_poll_response_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"poll_response_content\",\"poll_response_content_poll_response_proof_id_poll_response_proo\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"poll_response_content\",\"poll_response_content_conversation_content_id_conversation_cont\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"poll_response_proof\",\"poll_response_proof_conversation_id_conversation_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"poll_response_proof\",\"poll_response_proof_author_did_device_did_write_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"poll_response\",\"poll_response_author_id_user_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"poll_response\",\"poll_response_current_content_id_poll_response_content_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"poll\",\"poll_conversation_content_id_conversation_content_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"poll_response\",\"poll_response_poll_id_poll_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "pks\u0000[\"public\",\"poll_response_content\",\"poll_response_content_pkey\"]"
+    },
+    {
+      "op": "drop",
+      "key": "pks\u0000[\"public\",\"poll_response_proof\",\"poll_response_proof_pkey\"]"
+    },
+    {
+      "op": "drop",
+      "key": "pks\u0000[\"public\",\"poll_response\",\"poll_response_pkey\"]"
+    },
+    {
+      "op": "drop",
+      "key": "pks\u0000[\"public\",\"poll\",\"poll_pkey\"]"
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"poll_response_content\",\"poll_response_content_poll_response_proof_id_unique\"]"
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"poll_response\",\"poll_response_current_content_id_unique\"]"
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"poll\",\"poll_conversation_content_id_unique\"]"
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"poll_response\",\"poll_response_author_id_poll_id_unique\"]"
+    }
+  ]
+}

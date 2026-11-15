@@ -1,0 +1,65 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "4d9181dc-df5a-4979-82f9-76bf1048f92b",
+  "prevIds": [
+    "b7b34631-d1bc-487c-b0be-c4012076c61b"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation",
+        "conversation_math_update_scan_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_math_update_scan_idx",
+        "n|idx|public.conversation_math_update_scan_idx",
+        "e|idx|public.conversation_math_update_scan_idx",
+        "n|rel|public.conversation_math_update_scan_idx"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.conversation.needs_math_update",
+        "n|col|public.conversation.last_math_update_at"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "conversation_math_update_scan_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "needs_math_update",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "last_math_update_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": "\"conversation\".\"needs_math_update\" = true",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    }
+  ]
+}

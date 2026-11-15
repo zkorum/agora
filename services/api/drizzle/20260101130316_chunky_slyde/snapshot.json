@@ -1,0 +1,47 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "2c5c93d9-85d4-4baf-869c-94d2a37f3f7b",
+  "prevIds": [
+    "a5d1137d-3a05-403e-90e1-63feba359880"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_unique",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_import"
+      ],
+      "writes": [
+        "s|uq|public.conversation_import.conversation_import_conversation_id_unique",
+        "n|uq|public.conversation_import.conversation_import_conversation_id_unique",
+        "e|uq|public.conversation_import.conversation_import_conversation_id_unique",
+        "n|con|public.conversation_import.conversation_import_conversation_id_unique",
+        "n|rel|public.conversation_import_conversation_id_unique"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_import",
+        "n|sch|public",
+        "n|col|public.conversation_import.conversation_id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_import",
+        "name": "conversation_import_conversation_id_unique",
+        "nameExplicit": false,
+        "columns": [
+          "conversation_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    }
+  ]
+}

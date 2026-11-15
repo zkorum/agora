@@ -1,0 +1,183 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "7c3bba36-16fb-4eb7-b26b-db64c03fa113",
+  "prevIds": [
+    "2394a78f-7fec-4bcf-a81d-95853fddbf55"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "total_opinion_count"
+      ],
+      "writes": [
+        "s|col|public.conversation.total_opinion_count",
+        "n|col|public.conversation.total_opinion_count",
+        "e|col|public.conversation.total_opinion_count"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "total_vote_count"
+      ],
+      "writes": [
+        "s|col|public.conversation.total_vote_count",
+        "n|col|public.conversation.total_vote_count",
+        "e|col|public.conversation.total_vote_count"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "total_participant_count"
+      ],
+      "writes": [
+        "s|col|public.conversation.total_participant_count",
+        "n|col|public.conversation.total_participant_count",
+        "e|col|public.conversation.total_participant_count"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "moderated_opinion_count"
+      ],
+      "writes": [
+        "s|col|public.conversation.moderated_opinion_count",
+        "n|col|public.conversation.moderated_opinion_count",
+        "e|col|public.conversation.moderated_opinion_count"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "hidden_opinion_count"
+      ],
+      "writes": [
+        "s|col|public.conversation.hidden_opinion_count",
+        "n|col|public.conversation.hidden_opinion_count",
+        "e|col|public.conversation.hidden_opinion_count"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "total_opinion_count",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "0",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "total_vote_count",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "0",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "total_participant_count",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "0",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "moderated_opinion_count",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "0",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "hidden_opinion_count",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "0",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

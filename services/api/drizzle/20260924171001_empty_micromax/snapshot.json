@@ -1,0 +1,131 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "68f99428-016e-4779-8a76-2594c0673321",
+  "prevIds": [
+    "be22051d-f381-4889-8245-30c1f45d6475"
+  ],
+  "footprints": [
+    {
+      "statementType": "alter_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "notification_type_enum"
+      ],
+      "writes": [
+        "s|enum|public.notification_type_enum"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "notification",
+        "security_key"
+      ],
+      "writes": [
+        "s|col|public.notification.security_key",
+        "n|col|public.notification.security_key",
+        "e|col|public.notification.security_key"
+      ],
+      "reads": [
+        "n|tbl|public.notification",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "notification",
+        "notification_user_security_key_unique"
+      ],
+      "writes": [
+        "s|idx|public.notification_user_security_key_unique",
+        "n|idx|public.notification_user_security_key_unique",
+        "e|idx|public.notification_user_security_key_unique",
+        "n|rel|public.notification_user_security_key_unique"
+      ],
+      "reads": [
+        "n|tbl|public.notification",
+        "n|sch|public",
+        "n|col|public.notification.user_id",
+        "n|col|public.notification.security_key"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification",
+        "name": "security_key",
+        "type": "varchar(64)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification",
+        "name": "notification_user_security_key_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "security_key",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "enums\u0000[\"public\",\"notification_type_enum\"]",
+      "set": {
+        "values": [
+          "opinion_vote",
+          "new_opinion",
+          "export_started",
+          "export_completed",
+          "export_failed",
+          "export_cancelled",
+          "import_started",
+          "import_completed",
+          "import_failed",
+          "security_add_email"
+        ]
+      }
+    }
+  ]
+}

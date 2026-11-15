@@ -1,0 +1,47 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "7e0b4440-6a3b-4896-8583-1634d659ab5d",
+  "prevIds": [
+    "2c5c93d9-85d4-4baf-869c-94d2a37f3f7b"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "is_closed"
+      ],
+      "writes": [
+        "s|col|public.conversation.is_closed",
+        "n|col|public.conversation.is_closed",
+        "e|col|public.conversation.is_closed"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "is_closed",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

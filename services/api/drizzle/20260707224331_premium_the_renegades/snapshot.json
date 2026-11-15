@@ -1,0 +1,286 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "0912779f-3ded-4324-917e-7357a0d32f3d",
+  "prevIds": [
+    "43e9a2df-9138-4a67-a7a1-ccca5bacc347"
+  ],
+  "footprints": [
+    {
+      "statementType": "drop_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "ranking_item"
+      ],
+      "writes": [
+        "s|fk|public.ranking_item.ranking_item_current_content_id_ranking_item_content_id_fk",
+        "n|fk|public.ranking_item.ranking_item_current_content_id_ranking_item_content_id_fk",
+        "e|fk|public.ranking_item.ranking_item_current_content_id_ranking_item_content_id_fk",
+        "n|con|public.ranking_item.ranking_item_current_content_id_ranking_item_content_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.ranking_item",
+        "n|sch|public",
+        "e|col|public.ranking_item.current_content_id"
+      ]
+    },
+    {
+      "statementType": "drop_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation"
+      ],
+      "writes": [
+        "s|ck|public.conversation.conversation_preferred_opinion_group_count_check",
+        "n|ck|public.conversation.conversation_preferred_opinion_group_count_check",
+        "e|ck|public.conversation.conversation_preferred_opinion_group_count_check",
+        "n|con|public.conversation.conversation_preferred_opinion_group_count_check"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "e|col|public.conversation.preferred_opinion_group_count"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "ranking_item"
+      ],
+      "writes": [
+        "s|fk|public.ranking_item.ranking_item_current_content_owned_by_item_fk",
+        "n|fk|public.ranking_item.ranking_item_current_content_owned_by_item_fk",
+        "e|fk|public.ranking_item.ranking_item_current_content_owned_by_item_fk",
+        "n|con|public.ranking_item.ranking_item_current_content_owned_by_item_fk"
+      ],
+      "reads": [
+        "n|tbl|public.ranking_item",
+        "n|sch|public",
+        "n|tbl|public.ranking_item_content",
+        "n|sch|public",
+        "n|col|public.ranking_item.current_content_id",
+        "n|col|public.ranking_item.id",
+        "n|col|public.ranking_item_content.id",
+        "n|col|public.ranking_item_content.ranking_item_id",
+        "e|uniqueness|public.ranking_item_content.id.ranking_item_id"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_content_translation"
+      ],
+      "writes": [
+        "s|ck|public.conversation_content_translation.conversation_content_translation_body_plain_text_pair_check",
+        "n|ck|public.conversation_content_translation.conversation_content_translation_body_plain_text_pair_check",
+        "e|ck|public.conversation_content_translation.conversation_content_translation_body_plain_text_pair_check",
+        "n|con|public.conversation_content_translation.conversation_content_translation_body_plain_text_pair_check"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_content_translation",
+        "n|sch|public",
+        "n|col|public.conversation_content_translation.translated_body",
+        "n|col|public.conversation_content_translation.translated_body_plain_text"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation"
+      ],
+      "writes": [
+        "s|ck|public.conversation.conversation_subtype_config_check",
+        "n|ck|public.conversation.conversation_subtype_config_check",
+        "e|ck|public.conversation.conversation_subtype_config_check",
+        "n|con|public.conversation.conversation_subtype_config_check"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.conversation.conversation_type",
+        "n|col|public.conversation.polis_config_id",
+        "n|col|public.conversation.ranking_config_id"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "polis_conversation_config"
+      ],
+      "writes": [
+        "s|ck|public.polis_conversation_config.polis_conversation_config_preferred_opinion_group_count_check",
+        "n|ck|public.polis_conversation_config.polis_conversation_config_preferred_opinion_group_count_check",
+        "e|ck|public.polis_conversation_config.polis_conversation_config_preferred_opinion_group_count_check",
+        "n|con|public.polis_conversation_config.polis_conversation_config_preferred_opinion_group_count_check"
+      ],
+      "reads": [
+        "n|tbl|public.polis_conversation_config",
+        "n|sch|public",
+        "n|col|public.polis_conversation_config.preferred_opinion_group_count"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_content_translation"
+      ],
+      "writes": [
+        "s|ck|public.project_content_translation.project_content_translation_body_plain_text_pair_check",
+        "n|ck|public.project_content_translation.project_content_translation_body_plain_text_pair_check",
+        "e|ck|public.project_content_translation.project_content_translation_body_plain_text_pair_check",
+        "n|con|public.project_content_translation.project_content_translation_body_plain_text_pair_check"
+      ],
+      "reads": [
+        "n|tbl|public.project_content_translation",
+        "n|sch|public",
+        "n|col|public.project_content_translation.translated_body",
+        "n|col|public.project_content_translation.translated_body_plain_text"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "ranking_item_content"
+      ],
+      "writes": [
+        "s|ck|public.ranking_item_content.ranking_item_content_body_plain_text_pair_check",
+        "n|ck|public.ranking_item_content.ranking_item_content_body_plain_text_pair_check",
+        "e|ck|public.ranking_item_content.ranking_item_content_body_plain_text_pair_check",
+        "n|con|public.ranking_item_content.ranking_item_content_body_plain_text_pair_check"
+      ],
+      "reads": [
+        "n|tbl|public.ranking_item_content",
+        "n|sch|public",
+        "n|col|public.ranking_item_content.body",
+        "n|col|public.ranking_item_content.body_plain_text"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "ranking_item_content_translation"
+      ],
+      "writes": [
+        "s|ck|public.ranking_item_content_translation.ranking_item_content_translation_body_plain_text_pair_check",
+        "n|ck|public.ranking_item_content_translation.ranking_item_content_translation_body_plain_text_pair_check",
+        "e|ck|public.ranking_item_content_translation.ranking_item_content_translation_body_plain_text_pair_check",
+        "n|con|public.ranking_item_content_translation.ranking_item_content_translation_body_plain_text_pair_check"
+      ],
+      "reads": [
+        "n|tbl|public.ranking_item_content_translation",
+        "n|sch|public",
+        "n|col|public.ranking_item_content_translation.translated_body_html",
+        "n|col|public.ranking_item_content_translation.translated_body_plain_text"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_item",
+        "name": "ranking_item_current_content_owned_by_item_fk",
+        "nameExplicit": true,
+        "columns": [
+          "current_content_id",
+          "id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "ranking_item_content",
+        "columnsTo": [
+          "id",
+          "ranking_item_id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_content_translation",
+        "name": "conversation_content_translation_body_plain_text_pair_check",
+        "value": "((\"conversation_content_translation\".\"translated_body\" IS NULL AND \"conversation_content_translation\".\"translated_body_plain_text\" IS NULL) OR (\"conversation_content_translation\".\"translated_body\" IS NOT NULL AND \"conversation_content_translation\".\"translated_body_plain_text\" IS NOT NULL))",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "conversation_subtype_config_check",
+        "value": "((\"conversation\".\"conversation_type\" = 'polis' AND \"conversation\".\"polis_config_id\" IS NOT NULL AND \"conversation\".\"ranking_config_id\" IS NULL) OR (\"conversation\".\"conversation_type\" = 'ranking' AND \"conversation\".\"ranking_config_id\" IS NOT NULL AND \"conversation\".\"polis_config_id\" IS NULL))",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "polis_conversation_config",
+        "name": "polis_conversation_config_preferred_opinion_group_count_check",
+        "value": "\"polis_conversation_config\".\"preferred_opinion_group_count\" IS NULL OR \"polis_conversation_config\".\"preferred_opinion_group_count\" >= 2",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content_translation",
+        "name": "project_content_translation_body_plain_text_pair_check",
+        "value": "((\"project_content_translation\".\"translated_body\" IS NULL AND \"project_content_translation\".\"translated_body_plain_text\" IS NULL) OR (\"project_content_translation\".\"translated_body\" IS NOT NULL AND \"project_content_translation\".\"translated_body_plain_text\" IS NOT NULL))",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_item_content",
+        "name": "ranking_item_content_body_plain_text_pair_check",
+        "value": "((\"ranking_item_content\".\"body\" IS NULL AND \"ranking_item_content\".\"body_plain_text\" IS NULL) OR (\"ranking_item_content\".\"body\" IS NOT NULL AND \"ranking_item_content\".\"body_plain_text\" IS NOT NULL))",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_item_content_translation",
+        "name": "ranking_item_content_translation_body_plain_text_pair_check",
+        "value": "((\"ranking_item_content_translation\".\"translated_body_html\" IS NULL AND \"ranking_item_content_translation\".\"translated_body_plain_text\" IS NULL) OR (\"ranking_item_content_translation\".\"translated_body_html\" IS NOT NULL AND \"ranking_item_content_translation\".\"translated_body_plain_text\" IS NOT NULL))",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"ranking_item\",\"ranking_item_current_content_id_ranking_item_content_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "checks\u0000[\"public\",\"conversation\",\"conversation_preferred_opinion_group_count_check\"]"
+    }
+  ]
+}

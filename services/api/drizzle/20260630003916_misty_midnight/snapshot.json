@@ -1,0 +1,207 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "34d6600a-46c5-4cdb-b5df-5d1dbe5302ce",
+  "prevIds": [
+    "41b8b692-9e0d-47c7-80b0-c327be179e17"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "user_display_language"
+      ],
+      "writes": [
+        "s|tbl|public.user_display_language",
+        "n|tbl|public.user_display_language",
+        "e|tbl|public.user_display_language",
+        "n|rel|public.user_display_language",
+        "n|type|public.user_display_language",
+        "n|rel|public.user_display_language_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "user_display_language_current"
+      ],
+      "writes": [
+        "s|tbl|public.user_display_language_current",
+        "n|tbl|public.user_display_language_current",
+        "e|tbl|public.user_display_language_current",
+        "n|rel|public.user_display_language_current",
+        "n|type|public.user_display_language_current"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "user_display_language"
+      ],
+      "writes": [
+        "s|fk|public.user_display_language.user_display_language_user_id_user_id_fk",
+        "n|fk|public.user_display_language.user_display_language_user_id_user_id_fk",
+        "e|fk|public.user_display_language.user_display_language_user_id_user_id_fk",
+        "n|con|public.user_display_language.user_display_language_user_id_user_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.user_display_language",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.user_display_language.user_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "user_display_language",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_display_language",
+        "name": "user_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_display_language",
+        "name": "language_code",
+        "type": "display_language_code",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_display_language",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_display_language",
+        "name": "updated_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_display_language",
+        "name": "user_display_language_user_id_user_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "user_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_display_language",
+        "name": "user_display_language_pkey",
+        "columns": [
+          "user_id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "drop",
+      "key": "tables\u0000[\"public\",\"user_display_language_current\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user_display_language_current\",\"user_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user_display_language_current\",\"language_code\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user_display_language_current\",\"created_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user_display_language_current\",\"updated_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"user_display_language_current\",\"user_display_language_current_user_id_user_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "pks\u0000[\"public\",\"user_display_language_current\",\"user_display_language_current_pkey\"]"
+    }
+  ]
+}

@@ -1,0 +1,87 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "583570c0-bb75-458b-a7d2-a9138d58a946",
+  "prevIds": [
+    "44c9db4a-49b2-4e30-8f74-1bd8f9666ac8"
+  ],
+  "footprints": [
+    {
+      "statementType": "drop_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "participant"
+      ],
+      "writes": [
+        "s|tbl|public.participant",
+        "n|tbl|public.participant",
+        "e|tbl|public.participant",
+        "n|rel|public.participant",
+        "n|type|public.participant"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "drop",
+      "key": "tables\u0000[\"public\",\"participant\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"participant\",\"id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"participant\",\"conversation_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"participant\",\"user_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"participant\",\"polis_cluster_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"participant\",\"opinion_count\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"participant\",\"vote_count\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"participant\",\"created_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"participant\",\"updated_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"participant\",\"participant_conversation_id_conversation_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"participant\",\"participant_user_id_user_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"participant\",\"participant_polis_cluster_id_polis_cluster_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "pks\u0000[\"public\",\"participant\",\"participant_pkey\"]"
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"participant\",\"unique_cluster_per_participant\"]"
+    }
+  ]
+}

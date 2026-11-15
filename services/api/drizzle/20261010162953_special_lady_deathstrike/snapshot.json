@@ -1,0 +1,147 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "3c57fe07-0992-424f-88da-10106c79cb71",
+  "prevIds": [
+    "16fd1cc3-9b8f-4603-bdf3-847af1dac10d"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "survey_answer_option",
+        "text_value_plain_text"
+      ],
+      "writes": [
+        "s|col|public.survey_answer_option.text_value_plain_text",
+        "n|col|public.survey_answer_option.text_value_plain_text",
+        "e|col|public.survey_answer_option.text_value_plain_text"
+      ],
+      "reads": [
+        "n|tbl|public.survey_answer_option",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "survey_question_option",
+        "allows_text"
+      ],
+      "writes": [
+        "s|col|public.survey_question_option.allows_text",
+        "n|col|public.survey_question_option.allows_text",
+        "e|col|public.survey_question_option.allows_text"
+      ],
+      "reads": [
+        "n|tbl|public.survey_question_option",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "recreate_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_email_update_conversation"
+      ],
+      "writes": [
+        "s|fk|public.conversation_email_update_conversation.email_update_scope_conversation_project_fk",
+        "n|fk|public.conversation_email_update_conversation.email_update_scope_conversation_project_fk",
+        "e|fk|public.conversation_email_update_conversation.email_update_scope_conversation_project_fk",
+        "n|con|public.conversation_email_update_conversation.email_update_scope_conversation_project_fk"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_email_update_conversation",
+        "n|sch|public",
+        "n|tbl|public.conversation_project_assignment",
+        "n|sch|public",
+        "n|col|public.conversation_email_update_conversation.project_id",
+        "n|col|public.conversation_email_update_conversation.conversation_id",
+        "n|col|public.conversation_project_assignment.project_id",
+        "n|col|public.conversation_project_assignment.conversation_id",
+        "e|uniqueness|public.conversation_project_assignment.conversation_id.project_id"
+      ],
+      "sqlHash": "b466e1c921f2d81e"
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "survey_answer_option"
+      ],
+      "writes": [
+        "s|ck|public.survey_answer_option.survey_answer_option_text_byte_length_check",
+        "n|ck|public.survey_answer_option.survey_answer_option_text_byte_length_check",
+        "e|ck|public.survey_answer_option.survey_answer_option_text_byte_length_check",
+        "n|con|public.survey_answer_option.survey_answer_option_text_byte_length_check"
+      ],
+      "reads": [
+        "n|tbl|public.survey_answer_option",
+        "n|sch|public",
+        "n|col|public.survey_answer_option.text_value_plain_text"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "survey_answer_option",
+        "name": "text_value_plain_text",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "survey_question_option",
+        "name": "allows_text",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "survey_answer_option",
+        "name": "survey_answer_option_text_byte_length_check",
+        "value": "octet_length(\"survey_answer_option\".\"text_value_plain_text\") <= 16384",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "fks\u0000[\"public\",\"conversation_email_update_conversation\",\"email_update_scope_conversation_project_fk\"]",
+      "set": {
+        "tableTo": "conversation_project_assignment",
+        "columnsTo": [
+          "project_id",
+          "conversation_id"
+        ]
+      }
+    }
+  ]
+}

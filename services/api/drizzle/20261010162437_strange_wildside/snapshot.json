@@ -1,0 +1,189 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "16fd1cc3-9b8f-4603-bdf3-847af1dac10d",
+  "prevIds": [
+    "301ed8aa-c90c-4a97-a25e-70ff1eaa71fe"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_project_assignment"
+      ],
+      "writes": [
+        "s|tbl|public.conversation_project_assignment",
+        "n|tbl|public.conversation_project_assignment",
+        "e|tbl|public.conversation_project_assignment",
+        "n|rel|public.conversation_project_assignment",
+        "n|type|public.conversation_project_assignment",
+        "n|rel|public.conversation_project_assignment_project_id_conversation_id_pk"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_project_assignment"
+      ],
+      "writes": [
+        "s|fk|public.conversation_project_assignment.conversation_project_assignment_conversation_id_conversation_id",
+        "n|fk|public.conversation_project_assignment.conversation_project_assignment_conversation_id_conversation_id",
+        "e|fk|public.conversation_project_assignment.conversation_project_assignment_conversation_id_conversation_id",
+        "n|con|public.conversation_project_assignment.conversation_project_assignment_conversation_id_conversation_id"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_project_assignment",
+        "n|sch|public",
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.conversation_project_assignment.conversation_id",
+        "n|col|public.conversation.id",
+        "e|uniqueness|public.conversation.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_project_assignment"
+      ],
+      "writes": [
+        "s|fk|public.conversation_project_assignment.conversation_project_assignment_project_id_project_id_fk",
+        "n|fk|public.conversation_project_assignment.conversation_project_assignment_project_id_project_id_fk",
+        "e|fk|public.conversation_project_assignment.conversation_project_assignment_project_id_project_id_fk",
+        "n|con|public.conversation_project_assignment.conversation_project_assignment_project_id_project_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_project_assignment",
+        "n|sch|public",
+        "n|tbl|public.project",
+        "n|sch|public",
+        "n|col|public.conversation_project_assignment.project_id",
+        "n|col|public.project.id",
+        "e|uniqueness|public.project.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "conversation_project_assignment",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_project_assignment",
+        "name": "conversation_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_project_assignment",
+        "name": "project_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_project_assignment",
+        "name": "first_assigned_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_project_assignment",
+        "name": "conversation_project_assignment_conversation_id_conversation_id",
+        "nameExplicit": false,
+        "columns": [
+          "conversation_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conversation",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_project_assignment",
+        "name": "conversation_project_assignment_project_id_project_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "project_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "project",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_project_assignment",
+        "name": "conversation_project_assignment_project_id_conversation_id_pk",
+        "columns": [
+          "project_id",
+          "conversation_id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    }
+  ]
+}

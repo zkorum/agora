@@ -1,0 +1,38 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "1cf17ae7-9efa-43b2-8ad7-1bd1acc57cb9",
+  "prevIds": [
+    "d70b63ee-32ae-458e-b9d3-c0fa2792f7c4"
+  ],
+  "footprints": [
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion_moderation",
+        "author_id"
+      ],
+      "writes": [
+        "s|colprop|public.opinion_moderation.author_id.notNull"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_moderation",
+        "n|sch|public",
+        "n|col|public.opinion_moderation.author_id"
+      ],
+      "sqlHash": "5fcfc4b55ca46453"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"opinion_moderation\",\"author_id\"]",
+      "set": {
+        "notNull": false
+      }
+    }
+  ]
+}

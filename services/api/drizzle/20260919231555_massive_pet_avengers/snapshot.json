@@ -1,0 +1,102 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "be22051d-f381-4889-8245-30c1f45d6475",
+  "prevIds": [
+    "31b2b43f-c07c-4f75-b0a4-672d07a6d55c"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "project_document_file",
+        "html_scripts_enabled"
+      ],
+      "writes": [
+        "s|col|public.project_document_file.html_scripts_enabled",
+        "n|col|public.project_document_file.html_scripts_enabled",
+        "e|col|public.project_document_file.html_scripts_enabled"
+      ],
+      "reads": [
+        "n|tbl|public.project_document_file",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_document_file"
+      ],
+      "writes": [
+        "s|ck|public.project_document_file.project_document_file_html_scripts_check",
+        "n|ck|public.project_document_file.project_document_file_html_scripts_check",
+        "e|ck|public.project_document_file.project_document_file_html_scripts_check",
+        "n|con|public.project_document_file.project_document_file_html_scripts_check"
+      ],
+      "reads": [
+        "n|tbl|public.project_document_file",
+        "n|sch|public",
+        "n|col|public.project_document_file.html_scripts_enabled",
+        "n|col|public.project_document_file.content_type"
+      ]
+    },
+    {
+      "statementType": "alter_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_document_file"
+      ],
+      "writes": [
+        "s|ck|public.project_document_file.project_document_file_byte_size_check"
+      ],
+      "reads": [
+        "n|tbl|public.project_document_file",
+        "n|sch|public",
+        "n|col|public.project_document_file.byte_size",
+        "e|col|public.project_document_file.byte_size"
+      ],
+      "sqlHash": "97a44aa6c9277594"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document_file",
+        "name": "html_scripts_enabled",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document_file",
+        "name": "project_document_file_html_scripts_check",
+        "value": "NOT \"project_document_file\".\"html_scripts_enabled\" OR \"project_document_file\".\"content_type\" = 'text/html'",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "checks\u0000[\"public\",\"project_document_file\",\"project_document_file_byte_size_check\"]",
+      "set": {
+        "value": "\"project_document_file\".\"byte_size\" > 0 AND \"project_document_file\".\"byte_size\" <= 52428800"
+      }
+    }
+  ]
+}

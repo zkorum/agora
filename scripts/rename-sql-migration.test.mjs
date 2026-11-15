@@ -47,6 +47,14 @@ async function fixture(t) {
   }
   const copiedScript = resolve(service, "scripts/rename_sql_migration_file.sh");
   await copyFile(script, copiedScript);
+  await copyFile(
+    new URL("../services/api/scripts/copy_drizzle_v1_migrations.mjs", import.meta.url),
+    resolve(service, "scripts/copy_drizzle_v1_migrations.mjs"),
+  );
+  await copyFile(
+    new URL("../services/api/scripts/reviewed_drizzle_migrations.mjs", import.meta.url),
+    resolve(service, "scripts/reviewed_drizzle_migrations.mjs"),
+  );
 
   const stub = resolve(bin, "command.mjs");
   await writeFile(
@@ -511,4 +519,22 @@ test("rejects missing sources and using Flyway itself as the source", async (t) 
   assert.deepEqual(await contents(f.flyway), {
     "0001_pending.sql": "-- do not delete source\n",
   });
+});
+
+test("rejects mixed legacy and v1 folders before copying anything", async (t) => {
+  const f = await fixture(t);
+  const historical = { "V0114__existing.sql": "-- immutable deployed SQL\n" };
+  await f.seed({
+    drizzle: {
+      "20261114120000_new_schema/migration.sql": "CREATE TABLE pending (id integer);\n",
+      "20261114120000_new_schema/snapshot.json": "{}\n",
+      "0114_legacy_pending.sql": "SELECT 114;\n",
+    },
+    migrations: historical,
+  });
+  const result = await f.run();
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Mixed legacy and v1 migrations/);
+  assert.doesNotMatch(result.stdout, /Renamed /);
+  assert.deepEqual(await contents(f.flyway), historical);
 });

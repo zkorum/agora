@@ -1,0 +1,594 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "9d7428d7-fcf1-49a9-9df8-bfcd01a312ba",
+  "prevIds": [
+    "0912779f-3ded-4324-917e-7357a0d32f3d"
+  ],
+  "footprints": [
+    {
+      "statementType": "drop_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "maxdiff_item_content"
+      ],
+      "writes": [
+        "s|fk|public.maxdiff_item_content.maxdiff_item_content_maxdiff_item_id_maxdiff_item_id_fk",
+        "n|fk|public.maxdiff_item_content.maxdiff_item_content_maxdiff_item_id_maxdiff_item_id_fk",
+        "e|fk|public.maxdiff_item_content.maxdiff_item_content_maxdiff_item_id_maxdiff_item_id_fk",
+        "n|con|public.maxdiff_item_content.maxdiff_item_content_maxdiff_item_id_maxdiff_item_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.maxdiff_item_content",
+        "n|sch|public",
+        "e|col|public.maxdiff_item_content.maxdiff_item_id"
+      ]
+    },
+    {
+      "statementType": "drop_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "maxdiff_item_external_source"
+      ],
+      "writes": [
+        "s|fk|public.maxdiff_item_external_source.maxdiff_item_external_source_maxdiff_item_id_maxdiff_item_id_fk",
+        "n|fk|public.maxdiff_item_external_source.maxdiff_item_external_source_maxdiff_item_id_maxdiff_item_id_fk",
+        "e|fk|public.maxdiff_item_external_source.maxdiff_item_external_source_maxdiff_item_id_maxdiff_item_id_fk",
+        "n|con|public.maxdiff_item_external_source.maxdiff_item_external_source_maxdiff_item_id_maxdiff_item_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.maxdiff_item_external_source",
+        "n|sch|public",
+        "e|col|public.maxdiff_item_external_source.maxdiff_item_id"
+      ]
+    },
+    {
+      "statementType": "drop_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation"
+      ],
+      "writes": [
+        "s|fk|public.conversation.conversation_current_ranking_score_id_ranking_score_id_fk",
+        "n|fk|public.conversation.conversation_current_ranking_score_id_ranking_score_id_fk",
+        "e|fk|public.conversation.conversation_current_ranking_score_id_ranking_score_id_fk",
+        "n|con|public.conversation.conversation_current_ranking_score_id_ranking_score_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "e|col|public.conversation.current_ranking_score_id"
+      ]
+    },
+    {
+      "statementType": "drop_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "maxdiff_item_content"
+      ],
+      "writes": [
+        "s|tbl|public.maxdiff_item_content",
+        "n|tbl|public.maxdiff_item_content",
+        "e|tbl|public.maxdiff_item_content",
+        "n|rel|public.maxdiff_item_content",
+        "n|type|public.maxdiff_item_content"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "maxdiff_item_external_source"
+      ],
+      "writes": [
+        "s|tbl|public.maxdiff_item_external_source",
+        "n|tbl|public.maxdiff_item_external_source",
+        "e|tbl|public.maxdiff_item_external_source",
+        "n|rel|public.maxdiff_item_external_source",
+        "n|type|public.maxdiff_item_external_source"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "maxdiff_item"
+      ],
+      "writes": [
+        "s|tbl|public.maxdiff_item",
+        "n|tbl|public.maxdiff_item",
+        "e|tbl|public.maxdiff_item",
+        "n|rel|public.maxdiff_item",
+        "n|type|public.maxdiff_item"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_unique",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation"
+      ],
+      "writes": [
+        "s|uq|public.conversation.conversation_current_ranking_score_id_unique",
+        "n|uq|public.conversation.conversation_current_ranking_score_id_unique",
+        "e|uq|public.conversation.conversation_current_ranking_score_id_unique",
+        "n|con|public.conversation.conversation_current_ranking_score_id_unique",
+        "n|rel|public.conversation_current_ranking_score_id_unique"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "e|col|public.conversation.current_ranking_score_id"
+      ],
+      "sharedWrites": [
+        "e|uniqueness|public.conversation.current_ranking_score_id"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "import_url"
+      ],
+      "writes": [
+        "s|col|public.conversation.import_url",
+        "n|col|public.conversation.import_url",
+        "e|col|public.conversation.import_url"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "import_conversation_url"
+      ],
+      "writes": [
+        "s|col|public.conversation.import_conversation_url",
+        "n|col|public.conversation.import_conversation_url",
+        "e|col|public.conversation.import_conversation_url"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "import_export_url"
+      ],
+      "writes": [
+        "s|col|public.conversation.import_export_url",
+        "n|col|public.conversation.import_export_url",
+        "e|col|public.conversation.import_export_url"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "import_created_at"
+      ],
+      "writes": [
+        "s|col|public.conversation.import_created_at",
+        "n|col|public.conversation.import_created_at",
+        "e|col|public.conversation.import_created_at"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "import_author"
+      ],
+      "writes": [
+        "s|col|public.conversation.import_author",
+        "n|col|public.conversation.import_author",
+        "e|col|public.conversation.import_author"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "import_method"
+      ],
+      "writes": [
+        "s|col|public.conversation.import_method",
+        "n|col|public.conversation.import_method",
+        "e|col|public.conversation.import_method"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "external_source_config"
+      ],
+      "writes": [
+        "s|col|public.conversation.external_source_config",
+        "n|col|public.conversation.external_source_config",
+        "e|col|public.conversation.external_source_config"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "current_ranking_score_id"
+      ],
+      "writes": [
+        "s|col|public.conversation.current_ranking_score_id",
+        "n|col|public.conversation.current_ranking_score_id",
+        "e|col|public.conversation.current_ranking_score_id"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "ai_labeling_enabled"
+      ],
+      "writes": [
+        "s|col|public.conversation.ai_labeling_enabled",
+        "n|col|public.conversation.ai_labeling_enabled",
+        "e|col|public.conversation.ai_labeling_enabled"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "analysis_data_generation"
+      ],
+      "writes": [
+        "s|col|public.conversation.analysis_data_generation",
+        "n|col|public.conversation.analysis_data_generation",
+        "e|col|public.conversation.analysis_data_generation"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "preferred_opinion_group_count"
+      ],
+      "writes": [
+        "s|col|public.conversation.preferred_opinion_group_count",
+        "n|col|public.conversation.preferred_opinion_group_count",
+        "e|col|public.conversation.preferred_opinion_group_count"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "maxdiff_lifecycle_status"
+      ],
+      "writes": [
+        "s|enum|public.maxdiff_lifecycle_status",
+        "n|enum|public.maxdiff_lifecycle_status",
+        "e|enum|public.maxdiff_lifecycle_status",
+        "n|type|public.maxdiff_lifecycle_status"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "drop",
+      "key": "tables\u0000[\"public\",\"maxdiff_item_content\"]"
+    },
+    {
+      "op": "drop",
+      "key": "tables\u0000[\"public\",\"maxdiff_item_external_source\"]"
+    },
+    {
+      "op": "drop",
+      "key": "tables\u0000[\"public\",\"maxdiff_item\"]"
+    },
+    {
+      "op": "drop",
+      "key": "enums\u0000[\"public\",\"maxdiff_lifecycle_status\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation\",\"import_url\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation\",\"import_conversation_url\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation\",\"import_export_url\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation\",\"import_created_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation\",\"import_author\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation\",\"import_method\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation\",\"external_source_config\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"maxdiff_item_content\",\"id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"maxdiff_item_content\",\"maxdiff_item_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"maxdiff_item_content\",\"conversation_content_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"maxdiff_item_content\",\"title\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"maxdiff_item_content\",\"body\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"maxdiff_item_content\",\"created_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"maxdiff_item_external_source\",\"id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"maxdiff_item_external_source\",\"maxdiff_item_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"maxdiff_item_external_source\",\"source_type\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"maxdiff_item_external_source\",\"external_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"maxdiff_item_external_source\",\"external_url\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"maxdiff_item_external_source\",\"external_metadata\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"maxdiff_item_external_source\",\"last_synced_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"maxdiff_item_external_source\",\"created_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"maxdiff_item\",\"id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"maxdiff_item\",\"slug_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"maxdiff_item\",\"author_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"maxdiff_item\",\"conversation_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"maxdiff_item\",\"current_content_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"maxdiff_item\",\"is_seed\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"maxdiff_item\",\"lifecycle_status\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"maxdiff_item\",\"snapshot_score\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"maxdiff_item\",\"snapshot_rank\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"maxdiff_item\",\"snapshot_participant_count\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"maxdiff_item\",\"created_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"maxdiff_item\",\"updated_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"maxdiff_item_external_source\",\"conversation_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation\",\"current_ranking_score_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation\",\"ai_labeling_enabled\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation\",\"analysis_data_generation\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation\",\"preferred_opinion_group_count\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"maxdiff_item_conversation_active_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"maxdiff_item_lifecycle_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"maxdiff_external_source_dedup_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"maxdiff_item_content\",\"maxdiff_item_content_maxdiff_item_id_maxdiff_item_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"maxdiff_item_content\",\"maxdiff_item_content_conversation_content_id_conversation_conte\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"maxdiff_item_external_source\",\"maxdiff_item_external_source_maxdiff_item_id_maxdiff_item_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"maxdiff_item\",\"maxdiff_item_author_id_user_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"maxdiff_item\",\"maxdiff_item_conversation_id_conversation_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"maxdiff_item_external_source\",\"maxdiff_item_external_source_conversation_id_conversation_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"conversation\",\"conversation_current_ranking_score_id_ranking_score_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "pks\u0000[\"public\",\"maxdiff_item_content\",\"maxdiff_item_content_pkey\"]"
+    },
+    {
+      "op": "drop",
+      "key": "pks\u0000[\"public\",\"maxdiff_item_external_source\",\"maxdiff_item_external_source_pkey\"]"
+    },
+    {
+      "op": "drop",
+      "key": "pks\u0000[\"public\",\"maxdiff_item\",\"maxdiff_item_pkey\"]"
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"maxdiff_item_external_source\",\"maxdiff_item_external_source_maxdiff_item_id_unique\"]"
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"maxdiff_item\",\"maxdiff_item_slug_id_unique\"]"
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"conversation\",\"conversation_current_ranking_score_id_unique\"]"
+    }
+  ]
+}

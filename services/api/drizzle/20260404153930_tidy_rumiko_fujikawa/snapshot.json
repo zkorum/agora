@@ -1,0 +1,539 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "5b45f3b6-83f3-4914-9243-3e1789c063ec",
+  "prevIds": [
+    "a90e6a9c-c393-4616-aa16-cc0d3fb9efaf"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "otp_email_destination_state"
+      ],
+      "writes": [
+        "s|tbl|public.otp_email_destination_state",
+        "n|tbl|public.otp_email_destination_state",
+        "e|tbl|public.otp_email_destination_state",
+        "n|rel|public.otp_email_destination_state",
+        "n|type|public.otp_email_destination_state",
+        "n|rel|public.otp_email_destination_state_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "otp_phone_destination_state"
+      ],
+      "writes": [
+        "s|tbl|public.otp_phone_destination_state",
+        "n|tbl|public.otp_phone_destination_state",
+        "e|tbl|public.otp_phone_destination_state",
+        "n|rel|public.otp_phone_destination_state",
+        "n|type|public.otp_phone_destination_state",
+        "n|rel|public.otp_phone_destination_state_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation_export",
+        "conversation_export_active_user_conversation_unique"
+      ],
+      "writes": [
+        "s|idx|public.conversation_export_active_user_conversation_unique",
+        "n|idx|public.conversation_export_active_user_conversation_unique",
+        "e|idx|public.conversation_export_active_user_conversation_unique",
+        "n|rel|public.conversation_export_active_user_conversation_unique"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_export",
+        "n|sch|public",
+        "n|col|public.conversation_export.conversation_id",
+        "n|col|public.conversation_export.user_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation_import",
+        "conversation_import_active_user_unique"
+      ],
+      "writes": [
+        "s|idx|public.conversation_import_active_user_unique",
+        "n|idx|public.conversation_import_active_user_unique",
+        "e|idx|public.conversation_import_active_user_unique",
+        "n|rel|public.conversation_import_active_user_unique"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_import",
+        "n|sch|public",
+        "n|col|public.conversation_import.user_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "otp_email_destination_state",
+        "otp_email_destination_updated_idx"
+      ],
+      "writes": [
+        "s|idx|public.otp_email_destination_updated_idx",
+        "n|idx|public.otp_email_destination_updated_idx",
+        "e|idx|public.otp_email_destination_updated_idx",
+        "n|rel|public.otp_email_destination_updated_idx"
+      ],
+      "reads": [
+        "n|tbl|public.otp_email_destination_state",
+        "n|sch|public",
+        "n|col|public.otp_email_destination_state.updated_at"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "otp_phone_destination_state",
+        "otp_phone_destination_updated_idx"
+      ],
+      "writes": [
+        "s|idx|public.otp_phone_destination_updated_idx",
+        "n|idx|public.otp_phone_destination_updated_idx",
+        "e|idx|public.otp_phone_destination_updated_idx",
+        "n|rel|public.otp_phone_destination_updated_idx"
+      ],
+      "reads": [
+        "n|tbl|public.otp_phone_destination_state",
+        "n|sch|public",
+        "n|col|public.otp_phone_destination_state.updated_at"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "auth_attempt_email"
+      ],
+      "writes": [
+        "s|ck|public.auth_attempt_email.auth_attempt_email_canonical_check",
+        "n|ck|public.auth_attempt_email.auth_attempt_email_canonical_check",
+        "e|ck|public.auth_attempt_email.auth_attempt_email_canonical_check",
+        "n|con|public.auth_attempt_email.auth_attempt_email_canonical_check"
+      ],
+      "reads": [
+        "n|tbl|public.auth_attempt_email",
+        "n|sch|public",
+        "n|col|public.auth_attempt_email.email"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "email"
+      ],
+      "writes": [
+        "s|ck|public.email.email_canonical_check",
+        "n|ck|public.email.email_canonical_check",
+        "e|ck|public.email.email_canonical_check",
+        "n|con|public.email.email_canonical_check"
+      ],
+      "reads": [
+        "n|tbl|public.email",
+        "n|sch|public",
+        "n|col|public.email.email"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "otp_email_destination_state",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "otp_phone_destination_state",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "otp_email_destination_state",
+        "name": "email",
+        "type": "varchar(254)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "otp_email_destination_state",
+        "name": "last_otp_sent_at",
+        "type": "timestamp",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "otp_email_destination_state",
+        "name": "consecutive_failed_verify_attempts",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "0",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "otp_email_destination_state",
+        "name": "backoff_until",
+        "type": "timestamp",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "otp_email_destination_state",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "otp_email_destination_state",
+        "name": "updated_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "otp_phone_destination_state",
+        "name": "phone_hash",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "otp_phone_destination_state",
+        "name": "last_otp_sent_at",
+        "type": "timestamp",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "otp_phone_destination_state",
+        "name": "consecutive_failed_verify_attempts",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "0",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "otp_phone_destination_state",
+        "name": "backoff_until",
+        "type": "timestamp",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "otp_phone_destination_state",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "otp_phone_destination_state",
+        "name": "updated_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export",
+        "name": "conversation_export_active_user_conversation_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "conversation_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"conversation_export\".\"status\" = 'processing' AND \"conversation_export\".\"is_deleted\" = false",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_import",
+        "name": "conversation_import_active_user_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"conversation_import\".\"status\" = 'processing'",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "otp_email_destination_state",
+        "name": "otp_email_destination_updated_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "updated_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "otp_phone_destination_state",
+        "name": "otp_phone_destination_updated_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "updated_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "otp_email_destination_state",
+        "name": "otp_email_destination_state_pkey",
+        "columns": [
+          "email"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "otp_phone_destination_state",
+        "name": "otp_phone_destination_state_pkey",
+        "columns": [
+          "phone_hash"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "auth_attempt_email",
+        "name": "auth_attempt_email_canonical_check",
+        "value": "\"auth_attempt_email\".\"email\" = lower(btrim(\"auth_attempt_email\".\"email\"))",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "email",
+        "name": "email_canonical_check",
+        "value": "\"email\".\"email\" = lower(btrim(\"email\".\"email\"))",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "otp_email_destination_state",
+        "name": "otp_email_destination_canonical_check",
+        "value": "\"otp_email_destination_state\".\"email\" = lower(btrim(\"otp_email_destination_state\".\"email\"))",
+        "entityType": "checks"
+      }
+    }
+  ]
+}

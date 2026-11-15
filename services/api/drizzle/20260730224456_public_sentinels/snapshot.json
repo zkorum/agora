@@ -1,0 +1,149 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "f0acadd7-5353-43c7-975e-ae7af86fd531",
+  "prevIds": [
+    "01630ab8-70b5-43fa-9942-5b8680aa46b4"
+  ],
+  "footprints": [
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion_content",
+        "content"
+      ],
+      "writes": [
+        "s|colprop|public.opinion_content.content.type",
+        "s|colprop|public.opinion_content.content.default"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_content",
+        "n|sch|public",
+        "n|col|public.opinion_content.content"
+      ],
+      "sqlHash": "b4f344260c93a3cc"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "ranking_item_content",
+        "title"
+      ],
+      "writes": [
+        "s|colprop|public.ranking_item_content.title.type",
+        "s|colprop|public.ranking_item_content.title.default"
+      ],
+      "reads": [
+        "n|tbl|public.ranking_item_content",
+        "n|sch|public",
+        "n|col|public.ranking_item_content.title"
+      ],
+      "sqlHash": "b6bd44d3449018e9"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "ranking_item_content",
+        "body"
+      ],
+      "writes": [
+        "s|colprop|public.ranking_item_content.body.type",
+        "s|colprop|public.ranking_item_content.body.default"
+      ],
+      "reads": [
+        "n|tbl|public.ranking_item_content",
+        "n|sch|public",
+        "n|col|public.ranking_item_content.body"
+      ],
+      "sqlHash": "e45db347b407b57f"
+    },
+    {
+      "statementType": "recreate_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "realtime_event_outbox",
+        "realtime_event_outbox_conversation_replay_idx"
+      ],
+      "writes": [
+        "s|idx|public.realtime_event_outbox_conversation_replay_idx",
+        "n|idx|public.realtime_event_outbox_conversation_replay_idx",
+        "e|idx|public.realtime_event_outbox_conversation_replay_idx",
+        "n|rel|public.realtime_event_outbox_conversation_replay_idx"
+      ],
+      "reads": [
+        "n|tbl|public.realtime_event_outbox",
+        "n|sch|public",
+        "n|col|public.realtime_event_outbox.id"
+      ],
+      "sharedWrites": [],
+      "sqlHash": "69c4d5ea840d9240"
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "opinion_content"
+      ],
+      "writes": [
+        "s|ck|public.opinion_content.opinion_content_content_byte_length_check",
+        "n|ck|public.opinion_content.opinion_content_content_byte_length_check",
+        "e|ck|public.opinion_content.opinion_content_content_byte_length_check",
+        "n|con|public.opinion_content.opinion_content_content_byte_length_check"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_content",
+        "n|sch|public",
+        "n|col|public.opinion_content.content"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_content",
+        "name": "opinion_content_content_byte_length_check",
+        "value": "octet_length(\"opinion_content\".\"content\") <= 16384",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"opinion_content\",\"content\"]",
+      "set": {
+        "type": "text"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"ranking_item_content\",\"title\"]",
+      "set": {
+        "type": "text"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"ranking_item_content\",\"body\"]",
+      "set": {
+        "type": "text"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "indexes\u0000[\"public\",\"realtime_event_outbox_conversation_replay_idx\"]",
+      "set": {
+        "where": "\"realtime_event_outbox\".\"event_type\" IN ('conversation_analysis_updated', 'conversation_settings_updated', 'conversation_survey_updated')"
+      }
+    }
+  ]
+}

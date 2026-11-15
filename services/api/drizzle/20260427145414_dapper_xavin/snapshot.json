@@ -1,0 +1,47 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "f8644cc2-4560-4a1c-9b9f-82a47e911ae5",
+  "prevIds": [
+    "22ed3326-918b-402b-b4b0-885e7d3fc720"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "survey_config",
+        "is_optional"
+      ],
+      "writes": [
+        "s|col|public.survey_config.is_optional",
+        "n|col|public.survey_config.is_optional",
+        "e|col|public.survey_config.is_optional"
+      ],
+      "reads": [
+        "n|tbl|public.survey_config",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "survey_config",
+        "name": "is_optional",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

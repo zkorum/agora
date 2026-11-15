@@ -1,0 +1,504 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "48c23fbe-e506-4e3b-ad75-d94285674c76",
+  "prevIds": [
+    "c9a03d39-7728-4439-ba23-a49050693f75"
+  ],
+  "footprints": [
+    {
+      "statementType": "drop_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation"
+      ],
+      "writes": [
+        "s|fk|public.conversation.conversation_author_id_user_id_fk",
+        "n|fk|public.conversation.conversation_author_id_user_id_fk",
+        "e|fk|public.conversation.conversation_author_id_user_id_fk",
+        "n|con|public.conversation.conversation_author_id_user_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "e|col|public.conversation.author_id"
+      ]
+    },
+    {
+      "statementType": "drop_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation"
+      ],
+      "writes": [
+        "s|fk|public.conversation.conversation_organization_id_organization_id_fk",
+        "n|fk|public.conversation.conversation_organization_id_organization_id_fk",
+        "e|fk|public.conversation.conversation_organization_id_organization_id_fk",
+        "n|con|public.conversation.conversation_organization_id_organization_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "e|col|public.conversation.organization_id"
+      ]
+    },
+    {
+      "statementType": "drop_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "premium_feature_entitlement"
+      ],
+      "writes": [
+        "s|fk|public.premium_feature_entitlement.premium_feature_entitlement_user_id_user_id_fk",
+        "n|fk|public.premium_feature_entitlement.premium_feature_entitlement_user_id_user_id_fk",
+        "e|fk|public.premium_feature_entitlement.premium_feature_entitlement_user_id_user_id_fk",
+        "n|con|public.premium_feature_entitlement.premium_feature_entitlement_user_id_user_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.premium_feature_entitlement",
+        "n|sch|public",
+        "e|col|public.premium_feature_entitlement.user_id"
+      ]
+    },
+    {
+      "statementType": "drop_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "user_organization_mapping"
+      ],
+      "writes": [
+        "s|tbl|public.user_organization_mapping",
+        "n|tbl|public.user_organization_mapping",
+        "e|tbl|public.user_organization_mapping",
+        "n|rel|public.user_organization_mapping",
+        "n|type|public.user_organization_mapping"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_unique",
+      "statementTarget": [
+        "table",
+        "public",
+        "organization"
+      ],
+      "writes": [
+        "s|uq|public.organization.organization_name_unique",
+        "n|uq|public.organization.organization_name_unique",
+        "e|uq|public.organization.organization_name_unique",
+        "n|con|public.organization.organization_name_unique",
+        "n|rel|public.organization_name_unique"
+      ],
+      "reads": [
+        "n|tbl|public.organization",
+        "n|sch|public",
+        "e|col|public.organization.name"
+      ],
+      "sharedWrites": [
+        "e|uniqueness|public.organization.name"
+      ]
+    },
+    {
+      "statementType": "drop_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "premium_feature_entitlement"
+      ],
+      "writes": [
+        "s|ck|public.premium_feature_entitlement.premium_feature_entitlement_single_subject_check",
+        "n|ck|public.premium_feature_entitlement.premium_feature_entitlement_single_subject_check",
+        "e|ck|public.premium_feature_entitlement.premium_feature_entitlement_single_subject_check",
+        "n|con|public.premium_feature_entitlement.premium_feature_entitlement_single_subject_check"
+      ],
+      "reads": [
+        "n|tbl|public.premium_feature_entitlement",
+        "n|sch|public",
+        "e|col|public.premium_feature_entitlement.user_id",
+        "e|col|public.premium_feature_entitlement.organization_id"
+      ]
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation",
+        "conversation_author_timeline_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_author_timeline_idx",
+        "n|idx|public.conversation_author_timeline_idx",
+        "e|idx|public.conversation_author_timeline_idx",
+        "n|rel|public.conversation_author_timeline_idx"
+      ],
+      "reads": [
+        "e|tbl|public.conversation",
+        "n|sch|public",
+        "e|col|public.conversation.author_id",
+        "e|col|public.conversation.is_importing"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation",
+        "conversation_organization_timeline_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_organization_timeline_idx",
+        "n|idx|public.conversation_organization_timeline_idx",
+        "e|idx|public.conversation_organization_timeline_idx",
+        "n|rel|public.conversation_organization_timeline_idx"
+      ],
+      "reads": [
+        "e|tbl|public.conversation",
+        "n|sch|public",
+        "e|col|public.conversation.organization_id",
+        "e|col|public.conversation.is_importing"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "premium_feature_entitlement",
+        "premium_feature_entitlement_user_idx"
+      ],
+      "writes": [
+        "s|idx|public.premium_feature_entitlement_user_idx",
+        "n|idx|public.premium_feature_entitlement_user_idx",
+        "e|idx|public.premium_feature_entitlement_user_idx",
+        "n|rel|public.premium_feature_entitlement_user_idx"
+      ],
+      "reads": [
+        "e|tbl|public.premium_feature_entitlement",
+        "n|sch|public",
+        "e|col|public.premium_feature_entitlement.user_id",
+        "e|col|public.premium_feature_entitlement.feature"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "author_id"
+      ],
+      "writes": [
+        "s|col|public.conversation.author_id",
+        "n|col|public.conversation.author_id",
+        "e|col|public.conversation.author_id"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "organization_id"
+      ],
+      "writes": [
+        "s|col|public.conversation.organization_id",
+        "n|col|public.conversation.organization_id",
+        "e|col|public.conversation.organization_id"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "organization",
+        "name"
+      ],
+      "writes": [
+        "s|col|public.organization.name",
+        "n|col|public.organization.name",
+        "e|col|public.organization.name"
+      ],
+      "reads": [
+        "n|tbl|public.organization",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "premium_feature_entitlement",
+        "user_id"
+      ],
+      "writes": [
+        "s|col|public.premium_feature_entitlement.user_id",
+        "n|col|public.premium_feature_entitlement.user_id",
+        "e|col|public.premium_feature_entitlement.user_id"
+      ],
+      "reads": [
+        "n|tbl|public.premium_feature_entitlement",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "user",
+        "first_name"
+      ],
+      "writes": [
+        "s|col|public.user.first_name",
+        "n|col|public.user.first_name",
+        "e|col|public.user.first_name"
+      ],
+      "reads": [
+        "n|tbl|public.user",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "premium_feature_entitlement",
+        "organization_id"
+      ],
+      "writes": [
+        "s|colprop|public.premium_feature_entitlement.organization_id.notNull"
+      ],
+      "reads": [
+        "n|tbl|public.premium_feature_entitlement",
+        "n|sch|public",
+        "n|col|public.premium_feature_entitlement.organization_id"
+      ],
+      "sqlHash": "aa200dafdff1eeb0"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "project_id"
+      ],
+      "writes": [
+        "s|colprop|public.conversation.project_id.notNull"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.conversation.project_id"
+      ],
+      "sqlHash": "1b376a600cc752dd"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "organization",
+        "slug"
+      ],
+      "writes": [
+        "s|colprop|public.organization.slug.notNull"
+      ],
+      "reads": [
+        "n|tbl|public.organization",
+        "n|sch|public",
+        "n|col|public.organization.slug"
+      ],
+      "sqlHash": "ac39f81c5b06c75e"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "organization",
+        "display_name"
+      ],
+      "writes": [
+        "s|colprop|public.organization.display_name.notNull"
+      ],
+      "reads": [
+        "n|tbl|public.organization",
+        "n|sch|public",
+        "n|col|public.organization.display_name"
+      ],
+      "sqlHash": "61c6c50e88b47539"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "organization",
+        "directory_visibility"
+      ],
+      "writes": [
+        "s|colprop|public.organization.directory_visibility.notNull"
+      ],
+      "reads": [
+        "n|tbl|public.organization",
+        "n|sch|public",
+        "n|col|public.organization.directory_visibility"
+      ],
+      "sqlHash": "972f187698d24008"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "drop",
+      "key": "tables\u0000[\"public\",\"user_organization_mapping\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation\",\"author_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"organization\",\"name\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user_organization_mapping\",\"id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user_organization_mapping\",\"user_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user_organization_mapping\",\"organization_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user_organization_mapping\",\"created_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation\",\"organization_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"premium_feature_entitlement\",\"user_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user\",\"first_name\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"conversation_author_timeline_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"conversation_organization_timeline_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"premium_feature_entitlement_user_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"user_idx_organization\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"conversation\",\"conversation_author_id_user_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"user_organization_mapping\",\"user_organization_mapping_user_id_user_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"user_organization_mapping\",\"user_organization_mapping_organization_id_organization_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"conversation\",\"conversation_organization_id_organization_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"premium_feature_entitlement\",\"premium_feature_entitlement_user_id_user_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "pks\u0000[\"public\",\"user_organization_mapping\",\"user_organization_mapping_pkey\"]"
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"organization\",\"organization_name_unique\"]"
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"user_organization_mapping\",\"unique_user_orgaization_mapping\"]"
+    },
+    {
+      "op": "drop",
+      "key": "checks\u0000[\"public\",\"premium_feature_entitlement\",\"premium_feature_entitlement_single_subject_check\"]"
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"premium_feature_entitlement\",\"organization_id\"]",
+      "set": {
+        "notNull": true
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"conversation\",\"project_id\"]",
+      "set": {
+        "notNull": true
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"organization\",\"slug\"]",
+      "set": {
+        "notNull": true
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"organization\",\"display_name\"]",
+      "set": {
+        "notNull": true
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"organization\",\"directory_visibility\"]",
+      "set": {
+        "notNull": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,147 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "d70b63ee-32ae-458e-b9d3-c0fa2792f7c4",
+  "prevIds": [
+    "fac7b8ae-b818-428d-a289-0058e200536d"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "user",
+        "is_imported"
+      ],
+      "writes": [
+        "s|col|public.user.is_imported",
+        "n|col|public.user.is_imported",
+        "e|col|public.user.is_imported"
+      ],
+      "reads": [
+        "n|tbl|public.user",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "vote",
+        "polis_vote_id"
+      ],
+      "writes": [
+        "s|col|public.vote.polis_vote_id",
+        "n|col|public.vote.polis_vote_id",
+        "e|col|public.vote.polis_vote_id"
+      ],
+      "reads": [
+        "n|tbl|public.vote",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "user",
+        "is_anonymous"
+      ],
+      "writes": [
+        "s|col|public.user.is_anonymous",
+        "n|col|public.user.is_anonymous",
+        "e|col|public.user.is_anonymous"
+      ],
+      "reads": [
+        "n|tbl|public.user",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "user",
+        "is_seed"
+      ],
+      "writes": [
+        "s|col|public.user.is_seed",
+        "n|col|public.user.is_seed",
+        "e|col|public.user.is_seed"
+      ],
+      "reads": [
+        "n|tbl|public.user",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "user",
+        "show_flagged_content"
+      ],
+      "writes": [
+        "s|col|public.user.show_flagged_content",
+        "n|col|public.user.show_flagged_content",
+        "e|col|public.user.show_flagged_content"
+      ],
+      "reads": [
+        "n|tbl|public.user",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user",
+        "name": "is_imported",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "vote",
+        "name": "polis_vote_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user\",\"is_anonymous\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user\",\"is_seed\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user\",\"show_flagged_content\"]"
+    }
+  ]
+}

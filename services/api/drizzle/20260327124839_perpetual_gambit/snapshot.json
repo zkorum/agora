@@ -1,0 +1,361 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "d7c7ed21-b79c-4888-90ff-54276d4c5d99",
+  "prevIds": [
+    "ca28f6a4-e037-40aa-b3b2-8a9f805bd0be"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "ranking_score"
+      ],
+      "writes": [
+        "s|tbl|public.ranking_score",
+        "n|tbl|public.ranking_score",
+        "e|tbl|public.ranking_score",
+        "n|rel|public.ranking_score",
+        "n|type|public.ranking_score",
+        "n|rel|public.ranking_score_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "current_ranking_score_id"
+      ],
+      "writes": [
+        "s|col|public.conversation.current_ranking_score_id",
+        "n|col|public.conversation.current_ranking_score_id",
+        "e|col|public.conversation.current_ranking_score_id"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_unique",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation"
+      ],
+      "writes": [
+        "s|uq|public.conversation.conversation_current_ranking_score_id_unique",
+        "n|uq|public.conversation.conversation_current_ranking_score_id_unique",
+        "e|uq|public.conversation.conversation_current_ranking_score_id_unique",
+        "n|con|public.conversation.conversation_current_ranking_score_id_unique",
+        "n|rel|public.conversation_current_ranking_score_id_unique"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.conversation.current_ranking_score_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation"
+      ],
+      "writes": [
+        "s|fk|public.conversation.conversation_current_ranking_score_id_ranking_score_id_fk",
+        "n|fk|public.conversation.conversation_current_ranking_score_id_ranking_score_id_fk",
+        "e|fk|public.conversation.conversation_current_ranking_score_id_ranking_score_id_fk",
+        "n|con|public.conversation.conversation_current_ranking_score_id_ranking_score_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|tbl|public.ranking_score",
+        "n|sch|public",
+        "n|col|public.conversation.current_ranking_score_id",
+        "n|col|public.ranking_score.id",
+        "e|uniqueness|public.ranking_score.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "ranking_score"
+      ],
+      "writes": [
+        "s|fk|public.ranking_score.ranking_score_conversation_id_conversation_id_fk",
+        "n|fk|public.ranking_score.ranking_score_conversation_id_conversation_id_fk",
+        "e|fk|public.ranking_score.ranking_score_conversation_id_conversation_id_fk",
+        "n|con|public.ranking_score.ranking_score_conversation_id_conversation_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.ranking_score",
+        "n|sch|public",
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.ranking_score.conversation_id",
+        "n|col|public.conversation.id",
+        "e|uniqueness|public.conversation.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "ranking_score",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "current_ranking_score_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_score",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "ranking_score_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_score",
+        "name": "conversation_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_score",
+        "name": "scores",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_score",
+        "name": "participant_counts",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_score",
+        "name": "group_sources_snapshot",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_score",
+        "name": "user_weights_snapshot",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_score",
+        "name": "pipeline_config",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_score",
+        "name": "computed_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_score",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "conversation_current_ranking_score_id_ranking_score_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "current_ranking_score_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "ranking_score",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_score",
+        "name": "ranking_score_conversation_id_conversation_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "conversation_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conversation",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_score",
+        "name": "ranking_score_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "conversation_current_ranking_score_id_unique",
+        "nameExplicit": false,
+        "columns": [
+          "current_ranking_score_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    }
+  ]
+}

@@ -1,0 +1,1086 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "0e4c0620-5a60-47b8-96a4-745494444687",
+  "prevIds": [
+    "a5b98081-ed35-488d-b2d4-8f64135d8604"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "project_document_audience"
+      ],
+      "writes": [
+        "s|enum|public.project_document_audience",
+        "n|enum|public.project_document_audience",
+        "e|enum|public.project_document_audience",
+        "n|type|public.project_document_audience"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "project_document_content_type"
+      ],
+      "writes": [
+        "s|enum|public.project_document_content_type",
+        "n|enum|public.project_document_content_type",
+        "e|enum|public.project_document_content_type",
+        "n|type|public.project_document_content_type"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "project_document_file_status"
+      ],
+      "writes": [
+        "s|enum|public.project_document_file_status",
+        "n|enum|public.project_document_file_status",
+        "e|enum|public.project_document_file_status",
+        "n|type|public.project_document_file_status"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_document_file"
+      ],
+      "writes": [
+        "s|tbl|public.project_document_file",
+        "n|tbl|public.project_document_file",
+        "e|tbl|public.project_document_file",
+        "n|rel|public.project_document_file",
+        "n|type|public.project_document_file",
+        "n|rel|public.project_document_file_pkey",
+        "n|rel|public.project_document_file_object_key_unique"
+      ],
+      "reads": [
+        "n|sch|public",
+        "n|enum|public.project_document_audience",
+        "n|enum|public.project_document_file_status",
+        "n|enum|public.project_document_content_type"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_document_localization"
+      ],
+      "writes": [
+        "s|tbl|public.project_document_localization",
+        "n|tbl|public.project_document_localization",
+        "e|tbl|public.project_document_localization",
+        "n|rel|public.project_document_localization",
+        "n|type|public.project_document_localization",
+        "n|rel|public.project_document_localization_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_document"
+      ],
+      "writes": [
+        "s|tbl|public.project_document",
+        "n|tbl|public.project_document",
+        "e|tbl|public.project_document",
+        "n|rel|public.project_document",
+        "n|type|public.project_document",
+        "n|rel|public.project_document_pkey",
+        "n|rel|public.project_document_public_id_unique"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "project_document_file",
+        "project_document_file_audience_active_unique"
+      ],
+      "writes": [
+        "s|idx|public.project_document_file_audience_active_unique",
+        "n|idx|public.project_document_file_audience_active_unique",
+        "e|idx|public.project_document_file_audience_active_unique",
+        "n|rel|public.project_document_file_audience_active_unique"
+      ],
+      "reads": [
+        "n|tbl|public.project_document_file",
+        "n|sch|public",
+        "n|col|public.project_document_file.project_document_id",
+        "n|col|public.project_document_file.audience"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "project_document_file",
+        "project_document_file_deletion_queue_idx"
+      ],
+      "writes": [
+        "s|idx|public.project_document_file_deletion_queue_idx",
+        "n|idx|public.project_document_file_deletion_queue_idx",
+        "e|idx|public.project_document_file_deletion_queue_idx",
+        "n|rel|public.project_document_file_deletion_queue_idx"
+      ],
+      "reads": [
+        "n|tbl|public.project_document_file",
+        "n|sch|public",
+        "n|col|public.project_document_file.project_document_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "project_document_file",
+        "project_document_file_pending_created_idx"
+      ],
+      "writes": [
+        "s|idx|public.project_document_file_pending_created_idx",
+        "n|idx|public.project_document_file_pending_created_idx",
+        "e|idx|public.project_document_file_pending_created_idx",
+        "n|rel|public.project_document_file_pending_created_idx"
+      ],
+      "reads": [
+        "n|tbl|public.project_document_file",
+        "n|sch|public",
+        "n|col|public.project_document_file.created_at",
+        "n|col|public.project_document_file.project_document_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "project_document_localization",
+        "project_document_localization_active_unique"
+      ],
+      "writes": [
+        "s|idx|public.project_document_localization_active_unique",
+        "n|idx|public.project_document_localization_active_unique",
+        "e|idx|public.project_document_localization_active_unique",
+        "n|rel|public.project_document_localization_active_unique"
+      ],
+      "reads": [
+        "n|tbl|public.project_document_localization",
+        "n|sch|public",
+        "n|col|public.project_document_localization.project_document_id",
+        "n|col|public.project_document_localization.language_code"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "project_document",
+        "project_document_project_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.project_document_project_id_idx",
+        "n|idx|public.project_document_project_id_idx",
+        "e|idx|public.project_document_project_id_idx",
+        "n|rel|public.project_document_project_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.project_document",
+        "n|sch|public",
+        "n|col|public.project_document.project_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_document_file"
+      ],
+      "writes": [
+        "s|fk|public.project_document_file.project_document_file_project_document_id_project_document_id_f",
+        "n|fk|public.project_document_file.project_document_file_project_document_id_project_document_id_f",
+        "e|fk|public.project_document_file.project_document_file_project_document_id_project_document_id_f",
+        "n|con|public.project_document_file.project_document_file_project_document_id_project_document_id_f"
+      ],
+      "reads": [
+        "n|tbl|public.project_document_file",
+        "n|sch|public",
+        "n|tbl|public.project_document",
+        "n|sch|public",
+        "n|col|public.project_document_file.project_document_id",
+        "n|col|public.project_document.id",
+        "e|uniqueness|public.project_document.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_document_localization"
+      ],
+      "writes": [
+        "s|fk|public.project_document_localization.project_document_localization_project_document_id_project_docum",
+        "n|fk|public.project_document_localization.project_document_localization_project_document_id_project_docum",
+        "e|fk|public.project_document_localization.project_document_localization_project_document_id_project_docum",
+        "n|con|public.project_document_localization.project_document_localization_project_document_id_project_docum"
+      ],
+      "reads": [
+        "n|tbl|public.project_document_localization",
+        "n|sch|public",
+        "n|tbl|public.project_document",
+        "n|sch|public",
+        "n|col|public.project_document_localization.project_document_id",
+        "n|col|public.project_document.id",
+        "e|uniqueness|public.project_document.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_document"
+      ],
+      "writes": [
+        "s|fk|public.project_document.project_document_project_id_project_id_fk",
+        "n|fk|public.project_document.project_document_project_id_project_id_fk",
+        "e|fk|public.project_document.project_document_project_id_project_id_fk",
+        "n|con|public.project_document.project_document_project_id_project_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.project_document",
+        "n|sch|public",
+        "n|tbl|public.project",
+        "n|sch|public",
+        "n|col|public.project_document.project_id",
+        "n|col|public.project.id",
+        "e|uniqueness|public.project.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "project_document_file",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "project_document_localization",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "project_document",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "project_document_audience",
+        "values": [
+          "participant",
+          "owner"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "project_document_content_type",
+        "values": [
+          "text/html",
+          "application/pdf",
+          "text/plain",
+          "text/markdown",
+          "text/csv",
+          "application/json"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "project_document_file_status",
+        "values": [
+          "pending",
+          "available"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document_file",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "project_document_file_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document_file",
+        "name": "project_document_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document_file",
+        "name": "audience",
+        "type": "project_document_audience",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document_file",
+        "name": "status",
+        "type": "project_document_file_status",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'pending'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document_file",
+        "name": "object_key",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document_file",
+        "name": "original_file_name",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document_file",
+        "name": "content_type",
+        "type": "project_document_content_type",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document_file",
+        "name": "byte_size",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document_file",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document_file",
+        "name": "deleted_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document_file",
+        "name": "object_deleted_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document_localization",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "project_document_localization_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document_localization",
+        "name": "project_document_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document_localization",
+        "name": "language_code",
+        "type": "display_language_code",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document_localization",
+        "name": "name",
+        "type": "varchar(140)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document_localization",
+        "name": "download_file_name",
+        "type": "varchar(255)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document_localization",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document_localization",
+        "name": "deleted_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "project_document_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document",
+        "name": "public_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "gen_random_uuid()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document",
+        "name": "project_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document",
+        "name": "created_by_username",
+        "type": "varchar(20)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document",
+        "name": "default_language_code",
+        "type": "display_language_code",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document",
+        "name": "published_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document",
+        "name": "deleted_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document_file",
+        "name": "project_document_file_audience_active_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "project_document_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "audience",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"project_document_file\".\"deleted_at\" is null",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document_file",
+        "name": "project_document_file_deletion_queue_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "project_document_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": "\"project_document_file\".\"deleted_at\" IS NOT NULL AND \"project_document_file\".\"object_deleted_at\" IS NULL",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document_file",
+        "name": "project_document_file_pending_created_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "created_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "project_document_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": "\"project_document_file\".\"status\" = 'pending' AND \"project_document_file\".\"deleted_at\" IS NULL",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document_localization",
+        "name": "project_document_localization_active_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "project_document_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "language_code",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"project_document_localization\".\"deleted_at\" is null",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document",
+        "name": "project_document_project_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "project_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document_file",
+        "name": "project_document_file_project_document_id_project_document_id_f",
+        "nameExplicit": false,
+        "columns": [
+          "project_document_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "project_document",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document_localization",
+        "name": "project_document_localization_project_document_id_project_docum",
+        "nameExplicit": false,
+        "columns": [
+          "project_document_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "project_document",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document",
+        "name": "project_document_project_id_project_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "project_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "project",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document_file",
+        "name": "project_document_file_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document_localization",
+        "name": "project_document_localization_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document",
+        "name": "project_document_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document_file",
+        "name": "project_document_file_object_key_unique",
+        "nameExplicit": false,
+        "columns": [
+          "object_key"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document",
+        "name": "project_document_public_id_unique",
+        "nameExplicit": false,
+        "columns": [
+          "public_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_document_file",
+        "name": "project_document_file_byte_size_check",
+        "value": "\"project_document_file\".\"byte_size\" > 0 AND \"project_document_file\".\"byte_size\" <= 20971520",
+        "entityType": "checks"
+      }
+    }
+  ]
+}

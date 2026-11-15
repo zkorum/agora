@@ -1,0 +1,77 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "3e9dfc59-2d5b-47f8-a12b-14192548fc93",
+  "prevIds": [
+    "813e9bdc-3bee-48d2-976b-3c3a2da8368c"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "ranking_conversation_config",
+        "scoring_invalidation_revision"
+      ],
+      "writes": [
+        "s|col|public.ranking_conversation_config.scoring_invalidation_revision",
+        "n|col|public.ranking_conversation_config.scoring_invalidation_revision",
+        "e|col|public.ranking_conversation_config.scoring_invalidation_revision"
+      ],
+      "reads": [
+        "n|tbl|public.ranking_conversation_config",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "ranking_conversation_config"
+      ],
+      "writes": [
+        "s|ck|public.ranking_conversation_config.ranking_conversation_config_invalidation_revision_check",
+        "n|ck|public.ranking_conversation_config.ranking_conversation_config_invalidation_revision_check",
+        "e|ck|public.ranking_conversation_config.ranking_conversation_config_invalidation_revision_check",
+        "n|con|public.ranking_conversation_config.ranking_conversation_config_invalidation_revision_check"
+      ],
+      "reads": [
+        "n|tbl|public.ranking_conversation_config",
+        "n|sch|public",
+        "n|col|public.ranking_conversation_config.scoring_invalidation_revision",
+        "n|col|public.ranking_conversation_config.scoring_input_revision"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_conversation_config",
+        "name": "scoring_invalidation_revision",
+        "type": "bigint",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "0",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_conversation_config",
+        "name": "ranking_conversation_config_invalidation_revision_check",
+        "value": "\"ranking_conversation_config\".\"scoring_invalidation_revision\" >= 0 AND \"ranking_conversation_config\".\"scoring_invalidation_revision\" <= \"ranking_conversation_config\".\"scoring_input_revision\"",
+        "entityType": "checks"
+      }
+    }
+  ]
+}

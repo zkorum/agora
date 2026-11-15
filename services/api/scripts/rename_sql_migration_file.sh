@@ -18,6 +18,16 @@ if [ "$directory" = "$FLYWAY_DIRECTORY" ]; then
     exit 1
 fi
 
+# Preserve legacy history tooling while routing v1 folders to the pinned bridge.
+v1_pattern='^[0-9]{14}_.+'
+for migration_directory in "$directory"/[0-9]*; do
+    migration_name="$migration_directory"
+    migration_name="${migration_name##*/}"
+    if [[ $migration_name =~ $v1_pattern ]]; then
+        exec node "$service_directory/scripts/copy_drizzle_v1_migrations.mjs" "$directory" "$FLYWAY_DIRECTORY"
+    fi
+done
+
 # Never copy versioned SQL over existing Flyway migrations.
 rsync -av --include "[0-9][0-9][0-9][0-9]_*.sql" --exclude="*" "$directory/" "$FLYWAY_DIRECTORY/"
 

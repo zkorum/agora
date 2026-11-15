@@ -1,0 +1,39 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "ca28f6a4-e037-40aa-b3b2-8a9f805bd0be",
+  "prevIds": [
+    "c7f41b27-4cbb-4f14-825e-183654686269"
+  ],
+  "footprints": [
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "import_method"
+      ],
+      "writes": [
+        "s|colprop|public.conversation.import_method.default"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.conversation.import_method",
+        "n|enum|public.import_method"
+      ],
+      "sqlHash": "736eb90f28dc8cf6"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"conversation\",\"import_method\"]",
+      "set": {
+        "default": null
+      }
+    }
+  ]
+}

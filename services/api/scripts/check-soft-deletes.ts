@@ -35,7 +35,8 @@ type Operation =
     | "Drizzle delete"
     | "SQLAlchemy delete"
     | "Python .delete"
-    | "Historical migration modified";
+    | "Historical migration modified"
+    | "Approved retirement migration modified";
 export interface SourceFinding {
     readonly line: number;
     readonly operation: Operation;
@@ -85,12 +86,29 @@ export async function loadHistoricalMigrationHashes(): Promise<
     return new Map(Object.entries(schema.parse(JSON.parse(source))));
 }
 
+// Explicit approval for permanent deletion of retired event-ticket grants.
+// Pin the entire migration rather than allowing general table/DELETE exceptions.
+export const approvedEntitlementRetirement = {
+    path: "services/api/database/flyway/V0113.1__retire_zupass.sql",
+    sha256: "178bd7ad290f429453a68683ae488f58fa4a5cded6fce9760a1f5b364745b8b8",
+};
+
+export function getApprovedRetirementFinding(
+    source: PolicySource,
+): SourceFinding | undefined {
+    return source.path === approvedEntitlementRetirement.path &&
+        createHash("sha256").update(source.source).digest("hex") ===
+            approvedEntitlementRetirement.sha256
+        ? undefined
+        : { line: 1, operation: "Approved retirement migration modified" };
+}
+
 function hasDeleteResult(type: ts.Type): boolean {
     if (type.isUnionOrIntersection()) return type.types.some(hasDeleteResult);
     const symbol = type.getSymbol();
     return (
         symbol !== undefined &&
-        /^(?:Pg|MySql|SQLite)Delete/.test(symbol.name) &&
+        /^(?:Pg|MySql|SQLite)(?:Async|Sync|Effect)?Delete/.test(symbol.name) &&
         symbol.declarations?.some((declaration) =>
             declaration
                 .getSourceFile()
@@ -419,7 +437,11 @@ export async function checkRepository(): Promise<PolicyFinding[]> {
             ...source,
             path: relative(repositoryRoot, source.path).replaceAll("\\", "/"),
         };
-        if (hashes.has(normalized.path)) {
+        if (normalized.path === approvedEntitlementRetirement.path) {
+            const changed = getApprovedRetirementFinding(normalized);
+            if (changed !== undefined)
+                findings.push({ ...changed, path: source.path });
+        } else if (hashes.has(normalized.path)) {
             const changed = getHistoricalMigrationFinding({
                 source: normalized,
                 hashes,
@@ -446,6 +468,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     if (findings.length > 0) process.exitCode = 1;
     else
         console.info(
-            "Soft-delete policy passed: production database hard deletes are confined to the deletion worker.",
+            "Soft-delete policy passed: migration exceptions are hash-pinned; application hard deletes are confined to the deletion worker.",
         );
 }

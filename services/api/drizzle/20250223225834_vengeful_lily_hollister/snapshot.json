@@ -1,0 +1,170 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "78974b0e-d0e4-465c-af29-f51f74ee6031",
+  "prevIds": [
+    "99123be8-9db8-45f3-9407-cfff9c5ac3f7"
+  ],
+  "footprints": [
+    {
+      "statementType": "drop_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "notification_opinion_vote"
+      ],
+      "writes": [
+        "s|fk|public.notification_opinion_vote.notification_opinion_vote_author_id_user_id_fk",
+        "n|fk|public.notification_opinion_vote.notification_opinion_vote_author_id_user_id_fk",
+        "e|fk|public.notification_opinion_vote.notification_opinion_vote_author_id_user_id_fk",
+        "n|con|public.notification_opinion_vote.notification_opinion_vote_author_id_user_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.notification_opinion_vote",
+        "n|sch|public",
+        "e|col|public.notification_opinion_vote.author_id"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "notification_opinion_vote",
+        "num_votes"
+      ],
+      "writes": [
+        "s|col|public.notification_opinion_vote.num_votes",
+        "n|col|public.notification_opinion_vote.num_votes",
+        "e|col|public.notification_opinion_vote.num_votes"
+      ],
+      "reads": [
+        "n|tbl|public.notification_opinion_vote",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "polis_cluster",
+        "num_users"
+      ],
+      "writes": [
+        "s|col|public.polis_cluster.num_users",
+        "n|col|public.polis_cluster.num_users",
+        "e|col|public.polis_cluster.num_users"
+      ],
+      "reads": [
+        "n|tbl|public.polis_cluster",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "notification_opinion_vote",
+        "author_id"
+      ],
+      "writes": [
+        "s|col|public.notification_opinion_vote.author_id",
+        "n|col|public.notification_opinion_vote.author_id",
+        "e|col|public.notification_opinion_vote.author_id"
+      ],
+      "reads": [
+        "n|tbl|public.notification_opinion_vote",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "notification_opinion_vote",
+        "vote"
+      ],
+      "writes": [
+        "s|col|public.notification_opinion_vote.vote",
+        "n|col|public.notification_opinion_vote.vote",
+        "e|col|public.notification_opinion_vote.vote"
+      ],
+      "reads": [
+        "n|tbl|public.notification_opinion_vote",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "polis_cluster",
+        "numUsers"
+      ],
+      "writes": [
+        "s|col|public.polis_cluster.numUsers",
+        "n|col|public.polis_cluster.numUsers",
+        "e|col|public.polis_cluster.numUsers"
+      ],
+      "reads": [
+        "n|tbl|public.polis_cluster",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_opinion_vote",
+        "name": "num_votes",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "1",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "polis_cluster",
+        "name": "num_users",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"notification_opinion_vote\",\"author_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"notification_opinion_vote\",\"vote\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"polis_cluster\",\"numUsers\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"notification_opinion_vote\",\"notification_opinion_vote_author_id_user_id_fk\"]"
+    }
+  ]
+}

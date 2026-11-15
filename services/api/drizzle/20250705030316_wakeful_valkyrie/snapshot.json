@@ -1,0 +1,47 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "7c0b43f5-b1e8-4315-914d-c25595f98dc4",
+  "prevIds": [
+    "ce4336b5-143b-498b-b2ad-fcf5e6431e5e"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion",
+        "is_seed"
+      ],
+      "writes": [
+        "s|col|public.opinion.is_seed",
+        "n|col|public.opinion.is_seed",
+        "e|col|public.opinion.is_seed"
+      ],
+      "reads": [
+        "n|tbl|public.opinion",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion",
+        "name": "is_seed",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

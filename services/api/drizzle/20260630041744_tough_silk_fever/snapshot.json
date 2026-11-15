@@ -1,0 +1,77 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "a80e2cc6-d151-4842-a6f4-55ff8930e9fb",
+  "prevIds": [
+    "34d6600a-46c5-4cdb-b5df-5d1dbe5302ce"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "conversation_language_settings_source"
+      ],
+      "writes": [
+        "s|enum|public.conversation_language_settings_source",
+        "n|enum|public.conversation_language_settings_source",
+        "e|enum|public.conversation_language_settings_source",
+        "n|type|public.conversation_language_settings_source"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "language_settings_source"
+      ],
+      "writes": [
+        "s|col|public.conversation.language_settings_source",
+        "n|col|public.conversation.language_settings_source",
+        "e|col|public.conversation.language_settings_source"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|enum|public.conversation_language_settings_source"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "conversation_language_settings_source",
+        "values": [
+          "conversation_override",
+          "project_inherited"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "language_settings_source",
+        "type": "conversation_language_settings_source",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'conversation_override'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

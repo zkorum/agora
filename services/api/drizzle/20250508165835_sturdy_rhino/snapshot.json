@@ -1,0 +1,800 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "113a422e-da27-4cb8-9a00-c319cffbdba7",
+  "prevIds": [
+    "583570c0-bb75-458b-a7d2-a9138d58a946"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "followed_topic"
+      ],
+      "writes": [
+        "s|tbl|public.followed_topic",
+        "n|tbl|public.followed_topic",
+        "e|tbl|public.followed_topic",
+        "n|rel|public.followed_topic",
+        "n|type|public.followed_topic",
+        "n|rel|public.followed_topic_pkey",
+        "n|rel|public.followed_topic_unique"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "topic"
+      ],
+      "writes": [
+        "s|tbl|public.topic",
+        "n|tbl|public.topic",
+        "e|tbl|public.topic",
+        "n|rel|public.topic",
+        "n|type|public.topic",
+        "n|rel|public.topic_pkey",
+        "n|rel|public.topic_code_unique",
+        "n|rel|public.topic_name_unique",
+        "n|rel|public.topic_description_unique"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "user_conversation_topic_preference"
+      ],
+      "writes": [
+        "s|tbl|public.user_conversation_topic_preference",
+        "n|tbl|public.user_conversation_topic_preference",
+        "e|tbl|public.user_conversation_topic_preference",
+        "n|rel|public.user_conversation_topic_preference",
+        "n|type|public.user_conversation_topic_preference"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_topic",
+        "conversation_id"
+      ],
+      "writes": [
+        "s|col|public.conversation_topic.conversation_id",
+        "n|col|public.conversation_topic.conversation_id",
+        "e|col|public.conversation_topic.conversation_id"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_topic",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_topic",
+        "topic_id"
+      ],
+      "writes": [
+        "s|col|public.conversation_topic.topic_id",
+        "n|col|public.conversation_topic.topic_id",
+        "e|col|public.conversation_topic.topic_id"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_topic",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_topic",
+        "name"
+      ],
+      "writes": [
+        "s|col|public.conversation_topic.name",
+        "n|col|public.conversation_topic.name",
+        "e|col|public.conversation_topic.name"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_topic",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_topic",
+        "code"
+      ],
+      "writes": [
+        "s|col|public.conversation_topic.code",
+        "n|col|public.conversation_topic.code",
+        "e|col|public.conversation_topic.code"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_topic",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_unique",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_topic"
+      ],
+      "writes": [
+        "s|uq|public.conversation_topic.conversation_topic_unique",
+        "n|uq|public.conversation_topic.conversation_topic_unique",
+        "e|uq|public.conversation_topic.conversation_topic_unique",
+        "n|con|public.conversation_topic.conversation_topic_unique",
+        "n|rel|public.conversation_topic_unique"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_topic",
+        "n|sch|public",
+        "n|col|public.conversation_topic.conversation_id",
+        "n|col|public.conversation_topic.topic_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation_topic",
+        "conversation_topic_index"
+      ],
+      "writes": [
+        "s|idx|public.conversation_topic_index",
+        "n|idx|public.conversation_topic_index",
+        "e|idx|public.conversation_topic_index",
+        "n|rel|public.conversation_topic_index"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_topic",
+        "n|sch|public",
+        "n|col|public.conversation_topic.conversation_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "followed_topic",
+        "followed_topic_index"
+      ],
+      "writes": [
+        "s|idx|public.followed_topic_index",
+        "n|idx|public.followed_topic_index",
+        "e|idx|public.followed_topic_index",
+        "n|rel|public.followed_topic_index"
+      ],
+      "reads": [
+        "n|tbl|public.followed_topic",
+        "n|sch|public",
+        "n|col|public.followed_topic.user_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_topic"
+      ],
+      "writes": [
+        "s|fk|public.conversation_topic.conversation_topic_conversation_id_conversation_id_fk",
+        "n|fk|public.conversation_topic.conversation_topic_conversation_id_conversation_id_fk",
+        "e|fk|public.conversation_topic.conversation_topic_conversation_id_conversation_id_fk",
+        "n|con|public.conversation_topic.conversation_topic_conversation_id_conversation_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_topic",
+        "n|sch|public",
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.conversation_topic.conversation_id",
+        "n|col|public.conversation.id",
+        "e|uniqueness|public.conversation.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_topic"
+      ],
+      "writes": [
+        "s|fk|public.conversation_topic.conversation_topic_topic_id_topic_id_fk",
+        "n|fk|public.conversation_topic.conversation_topic_topic_id_topic_id_fk",
+        "e|fk|public.conversation_topic.conversation_topic_topic_id_topic_id_fk",
+        "n|con|public.conversation_topic.conversation_topic_topic_id_topic_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_topic",
+        "n|sch|public",
+        "n|tbl|public.topic",
+        "n|sch|public",
+        "n|col|public.conversation_topic.topic_id",
+        "n|col|public.topic.id",
+        "e|uniqueness|public.topic.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "followed_topic"
+      ],
+      "writes": [
+        "s|fk|public.followed_topic.followed_topic_user_id_user_id_fk",
+        "n|fk|public.followed_topic.followed_topic_user_id_user_id_fk",
+        "e|fk|public.followed_topic.followed_topic_user_id_user_id_fk",
+        "n|con|public.followed_topic.followed_topic_user_id_user_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.followed_topic",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.followed_topic.user_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "followed_topic"
+      ],
+      "writes": [
+        "s|fk|public.followed_topic.followed_topic_topic_id_topic_id_fk",
+        "n|fk|public.followed_topic.followed_topic_topic_id_topic_id_fk",
+        "e|fk|public.followed_topic.followed_topic_topic_id_topic_id_fk",
+        "n|con|public.followed_topic.followed_topic_topic_id_topic_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.followed_topic",
+        "n|sch|public",
+        "n|tbl|public.topic",
+        "n|sch|public",
+        "n|col|public.followed_topic.topic_id",
+        "n|col|public.topic.id",
+        "e|uniqueness|public.topic.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "followed_topic",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "topic",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_topic",
+        "name": "conversation_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_topic",
+        "name": "topic_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "followed_topic",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "followed_topic_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "followed_topic",
+        "name": "user_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "followed_topic",
+        "name": "topic_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "followed_topic",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "topic",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "topic_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "topic",
+        "name": "code",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "topic",
+        "name": "name",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "topic",
+        "name": "description",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "topic",
+        "name": "score_weight",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "topic",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_topic",
+        "name": "conversation_topic_index",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "conversation_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "followed_topic",
+        "name": "followed_topic_index",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_topic",
+        "name": "conversation_topic_conversation_id_conversation_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "conversation_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conversation",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_topic",
+        "name": "conversation_topic_topic_id_topic_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "topic_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "topic",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "followed_topic",
+        "name": "followed_topic_user_id_user_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "user_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "followed_topic",
+        "name": "followed_topic_topic_id_topic_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "topic_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "topic",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "followed_topic",
+        "name": "followed_topic_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "topic",
+        "name": "topic_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_topic",
+        "name": "conversation_topic_unique",
+        "nameExplicit": true,
+        "columns": [
+          "conversation_id",
+          "topic_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "followed_topic",
+        "name": "followed_topic_unique",
+        "nameExplicit": true,
+        "columns": [
+          "user_id",
+          "topic_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "topic",
+        "name": "topic_code_unique",
+        "nameExplicit": false,
+        "columns": [
+          "code"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "topic",
+        "name": "topic_name_unique",
+        "nameExplicit": false,
+        "columns": [
+          "name"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "topic",
+        "name": "topic_description_unique",
+        "nameExplicit": false,
+        "columns": [
+          "description"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "drop",
+      "key": "tables\u0000[\"public\",\"user_conversation_topic_preference\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_topic\",\"name\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_topic\",\"code\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user_conversation_topic_preference\",\"id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user_conversation_topic_preference\",\"user_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user_conversation_topic_preference\",\"conversation_tag_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user_conversation_topic_preference\",\"created_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"user_idx_topic\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"user_conversation_topic_preference\",\"user_conversation_topic_preference_user_id_user_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"user_conversation_topic_preference\",\"user_conversation_topic_preference_conversation_tag_id_conversa\"]"
+    },
+    {
+      "op": "drop",
+      "key": "pks\u0000[\"public\",\"user_conversation_topic_preference\",\"user_conversation_topic_preference_pkey\"]"
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"user_conversation_topic_preference\",\"user_unique_topic\"]"
+    }
+  ]
+}

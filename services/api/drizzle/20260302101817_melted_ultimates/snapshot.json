@@ -1,0 +1,100 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "11e17b27-f11d-4e01-888e-60e29bba939e",
+  "prevIds": [
+    "7ab50d59-a629-4152-9a7a-7d9a5b7d0c2d"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "participation_mode"
+      ],
+      "writes": [
+        "s|enum|public.participation_mode",
+        "n|enum|public.participation_mode",
+        "e|enum|public.participation_mode",
+        "n|type|public.participation_mode"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "participation_mode"
+      ],
+      "writes": [
+        "s|col|public.conversation.participation_mode",
+        "n|col|public.conversation.participation_mode",
+        "e|col|public.conversation.participation_mode"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|enum|public.participation_mode"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "is_login_required"
+      ],
+      "writes": [
+        "s|col|public.conversation.is_login_required",
+        "n|col|public.conversation.is_login_required",
+        "e|col|public.conversation.is_login_required"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "participation_mode",
+        "values": [
+          "strong_verification",
+          "email_verification",
+          "guest"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "participation_mode",
+        "type": "participation_mode",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'strong_verification'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation\",\"is_login_required\"]"
+    }
+  ]
+}

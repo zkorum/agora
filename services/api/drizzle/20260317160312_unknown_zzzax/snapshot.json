@@ -1,0 +1,1119 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "a6fbce96-4cef-4af2-a2e1-3678f3d69918",
+  "prevIds": [
+    "ed3d7d5e-361d-41c8-a86d-57aad4fe974f"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "external_source_type"
+      ],
+      "writes": [
+        "s|enum|public.external_source_type",
+        "n|enum|public.external_source_type",
+        "e|enum|public.external_source_type",
+        "n|type|public.external_source_type"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "maxdiff_lifecycle_status"
+      ],
+      "writes": [
+        "s|enum|public.maxdiff_lifecycle_status",
+        "n|enum|public.maxdiff_lifecycle_status",
+        "e|enum|public.maxdiff_lifecycle_status",
+        "n|type|public.maxdiff_lifecycle_status"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "maxdiff_item_content"
+      ],
+      "writes": [
+        "s|tbl|public.maxdiff_item_content",
+        "n|tbl|public.maxdiff_item_content",
+        "e|tbl|public.maxdiff_item_content",
+        "n|rel|public.maxdiff_item_content",
+        "n|type|public.maxdiff_item_content",
+        "n|rel|public.maxdiff_item_content_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "maxdiff_item_external_source"
+      ],
+      "writes": [
+        "s|tbl|public.maxdiff_item_external_source",
+        "n|tbl|public.maxdiff_item_external_source",
+        "e|tbl|public.maxdiff_item_external_source",
+        "n|rel|public.maxdiff_item_external_source",
+        "n|type|public.maxdiff_item_external_source",
+        "n|rel|public.maxdiff_item_external_source_pkey",
+        "n|rel|public.maxdiff_item_external_source_maxdiff_item_id_unique"
+      ],
+      "reads": [
+        "n|sch|public",
+        "n|enum|public.external_source_type"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "maxdiff_item"
+      ],
+      "writes": [
+        "s|tbl|public.maxdiff_item",
+        "n|tbl|public.maxdiff_item",
+        "e|tbl|public.maxdiff_item",
+        "n|rel|public.maxdiff_item",
+        "n|type|public.maxdiff_item",
+        "n|rel|public.maxdiff_item_pkey",
+        "n|rel|public.maxdiff_item_slug_id_unique"
+      ],
+      "reads": [
+        "n|sch|public",
+        "n|enum|public.maxdiff_lifecycle_status"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "external_source_config"
+      ],
+      "writes": [
+        "s|col|public.conversation.external_source_config",
+        "n|col|public.conversation.external_source_config",
+        "e|col|public.conversation.external_source_config"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "maxdiff_item_external_source",
+        "maxdiff_external_source_dedup_idx"
+      ],
+      "writes": [
+        "s|idx|public.maxdiff_external_source_dedup_idx",
+        "n|idx|public.maxdiff_external_source_dedup_idx",
+        "e|idx|public.maxdiff_external_source_dedup_idx",
+        "n|rel|public.maxdiff_external_source_dedup_idx"
+      ],
+      "reads": [
+        "n|tbl|public.maxdiff_item_external_source",
+        "n|sch|public",
+        "n|col|public.maxdiff_item_external_source.source_type",
+        "n|col|public.maxdiff_item_external_source.external_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "maxdiff_item",
+        "maxdiff_item_slug_idx"
+      ],
+      "writes": [
+        "s|idx|public.maxdiff_item_slug_idx",
+        "n|idx|public.maxdiff_item_slug_idx",
+        "e|idx|public.maxdiff_item_slug_idx",
+        "n|rel|public.maxdiff_item_slug_idx"
+      ],
+      "reads": [
+        "n|tbl|public.maxdiff_item",
+        "n|sch|public",
+        "n|col|public.maxdiff_item.slug_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "maxdiff_item",
+        "maxdiff_item_conversation_active_idx"
+      ],
+      "writes": [
+        "s|idx|public.maxdiff_item_conversation_active_idx",
+        "n|idx|public.maxdiff_item_conversation_active_idx",
+        "e|idx|public.maxdiff_item_conversation_active_idx",
+        "n|rel|public.maxdiff_item_conversation_active_idx"
+      ],
+      "reads": [
+        "n|tbl|public.maxdiff_item",
+        "n|sch|public",
+        "n|col|public.maxdiff_item.conversation_id",
+        "n|col|public.maxdiff_item.current_content_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "maxdiff_item",
+        "maxdiff_item_lifecycle_idx"
+      ],
+      "writes": [
+        "s|idx|public.maxdiff_item_lifecycle_idx",
+        "n|idx|public.maxdiff_item_lifecycle_idx",
+        "e|idx|public.maxdiff_item_lifecycle_idx",
+        "n|rel|public.maxdiff_item_lifecycle_idx"
+      ],
+      "reads": [
+        "n|tbl|public.maxdiff_item",
+        "n|sch|public",
+        "n|col|public.maxdiff_item.conversation_id",
+        "n|col|public.maxdiff_item.lifecycle_status"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "maxdiff_item_content"
+      ],
+      "writes": [
+        "s|fk|public.maxdiff_item_content.maxdiff_item_content_maxdiff_item_id_maxdiff_item_id_fk",
+        "n|fk|public.maxdiff_item_content.maxdiff_item_content_maxdiff_item_id_maxdiff_item_id_fk",
+        "e|fk|public.maxdiff_item_content.maxdiff_item_content_maxdiff_item_id_maxdiff_item_id_fk",
+        "n|con|public.maxdiff_item_content.maxdiff_item_content_maxdiff_item_id_maxdiff_item_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.maxdiff_item_content",
+        "n|sch|public",
+        "n|tbl|public.maxdiff_item",
+        "n|sch|public",
+        "n|col|public.maxdiff_item_content.maxdiff_item_id",
+        "n|col|public.maxdiff_item.id",
+        "e|uniqueness|public.maxdiff_item.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "maxdiff_item_content"
+      ],
+      "writes": [
+        "s|fk|public.maxdiff_item_content.maxdiff_item_content_conversation_content_id_conversation_conte",
+        "n|fk|public.maxdiff_item_content.maxdiff_item_content_conversation_content_id_conversation_conte",
+        "e|fk|public.maxdiff_item_content.maxdiff_item_content_conversation_content_id_conversation_conte",
+        "n|con|public.maxdiff_item_content.maxdiff_item_content_conversation_content_id_conversation_conte"
+      ],
+      "reads": [
+        "n|tbl|public.maxdiff_item_content",
+        "n|sch|public",
+        "n|tbl|public.conversation_content",
+        "n|sch|public",
+        "n|col|public.maxdiff_item_content.conversation_content_id",
+        "n|col|public.conversation_content.id",
+        "e|uniqueness|public.conversation_content.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "maxdiff_item_external_source"
+      ],
+      "writes": [
+        "s|fk|public.maxdiff_item_external_source.maxdiff_item_external_source_maxdiff_item_id_maxdiff_item_id_fk",
+        "n|fk|public.maxdiff_item_external_source.maxdiff_item_external_source_maxdiff_item_id_maxdiff_item_id_fk",
+        "e|fk|public.maxdiff_item_external_source.maxdiff_item_external_source_maxdiff_item_id_maxdiff_item_id_fk",
+        "n|con|public.maxdiff_item_external_source.maxdiff_item_external_source_maxdiff_item_id_maxdiff_item_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.maxdiff_item_external_source",
+        "n|sch|public",
+        "n|tbl|public.maxdiff_item",
+        "n|sch|public",
+        "n|col|public.maxdiff_item_external_source.maxdiff_item_id",
+        "n|col|public.maxdiff_item.id",
+        "e|uniqueness|public.maxdiff_item.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "maxdiff_item"
+      ],
+      "writes": [
+        "s|fk|public.maxdiff_item.maxdiff_item_author_id_user_id_fk",
+        "n|fk|public.maxdiff_item.maxdiff_item_author_id_user_id_fk",
+        "e|fk|public.maxdiff_item.maxdiff_item_author_id_user_id_fk",
+        "n|con|public.maxdiff_item.maxdiff_item_author_id_user_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.maxdiff_item",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.maxdiff_item.author_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "maxdiff_item"
+      ],
+      "writes": [
+        "s|fk|public.maxdiff_item.maxdiff_item_conversation_id_conversation_id_fk",
+        "n|fk|public.maxdiff_item.maxdiff_item_conversation_id_conversation_id_fk",
+        "e|fk|public.maxdiff_item.maxdiff_item_conversation_id_conversation_id_fk",
+        "n|con|public.maxdiff_item.maxdiff_item_conversation_id_conversation_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.maxdiff_item",
+        "n|sch|public",
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.maxdiff_item.conversation_id",
+        "n|col|public.conversation.id",
+        "e|uniqueness|public.conversation.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "maxdiff_item_content",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "maxdiff_item_external_source",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "maxdiff_item",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "external_source_type",
+        "values": [
+          "github_issue"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "maxdiff_lifecycle_status",
+        "values": [
+          "active",
+          "completed",
+          "in_progress",
+          "canceled"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "external_source_config",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item_content",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "maxdiff_item_content_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item_content",
+        "name": "maxdiff_item_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item_content",
+        "name": "conversation_content_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item_content",
+        "name": "title",
+        "type": "varchar(200)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item_content",
+        "name": "body",
+        "type": "varchar(3000)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item_content",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item_external_source",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "maxdiff_item_external_source_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item_external_source",
+        "name": "maxdiff_item_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item_external_source",
+        "name": "source_type",
+        "type": "external_source_type",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item_external_source",
+        "name": "external_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item_external_source",
+        "name": "external_url",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item_external_source",
+        "name": "external_metadata",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item_external_source",
+        "name": "last_synced_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item_external_source",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "maxdiff_item_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item",
+        "name": "slug_id",
+        "type": "varchar(8)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item",
+        "name": "author_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item",
+        "name": "conversation_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item",
+        "name": "current_content_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item",
+        "name": "is_seed",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item",
+        "name": "lifecycle_status",
+        "type": "maxdiff_lifecycle_status",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'active'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item",
+        "name": "snapshot_score",
+        "type": "real",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item",
+        "name": "snapshot_rank",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item",
+        "name": "snapshot_participant_count",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item",
+        "name": "updated_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item_external_source",
+        "name": "maxdiff_external_source_dedup_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "source_type",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "external_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item",
+        "name": "maxdiff_item_slug_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "slug_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item",
+        "name": "maxdiff_item_conversation_active_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "conversation_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "current_content_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item",
+        "name": "maxdiff_item_lifecycle_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "conversation_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "lifecycle_status",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item_content",
+        "name": "maxdiff_item_content_maxdiff_item_id_maxdiff_item_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "maxdiff_item_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "maxdiff_item",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item_content",
+        "name": "maxdiff_item_content_conversation_content_id_conversation_conte",
+        "nameExplicit": false,
+        "columns": [
+          "conversation_content_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conversation_content",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item_external_source",
+        "name": "maxdiff_item_external_source_maxdiff_item_id_maxdiff_item_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "maxdiff_item_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "maxdiff_item",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item",
+        "name": "maxdiff_item_author_id_user_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "author_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item",
+        "name": "maxdiff_item_conversation_id_conversation_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "conversation_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conversation",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item_content",
+        "name": "maxdiff_item_content_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item_external_source",
+        "name": "maxdiff_item_external_source_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item",
+        "name": "maxdiff_item_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item_external_source",
+        "name": "maxdiff_item_external_source_maxdiff_item_id_unique",
+        "nameExplicit": false,
+        "columns": [
+          "maxdiff_item_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_item",
+        "name": "maxdiff_item_slug_id_unique",
+        "nameExplicit": false,
+        "columns": [
+          "slug_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    }
+  ]
+}

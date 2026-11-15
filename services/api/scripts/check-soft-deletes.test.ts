@@ -4,6 +4,8 @@ import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import {
     getHistoricalMigrationFinding,
+    getApprovedRetirementFinding,
+    approvedEntitlementRetirement,
     inspectPython,
     inspectTypeScript,
     isProductionSource,
@@ -45,6 +47,38 @@ function analyzeTypeScript(source: string): SourceFinding[] {
 }
 
 describe("database hard-delete source policy", () => {
+    it("pins only the explicitly approved entitlement retirement migration", async () => {
+        const source = await readFile(
+            new URL(
+                "../database/flyway/V0113.1__retire_zupass.sql",
+                import.meta.url,
+            ),
+            "utf8",
+        );
+        const migration = { path: approvedEntitlementRetirement.path, source };
+        expect(inspectSql(source).map((finding) => finding.operation)).toEqual([
+            "SQL DELETE",
+        ]);
+        expect(getApprovedRetirementFinding(migration)).toBeUndefined();
+        expect(
+            getApprovedRetirementFinding({
+                ...migration,
+                path: "services/api/database/flyway/V0112.2__unapproved.sql",
+            }),
+        ).toEqual({
+            line: 1,
+            operation: "Approved retirement migration modified",
+        });
+        expect(
+            getApprovedRetirementFinding({
+                ...migration,
+                source: `${source}\nDELETE FROM conversation;`,
+            }),
+        ).toEqual({
+            line: 1,
+            operation: "Approved retirement migration modified",
+        });
+    });
     it("detects real Drizzle deletes and method aliases while allowing updates and collections keyed by tables", () => {
         expect(
             analyzeTypeScript(`

@@ -1,0 +1,278 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "55ac121e-8b1f-4839-bf05-87dfdcf45bb0",
+  "prevIds": [
+    "680f6df2-8d6e-4dd6-b26d-bd9d40114fa6"
+  ],
+  "footprints": [
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "notification_export",
+        "notification_export_notification_idx"
+      ],
+      "writes": [
+        "s|idx|public.notification_export_notification_idx",
+        "n|idx|public.notification_export_notification_idx",
+        "e|idx|public.notification_export_notification_idx",
+        "n|rel|public.notification_export_notification_idx"
+      ],
+      "reads": [
+        "e|tbl|public.notification_export",
+        "n|sch|public",
+        "e|col|public.notification_export.notification_id"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "notification_import",
+        "notification_import_notification_idx"
+      ],
+      "writes": [
+        "s|idx|public.notification_import_notification_idx",
+        "n|idx|public.notification_import_notification_idx",
+        "e|idx|public.notification_import_notification_idx",
+        "n|rel|public.notification_import_notification_idx"
+      ],
+      "reads": [
+        "e|tbl|public.notification_import",
+        "n|sch|public",
+        "e|col|public.notification_import.notification_id"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "notification_new_opinion",
+        "notification_new_opinion_notification_idx"
+      ],
+      "writes": [
+        "s|idx|public.notification_new_opinion_notification_idx",
+        "n|idx|public.notification_new_opinion_notification_idx",
+        "e|idx|public.notification_new_opinion_notification_idx",
+        "n|rel|public.notification_new_opinion_notification_idx"
+      ],
+      "reads": [
+        "e|tbl|public.notification_new_opinion",
+        "n|sch|public",
+        "e|col|public.notification_new_opinion.notification_id"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "notification_opinion_vote",
+        "notification_opinion_vote_notification_idx"
+      ],
+      "writes": [
+        "s|idx|public.notification_opinion_vote_notification_idx",
+        "n|idx|public.notification_opinion_vote_notification_idx",
+        "e|idx|public.notification_opinion_vote_notification_idx",
+        "n|rel|public.notification_opinion_vote_notification_idx"
+      ],
+      "reads": [
+        "e|tbl|public.notification_opinion_vote",
+        "n|sch|public",
+        "e|col|public.notification_opinion_vote.notification_id"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "add_unique",
+      "statementTarget": [
+        "table",
+        "public",
+        "notification_export"
+      ],
+      "writes": [
+        "s|uq|public.notification_export.notification_export_notification_unique",
+        "n|uq|public.notification_export.notification_export_notification_unique",
+        "e|uq|public.notification_export.notification_export_notification_unique",
+        "n|con|public.notification_export.notification_export_notification_unique",
+        "n|rel|public.notification_export_notification_unique"
+      ],
+      "reads": [
+        "n|tbl|public.notification_export",
+        "n|sch|public",
+        "n|col|public.notification_export.notification_id"
+      ]
+    },
+    {
+      "statementType": "add_unique",
+      "statementTarget": [
+        "table",
+        "public",
+        "notification_import"
+      ],
+      "writes": [
+        "s|uq|public.notification_import.notification_import_notification_unique",
+        "n|uq|public.notification_import.notification_import_notification_unique",
+        "e|uq|public.notification_import.notification_import_notification_unique",
+        "n|con|public.notification_import.notification_import_notification_unique",
+        "n|rel|public.notification_import_notification_unique"
+      ],
+      "reads": [
+        "n|tbl|public.notification_import",
+        "n|sch|public",
+        "n|col|public.notification_import.notification_id"
+      ]
+    },
+    {
+      "statementType": "add_unique",
+      "statementTarget": [
+        "table",
+        "public",
+        "notification_new_opinion"
+      ],
+      "writes": [
+        "s|uq|public.notification_new_opinion.notification_new_opinion_notification_unique",
+        "n|uq|public.notification_new_opinion.notification_new_opinion_notification_unique",
+        "e|uq|public.notification_new_opinion.notification_new_opinion_notification_unique",
+        "n|con|public.notification_new_opinion.notification_new_opinion_notification_unique",
+        "n|rel|public.notification_new_opinion_notification_unique"
+      ],
+      "reads": [
+        "n|tbl|public.notification_new_opinion",
+        "n|sch|public",
+        "n|col|public.notification_new_opinion.notification_id"
+      ]
+    },
+    {
+      "statementType": "add_unique",
+      "statementTarget": [
+        "table",
+        "public",
+        "notification_opinion_vote"
+      ],
+      "writes": [
+        "s|uq|public.notification_opinion_vote.notification_opinion_vote_notification_unique",
+        "n|uq|public.notification_opinion_vote.notification_opinion_vote_notification_unique",
+        "e|uq|public.notification_opinion_vote.notification_opinion_vote_notification_unique",
+        "n|con|public.notification_opinion_vote.notification_opinion_vote_notification_unique",
+        "n|rel|public.notification_opinion_vote_notification_unique"
+      ],
+      "reads": [
+        "n|tbl|public.notification_opinion_vote",
+        "n|sch|public",
+        "n|col|public.notification_opinion_vote.notification_id"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "notification_opinion_vote"
+      ],
+      "writes": [
+        "s|ck|public.notification_opinion_vote.notification_opinion_vote_positive_count",
+        "n|ck|public.notification_opinion_vote.notification_opinion_vote_positive_count",
+        "e|ck|public.notification_opinion_vote.notification_opinion_vote_positive_count",
+        "n|con|public.notification_opinion_vote.notification_opinion_vote_positive_count"
+      ],
+      "reads": [
+        "n|tbl|public.notification_opinion_vote",
+        "n|sch|public",
+        "n|col|public.notification_opinion_vote.num_votes"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_export",
+        "name": "notification_export_notification_unique",
+        "nameExplicit": true,
+        "columns": [
+          "notification_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_import",
+        "name": "notification_import_notification_unique",
+        "nameExplicit": true,
+        "columns": [
+          "notification_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_new_opinion",
+        "name": "notification_new_opinion_notification_unique",
+        "nameExplicit": true,
+        "columns": [
+          "notification_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_opinion_vote",
+        "name": "notification_opinion_vote_notification_unique",
+        "nameExplicit": true,
+        "columns": [
+          "notification_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_opinion_vote",
+        "name": "notification_opinion_vote_positive_count",
+        "value": "\"notification_opinion_vote\".\"num_votes\" >= 1",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"notification_export_notification_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"notification_import_notification_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"notification_new_opinion_notification_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"notification_opinion_vote_notification_idx\"]"
+    }
+  ]
+}

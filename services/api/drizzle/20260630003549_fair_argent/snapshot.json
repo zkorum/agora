@@ -1,0 +1,456 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "41b8b692-9e0d-47c7-80b0-c327be179e17",
+  "prevIds": [
+    "a02e9d84-e1b4-4c7f-bc93-c4d8f9ff9df3"
+  ],
+  "footprints": [
+    {
+      "statementType": "drop_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_translation_target_language"
+      ],
+      "writes": [
+        "s|fk|public.conversation_translation_target_language.conversation_translation_target_language_translation_setting_id",
+        "n|fk|public.conversation_translation_target_language.conversation_translation_target_language_translation_setting_id",
+        "e|fk|public.conversation_translation_target_language.conversation_translation_target_language_translation_setting_id",
+        "n|con|public.conversation_translation_target_language.conversation_translation_target_language_translation_setting_id"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_translation_target_language",
+        "n|sch|public",
+        "e|col|public.conversation_translation_target_language.translation_setting_id"
+      ]
+    },
+    {
+      "statementType": "drop_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "user_display_language"
+      ],
+      "writes": [
+        "s|tbl|public.user_display_language",
+        "n|tbl|public.user_display_language",
+        "e|tbl|public.user_display_language",
+        "n|rel|public.user_display_language",
+        "n|type|public.user_display_language"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_language_setting"
+      ],
+      "writes": [
+        "s|tbl|public.conversation_language_setting",
+        "n|tbl|public.conversation_language_setting",
+        "e|tbl|public.conversation_language_setting",
+        "n|rel|public.conversation_language_setting",
+        "n|type|public.conversation_language_setting"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_translation_setting"
+      ],
+      "writes": [
+        "s|tbl|public.conversation_translation_setting",
+        "n|tbl|public.conversation_translation_setting",
+        "e|tbl|public.conversation_translation_setting",
+        "n|rel|public.conversation_translation_setting",
+        "n|type|public.conversation_translation_setting"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_language_setting"
+      ],
+      "writes": [
+        "s|tbl|public.project_language_setting",
+        "n|tbl|public.project_language_setting",
+        "e|tbl|public.project_language_setting",
+        "n|rel|public.project_language_setting",
+        "n|type|public.project_language_setting"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation_translation_target_language",
+        "conversation_translation_target_language_legacy_active_unique"
+      ],
+      "writes": [
+        "s|idx|public.conversation_translation_target_language_legacy_active_unique",
+        "n|idx|public.conversation_translation_target_language_legacy_active_unique",
+        "e|idx|public.conversation_translation_target_language_legacy_active_unique",
+        "n|rel|public.conversation_translation_target_language_legacy_active_unique"
+      ],
+      "reads": [
+        "e|tbl|public.conversation_translation_target_language",
+        "n|sch|public",
+        "e|col|public.conversation_translation_target_language.translation_setting_id",
+        "e|col|public.conversation_translation_target_language.language_code"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_translation_target_language",
+        "translation_setting_id"
+      ],
+      "writes": [
+        "s|col|public.conversation_translation_target_language.translation_setting_id",
+        "n|col|public.conversation_translation_target_language.translation_setting_id",
+        "e|col|public.conversation_translation_target_language.translation_setting_id"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_translation_target_language",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_translation_target_language",
+        "conversation_id"
+      ],
+      "writes": [
+        "s|colprop|public.conversation_translation_target_language.conversation_id.notNull"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_translation_target_language",
+        "n|sch|public",
+        "n|col|public.conversation_translation_target_language.conversation_id"
+      ],
+      "sqlHash": "727ebd19a22440c2"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "organization",
+        "default_language_code"
+      ],
+      "writes": [
+        "s|colprop|public.organization.default_language_code.notNull"
+      ],
+      "reads": [
+        "n|tbl|public.organization",
+        "n|sch|public",
+        "n|col|public.organization.default_language_code"
+      ],
+      "sqlHash": "c75aeeb6ddb12b7c"
+    },
+    {
+      "statementType": "drop_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "conversation_language_setting_mode"
+      ],
+      "writes": [
+        "s|enum|public.conversation_language_setting_mode",
+        "n|enum|public.conversation_language_setting_mode",
+        "e|enum|public.conversation_language_setting_mode",
+        "n|type|public.conversation_language_setting_mode"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "project_language_setting_mode"
+      ],
+      "writes": [
+        "s|enum|public.project_language_setting_mode",
+        "n|enum|public.project_language_setting_mode",
+        "e|enum|public.project_language_setting_mode",
+        "n|type|public.project_language_setting_mode"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "drop",
+      "key": "tables\u0000[\"public\",\"user_display_language\"]"
+    },
+    {
+      "op": "drop",
+      "key": "tables\u0000[\"public\",\"conversation_language_setting\"]"
+    },
+    {
+      "op": "drop",
+      "key": "tables\u0000[\"public\",\"conversation_translation_setting\"]"
+    },
+    {
+      "op": "drop",
+      "key": "tables\u0000[\"public\",\"project_language_setting\"]"
+    },
+    {
+      "op": "drop",
+      "key": "enums\u0000[\"public\",\"conversation_language_setting_mode\"]"
+    },
+    {
+      "op": "drop",
+      "key": "enums\u0000[\"public\",\"project_language_setting_mode\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user_display_language\",\"id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user_display_language\",\"user_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user_display_language\",\"language_code\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user_display_language\",\"is_deleted\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user_display_language\",\"deleted_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user_display_language\",\"created_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_language_setting\",\"id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_language_setting\",\"conversation_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_language_setting\",\"mode\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_language_setting\",\"language_code\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_language_setting\",\"detected_language_code\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_language_setting\",\"detected_source_language_code\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_language_setting\",\"detected_raw_language_code\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_language_setting\",\"detected_raw_language_provider\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_language_setting\",\"detection_confidence\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_language_setting\",\"detected_from_corpus_hash\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_language_setting\",\"auto_detection_retryable\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_language_setting\",\"created_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_language_setting\",\"updated_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_translation_setting\",\"id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_translation_setting\",\"conversation_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_translation_setting\",\"dynamic_translation_enabled\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_translation_setting\",\"created_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_translation_setting\",\"updated_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_translation_target_language\",\"translation_setting_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_language_setting\",\"dynamic_translation_enabled\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"project_language_setting\",\"id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"project_language_setting\",\"project_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"project_language_setting\",\"mode\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"project_language_setting\",\"language_code\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"project_language_setting\",\"dynamic_translation_enabled\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"project_language_setting\",\"created_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"project_language_setting\",\"updated_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"user_display_language_active_user_unique\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"conversation_translation_target_language_legacy_active_unique\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"user_display_language\",\"user_display_language_user_id_user_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"conversation_language_setting\",\"conversation_language_setting_conversation_id_conversation_id_f\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"conversation_translation_setting\",\"conversation_translation_setting_conversation_id_conversation_i\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"conversation_translation_target_language\",\"conversation_translation_target_language_translation_setting_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"project_language_setting\",\"project_language_setting_project_id_project_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "pks\u0000[\"public\",\"user_display_language\",\"user_display_language_pkey\"]"
+    },
+    {
+      "op": "drop",
+      "key": "pks\u0000[\"public\",\"conversation_language_setting\",\"conversation_language_setting_pkey\"]"
+    },
+    {
+      "op": "drop",
+      "key": "pks\u0000[\"public\",\"conversation_translation_setting\",\"conversation_translation_setting_pkey\"]"
+    },
+    {
+      "op": "drop",
+      "key": "pks\u0000[\"public\",\"project_language_setting\",\"project_language_setting_pkey\"]"
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"user_display_language\",\"user_display_language_unique\"]"
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"conversation_language_setting\",\"conversation_language_setting_conversation_unique\"]"
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"conversation_translation_setting\",\"conversation_translation_setting_conversation_unique\"]"
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"project_language_setting\",\"project_language_setting_project_unique\"]"
+    },
+    {
+      "op": "drop",
+      "key": "checks\u0000[\"public\",\"conversation_language_setting\",\"conversation_language_setting_manual_language_check\"]"
+    },
+    {
+      "op": "drop",
+      "key": "checks\u0000[\"public\",\"conversation_language_setting\",\"conversation_language_setting_detected_raw_provider_check\"]"
+    },
+    {
+      "op": "drop",
+      "key": "checks\u0000[\"public\",\"project_language_setting\",\"project_language_setting_manual_language_check\"]"
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"conversation_translation_target_language\",\"conversation_id\"]",
+      "set": {
+        "notNull": true
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"organization\",\"default_language_code\"]",
+      "set": {
+        "notNull": true
+      }
+    }
+  ]
+}

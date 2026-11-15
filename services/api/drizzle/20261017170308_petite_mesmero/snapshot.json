@@ -1,0 +1,38 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "3153193d-84fc-4d8e-bf7a-d9371827e664",
+  "prevIds": [
+    "c3a6626f-5744-439b-99c2-e686c5d0fd62"
+  ],
+  "footprints": [
+    {
+      "statementType": "alter_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "survey_answer_option"
+      ],
+      "writes": [
+        "s|ck|public.survey_answer_option.survey_answer_option_html_byte_length_check"
+      ],
+      "reads": [
+        "n|tbl|public.survey_answer_option",
+        "n|sch|public",
+        "n|col|public.survey_answer_option.text_value_html",
+        "e|col|public.survey_answer_option.text_value_html"
+      ],
+      "sqlHash": "613e1c44ee91bd47"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "alter",
+      "key": "checks\u0000[\"public\",\"survey_answer_option\",\"survey_answer_option_html_byte_length_check\"]",
+      "set": {
+        "value": "octet_length(\"survey_answer_option\".\"text_value_html\") <= 81927"
+      }
+    }
+  ]
+}

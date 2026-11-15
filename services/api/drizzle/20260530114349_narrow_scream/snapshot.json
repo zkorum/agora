@@ -1,0 +1,114 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "724431e8-3f2d-419b-b80a-fbc221e4310d",
+  "prevIds": [
+    "4f1613c9-eb20-4f28-8e7a-40ed56700354"
+  ],
+  "footprints": [
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "notification",
+        "user_idx_notification"
+      ],
+      "writes": [
+        "s|idx|public.user_idx_notification",
+        "n|idx|public.user_idx_notification",
+        "e|idx|public.user_idx_notification",
+        "n|rel|public.user_idx_notification"
+      ],
+      "reads": [
+        "e|tbl|public.notification",
+        "n|sch|public",
+        "e|col|public.notification.user_id"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "notification",
+        "notification_createdAt_idx"
+      ],
+      "writes": [
+        "s|idx|public.notification_createdAt_idx",
+        "n|idx|public.notification_createdAt_idx",
+        "e|idx|public.notification_createdAt_idx",
+        "n|rel|public.notification_createdAt_idx"
+      ],
+      "reads": [
+        "e|tbl|public.notification",
+        "n|sch|public",
+        "e|col|public.notification.created_at"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "realtime_event_outbox",
+        "realtime_event_outbox_conversation_replay_idx"
+      ],
+      "writes": [
+        "s|idx|public.realtime_event_outbox_conversation_replay_idx",
+        "n|idx|public.realtime_event_outbox_conversation_replay_idx",
+        "e|idx|public.realtime_event_outbox_conversation_replay_idx",
+        "n|rel|public.realtime_event_outbox_conversation_replay_idx"
+      ],
+      "reads": [
+        "n|tbl|public.realtime_event_outbox",
+        "n|sch|public",
+        "n|col|public.realtime_event_outbox.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "realtime_event_outbox",
+        "name": "realtime_event_outbox_conversation_replay_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "(\"payload\"->>'conversationSlugId')",
+            "isExpression": true,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": "\"realtime_event_outbox\".\"event_type\" IN ('conversation_analysis_updated', 'conversation_settings_updated')",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"user_idx_notification\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"notification_createdAt_idx\"]"
+    }
+  ]
+}

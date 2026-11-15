@@ -1,0 +1,133 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "6b6d58a8-3179-4c3e-b91b-c299bb5c8fe5",
+  "prevIds": [
+    "724431e8-3f2d-419b-b80a-fbc221e4310d"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "opinion_group_description_translation_work",
+        "opinion_group_description_translation_work_claim_idx"
+      ],
+      "writes": [
+        "s|idx|public.opinion_group_description_translation_work_claim_idx",
+        "n|idx|public.opinion_group_description_translation_work_claim_idx",
+        "e|idx|public.opinion_group_description_translation_work_claim_idx",
+        "n|rel|public.opinion_group_description_translation_work_claim_idx"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_group_description_translation_work",
+        "n|sch|public",
+        "n|col|public.opinion_group_description_translation_work.conversation_id",
+        "n|col|public.opinion_group_description_translation_work.next_run_at",
+        "n|col|public.opinion_group_description_translation_work.id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "opinion_group_lineage_description_work",
+        "opinion_group_lineage_description_work_claim_idx"
+      ],
+      "writes": [
+        "s|idx|public.opinion_group_lineage_description_work_claim_idx",
+        "n|idx|public.opinion_group_lineage_description_work_claim_idx",
+        "e|idx|public.opinion_group_lineage_description_work_claim_idx",
+        "n|rel|public.opinion_group_lineage_description_work_claim_idx"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_group_lineage_description_work",
+        "n|sch|public",
+        "n|col|public.opinion_group_lineage_description_work.conversation_id",
+        "n|col|public.opinion_group_lineage_description_work.next_run_at",
+        "n|col|public.opinion_group_lineage_description_work.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_group_description_translation_work",
+        "name": "opinion_group_description_translation_work_claim_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "conversation_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "next_run_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": "(\"opinion_group_description_translation_work\".\"lease_token\" is null AND \"opinion_group_description_translation_work\".\"next_run_at\" is not null)",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_group_lineage_description_work",
+        "name": "opinion_group_lineage_description_work_claim_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "conversation_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "next_run_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": "(\"opinion_group_lineage_description_work\".\"lease_token\" is null AND \"opinion_group_lineage_description_work\".\"next_run_at\" is not null)",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    }
+  ]
+}
