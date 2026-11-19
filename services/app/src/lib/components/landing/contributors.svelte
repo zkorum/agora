@@ -21,7 +21,7 @@
     { name: "François Taddei", role: m.contributors_partner },
     { name: "Christophe Gautier", role: m.contributors_partner },
     { name: "Michael Backlund", role: m.contributors_partner },
-    { name: "Boris Mann", role: m.contributors_advisor },
+    { name: "Boris Mann", role: m.contributors_mentor },
   ];
 </script>
 
