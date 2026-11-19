@@ -1,8 +1,10 @@
 import type { HandleClientError } from "@sveltejs/kit";
 
+import { sentryEnabled } from "$lib/sentry-enabled";
 import { recoverFromDynamicImportError } from "$logic/shared/dynamic-import-error";
 
 const isProduction =
+  sentryEnabled &&
   typeof window !== "undefined" &&
   !["localhost", "127.0.0.1"].includes(window.location.hostname) &&
   !window.location.hostname.includes("staging") &&

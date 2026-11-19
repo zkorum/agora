@@ -12,7 +12,7 @@ image: "/images/resources/ethprague-broad-listening.jpg"
 
 核心观点很简单：最困难的问题不是智能，而是 **协调**。从气候变化，到疫情应对，再到 AI 治理，我们面临的许多重大挑战并不是缺少想法，而是协调失败。
 
-这场演讲介绍了 **[Broad Listening](https://www.agoracitizen.network/resources/broadcasting-to-broadlistening)**，它是一种从共同注意力走向共同决策的方法。
+这场演讲介绍了 **Broad Listening**，它是一种从共同注意力走向共同决策的方法。
 
 ## 关键主题
 

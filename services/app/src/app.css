@@ -272,6 +272,30 @@
   --tw-prose-captions: var(--secondary-foreground);
 }
 
+.resource-comparison {
+  @apply grid gap-3 sm:grid-cols-2;
+}
+
+.resource-comparison-card {
+  @apply rounded-2xl bg-primary-lightest p-4 text-center text-ink-base;
+
+  &.resource-comparison-card--sky {
+    @apply bg-sky-lightest;
+  }
+
+  img {
+    @apply mx-auto mt-0 mb-3 rounded-xl bg-primary-dark p-2;
+  }
+
+  strong {
+    @apply block;
+  }
+
+  span {
+    @apply block text-sm;
+  }
+}
+
 /* ========================================
  * CSS GRADIENT UTILITIES
  * Defined with @utility so Tailwind + ESLint recognize them

@@ -12,7 +12,7 @@ ETHPragueで、Yuting JiangはAgora Citizen Networkを、複雑で分断を生�
 
 中心となる主張はシンプルです。最も難しい問題は知能ではありません。**協調**です。気候変動、パンデミック対応、AIガバナンスに至るまで、私たちが直面する大きな課題の多くは、アイデア不足ではなく協調の失敗です。
 
-このトークでは、共有された注意を共有された意思決定へ移す方法として、**[Broad Listening](https://www.agoracitizen.network/resources/broadcasting-to-broadlistening)**を紹介しています。
+このトークでは、共有された注意を共有された意思決定へ移す方法として、**Broad Listening**を紹介しています。
 
 ## 主なテーマ
 

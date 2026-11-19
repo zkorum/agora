@@ -43,11 +43,13 @@ Each locale folder mirrors the same set of slugs. The slug is derived from the f
    ---
    title: "Post Title"
    description: "Brief description"
-   author: "Author Name"
-   date: "2026-02-01"
-   thumbnail: "/images/my-thumbnail.png"
-   ---
+    author: "Author Name"
+    date: "2026-02-01"
+    type: "case-study"
+    thumbnail: "/images/my-thumbnail.png"
+    ---
    ```
+   `type` must be `case-study`, `guide`, `tech` or `vision`. `image` can override the thumbnail for social previews.
 3. Write Markdown content below the frontmatter (raw HTML is supported)
 4. Place referenced images in `static/images/`
 5. To translate, create the same filename under other locale folders

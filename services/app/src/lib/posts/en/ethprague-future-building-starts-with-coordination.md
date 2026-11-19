@@ -12,7 +12,7 @@ At ETHPrague, Yuting Jiang presented Agora Citizen Network as an open-source del
 
 The core claim is simple: the hardest problem is not intelligence. It is **coordination**. From climate change to pandemic response to AI governance, many of our biggest challenges are not caused by a lack of ideas. They are coordination failures.
 
-This talk introduces **[Broad Listening](https://www.agoracitizen.network/resources/broadcasting-to-broadlistening)** as a way to move from shared attention to shared decisions.
+This talk introduces **Broad Listening** as a way to move from shared attention to shared decisions.
 
 ## Key Themes
 

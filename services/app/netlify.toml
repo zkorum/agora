@@ -6,6 +6,9 @@ ignore = 'if [ "$CONTEXT" = "production" ]; then git diff --quiet "$COMMIT_REF^"
 [build.environment]
 NODE_VERSION = "26.13.1"
 
+[context.production.environment]
+VITE_SENTRY_ENABLED = "true"
+
 # Preserve old blog URLs after resources replaced the blog section.
 [[redirects]]
 from = "/blog"

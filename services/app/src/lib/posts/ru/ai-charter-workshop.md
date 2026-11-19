@@ -2,7 +2,7 @@
 title: "Могут ли 30 человек за день согласовать правила использования ИИ?"
 description: "Как Leviathan, стартап в сфере глубоких технологий с командой из 30 человек, за один день с помощью фасилитатора и Agora совместно разработал хартию использования ИИ и определил приоритеты."
 author: "Команда Agora"
-date: "2026-09-01"
+date: "2026-09-23"
 type: "case-study"
 thumbnail: "/images/resources/ai-charter-workshop.webp"
 image: "/images/resources/ai-charter-workshop.webp"

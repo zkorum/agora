@@ -4,7 +4,9 @@ import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
 import { getFaqContent } from "$components/landing/faq-content";
-import { locales } from "$lib/paraglide/runtime";
+import { baseLocale, locales } from "$lib/paraglide/runtime";
+
+import { getResourcePosts } from "./resources";
 
 const messages = new Map(
   Object.entries(
@@ -22,6 +24,7 @@ const englishMessages = messages.get("/messages/en.json") ?? {};
 const englishPostPaths = Object.keys(posts).filter((path) =>
   path.startsWith("/src/lib/posts/en/"),
 );
+const translatedLocales = locales.filter((locale) => locale !== baseLocale);
 
 describe("landing localization", () => {
   it("supports the Quasar app's display languages", () => {
@@ -97,7 +100,24 @@ describe("landing localization", () => {
     },
   );
 
-  it.each(locales.filter((locale) => locale !== "en"))(
+  it.each(translatedLocales)(
+    "keeps resource categories and dates consistent in %s",
+    (locale) => {
+      const translatedPosts = new Map(
+        getResourcePosts({ locale }).map(({ slug, type, date }) => [
+          slug,
+          { type, date },
+        ]),
+      );
+      for (const { slug, type, date } of getResourcePosts({
+        locale: baseLocale,
+      })) {
+        expect(translatedPosts.get(slug), slug).toEqual({ type, date });
+      }
+    },
+  );
+
+  it.each(translatedLocales)(
     "does not leave English paragraphs in %s posts",
     (locale) => {
       for (const englishPath of englishPostPaths) {

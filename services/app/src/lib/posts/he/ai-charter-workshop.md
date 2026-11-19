@@ -2,7 +2,7 @@
 title: "האם 30 אנשים יכולים להסכים על כללי בינה מלאכותית ביום אחד?"
 description: "איך Leviathan, סטארטאפ דיפ-טק של 30 עובדים, השתמש ב-Agora כדי לנסח יחד אמנת שימוש בבינה מלאכותית ולתעדף אותה ביום אחד של סדנה מונחית."
 author: "צוות Agora"
-date: "2026-09-01"
+date: "2026-09-23"
 type: "case-study"
 thumbnail: "/images/resources/ai-charter-workshop.webp"
 image: "/images/resources/ai-charter-workshop.webp"
