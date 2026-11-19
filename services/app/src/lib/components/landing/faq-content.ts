@@ -79,7 +79,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "Is AI deciding the results?",
             answer:
-              "No. The opinion groups and common-ground signals come from deterministic voting-pattern analysis, not from generative AI. After the opinion grouping step, Agora uses Mistral Large to label and summarize the representative opinions of each group, but those summaries are only an aid for reading the results. The source statements remain visible under each group, and AI summaries can be turned off by conversation owners.",
+              "No. Agora identifies opinion groups and finds common ground through deterministic analysis of voting patterns, not generative AI. Once the groups are identified, Mistral Large draws on the statements that best represent each group to give it a name and summarize its views. The names and summaries help explain the results; they don’t determine them. The original statements remain visible under each group, and conversation owners can turn off AI summaries.",
           },
           {
             question: "How does Prioritization Mode work?",
@@ -178,7 +178,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "L'IA décide-t-elle des résultats ?",
             answer:
-              "Non. Les groupes d'opinion et les signaux de terrain d'entente viennent d'une analyse déterministe des schémas de vote, pas de l'IA générative. Après l'étape de regroupement, Agora utilise Mistral Large pour nommer et résumer les opinions représentatives de chaque groupe, mais ces résumés servent seulement d'aide à la lecture des résultats. Les propositions sources restent visibles sous chaque groupe, et les propriétaires de conversation peuvent désactiver les résumés par IA.",
+              "Non. Agora identifie les groupes d’opinion et fait ressortir le terrain d’entente grâce à une analyse déterministe des schémas de vote, sans IA générative. Ce n’est qu’ensuite que Mistral Large s’appuie sur les propositions les plus représentatives de chaque groupe pour lui donner un nom et résumer ses points de vue. Ces noms et résumés aident à comprendre les résultats, sans les déterminer. Les propositions d’origine restent visibles sous chaque groupe, et les propriétaires de la conversation peuvent désactiver les résumés par IA.",
           },
           {
             question: "Comment fonctionne le mode Priorisation ?",
@@ -277,7 +277,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "¿La IA decide los resultados?",
             answer:
-              "No. Los grupos de opinión y las señales de terreno común vienen de un análisis determinista de patrones de voto, no de IA generativa. Después del agrupamiento de opiniones, Agora usa Mistral Large para etiquetar y resumir las opiniones representativas de cada grupo, pero esos resúmenes solo ayudan a leer los resultados. Las afirmaciones fuente siguen visibles bajo cada grupo, y los propietarios de la conversación pueden desactivar los resúmenes con IA.",
+              "No. Agora identifica los grupos de opinión y sus puntos en común mediante un análisis determinista de los patrones de voto, no con IA generativa. Una vez formados los grupos, Mistral Large se basa en las afirmaciones más representativas de cada uno para darle un nombre y resumir sus puntos de vista. Los nombres y resúmenes ayudan a interpretar los resultados, pero no los determinan. Las afirmaciones originales siguen visibles debajo de cada grupo y los propietarios de la conversación pueden desactivar los resúmenes con IA.",
           },
           {
             question: "¿Cómo funciona el modo Priorización?",
@@ -374,7 +374,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "هل يقرر الذكاء الاصطناعي النتائج؟",
             answer:
-              "لا. مجموعات الرأي وإشارات الأرضية المشتركة تأتي من تحليل حتمي لأنماط التصويت، وليس من ذكاء اصطناعي توليدي. بعد خطوة تجميع الآراء، تستخدم Agora نموذج Mistral Large لتسمية وتلخيص الآراء التمثيلية لكل مجموعة، لكن هذه الملخصات مجرد أداة تساعد على قراءة النتائج. تبقى العبارات الأصلية ظاهرة تحت كل مجموعة، ويمكن لمالكي المحادثة إيقاف ملخصات الذكاء الاصطناعي.",
+              "لا. تحدّد أغورا مجموعات الرأي وتكشف الأرضية المشتركة بتحليل حتمي لأنماط التصويت، لا باستخدام الذكاء الاصطناعي التوليدي. وبعد تحديد المجموعات، يستند نموذج Mistral Large إلى العبارات الأكثر تمثيلًا لكل مجموعة ليمنحها اسمًا ويلخّص وجهات نظرها. تُسهّل الأسماء والملخصات فهم النتائج، لكنها لا تحدّدها. وتظلّ العبارات الأصلية ظاهرة تحت كل مجموعة، ويمكن لمالكي المحادثة تعطيل ملخصات الذكاء الاصطناعي.",
           },
           {
             question: "كيف يعمل وضع تحديد الأولويات؟",
@@ -471,7 +471,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "آیا هوش مصنوعی نتیجه‌ها را تعیین می‌کند؟",
             answer:
-              "خیر. گروه‌های نظر و نشانه‌های زمینه مشترک از تحلیل قطعی الگوهای رای می‌آیند، نه از هوش مصنوعی مولد. پس از مرحله گروه‌بندی نظر، Agora از Mistral Large برای برچسب‌گذاری و خلاصه‌کردن نظرهای نماینده هر گروه استفاده می‌کند، اما این خلاصه‌ها فقط برای خواندن آسان‌تر نتایج هستند. گزاره‌های منبع زیر هر گروه همچنان دیده می‌شوند و مالکان گفت‌وگو می‌توانند خلاصه‌های هوش مصنوعی را خاموش کنند.",
+              "خیر. آگورا گروه‌های دیدگاهی و زمینهٔ مشترک را با تحلیل قطعی الگوهای رأی‌گیری مشخص می‌کند، نه با هوش مصنوعی مولد. پس از مشخص‌شدن گروه‌ها، مدل Mistral Large بر پایهٔ گزاره‌هایی که دیدگاه هر گروه را بهتر از همه بازتاب می‌دهند، برای آن گروه نامی انتخاب می‌کند و دیدگاه‌هایش را خلاصه می‌کند. این نام‌ها و خلاصه‌ها به فهم نتایج کمک می‌کنند، اما آن‌ها را تعیین نمی‌کنند. گزاره‌های اصلی همچنان در بخش هر گروه دیده می‌شوند و مالکان گفت‌وگو می‌توانند خلاصه‌های هوش مصنوعی را غیرفعال کنند.",
           },
           {
             question: "حالت اولویت‌بندی چگونه کار می‌کند؟",
@@ -568,7 +568,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "האם בינה מלאכותית מחליטה את התוצאות?",
             answer:
-              "לא. קבוצות הדעה ואותות הבסיס המשותף מגיעים מניתוח דטרמיניסטי של דפוסי הצבעה, לא מבינה מלאכותית יוצרת. לאחר שלב קיבוץ הדעות, Agora משתמשת ב-Mistral Large כדי לתייג ולסכם את הדעות המייצגות של כל קבוצה, אבל הסיכומים האלה הם רק עזר לקריאת התוצאות. אמירות המקור נשארות גלויות תחת כל קבוצה, ובעלי השיחה יכולים לכבות סיכומי AI.",
+              "לא. Agora מזהה קבוצות דעה ומוצאת מכנה משותף באמצעות ניתוח דטרמיניסטי של דפוסי ההצבעה, ולא בעזרת בינה מלאכותית יוצרת. רק לאחר זיהוי הקבוצות, המודל Mistral Large נעזר בהיגדים שמייצגים כל קבוצה בצורה הטובה ביותר כדי לתת לה שם ולסכם את עמדותיה. השמות והסיכומים עוזרים להבין את התוצאות, אך אינם קובעים אותן. ההיגדים המקוריים ממשיכים להופיע תחת כל קבוצה, ובעלי השיחה יכולים לכבות את הסיכומים שמופקים בבינה מלאכותית.",
           },
           {
             question: "איך עובד מצב תעדוף?",
@@ -665,7 +665,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "AIが結果を決めているのですか？",
             answer:
-              "いいえ。意見グループと共通点のシグナルは、生成AIではなく、投票パターンの決定論的な分析から得られます。意見グループ化の後、AgoraはMistral Largeを使って各グループの代表的な意見にラベルを付け、要約しますが、これらの要約は結果を読みやすくする補助にすぎません。元のステートメントは各グループの下に表示され続け、会話のオーナーはAI要約をオフにできます。",
+              "いいえ。Agoraは生成AIではなく、投票パターンの決定論的な分析によって意見グループを特定し、共通点を見つけます。グループが決まった後で、Mistral Largeが各グループを最もよく代表する意見をもとに、グループ名を付け、そのグループの考え方を要約します。名前や要約は結果を理解しやすくするためのもので、結果そのものを決めるわけではありません。元の意見は各グループの下に引き続き表示され、会話の作成者はAIによる要約をオフにできます。",
           },
           {
             question: "優先順位付けモードはどのように機能しますか？",
@@ -762,7 +762,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "结果是由 AI 决定的吗？",
             answer:
-              "不是。意见群体和共同点信号来自对投票模式的确定性分析，而不是生成式 AI。在意见分组之后，Agora 使用 Mistral Large 为每个群体的代表性观点命名和总结，但这些总结只是帮助阅读结果。原始陈述仍会显示在每个群体下方，讨论创建者也可以关闭 AI 总结。",
+              "不是。Agora 通过对投票模式的确定性分析来识别意见群体、找出共同点，而不是依赖生成式 AI。分组完成后，Agora 才使用 Mistral Large，根据最能代表各群体的陈述，为每个群体命名并概括其观点。这些名称和总结只是为了帮助理解结果，并不决定结果。原始陈述仍会显示在各群体下方，讨论创建者也可以关闭 AI 总结。",
           },
           {
             question: "优先级排序模式如何运作？",
@@ -858,7 +858,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "結果是由 AI 決定的嗎？",
             answer:
-              "不是。意見群體和共同點訊號來自對投票模式的確定性分析，而不是生成式 AI。在意見分組之後，Agora 使用 Mistral Large 為每個群體的代表性觀點命名和總結，但這些總結只是幫助閱讀結果。原始陳述仍會顯示在每個群體下方，討論建立者也可以關閉 AI 總結。",
+              "不是。Agora 透過對投票模式的確定性分析辨識意見群組、找出共同點，而不是依靠生成式 AI。分組完成後，Agora 才使用 Mistral Large，根據最能代表各群組的陳述，為每個群組命名並整理出觀點摘要。這些名稱與摘要能幫助理解結果，並不決定結果。原始陳述仍會顯示在各群組下方，對話建立者也可以關閉 AI 摘要。",
           },
           {
             question: "優先排序模式如何運作？",
@@ -956,7 +956,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "Натыйжаларды AI чечеби?",
             answer:
-              "Жок. Пикир топтору жана жалпы негиз сигналдары генеративдик AIден эмес, добуш берүү үлгүлөрүнүн детерминисттик анализинен чыгат. Пикир топторун түзүү кадамынан кийин Agora ар бир топтун өкүл пикирлерине ат коюп, аларды кыскача жыйынтыктоо үчүн Mistral Large моделин колдонот, бирок бул жыйынтыктар натыйжаларды окууну жеңилдетүүгө гана жардам берет. Баштапкы пикирлер ар бир топтун астында көрүнүп турат, ал эми талкуу ээлери AI жыйынтыктарын өчүрө алышат.",
+              "Жок. Agora пикир топторун аныктап, орток пикирлерди табуу үчүн генеративдик ЖИни эмес, добуш берүү үлгүлөрүнүн детерминисттик талдоосун колдонот. Топтор аныкталгандан кийин гана Mistral Large ар бир топтун көз карашын эң жакшы чагылдырган пикирлерге таянып, топко ат коюп, анын көз карашын кыскача баяндайт. Аталыштар менен кыскача баяндар натыйжаларды түшүнүүгө жардам берет, бирок аларды аныктабайт. Баштапкы пикирлер ар бир топтун астында көрүнүп турат, ал эми талкуу ээлери ЖИ түзгөн кыскача баяндарды өчүрө алышат.",
           },
           {
             question: "Артыкчылык берүү режими кантип иштейт?",
@@ -1054,7 +1054,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "Определяет ли ИИ результаты?",
             answer:
-              "Нет. Группы мнений и сигналы общей основы определяются детерминированным анализом закономерностей голосования, а не генеративным ИИ. После этапа группировки мнений Agora использует Mistral Large, чтобы присвоить названия и составить сводки по репрезентативным высказываниям каждой группы, но эти сводки лишь помогают читать результаты. Исходные высказывания остаются видимыми под каждой группой, а владельцы обсуждения могут отключить сводки ИИ.",
+              "Нет. Agora определяет группы мнений и находит точки соприкосновения с помощью детерминированного анализа того, как голосуют участники, а не с помощью генеративного ИИ. Только после этого Mistral Large даёт каждой группе название и кратко описывает её взгляды, опираясь на высказывания, которые лучше всего её характеризуют. Названия и описания помогают понять результаты, но не определяют их. Исходные высказывания остаются видны под каждой группой, а владельцы обсуждения могут отключить сводки ИИ.",
           },
           {
             question: "Как работает режим приоритизации?",
