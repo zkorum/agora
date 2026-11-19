@@ -40,7 +40,6 @@ export const logMessageTemplates: readonly LogMessageTemplate[] = [
     { parts: ["[Zupass] Verifying GPC proof"] },
     { parts: ["[ProjectDocument] Immediate storage cleanup failed"] },
     { parts: ["[ProjectDocument] Storage cleanup is unavailable"] },
-    { parts: ["[ProjectDocument] Failed upload cleanup will be retried"] },
     { parts: ["[API] Failed to validate S3 access"] },
     { parts: ["[API] Failed to validate project document storage"] },
     { parts: ["[API] Project document storage is unavailable"] },

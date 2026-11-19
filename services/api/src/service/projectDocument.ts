@@ -10,6 +10,7 @@ import {
     isNull,
     lt,
     or,
+    sql,
 } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import pLimit from "p-limit";
@@ -45,10 +46,11 @@ import type { ProjectDocumentEncoding } from "./projectDocumentCompression.js";
 import {
     cleanupProjectDocumentRepresentations,
     publishProjectDocumentRepresentations,
+    type ProjectDocumentStorage,
 } from "./projectDocumentStorage.js";
 import {
     PROJECT_DOCUMENT_MAX_URL_EXPIRY_SECONDS,
-    PROJECT_DOCUMENT_UPLOAD_TIMEOUT_MS,
+    createProjectDocumentUploadDeadline,
     STALE_PENDING_UPLOAD_AGE_MS,
 } from "./projectDocumentPolicy.js";
 import {
@@ -60,12 +62,9 @@ import {
 import { deleteFromS3, generatePresignedUrl, uploadToS3 } from "./s3.js";
 export type { ProjectDocumentFileUpload } from "./projectDocumentFile.js";
 
-interface StorageConfig {
-    bucketName: string;
-    region: string;
-}
+const originalDeletionLimit = pLimit(5);
 
-function getStorageConfig(): StorageConfig {
+function getStorageConfig(): ProjectDocumentStorage {
     const bucketName = config.PROJECT_DOCUMENTS_AWS_S3_BUCKET_NAME;
     const region = config.PROJECT_DOCUMENTS_AWS_S3_REGION;
     if (bucketName === undefined || region === undefined) {
@@ -260,6 +259,7 @@ export async function uploadProjectDocument({
         ownerFile,
     });
     const documentId = randomUUID();
+    const deadline = createProjectDocumentUploadDeadline();
     const persistedDocument = await db.transaction(async (tx) => {
         const projectId = await fetchActiveProjectId({
             db: tx,
@@ -340,13 +340,13 @@ export async function uploadProjectDocument({
             ...insertedDocument,
             projectId,
             objectUploads: reservedUploads,
-            expectedFileCount: objectUploads.length,
             uploaderUsername: uploader.username,
         };
     });
     const publishedAt = new Date();
     try {
         for (const upload of persistedDocument.objectUploads) {
+            deadline.check();
             if (upload.file.contentType === "application/pdf") {
                 await uploadToS3({
                     s3Key: upload.objectKey,
@@ -355,9 +355,7 @@ export async function uploadProjectDocument({
                     contentType: upload.file.contentType,
                     checksumSha256: upload.file.checksumSha256,
                     region,
-                    abortSignal: AbortSignal.timeout(
-                        PROJECT_DOCUMENT_UPLOAD_TIMEOUT_MS,
-                    ),
+                    abortSignal: deadline.abortSignal,
                 });
                 continue;
             }
@@ -370,6 +368,7 @@ export async function uploadProjectDocument({
                 },
                 storage: { bucketName, region },
                 buffer: upload.file.buffer,
+                deadline,
             });
             if (published !== 2)
                 throw httpErrors.conflict(
@@ -393,6 +392,7 @@ export async function uploadProjectDocument({
             if (activeProjects.length === 0) {
                 return false;
             }
+            deadline.check();
             const publishedDocuments = await tx
                 .update(projectDocumentTable)
                 .set({ publishedAt })
@@ -421,7 +421,9 @@ export async function uploadProjectDocument({
                     ),
                 )
                 .returning({ id: projectDocumentFileTable.id });
-            if (publishedFiles.length !== persistedDocument.expectedFileCount) {
+            if (
+                publishedFiles.length !== persistedDocument.objectUploads.length
+            ) {
                 throw httpErrors.conflict(
                     "Project document files changed during publication",
                 );
@@ -433,8 +435,25 @@ export async function uploadProjectDocument({
         }
     } catch (error: unknown) {
         const deletedAt = new Date();
+        let publicationRecovered = false;
         try {
-            await db.transaction(async (tx) => {
+            publicationRecovered = await db.transaction(async (tx) => {
+                const documents = await tx
+                    .select({
+                        publishedAt: projectDocumentTable.publishedAt,
+                        deletedAt: projectDocumentTable.deletedAt,
+                    })
+                    .from(projectDocumentTable)
+                    .where(eq(projectDocumentTable.id, persistedDocument.id))
+                    .for("update");
+                const document = documents.at(0);
+                // Final publication may commit even when its acknowledgement is
+                // lost. Do not delete a document that readers can already open.
+                if (
+                    document?.deletedAt === null &&
+                    document.publishedAt !== null
+                )
+                    return true;
                 await tx
                     .update(projectDocumentTable)
                     .set({ deletedAt })
@@ -448,26 +467,33 @@ export async function uploadProjectDocument({
                             persistedDocument.id,
                         ),
                     );
+                return false;
             });
         } catch (recoveryError: unknown) {
-            log.error(
-                recoveryError,
-                "[ProjectDocument] Failed to tombstone unsuccessful upload",
-            );
-        }
-        try {
-            await cleanupProjectDocumentStorage({
-                db,
-                documentId,
-                includeRecentPending: true,
+            logApiError({
+                logger: log,
+                level: "error",
+                event: { event: "application_error" },
+                error: recoveryError,
             });
-        } catch (cleanupError: unknown) {
-            log.error(
-                cleanupError,
-                "[ProjectDocument] Failed upload cleanup will be retried",
-            );
         }
-        throw error;
+        if (!publicationRecovered) {
+            try {
+                await cleanupProjectDocumentStorage({
+                    db,
+                    documentId,
+                    settledUploadDocumentId: documentId,
+                });
+            } catch (cleanupError: unknown) {
+                logApiError({
+                    logger: log,
+                    level: "error",
+                    event: { event: "application_error" },
+                    error: cleanupError,
+                });
+            }
+            throw error;
+        }
     }
     return {
         document: {
@@ -558,7 +584,6 @@ export async function deleteProjectDocument({
         await cleanupProjectDocumentStorage({
             db,
             documentId,
-            includeRecentPending: true,
         });
     } catch (error: unknown) {
         log.error(error, "[ProjectDocument] Immediate storage cleanup failed");
@@ -569,28 +594,27 @@ export async function cleanupProjectDocumentStorage({
     db,
     projectSlug,
     documentId,
-    includeRecentPending = false,
+    settledUploadDocumentId,
 }: {
     db: PostgresJsDatabase;
     projectSlug?: string;
     documentId?: string;
-    includeRecentPending?: boolean;
+    // Only the uploader, after its last PUT settles, may bypass the pending grace.
+    settledUploadDocumentId?: string;
 }): Promise<void> {
-    let storage: StorageConfig;
+    let storage: ProjectDocumentStorage;
     try {
         storage = getStorageConfig();
     } catch (error: unknown) {
         log.error(error, "[ProjectDocument] Storage cleanup is unavailable");
         return;
     }
-    const stalePendingUploadCutoff = new Date(
-        Date.now() - STALE_PENDING_UPLOAD_AGE_MS,
-    );
+    // Age DB-created timestamps with the database clock, not a skewed API host.
+    // A statement-stable cutoff also allows indexed range scans.
+    const stalePendingUploadCutoff = sql`(statement_timestamp() AT TIME ZONE 'UTC') - ${STALE_PENDING_UPLOAD_AGE_MS} * interval '1 millisecond'`;
     // Preserve every pre-conversion URL, including URLs issued under an older
     // configuration with the maximum permitted seven-day lifetime.
-    const legacyOriginalCutoff = new Date(
-        Date.now() - PROJECT_DOCUMENT_MAX_URL_EXPIRY_SECONDS * 1000,
-    );
+    const legacyOriginalCutoff = sql`(statement_timestamp() AT TIME ZONE 'UTC') - ${PROJECT_DOCUMENT_MAX_URL_EXPIRY_SECONDS} * interval '1 second'`;
     const fileRows = await db.transaction(async (tx) => {
         const staleDocumentRows = await tx
             .select({
@@ -721,18 +745,22 @@ export async function cleanupProjectDocumentStorage({
                     or(
                         and(
                             isNotNull(projectDocumentFileTable.deletedAt),
-                            includeRecentPending
-                                ? undefined
-                                : or(
-                                      eq(
-                                          projectDocumentFileTable.status,
-                                          "available",
+                            or(
+                                settledUploadDocumentId === undefined
+                                    ? undefined
+                                    : eq(
+                                          projectDocumentTable.publicId,
+                                          settledUploadDocumentId,
                                       ),
-                                      lt(
-                                          projectDocumentFileTable.createdAt,
-                                          stalePendingUploadCutoff,
-                                      ),
-                                  ),
+                                eq(
+                                    projectDocumentFileTable.status,
+                                    "available",
+                                ),
+                                lt(
+                                    projectDocumentFileTable.createdAt,
+                                    stalePendingUploadCutoff,
+                                ),
+                            ),
                         ),
                         and(
                             isNull(projectDocumentFileTable.deletedAt),
@@ -754,10 +782,9 @@ export async function cleanupProjectDocumentStorage({
             .orderBy(asc(projectDocumentFileTable.id))
             .limit(100);
     });
-    const limit = pLimit(5);
     await Promise.all(
         fileRows.map((file) =>
-            limit(async () => {
+            originalDeletionLimit(async () => {
                 try {
                     await deleteFromS3({
                         s3Key: file.objectKey,
@@ -1011,6 +1038,12 @@ export async function accessProjectDocument({
                 htmlScriptsEnabled: projectDocumentFileTable.htmlScriptsEnabled,
                 compressedAt: projectDocumentFileTable.compressedAt,
                 objectDeletedAt: projectDocumentFileTable.objectDeletedAt,
+                // Capture the signing instant while holding this file's lock.
+                // Use the cutover/cleanup clock, not this API instance's clock.
+                signingDate:
+                    sql`date_trunc('second', clock_timestamp() AT TIME ZONE 'UTC')`.mapWith(
+                        projectDocumentFileTable.createdAt,
+                    ),
             })
             .from(projectDocumentFileTable)
             .where(
@@ -1120,9 +1153,7 @@ export async function accessProjectDocument({
         return {
             selectedFile,
             selectedObjectKey,
-            // Capture under the file lock so legacy URLs cannot outlive the
-            // retention window measured from the later compression cutover.
-            signingDate: new Date(Math.floor(Date.now() / 1000) * 1000),
+            signingDate: selectedFile.signingDate,
             downloadFileName: getProjectDocumentDownloadFileName({
                 fileName: downloadFileName,
                 audience: selectedFile.audience,

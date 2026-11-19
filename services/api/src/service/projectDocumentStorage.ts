@@ -10,6 +10,7 @@ import {
     ne,
     notExists,
     or,
+    sql,
 } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { randomUUID } from "node:crypto";
@@ -20,13 +21,11 @@ import {
     projectDocumentTable,
     projectTable,
 } from "@/shared-backend/schema.js";
+import { compressProjectDocument } from "./projectDocumentCompression.js";
 import {
-    compressProjectDocument,
-    type CompressedProjectDocument,
-} from "./projectDocumentCompression.js";
-import {
-    PROJECT_DOCUMENT_UPLOAD_TIMEOUT_MS,
+    createProjectDocumentUploadDeadline,
     STALE_PENDING_UPLOAD_AGE_MS,
+    type ProjectDocumentUploadDeadline,
 } from "./projectDocumentPolicy.js";
 import { deleteFromS3, downloadFromS3, uploadToS3 } from "./s3.js";
 
@@ -81,6 +80,7 @@ export async function publishProjectDocumentRepresentations({
     file,
     storage,
     buffer,
+    deadline = createProjectDocumentUploadDeadline(),
 }: {
     db: PostgresJsDatabase;
     file: Pick<
@@ -89,28 +89,20 @@ export async function publishProjectDocumentRepresentations({
     >;
     storage: ProjectDocumentStorage;
     buffer: Buffer;
-}): Promise<number> {
+    deadline?: ProjectDocumentUploadDeadline;
+}): Promise<0 | 2> {
+    // Include compression/queueing and reservation waits, not only the PUTs.
+    deadline.check();
     const compressed = await compressProjectDocument({
         buffer,
         contentType: file.contentType,
+        abortSignal: deadline.abortSignal,
     });
     if (compressed.length === 0) return 0;
-    // One deadline covers reservation waits and every PUT, not just each upload.
-    // Expired publishers must stop well before stale-pending cleanup can run.
-    const deadlineMs = Date.now() + PROJECT_DOCUMENT_UPLOAD_TIMEOUT_MS;
-    const abortSignal = AbortSignal.timeout(PROJECT_DOCUMENT_UPLOAD_TIMEOUT_MS);
-    function checkDeadline(): void {
-        abortSignal.throwIfAborted();
-        // Timers may not have fired yet when a suspended process resumes.
-        if (Date.now() >= deadlineMs)
-            throw new DOMException(
-                "Document publication deadline exceeded",
-                "TimeoutError",
-            );
-    }
+    deadline.check();
     const reserved = await db.transaction(async (tx) => {
         const active = await lockActiveFile({ db: tx, fileId: file.id });
-        checkDeadline();
+        deadline.check();
         if (active.compressedAt !== null) return [];
         const existing = await tx
             .select({ id: projectDocumentRepresentationTable.id })
@@ -124,34 +116,37 @@ export async function publishProjectDocumentRepresentations({
             .limit(1);
         // A concurrent publisher owns the pending set, or this file is prepared.
         if (existing.length > 0) return [];
-        const uploads: (CompressedProjectDocument &
-            Pick<
-                typeof projectDocumentRepresentationTable.$inferSelect,
-                "id" | "objectKey"
-            >)[] = [];
-        for (const representation of compressed) {
-            const rows = await tx
-                .insert(projectDocumentRepresentationTable)
-                .values({
+        const representationsByEncoding = {
+            br: compressed[0],
+            gzip: compressed[1],
+        };
+        const prefix = `${file.objectKey}/representations/${randomUUID()}`;
+        const rows = await tx
+            .insert(projectDocumentRepresentationTable)
+            .values(
+                compressed.map((representation) => ({
                     fileId: file.id,
                     encoding: representation.encoding,
-                    objectKey: `${file.objectKey}/representations/${randomUUID()}/${representation.encoding}`,
+                    objectKey: `${prefix}/${representation.encoding}`,
                     byteSize: representation.buffer.length,
                     checksumSha256: representation.checksumSha256,
-                })
-                .returning({
-                    id: projectDocumentRepresentationTable.id,
-                    objectKey: projectDocumentRepresentationTable.objectKey,
-                });
-            uploads.push(...rows.map((row) => ({ ...representation, ...row })));
-        }
-        return uploads;
+                })),
+            )
+            .returning({
+                id: projectDocumentRepresentationTable.id,
+                objectKey: projectDocumentRepresentationTable.objectKey,
+                encoding: projectDocumentRepresentationTable.encoding,
+            });
+        return rows.map((row) => ({
+            ...representationsByEncoding[row.encoding],
+            ...row,
+        }));
     });
     if (reserved.length === 0) return 0;
     const ids = reserved.map(({ id }) => id);
     try {
         for (const representation of reserved) {
-            checkDeadline();
+            deadline.check();
             await uploadToS3({
                 s3Key: representation.objectKey,
                 bucketName: storage.bucketName,
@@ -160,12 +155,12 @@ export async function publishProjectDocumentRepresentations({
                 contentEncoding: representation.encoding,
                 buffer: representation.buffer,
                 checksumSha256: representation.checksumSha256,
-                abortSignal,
+                abortSignal: deadline.abortSignal,
             });
         }
         await db.transaction(async (tx) => {
             const active = await lockActiveFile({ db: tx, fileId: file.id });
-            checkDeadline();
+            deadline.check();
             const published = await tx
                 .update(projectDocumentRepresentationTable)
                 .set({ status: "available" })
@@ -191,7 +186,7 @@ export async function publishProjectDocumentRepresentations({
             await tx
                 .update(projectDocumentFileTable)
                 .set({
-                    compressedAt: now,
+                    compressedAt: sql`clock_timestamp() AT TIME ZONE 'UTC'`,
                     // Pending files are new uploads: no identity object was created.
                     objectDeletedAt:
                         active.status === "pending"
@@ -200,7 +195,7 @@ export async function publishProjectDocumentRepresentations({
                 })
                 .where(eq(projectDocumentFileTable.id, file.id));
         });
-        return reserved.length;
+        return compressed.length;
     } catch (error) {
         const committed = await db.transaction(async (tx) => {
             const files = await tx
@@ -248,7 +243,7 @@ export async function publishProjectDocumentRepresentations({
                 );
             return false;
         });
-        if (committed) return reserved.length;
+        if (committed) return compressed.length;
         throw error;
     }
 }
@@ -264,7 +259,9 @@ export async function cleanupProjectDocumentRepresentations({
     projectSlug: string | undefined;
     documentId: string | undefined;
 }): Promise<void> {
-    const cutoff = new Date(Date.now() - STALE_PENDING_UPLOAD_AGE_MS);
+    // Use the database clock for DB-created reservations. statement_timestamp()
+    // is stable within the query, so the cutoff remains usable by an index scan.
+    const cutoff = sql`(statement_timestamp() AT TIME ZONE 'UTC') - ${STALE_PENDING_UPLOAD_AGE_MS} * interval '1 millisecond'`;
     // Claim/tombstone on the writer before deleting S3 objects. A replica read
     // could miss a recent deletion or mistake a completed upload for abandoned.
     const rows = await db.transaction(async (tx) => {

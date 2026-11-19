@@ -37,6 +37,7 @@ import {
     uploadProjectDocument,
 } from "./projectDocument.js";
 import { normalizeProjectDocumentUploadFile } from "./projectDocumentFile.js";
+import * as documentCompression from "./projectDocumentCompression.js";
 import { PROJECT_DOCUMENT_MAX_URL_EXPIRY_SECONDS } from "./projectDocumentPolicy.js";
 import {
     backfillProjectDocumentRepresentations,
@@ -215,6 +216,46 @@ describe("project document representation lifecycle", () => {
         });
     }
 
+    async function uploadPdf() {
+        return await uploadProjectDocument({
+            db,
+            metadata: {
+                ...metadata,
+                localizations: [
+                    {
+                        languageCode: "en",
+                        name: "PDF report",
+                        downloadFileName: "report.pdf",
+                    },
+                ],
+            },
+            participantFile: {
+                originalFileName: "report.pdf",
+                reportedContentType: "application/pdf",
+                buffer: Buffer.from("%PDF-1.4\nfixture\n%%EOF"),
+            },
+            ownerFile: undefined,
+            createdByUserId: ownerId,
+        });
+    }
+
+    function loseCommitAcknowledgement(transactionNumber: number): void {
+        type Transaction = Parameters<
+            Parameters<PostgresJsDatabase["transaction"]>[0]
+        >[0];
+        const originalTransaction = db.transaction.bind(db);
+        let completed = 0;
+        vi.spyOn(db, "transaction").mockImplementation(
+            async <T>(callback: (tx: Transaction) => Promise<T>) => {
+                const result = await originalTransaction(callback);
+                completed += 1;
+                if (completed === transactionNumber)
+                    throw new Error("Simulated lost COMMIT acknowledgement");
+                return result;
+            },
+        );
+    }
+
     async function resetCompression() {
         await db
             .update(projectDocumentRepresentationTable)
@@ -321,26 +362,7 @@ describe("project document representation lifecycle", () => {
 
     it("keeps PDFs as one unencoded object", async () => {
         const buffer = Buffer.from("%PDF-1.4\nfixture\n%%EOF");
-        const { document } = await uploadProjectDocument({
-            db,
-            metadata: {
-                ...metadata,
-                localizations: [
-                    {
-                        languageCode: "en",
-                        name: "PDF report",
-                        downloadFileName: "report.pdf",
-                    },
-                ],
-            },
-            participantFile: {
-                originalFileName: "report.pdf",
-                reportedContentType: "application/pdf",
-                buffer,
-            },
-            ownerFile: undefined,
-            createdByUserId: ownerId,
-        });
+        const { document } = await uploadPdf();
         const file = first(await db.select().from(projectDocumentFileTable));
         expect(file.compressedAt).toBeNull();
         expect(objects.get(file.objectKey)).toEqual({
@@ -584,7 +606,7 @@ describe("project document representation lifecycle", () => {
                     }),
             ),
         );
-        expect(results.reduce((sum, count) => sum + count, 0)).toBe(2);
+        expect(results.filter((count) => count === 2)).toHaveLength(1);
         expect(mocks.upload).toHaveBeenCalledTimes(2);
     });
 
@@ -613,6 +635,8 @@ describe("project document representation lifecycle", () => {
         await db
             .update(projectDocumentRepresentationTable)
             .set({ status: "pending", deletedAt: new Date() });
+        // Cleanup ages database-created reservations with the database clock.
+        vi.spyOn(Date, "now").mockReturnValue(Date.now() + 24 * 60 * 60 * 1000);
         mocks.delete.mockClear();
         await cleanupProjectDocumentRepresentations({
             db,
@@ -621,9 +645,9 @@ describe("project document representation lifecycle", () => {
             documentId: undefined,
         });
         expect(mocks.delete).not.toHaveBeenCalled();
-        await db
-            .update(projectDocumentRepresentationTable)
-            .set({ createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000) });
+        await db.update(projectDocumentRepresentationTable).set({
+            createdAt: sql`(clock_timestamp() AT TIME ZONE 'UTC') - interval '2 hours'`,
+        });
         await cleanupProjectDocumentRepresentations({
             db,
             storage,
@@ -668,7 +692,7 @@ describe("project document representation lifecycle", () => {
                 await db
                     .update(projectDocumentRepresentationTable)
                     .set({
-                        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+                        createdAt: sql`(clock_timestamp() AT TIME ZONE 'UTC') - interval '2 hours'`,
                     })
                     .where(
                         isNull(projectDocumentRepresentationTable.deletedAt),
@@ -742,6 +766,22 @@ describe("project document representation lifecycle", () => {
             .where(eq(projectDocumentRepresentationTable.status, "failed"));
         expect(rows).toHaveLength(2);
         expect(rows.every((row) => row.deletedAt !== null)).toBe(true);
+    });
+
+    it("includes compression time in the upload deadline", async () => {
+        const compress = documentCompression.compressProjectDocument;
+        const resumedAt = Date.now() + 3 * 60 * 1000;
+        vi.spyOn(
+            documentCompression,
+            "compressProjectDocument",
+        ).mockImplementation(async (request) => {
+            const result = await compress(request);
+            vi.spyOn(Date, "now").mockReturnValue(resumedAt);
+            return result;
+        });
+        await expect(upload()).rejects.toMatchObject({ name: "TimeoutError" });
+        expect(mocks.upload).not.toHaveBeenCalled();
+        expect(objects.size).toBe(0);
     });
 
     it("checks elapsed time even if a suspended process has not run its abort timer", async () => {
@@ -1011,14 +1051,26 @@ describe("project document representation lifecycle", () => {
             }),
         ).rejects.toMatchObject({ statusCode: 406 });
         mocks.delete.mockClear();
+        vi.spyOn(Date, "now").mockReturnValue(
+            Date.now() + (PROJECT_DOCUMENT_MAX_URL_EXPIRY_SECONDS + 60) * 1000,
+        );
         await cleanupProjectDocumentStorage({ db });
         expect(mocks.delete).not.toHaveBeenCalled();
         expect(objects.has(file.objectKey)).toBe(true);
-        const expiredAt =
-            converted.compressedAt.getTime() +
-            PROJECT_DOCUMENT_MAX_URL_EXPIRY_SECONDS * 1000 +
-            1000;
-        vi.spyOn(Date, "now").mockReturnValue(expiredAt);
+        await access({ documentId: document.documentId });
+        const signingDate = mocks.sign.mock.calls.at(-1)?.[0].signingDate;
+        expect(signingDate).toBeInstanceOf(Date);
+        if (signingDate === undefined)
+            throw new Error("Missing grant timestamp");
+        expect(signingDate.getTime()).toBeLessThan(
+            converted.compressedAt.getTime() + 60_000,
+        );
+        await db
+            .update(projectDocumentFileTable)
+            .set({
+                compressedAt: sql`(clock_timestamp() AT TIME ZONE 'UTC') - ${PROJECT_DOCUMENT_MAX_URL_EXPIRY_SECONDS + 1} * interval '1 second'`,
+            })
+            .where(eq(projectDocumentFileTable.id, file.id));
         await cleanupProjectDocumentStorage({ db });
         expect(mocks.delete).toHaveBeenCalledExactlyOnceWith({
             s3Key: file.objectKey,
@@ -1053,9 +1105,12 @@ describe("project document representation lifecycle", () => {
             apply: true,
             limit: 100,
         });
-        vi.spyOn(Date, "now").mockReturnValue(
-            Date.now() + (PROJECT_DOCUMENT_MAX_URL_EXPIRY_SECONDS + 60) * 1000,
-        );
+        await db
+            .update(projectDocumentFileTable)
+            .set({
+                compressedAt: sql`(clock_timestamp() AT TIME ZONE 'UTC') - ${PROJECT_DOCUMENT_MAX_URL_EXPIRY_SECONDS + 60} * interval '1 second'`,
+            })
+            .where(eq(projectDocumentFileTable.id, file.id));
         mocks.delete.mockRejectedValueOnce(
             new Error("Simulated identity deletion failure"),
         );
@@ -1100,20 +1155,7 @@ describe("project document representation lifecycle", () => {
         const { document } = await upload();
         await resetCompression();
         const file = first(await db.select().from(projectDocumentFileTable));
-        type Transaction = Parameters<
-            Parameters<PostgresJsDatabase["transaction"]>[0]
-        >[0];
-        const originalTransaction = db.transaction.bind(db);
-        let completed = 0;
-        vi.spyOn(db, "transaction").mockImplementation(
-            async <T>(callback: (tx: Transaction) => Promise<T>) => {
-                const result = await originalTransaction(callback);
-                completed += 1;
-                if (completed === 2)
-                    throw new Error("Simulated lost COMMIT acknowledgement");
-                return result;
-            },
-        );
+        loseCommitAcknowledgement(2);
         expect(
             await publishProjectDocumentRepresentations({
                 db,
@@ -1131,6 +1173,59 @@ describe("project document representation lifecycle", () => {
             .where(isNull(projectDocumentRepresentationTable.deletedAt));
         expect(rows).toHaveLength(2);
         expect(rows.every((row) => row.status === "available")).toBe(true);
+    });
+
+    it("preserves a fully published new document when the final COMMIT acknowledgement is lost", async () => {
+        // Document reservation, encoding reservation, encoding cutover, publication.
+        loseCommitAcknowledgement(4);
+        const { document } = await upload();
+        expect(objects.size).toBe(2);
+        const persisted = first(await db.select().from(projectDocumentTable));
+        expect(persisted.publishedAt).not.toBeNull();
+        expect(persisted.deletedAt).toBeNull();
+        expect(
+            (await access({ documentId: document.documentId })).url,
+        ).toContain("/representations/");
+    });
+
+    it("does not acknowledge a PDF deletion before its in-flight PUT has settled", async () => {
+        mocks.upload.mockImplementation(
+            async ({ s3Key, buffer, contentEncoding }) => {
+                const document = first(
+                    await db.select().from(projectDocumentTable),
+                );
+                await deleteProjectDocument({
+                    db,
+                    projectSlug: metadata.projectSlug,
+                    documentId: document.publicId,
+                });
+                objects.set(s3Key, { buffer, encoding: contentEncoding });
+            },
+        );
+        await expect(uploadPdf()).rejects.toMatchObject({ statusCode: 409 });
+        expect(objects.size).toBe(0);
+        expect(
+            first(await db.select().from(projectDocumentFileTable))
+                .objectDeletedAt,
+        ).not.toBeNull();
+    });
+
+    it("does not publish a PDF after its upload deadline expires", async () => {
+        const resumedAt = Date.now() + 3 * 60 * 1000;
+        mocks.upload.mockImplementation(
+            ({ s3Key, buffer, contentEncoding }) => {
+                objects.set(s3Key, { buffer, encoding: contentEncoding });
+                vi.spyOn(Date, "now").mockReturnValue(resumedAt);
+                return Promise.resolve();
+            },
+        );
+        await expect(uploadPdf()).rejects.toMatchObject({
+            name: "TimeoutError",
+        });
+        expect(objects.size).toBe(0);
+        const document = first(await db.select().from(projectDocumentTable));
+        expect(document.publishedAt).toBeNull();
+        expect(document.deletedAt).not.toBeNull();
     });
 
     it.each(["br", "gzip"])(

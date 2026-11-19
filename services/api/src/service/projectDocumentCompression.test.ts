@@ -81,6 +81,18 @@ describe("project document HTTP representations", () => {
         );
         for (const result of results) expect(result).toEqual(results[0]);
     });
+
+    it("rejects cancelled work before starting compression", async () => {
+        const controller = new AbortController();
+        controller.abort();
+        await expect(
+            compressProjectDocument({
+                buffer: Buffer.from("cancelled report"),
+                contentType: "text/html",
+                abortSignal: controller.signal,
+            }),
+        ).rejects.toMatchObject({ name: "AbortError" });
+    });
 });
 
 describe("document content-coding preferences", () => {

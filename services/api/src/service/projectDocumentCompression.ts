@@ -11,8 +11,11 @@ export type ProjectDocumentEncoding =
     | "identity"
     | CompressedProjectDocumentEncoding;
 
-export interface CompressedProjectDocument {
-    encoding: CompressedProjectDocumentEncoding;
+export interface CompressedProjectDocument<
+    Encoding extends CompressedProjectDocumentEncoding =
+        CompressedProjectDocumentEncoding,
+> {
+    encoding: Encoding;
     buffer: Buffer;
     checksumSha256: string;
 }
@@ -22,35 +25,46 @@ const compressGzip = promisify(gzip);
 // Bound native compression work across requests, not separately per uploader.
 const compressionLimit = pLimit(2);
 
+function createRepresentation<
+    Encoding extends CompressedProjectDocumentEncoding,
+>({
+    encoding,
+    buffer,
+}: {
+    encoding: Encoding;
+    buffer: Buffer;
+}): CompressedProjectDocument<Encoding> {
+    return {
+        encoding,
+        buffer,
+        checksumSha256: createHash("sha256").update(buffer).digest("base64"),
+    };
+}
+
 export async function compressProjectDocument({
     buffer,
     contentType,
+    abortSignal,
 }: {
     buffer: Buffer;
     contentType: ProjectDocumentContentType;
-}): Promise<CompressedProjectDocument[]> {
+    abortSignal?: AbortSignal;
+}): Promise<
+    [] | [CompressedProjectDocument<"br">, CompressedProjectDocument<"gzip">]
+> {
     if (contentType === "application/pdf") return [];
     return await compressionLimit(async () => {
-        const representations: CompressedProjectDocument[] = [];
-        for (const encoding of [
-            "br",
-            "gzip",
-        ] satisfies CompressedProjectDocumentEncoding[]) {
-            const compressed =
-                encoding === "br"
-                    ? await compressBrotli(buffer, {
-                          params: { [constants.BROTLI_PARAM_QUALITY]: 6 },
-                      })
-                    : await compressGzip(buffer);
-            representations.push({
-                encoding,
-                buffer: compressed,
-                checksumSha256: createHash("sha256")
-                    .update(compressed)
-                    .digest("base64"),
-            });
-        }
-        return representations;
+        abortSignal?.throwIfAborted();
+        const brotli = await compressBrotli(buffer, {
+            params: { [constants.BROTLI_PARAM_QUALITY]: 6 },
+        });
+        abortSignal?.throwIfAborted();
+        const gzip = await compressGzip(buffer);
+        abortSignal?.throwIfAborted();
+        return [
+            createRepresentation({ encoding: "br", buffer: brotli }),
+            createRepresentation({ encoding: "gzip", buffer: gzip }),
+        ];
     });
 }
 
