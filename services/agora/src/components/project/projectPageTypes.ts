@@ -47,7 +47,7 @@ export interface ProjectDocumentViewerState {
   access: AccessProjectDocumentResponse & {
     contentType: InlineProjectDocumentContentType;
   };
-  loadState: "loading" | "loaded" | "timeout";
+  loadState: "loading" | "loaded";
 }
 
 function getProjectActivityTitle(activity: ProjectActivity): string {

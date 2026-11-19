@@ -19,6 +19,7 @@ import {
     phoneSmsCostOverridesSchema,
 } from "./service/phoneSmsPricing.js";
 import { seedSuggestionSourceNames } from "./service/seedSuggestionSourceName.js";
+import { PROJECT_DOCUMENT_MAX_URL_EXPIRY_SECONDS } from "./service/projectDocumentPolicy.js";
 
 export type Environment = "development" | "production" | "staging" | "test";
 
@@ -222,7 +223,7 @@ const baseConfigSchema = sharedConfigSchema.extend({
         .number()
         .int()
         .min(60)
-        .max(604800)
+        .max(PROJECT_DOCUMENT_MAX_URL_EXPIRY_SECONDS)
         .default(600),
     IS_MAXDIFF_GITHUB_ORG_ONLY: z
         .string()

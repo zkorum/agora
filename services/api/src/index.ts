@@ -2950,11 +2950,12 @@ server.after(() => {
         server,
         apiVersion,
         service: {
-            access: async ({ request, authorization }) =>
+            access: async ({ request, authorization, acceptedEncodings }) =>
                 await projectDocumentService.accessProjectDocument({
                     db,
                     request,
                     authorization,
+                    acceptedEncodings,
                 }),
             authenticateFacilitator: async ({ request }) => {
                 const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(

@@ -88,6 +88,7 @@ describe("project document access route", () => {
         expect(service.access).toHaveBeenCalledExactlyOnceWith({
             request: request("participant"),
             authorization: { type: "public" },
+            acceptedEncodings: ["gzip", "identity"],
         });
     });
 
@@ -111,25 +112,53 @@ describe("project document access route", () => {
         expect(service.access).toHaveBeenCalledExactlyOnceWith({
             request: request("owner"),
             authorization: { type: "facilitator", userId: USER_ID },
+            acceptedEncodings: ["gzip", "identity"],
         });
     });
 
-    it("rate limits anonymous access by requester", async () => {
+    it("rate limits facilitator access by requester", async () => {
         for (let requestCount = 0; requestCount < 60; requestCount += 1) {
             const response = await server.inject({
                 method: "POST",
                 url: "/api/v1/project/document/access",
-                payload: request("participant"),
+                payload: request("owner"),
+                headers: { authorization: "Bearer valid" },
             });
             expect(response.statusCode).toBe(200);
         }
         const blocked = await server.inject({
             method: "POST",
             url: "/api/v1/project/document/access",
-            payload: request("participant"),
+            payload: request("owner"),
+            headers: { authorization: "Bearer valid" },
         });
 
         expect(blocked.statusCode).toBe(429);
         expect(service.access).toHaveBeenCalledTimes(60);
+    });
+
+    it("permits a crowd behind the same IP without returning 429 or authenticating participant files", async () => {
+        const responses = await Promise.all(
+            Array.from(
+                { length: 200 },
+                async () =>
+                    await server.inject({
+                        method: "POST",
+                        url: "/api/v1/project/document/access",
+                        headers: { "accept-encoding": "gzip, br" },
+                        payload: request("participant"),
+                    }),
+            ),
+        );
+        expect(responses.every((response) => response.statusCode === 200)).toBe(
+            true,
+        );
+        expect(service.access).toHaveBeenCalledTimes(200);
+        expect(service.authenticateFacilitator).not.toHaveBeenCalled();
+        expect(service.access).toHaveBeenLastCalledWith({
+            request: request("participant"),
+            authorization: { type: "public" },
+            acceptedEncodings: ["br", "gzip", "identity"],
+        });
     });
 });

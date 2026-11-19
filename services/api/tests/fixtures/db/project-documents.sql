@@ -23,7 +23,11 @@ CREATE TYPE "public"."project_document_audience" AS ENUM('participant', 'owner')
 
 CREATE TYPE "public"."project_document_content_type" AS ENUM('text/html', 'application/pdf', 'text/plain', 'text/markdown', 'text/csv', 'application/json');
 
+CREATE TYPE "public"."project_document_encoding" AS ENUM('gzip', 'br');
+
 CREATE TYPE "public"."project_document_file_status" AS ENUM('pending', 'available');
+
+CREATE TYPE "public"."project_document_representation_status" AS ENUM('pending', 'available', 'failed');
 
 CREATE TABLE "conversation" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "conversation_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
@@ -160,12 +164,15 @@ CREATE TABLE "project_document_file" (
 	"content_type" "project_document_content_type" NOT NULL,
 	"html_scripts_enabled" boolean DEFAULT false NOT NULL,
 	"byte_size" integer NOT NULL,
+	"compressed_at" timestamp (0),
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"deleted_at" timestamp (0),
 	"object_deleted_at" timestamp (0),
 	CONSTRAINT "project_document_file_object_key_unique" UNIQUE("object_key"),
 	CONSTRAINT "project_document_file_byte_size_check" CHECK ("project_document_file"."byte_size" > 0 AND "project_document_file"."byte_size" <= 52428800),
-	CONSTRAINT "project_document_file_html_scripts_check" CHECK (NOT "project_document_file"."html_scripts_enabled" OR "project_document_file"."content_type" = 'text/html')
+	CONSTRAINT "project_document_file_html_scripts_check" CHECK (NOT "project_document_file"."html_scripts_enabled" OR "project_document_file"."content_type" = 'text/html'),
+	CONSTRAINT "project_document_file_compressed_content_check" CHECK ("project_document_file"."compressed_at" IS NULL OR "project_document_file"."content_type" <> 'application/pdf'),
+	CONSTRAINT "project_document_file_original_cleanup_check" CHECK ("project_document_file"."object_deleted_at" IS NULL OR "project_document_file"."deleted_at" IS NOT NULL OR "project_document_file"."compressed_at" IS NOT NULL)
 );
 
 CREATE TABLE "project_document_localization" (
@@ -176,6 +183,23 @@ CREATE TABLE "project_document_localization" (
 	"download_file_name" varchar(255) NOT NULL,
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"deleted_at" timestamp (0)
+);
+
+CREATE TABLE "project_document_representation" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "project_document_representation_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"file_id" integer NOT NULL,
+	"encoding" "project_document_encoding" NOT NULL,
+	"status" "project_document_representation_status" DEFAULT 'pending' NOT NULL,
+	"object_key" text NOT NULL,
+	"byte_size" integer NOT NULL,
+	"checksum_sha256" text NOT NULL,
+	"created_at" timestamp (0) DEFAULT now() NOT NULL,
+	"deleted_at" timestamp (0),
+	"object_deleted_at" timestamp (0),
+	CONSTRAINT "project_document_representation_object_key_unique" UNIQUE("object_key"),
+	CONSTRAINT "project_document_representation_byte_size_check" CHECK ("project_document_representation"."byte_size" > 0),
+	CONSTRAINT "project_document_representation_failed_check" CHECK ("project_document_representation"."status" <> 'failed' OR "project_document_representation"."deleted_at" IS NOT NULL),
+	CONSTRAINT "project_document_representation_deleted_object_check" CHECK ("project_document_representation"."object_deleted_at" IS NULL OR "project_document_representation"."deleted_at" IS NOT NULL)
 );
 
 CREATE TABLE "project_document" (
@@ -294,7 +318,13 @@ CREATE INDEX "project_document_file_deletion_queue_idx" ON "project_document_fil
 
 CREATE INDEX "project_document_file_pending_created_idx" ON "project_document_file" USING btree ("created_at","project_document_id") WHERE "project_document_file"."status" = 'pending' AND "project_document_file"."deleted_at" IS NULL;
 
+CREATE INDEX "project_document_file_original_retirement_idx" ON "project_document_file" USING btree ("compressed_at") WHERE "project_document_file"."compressed_at" IS NOT NULL AND "project_document_file"."deleted_at" IS NULL AND "project_document_file"."object_deleted_at" IS NULL;
+
 CREATE UNIQUE INDEX "project_document_localization_active_unique" ON "project_document_localization" USING btree ("project_document_id","language_code") WHERE "project_document_localization"."deleted_at" is null;
+
+CREATE UNIQUE INDEX "project_document_representation_file_encoding_active_unique" ON "project_document_representation" USING btree ("file_id","encoding") WHERE "project_document_representation"."deleted_at" is null;
+
+CREATE INDEX "project_document_representation_cleanup_idx" ON "project_document_representation" USING btree ("created_at") WHERE "project_document_representation"."object_deleted_at" is null;
 
 CREATE INDEX "project_document_project_id_idx" ON "project_document" USING btree ("project_id");
 

@@ -245,12 +245,15 @@ CREATE TABLE "project_document_file" (
 	"content_type" "project_document_content_type" NOT NULL,
 	"html_scripts_enabled" boolean DEFAULT false NOT NULL,
 	"byte_size" integer NOT NULL,
+	"compressed_at" timestamp (0),
 	"created_at" timestamp (0) DEFAULT now() NOT NULL,
 	"deleted_at" timestamp (0),
 	"object_deleted_at" timestamp (0),
 	CONSTRAINT "project_document_file_object_key_unique" UNIQUE("object_key"),
 	CONSTRAINT "project_document_file_byte_size_check" CHECK ("project_document_file"."byte_size" > 0 AND "project_document_file"."byte_size" <= 52428800),
-	CONSTRAINT "project_document_file_html_scripts_check" CHECK (NOT "project_document_file"."html_scripts_enabled" OR "project_document_file"."content_type" = 'text/html')
+	CONSTRAINT "project_document_file_html_scripts_check" CHECK (NOT "project_document_file"."html_scripts_enabled" OR "project_document_file"."content_type" = 'text/html'),
+	CONSTRAINT "project_document_file_compressed_content_check" CHECK ("project_document_file"."compressed_at" IS NULL OR "project_document_file"."content_type" <> 'application/pdf'),
+	CONSTRAINT "project_document_file_original_cleanup_check" CHECK ("project_document_file"."object_deleted_at" IS NULL OR "project_document_file"."deleted_at" IS NOT NULL OR "project_document_file"."compressed_at" IS NOT NULL)
 );
 
 CREATE TABLE "project_document_localization" (
@@ -415,6 +418,8 @@ CREATE UNIQUE INDEX "project_document_file_audience_active_unique" ON "project_d
 CREATE INDEX "project_document_file_deletion_queue_idx" ON "project_document_file" USING btree ("project_document_id") WHERE "project_document_file"."deleted_at" IS NOT NULL AND "project_document_file"."object_deleted_at" IS NULL;
 
 CREATE INDEX "project_document_file_pending_created_idx" ON "project_document_file" USING btree ("created_at","project_document_id") WHERE "project_document_file"."status" = 'pending' AND "project_document_file"."deleted_at" IS NULL;
+
+CREATE INDEX "project_document_file_original_retirement_idx" ON "project_document_file" USING btree ("compressed_at") WHERE "project_document_file"."compressed_at" IS NOT NULL AND "project_document_file"."deleted_at" IS NULL AND "project_document_file"."object_deleted_at" IS NULL;
 
 CREATE UNIQUE INDEX "project_document_localization_active_unique" ON "project_document_localization" USING btree ("project_document_id","language_code") WHERE "project_document_localization"."deleted_at" is null;
 

@@ -236,6 +236,7 @@
         "ranking_conversation_stats_snapshot"
     ],
     "project-documents": [
+        "project_document_representation",
         "user",
         "organization",
         "organization_membership",

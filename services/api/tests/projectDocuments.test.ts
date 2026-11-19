@@ -18,6 +18,7 @@ import {
     organizationTable,
     projectDocumentFileTable,
     projectDocumentLocalizationTable,
+    projectDocumentRepresentationTable,
     projectDocumentTable,
     projectOrganizationOwnershipTable,
     projectTable,
@@ -239,6 +240,146 @@ describe("project document version authorization", () => {
                         .set({ byteSize: 51 * 1024 * 1024 });
                 }),
             ).rejects.toMatchObject({ cause: { code: "23514" } });
+        });
+    });
+
+    it("applies the generated compression migration without changing existing files or script permissions", async () => {
+        const migration = readFileSync(
+            new URL(
+                "../database/flyway/V0115__equal_golden_guardian.sql",
+                import.meta.url,
+            ),
+            "utf8",
+        );
+        expect(migration).toBe(
+            readFileSync(
+                new URL(
+                    "../drizzle/0114_equal_golden_guardian.sql",
+                    import.meta.url,
+                ),
+                "utf8",
+            ),
+        );
+        const before = await db.select().from(projectDocumentFileTable);
+        await db.transaction(async (tx) => {
+            // Recreate the pre-migration shape only in this disposable database.
+            await tx.execute(sql`DROP TABLE project_document_representation;
+                DROP TYPE project_document_encoding;
+                DROP TYPE project_document_representation_status;
+                ALTER TABLE project_document_file DROP COLUMN compressed_at`);
+            await tx.execute(sql.raw(migration));
+            expect(await tx.select().from(projectDocumentFileTable)).toEqual(
+                before,
+            );
+            expect(
+                await tx.select().from(projectDocumentRepresentationTable),
+            ).toEqual([]);
+            const file = firstRow(
+                before.filter(
+                    (row) => row.objectKey === `${DOCUMENT}/participant`,
+                ),
+            );
+            const representation = {
+                fileId: file.id,
+                encoding: "br",
+                objectKey: "migrated/participant/br",
+                byteSize: 50,
+                checksumSha256: "test-checksum",
+                status: "available",
+            } satisfies typeof projectDocumentRepresentationTable.$inferInsert;
+            await tx.insert(projectDocumentRepresentationTable).values([
+                representation,
+                {
+                    ...representation,
+                    encoding: "gzip",
+                    objectKey: "migrated/participant/gzip",
+                },
+            ]);
+            await tx
+                .update(projectDocumentFileTable)
+                .set({ compressedAt: new Date() })
+                .where(eq(projectDocumentFileTable.id, file.id));
+            const grant = await accessProjectDocument({
+                db: tx,
+                request: request({ audience: "participant" }),
+                authorization: { type: "public" },
+                acceptedEncodings: ["br", "identity"],
+            });
+            expect(grant.url).toBe(
+                `https://documents.example.com/${representation.objectKey}`,
+            );
+            expect(grant.htmlScriptsEnabled).toBe(false);
+            for (const invalid of [
+                {
+                    ...representation,
+                    objectKey: "invalid-size",
+                    byteSize: 0,
+                    code: "23514",
+                },
+                {
+                    ...representation,
+                    objectKey: "invalid-file",
+                    fileId: 0,
+                    code: "23503",
+                },
+                {
+                    ...representation,
+                    objectKey: "duplicate-active",
+                    code: "23505",
+                },
+                {
+                    ...representation,
+                    objectKey: "invalid-failed",
+                    status: "failed",
+                    code: "23514",
+                },
+                {
+                    ...representation,
+                    objectKey: "invalid-deletion",
+                    objectDeletedAt: new Date(),
+                    code: "23514",
+                },
+            ] satisfies (typeof projectDocumentRepresentationTable.$inferInsert & {
+                code: string;
+            })[]) {
+                const { code, ...values } = invalid;
+                await expect(
+                    tx.transaction(async (savepoint) => {
+                        await savepoint
+                            .insert(projectDocumentRepresentationTable)
+                            .values(values);
+                    }),
+                ).rejects.toMatchObject({ cause: { code } });
+            }
+            await expect(
+                tx.transaction(async (savepoint) => {
+                    await savepoint
+                        .update(projectDocumentFileTable)
+                        .set({
+                            contentType: "application/pdf",
+                            htmlScriptsEnabled: false,
+                        })
+                        .where(eq(projectDocumentFileTable.id, file.id));
+                }),
+            ).rejects.toMatchObject({ cause: { code: "23514" } });
+            await expect(
+                tx.transaction(async (savepoint) => {
+                    await savepoint
+                        .update(projectDocumentFileTable)
+                        .set({
+                            compressedAt: null,
+                            objectDeletedAt: new Date(),
+                        })
+                        .where(eq(projectDocumentFileTable.id, file.id));
+                }),
+            ).rejects.toMatchObject({ cause: { code: "23514" } });
+            await tx
+                .update(projectDocumentRepresentationTable)
+                .set({ deletedAt: new Date() });
+            await tx.insert(projectDocumentRepresentationTable).values({
+                ...representation,
+                objectKey: "migrated/participant/replacement/br",
+            });
         });
     });
 

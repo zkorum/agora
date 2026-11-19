@@ -22,7 +22,7 @@ import {
     foreignKey,
     primaryKey,
 } from "drizzle-orm/pg-core";
-import { isNotNull, isNull, type SQL } from "drizzle-orm";
+import { gt, isNotNull, isNull, type SQL } from "drizzle-orm";
 import { sql } from "drizzle-orm/sql";
 import {
     ZodSupportedDisplayLanguageCodes,
@@ -643,6 +643,14 @@ export const projectDocumentAudienceEnum = pgEnum("project_document_audience", [
 export const projectDocumentFileStatusEnum = pgEnum(
     "project_document_file_status",
     ["pending", "available"],
+);
+export const projectDocumentEncodingEnum = pgEnum("project_document_encoding", [
+    "gzip",
+    "br",
+]);
+export const projectDocumentRepresentationStatusEnum = pgEnum(
+    "project_document_representation_status",
+    ["pending", "available", "failed"],
 );
 export const projectDocumentContentTypeEnum = pgEnum(
     "project_document_content_type",
@@ -1565,6 +1573,7 @@ export const projectDocumentFileTable = pgTable(
         status: projectDocumentFileStatusEnum("status")
             .notNull()
             .default("pending"),
+        // PDF/legacy identity-object key; a prefix only for compressed-only uploads.
         objectKey: text("object_key").notNull().unique(),
         originalFileName: text("original_file_name").notNull(),
         contentType: projectDocumentContentTypeEnum("content_type").notNull(),
@@ -1572,6 +1581,11 @@ export const projectDocumentFileTable = pgTable(
             .notNull()
             .default(false),
         byteSize: integer("byte_size").notNull(),
+        // Cutover to gzip/Brotli delivery; no new grants may use the identity object.
+        compressedAt: timestamp("compressed_at", {
+            mode: "date",
+            precision: 0,
+        }),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -1598,6 +1612,11 @@ export const projectDocumentFileTable = pgTable(
             .where(
                 sql`${table.status} = 'pending' AND ${table.deletedAt} IS NULL`,
             ),
+        index("project_document_file_original_retirement_idx")
+            .on(table.compressedAt)
+            .where(
+                sql`${table.compressedAt} IS NOT NULL AND ${table.deletedAt} IS NULL AND ${table.objectDeletedAt} IS NULL`,
+            ),
         check(
             "project_document_file_byte_size_check",
             sql`${table.byteSize} > 0 AND ${table.byteSize} <= ${sql.raw(String(MAX_PROJECT_DOCUMENT_FILE_SIZE))}`,
@@ -1605,6 +1624,62 @@ export const projectDocumentFileTable = pgTable(
         check(
             "project_document_file_html_scripts_check",
             sql`NOT ${table.htmlScriptsEnabled} OR ${table.contentType} = 'text/html'`,
+        ),
+        check(
+            "project_document_file_compressed_content_check",
+            sql`${table.compressedAt} IS NULL OR ${table.contentType} <> 'application/pdf'`,
+        ),
+        check(
+            "project_document_file_original_cleanup_check",
+            sql`${table.objectDeletedAt} IS NULL OR ${table.deletedAt} IS NOT NULL OR ${table.compressedAt} IS NOT NULL`,
+        ),
+    ],
+);
+
+/** @service api */
+export const projectDocumentRepresentationTable = pgTable(
+    "project_document_representation",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        fileId: integer("file_id")
+            .references(() => projectDocumentFileTable.id)
+            .notNull(),
+        encoding: projectDocumentEncodingEnum("encoding").notNull(),
+        status: projectDocumentRepresentationStatusEnum("status")
+            .default("pending")
+            .notNull(),
+        objectKey: text("object_key").notNull().unique(),
+        byteSize: integer("byte_size").notNull(),
+        checksumSha256: text("checksum_sha256").notNull(),
+        createdAt: timestamp("created_at", { mode: "date", precision: 0 })
+            .defaultNow()
+            .notNull(),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
+        objectDeletedAt: timestamp("object_deleted_at", {
+            mode: "date",
+            precision: 0,
+        }),
+    },
+    (table) => [
+        uniqueIndex(
+            "project_document_representation_file_encoding_active_unique",
+        )
+            .on(table.fileId, table.encoding)
+            .where(isNull(table.deletedAt)),
+        index("project_document_representation_cleanup_idx")
+            .on(table.createdAt)
+            .where(isNull(table.objectDeletedAt)),
+        check(
+            "project_document_representation_byte_size_check",
+            gt(table.byteSize, 0).inlineParams(),
+        ),
+        check(
+            "project_document_representation_failed_check",
+            sql`${table.status} <> 'failed' OR ${table.deletedAt} IS NOT NULL`,
+        ),
+        check(
+            "project_document_representation_deleted_object_check",
+            sql`${table.objectDeletedAt} IS NULL OR ${table.deletedAt} IS NOT NULL`,
         ),
     ],
 );

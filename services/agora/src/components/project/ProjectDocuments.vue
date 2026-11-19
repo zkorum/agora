@@ -72,10 +72,7 @@
               flat
               color="primary"
               icon="mdi-refresh"
-              :loading="
-                activeAction?.mode === 'inline' ||
-                viewer.loadState === 'loading'
-              "
+              :loading="activeAction?.mode === 'inline'"
               :disable="activeAction !== undefined"
               :aria-label="t('reloadDocument')"
               @click="retryViewer"
@@ -120,21 +117,10 @@
         <div
           v-if="viewer.loadState !== 'loaded'"
           class="project-documents__viewer-loading"
+          role="status"
         >
-          <ErrorRetryBlock
-            v-if="
-              viewer.loadState === 'timeout' && activeAction?.mode !== 'inline'
-            "
-            :title="t('documentLoadFailed')"
-            :retry-label="t('retryAction')"
-            compact
-            @retry="retryViewer"
-          />
-          <PageLoadingSpinner
-            v-else
-            role="status"
-            :aria-label="t('documentLoading')"
-          />
+          <q-spinner-dots color="primary" size="1.5rem" aria-hidden="true" />
+          <span>{{ t("documentLoading") }}</span>
         </div>
       </div>
     </q-dialog>
@@ -143,8 +129,6 @@
 
 <script setup lang="ts">
 import { isAxiosError } from "axios";
-import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
-import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import SandboxedHtmlFrame from "src/components/ui-library/SandboxedHtmlFrame.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKIconButton from "src/components/ui-library/ZKIconButton.vue";
@@ -328,10 +312,17 @@ function handleFrameLoad(event: Event): void {
 
 .project-documents__viewer-loading {
   z-index: 1;
-  display: grid;
+  display: flex;
   grid-row: 2;
   grid-column: 1;
-  place-items: center;
-  background: rgba(white, 0.86);
+  align-self: start;
+  justify-self: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-block-start: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background: rgba(white, 0.94);
+  pointer-events: none;
 }
 </style>

@@ -262,7 +262,7 @@ describe("project document viewer", () => {
     expect(accessDocument).toHaveBeenCalledOnce();
   });
 
-  it("shows the shared retry block on timeout instead of treating the frame as loaded", async () => {
+  it("does not fail or restart a slow transfer and still permits manual reload", async () => {
     vi.useFakeTimers();
     const accessDocument = vi
       .fn<ProjectDocumentAccess>()
@@ -275,12 +275,17 @@ describe("project document viewer", () => {
     await vi.waitFor(() =>
       expect(container.querySelector("iframe")).not.toBeNull()
     );
-    await vi.advanceTimersByTimeAsync(15_000);
-    expect(container.querySelector(".errorContainer")?.textContent).toContain(
-      "The document could not be opened."
-    );
     const previousFrame = container.querySelector("iframe");
-    clickButton({ container, label: "Retry" });
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(container.querySelector(".errorContainer")).toBeNull();
+    expect(container.querySelector("iframe")).toBe(previousFrame);
+    expect(accessDocument).toHaveBeenCalledOnce();
+    expect(
+      container
+        .querySelector(".project-documents__viewer-loading")
+        ?.getAttribute("role")
+    ).toBe("status");
+    clickButton({ container, label: "Reload" });
     await vi.waitFor(() => expect(accessDocument).toHaveBeenCalledTimes(2));
     await vi.waitFor(() =>
       expect(container.querySelector("iframe")).not.toBe(previousFrame)

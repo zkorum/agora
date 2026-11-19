@@ -22,6 +22,7 @@
         "format:check": "prettier . --check",
         "preview:csv": "node ./scripts/preview-csv.mjs",
         "backfill:rich-text-plain-text": "tsx scripts/backfill-rich-text-plain-text.ts",
+        "documents:compress": "node --loader esm-module-alias/loader --loader ./esm-loader-lodash-fix.mjs --no-warnings dist/cli/compressProjectDocuments.js",
         "generate-dev-keys": "NODE_OPTIONS=--experimental-vm-modules GENERATE_DEV_KEYS=true jest -t 'generate-dev-keys'",
         "typecheck": "pnpm email:build && tsc -p tsconfig.json",
         "test": "./scripts/run-tests.sh",

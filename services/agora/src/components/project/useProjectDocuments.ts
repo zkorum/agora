@@ -44,18 +44,11 @@ export function useProjectDocuments({
   let nextFrameId = 0;
   const frameIdPrefix = `project-document-${useId()}`;
   let isActive = true;
-  let loadingTimeout: ReturnType<typeof setTimeout> | undefined;
-
-  function clearLoadingTimeout(): void {
-    clearTimeout(loadingTimeout);
-    loadingTimeout = undefined;
-  }
 
   function closeViewer(): void {
     requestId += 1;
     pending.value = undefined;
     viewer.value = undefined;
-    clearLoadingTimeout();
   }
 
   function resolveSelection({
@@ -78,7 +71,6 @@ export function useProjectDocuments({
   function handleViewerLoaded(frameId: string): void {
     const current = viewer.value;
     if (current === undefined || current.id !== frameId) return;
-    clearLoadingTimeout();
     viewer.value = { ...current, loadState: "loaded" };
   }
 
@@ -92,7 +84,6 @@ export function useProjectDocuments({
     if (!isInlineProjectDocumentContentType(access.contentType)) {
       throw new Error("The document service returned a non-previewable file");
     }
-    clearLoadingTimeout();
     const id = `${frameIdPrefix}-${++nextFrameId}`;
     viewer.value = {
       id,
@@ -100,12 +91,6 @@ export function useProjectDocuments({
       access: { ...access, contentType: access.contentType },
       loadState: "loading",
     };
-    loadingTimeout = setTimeout(() => {
-      const current = viewer.value;
-      if (current?.id === id)
-        viewer.value = { ...current, loadState: "timeout" };
-      loadingTimeout = undefined;
-    }, 15_000);
   }
 
   async function performAction({

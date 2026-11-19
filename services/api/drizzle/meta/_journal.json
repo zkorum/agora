@@ -799,6 +799,13 @@
       "when": 1794236468817,
       "tag": "0113_nice_bloodaxe",
       "breakpoints": true
+    },
+    {
+      "idx": 114,
+      "version": "7",
+      "when": 1794675054222,
+      "tag": "0114_equal_golden_guardian",
+      "breakpoints": true
     }
   ]
 }
