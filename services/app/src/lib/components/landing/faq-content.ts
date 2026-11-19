@@ -183,7 +183,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "Comment fonctionne le mode Priorisation ?",
             answer:
-              "Agora utilise actuellement le vote meilleur–pire : les participants voient de petits ensembles de propositions et choisissent, dans chacun, la plus importante et la moins importante. [Solidago](https://solidago.tournesol.app/) combine ces choix pour produire un classement commun. Nous travaillons à l’ajout du vote quadratique comme autre option.",
+              "Agora utilise actuellement le vote par comparaison (méthode Best-Worst Scaling) : les participants voient de petits ensembles de propositions et choisissent, dans chacun, la plus importante et la moins importante. [Solidago](https://solidago.tournesol.app/) combine ces choix pour produire un classement commun. Nous travaillons à l’ajout du vote quadratique comme autre option.",
           },
         ],
       },
@@ -260,7 +260,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "¿Cómo encuentra Agora puntos en común?",
             answer:
-              "Las personas participantes votan «De acuerdo», «En desacuerdo» o «No estoy seguro» sobre afirmaciones. Luego Agora mapea los patrones de esos votos, no la redacción de las afirmaciones, para mostrar dónde se agrupan las personas, dónde divergen y qué afirmaciones reciben apoyo entre distintos grupos de opinión. Para crear el mapa, Agora utiliza [Red Dwarf](https://github.com/polis-community/red-dwarf), una biblioteca de aprendizaje automático de código abierto, no un modelo de lenguaje grande (LLM). El análisis es determinista: los mismos votos y parámetros producen el mismo mapa. Esta reproducibilidad hace que los resultados sean más fáciles de verificar y más fiables para esta tarea que si se usara solo un LLM.",
+              "Las personas participantes votan «De acuerdo», «En desacuerdo» o «No seguro» sobre afirmaciones. Luego Agora mapea los patrones de esos votos, no la redacción de las afirmaciones, para mostrar dónde se agrupan las personas, dónde divergen y qué afirmaciones reciben apoyo entre distintos grupos de opinión. Para crear el mapa, Agora utiliza [Red Dwarf](https://github.com/polis-community/red-dwarf), una biblioteca de aprendizaje automático de código abierto, no un modelo de lenguaje de gran tamaño (LLM). El análisis es determinista: los mismos votos y parámetros producen el mismo mapa. Esta reproducibilidad hace que los resultados sean más fáciles de verificar y más fiables para esta tarea que si se usara solo un LLM.",
           },
           {
             question: "¿Cuál es la diferencia entre consenso y mayoría?",
@@ -282,7 +282,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "¿Cómo funciona el modo Priorización?",
             answer:
-              "Actualmente, Agora utiliza el voto mejor–peor: los participantes ven pequeños conjuntos de propuestas y eligen la más importante y la menos importante de cada conjunto. [Solidago](https://solidago.tournesol.app/) combina esas elecciones en una clasificación compartida. Estamos trabajando para añadir el voto cuadrático como otra opción.",
+              "Actualmente, Agora utiliza la votación por comparación (método Best-Worst Scaling): los participantes ven pequeños conjuntos de propuestas y eligen la más importante y la menos importante de cada conjunto. [Solidago](https://solidago.tournesol.app/) combina esas elecciones en una clasificación compartida. Estamos trabajando para añadir el voto cuadrático como otra opción.",
           },
         ],
       },
@@ -358,7 +358,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "كيف تجد Agora الأرضية المشتركة؟",
             answer:
-              "يصوت المشاركون بالموافقة أو الرفض أو عدم التأكد على عبارات. بعد ذلك ترسم Agora أنماط هذه الأصوات، وليس صياغة العبارات، لتوضح أين يتجمع الناس، وأين يختلفون، وأي العبارات تحظى بدعم عبر مجموعات رأي مختلفة. لبناء الخريطة، تستخدم Agora مكتبة [Red Dwarf](https://github.com/polis-community/red-dwarf) مفتوحة المصدر لتعلّم الآلة، لا نموذجًا لغويًا كبيرًا (LLM). التحليل حتمي: تعطي الأصوات والإعدادات نفسها الخريطة نفسها. وتسهّل قابلية إعادة إنتاج النتائج التحقق منها، وتجعلها أكثر موثوقية لهذه المهمة من الاعتماد على نموذج لغوي كبير وحده.",
+              "يصوّت المشاركون على العبارات باختيار «أوافق» أو «أرفض» أو «غير متأكد». ثم تحلّل أغورا أنماط التصويت، لا صياغة العبارات، لتوضّح كيف يتجمّع المشاركون، وأين تختلف آراؤهم، وأيّ العبارات تحظى بدعم من مجموعات رأي مختلفة. ولرسم الخريطة، تعتمد أغورا على مكتبة التعلّم الآلي مفتوحة المصدر [Red Dwarf](https://github.com/polis-community/red-dwarf)، لا على نموذج لغوي كبير (LLM). التحليل حتمي: الأصوات والإعدادات نفسها تعطي الخريطة نفسها. وتسهّل قابلية إعادة إنتاج النتائج التحقّق منها، وتجعلها أكثر موثوقية لهذه المهمة مقارنةً بالاعتماد على نموذج لغوي كبير وحده.",
           },
           {
             question: "ما الفرق بين الإجماع والأغلبية؟",
@@ -379,7 +379,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "كيف يعمل وضع تحديد الأولويات؟",
             answer:
-              "تستخدم Agora حاليًا التصويت باختيار الأفضل والأسوأ: يرى المشاركون مجموعات صغيرة من المقترحات ويختارون من كل مجموعة المقترح الأكثر أهمية والأقل أهمية. وتجمع [Solidago](https://solidago.tournesol.app/) هذه الاختيارات في ترتيب مشترك. ونعمل على إضافة التصويت التربيعي كخيار آخر.",
+              "تستخدم أغورا حاليًا طريقة «اختيار الأفضل والأسوأ» في التصويت. في كل جولة، يرى المشاركون مجموعة صغيرة من المقترحات ويختارون الأكثر أهمية والأقل أهمية. وتجمع [Solidago](https://solidago.tournesol.app/) هذه الاختيارات في ترتيب مشترك. ونعمل على إضافة التصويت التربيعي بوصفه خيارًا آخر.",
           },
         ],
       },
@@ -455,7 +455,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "Agora چطور زمینه مشترک را پیدا می‌کند؟",
             answer:
-              "شرکت‌کنندگان درباره گزاره‌ها رای موافق، مخالف یا نامطمئن می‌دهند. سپس Agora الگوهای این رای‌ها را، نه متن گزاره‌ها را، نقشه‌برداری می‌کند تا نشان دهد افراد کجا خوشه‌بندی می‌شوند، کجا واگرا هستند و کدام گزاره‌ها در میان گروه‌های مختلف نظر حمایت می‌گیرند. برای ساخت این نقشه، Agora از [Red Dwarf](https://github.com/polis-community/red-dwarf)، یک کتابخانهٔ متن‌باز یادگیری ماشین، استفاده می‌کند، نه از مدل زبانی بزرگ (LLM). تحلیل قطعی است: رأی‌ها و تنظیمات یکسان، نقشهٔ یکسانی تولید می‌کنند. این بازتولیدپذیری بررسی نتیجه‌ها را آسان‌تر می‌کند و برای این کار از اتکا به یک مدل زبانی بزرگ به‌تنهایی قابل‌اعتمادتر است.",
+              "شرکت‌کنندگان به گزاره‌ها با گزینه‌های «موافقم»، «مخالفم» یا «مطمئن نیستم» رأی می‌دهند. آگورا از الگوهای رأی‌گیری، نه از متن گزاره‌ها، نقشه‌ای ترسیم می‌کند که نشان می‌دهد چه کسانی رأی‌های مشابهی دارند، کجا اختلاف‌نظر هست و کدام گزاره‌ها در میان گروه‌های دیدگاهی مختلف حمایت می‌شوند. آگورا برای ترسیم این نقشه از کتابخانهٔ متن‌باز یادگیری ماشین [Red Dwarf](https://github.com/polis-community/red-dwarf) استفاده می‌کند، نه از مدل زبانی بزرگ (LLM). تحلیل قطعی است: رأی‌ها و تنظیمات یکسان، نقشهٔ یکسانی به دست می‌دهند. بازتولیدپذیری، بررسی درستی نتایج را آسان‌تر می‌کند و در این کاربرد، این روش از اتکا به یک مدل زبانی بزرگ به‌تنهایی قابل‌اعتمادتر است.",
           },
           {
             question: "تفاوت اجماع و اکثریت چیست؟",
@@ -463,9 +463,9 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
               "یک گزاره اکثریتی از سوی بیشتر شرکت‌کنندگان در کل حمایت می‌شود. یک گزاره اجماعی در میان گروه‌های نظر حمایت می‌شود، بنابراین نمی‌تواند صرفا یک گروه کوچک‌تر را کنار بزند. در Agora، اجماع به معنای موافقت همه نیست؛ یعنی گزاره در میان تفاوت‌های اصلی حاضر در جمع مشروعیت دارد.",
           },
           {
-            question: "گروه‌های نظر و گزاره‌های پل‌ساز چیستند؟",
+            question: "گروه‌های دیدگاهی و گزاره‌های پل‌ساز چیستند؟",
             answer:
-              "گروه‌های نظر خوشه‌هایی از شرکت‌کنندگان هستند که به شکل مشابه رای می‌دهند. آن‌ها از رفتار رای‌دادن استنتاج می‌شوند، نه از داده‌های جمعیت‌شناختی یا برچسب‌های هوش مصنوعی. گزاره‌های پل‌ساز گزاره‌هایی هستند که گروه‌های مختلف از آن‌ها حمایت می‌کنند، حتی وقتی همان گروه‌ها درباره بسیاری از موضوعات دیگر اختلاف دارند.",
+              "گروه‌های دیدگاهی از شرکت‌کنندگانی تشکیل می‌شوند که به شکل مشابه رأی می‌دهند. این گروه‌ها از الگوهای رأی‌گیری به دست می‌آیند، نه از داده‌های جمعیت‌شناختی یا برچسب‌های هوش مصنوعی. گزاره‌های پل‌ساز گزاره‌هایی هستند که گروه‌های مختلف از آن‌ها حمایت می‌کنند، حتی وقتی همان گروه‌ها درباره بسیاری از موضوعات دیگر اختلاف دارند.",
           },
           getComparisonFaq("fa"),
           {
@@ -476,7 +476,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "حالت اولویت‌بندی چگونه کار می‌کند؟",
             answer:
-              "Agora در حال حاضر از رأی‌گیری بهترین–بدترین استفاده می‌کند: شرکت‌کنندگان مجموعه‌های کوچکی از پیشنهادها را می‌بینند و در هر مجموعه مهم‌ترین و کم‌اهمیت‌ترین پیشنهاد را انتخاب می‌کنند. [Solidago](https://solidago.tournesol.app/) این انتخاب‌ها را در یک رتبه‌بندی مشترک ترکیب می‌کند. در حال کار روی افزودن رأی‌گیری درجه‌دوم به‌عنوان گزینه‌ای دیگر هستیم.",
+              "آگورا در حال حاضر از رأی‌گیری به روش «بهترین و بدترین» استفاده می‌کند. در هر نوبت، شرکت‌کنندگان چند پیشنهاد می‌بینند و مهم‌ترین و کم‌اهمیت‌ترین را انتخاب می‌کنند. [Solidago](https://solidago.tournesol.app/) این انتخاب‌ها را تجمیع می‌کند و رتبه‌بندی مشترکی به دست می‌دهد. در تلاشیم رأی‌گیری درجه‌دوم را به‌عنوان گزینه‌ای دیگر اضافه کنیم.",
           },
         ],
       },
@@ -550,9 +550,9 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
         title: "איך קונצנזוס עובד",
         items: [
           {
-            question: "איך Agora מוצאת בסיס משותף?",
+            question: "איך Agora מוצאת מכנה משותף?",
             answer:
-              "המשתתפים מצביעים מסכים, לא מסכים או לא בטוח על אמירות. לאחר מכן Agora ממפה את דפוסי ההצבעה, ולא את ניסוח האמירות, כדי להראות היכן אנשים מתקבצים, היכן הם מתפצלים ואילו אמירות מקבלות תמיכה בין קבוצות דעה שונות. כדי ליצור את המפה, Agora משתמשת ב־[Red Dwarf](https://github.com/polis-community/red-dwarf), ספריית למידת מכונה בקוד פתוח, ולא במודל שפה גדול (LLM). הניתוח דטרמיניסטי: אותם קולות ואותן הגדרות מניבים את אותה מפה. היכולת לשחזר את התוצאות מקלה על אימותן והופכת אותן לאמינות יותר למשימה הזאת מאשר הסתמכות על מודל שפה בלבד.",
+              "המשתתפים מצביעים על היגדים ובוחרים ״מסכים/ה״, ״לא מסכים/ה״ או ״לא בטוח/ה״. לאחר מכן Agora ממפה את דפוסי ההצבעה, ולא את ניסוח ההיגדים, כדי להראות אילו משתתפים מצביעים באופן דומה, היכן מתגלות מחלוקות ואילו היגדים מקבלים תמיכה בקבוצות דעה שונות. כדי ליצור את המפה, Agora משתמשת ב־[Red Dwarf](https://github.com/polis-community/red-dwarf), ספריית למידת מכונה בקוד פתוח, ולא במודל שפה גדול (LLM). הניתוח דטרמיניסטי: אותם קולות ואותן הגדרות מניבים את אותה מפה. היכולת לשחזר את התוצאות מקלה על אימותן והופכת אותן לאמינות יותר למשימה הזאת מאשר הסתמכות על מודל שפה בלבד.",
           },
           {
             question: "מה ההבדל בין קונצנזוס לרוב?",
@@ -560,9 +560,9 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
               "אמירת רוב נתמכת על ידי רוב המשתתפים בסך הכול. אמירת קונצנזוס נתמכת בין קבוצות דעה, ולכן היא לא פשוט מוחקת קבוצה קטנה יותר. ב-Agora, קונצנזוס לא אומר שכולם מסכימים; הוא אומר שלאמירה יש לגיטימיות בין ההבדלים המרכזיים בחדר.",
           },
           {
-            question: "מהן קבוצות דעה ואמירות מגשרות?",
+            question: "מהן קבוצות דעה ומהם היגדים מגשרים?",
             answer:
-              "קבוצות דעה הן אשכולות של משתתפים שמצביעים בדרכים דומות. הן מוסקות מהתנהגות ההצבעה, לא מדמוגרפיה או מתוויות של בינה מלאכותית. אמירות מגשרות הן אמירות שקבוצות שונות תומכות בהן, גם כאשר אותן קבוצות חלוקות בנושאים רבים אחרים.",
+              "קבוצות דעה הן קבוצות של משתתפים שמצביעים באופן דומה. הן מזוהות לפי דפוסי ההצבעה, לא לפי נתונים דמוגרפיים או תוויות של בינה מלאכותית. היגדים מגשרים הם היגדים שקבוצות שונות תומכות בהם, גם כשהן חלוקות בנושאים רבים אחרים.",
           },
           getComparisonFaq("he"),
           {
@@ -573,7 +573,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "איך עובד מצב תעדוף?",
             answer:
-              "כיום Agora משתמשת בהצבעת מיטב–גרוע ביותר: המשתתפים רואים קבוצות קטנות של הצעות ובוחרים בכל קבוצה את ההצעה החשובה ביותר ואת זו שהכי פחות חשובה. [Solidago](https://solidago.tournesol.app/) משלבת את הבחירות האלו לדירוג משותף. אנחנו עובדים על הוספת הצבעה ריבועית כאפשרות נוספת.",
+              "כיום Agora משתמשת בהצבעה בשיטת הטוב ביותר והגרוע ביותר (Best–Worst): המשתתפים רואים מקבצים קטנים של הצעות ובוחרים בכל מקבץ את ההצעה החשובה ביותר ואת ההצעה הפחות חשובה. [Solidago](https://solidago.tournesol.app/) משלבת את הבחירות האלה לדירוג משותף. אנחנו עובדים על הוספת הצבעה ריבועית כאפשרות נוספת.",
           },
         ],
       },
@@ -649,7 +649,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "Agoraはどのように共通点を見つけますか？",
             answer:
-              "参加者はステートメントに対して、賛成、反対、わからないで投票します。Agoraはステートメントの文言ではなく投票パターンを分析し、人々がどこでまとまり、どこで分かれ、どのステートメントが異なる意見グループをまたいで支持されているかを示します。意見マップの作成には、大規模言語モデル（LLM）ではなく、オープンソースの機械学習ライブラリ[Red Dwarf](https://github.com/polis-community/red-dwarf)を使います。分析は決定論的で、投票データと設定が同じなら、同じマップが得られます。結果を再現できるため、検証しやすく、この用途ではLLMだけに頼るよりも信頼性が高まります。",
+              "参加者は意見に対して「同意」「同意しない」「わからない」のいずれかで投票します。Agoraは意見の文言ではなく投票パターンを分析し、人々がどこでまとまり、どこで分かれ、どの意見が異なる意見グループをまたいで支持されているかを示します。意見マップの作成には、大規模言語モデル（LLM）ではなく、オープンソースの機械学習ライブラリ[Red Dwarf](https://github.com/polis-community/red-dwarf)を使います。分析は決定論的で、投票データと設定が同じなら、同じマップが得られます。結果を再現できるため、検証しやすく、この用途ではLLMだけに頼るよりも信頼性が高まります。",
           },
           {
             question: "コンセンサスと多数派の違いは何ですか？",
@@ -657,9 +657,9 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
               "多数派のステートメントは、参加者全体の多くに支持されています。コンセンサスのステートメントは、複数の意見グループをまたいで支持されているため、小さなグループを単に押しつぶすものではありません。Agoraにおけるコンセンサスは全員一致を意味しません。場にある主要な違いを越えて正当性がある、という意味です。",
           },
           {
-            question: "意見グループと橋渡しステートメントとは何ですか？",
+            question: "意見グループと橋渡しとなる意見とは何ですか？",
             answer:
-              "意見グループは、似た投票行動をする参加者のクラスターです。人口統計やAIラベルではなく、投票行動から推定されます。橋渡しステートメントは、他の多くの点で対立しているグループ同士でも支持できるステートメントです。",
+              "意見グループは、投票の傾向が似ている参加者の集まりです。人口統計やAIのラベルではなく、投票の傾向から判断します。橋渡しとなる意見とは、他の多くの点で意見が異なるグループの双方が支持できる意見です。",
           },
           getComparisonFaq("ja"),
           {
@@ -842,7 +842,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "Agora 如何找到共同點？",
             answer:
-              "參與者對陳述投票：同意、不同意或不確定。Agora 隨後分析這些投票模式，而不是陳述的文字本身，以展示人們在哪裡聚集、在哪裡分歧，以及哪些陳述在不同意見群體之間都獲得支持。Agora 使用開放原始碼的機器學習函式庫 [Red Dwarf](https://github.com/polis-community/red-dwarf) 繪製意見地圖，而不是使用大型語言模型（LLM）。分析是確定性的：相同的投票資料和設定會產生相同的地圖。結果可以重現，因此更容易驗證；在這項任務中，這比單靠大型語言模型更可靠。",
+              "參與者對陳述投票：同意、不同意或不確定。Agora 隨後分析這些投票模式，而不是陳述的文字本身，以顯示人們如何分組、在哪些地方有分歧，以及哪些陳述獲得不同意見群組的支持。Agora 使用開放原始碼的機器學習函式庫 [Red Dwarf](https://github.com/polis-community/red-dwarf) 繪製意見地圖，而不是使用大型語言模型（LLM）。分析是確定性的：相同的投票資料和設定會產生相同的地圖。結果可以重現，因此更容易驗證；在這項任務中，這比單靠大型語言模型更可靠。",
           },
           {
             question: "共識和多數有什麼區別？",
@@ -850,9 +850,9 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
               "多數陳述是整體上得到大多數參與者支持的陳述。共識陳述則是在不同意見群體之間都得到支持的陳述，因此它不能簡單地壓過較小群體。在 Agora 中，共識並不意味著所有人都同意；它意味著該陳述在場內主要差異之間具有正當性。",
           },
           {
-            question: "什麼是意見群體和橋接陳述？",
+            question: "什麼是意見群組和橋接陳述？",
             answer:
-              "意見群體是投票方式相似的參與者聚類。它們來自投票行為，而不是人口統計資料或 AI 標籤。橋接陳述是不同群體都支持的陳述，即使這些群體在許多其他問題上存在分歧。",
+              "意見群組由投票方式相似的參與者組成，分組依據是投票行為，而不是人口統計資料或 AI 標籤。橋接陳述是不同群組都支持的陳述，即使這些群組在許多其他問題上仍有分歧。",
           },
           getComparisonFaq("zh-hant"),
           {
@@ -861,9 +861,9 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
               "不是。意見群體和共同點訊號來自對投票模式的確定性分析，而不是生成式 AI。在意見分組之後，Agora 使用 Mistral Large 為每個群體的代表性觀點命名和總結，但這些總結只是幫助閱讀結果。原始陳述仍會顯示在每個群體下方，討論建立者也可以關閉 AI 總結。",
           },
           {
-            question: "優先順序排序模式如何運作？",
+            question: "優先排序模式如何運作？",
             answer:
-              "目前，Agora 使用最佳–最差投票法：參與者每次看到一小組提案，並從中選出最重要和最不重要的提案。[Solidago](https://solidago.tournesol.app/) 彙整這些選擇，產生共同的排序。我們正在開發二次方投票，作為另一種選項。",
+              "目前，Agora 使用最佳–最差投票法：參與者每次會看到幾項提案，並從中選出最重要和最不重要的提案。[Solidago](https://solidago.tournesol.app/) 彙整這些選擇，產生共同的排序。我們正在開發二次方投票，作為另一種選項。",
           },
         ],
       },
@@ -937,7 +937,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
         title: "Консенсус кантип иштейт",
         items: [
           {
-            question: "Agora жалпы негизди кантип табат?",
+            question: "Agora орток пикирлерди кантип табат?",
             answer:
               "Катышуучулар пикирлерге «Макулмун», «Макул эмесмин» же «Так билбейм» деп добуш беришет. Андан соң Agora пикирлердин текстин эмес, ошол добуштардагы үлгүлөрдү картага түшүрөт: адамдар кайсы жерде топтолот, кайсы жерде айырмаланат жана кайсы пикирлер ар башка пикир топторунда колдоо табат. Картаны түзүү үчүн Agora чоң тил моделин (LLM) эмес, машина үйрөнүүсүнө арналган ачык булактуу [Red Dwarf](https://github.com/polis-community/red-dwarf) китепканасын колдонот. Талдоо детерминисттик: добуштар жана жөндөөлөр бирдей болсо, карта да бирдей чыгат. Натыйжаны кайра чыгарууга мүмкүн болгондуктан, аны текшерүү оңой жана бул иште чоң тил моделине гана таянганга караганда ишенимдүүрөөк.",
           },
@@ -947,9 +947,10 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
               "Көпчүлүк пикирин катышуучулардын көбү жалпы деңгээлде колдойт. Консенсус пикири болсо пикир топторунун ортосунда колдоо табат, ошондуктан ал кичине топту жөн эле басып өтпөйт. Agoraда консенсус баары макул дегенди билдирбейт; ал бөлмөдөгү негизги айырмачылыктар боюнча пикирдин легитимдүүлүгү бар дегенди билдирет.",
           },
           {
-            question: "Пикир топтору жана көпүрө пикирлер деген эмне?",
+            question:
+              "Пикир топтору жана топторду бириктирген пикирлер деген эмне?",
             answer:
-              "Пикир топтору окшош добуш берген катышуучулардын кластерлери. Алар демографиядан же AI белгилеринен эмес, добуш берүү жүрүм-турумунан чыгарылат. Көпүрө пикирлерди ар башка топтор колдойт, ошол эле топтор башка көп маселеде келишпесе да.",
+              "Пикир топтору окшош добуш берген катышуучулардын топтору. Алар демография же ЖИ белгилери боюнча эмес, добуш берүү үлгүлөрү боюнча аныкталат. Топторду бириктирген пикирлер — башка көп маселеде макулдашпаган топтордон да колдоо тапкан пикирлер.",
           },
           getComparisonFaq("ky"),
           {
@@ -1035,7 +1036,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
         title: "Как работает консенсус",
         items: [
           {
-            question: "Как Agora находит общую основу?",
+            question: "Как Agora находит точки соприкосновения?",
             answer:
               "Участники оценивают высказывания, выбирая «Согласен», «Не согласен» или «Не уверен». Затем Agora анализирует паттерны этих голосов, а не формулировки высказываний, чтобы показать, где люди группируются, где расходятся и какие высказывания получают поддержку в разных группах мнений. Для создания карты Agora использует [Red Dwarf](https://github.com/polis-community/red-dwarf) — библиотеку машинного обучения с открытым исходным кодом, а не большую языковую модель (LLM). Анализ детерминирован: одни и те же голоса и настройки дают одну и ту же карту. Такая воспроизводимость упрощает проверку результатов и делает их надёжнее для этой задачи, чем при использовании одной лишь языковой модели.",
           },
@@ -1045,9 +1046,9 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
               "Высказывание большинства поддерживает большинство участников в целом. Консенсусное высказывание поддерживается в разных группах мнений, поэтому оно не просто подавляет меньшую группу. В Agora консенсус не означает, что все согласны; он означает, что высказывание сохраняет легитимность среди основных различий во мнениях участников.",
           },
           {
-            question: "Что такое группы мнений и мостовые высказывания?",
+            question: "Что такое группы мнений и объединяющие высказывания?",
             answer:
-              "Группы мнений — это кластеры участников, которые голосуют похожим образом. Они определяются по поведению при голосовании, а не по демографии или меткам ИИ. Мостовые высказывания поддерживают разные группы, даже если эти же группы расходятся по многим другим вопросам.",
+              "Группы мнений — это группы участников, которые голосуют похожим образом. Их определяют по голосам, а не по демографическим данным или меткам ИИ. Объединяющие высказывания получают поддержку в разных группах, даже если те расходятся по многим другим вопросам.",
           },
           getComparisonFaq("ru"),
           {

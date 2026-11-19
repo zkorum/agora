@@ -545,6 +545,7 @@ Environment variables are validated at build time. See `src/lib/paraglide/` for 
 For production deployment, configure:
 
 - `ORIGIN` - The app's public URL (required for SSR)
+- `VITE_SENTRY_ENABLED=true` - Opt in to production Sentry reporting at build time. Netlify sets this only for its production context; leave it unset for local builds and tests.
 
 ## Scope
 

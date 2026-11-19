@@ -32,7 +32,7 @@ Jean-Lou 從另一個方向抵達同一地點。透過氣候傳播工作以及�
 
 隨著 Jean-Lou 和其他引導者使用 Agora，一個問題自然出現：當群體已經達成共識，接下來做什麼？
 
-[優先排序模式](https://www.agoracitizen.network/resources/facilitation-guide)是我們的答案：參與者比較小組方案，Agora 產生共同排序。對話模式顯示群體在哪裡達成一致；優先排序模式顯示現在什麼最重要。你可以在[《30個人能在一天內就 AI 規則達成共識嗎？》](https://www.agoracitizen.network/resources/ai-charter-workshop)中看到實際案例。我們與 Jean-Lou 共同舉辦這場工作坊，一家 AI 新創公司的團隊共同撰寫並排序自己的 AI 章程。
+[優先排序模式](https://www.agoracitizen.network/resources/facilitation-guide)是我們的答案：參與者每次比較少量提案，Agora 產生共同排序。對話模式顯示群體在哪裡達成一致；優先排序模式顯示現在什麼最重要。你可以在[《30個人能在一天內就 AI 使用規則達成共識嗎？》](https://www.agoracitizen.network/resources/ai-charter-workshop)中看到實際案例。我們與 Jean-Lou 共同舉辦這場工作坊，一家 AI 新創公司的團隊共同撰寫自己的 AI 章程，並為其中的原則排定優先順序。
 
 每次部署都塑造了產品，而每項新功能最終都會服務所有引導者，而不只是提出需求的客戶。
 

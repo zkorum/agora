@@ -4,7 +4,7 @@ description: "At Devcon 8 in Mumbai, we facilitated a workshop to help the local
 author: "Yuting Jiang"
 date: "2026-11-14"
 type: "case-study"
-thumbnail: "/images/resources/devcon8-banner.png"
+thumbnail: "/images/resources/devcon8-banner.webp"
 image: "/images/resources/devcon-exam-leak-opinion-map.webp"
 ---
 
@@ -18,16 +18,16 @@ We asked participants to act as a mini citizens' assembly. No prior technical kn
 
 ## Two starting points: the Vault and the Library
 
-<figure aria-label="Two approaches to exam security" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(0.5rem, 2vw, 1rem);">
-  <div style="background: #f2efff; border-radius: 1rem; padding: clamp(0.75rem, 3vw, 1.5rem); text-align: center;">
-    <img src="/images/resources/devcon-exam-leak-vault.png" alt="" width="72" height="72" style="display: block; margin: 0 auto 0.75rem; background: #44328e; border-radius: 1rem; padding: 0.6rem;" />
-    <strong style="display: block; color: #29205a;">The Vault: protect the secret</strong>
-    <span style="display: block; font-size: 0.9em; line-height: 1.4; color: #423a62;">Fewer people ever see the real questions, and every step is secured.</span>
+<figure class="resource-comparison" aria-label="Two approaches to exam security">
+  <div class="resource-comparison-card">
+    <img src="/images/resources/devcon-exam-leak-vault.webp" alt="" width="72" height="72" loading="lazy" decoding="async" />
+    <strong>The Vault: protect the secret</strong>
+    <span>Fewer people ever see the real questions, and every step is secured.</span>
   </div>
-  <div style="background: #edf5ff; border-radius: 1rem; padding: clamp(0.75rem, 3vw, 1.5rem); text-align: center;">
-    <img src="/images/resources/devcon-exam-leak-library.png" alt="" width="72" height="72" style="display: block; margin: 0 auto 0.75rem; background: #3156a4; border-radius: 1rem; padding: 0.6rem;" />
-    <strong style="display: block; color: #202f57;">The Library: remove the secret</strong>
-    <span style="display: block; font-size: 0.9em; line-height: 1.4; color: #344665;">All possible questions are public; the paper is drawn at random on exam day.</span>
+  <div class="resource-comparison-card resource-comparison-card--sky">
+    <img src="/images/resources/devcon-exam-leak-library.webp" alt="" width="72" height="72" loading="lazy" decoding="async" />
+    <strong>The Library: remove the secret</strong>
+    <span>All possible questions are public; the paper is drawn at random on exam day.</span>
   </div>
 </figure>
 

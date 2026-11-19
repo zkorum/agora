@@ -6,18 +6,14 @@ import remarkRehype from "remark-rehype";
 import { unified } from "unified";
 
 import type { locales } from "$lib/paraglide/runtime";
-import { localizeHref, toLocale } from "$lib/paraglide/runtime";
+import { baseLocale, localizeHref, toLocale } from "$lib/paraglide/runtime";
 import { SITE_ORIGIN } from "$lib/seo";
 import { parseResourceDate } from "$logic/shared/resource-date";
 
 type Locale = (typeof locales)[number];
 
-function getString(value: unknown): string {
-  return typeof value === "string" ? value : "";
-}
-
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function localizeResourceHref({
@@ -77,32 +73,25 @@ function rehypeLocalizeResourceLinks({ locale }: { locale: Locale }) {
   };
 }
 
-export type ResourceType = "vision" | "case-study" | "guide" | "tech";
+const resourceTypes = ["vision", "case-study", "guide", "tech"] as const;
+export type ResourceType = (typeof resourceTypes)[number];
 
-export interface ResourcePost {
-  slug: string;
-  type: ResourceType;
-  title: string;
-  description: string;
-  author: string;
-  date: Date;
-  thumbnail: string;
-  image: string;
-  content: string;
+interface ResourcePost extends ResourcePostMeta {
+  readonly content: string;
 }
 
 export interface ResourcePostMeta {
-  slug: string;
-  type: ResourceType;
-  title: string;
-  description: string;
-  author: string;
-  date: Date;
-  thumbnail: string;
-  image: string;
+  readonly slug: string;
+  readonly type: ResourceType;
+  readonly title: string;
+  readonly description: string;
+  readonly author: string;
+  readonly date: Date;
+  readonly thumbnail: string;
+  readonly image: string | undefined;
 }
 
-const markdownFiles: Record<string, string> = import.meta.glob(
+const markdownFiles = import.meta.glob<string>(
   ["/src/lib/posts/**/*.md", "!/src/lib/posts/README.md"],
   {
     query: "?raw",
@@ -111,101 +100,90 @@ const markdownFiles: Record<string, string> = import.meta.glob(
   },
 );
 
-function getLocaleFromPath(path: string): string {
-  const match = /\/src\/lib\/posts\/([^/]+)\//.exec(path);
-  return match?.[1] ?? "en";
+interface ResourceSource {
+  readonly meta: ResourcePostMeta;
+  readonly markdown: string;
 }
 
-function getSlugFromPath(path: string): string {
-  const match = /\/([^/]+)\.md$/.exec(path);
-  return match?.[1] ?? "";
-}
+function parseResourceMeta({
+  data,
+  slug,
+}: {
+  data: unknown;
+  slug: string;
+}): ResourcePostMeta {
+  if (!isRecord(data)) throw new TypeError("Expected a frontmatter object");
+  const { title, description, author, date, thumbnail, image } = data;
 
-function getFallbackType(slug: string): ResourceType {
-  if (slug === "facilitation-guide") return "guide";
-
+  const type = resourceTypes.find((candidate) => candidate === data.type);
+  if (type === undefined) {
+    throw new TypeError("Expected a valid resource type");
+  }
   if (
-    slug === "bloquonstout" ||
-    slug === "prototyping-the-future-with-agora" ||
-    slug === "tech4nature" ||
-    slug === "unesco-mil-alliance"
+    typeof title !== "string" ||
+    typeof description !== "string" ||
+    typeof author !== "string" ||
+    typeof thumbnail !== "string" ||
+    thumbnail.trim() === "" ||
+    (image !== undefined && (typeof image !== "string" || image.trim() === ""))
   ) {
-    return "case-study";
+    throw new TypeError(
+      "Expected text in title, description and author, and non-empty image paths when provided",
+    );
   }
 
-  if (
-    slug === "devconnect-finding-common-ground-at-scale" ||
-    slug === "ethprague-future-building-starts-with-coordination"
-  ) {
-    return "vision";
-  }
-
-  return "tech";
+  return {
+    slug,
+    type,
+    title,
+    description,
+    author,
+    date: parseResourceDate(date),
+    thumbnail,
+    image,
+  };
 }
 
-function getResourceType(value: unknown, slug: string): ResourceType {
-  const normalized = getString(value)
-    .toLowerCase()
-    .replace(/[\s_]+/g, "-");
+function loadResourceSources() {
+  const byLocale = new Map<Locale, Map<string, ResourceSource>>();
+  for (const [path, raw] of Object.entries(markdownFiles)) {
+    const [, localeSegment, slug] =
+      /^\/src\/lib\/posts\/([^/]+)\/([^/]+)\.md$/.exec(path) ?? [];
+    const locale = toLocale(localeSegment);
+    if (!locale || !slug) {
+      throw new Error(`Invalid resource path: ${path}`);
+    }
 
-  if (
-    normalized === "vision" ||
-    normalized === "case-study" ||
-    normalized === "guide" ||
-    normalized === "tech"
-  ) {
-    return normalized;
+    try {
+      const { data, content: markdown } = matter(raw);
+      const source = { meta: parseResourceMeta({ data, slug }), markdown };
+      let posts = byLocale.get(locale);
+      if (!posts) {
+        posts = new Map();
+        byLocale.set(locale, posts);
+      }
+      posts.set(slug, source);
+    } catch (cause) {
+      throw new Error(`Invalid resource: ${path}`, { cause });
+    }
   }
-
-  return getFallbackType(slug);
+  return byLocale;
 }
+
+const resourceSources = loadResourceSources();
 
 export function getResourcePosts({
   locale,
 }: {
-  locale: string;
+  locale: Locale;
 }): ResourcePostMeta[] {
-  const posts: ResourcePostMeta[] = [];
-
-  for (const [path, raw] of Object.entries(markdownFiles)) {
-    if (getLocaleFromPath(path) !== locale) continue;
-
-    const { data } = matter(raw);
-    const slug = getSlugFromPath(path);
-    posts.push({
-      slug,
-      type: getResourceType(data.type, slug),
-      title: getString(data.title),
-      description: getString(data.description),
-      author: getString(data.author),
-      date: parseResourceDate(data.date),
-      thumbnail: getString(data.thumbnail),
-      image: getString(data.image),
-    });
+  const posts = new Map(resourceSources.get(locale));
+  for (const [slug, source] of resourceSources.get(baseLocale) ?? []) {
+    if (!posts.has(slug)) posts.set(slug, source);
   }
-
-  // Fallback: include English-only posts not available in the requested locale
-  if (locale !== "en") {
-    const localeSlugs = new Set(posts.map((p) => p.slug));
-    for (const [path, raw] of Object.entries(markdownFiles)) {
-      if (getLocaleFromPath(path) !== "en") continue;
-      const slug = getSlugFromPath(path);
-      if (localeSlugs.has(slug)) continue;
-      const { data } = matter(raw);
-      posts.push({
-        slug,
-        type: getResourceType(data.type, slug),
-        title: getString(data.title),
-        description: getString(data.description),
-        author: getString(data.author),
-        date: parseResourceDate(data.date),
-        thumbnail: getString(data.thumbnail),
-        image: getString(data.image),
-      });
-    }
-  }
-
-  return posts.sort((a, b) => b.date.getTime() - a.date.getTime());
+  return Array.from(posts.values(), ({ meta }) => meta).sort(
+    (a, b) => b.date.getTime() - a.date.getTime(),
+  );
 }
 
 export async function renderResourceMarkdown({
@@ -233,30 +211,15 @@ export async function getResourcePost({
   slug: string;
   locale: Locale;
 }): Promise<ResourcePost | null> {
-  const path = `/src/lib/posts/${locale}/${slug}.md`;
-  let raw = markdownFiles[path];
-
-  // Fallback to English if locale-specific version doesn't exist
-  if (!raw && locale !== "en") {
-    const fallbackPath = `/src/lib/posts/en/${slug}.md`;
-    raw = markdownFiles[fallbackPath];
-  }
-
-  if (!raw) return null;
-
-  const { data, content: markdownContent } = matter(raw);
+  const source =
+    resourceSources.get(locale)?.get(slug) ??
+    resourceSources.get(baseLocale)?.get(slug);
+  if (!source) return null;
 
   return {
-    slug,
-    type: getResourceType(data.type, slug),
-    title: getString(data.title),
-    description: getString(data.description),
-    author: getString(data.author),
-    date: parseResourceDate(data.date),
-    thumbnail: getString(data.thumbnail),
-    image: getString(data.image),
+    ...source.meta,
     content: await renderResourceMarkdown({
-      markdown: markdownContent,
+      markdown: source.markdown,
       locale,
     }),
   };
@@ -264,8 +227,8 @@ export async function getResourcePost({
 
 export function getAllSlugs(): string[] {
   const slugs = new Set<string>();
-  for (const path of Object.keys(markdownFiles)) {
-    slugs.add(getSlugFromPath(path));
+  for (const posts of resourceSources.values()) {
+    for (const slug of posts.keys()) slugs.add(slug);
   }
   return [...slugs];
 }

@@ -21,8 +21,11 @@ function resolveImageUrl(imagePath: string): string {
 }
 
 function inferImageType(url: string): string | undefined {
-  if (url.endsWith(".jpg") || url.endsWith(".jpeg")) return "image/jpeg";
-  if (url.endsWith(".png")) return "image/png";
+  const { pathname } = new URL(url);
+  if (pathname.endsWith(".jpg") || pathname.endsWith(".jpeg"))
+    return "image/jpeg";
+  if (pathname.endsWith(".png")) return "image/png";
+  if (pathname.endsWith(".webp")) return "image/webp";
   return undefined;
 }
 
@@ -34,15 +37,14 @@ export const load: PageServerLoad = async ({ params }) => {
     error(404, m.resources_post_not_found());
   }
 
-  const ogImagePath = post.image || post.thumbnail;
-  const ogImage = ogImagePath ? resolveImageUrl(ogImagePath) : undefined;
+  const ogImage = resolveImageUrl(post.image ?? post.thumbnail);
 
   const seo: SeoData = {
     title: post.title,
     description: post.description,
     ogType: "article",
     ogImage,
-    ogImageType: ogImage ? inferImageType(ogImage) : undefined,
+    ogImageType: inferImageType(ogImage),
     articleAuthor: post.author,
   };
 

@@ -6,6 +6,8 @@
   import GradientText from "$ui/shared/gradient-text.svelte";
   import Text from "$ui/shared/text.svelte";
 
+  import Contributors from "./contributors.svelte";
+
   const members = [
     {
       id: "yuting",
@@ -26,7 +28,7 @@
 
 <section id="team" class="px-8 py-20">
   <div class="mx-auto max-w-[1120px]">
-    <Text size="base" weight="bold" class="mb-12 text-center">
+    <Text element="h2" size="base" weight="bold" class="mb-12 text-center">
       <GradientText>{m.team_label()}</GradientText>
     </Text>
 
@@ -37,13 +39,13 @@
       "
     >
       {#each members as member (member.id)}
-        <div class="flex w-[320px] flex-col">
+        <div class="flex w-full max-w-80 flex-col">
           <div class="relative">
             <enhanced:img
               src={member.photo}
-              alt={member.name()}
-              sizes="320px"
-              class="size-[320px] rounded-2xl object-cover"
+              alt=""
+              loading="lazy"
+              class="aspect-square w-full rounded-2xl object-cover"
             />
             <div
               class="
@@ -54,9 +56,9 @@
           </div>
           <div class="mt-6 px-6">
             <Text size="lg" weight="medium" element="h3">
-              <GradientLink href={member.profileUrl}
-                >{member.name()}</GradientLink
-              >
+              <GradientLink href={member.profileUrl} underline>
+                <bdi>{member.name()}</bdi>
+              </GradientLink>
             </Text>
             <Text size="base" class="mt-1 text-secondary-foreground">
               {member.role()}
@@ -65,5 +67,6 @@
         </div>
       {/each}
     </div>
+    <Contributors />
   </div>
 </section>

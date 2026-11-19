@@ -74,6 +74,18 @@ test("explicit locale links override a different saved preference", async ({
   );
 });
 
+test("retired resource bookmarks redirect to the localized resources index", async ({
+  request,
+}) => {
+  const response = await request.get(
+    "/ar/resources/broadcasting-to-broadlistening?source=bookmark",
+    { maxRedirects: 0 },
+  );
+
+  expect(response.status()).toBe(308);
+  expect(response.headers().location).toBe("/ar/resources?source=bookmark");
+});
+
 test("initial homepage visits use the saved language preference", async ({
   page,
 }) => {

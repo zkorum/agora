@@ -4,7 +4,7 @@ description: "在孟买举行的 Devcon 8 上，我们主持了一场工作坊�
 author: "Yuting Jiang"
 date: "2026-11-14"
 type: "case-study"
-thumbnail: "/images/resources/devcon8-banner.png"
+thumbnail: "/images/resources/devcon8-banner.webp"
 image: "/images/resources/devcon-exam-leak-opinion-map.webp"
 ---
 
@@ -18,16 +18,16 @@ image: "/images/resources/devcon-exam-leak-opinion-map.webp"
 
 ## 两个起点：保险库和图书馆
 
-<figure aria-label="保障考试安全的两种方案" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(0.5rem, 2vw, 1rem);">
-  <div style="background: #f2efff; border-radius: 1rem; padding: clamp(0.75rem, 3vw, 1.5rem); text-align: center;">
-    <img src="/images/resources/devcon-exam-leak-vault.png" alt="" width="72" height="72" style="display: block; margin: 0 auto 0.75rem; background: #44328e; border-radius: 1rem; padding: 0.6rem;" />
-    <strong style="display: block; color: #29205a;">保险库：保守秘密</strong>
-    <span style="display: block; font-size: 0.9em; line-height: 1.4; color: #423a62;">尽量减少能接触到正式考题的人，并保护每一个环节。</span>
+<figure class="resource-comparison" aria-label="保障考试安全的两种方案">
+  <div class="resource-comparison-card">
+    <img src="/images/resources/devcon-exam-leak-vault.webp" alt="" width="72" height="72" loading="lazy" decoding="async" />
+    <strong>保险库：保守秘密</strong>
+    <span>尽量减少能接触到正式考题的人，并保护每一个环节。</span>
   </div>
-  <div style="background: #edf5ff; border-radius: 1rem; padding: clamp(0.75rem, 3vw, 1.5rem); text-align: center;">
-    <img src="/images/resources/devcon-exam-leak-library.png" alt="" width="72" height="72" style="display: block; margin: 0 auto 0.75rem; background: #3156a4; border-radius: 1rem; padding: 0.6rem;" />
-    <strong style="display: block; color: #202f57;">图书馆：取消保密</strong>
-    <span style="display: block; font-size: 0.9em; line-height: 1.4; color: #344665;">公开所有可能的考题，并在考试当天随机抽取试题。</span>
+  <div class="resource-comparison-card resource-comparison-card--sky">
+    <img src="/images/resources/devcon-exam-leak-library.webp" alt="" width="72" height="72" loading="lazy" decoding="async" />
+    <strong>图书馆：取消保密</strong>
+    <span>公开所有可能的考题，并在考试当天随机抽取试题。</span>
   </div>
 </figure>
 

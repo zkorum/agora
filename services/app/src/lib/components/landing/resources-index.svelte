@@ -44,10 +44,6 @@
       : posts.filter((post) => post.type === selectedType),
   );
 
-  function getPostImage(post: ResourcePostMeta): string {
-    return post.thumbnail || post.image;
-  }
-
   function getCategoryLabel(type: ResourceType): string {
     switch (type) {
       case "case-study":
@@ -208,17 +204,15 @@
             "
             aria-label={post.title}
           >
-            {#if getPostImage(post)}
-              <img
-                src={getPostImage(post)}
-                alt=""
-                class="
-                  size-full object-cover opacity-60 transition-transform
-                  duration-300
-                  group-hover:scale-105
-                "
-              />
-            {/if}
+            <img
+              src={post.thumbnail}
+              alt=""
+              class="
+                size-full object-cover opacity-60 transition-transform
+                duration-300
+                group-hover:scale-105
+              "
+            />
           </a>
 
           <div class="flex min-h-[248px] flex-col justify-between gap-8">

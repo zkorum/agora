@@ -1,10 +1,10 @@
-<script lang="ts">
+<script module lang="ts">
   import * as m from "$lib/paraglide/messages.js";
   import GradientLink from "$ui/shared/gradient-link.svelte";
   import GradientText from "$ui/shared/gradient-text.svelte";
   import Text from "$ui/shared/text.svelte";
 
-  const contributors: {
+  const contributors: readonly {
     name: string;
     role: () => string;
     profileUrl?: string;
@@ -25,9 +25,9 @@
   ];
 </script>
 
-<section id="contributors" class="scroll-mt-20 px-8 pb-20">
+<section id="contributors" class="mt-16 scroll-mt-20">
   <div class="mx-auto max-w-3xl">
-    <Text element="h2" weight="bold" class="mb-6 text-center">
+    <Text element="h3" weight="bold" class="mb-6 text-center">
       <GradientText>{m.contributors_label()}</GradientText>
     </Text>
 
@@ -42,11 +42,11 @@
         <li class="rounded-xl border border-border px-4 py-3">
           <Text weight="semibold">
             {#if contributor.profileUrl}
-              <GradientLink href={contributor.profileUrl}>
-                {contributor.name}
+              <GradientLink href={contributor.profileUrl} underline>
+                <bdi>{contributor.name}</bdi>
               </GradientLink>
             {:else}
-              {contributor.name}
+              <bdi>{contributor.name}</bdi>
             {/if}
           </Text>
           <Text size="sm" class="mt-1 text-secondary-foreground">

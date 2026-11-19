@@ -5,6 +5,7 @@ export default defineConfig({
   webServer: {
     command: "pnpm build && pnpm preview",
     port: 4173,
+    env: { VITE_SENTRY_ENABLED: "false" },
   },
   testDir: "tests",
 });

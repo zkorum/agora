@@ -55,7 +55,7 @@ const comparisonCopyByLocale: Record<Locale, ComparisonCopy> = {
   fr: {
     question: "En quoi Agora diffère-t-il de Pol.is ?",
     answer:
-      "Agora est conçu pour la prise de décision collective, de la recherche de consensus à l’identification de priorités communes. Agora s’inspire de Pol.is sans être un fork de l’application. Le mode Conversation utilise [Red Dwarf](https://github.com/polis-community/red-dwarf), une bibliothèque Python open source, pour cartographier les opinions et faire ressortir les points d’accord. Le mode Priorisation permet ensuite de comparer les propositions pour déterminer par quoi commencer. Le tableau compare Agora à l'expérience standard de Pol.is ; les fonctionnalités peuvent varier selon les déploiements ou les forks.",
+      "Agora est conçu pour la prise de décision collective, de la recherche de consensus à l’identification de priorités communes. Agora s’inspire de Pol.is sans être un fork de l’application. Le mode Conversation utilise [Red Dwarf](https://github.com/polis-community/red-dwarf), une bibliothèque Python open source, pour cartographier les opinions et faire ressortir les points d’accord. Le mode Priorisation permet ensuite de comparer les propositions pour déterminer par quoi commencer. Le tableau compare Agora à la version standard de Pol.is ; les fonctionnalités peuvent varier selon les déploiements ou les forks.",
     featureLabel: "Fonctionnalité",
     features: {
       openSource: "Open source",
@@ -81,7 +81,7 @@ const comparisonCopyByLocale: Record<Locale, ComparisonCopy> = {
   es: {
     question: "¿En qué se diferencia Agora de Pol.is?",
     answer:
-      "Agora está diseñado para la toma de decisiones colectiva, desde la búsqueda de consenso hasta la identificación de prioridades compartidas. Se inspira en Pol.is, pero no es una versión derivada de su aplicación. El modo Conversación utiliza [Red Dwarf](https://github.com/polis-community/red-dwarf), una biblioteca de Python de código abierto, para mapear opiniones y detectar puntos en común. Después, el modo Priorización permite comparar propuestas para decidir por dónde empezar. La tabla compara Agora con la experiencia estándar de Pol.is; las funciones pueden variar en otras instalaciones o forks.",
+      "Agora está diseñado para la toma de decisiones colectiva, desde la búsqueda de consenso hasta la identificación de prioridades compartidas. Se inspira en Pol.is, pero no es una versión derivada de su aplicación. El modo Conversación utiliza [Red Dwarf](https://github.com/polis-community/red-dwarf), una biblioteca de Python de código abierto, para mapear opiniones y detectar puntos en común. Después, el modo Priorización permite comparar propuestas para decidir por dónde empezar. La tabla compara Agora con la versión estándar de Pol.is; las funciones pueden variar en otras instalaciones o forks.",
     featureLabel: "Función",
     features: {
       openSource: "Código abierto",
@@ -134,7 +134,7 @@ const comparisonCopyByLocale: Record<Locale, ComparisonCopy> = {
   fa: {
     question: "Agora چه تفاوتی با Pol.is دارد؟",
     answer:
-      "Agora برای تصمیم‌گیری جمعی طراحی شده است، از رسیدن به توافق تا شناسایی اولویت‌های مشترک. از Pol.is الهام گرفته، اما نسخه‌ای منشعب از برنامهٔ آن نیست. حالت گفت‌وگو از [Red Dwarf](https://github.com/polis-community/red-dwarf)، یک کتابخانهٔ متن‌باز پایتون، برای ترسیم نقشهٔ دیدگاه‌ها و آشکار کردن نقاط توافق استفاده می‌کند. سپس حالت اولویت‌بندی به شرکت‌کنندگان امکان می‌دهد پیشنهادها را مقایسه کنند و مشخص کنند ابتدا روی چه چیزی تمرکز کنند. جدول، Agora را با تجربه استاندارد Pol.is مقایسه می‌کند؛ امکانات در استقرارها یا نسخه‌های منشعب دیگر ممکن است متفاوت باشند.",
+      "Agora برای تصمیم‌گیری جمعی طراحی شده است، از رسیدن به اجماع تا شناسایی اولویت‌های مشترک. از Pol.is الهام گرفته، اما نسخه‌ای منشعب از برنامهٔ آن نیست. حالت گفت‌وگو از [Red Dwarf](https://github.com/polis-community/red-dwarf)، یک کتابخانهٔ متن‌باز پایتون، برای ترسیم نقشهٔ دیدگاه‌ها و آشکار کردن زمینهٔ مشترک استفاده می‌کند. سپس حالت اولویت‌بندی به شرکت‌کنندگان امکان می‌دهد پیشنهادها را مقایسه کنند و مشخص کنند ابتدا روی چه چیزی تمرکز کنند. جدول، Agora را با تجربه استاندارد Pol.is مقایسه می‌کند؛ امکانات در استقرارها یا نسخه‌های منشعب دیگر ممکن است متفاوت باشند.",
     featureLabel: "قابلیت",
     features: {
       openSource: "متن‌باز",
@@ -231,7 +231,7 @@ const comparisonCopyByLocale: Record<Locale, ComparisonCopy> = {
   "zh-hant": {
     question: "Agora 與 Pol.is 有何不同？",
     answer:
-      "Agora 專為集體決策而設計，協助群體從形成共識走向確定共同的優先事項。它受到 Pol.is 的啟發，但不是 Pol.is 應用程式的分支。對話模式使用開放原始碼 Python 函式庫 [Red Dwarf](https://github.com/polis-community/red-dwarf) 繪製意見圖譜，找出共同點。接著，參與者可以在優先順序排序模式中比較提案，確定應先關注什麼。下表將 Agora 與標準 Pol.is 體驗進行比較；其他部署或分支版本的功能可能有所不同。",
+      "Agora 專為集體決策而設計，協助群體從形成共識走向確定共同的優先事項。它受到 Pol.is 的啟發，但不是 Pol.is 應用程式的分支。對話模式使用開放原始碼 Python 函式庫 [Red Dwarf](https://github.com/polis-community/red-dwarf) 繪製意見地圖，找出共同點。接著，參與者可以在優先排序模式中比較提案，確定應先關注什麼。下表將 Agora 與標準 Pol.is 體驗進行比較；其他部署或分支版本的功能可能有所不同。",
     featureLabel: "功能",
     features: {
       openSource: "開源",
