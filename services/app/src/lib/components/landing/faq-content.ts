@@ -125,7 +125,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "Can Agora work with other tools?",
             answer:
-              "Yes. Agora supports practical interoperability through imports, exports, embeds, APIs (under development), and open-source code. We also launched the [DDS (Decentralized Deliberation Standard)](https://dds.xyz) initiative, for broader protocol-level interoperability.",
+              "Yes. Agora supports practical interoperability through imports, exports, embeds, APIs (under development), and open-source code. We also launched the [Decentralized Deliberation Stack (DDS)](https://www.w3.org/community/dds/). A W3C Community Group now develops it to help deliberation tools work together without depending on a single protocol.",
           },
         ],
       },
@@ -224,7 +224,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "Agora peut-il fonctionner avec d'autres outils ?",
             answer:
-              "Oui. Agora prend en charge une interopérabilité pratique via les imports, exports, intégrations, API en cours de développement et code open source. Nous avons aussi lancé l'initiative [DDS (Decentralized Deliberation Standard)](https://dds.xyz), pour une interopérabilité plus large au niveau protocolaire.",
+              "Oui. Agora prend en charge une interopérabilité pratique via les imports, exports, intégrations, API en cours de développement et code open source. Nous avons aussi lancé le [Decentralized Deliberation Stack (DDS)](https://www.w3.org/community/dds/). Un groupe communautaire du W3C le développe désormais pour que les outils de délibération puissent fonctionner ensemble sans dépendre d’un protocole unique.",
           },
         ],
       },
@@ -323,7 +323,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "¿Agora puede funcionar con otras herramientas?",
             answer:
-              "Sí. Agora admite interoperabilidad práctica mediante importaciones, exportaciones, contenido incrustado, API en desarrollo y código abierto. También lanzamos la iniciativa [DDS (Decentralized Deliberation Standard)](https://dds.xyz), para una interoperabilidad más amplia a nivel de protocolo.",
+              "Sí. Agora admite interoperabilidad práctica mediante importaciones, exportaciones, contenido incrustado, API en desarrollo y código abierto. También lanzamos la iniciativa [Decentralized Deliberation Stack (DDS)](https://www.w3.org/community/dds/). Un grupo comunitario del W3C la desarrolla ahora para que las herramientas de deliberación puedan funcionar juntas sin depender de un único protocolo.",
           },
         ],
       },
@@ -420,7 +420,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "هل يمكن أن تعمل Agora مع أدوات أخرى؟",
             answer:
-              "نعم. تدعم Agora قابلية تشغيل بيني عملية عبر الاستيراد والتصدير والتضمين وواجهات API قيد التطوير والكود المفتوح المصدر. أطلقنا أيضا مبادرة [DDS (Decentralized Deliberation Standard)](https://dds.xyz)، من أجل قابلية تشغيل بيني أوسع على مستوى البروتوكول.",
+              "نعم. تدعم Agora قابلية تشغيل بيني عملية عبر الاستيراد والتصدير والتضمين وواجهات API قيد التطوير والكود المفتوح المصدر. أطلقنا أيضًا مبادرة [Decentralized Deliberation Stack (DDS)](https://www.w3.org/community/dds/). وتتولى الآن مجموعة مجتمعية ضمن W3C تطويرها كي تتمكن أدوات المداولة من العمل معًا دون الاعتماد على بروتوكول واحد.",
           },
         ],
       },
@@ -517,7 +517,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "آیا Agora با ابزارهای دیگر کار می‌کند؟",
             answer:
-              "بله. Agora از تعامل‌پذیری عملی از راه واردکردن، صادرکردن، جاسازی، APIهای در حال توسعه و کد متن‌باز پشتیبانی می‌کند. ما همچنین ابتکار [DDS (Decentralized Deliberation Standard)](https://dds.xyz) را برای تعامل‌پذیری گسترده‌تر در سطح پروتکل راه‌اندازی کرده‌ایم.",
+              "بله. Agora از تعامل‌پذیری عملی از راه واردکردن، صادرکردن، جاسازی، APIهای در حال توسعه و کد متن‌باز پشتیبانی می‌کند. ما همچنین ابتکار [Decentralized Deliberation Stack (DDS)](https://www.w3.org/community/dds/) را راه‌اندازی کردیم. اکنون یک گروه جامعه‌محور در W3C آن را توسعه می‌دهد تا ابزارهای هم‌اندیشی بتوانند بدون وابستگی به یک پروتکل واحد با هم کار کنند.",
           },
         ],
       },
@@ -613,7 +613,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "האם Agora יכולה לעבוד עם כלים אחרים?",
             answer:
-              "כן. Agora תומכת באינטראופרביליות מעשית דרך יבוא, יצוא, הטמעות, API בפיתוח וקוד פתוח. השקנו גם את יוזמת [DDS (Decentralized Deliberation Standard)](https://dds.xyz), לאינטראופרביליות רחבה יותר ברמת הפרוטוקול.",
+              "כן. Agora תומכת באינטראופרביליות מעשית דרך יבוא, יצוא, הטמעות, API בפיתוח וקוד פתוח. השקנו גם את יוזמת [Decentralized Deliberation Stack (DDS)](https://www.w3.org/community/dds/). קבוצת קהילה של W3C מפתחת אותה כיום כדי שכלי דיון יוכלו לעבוד יחד בלי להסתמך על פרוטוקול אחד.",
           },
         ],
       },
@@ -711,7 +711,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "Agoraは他のツールと連携できますか？",
             answer:
-              "はい。Agoraは、インポート、エクスポート、埋め込み、開発中のAPI、オープンソースコードを通じて実用的な相互運用性をサポートしています。また、より広いプロトコルレベルの相互運用性に向けて[DDS (Decentralized Deliberation Standard)](https://dds.xyz)イニシアチブも立ち上げました。",
+              "はい。Agoraは、インポート、エクスポート、埋め込み、開発中のAPI、オープンソースコードを通じて実用的な相互運用性をサポートしています。また、[Decentralized Deliberation Stack（DDS）](https://www.w3.org/community/dds/)の取り組みも立ち上げました。現在はW3Cのコミュニティグループが、熟議ツールが単一のプロトコルに依存せず連携できるよう、DDSを開発しています。",
           },
         ],
       },
@@ -807,7 +807,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "Agora 能与其他工具配合使用吗？",
             answer:
-              "可以。Agora 通过导入、导出、嵌入、正在开发的 API 和开源代码支持实用的互操作性。我们还发起了 [DDS（Decentralized Deliberation Standard）](https://dds.xyz) 倡议，以实现更广泛的协议层互操作性。",
+              "可以。Agora 通过导入、导出、嵌入、正在开发的 API 和开源代码支持实用的互操作性。我们还发起了 [Decentralized Deliberation Stack（DDS）](https://www.w3.org/community/dds/) 倡议。现在，W3C 的一个社区组负责开发 DDS，让协商工具不必依赖同一种协议也能互操作。",
           },
         ],
       },
@@ -903,7 +903,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "Agora 能與其他工具配合使用嗎？",
             answer:
-              "可以。Agora 透過匯入、匯出、嵌入、正在開發的 API 和開源程式碼支援實用的互操作性。我們還發起了 [DDS（Decentralized Deliberation Standard）](https://dds.xyz) 倡議，以實現更廣泛的協議層互操作性。",
+              "可以。Agora 透過匯入、匯出、嵌入、正在開發的 API 和開源程式碼支援實用的互操作性。我們也發起了 [Decentralized Deliberation Stack（DDS）](https://www.w3.org/community/dds/) 倡議。現在由 W3C 的一個社群小組開發 DDS，讓審議工具不必依賴同一種通訊協定也能相互運作。",
           },
         ],
       },
@@ -1002,7 +1002,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "Agora башка куралдар менен иштей алабы?",
             answer:
-              "Ооба. Agora импорт, экспорт, embed, иштелип жаткан APIлер жана ачык булактуу код аркылуу практикалык өз ара иштешүүнү колдойт. Ошондой эле биз протокол деңгээлиндеги кеңири өз ара иштешүү үчүн [DDS (Decentralized Deliberation Standard)](https://dds.xyz) демилгесин баштадык.",
+              "Ооба. Agora импорт, экспорт, embed, иштелип жаткан APIлер жана ачык булактуу код аркылуу практикалык өз ара иштешүүнү колдойт. Биз [Decentralized Deliberation Stack (DDS)](https://www.w3.org/community/dds/) демилгесин да баштадык. Талкуу куралдары бир эле протоколго көз каранды болбой, бирге иштей алышы үчүн DDSти азыр W3Cнин коомчулук тобу иштеп чыгууда.",
           },
         ],
       },
@@ -1100,7 +1100,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
           {
             question: "Может ли Agora работать с другими инструментами?",
             answer:
-              "Да. Agora поддерживает практическую совместимость через импорт, экспорт, встраивание, API в разработке и открытый исходный код. Мы также запустили инициативу [DDS (Decentralized Deliberation Standard)](https://dds.xyz) для более широкой совместимости на уровне протокола.",
+              "Да. Agora поддерживает практическую совместимость через импорт, экспорт, встраивание, API в разработке и открытый исходный код. Мы также запустили инициативу [Decentralized Deliberation Stack (DDS)](https://www.w3.org/community/dds/). Теперь DDS развивает группа сообщества W3C, чтобы инструменты для обсуждений могли работать вместе без привязки к одному протоколу.",
           },
         ],
       },
