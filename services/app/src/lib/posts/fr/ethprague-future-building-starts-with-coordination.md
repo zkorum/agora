@@ -12,7 +12,7 @@ image: "/images/resources/ethprague-broad-listening.jpg"
 
 L'idée centrale est simple : le problème le plus difficile n'est pas l'intelligence. C'est la **coordination**. Du changement climatique à la réponse aux pandémies en passant par la gouvernance de l'IA, beaucoup de nos plus grands défis ne viennent pas d'un manque d'idées. Ce sont des échecs de coordination.
 
-Cette présentation introduit le **[Broad Listening](https://www.agoracitizen.network/resources/broadcasting-to-broadlistening)** comme une manière de passer de l'attention partagée aux décisions partagées.
+Cette présentation introduit le **Broad Listening** comme une manière de passer de l'attention partagée aux décisions partagées.
 
 ## Thèmes clés
 

@@ -2,7 +2,7 @@
 title: "هل يمكن لـ30 شخصًا الاتفاق على قواعد للذكاء الاصطناعي في يوم واحد؟"
 description: "كيف استخدمت Leviathan، وهي شركة ناشئة في مجال التكنولوجيا العميقة تضم 30 شخصًا، أغورا لصياغة ميثاق للذكاء الاصطناعي معًا وترتيب أولوياته خلال يوم واحد بإشراف ميسّر."
 author: "فريق أغورا"
-date: "2026-09-01"
+date: "2026-09-23"
 type: "case-study"
 thumbnail: "/images/resources/ai-charter-workshop.webp"
 image: "/images/resources/ai-charter-workshop.webp"

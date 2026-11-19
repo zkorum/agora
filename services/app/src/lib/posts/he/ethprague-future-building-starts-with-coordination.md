@@ -12,7 +12,7 @@ image: "/images/resources/ethprague-broad-listening.jpg"
 
 הטענה המרכזית פשוטה: הבעיה הקשה ביותר אינה אינטליגנציה. היא **תיאום**. משינוי אקלים ועד תגובה למגפות וממשל AI, רבים מהאתגרים הגדולים שלנו אינם נובעים ממחסור ברעיונות. הם כשלי תיאום.
 
-ההרצאה מציגה את **[Broad Listening](https://www.agoracitizen.network/resources/broadcasting-to-broadlistening)** כדרך לעבור מקשב משותף להחלטות משותפות.
+ההרצאה מציגה את **Broad Listening** כדרך לעבור מקשב משותף להחלטות משותפות.
 
 ## נושאים מרכזיים
 

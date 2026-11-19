@@ -134,7 +134,6 @@ function getFallbackType(slug: string): ResourceType {
   }
 
   if (
-    slug === "broadcasting-to-broadlistening" ||
     slug === "devconnect-finding-common-ground-at-scale" ||
     slug === "ethprague-future-building-starts-with-coordination"
   ) {

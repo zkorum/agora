@@ -25,14 +25,14 @@
       "
     >
       <a
-        href={localizeHref("/resources/unesco-mil-alliance")}
+        href={localizeHref("/resources/bloquonstout")}
         class="
           group relative flex aspect-544/305 flex-col justify-end
           overflow-hidden rounded-2xl p-8
         "
       >
         <enhanced:img
-          src="$lib/assets/casestudy-unesco-mil.jpeg"
+          src="$lib/assets/casestudy-bloquonstout.png"
           alt=""
           loading="lazy"
           sizes="(min-width: 768px) 33vw, 100vw"
@@ -44,17 +44,17 @@
         />
         <div
           class="
-            absolute inset-0 bg-linear-to-b from-black/30 from-0%
+            absolute inset-0 bg-linear-to-b from-transparent from-30%
             to-overlay-dark
           "
         ></div>
         <div class="relative z-10 flex flex-col gap-2 drop-shadow-lg">
           <Text size="xl" weight="semibold" element="h3" class="text-white">
-            {m.casestudy_unesco_mil_title()}
+            {m.casestudy_bloquonstout_title()}
           </Text>
           <div class="flex items-center justify-between">
             <Text size="base" element="span" class="text-white">
-              {m.casestudy_date_october_2025()}
+              {m.casestudy_date_september_2025()}
             </Text>
             <span
               class="
@@ -112,14 +112,14 @@
       </a>
 
       <a
-        href={localizeHref("/resources/bloquonstout")}
+        href={localizeHref("/resources/unesco-mil-alliance")}
         class="
           group relative flex aspect-544/305 flex-col justify-end
           overflow-hidden rounded-2xl p-8
         "
       >
         <enhanced:img
-          src="$lib/assets/casestudy-bloquonstout.png"
+          src="$lib/assets/casestudy-unesco-mil.jpeg"
           alt=""
           loading="lazy"
           sizes="(min-width: 768px) 33vw, 100vw"
@@ -131,17 +131,17 @@
         />
         <div
           class="
-            absolute inset-0 bg-linear-to-b from-transparent from-30%
+            absolute inset-0 bg-linear-to-b from-black/30 from-0%
             to-overlay-dark
           "
         ></div>
         <div class="relative z-10 flex flex-col gap-2 drop-shadow-lg">
           <Text size="xl" weight="semibold" element="h3" class="text-white">
-            {m.casestudy_bloquonstout_title()}
+            {m.casestudy_unesco_mil_title()}
           </Text>
           <div class="flex items-center justify-between">
             <Text size="base" element="span" class="text-white">
-              {m.casestudy_date_september_2025()}
+              {m.casestudy_date_october_2025()}
             </Text>
             <span
               class="

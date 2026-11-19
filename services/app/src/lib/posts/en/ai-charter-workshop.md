@@ -2,7 +2,7 @@
 title: "Can 30 People Agree on AI Rules in a Day?"
 description: "How Leviathan, a 30-person deep tech startup, used Agora to co-write and prioritize an AI charter in one facilitated day."
 author: "Agora Team"
-date: "2026-09-01"
+date: "2026-09-23"
 type: "case-study"
 thumbnail: "/images/resources/ai-charter-workshop.webp"
 image: "/images/resources/ai-charter-workshop.webp"

@@ -2,7 +2,7 @@
 title: "¿Pueden 30 personas acordar reglas para la IA en un día?"
 description: "Cómo Leviathan, una startup de tecnología profunda de 30 personas, utilizó Agora para redactar conjuntamente una carta de uso de la IA y priorizar sus principios en una jornada facilitada."
 author: "Equipo de Agora"
-date: "2026-09-01"
+date: "2026-09-23"
 type: "case-study"
 thumbnail: "/images/resources/ai-charter-workshop.webp"
 image: "/images/resources/ai-charter-workshop.webp"

@@ -1,5 +1,5 @@
 ---
-title: "将挫折转化为集体力量"
+title: "将分歧转化为集体力量"
 description: "在法国#bloquonstout罢工期间,Agora Citizen Network如何被用来将大规模动员转化为共享的民主诉求。"
 author: "Agora团队"
 date: "2025-09-01"

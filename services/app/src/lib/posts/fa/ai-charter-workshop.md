@@ -2,7 +2,7 @@
 title: "آیا ۳۰ نفر می‌توانند در یک روز بر سر قواعد هوش مصنوعی توافق کنند؟"
 description: "چگونه Leviathan، یک استارتاپ ۳۰ نفره در حوزه فناوری عمیق، با کمک آگورا، در یک روز و با همراهی یک تسهیلگر، منشور هوش مصنوعی خود را به‌صورت جمعی نوشت و اولویت‌بندی کرد."
 author: "تیم آگورا"
-date: "2026-09-01"
+date: "2026-09-23"
 type: "case-study"
 thumbnail: "/images/resources/ai-charter-workshop.webp"
 image: "/images/resources/ai-charter-workshop.webp"

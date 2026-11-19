@@ -2,7 +2,7 @@
 title: "30個人能在一天內就AI使用規則達成共識嗎？"
 description: "Leviathan這家30人的深科技新創公司如何在一天的引導式工作坊中，使用Agora共同制定AI使用章程，並確定各項原則的優先順序。"
 author: "Agora團隊"
-date: "2026-09-01"
+date: "2026-09-23"
 type: "case-study"
 thumbnail: "/images/resources/ai-charter-workshop.webp"
 image: "/images/resources/ai-charter-workshop.webp"

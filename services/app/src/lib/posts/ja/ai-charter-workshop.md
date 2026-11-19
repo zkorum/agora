@@ -2,7 +2,7 @@
 title: "30人が1日でAI利用ルールに合意できるか？"
 description: "30人のディープテック系スタートアップLeviathanが、Agoraを使い、ファシリテーターの進行のもとでAI利用憲章を共同作成し、1日で優先順位を定めた事例。"
 author: "Agoraチーム"
-date: "2026-09-01"
+date: "2026-09-23"
 type: "case-study"
 thumbnail: "/images/resources/ai-charter-workshop.webp"
 image: "/images/resources/ai-charter-workshop.webp"

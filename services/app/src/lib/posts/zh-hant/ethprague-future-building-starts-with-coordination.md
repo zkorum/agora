@@ -12,7 +12,7 @@ image: "/images/resources/ethprague-broad-listening.jpg"
 
 核心觀點很簡單：最困難的問題不是智慧，而是 **協調**。從氣候變遷，到疫情應對，再到 AI 治理，我們面臨的許多重大挑戰並不是缺少想法，而是協調失敗。
 
-這場演講介紹了 **[Broad Listening](https://www.agoracitizen.network/resources/broadcasting-to-broadlistening)**，它是一種從共同注意力走向共同決策的方法。
+這場演講介紹了 **Broad Listening**，它是一種從共同注意力走向共同決策的方法。
 
 ## 關鍵主題
 

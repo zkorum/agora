@@ -2,7 +2,7 @@
 title: "30 адам бир күндө ЖИ эрежелери боюнча макулдаша алабы?"
 description: "Терең технологиялар тармагындагы 30 адамдан турган Leviathan стартапы Agoraны колдонуп, фасилитатордун жардамы менен бир күндө ЖИ колдонуу хартиясын чогуу жазып, артыкчылыктарын кантип аныктады."
 author: "Agora командасы"
-date: "2026-09-01"
+date: "2026-09-23"
 type: "case-study"
 thumbnail: "/images/resources/ai-charter-workshop.webp"
 image: "/images/resources/ai-charter-workshop.webp"

@@ -1,5 +1,4 @@
 <script lang="ts">
-  import photoGeorge from "$lib/assets/team/george.png?enhanced";
   import photoNicolas from "$lib/assets/team/nicolas.png?enhanced";
   import photoYuting from "$lib/assets/team/yuting.png?enhanced";
   import * as m from "$lib/paraglide/messages.js";
@@ -21,13 +20,6 @@
       name: () => m.team_nicolas_name(),
       role: () => m.team_nicolas_role(),
       profileUrl: "https://bsky.app/profile/nicobao.dev",
-    },
-    {
-      id: "george",
-      photo: photoGeorge,
-      name: () => m.team_george_name(),
-      role: () => m.team_george_role(),
-      profileUrl: "https://www.georgecharnley.com/",
     },
   ];
 </script>
