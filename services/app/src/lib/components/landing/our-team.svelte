@@ -6,8 +6,6 @@
   import GradientText from "$ui/shared/gradient-text.svelte";
   import Text from "$ui/shared/text.svelte";
 
-  import Contributors from "./contributors.svelte";
-
   const members = [
     {
       id: "yuting",
@@ -67,6 +65,5 @@
         </div>
       {/each}
     </div>
-    <Contributors />
   </div>
 </section>
