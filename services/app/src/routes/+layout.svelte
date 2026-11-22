@@ -1,5 +1,4 @@
 <script lang="ts">
-  import "@fontsource-variable/albert-sans";
   import "../app.css";
 
   import * as m from "#lib/paraglide/messages.js";
@@ -84,7 +83,7 @@
   <div
     class="
       flex min-h-screen flex-col font-sans text-foreground
-      {isResources ? 'bg-[#fefeff]' : 'bg-background'}
+      {isResources ? 'bg-resource-surface' : 'bg-background'}
     "
   >
     <Header

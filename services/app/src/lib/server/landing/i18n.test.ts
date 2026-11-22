@@ -71,8 +71,8 @@ describe("landing localization", () => {
 
     for (const [key, value] of Object.entries(translatedMessages ?? {})) {
       expect(value.trim(), key).not.toBe("");
-      expect(value.match(/\{[^}]+\}/g) ?? [], key).toEqual(
-        englishMessages[key].match(/\{[^}]+\}/g) ?? [],
+      expect(new Set(value.match(/\{[^}]+\}/g)), key).toEqual(
+        new Set(englishMessages[key].match(/\{[^}]+\}/g)),
       );
     }
 

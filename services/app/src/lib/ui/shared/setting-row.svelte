@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Label, Switch } from "bits-ui";
+  import { Switch } from "bits-ui";
 
   import Icon from "./icon.svelte";
   import type { IconName } from "./view-types.js";
@@ -20,105 +20,65 @@
     disabled?: boolean;
     switchProps?: Omit<
       Switch.RootProps,
-      "checked" | "children" | "ref" | "id" | "disabled"
+      | "checked"
+      | "child"
+      | "children"
+      | "ref"
+      | "id"
+      | "disabled"
+      | "aria-label"
+      | "aria-labelledby"
     >;
     ref?: Switch.RootProps["ref"];
   } = $props();
   const id = $props.id();
 </script>
 
-<div class={["setting-row", { disabled }]}>
-  <span class="setting-icon"><Icon name={icon} size={20} /></span>
-  <div class="copy">
-    <Label.Root for={id} class="setting-label">{title}</Label.Root>
-    <p id={`${id}-description`}>{description}</p>
-  </div>
-  <Switch.Root
-    {...switchProps}
-    bind:ref
-    {id}
-    bind:checked
-    {disabled}
-    aria-describedby={`${id}-description ${switchProps["aria-describedby"] ?? ""}`.trim()}
-    class={["setting-switch", switchProps.class]}
-    ><Switch.Thumb class="setting-thumb" /></Switch.Root
+<Switch.Root
+  {...switchProps}
+  bind:ref
+  {id}
+  bind:checked
+  {disabled}
+  aria-labelledby={`${id}-title`}
+  aria-describedby={`${id}-description ${switchProps["aria-describedby"] ?? ""}`.trim()}
+  class={[
+    `
+      group/setting @container flex w-full min-w-0 cursor-pointer items-center
+      gap-3.5 rounded-[10px] border border-sky-lighter bg-sky-white p-4
+      text-start text-ink-light
+      focus-visible:outline-3 focus-visible:outline-offset-3
+      focus-visible:outline-primary-light
+      enabled:hover:bg-sky-lightest
+      disabled:cursor-not-allowed disabled:opacity-50
+    `,
+    switchProps.class,
+  ]}
+>
+  <span class="@max-[30rem]:hidden"><Icon name={icon} size={20} /></span>
+  <span class="min-w-0 flex-1 wrap-anywhere">
+    <span id={`${id}-title`} class="block text-sm font-medium text-ink-dark"
+      >{title}</span
+    >
+    <span id={`${id}-description`} class="mt-1 block text-[13px]"
+      >{description}</span
+    >
+  </span>
+  <span
+    aria-hidden="true"
+    class="
+      flex h-6.5 w-11 shrink-0 items-center rounded-full bg-sky-lighter p-0.75
+      group-data-[state=checked]/setting:bg-primary-base
+    "
   >
-</div>
-
-<style>
-  .setting-row {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 16px;
-    border: 1px solid var(--sky-lighter);
-    border-radius: 10px;
-    background: white;
-  }
-  .setting-icon {
-    color: var(--ink-light);
-  }
-  .copy {
-    flex: 1;
-    min-width: 0;
-  }
-  .copy :global(.setting-label) {
-    color: var(--ink-dark);
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-  }
-  p {
-    margin-block-start: 4px;
-    color: var(--ink-light);
-    font-size: 13px;
-  }
-  .setting-row :global(.setting-switch) {
-    display: flex;
-    align-items: center;
-    padding: 3px;
-    width: 44px;
-    height: 26px;
-    border: 0;
-    border-radius: 999px;
-    background: var(--sky-lighter);
-    flex-shrink: 0;
-    cursor: pointer;
-  }
-  .setting-row :global(.setting-switch[data-state="checked"]) {
-    background: var(--primary-base);
-  }
-  .setting-row :global(.setting-thumb) {
-    display: block;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: white;
-    transform: translateX(0);
-    transition: transform 150ms ease;
-    box-shadow: 0 1px 3px #33323814;
-  }
-  .setting-row :global(.setting-thumb[data-state="checked"]) {
-    transform: translateX(18px);
-  }
-  .setting-row:dir(rtl) :global(.setting-thumb[data-state="checked"]) {
-    transform: translateX(-18px);
-  }
-  .disabled {
-    opacity: 0.5;
-  }
-  .setting-row :global(.setting-switch:focus-visible) {
-    outline: 3px solid var(--primary-light);
-    outline-offset: 3px;
-  }
-  @media (max-width: 480px) {
-    .setting-icon {
-      display: none;
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .setting-row :global(.setting-thumb) {
-      transition: none;
-    }
-  }
-</style>
+    <Switch.Thumb
+      class="
+        block size-5 rounded-full bg-sky-white shadow-[0_1px_3px_#33323814]
+        transition-transform duration-150
+        data-[state=checked]:translate-x-4.5
+        motion-reduce:transition-none
+        rtl:data-[state=checked]:-translate-x-4.5
+      "
+    />
+  </span>
+</Switch.Root>

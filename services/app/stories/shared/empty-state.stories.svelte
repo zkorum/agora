@@ -22,7 +22,7 @@
 </script>
 
 {#snippet template({ withAction = false, dir = "ltr", ...args }: Args)}
-  <div {dir} style="max-width: 640px">
+  <div {dir} class="w-full max-w-160">
     {#snippet action()}<Button variant="neutral" size="control" disabled
         >Create project</Button
       >{/snippet}

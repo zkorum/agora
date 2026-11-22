@@ -28,16 +28,13 @@
     {className}"
 >
   <span
-    style="
-      color: var(--color-brand-purple);
-      background-image: linear-gradient(180deg, var(--color-brand-purple), var(--color-brand-blue));
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
-      {underline
-      ? 'text-decoration: underline; text-decoration-color: var(--color-brand-purple);'
-      : ''}
-    "
+    class={[
+      `
+        bg-linear-to-b from-brand-purple to-brand-blue bg-clip-text
+        text-transparent
+      `,
+      underline && "underline decoration-brand-purple",
+    ]}
   >
     {@render children()}
   </span>

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { RadioGroup } from "bits-ui";
 
+  import * as m from "#lib/paraglide/messages.js";
   import ExpandableText from "$ui/shared/expandable-text.svelte";
 
   let {
@@ -34,12 +35,21 @@
   } = $props();
 </script>
 
-<div class="bws">
-  <span class="heading">Statement</span><span class="heading">Most</span><span
-    class="heading">Least</span
+<div
+  class="
+    grid grid-flow-row-dense grid-cols-[minmax(0,1fr)_3.125rem_3.125rem] gap-x-3
+    text-sm
+  "
+>
+  <span class="border-b border-sky-lighter py-5 text-xs text-ink-light"
+    >{m.authoring_statement()}</span
+  ><span class="border-b border-sky-lighter py-5 text-xs text-ink-light"
+    >{m.authoring_most()}</span
+  ><span class="border-b border-sky-lighter py-5 text-xs text-ink-light"
+    >{m.authoring_least()}</span
   >
-  {#each items as item, index (item.value)}
-    <div class="item" style:grid-row={index + 2}>
+  {#each items as item (item.value)}
+    <div class="col-start-1 min-w-0 border-b border-sky-lighter py-5">
       <ExpandableText text={item.text} />
     </div>
   {/each}
@@ -48,16 +58,30 @@
     bind:ref={bestRef}
     bind:value={() => best ?? "", onbestchange}
     {disabled}
-    aria-label="Most important statement"
-    class={["agora-priority-options", bestRootProps.class]}
+    aria-label={m.authoring_most()}
+    class={["contents", bestRootProps.class]}
   >
-    {#each items as item, index (item.value)}
-      <div class="option" style:grid-column={2} style:grid-row={index + 2}>
+    {#each items as item (item.value)}
+      <div
+        class="col-start-2 flex items-center border-b border-sky-lighter py-5"
+      >
         <RadioGroup.Item
           value={item.value}
-          aria-label={`Most important: ${item.text}`}
-          class="agora-priority-radio"
-          ><span class="dot" aria-hidden="true"></span></RadioGroup.Item
+          aria-label={`${m.authoring_most()}: ${item.text}`}
+          class="
+            group grid size-6 cursor-pointer place-items-center rounded-full
+            border border-sky-base bg-sky-white
+            focus-visible:outline-2 focus-visible:outline-primary-base
+            disabled:cursor-not-allowed disabled:opacity-60
+            aria-checked:border-primary-base
+          "
+          ><span
+            class="
+              size-3 rounded-full
+              group-aria-checked:bg-primary-base
+            "
+            aria-hidden="true"
+          ></span></RadioGroup.Item
         >
       </div>
     {/each}
@@ -67,81 +91,32 @@
     bind:ref={worstRef}
     bind:value={() => worst ?? "", onworstchange}
     {disabled}
-    aria-label="Least important statement"
-    class={["agora-priority-options", worstRootProps.class]}
+    aria-label={m.authoring_least()}
+    class={["contents", worstRootProps.class]}
   >
-    {#each items as item, index (item.value)}
-      <div class="option" style:grid-column={3} style:grid-row={index + 2}>
+    {#each items as item (item.value)}
+      <div
+        class="col-start-3 flex items-center border-b border-sky-lighter py-5"
+      >
         <RadioGroup.Item
           value={item.value}
-          aria-label={`Least important: ${item.text}`}
-          class="agora-priority-radio"
-          ><span class="dot" aria-hidden="true"></span></RadioGroup.Item
+          aria-label={`${m.authoring_least()}: ${item.text}`}
+          class="
+            group grid size-6 cursor-pointer place-items-center rounded-full
+            border border-sky-base bg-sky-white
+            focus-visible:outline-2 focus-visible:outline-primary-base
+            disabled:cursor-not-allowed disabled:opacity-60
+            aria-checked:border-primary-base
+          "
+          ><span
+            class="
+              size-3 rounded-full
+              group-aria-checked:bg-primary-base
+            "
+            aria-hidden="true"
+          ></span></RadioGroup.Item
         >
       </div>
     {/each}
   </RadioGroup.Root>
 </div>
-
-<style>
-  .bws {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 50px 50px;
-    column-gap: 12px;
-    font-size: 14px;
-  }
-  .heading {
-    color: var(--ink-light);
-    font-size: 12px;
-    padding-block: 20px;
-    border-block-end: 1px solid var(--sky-lighter);
-  }
-  .item {
-    grid-column: 1;
-    min-width: 0;
-  }
-  .item,
-  .option {
-    padding-block: 20px;
-    border-block-end: 1px solid var(--sky-lighter);
-  }
-  .option {
-    display: flex;
-    align-items: center;
-  }
-  /* Keep both logical radio groups while aligning their cells to the shared grid rows. */
-  :global(.agora-priority-options) {
-    display: contents;
-  }
-  .option :global(.agora-priority-radio) {
-    display: grid;
-    place-items: center;
-    width: 24px;
-    height: 24px;
-    padding: 0;
-    border: 1px solid var(--sky-base);
-    border-radius: 50%;
-    background: white;
-    cursor: pointer;
-  }
-  .option :global(.agora-priority-radio[data-state="checked"]) {
-    border-color: var(--primary-base);
-  }
-  .dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: transparent;
-  }
-  :global(.agora-priority-radio[data-state="checked"]) .dot {
-    background: var(--primary-base);
-  }
-  .option :global(.agora-priority-radio:focus-visible) {
-    outline: 3px solid var(--primary-light);
-    outline-offset: 3px;
-  }
-  .option :global(.agora-priority-radio:disabled) {
-    cursor: not-allowed;
-    opacity: 0.6;
-  }
-</style>

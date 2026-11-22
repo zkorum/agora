@@ -7,21 +7,12 @@
 <span
   class={[
     iconClasses[name],
-    { directional: name === "back" || name === "forward" || name === "panel" },
+    "inline-block size-(--icon-size) shrink-0 align-middle",
+    {
+      "rtl:-scale-x-100":
+        name === "back" || name === "forward" || name === "panel",
+    },
   ]}
-  style:width={`${size}px`}
-  style:height={`${size}px`}
+  style:--icon-size={`${size}px`}
   aria-hidden="true"
 ></span>
-
-<style>
-  span {
-    display: inline-block;
-    flex-shrink: 0;
-    vertical-align: middle;
-  }
-
-  .directional:dir(rtl) {
-    transform: scaleX(-1);
-  }
-</style>

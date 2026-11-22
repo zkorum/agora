@@ -1,6 +1,17 @@
 import type { QvAllocationRow } from "$logic/agora/qv-allocation.js";
 import type { AuthorView, OpinionVoteBreakdown } from "$ui/agora/view-types.js";
 
+export interface AccountSettingsPreview {
+  username: string;
+  email: string;
+  subscriptions: {
+    projectSlug: string;
+    projectTitle: string;
+    enabled: boolean;
+    activities: { id: string; title: string; enabled: boolean }[];
+  }[];
+}
+
 export interface ParticipationResponse {
   id: string;
   title: string;
@@ -50,16 +61,6 @@ export interface PolisAnalysisViewData {
     participantCount: string;
     description: string;
   }[];
-}
-
-export interface SettingsDialogData {
-  name: string;
-  description: string;
-  allowSubmissions: boolean;
-  reviewBeforePublishing: boolean;
-  emailUpdates: boolean;
-  language: string;
-  useProjectLanguage: boolean;
 }
 
 export interface QvAllocationEditorProps {

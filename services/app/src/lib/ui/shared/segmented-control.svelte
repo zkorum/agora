@@ -26,85 +26,50 @@
   {disabled}
   bind:value={() => value, change}
   aria-label={label}
-  class={["agora-segments", appearance, rootProps.class]}
+  class={[
+    appearance !== "unstyled" && "flex w-fit max-w-full flex-wrap items-center",
+    appearance === "underline" && "border-b border-sky-lighter",
+    (appearance === "filter" || appearance === "pill") && "gap-1",
+    appearance === "pill" && "rounded-full bg-sky-lighter p-0.75",
+    rootProps.class,
+  ]}
 >
   {#each items as item (item.value)}
-    <ToggleGroup.Item value={item.value} class="agora-segment"
+    <ToggleGroup.Item
+      value={item.value}
+      class={[
+        `
+          inline-flex cursor-pointer items-center justify-center gap-1.75
+          text-sm text-ink-light
+          focus-visible:outline-3 focus-visible:outline-offset-2
+          focus-visible:outline-primary-light
+          disabled:cursor-not-allowed disabled:opacity-60
+        `,
+        appearance === "underline"
+          ? `
+            border-b-2 border-transparent bg-transparent px-3 py-2.25
+            data-[state=on]:border-primary-base data-[state=on]:text-ink-dark
+          `
+          : appearance === "filter"
+            ? `
+              rounded-full bg-sky-lighter px-3.5 py-1.5
+              data-[state=on]:bg-primary-base data-[state=on]:text-sky-white
+              data-[state=on]:shadow-[0_1px_3px_#33323808]
+            `
+            : appearance === "pill" &&
+              `
+                rounded-full bg-transparent px-4.5 py-2.25
+                data-[state=on]:bg-sky-white data-[state=on]:text-ink-dark
+                data-[state=on]:shadow-[0_1px_3px_#33323808]
+                max-md:px-3
+              `,
+      ]}
       >{#if itemContent}{@render itemContent(
           item,
-        )}{:else}{item.label}{#if item.count}<span class="count"
+        )}{:else}{item.label}{#if item.count}<span
+            class="rounded-sm bg-sky-lighter px-1 text-[11px] text-ink-light"
             >{item.count}</span
           >{/if}{/if}</ToggleGroup.Item
     >
   {/each}
 </ToggleGroup.Root>
-
-<style>
-  :global(.agora-segments) {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    flex-wrap: wrap;
-    width: fit-content;
-    max-width: 100%;
-  }
-  :global(.agora-segments.pill) {
-    padding: 3px;
-    background: var(--sky-lighter);
-    border-radius: 999px;
-  }
-  :global(.agora-segment) {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    padding: 9px 18px;
-    border-radius: 999px;
-    background: transparent;
-    color: var(--ink-light);
-    font: inherit;
-    font-size: 14px;
-    border: 0;
-    cursor: pointer;
-  }
-  :global(.agora-segment[data-state="on"]) {
-    background: white;
-    color: var(--ink-dark);
-    box-shadow: 0 1px 3px #33323808;
-  }
-  :global(.agora-segments.underline) {
-    gap: 0;
-    border-block-end: 1px solid var(--sky-lighter);
-    border-radius: 0;
-  }
-  :global(.agora-segments.underline .agora-segment) {
-    border-radius: 0;
-    border-block-end: 2px solid transparent;
-    padding-inline: 12px;
-  }
-  :global(.agora-segments.underline .agora-segment[data-state="on"]) {
-    background: transparent;
-    border-block-end-color: var(--primary-base);
-    box-shadow: none;
-  }
-  .count {
-    background: var(--sky-lighter);
-    border-radius: 4px;
-    padding: 0 4px;
-    color: var(--ink-light);
-    font-size: 11px;
-  }
-  :global(.agora-segment:focus-visible) {
-    outline: 3px solid var(--primary-light);
-    outline-offset: 2px;
-  }
-  :global(.agora-segment:disabled) {
-    cursor: not-allowed;
-    opacity: 0.6;
-  }
-  @media (max-width: 760px) {
-    :global(.agora-segment) {
-      padding-inline: 12px;
-    }
-  }
-</style>

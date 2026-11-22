@@ -1,5 +1,3 @@
-import { globSync, readFileSync } from "node:fs";
-
 import eslint from "@eslint/js";
 import eslintComments from "@eslint-community/eslint-plugin-eslint-comments";
 import eslintPluginBetterTailwindcss from "eslint-plugin-better-tailwindcss";
@@ -11,68 +9,8 @@ import sveltePlugin from "eslint-plugin-svelte";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 import svelteParser from "svelte-eslint-parser";
-import { parse } from "svelte/compiler";
 
 import appPolicy from "./eslint/app-policy.js";
-
-/** @param {import("svelte/compiler").AST.CSS.Node | null} node @returns {string[]} */
-function declaredCssClasses(node) {
-  if (node === null) return [];
-  switch (node.type) {
-    case "ClassSelector":
-      return [node.name];
-    case "StyleSheet":
-    case "Block":
-    case "SelectorList":
-    case "ComplexSelector":
-      return node.children.flatMap(declaredCssClasses);
-    case "RelativeSelector":
-      return node.selectors.flatMap(declaredCssClasses);
-    case "Rule":
-      return [node.prelude, node.block].flatMap(declaredCssClasses);
-    case "Atrule":
-      return declaredCssClasses(node.block);
-    case "PseudoClassSelector":
-    case "PseudoElementSelector":
-      return declaredCssClasses(node.args ?? null);
-    case "AttributeSelector":
-    case "Combinator":
-    case "Declaration":
-    case "IdSelector":
-    case "NestingSelector":
-    case "Nth":
-    case "Percentage":
-    case "TypeSelector":
-      return [];
-  }
-}
-
-// Tailwind cannot see Svelte's scoped styles. Allow only class selectors actually
-// declared in each foundation component; unknown utility/class typos still fail.
-const scopedClassOverrides = globSync(
-  [
-    "src/lib/ui/shared/{avatar,button,collection-toolbar,dialog,empty-state,expandable-text,field,icon,metrics,mobile-nav-drawer,panel,segmented-control,setting-row,top-bar}.svelte",
-    "src/lib/ui/agora/*.svelte",
-    "src/lib/components/agora/*.svelte",
-  ],
-  { cwd: import.meta.dirname },
-).map(
-  /** @returns {import("eslint").Linter.Config} */ (file) => ({
-    files: [file],
-    rules: {
-      "better-tailwindcss/no-unknown-classes": [
-        "error",
-        {
-          ignore: declaredCssClasses(
-            parse(readFileSync(new URL(file, import.meta.url), "utf8"), {
-              modern: true,
-            }).css,
-          ).map((name) => `^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`),
-        },
-      ],
-    },
-  }),
-);
 
 export default tseslint.config(
   {
@@ -178,12 +116,34 @@ export default tseslint.config(
     },
   },
   eslintPluginBetterTailwindcss.configs["recommended"],
-  ...scopedClassOverrides,
   {
     settings: {
       "better-tailwindcss": {
         entryPoint: "src/app.css",
       },
+    },
+  },
+  {
+    files: ["**/*.svelte"],
+    rules: {
+      "better-tailwindcss/no-restricted-classes": [
+        "error",
+        {
+          restrict: [
+            {
+              pattern: "(?:^|:)(?:max|min)-\\[[^\\]]+\\]:",
+              message:
+                "Use a named Tailwind viewport breakpoint, or a container query for component layout.",
+            },
+            {
+              pattern:
+                "\\[(?:color:)?(?:#[\\da-fA-F]{3,8}(?![\\da-fA-F])|(?:rgba?|hsla?|oklch|oklab|lch|lab|hwb|color)\\()",
+              message:
+                "Use a design-system color utility or CSS custom property instead of a literal color.",
+            },
+          ],
+        },
+      ],
     },
   },
   {
@@ -236,7 +196,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ["src/**/*.{js,ts,mjs,mts,cjs,cts,jsx,tsx,svelte}"],
+    files: ["{src,stories}/**/*.{js,ts,mjs,mts,cjs,cts,jsx,tsx,svelte}"],
     rules: {
       "app-policy/module-boundaries": "error",
     },
@@ -244,6 +204,8 @@ export default tseslint.config(
   {
     files: ["**/*.svelte"],
     rules: {
+      "app-policy/use-design-system": "error",
+      "app-policy/module-boundaries": "error",
       // Disabled: This codebase uses localizeHref() from Paraglide for i18n-aware navigation
       // instead of SvelteKit's resolve(). The rule can't detect this equivalent pattern.
       "svelte/no-navigation-without-resolve": "off",
@@ -263,6 +225,13 @@ export default tseslint.config(
     files: ["src/routes/resources/[[]slug[]]/+page.svelte"],
     rules: {
       // Resource HTML comes only from repository-owned Markdown, not user input.
+      "svelte/no-at-html-tags": "off",
+    },
+  },
+  {
+    files: ["src/lib/components/agora/project-detail.svelte"],
+    rules: {
+      // This sink receives only the output of getProjectBodyDisplayHtml.
       "svelte/no-at-html-tags": "off",
     },
   },

@@ -15,7 +15,7 @@
 </script>
 
 {#snippet template({ dir = "ltr", ...args }: Args)}
-  <div {dir} style="max-width: 480px">
+  <div {dir} class="w-full max-w-120">
     <Field {...args} />
   </div>
 {/snippet}

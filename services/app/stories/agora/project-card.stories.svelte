@@ -16,7 +16,7 @@
 </script>
 
 {#snippet template({ dir = "ltr", ...args }: Args)}
-  <div {dir} style:max-width={args.layout === "list" ? "900px" : "420px"}>
+  <div {dir} class={args.layout === "list" ? "max-w-225" : "max-w-105"}>
     <ProjectCard {...args} />
   </div>
 {/snippet}

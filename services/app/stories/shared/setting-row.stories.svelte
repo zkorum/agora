@@ -4,6 +4,9 @@
 
   import SettingRow from "$ui/shared/setting-row.svelte";
 
+  import FixtureState from "../fixture-state.svelte";
+  import type { FixtureStateView } from "../view-types.js";
+
   type Args = ComponentProps<typeof SettingRow> & { dir?: "ltr" | "rtl" };
 
   const { Story } = defineMeta({
@@ -20,7 +23,21 @@
 </script>
 
 {#snippet template({ dir = "ltr", ...args }: Args)}
-  <div {dir} style="max-width: 640px"><SettingRow {...args} /></div>
+  <div {dir} class="w-full max-w-160">
+    <FixtureState initial={() => 0}>
+      {#snippet children(changes: FixtureStateView<number>)}
+        <SettingRow
+          {...args}
+          switchProps={{
+            onCheckedChange: () => {
+              changes.set(changes.value + 1);
+            },
+          }}
+        />
+        <output aria-label="Setting changes">{changes.value}</output>
+      {/snippet}
+    </FixtureState>
+  </div>
 {/snippet}
 
 <Story name="Off" />

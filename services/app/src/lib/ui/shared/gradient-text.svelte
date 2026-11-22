@@ -11,16 +11,15 @@
 </script>
 
 <span
-  class="
-    inline-block
-    {className}"
-  style="
-		color: var(--color-brand-purple);
-		background-image: linear-gradient({angle}deg, var(--color-brand-purple), var(--color-brand-blue));
-		-webkit-background-clip: text;
-		background-clip: text;
-		-webkit-text-fill-color: transparent;
-	"
+  class={[
+    `
+      inline-block
+      bg-[linear-gradient(var(--text-angle),var(--brand-purple),var(--brand-blue))]
+      bg-clip-text text-transparent
+    `,
+    className,
+  ]}
+  style:--text-angle={`${angle}deg`}
 >
   {@render children()}
 </span>

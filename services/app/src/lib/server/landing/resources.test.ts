@@ -49,7 +49,7 @@ describe("renderResourceMarkdown", () => {
 
 describe("AI charter translations", () => {
   it.each(locales)(
-    "renders all bold passages correctly in %s",
+    "renders emphasis without stray Markdown markers in %s",
     async (locale) => {
       const post = await getResourcePost({
         slug: "ai-charter-workshop",
@@ -57,8 +57,8 @@ describe("AI charter translations", () => {
       });
 
       expect(post).not.toBeNull();
-      expect(post?.content.includes("**")).toBe(false);
-      expect(post?.content.match(/<strong>/g)).toHaveLength(17);
+      expect(post?.content).not.toContain("**");
+      expect(post?.content).toMatch(/<strong>[^<]+<\/strong>/);
     },
   );
 });

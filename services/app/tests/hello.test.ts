@@ -89,6 +89,9 @@ test("the empty app does not emit unused mock data", async () => {
     expect(
       Object.keys(manifest).filter((id) => id.includes("/lib/mock-data.")),
     ).toEqual([]);
+    expect(
+      Object.keys(manifest).filter((id) => id.includes("/api/agora/mock/")),
+    ).toEqual([]);
   }
 });
 

@@ -61,17 +61,24 @@
   }
 </script>
 
-<div class="expandable-text">
+<div class="relative w-full min-w-0">
   <p
     id={contentId}
-    class={["text", { clamped: !expanded }]}
+    class={[
+      "m-0 wrap-anywhere whitespace-pre-wrap",
+      !expanded && "line-clamp-(--lines)",
+    ]}
     style:--lines={lineCount}
   >
     {text}
   </p>
   <!-- Keep measuring the collapsed layout even while the visible text is expanded. -->
   <p
-    class="text clamped measurement"
+    class="
+      pointer-events-none invisible absolute inset-x-0 top-0 m-0
+      line-clamp-(--lines) wrap-anywhere whitespace-pre-wrap
+      before:content-[attr(data-text)]
+    "
     aria-hidden="true"
     data-text={text}
     style:--lines={lineCount}
@@ -79,6 +86,13 @@
   ></p>
   {#if overflowing}
     <Button.Root
+      class="
+        relative z-1 mt-2 block w-fit cursor-pointer rounded-xs bg-transparent
+        p-0 text-start font-medium text-primary-base
+        hover:underline
+        focus-visible:outline-3 focus-visible:outline-offset-3
+        focus-visible:outline-primary-light
+      "
       type="button"
       aria-expanded={expanded}
       aria-controls={contentId}
@@ -86,56 +100,3 @@
     >
   {/if}
 </div>
-
-<style>
-  .expandable-text {
-    position: relative;
-    width: 100%;
-    min-width: 0;
-  }
-  .text {
-    margin: 0;
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-  }
-  .clamped {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: var(--lines);
-    line-clamp: var(--lines);
-    overflow: hidden;
-  }
-  .measurement {
-    position: absolute;
-    inset-block-start: 0;
-    inset-inline: 0;
-    visibility: hidden;
-    pointer-events: none;
-  }
-  .measurement::before {
-    content: attr(data-text);
-  }
-  .expandable-text :global(button) {
-    position: relative;
-    z-index: 1;
-    display: block;
-    width: fit-content;
-    margin-block-start: 8px;
-    border: 0;
-    padding: 0;
-    background: transparent;
-    color: var(--primary-base);
-    font: inherit;
-    font-weight: 500;
-    text-align: start;
-    cursor: pointer;
-  }
-  .expandable-text :global(button:hover) {
-    text-decoration: underline;
-  }
-  .expandable-text :global(button:focus-visible) {
-    outline: 3px solid var(--primary-light);
-    outline-offset: 3px;
-    border-radius: 2px;
-  }
-</style>

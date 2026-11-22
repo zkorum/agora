@@ -39,47 +39,106 @@
   );
 </script>
 
-<div class="participant">
-  <div class="crumbs">
+<div
+  class="
+    mx-auto px-10 pb-16 [--qv-footer-inset:-21px]
+    max-md:px-5 max-md:pt-6 max-md:pb-0
+  "
+>
+  <div
+    class="
+      mb-12 flex min-h-[71px] flex-wrap items-center gap-3 border-b
+      border-sky-lighter text-xs text-ink-light
+      max-md:hidden
+    "
+  >
     <Icon name="back" size={16} />{data.projectTitle}<span aria-hidden="true"
       >/</span
     >{title}
   </div>
-  <header class="conversation-heading">
-    <div class="row">
+  <header
+    class="
+      mb-12 flex flex-col gap-2
+      max-md:mb-4 max-md:gap-4
+    "
+  >
+    <div class="flex min-h-[30px] flex-wrap items-center justify-between gap-4">
       <ConversationBadge {kind} /><ConversationBadge {status} />
     </div>
-    <h1>{title}</h1>
-    <div class="description">
+    <h1
+      class="
+        text-[32px] leading-[1.3] font-bold
+        max-md:text-2xl
+      "
+    >
+      {title}
+    </h1>
+    <div
+      class="
+        text-base text-ink-light
+        max-md:text-lg max-md:leading-[27px]
+      "
+    >
       <ExpandableText text={description} />
     </div>
   </header>
   {#if data.kind === "polis" || data.kind === "qv"}
-    <div class="conversation-toolbar">
-      <div class="conversation-tabs" aria-label="Activity sections">
-        <span class="current-section"
-          >Statements <span class="count"
+    <div
+      class="
+        mb-4 flex min-h-14 items-center gap-3
+        max-md:gap-2 max-md:border-b max-md:border-sky-lighter
+      "
+    >
+      <div
+        class="
+          flex flex-1 items-stretch self-stretch border-b border-sky-lighter
+          text-base
+          max-md:border-0
+        "
+        aria-label="Activity sections"
+      >
+        <span
+          class="
+            flex items-center gap-2 border-b-2 border-primary-base px-3 py-2
+            whitespace-nowrap
+          "
+          >Statements <span
+            class="rounded-[3px] bg-sky-lighter px-1 text-xs text-ink-light"
             >{data.kind === "polis"
               ? data.opinions.length
               : data.allocations.length}</span
           ></span
         >
-        <Button variant="unstyled" type="button" disabled
-          >Analysis <Icon name="prioritizing" size={20} /></Button
+        <Button
+          variant="unstyled"
+          class="
+            flex items-center gap-2 border-0 bg-transparent px-3 py-2
+            whitespace-nowrap text-sky-dark
+          "
+          type="button"
+          disabled>Analysis <Icon name="prioritizing" size={20} /></Button
         >
       </div>
       <Button
         variant="unstyled"
-        class="conversation-sort"
+        class="
+          flex h-[42px] items-center gap-3 rounded-lg border border-sky-lighter
+          bg-sky-white px-3 py-2 text-sm text-ink-light
+          max-md:size-9 max-md:border-0 max-md:bg-sky-lighter max-md:p-2.5
+          max-md:text-sky-dark
+        "
         type="button"
         disabled
         aria-label="Sort by: Recent"
         ><span class="icon-[lucide--arrow-down-up]" aria-hidden="true"
-        ></span><span class="sort-label"
-          >Recent <Icon name="chevron" size={16} /></span
+        ></span><span
+          class="
+            flex items-center gap-5
+            max-md:hidden
+          ">Recent <Icon name="chevron" size={16} /></span
         ></Button
       >
-      {#if data.kind === "polis"}<span class="desktop-add"
+      {#if data.kind === "polis"}<span class="max-md:hidden"
           ><Button
             variant="solid"
             size="control"
@@ -90,7 +149,7 @@
         >{/if}
     </div>
   {:else if data.kind === "gathering"}
-    <div class="toolbar">
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
       <Button
         variant="solid"
         size="control"
@@ -101,7 +160,12 @@
     </div>
   {/if}
   {#if data.kind === "polis"}
-    <div class="stack">
+    <div
+      class="
+        flex flex-col gap-6
+        max-md:gap-4
+      "
+    >
       {#each data.opinions as text (text)}<OpinionCard
           {text}
           {author}
@@ -114,7 +178,6 @@
     </div>
   {:else if data.kind === "qv"}
     <QvAllocationEditor
-      --qv-footer-inset="-21px"
       rows={data.allocations}
       totalCredits={data.totalCredits}
       voteLimit={data.voteLimit}
@@ -158,7 +221,12 @@
         />{/if}
     </Panel>
   {:else}
-    <div class="stack">
+    <div
+      class="
+        flex flex-col gap-6
+        max-md:gap-4
+      "
+    >
       {#each data.responses as response (response.id)}<ContentCard
           {author}
           title={response.title}
@@ -170,8 +238,18 @@
     </div>
   {/if}
   {#if data.kind === "polis"}
-    <div class="mobile-action">
+    <div
+      class="
+        sticky bottom-0 z-1 mx-[-21px] mt-6 hidden border-t border-sky-lighter
+        bg-sky-white px-5 pt-3 pb-10
+        max-md:block
+      "
+    >
       <Button
+        class="
+          max-md:min-h-[50px] max-md:w-full max-md:rounded-full max-md:text-base
+          max-md:font-normal
+        "
         variant="solid"
         size="control"
         disabled={status === "closed"}
@@ -188,7 +266,12 @@
   title={data.kind === "gathering" ? "Add a response" : "Add a statement"}
   description="Submission is not available yet."
 >
-  <div class="stack">
+  <div
+    class="
+      flex flex-col gap-6
+      max-md:gap-4
+    "
+  >
     {#if data.kind === "gathering"}<Field
         label="Title"
         placeholder="Give your response a title"
@@ -215,178 +298,12 @@
   title={reading?.title ?? ""}
   description="Full response"
 >
-  <div class="stack">
+  <div
+    class="
+      flex flex-col gap-6
+      max-md:gap-4
+    "
+  >
     <ExpandableText text={reading?.description ?? ""} />
   </div>
 </Dialog>
-
-<style>
-  .participant {
-    padding: 0 40px 64px;
-    margin-inline: auto;
-  }
-  .crumbs {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 12px;
-    min-height: 71px;
-    border-block-end: 1px solid var(--sky-lighter);
-    color: var(--ink-light);
-    font-size: 12px;
-    margin-block-end: 48px;
-  }
-  .conversation-heading {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-block-end: 48px;
-  }
-  h1 {
-    font-size: 32px;
-    font-weight: 700;
-    line-height: 1.3;
-  }
-  .conversation-heading > .description {
-    color: var(--ink-light);
-    font-size: 16px;
-  }
-  .conversation-heading .row {
-    min-height: 30px;
-  }
-  .row,
-  .toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    flex-wrap: wrap;
-  }
-  .conversation-toolbar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-height: 56px;
-    margin-block-end: 16px;
-  }
-  .conversation-tabs {
-    display: flex;
-    align-self: stretch;
-    align-items: stretch;
-    flex: 1;
-    border-block-end: 1px solid var(--sky-lighter);
-    font-size: 16px;
-  }
-  .current-section,
-  .conversation-tabs :global(button) {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    white-space: nowrap;
-  }
-  .current-section {
-    border-block-end: 2px solid var(--primary-base);
-  }
-  .count {
-    border-radius: 3px;
-    padding: 0 4px;
-    color: var(--ink-light);
-    background: var(--sky-lighter);
-    font-size: 12px;
-  }
-  .conversation-tabs :global(button) {
-    border: 0;
-    background: transparent;
-    color: var(--sky-dark);
-    font: inherit;
-  }
-  .conversation-toolbar :global(.conversation-sort) {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    height: 42px;
-    padding: 8px 12px;
-    border: 1px solid var(--sky-lighter);
-    border-radius: 8px;
-    background: white;
-    color: var(--ink-light);
-    font: inherit;
-    font-size: 14px;
-  }
-  .sort-label {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-  }
-  .mobile-action {
-    display: none;
-  }
-  .toolbar {
-    margin-block-end: 24px;
-  }
-  .stack {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-  }
-  @media (max-width: 760px) {
-    .participant {
-      padding: 24px 20px 0;
-    }
-    .crumbs {
-      display: none;
-    }
-    .conversation-heading {
-      gap: 16px;
-      margin-block-end: 16px;
-    }
-    .conversation-heading > .description {
-      font-size: 18px;
-      line-height: 27px;
-    }
-    .stack {
-      gap: 16px;
-    }
-    .conversation-toolbar {
-      gap: 8px;
-      border-block-end: 1px solid var(--sky-lighter);
-    }
-    .conversation-tabs {
-      border: 0;
-    }
-    .conversation-toolbar :global(.conversation-sort) {
-      padding: 10px;
-      width: 36px;
-      height: 36px;
-      border: 0;
-      background: var(--sky-lighter);
-      color: var(--sky-dark);
-    }
-    .sort-label,
-    .desktop-add {
-      display: none;
-    }
-    .mobile-action {
-      display: block;
-      position: sticky;
-      inset-block-end: 0;
-      margin-inline: -21px;
-      margin-block-start: 24px;
-      padding: 12px 20px 40px;
-      border-block-start: 1px solid var(--sky-lighter);
-      background: white;
-      z-index: 1;
-    }
-    .mobile-action :global(button) {
-      width: 100%;
-      min-height: 50px;
-      border-radius: 999px;
-      font-size: 16px;
-      font-weight: 400;
-    }
-    h1 {
-      font-size: 24px;
-    }
-  }
-</style>

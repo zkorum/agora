@@ -1,9 +1,11 @@
 <script lang="ts">
   import { Button, Dialog } from "bits-ui";
+  import { MediaQuery } from "svelte/reactivity";
 
   import * as m from "#lib/paraglide/messages.js";
   import Chip from "$ui/shared/chip.svelte";
 
+  import { desktopMediaQueries } from "./responsive.js";
   import type { MobileNavDrawerProps } from "./view-types.js";
 
   let {
@@ -22,26 +24,62 @@
     contentRef = $bindable(null),
   }: MobileNavDrawerProps = $props();
 
-  function closeOnDesktop() {
-    const query =
-      appearance === "sidebar" ? "(min-width: 761px)" : "(min-width: 1024px)";
-    if (window.matchMedia(query).matches) open = false;
-  }
-</script>
+  const workspaceDesktop = new MediaQuery(desktopMediaQueries.md);
+  const landingDesktop = new MediaQuery(desktopMediaQueries.lg);
+  const desktop = $derived(
+    appearance === "sidebar"
+      ? workspaceDesktop.current
+      : landingDesktop.current,
+  );
 
-<svelte:window onresize={closeOnDesktop} />
+  // Close the portaled dialog on desktop so it releases focus and scroll lock.
+  $effect(() => {
+    if (desktop && open) open = false;
+  });
+</script>
 
 <Dialog.Root {...rootProps} bind:open>
   <Dialog.Portal>
-    <Dialog.Overlay class={["agora-mobile-drawer-overlay", appearance]} />
+    <Dialog.Overlay
+      class={[
+        "fixed inset-0",
+        appearance === "default"
+          ? `
+            z-60 animate-[fade-in_200ms_ease-out] bg-black/30
+            data-[state=closed]:animate-[fade-out_200ms_ease-out]
+            motion-reduce:animate-none
+            motion-reduce:data-[state=closed]:animate-none
+          `
+          : "z-81 bg-overlay-soft",
+      ]}
+    />
     <Dialog.Content
       {...contentProps}
       bind:ref={contentRef}
       {dir}
-      class={[`agora-mobile-drawer`, appearance, contentProps.class]}
+      class={[
+        "fixed inset-y-0 flex flex-col overflow-hidden shadow-xl",
+        appearance === "default"
+          ? `
+            inset-e-0 z-70 w-full max-w-70
+            animate-[slide-in-from-right_300ms_ease-out] bg-sky-white
+            data-[state=closed]:animate-[slide-out-to-right_300ms_ease-out]
+            motion-reduce:animate-none
+            motion-reduce:data-[state=closed]:animate-none
+            rtl:animate-[slide-in-from-left_300ms_ease-out]
+            rtl:data-[state=closed]:animate-[slide-out-to-left_300ms_ease-out]
+            rtl:motion-reduce:animate-none
+            rtl:motion-reduce:data-[state=closed]:animate-none
+          `
+          : `
+            inset-s-0 z-82 w-full max-w-60 bg-sky-lightest font-sans
+            leading-normal tracking-[-0.01em] text-ink-dark
+          `,
+        contentProps.class,
+      ]}
     >
       <Dialog.Title class="sr-only">{title}</Dialog.Title>
-      <div class="flex items-center justify-end px-6 py-4">
+      <div class="flex shrink-0 items-center justify-end px-6 py-4">
         <Dialog.Close
           class="
             inline-flex items-center justify-center rounded-full p-2
@@ -55,7 +93,9 @@
       </div>
 
       {#if navigation}
-        <div class="drawer-navigation">{@render navigation()}</div>
+        <div class="flex min-h-0 flex-1 flex-col gap-4 px-5 pb-5">
+          {@render navigation()}
+        </div>
       {:else}
         <nav
           class="flex flex-1 flex-col gap-5 overflow-y-auto px-5 py-2"
@@ -94,74 +134,3 @@
     </Dialog.Content>
   </Dialog.Portal>
 </Dialog.Root>
-
-<style>
-  :global(.agora-mobile-drawer-overlay) {
-    position: fixed;
-    inset: 0;
-    z-index: 60;
-    background: rgb(0 0 0 / 30%);
-  }
-  :global(.agora-mobile-drawer) {
-    position: fixed;
-    inset-block: 0;
-    inset-inline-end: 0;
-    z-index: 70;
-    display: flex;
-    flex-direction: column;
-    width: min(280px, 100vw);
-    overflow: hidden;
-    background: var(--sky-white);
-    box-shadow:
-      0 20px 25px -5px rgb(0 0 0 / 10%),
-      0 8px 10px -6px rgb(0 0 0 / 10%);
-  }
-  :global(.agora-mobile-drawer.default) {
-    animation: slide-in-from-right 300ms ease-out;
-  }
-  :global(.agora-mobile-drawer.default[data-state="closed"]) {
-    animation-name: slide-out-to-right;
-  }
-  :global(.agora-mobile-drawer.default:dir(rtl)) {
-    animation-name: slide-in-from-left;
-  }
-  :global(.agora-mobile-drawer.default:dir(rtl)[data-state="closed"]) {
-    animation-name: slide-out-to-left;
-  }
-  :global(.agora-mobile-drawer-overlay.default) {
-    animation: fade-in 200ms ease-out;
-  }
-  :global(.agora-mobile-drawer-overlay.default[data-state="closed"]) {
-    animation-name: fade-out;
-  }
-  :global(.agora-mobile-drawer-overlay.sidebar) {
-    z-index: 81;
-    background: #211a3340;
-  }
-  :global(.agora-mobile-drawer.sidebar) {
-    inset-inline-start: 0;
-    inset-inline-end: auto;
-    z-index: 82;
-    width: min(240px, 100vw);
-    background: var(--sky-lightest);
-    color: var(--ink-dark);
-    font-family: var(--font-albert-sans);
-    line-height: 1.5;
-    letter-spacing: -0.01em;
-  }
-  .drawer-navigation {
-    display: flex;
-    flex: 1;
-    min-height: 0;
-    flex-direction: column;
-    gap: 16px;
-    padding-inline: 20px;
-    padding-block-end: 20px;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    :global(.agora-mobile-drawer.default),
-    :global(.agora-mobile-drawer-overlay.default) {
-      animation: none;
-    }
-  }
-</style>

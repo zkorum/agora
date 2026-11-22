@@ -17,95 +17,47 @@
   }: NotificationItemProps = $props();
 </script>
 
-<article class={{ unread }}>
-  <span class="dot" aria-hidden="true"></span><span class="sr-only"
-    >{unread ? "Unread" : "Read"}</span
-  ><Avatar {author} />
-  <div class="copy">
-    <Button.Root class="notification-open" type="button" onclick={onopen}
-      >{title}</Button.Root
+<article
+  class={[
+    `
+      relative flex w-full items-start gap-4 border-b border-sky-lighter px-4
+      py-5 text-start text-ink-dark
+      hover:bg-sky-lightest
+      max-md:flex-wrap max-md:gap-2.5
+    `,
+    unread ? "bg-surface-unread" : "bg-sky-white",
+  ]}
+>
+  <span
+    class={[
+      "mt-2.5 size-1.5 shrink-0 rounded-full",
+      unread && "bg-primary-base",
+    ]}
+    aria-hidden="true"
+  ></span><span class="sr-only">{unread ? "Unread" : "Read"}</span><Avatar
+    {author}
+    class="max-md:hidden"
+  />
+  <div class="flex min-w-0 flex-1 flex-col gap-1 text-sm">
+    <Button.Root
+      class="
+        cursor-pointer bg-transparent p-0 text-start font-medium text-ink-dark
+        after:absolute after:inset-0
+        focus-visible:after:outline-3 focus-visible:after:outline-offset-2
+        focus-visible:after:outline-primary-light
+      "
+      type="button"
+      onclick={onopen}>{title}</Button.Root
     >
     <span>{conversationTitle}</span>
-    <div class="excerpt"><ExpandableText text={excerpt} lines={3} /></div>
+    <div class="text-xs text-ink-light">
+      <ExpandableText text={excerpt} lines={3} />
+    </div>
   </div>
-  <span class="time">{time}</span>
+  <span
+    class="
+      text-xs text-ink-light
+      max-md:w-full max-md:ps-4
+    ">{time}</span
+  >
 </article>
-
-<style>
-  article {
-    position: relative;
-    display: flex;
-    align-items: flex-start;
-    gap: 16px;
-    width: 100%;
-    padding: 20px 16px;
-    border: 0;
-    border-block-end: 1px solid var(--sky-lighter);
-    text-align: start;
-    background: white;
-    color: var(--ink-dark);
-    font: inherit;
-  }
-  article:hover {
-    background: var(--sky-lightest);
-  }
-  .unread {
-    background: #fbfaff;
-  }
-  .dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: transparent;
-    margin-block-start: 10px;
-    flex-shrink: 0;
-  }
-  .unread .dot {
-    background: var(--primary-base);
-  }
-  .copy {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    flex: 1;
-    min-width: 0;
-    font-size: 14px;
-  }
-  article :global(.notification-open) {
-    border: 0;
-    padding: 0;
-    background: transparent;
-    text-align: start;
-    color: inherit;
-    font: inherit;
-    font-weight: 500;
-    cursor: pointer;
-  }
-  article :global(.notification-open::after) {
-    content: "";
-    position: absolute;
-    inset: 0;
-  }
-  article :global(.notification-open:focus-visible::after) {
-    outline: 3px solid var(--primary-light);
-    outline-offset: 2px;
-  }
-  .excerpt,
-  .time {
-    font-size: 12px;
-    color: var(--ink-light);
-  }
-  @media (max-width: 760px) {
-    article {
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    article > :global(.author) {
-      display: none;
-    }
-    .time {
-      width: 100%;
-      padding-inline-start: 16px;
-    }
-  }
-</style>

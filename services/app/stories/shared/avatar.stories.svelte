@@ -16,7 +16,7 @@
 </script>
 
 {#snippet template({ dir = "ltr", ...args }: Args)}
-  <div {dir} style="max-width: 320px">
+  <div {dir} class="w-full max-w-80">
     <Avatar {...args} />
   </div>
 {/snippet}

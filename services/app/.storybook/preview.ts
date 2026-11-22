@@ -1,5 +1,4 @@
-import "@fontsource-variable/albert-sans";
-import "../src/app.css";
+import "./preview.css";
 
 import type { Preview } from "@storybook/svelte-vite";
 

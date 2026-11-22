@@ -61,7 +61,7 @@
       value: reading,
       set,
     }: FixtureStateView<(typeof qvAllocations)[number] | undefined>)}
-      <div {dir} style="max-width: 1100px">
+      <div {dir} class="w-full max-w-275">
         <QvAllocationEditor
           {...args}
           onread={(id: string) => {

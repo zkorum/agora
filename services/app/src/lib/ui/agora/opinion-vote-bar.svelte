@@ -1,75 +1,51 @@
 <script lang="ts">
+  import * as m from "#lib/paraglide/messages.js";
+
   import type { OpinionVoteBreakdown } from "./view-types.js";
 
-  let { voteBreakdown }: { voteBreakdown: readonly OpinionVoteBreakdown[] } =
-    $props();
+  const colors = {
+    agree: "bg-primary-base",
+    disagree: "bg-yellow-base",
+    pass: "bg-sky-base",
+  };
+  let {
+    voteBreakdown,
+    compact = false,
+  }: {
+    voteBreakdown: readonly OpinionVoteBreakdown[];
+    compact?: boolean;
+  } = $props();
 </script>
 
 <div
-  class="bar"
+  class={[
+    "mt-4.5 mb-3 flex w-full overflow-hidden rounded-full",
+    compact ? "h-3 gap-1.5" : "h-2 bg-sky-lighter",
+  ]}
   role="img"
   aria-label={voteBreakdown
     .map((vote) => `${vote.label}: ${vote.percentage}%`)
     .join(", ")}
 >
   {#each voteBreakdown as vote (vote.choice)}<span
-      class={vote.choice}
-      style:flex-basis={`${vote.percentage}%`}
+      class={[
+        "basis-(--vote-share)",
+        colors[vote.choice],
+        compact && "rounded-full",
+      ]}
+      style:--vote-share={`${vote.percentage}%`}
     ></span>{/each}
 </div>
-<ul aria-label="Response breakdown">
-  {#each voteBreakdown as vote (vote.choice)}<li>
-      <span class="key"><i class={vote.choice}></i>{vote.label}</span><span
-        >{vote.count} ({vote.percentage}%)</span
-      >
+<ul
+  aria-label={m.opinion_feed_votes()}
+  class="m-0 flex list-none flex-wrap gap-5 p-0"
+>
+  {#each voteBreakdown as vote (vote.choice)}<li
+      class={["flex gap-1 text-xs text-ink-light", !compact && "flex-col"]}
+    >
+      <span class="flex items-center gap-1.5"
+        ><i class={["size-1.5 rounded-full", colors[vote.choice]]}
+        ></i>{vote.label}</span
+      ><span>{vote.count} ({vote.percentage}%)</span>
     </li>{/each}
 </ul>
-
-<style>
-  .bar {
-    display: flex;
-    width: 100%;
-    height: 8px;
-    border-radius: 999px;
-    overflow: hidden;
-    background: var(--sky-lighter);
-    margin-block: 18px 12px;
-  }
-  .bar span {
-    flex-grow: 0;
-  }
-  .disagree {
-    background: var(--yellow-base);
-  }
-  .pass {
-    background: var(--sky-base);
-  }
-  .agree {
-    background: var(--primary-base);
-  }
-  ul {
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-  li {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    color: var(--ink-light);
-    font-size: 12px;
-  }
-  .key {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-  }
-  i {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-  }
-</style>

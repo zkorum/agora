@@ -34,7 +34,7 @@
 </script>
 
 {#snippet template({ dir = "ltr", ...args }: Args)}
-  <div {dir} style="display: flex; align-items: center; gap: 12px">
+  <div {dir} class="flex items-center gap-3">
     <Icon {...args} /><span>{args.name}</span>
   </div>
 {/snippet}

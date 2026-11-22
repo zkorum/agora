@@ -33,7 +33,7 @@
 {#snippet template({ dir = "ltr", ...args }: Args)}
   <FixtureState initial={() => args.unread}>
     {#snippet children({ value: unread, set }: FixtureStateView<boolean>)}
-      <div {dir} style="max-width: 1000px">
+      <div {dir} class="w-full max-w-250">
         <NotificationItem
           {...args}
           {unread}

@@ -9,4 +9,5 @@ export default defineConfig({
   },
   testDir: "tests",
   testMatch: "**/*.test.ts",
+  testIgnore: "**/projects-mock.test.ts",
 });

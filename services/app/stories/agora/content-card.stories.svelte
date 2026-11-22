@@ -28,7 +28,7 @@
 {#snippet template({ dir = "ltr", ...args }: Args)}
   <FixtureState initial={() => false}>
     {#snippet children({ value: open, set }: FixtureStateView<boolean>)}
-      <div {dir} style="max-width: 640px">
+      <div {dir} class="w-full max-w-160">
         <ContentCard
           {...args}
           onread={() => {

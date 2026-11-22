@@ -1,28 +1,73 @@
+import type { AccountSettingsPreview } from "$components/agora/view-types.js";
+import { gatheringAnswerLimits } from "$logic/agora/gathering-format.js";
 import type { QvAllocationRow } from "$logic/agora/qv-allocation.js";
 import type {
   AuthorView,
   ConversationView,
   OpinionVoteBreakdown,
   ProjectView,
+  WorkspaceNavigationItem,
+  WorkspaceUser,
 } from "$ui/agora/view-types.js";
-import type { IconName } from "$ui/shared/view-types.js";
 
-export const navigation: {
-  id: string;
-  label: string;
-  icon: IconName;
-  group: string;
-}[] = [
-  { id: "projects", label: "Projects", icon: "folder", group: "Facilitate" },
-  { id: "history", label: "History", icon: "history", group: "Participate" },
-  { id: "explore", label: "Explore", icon: "explore", group: "Participate" },
+import type { gatheringResponseFormat } from "../../../shared/src/gathering.js";
+
+export const navigation: WorkspaceNavigationItem[] = [
+  {
+    id: "projects",
+    label: "Projects",
+    icon: "folder",
+    group: "facilitate",
+    destination: { kind: "unavailable" },
+  },
+  {
+    id: "history",
+    label: "History",
+    icon: "history",
+    group: "participate",
+    destination: { kind: "unavailable" },
+  },
+  {
+    id: "explore",
+    label: "Explore",
+    icon: "explore",
+    group: "participate",
+    destination: { kind: "unavailable" },
+  },
   {
     id: "notifications",
     label: "Notifications",
     icon: "bell",
-    group: "Updates",
+    group: "updates",
+    destination: { kind: "unavailable" },
   },
 ];
+
+export const workspaceUser: WorkspaceUser = { name: "Jamie", initials: "J" };
+
+export const accountSettingsPreview: AccountSettingsPreview = {
+  username: workspaceUser.name,
+  email: "jamie@example.com",
+  subscriptions: [
+    {
+      projectSlug: "riverside",
+      projectTitle: "A Greener Riverside",
+      enabled: true,
+      activities: [
+        {
+          id: "ideas",
+          title: "Share your idea for a greener Riverside",
+          enabled: true,
+        },
+        {
+          id: "polis",
+          title: "Where do we agree on better journeys?",
+          enabled: false,
+        },
+      ],
+    },
+  ],
+};
 
 export const projects: ProjectView[] = [
   {
@@ -101,6 +146,22 @@ export const opinionVoteBreakdown: OpinionVoteBreakdown[] = [
   { choice: "pass", label: "Unsure", count: "16", percentage: 12.5 },
   { choice: "agree", label: "Agree", count: "80", percentage: 62.5 },
 ];
+
+export const gatheringFormat: ReturnType<typeof gatheringResponseFormat.parse> =
+  [
+    {
+      fieldId: "00000000-0000-4000-a000-000000000001",
+      label: "Title",
+      required: true,
+      characterLimit: gatheringAnswerLimits.short,
+    },
+    {
+      fieldId: "00000000-0000-4000-a000-000000000002",
+      label: "Body",
+      required: true,
+      characterLimit: gatheringAnswerLimits.long,
+    },
+  ];
 
 export const qvAllocations: QvAllocationRow[] = [
   {

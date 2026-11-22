@@ -38,7 +38,7 @@
       value: selected,
       set,
     }: FixtureStateView<OpinionVoteChoice | undefined>)}
-      <div {dir} style="max-width: 800px">
+      <div {dir} class="max-w-[800px]">
         <OpinionVoteControls
           {...args}
           {selected}

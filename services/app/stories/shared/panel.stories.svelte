@@ -24,7 +24,7 @@
 </script>
 
 {#snippet template({ body, withAction = false, dir = "ltr", ...args }: Args)}
-  <div {dir} style="max-width: 800px">
+  <div {dir} class="w-full max-w-200">
     {#snippet action()}<Button variant="neutral" size="control" disabled
         >Action</Button
       >{/snippet}

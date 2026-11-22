@@ -2,6 +2,21 @@ import type { Snippet } from "svelte";
 
 import type { IconName } from "$ui/shared/view-types.js";
 
+export interface ConversationMethodPanelProps<Value extends string> {
+  title: string;
+  description?: string;
+  actions?: Snippet;
+  items: readonly {
+    value: Value;
+    label: string;
+    description: string;
+    icon: IconName;
+    disabled?: boolean;
+  }[];
+  selected: NoInfer<Value> | undefined;
+  onselect: (value: NoInfer<Value>) => void;
+}
+
 export type ConversationViewKind = "gathering" | "polis" | "prioritizing";
 export type ConversationViewStatus = "draft" | "open" | "closed";
 export type OpinionVoteChoice = "disagree" | "pass" | "agree";
@@ -13,7 +28,7 @@ export interface ProjectView {
   organization: string;
   cover: "coral" | "gradient" | "mint";
   conversationCount: string;
-  participantCount: string;
+  participantCount?: string;
 }
 
 export interface ConversationView {
@@ -52,22 +67,66 @@ export interface QvAllocationView {
   moreDisabled?: boolean;
 }
 
-export interface AppShellProps {
-  navigation: readonly {
-    id: string;
-    label: string;
-    icon: IconName;
-    group: string;
-    href?: string;
-    disabled?: boolean;
-  }[];
-  active: string;
-  onnavigate?: (id: string) => void;
-  header?: Snippet;
-  children: Snippet;
+export type WorkspaceNavigationIcon = "folder" | "history" | "explore" | "bell";
+export type WorkspaceNavigationId =
+  | "projects"
+  | "history"
+  | "explore"
+  | "notifications";
+export type WorkspaceActive =
+  | "home"
+  | WorkspaceNavigationId
+  | { projectSlug: string };
+export type WorkspaceDestination =
+  | { kind: "link"; href: string }
+  | { kind: "action"; onselect: () => void }
+  | { kind: "unavailable" };
+export type AccountAction = "organizations" | "logout";
+export type AccountActions = Record<AccountAction, (() => void) | undefined>;
+export type WorkspaceUser = Pick<AuthorView, "name" | "initials">;
+
+export interface WorkspaceNavigationItem {
+  id: WorkspaceNavigationId;
+  label: string;
+  icon: WorkspaceNavigationIcon;
+  group: "facilitate" | "participate" | "updates";
+  destination: WorkspaceDestination;
+}
+
+export interface WorkspaceProjectLink {
+  projectSlug: string;
+  label: string;
+  href: string | undefined;
+}
+
+export interface WorkspaceNavigationProps {
+  onsettings: (opener: HTMLElement) => void;
+  navigation: readonly WorkspaceNavigationItem[];
+  active: WorkspaceActive;
   dir: "ltr" | "rtl";
+  account?: WorkspaceUser;
+  projects?: readonly WorkspaceProjectLink[];
+  oncreateproject?: () => void;
+  accountActions?: AccountActions;
+  onlogin?: () => void;
+}
+
+export interface AppShellProps extends WorkspaceNavigationProps {
+  headerStart?: Snippet;
+  headerCenter?: Snippet;
+  header?: Snippet;
+  contentRef?: HTMLElement | null;
+  children: Snippet;
   participant?: boolean;
-  account?: AuthorView;
+  onbacktoproject?: () => void;
+}
+
+export interface WorkspaceSidebarProps extends WorkspaceNavigationProps {
+  collapsed: boolean;
+  projectsExpanded?: boolean;
+  mobile?: boolean;
+  ontoggle: () => void;
+  onfollow: () => void;
 }
 
 export interface ChoiceCardProps {
@@ -108,7 +167,7 @@ export interface OpinionCardProps extends Omit<
   "label"
 > {
   text: string;
-  author: AuthorView;
+  author?: AuthorView;
   voteBreakdown?: readonly OpinionVoteBreakdown[];
   visibilityNotice?: "pending" | "hidden";
   actions?: Snippet;

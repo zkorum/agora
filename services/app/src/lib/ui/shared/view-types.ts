@@ -55,6 +55,7 @@ export const iconClasses = {
   grid: "icon-[lucide--layout-grid]",
   list: "icon-[lucide--list]",
   people: "icon-[lucide--users]",
+  user: "icon-[lucide--user-round]",
   message: "icon-[lucide--message-square]",
   polis: "icon-[lucide--messages-square]",
   gathering: "icon-[lucide--notebook-pen]",
@@ -68,6 +69,7 @@ export const iconClasses = {
   forward: "icon-[lucide--arrow-right]",
   chevron: "icon-[lucide--chevron-down]",
   check: "icon-[lucide--check]",
+  "circle-check": "icon-[lucide--circle-check]",
   shield: "icon-[lucide--shield-check]",
   mail: "icon-[lucide--mail]",
   sparkles: "icon-[lucide--sparkles]",
@@ -77,10 +79,12 @@ export const iconClasses = {
   thumbsDown: "icon-[lucide--thumbs-down]",
 };
 
-export interface SelectItem {
-  value: string;
+export interface SelectItem<Value extends string = string> {
+  value: Value;
   label: string;
   disabled?: boolean;
+  description?: string;
+  searchText?: string;
 }
 
 export interface CollectionToolbarProps {
@@ -96,6 +100,10 @@ export interface DialogProps {
   open?: boolean;
   children: Snippet;
   footer?: Snippet;
+  footerInset?: "action";
+  variant?: "settings";
+  closeLabel?: string;
+  closeIcon?: Snippet;
   wide?: boolean;
   dir?: "ltr" | "rtl";
   rootProps?: Omit<Dialog.RootProps, "children" | "open">;
@@ -124,7 +132,7 @@ export interface SegmentedControlProps {
   items: readonly SegmentedControlItem[];
   value: string;
   onchange: (value: string) => void;
-  appearance?: "pill" | "underline" | "unstyled";
+  appearance?: "pill" | "underline" | "unstyled" | "filter";
   itemContent?: Snippet<[SegmentedControlItem]>;
   disabled?: boolean;
   rootProps?: Omit<

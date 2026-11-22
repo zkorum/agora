@@ -32,7 +32,13 @@
   aria-label={label}
   {disabled}
   bind:value={() => selected ?? "", onselect}
-  class={["agora-choice-group", rootProps.class]}
+  class={[
+    `
+      grid grid-cols-2 gap-5
+      max-md:grid-cols-1
+    `,
+    rootProps.class,
+  ]}
 >
   {#each items as item (item.value)}
     <ChoiceCard
@@ -47,16 +53,3 @@
     />
   {/each}
 </RadioGroup.Root>
-
-<style>
-  :global(.agora-choice-group) {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 20px;
-  }
-  @media (max-width: 760px) {
-    :global(.agora-choice-group) {
-      grid-template-columns: 1fr;
-    }
-  }
-</style>

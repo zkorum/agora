@@ -81,7 +81,7 @@
 
 <div
   class="
-    bg-[#fefeff] px-4 pb-24
+    bg-resource-surface px-4 pb-24
     sm:px-8
   "
 >
@@ -89,11 +89,22 @@
     <section
       class="
         relative mx-auto min-h-[560px] max-w-[1376px] overflow-hidden
-        rounded-3xl bg-cover bg-center
+        rounded-3xl
         lg:h-[445px] lg:min-h-0
       "
-      style={`background-image: linear-gradient(270.64deg, rgba(255, 255, 255, 0) 43.6%, rgba(255, 255, 255, 0.7) 99.47%), url(${agoraBgGradient});`}
     >
+      <img
+        src={agoraBgGradient}
+        alt=""
+        class="absolute inset-0 size-full object-cover"
+      />
+      <div
+        aria-hidden="true"
+        class="
+          absolute inset-0
+          bg-[linear-gradient(270.64deg,transparent_43.6%,rgb(255_255_255/70%)_99.47%)]
+        "
+      ></div>
       <img
         src={resourcesHeroIllustration}
         alt=""
@@ -105,7 +116,7 @@
           relative z-10 m-6 flex max-w-[539px] flex-col gap-8 rounded-2xl
           bg-white/80 p-6
           sm:m-10
-          lg:mt-11 lg:ml-14
+          lg:ms-14 lg:mt-11
         "
       >
         <div class="flex flex-col gap-2">
@@ -201,7 +212,7 @@
             href={localizeHref(`/resources/${post.slug}`)}
             class="
               group block aspect-533/248 overflow-hidden rounded-2xl
-              bg-[#f1f1f1]
+              bg-resource-placeholder
             "
             aria-label={post.title}
           >

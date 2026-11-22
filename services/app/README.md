@@ -1,8 +1,9 @@
 # Agora Svelte app (`services/app`)
 
 SvelteKit home for Agora's landing page, resources and new shared product UI.
-The real product entry point is `/home`, initially a layout-only screen without
-authentication, project creation or backend integration.
+The product entry point `/home` redirects to the localized `/projects` overview.
+Project creation is developed through a clearly marked, disposable mock API;
+real authentication and backend writes are not integrated yet.
 
 ## Why SvelteKit?
 
@@ -49,6 +50,8 @@ pnpm lint:fix     # Auto-fix lint and format issues
 
 pnpm test:unit    # Run Vitest unit tests
 pnpm test:e2e     # Run Playwright E2E tests
+pnpm test:storybook # Browser regressions against a separate static Storybook build
+pnpm test:projects # Mock-backed project creation in an explicit staging build
 pnpm storybook    # Browse shared UI components at http://127.0.0.1:6006
 pnpm storybook:build # Build a separate, local Storybook in storybook-static/
 ```
@@ -62,18 +65,107 @@ to inspect the inputs exposed by a story. Each story is a live Svelte component,
 not a screenshot or a test-results report. Interactions use local fixture state;
 there are no API requests, saved settings or real submissions.
 
+## Local fonts
+
+The app and Storybook share repository-owned Albert Sans variable fonts, using
+the same version as the Vue app. Upright and real italic faces cover weights
+100–900. WOFF2 assets are fingerprinted by Vite and served from our own origin;
+the upright face is preloaded through SvelteKit, while italics load on demand.
+No external font service or font-package dependency is required. See
+[`font provenance and regeneration`](src/lib/assets/fonts/albert-sans/README.md).
+
 ## Product routes
 
 - `/` remains the public landing page; visiting it does not redirect to the app.
-- `/home` is the product home, with its own responsive app layout rather than the
-  marketing header and footer. It is a real application route, available in
-  production as well as development, not a Storybook or `/dev/` preview.
+- `/home` redirects to `/projects`, preserving the selected language. Product
+  routes use the responsive app layout rather than the marketing header/footer.
+  It remains a stable entry point: the temporary 307 destination can later depend
+  on the user's context without changing existing entry links.
 - The `(agora)` route group separates the product layout without adding a URL
   prefix. Future product routes can share that layout.
-- Only the home layout is implemented for now; its content area is empty.
-  Unavailable navigation and project creation must not pretend to work. There is
-  no sample project content, simulated signed-in identity, authentication redirect,
-  mock API or persistence on that page.
+- `/projects` hosts the overview and creation, with a centered creation action
+  when no projects exist. `/project/[projectSlug]` displays the result without
+  invented activities. Production features without a real API remain unavailable.
+  Populated desktop overviews place a compact creation button beside the heading;
+  the project grid contains only actual projects, not a creation placeholder card.
+- `/project/[projectSlug]/draft/[draftId]` is the activity workspace. In
+  development, open `/projects`, create or open a project, then choose an activity
+  type to open its draft. Unpublished edits stay on the page. Creating the
+  activity keeps its configuration in the mock workspace for this browser tab.
+  See the [activity design notes](ACTIVITY-DESIGN.md).
+- Mock-backed creation is enabled in development, or explicitly in staging with
+  **both** `VITE_STAGING=true` and `VITE_PROJECTS_MOCK=true`. It starts with no
+  projects, persists creations in the current tab's `sessionStorage`, and has
+  visible mock/reset controls. It does not simulate a real login or write to the
+  backend. Normal production refuses mock mode even if the mock flag is set.
+
+The product shell reuses `WorkspaceSidebar`, `WorkspaceNavigationItem` and
+`AccountMenu` in desktop navigation, the mobile drawer and component stories.
+The sidebar follows Figma's Navigation section (`24105:142114`), including the
+196px expanded and 69px collapsed widths. Its icon assets are local exports of
+that design, not replacement glyphs.
+
+**Settings** in the sidebar footer (or the mobile navigation drawer) is available
+before login. It contains the interface language, privacy policy, terms of service
+and community guidelines, with a link to the product roadmap. Account controls appear
+only when the shell has a signed-in identity. Settings for a particular project
+or activity are opened from that project or activity.
+
+**Temporary legal-page ownership:** The Vue app (`services/agora/src/pages/legal/`)
+owns the published privacy policy, terms of service and community guidelines.
+All three documents open as sections inside Svelte Settings. Each section links to
+the published version until its local copy is ready. Before launch, replace the
+placeholders with the current text and translations. Before
+deploying Svelte on the Vue app’s domain or retiring Vue, verify that the
+public `/legal/privacy/`, `/legal/terms/` and `/legal/guidelines/` URLs still
+work without login.
+
+The project list starts expanded. Projects is an ordinary navigation link;
+only its disclosure control changes list expansion. That choice survives
+navigation, closing the mobile drawer and responsive layout changes. With many
+projects, the project list scrolls internally while Participate, notifications
+and account controls remain visible. Mobile project links have larger touch
+targets and clearer spacing than the compact desktop reference.
+Short windows use tighter vertical spacing without shrinking touch targets.
+Below 480px height, the navigation itself can scroll as an accessibility
+fallback, so no controls are clipped.
+
+On mobile, project detail uses one compact back/settings/share header instead of
+stacking the global navigation bar above it. The projects overview retains its
+navigation header. The **New project** and **New activity** buttons float on
+mobile and sit inline at `md` and above; their labels and styling stay the same.
+
+The account menu always represents the individual user. Organization management
+does not switch the signed-in identity: organizations publish projects but cannot
+participate in conversations. The organization to publish from belongs in project
+creation, not in login or the account menu. Real authentication and project
+creation are not wired yet; production shows no fabricated user or projects.
+
+### Data access and rendering
+
+`src/lib/api/agora/projects.ts` is the small feature-facing API boundary.
+The temporary implementation is isolated in `api/agora/mock/`; selection occurs
+once at the workspace bootstrap, never inside individual controls. Replacing it
+must not require rewriting the form or project screens. See
+[`api/agora/README.md`](src/lib/api/agora/README.md) for the removal checklist,
+current backend contract gaps and research references.
+
+Keep API integration separate from pure `logic/`, reactive `state/`, feature
+`components/` and presentation `ui/`. UI must not import API implementations;
+the existing lint boundary enforces this.
+
+The landing/resources pages are statically generated at **build time**, then
+served as files—not rendered by a backend on each visit. Product routes retain
+SSR for the initial render and client-side SPA navigation afterward. Their
+temporary browser-local mock data loads after hydration. Do not disable SSR
+globally, keep user state in a module singleton or copy UCAN private keys to a
+server to make private SSR possible.
+
+`pnpm test:storybook` uses the existing Playwright dependency to check signed-in
+presentation fixtures without adding authentication or a test route to the app.
+It builds and serves Storybook separately on port 6007; production page tests
+remain in `tests/`. Run these checks sequentially with other builds because they
+share generated translations.
 
 This is the real application, not a parallel preview app. Build product screens
 under `(agora)` and compose the normal feature components and shared UI.
@@ -123,11 +215,12 @@ not embedded in reusable UI or duplicated in a preview implementation.
 - The normal `pnpm build` / Netlify pipeline is unchanged and does not run
   Storybook. `storybook-static/` is separate ignored output, not deployment input.
 - Application source may not import Storybook or story/config files (enforced by
-  ESLint). Tailwind explicitly excludes those directories from utility scanning
-  so story-only classes cannot alter production CSS. Storybook telemetry is off.
+  ESLint). Production Tailwind scans `src/`; `.storybook/preview.css` also
+  scans `stories/` so fixture utilities work without being shipped in production.
+  Storybook telemetry is off.
 - There is no `/dev/design-system` gallery or preview-specific build configuration.
   Production checks exercise `/home` and the public landing page directly.
-  The empty home does not import or ship the unused sample data.
+  Product routes do not import or ship the unused Storybook sample data.
 - Existing Vitest logic tests and Playwright page tests remain separate. Run
   checks, tests and production builds sequentially as noted below.
 
@@ -347,6 +440,18 @@ the installed resolve-only rule does not model `localizeHref()`.
 | `components/` | Application features with business logic (data fetching, API calls, validation). Compose `$ui/` primitives.               | LoginForm, Navbar, ConversationCard, ConfirmDeleteDialog, CommentThread   |
 
 **`ui/` = Design System Abstraction Layer:**
+
+Use Tailwind utilities for component and story styling. Shared design tokens and
+Tailwind utilities belong in `src/app.css`. Bind runtime values such as vote
+percentages through `style:--amount={value}` and consume them in a utility;
+do not add scoped stylesheets, inline style strings, or static style directives.
+`app-policy/use-design-system` checks all Svelte markup, including stories.
+There are no per-file exemptions. Use shared controls in features, pages and
+stories. Use Bits UI inside the wrapper when it provides the behavior; native
+form elements in the wrapper are appropriate for ordinary text or number entry.
+For example, the Mapping display selector and activity-type picker both use
+`SelectionCard` in radio mode, while cards that immediately start a new draft
+use the same component in action mode.
 
 - **NEVER use Bits UI directly** in `components/` or routes
 - **ALWAYS import from `$ui/`** - this is your internal design system

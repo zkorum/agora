@@ -21,7 +21,7 @@
 </script>
 
 {#snippet template({ dir = "ltr", ...args }: Args)}
-  <div {dir} style="max-width: 560px; line-height: 1.5">
+  <div {dir} class="max-w-140 leading-normal">
     <ExpandableText {...args} />
   </div>
 {/snippet}

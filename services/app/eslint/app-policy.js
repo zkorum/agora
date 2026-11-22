@@ -12,6 +12,7 @@ const layers = new Set([
   "state",
   "server",
   "assets",
+  "api",
 ]);
 const assetFeatures = new Set(["shared", "landing", "agora"]);
 const toolingPackages = [
@@ -102,6 +103,8 @@ const moduleBoundaries = {
       tooling:
         "Production source must not depend on test, story or lint tooling, including local test modules.",
       bits: "Only UI wrappers may import Bits UI. Compose $ui/ components instead.",
+      stylesheet:
+        "Keep component styling in Tailwind utilities. The application stylesheet is loaded once in the root layout.",
       vue: "This app is Svelte-only; do not import Vue or Quasar integrations.",
       runed:
         "runed/kit is incompatible with Kit 3. Use supported Kit APIs directly.",
@@ -134,8 +137,7 @@ const moduleBoundaries = {
         return true;
       }
       if (path === "bits-ui" || path.startsWith("bits-ui/")) {
-        if (production && source?.layer !== "ui")
-          context.report({ node, messageId: "bits" });
+        if (source?.layer !== "ui") context.report({ node, messageId: "bits" });
         return true;
       }
       if (path === "runed/kit" || path.startsWith("runed/kit/")) {
@@ -178,6 +180,17 @@ const moduleBoundaries = {
         return;
       }
       if (
+        /\.(?:css|pcss|postcss|s[ac]ss|less|styl)$/.test(targetPath) &&
+        contains({ directory: appRoot, file: target }) &&
+        !(
+          filename === resolve(appRoot, "src/routes/+layout.svelte") &&
+          target === resolve(appRoot, "src/app.css")
+        )
+      ) {
+        context.report({ node, messageId: "stylesheet" });
+        return;
+      }
+      if (
         !contains({ directory: appRoot, file: target }) &&
         !contains({ directory: sharedRoot, file: target })
       ) {
@@ -190,6 +203,20 @@ const moduleBoundaries = {
         return;
       }
       const destination = location(target);
+      if (
+        destination?.layer === "api" &&
+        /(?:^|\/)mock\//.test(
+          portable(relative(resolve(appRoot, "src/lib/api"), target)),
+        ) &&
+        source?.layer !== "api"
+      ) {
+        context.report({
+          node,
+          messageId: "layer",
+          data: { from: source?.layer ?? "routes", to: "mock implementation" },
+        });
+        return;
+      }
       if (source === undefined) return;
       const routeTarget = contains({
         directory: resolve(appRoot, "src/routes"),
@@ -198,8 +225,14 @@ const moduleBoundaries = {
       const upward =
         destination !== undefined &&
         ((source.layer === "ui" &&
-          ["components", "server", "state"].includes(destination.layer)) ||
+          ["api", "components", "server", "state"].includes(
+            destination.layer,
+          )) ||
           (source.layer === "logic" && destination.layer !== "logic") ||
+          (source.layer === "api" &&
+            ["components", "ui", "state", "server"].includes(
+              destination.layer,
+            )) ||
           (source.layer === "state" &&
             ["components", "ui", "server"].includes(destination.layer)) ||
           (source.layer === "components" && destination.layer === "server"));
@@ -347,9 +380,59 @@ const noHtmlLintDirectives = {
   },
 };
 
+/** @param {import("eslint").JSSyntaxElement} node @returns {node is import("svelte-eslint-parser").AST.SvelteStyleDirective} */
+function isStyleDirective(node) {
+  return node.type === "SvelteStyleDirective";
+}
+
+/** @type {import("eslint").Rule.RuleModule} */
+const useDesignSystem = {
+  meta: {
+    type: "problem",
+    schema: [],
+    messages: {
+      tailwind:
+        "Use Tailwind utilities. For a runtime value, bind a CSS custom property and consume it in a utility.",
+      control:
+        "Compose a $ui control instead of implementing a widget in a feature, route or story.",
+    },
+  },
+  create(context) {
+    const path = portable(relative(appRoot, context.filename));
+    const inUi = path.startsWith("src/lib/ui/");
+    return {
+      /** @param {import("eslint").JSSyntaxElement} node */
+      "SvelteStyleElement, SvelteAttribute[key.name='style']"(node) {
+        context.report({ node, messageId: "tailwind" });
+      },
+      /** @param {import("eslint").JSSyntaxElement} node */
+      SvelteStyleDirective(node) {
+        if (!isStyleDirective(node)) return;
+        const dynamic = node.value.some(
+          (part) =>
+            part.type === "SvelteMustacheTag" &&
+            getStaticValue(
+              part.expression,
+              context.sourceCode.getScope(part.expression),
+            ) === null,
+        );
+        if (!node.key.name.name.startsWith("--") || !dynamic)
+          context.report({ node, messageId: "tailwind" });
+      },
+      /** @param {import("eslint").JSSyntaxElement} node */
+      "SvelteElement[kind=html][name.name=/^(button|input|textarea|select|dialog|details)$/] > SvelteStartTag, SvelteElement[kind=html] > SvelteStartTag > SvelteAttribute[key.name='role']:has(SvelteLiteral[value=/^(tab|tablist|radio|radiogroup|switch|checkbox|combobox|listbox|option|menu|menuitem|dialog|slider)$/])"(
+        node,
+      ) {
+        if (!inUi) context.report({ node, messageId: "control" });
+      },
+    };
+  },
+};
+
 export default {
   meta: { name: "agora-app-policy" },
   rules: {
+    "use-design-system": useDesignSystem,
     "module-boundaries": moduleBoundaries,
     "no-barrel-exports": noBarrelExports,
     "no-html-lint-directives": noHtmlLintDirectives,

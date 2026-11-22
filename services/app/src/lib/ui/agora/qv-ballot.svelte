@@ -31,27 +31,94 @@
   const meterPercent = $derived(Math.max(0, Math.min(100, remainingPercent)));
 </script>
 
-<section class="qv" aria-label="Quadratic voting visual preview">
-  <header>
-    <p>Quadratic voting</p>
-    <h3>
+<section
+  class="
+    rounded-xl border border-sky-lighter bg-sky-white px-6 pt-10 pb-6
+    max-md:rounded-none max-md:border-0 max-md:bg-transparent max-md:px-0
+    max-md:pt-4 max-md:pb-0
+  "
+  aria-label="Quadratic voting visual preview"
+>
+  <header
+    class="
+      mb-7
+      max-md:mb-6
+    "
+  >
+    <p
+      class="
+        mb-2 text-sm text-ink-light
+        max-md:mb-1
+      "
+    >
+      Quadratic voting
+    </p>
+    <h3
+      class="
+        text-base leading-[1.6] font-medium
+        max-md:text-lg/6 max-md:font-semibold
+      "
+    >
       Give more votes to the statements you care about. Each statement’s cost is
       its votes squared.
     </h3>
   </header>
-  <div class="table-heading" aria-hidden="true">
+  <div
+    class="
+      grid grid-cols-[minmax(0,1fr)_150px_80px] items-center gap-8 border-b
+      border-sky-lighter p-4 text-xs text-ink-light
+      max-md:hidden
+      [&>span:not(:first-child)]:text-center
+    "
+    aria-hidden="true"
+  >
     <span>Statement</span><span>Votes</span><span>Credits</span>
   </div>
-  <ul class="rows">
+  <ul
+    class="
+      m-0 list-none p-0
+      max-md:flex max-md:flex-col max-md:gap-4
+    "
+  >
     {#each rows as row (row.id)}
-      <li>
-        <div class="item">
-          <h4>{row.title}</h4>
-          <div class="description">
+      <li
+        class="
+          grid min-h-[166px] grid-cols-[minmax(0,1fr)_150px_80px] items-center
+          gap-8 border-b border-sky-lighter px-4 py-6
+          max-md:min-h-[247px] max-md:grid-cols-[150px_minmax(0,1fr)]
+          max-md:gap-4 max-md:rounded-xl max-md:border max-md:bg-sky-white
+          max-md:pb-4
+        "
+      >
+        <div
+          class="
+            min-w-0
+            max-md:col-span-full
+          "
+        >
+          <h4
+            class="
+              mb-2 text-lg/6.5 font-semibold
+              max-md:leading-6
+            "
+          >
+            {row.title}
+          </h4>
+          <div
+            class="
+              text-base/6 text-ink-light
+              max-md:text-sm max-md:leading-[23.5px]
+            "
+          >
             <ExpandableText text={row.description} lines={2} />
           </div>
           <BitsButton.Root
-            class="read-item"
+            class="
+              relative mt-3 block cursor-pointer border-0 bg-transparent p-0
+              text-start text-base text-sky-dark underline
+              focus-visible:outline-3 focus-visible:outline-offset-3
+              focus-visible:outline-primary-light
+            "
             type="button"
             onclick={() => {
               onread(row.id);
@@ -61,7 +128,11 @@
           >
         </div>
         <div
-          class="controls"
+          class="
+            flex items-center justify-center
+            max-md:justify-start
+            [&_button]:size-12.5
+          "
           role="group"
           aria-label={`Votes for ${row.title}`}
         >
@@ -73,8 +144,13 @@
             onclick={() => {
               onallocationchange({ id: row.id, direction: "fewer" });
             }}><Icon name="thumbsDown" size={16} /></Button
-          ><output class={row.tone} aria-label={`Votes: ${row.votes}`}
-            >{row.votes}</output
+          ><output
+            class={[
+              "min-w-12 text-center text-base",
+              row.tone === "support" && "text-primary-base",
+              row.tone === "opposition" && "text-red-darkest",
+            ]}
+            aria-label={`Votes: ${row.votes}`}>{row.votes}</output
           ><Button
             disabled={disabled || row.moreDisabled}
             variant="neutral"
@@ -85,292 +161,87 @@
             }}><Icon name="thumbsUp" size={16} /></Button
           >
         </div>
-        <figure>
+        <figure
+          class="
+            m-0 flex flex-col items-center gap-2
+            max-md:flex-row-reverse max-md:justify-self-end
+          "
+        >
           <div
             class="
-              square
-              {row.tone}"
+              flex size-20 items-end overflow-hidden rounded-[3px]
+              bg-sky-lighter
+              max-md:size-12.5
+            "
             role="img"
             aria-label={`${row.credits}, ${row.votes} votes`}
           >
             <span
-              style:width={`${row.squarePercent}%`}
-              style:height={`${row.squarePercent}%`}
+              class={[
+                "block size-(--square-size) rounded-xs",
+                row.tone === "opposition" ? "bg-red-base" : "bg-primary-base",
+              ]}
+              style:--square-size={`${row.squarePercent}%`}
             ></span>
           </div>
-          <figcaption>{row.credits}</figcaption>
+          <figcaption
+            class="
+              text-xs text-ink-light
+              max-md:text-sm max-md:whitespace-nowrap
+            "
+          >
+            {row.credits}
+          </figcaption>
         </figure>
       </li>
     {/each}
   </ul>
-  <footer>
+  <footer
+    class="
+      sticky bottom-0 z-1 mt-6 flex flex-wrap items-center justify-between gap-5
+      border-t border-sky-lighter bg-sky-white pt-6
+      pb-[max(24px,env(safe-area-inset-bottom,0px))]
+      max-md:mx-(--qv-footer-inset,0px) max-md:block max-md:px-5 max-md:pt-3
+      max-md:pb-[max(40px,env(safe-area-inset-bottom,0px))]
+      max-md:[&_button]:mt-4 max-md:[&_button]:min-h-12.5
+      max-md:[&_button]:w-full max-md:[&_button]:rounded-full
+      max-md:[&_button]:text-base max-md:[&_button]:font-normal
+    "
+  >
     <div>
-      <div class="balance">
+      <div
+        class="
+          flex flex-wrap items-center gap-3 text-sm
+          max-md:flex-nowrap max-md:text-base max-md:whitespace-nowrap
+        "
+      >
         <span aria-live="polite" aria-atomic="true">{remaining}</span
         ><Meter.Root
-          class="agora-credit-meter"
+          class="
+            h-1.5 w-20 rounded-full bg-sky-lighter
+            max-md:min-w-0 max-md:flex-1
+          "
           min={0}
           max={100}
           value={meterPercent}
           aria-label="Credits remaining"
-          ><span class="meter-fill" style:width={`${meterPercent}%`}
+          ><span
+            class="
+              block h-full w-(--remaining) rounded-[inherit] bg-primary-base
+            "
+            style:--remaining={`${meterPercent}%`}
           ></span></Meter.Root
         >
       </div>
-      <p>You can submit without spending all your credits.</p>
+      <p
+        class="
+          mt-2 text-xs text-ink-light
+          max-md:hidden
+        "
+      >
+        You can submit without spending all your credits.
+      </p>
     </div>
     <Button variant="solid" size="control" disabled>Submit votes</Button>
   </footer>
 </section>
-
-<style>
-  .qv {
-    padding: 40px 24px 24px;
-    background: white;
-    border: 1px solid var(--sky-lighter);
-    border-radius: 12px;
-  }
-  header {
-    margin-block-end: 28px;
-  }
-  header p {
-    font-size: 14px;
-    color: var(--ink-light);
-    margin-block-end: 8px;
-  }
-  h3 {
-    font-size: 16px;
-    font-weight: 500;
-    line-height: 1.6;
-  }
-  .table-heading,
-  li {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 150px 80px;
-    gap: 32px;
-    align-items: center;
-  }
-  .table-heading {
-    padding: 16px;
-    border-block-end: 1px solid var(--sky-lighter);
-    font-size: 12px;
-    color: var(--ink-light);
-  }
-  .table-heading span:not(:first-child) {
-    text-align: center;
-  }
-  .rows {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-  li {
-    min-height: 166px;
-    padding: 24px 16px;
-    border-block-end: 1px solid var(--sky-lighter);
-  }
-  h4 {
-    font-size: 18px;
-    font-weight: 600;
-    line-height: 26px;
-    margin: 0 0 8px;
-  }
-  .description {
-    color: var(--ink-light);
-    font-size: 16px;
-    line-height: 24px;
-  }
-  .item :global(.read-item) {
-    position: relative;
-    display: block;
-    padding: 0;
-    margin-block-start: 12px;
-    background: transparent;
-    border: 0;
-    color: var(--sky-dark);
-    text-align: start;
-    font: inherit;
-    font-size: 16px;
-    text-decoration: underline;
-    cursor: pointer;
-  }
-  .item :global(.read-item:focus-visible) {
-    outline: 3px solid var(--primary-light);
-    outline-offset: 3px;
-  }
-  .controls {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .controls :global(button) {
-    width: 50px;
-    height: 50px;
-  }
-  output {
-    min-width: 48px;
-    text-align: center;
-    font-size: 16px;
-  }
-  output.support {
-    color: var(--primary-base);
-  }
-  output.opposition {
-    color: var(--red-darkest);
-  }
-  figure {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    margin: 0;
-  }
-  .square {
-    display: flex;
-    align-items: flex-end;
-    width: 80px;
-    height: 80px;
-    background: var(--sky-lighter);
-    border-radius: 3px;
-    overflow: hidden;
-  }
-  .square span {
-    display: block;
-    background: var(--primary-base);
-    border-radius: 2px;
-  }
-  .square.opposition span {
-    background: var(--red-base);
-  }
-  figcaption {
-    font-size: 12px;
-    color: var(--ink-light);
-  }
-  footer {
-    position: sticky;
-    inset-block-end: 0;
-    z-index: 1;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-    flex-wrap: wrap;
-    border-block-start: 1px solid var(--sky-lighter);
-    margin-block-start: 24px;
-    padding-block: 24px max(24px, env(safe-area-inset-bottom, 0px));
-    background: var(--sky-white);
-  }
-  .balance {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-    font-size: 14px;
-  }
-  :global(.agora-credit-meter) {
-    width: 80px;
-    height: 6px;
-    background: var(--sky-lighter);
-    border-radius: 99px;
-  }
-  .meter-fill {
-    display: block;
-    height: 100%;
-    border-radius: inherit;
-    background: var(--primary-base);
-  }
-  footer p {
-    margin-block-start: 8px;
-    font-size: 12px;
-    color: var(--ink-light);
-  }
-  @media (max-width: 760px) {
-    .qv {
-      padding: 16px 0 0;
-      border: 0;
-      border-radius: 0;
-      background: transparent;
-    }
-    header {
-      margin-block-end: 24px;
-    }
-    header p {
-      font-size: 14px;
-      margin-block-end: 4px;
-    }
-    h3 {
-      font-size: 18px;
-      font-weight: 600;
-      line-height: 24px;
-    }
-    .rows {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    .table-heading {
-      display: none;
-    }
-    li {
-      grid-template-columns: 150px minmax(0, 1fr);
-      min-height: 247px;
-      padding: 24px 16px 16px;
-      border: 1px solid var(--sky-lighter);
-      border-radius: 12px;
-      background: white;
-      gap: 16px;
-    }
-    .statement {
-      grid-column: 1 / -1;
-    }
-    .controls {
-      justify-content: flex-start;
-    }
-    h4 {
-      line-height: 24px;
-    }
-    .description {
-      font-size: 14px;
-      line-height: 23.5px;
-    }
-    figure {
-      flex-direction: row-reverse;
-      justify-self: end;
-    }
-    .square {
-      width: 50px;
-      height: 50px;
-    }
-    figcaption {
-      white-space: nowrap;
-      font-size: 14px;
-    }
-    footer {
-      display: block;
-      margin-inline: var(--qv-footer-inset, 0px);
-      margin-block-start: 24px;
-      padding: 12px 20px max(40px, env(safe-area-inset-bottom, 0px));
-    }
-    footer p {
-      display: none;
-    }
-    .balance {
-      flex-wrap: nowrap;
-      gap: 12px;
-      white-space: nowrap;
-      font-size: 16px;
-    }
-    :global(.agora-credit-meter) {
-      flex: 1;
-      min-width: 0;
-    }
-    footer :global(button) {
-      margin-block-start: 16px;
-      width: 100%;
-      min-height: 50px;
-      border-radius: 999px;
-      font-size: 16px;
-      font-weight: 400;
-    }
-  }
-</style>

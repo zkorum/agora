@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { Button } from "bits-ui";
+  import type { Snippet } from "svelte";
 
-  import ExpandableText from "$ui/shared/expandable-text.svelte";
+  import Button from "$ui/shared/button.svelte";
   import Icon from "$ui/shared/icon.svelte";
 
   import type { ProjectView } from "./view-types.js";
@@ -9,184 +9,112 @@
   let {
     project,
     onopen,
+    href,
+    organization,
+    metadata,
     layout = "grid",
   }: {
     project: ProjectView;
-    onopen: () => void;
+    organization?: Snippet;
+    metadata?: Snippet;
     layout?: "grid" | "list";
-  } = $props();
+  } & (
+    | { href: string; onopen?: never }
+    | { href?: never; onopen: () => void }
+  ) = $props();
 </script>
 
-<article class={["project-card", { list: layout === "list" }]}>
+<article
+  class={[
+    `
+      relative flex min-w-0 flex-col rounded-xl border border-sky-lighter
+      bg-sky-white p-2 shadow-(--shadow-surface-subtle)
+      hover:shadow-[0_2px_5px_#0000000d]
+    `,
+    layout === "list"
+      ? `
+        max-md:min-h-(--project-card-min-height,417px)
+        md:flex-row
+      `
+      : "min-h-(--project-card-min-height,417px)",
+  ]}
+>
   <div
-    class="
-      cover
-      {project.cover}"
+    class={[
+      "h-32 shrink-0 rounded-md",
+      layout === "list" && "md:h-auto md:min-h-32.5 md:w-40",
+      project.cover === "coral"
+        ? "bg-(--organization-coral)"
+        : project.cover === "mint"
+          ? "bg-project-mint"
+          : `
+            bg-[linear-gradient(165deg,var(--primary-base)_30%,var(--brand-blue))]
+          `,
+    ]}
     aria-hidden="true"
   ></div>
-  <div class="info">
-    <p class="organization">
-      <span class="organization-mark" aria-hidden="true">CTC</span
-      >{project.organization}
-    </p>
-    <h3>
-      <Button.Root class="project-open" type="button" onclick={onopen}
-        >{project.title}</Button.Root
-      >
-    </h3>
-    <div class="description">
-      <ExpandableText text={project.description} lines={5} />
+  <div class="flex flex-1 flex-col gap-2 px-3 py-4">
+    <div
+      class="
+        flex min-h-5 flex-wrap items-center gap-2 text-sm/none-base
+        text-ink-light
+      "
+    >
+      {#if organization}{@render organization()}{:else}{project.organization}{/if}
     </div>
-    <footer>
-      <span>
-        <Icon name="list" size={14} />
-        {project.conversationCount}
-        <span class="sr-only">activities</span>
-      </span>
-      <span>
-        <Icon name="people" size={14} />
-        {project.participantCount}
-        <span class="sr-only">participants</span>
-      </span>
-      <span class="publication"
-        ><Icon name="globe" size={14} /><span class="sr-only"
-          >Public project</span
-        ></span
-      >
+    <h2 class="m-0 text-lg/6 font-semibold wrap-anywhere">
+      {#if href !== undefined}
+        <Button
+          variant="unstyled"
+          class="
+            cursor-pointer bg-transparent p-0 text-start text-ink-dark
+            no-underline
+            after:absolute after:inset-0 after:rounded-xl
+            focus-visible:after:outline-3 focus-visible:after:outline-offset-2
+            focus-visible:after:outline-primary-light
+          "
+          {href}>{project.title}</Button
+        >
+      {:else}
+        <Button
+          variant="unstyled"
+          class="
+            cursor-pointer bg-transparent p-0 text-start text-ink-dark
+            no-underline
+            after:absolute after:inset-0 after:rounded-xl
+            focus-visible:after:outline-3 focus-visible:after:outline-offset-2
+            focus-visible:after:outline-primary-light
+          "
+          onclick={onopen}>{project.title}</Button
+        >
+      {/if}
+    </h2>
+    <p
+      class="
+        mt-1 line-clamp-5 flex-1 text-sm/5.25 wrap-anywhere whitespace-pre-wrap
+        text-ink-light
+      "
+    >
+      {project.description}
+    </p>
+    <footer
+      class="
+        mt-4 flex min-h-[47px] gap-3 border-t border-sky-lighter pt-4 text-sm
+        text-ink-light
+      "
+    >
+      {#if metadata}{@render metadata()}{:else if project.participantCount}<span
+          class="inline-flex items-center gap-1.25"
+        >
+          <Icon name="list" size={14} />
+          {project.conversationCount}
+          <span class="sr-only">activities</span>
+        </span>
+        <span class="inline-flex items-center gap-1.25">
+          <Icon name="people" size={14} />
+          {project.participantCount}
+          <span class="sr-only">participants</span>
+        </span>{/if}
     </footer>
   </div>
 </article>
-
-<style>
-  .project-card {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    border: 1px solid var(--sky-lighter);
-    border-radius: 12px;
-    padding: 8px;
-    background: white;
-    min-width: 0;
-    min-height: 417px;
-    box-shadow: 0 2px 6px #00000008;
-  }
-  .project-card:hover {
-    box-shadow: 0 2px 5px #0000000d;
-  }
-  .cover {
-    height: 128px;
-    border-radius: 6px;
-    flex-shrink: 0;
-  }
-  .coral {
-    background: #f06c48;
-  }
-  .gradient {
-    background: linear-gradient(
-      165deg,
-      var(--primary-base) 30%,
-      var(--brand-blue)
-    );
-  }
-  .mint {
-    background: #bfe5d7;
-  }
-  .info {
-    display: flex;
-    flex-direction: column;
-    padding: 16px 12px;
-    flex: 1;
-  }
-  .organization {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 20px;
-    margin-block-end: 12px;
-    font-size: 14px;
-    line-height: 16px;
-    color: var(--ink-light);
-  }
-  .organization-mark {
-    display: grid;
-    place-items: center;
-    width: 20px;
-    height: 20px;
-    border-radius: 5px;
-    background: #f06c48;
-    color: white;
-    font-size: 7px;
-    flex-shrink: 0;
-  }
-  h3 {
-    font-size: 18px;
-    font-weight: 600;
-    line-height: 24px;
-  }
-  .project-card :global(.project-open) {
-    border: 0;
-    padding: 0;
-    background: transparent;
-    text-align: start;
-    font: inherit;
-    color: var(--ink-dark);
-    cursor: pointer;
-  }
-  .project-card :global(.project-open::after) {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: 12px;
-  }
-  .project-card :global(.project-open:focus-visible::after) {
-    outline: 3px solid var(--primary-light);
-    outline-offset: 2px;
-  }
-  .description {
-    color: var(--ink-light);
-    font-size: 14px;
-    line-height: 21px;
-    margin-block-start: 4px;
-    flex: 1;
-  }
-  footer {
-    display: flex;
-    gap: 12px;
-    min-height: 47px;
-    padding-block-start: 16px;
-    margin-block-start: 16px;
-    border-block-start: 1px solid var(--sky-lighter);
-    font-size: 14px;
-    color: var(--ink-light);
-  }
-  footer span {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-  }
-  .publication {
-    margin-inline-start: auto;
-  }
-  .list {
-    flex-direction: row;
-    min-height: 0;
-  }
-  .list .cover {
-    width: 160px;
-    height: auto;
-    min-height: 130px;
-  }
-  @media (max-width: 760px) {
-    .list {
-      flex-direction: column;
-    }
-    .list .cover {
-      width: 100%;
-      height: 128px;
-      min-height: 0;
-    }
-    .project-card {
-      min-height: 417px;
-    }
-  }
-</style>

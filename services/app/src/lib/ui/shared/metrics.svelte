@@ -3,36 +3,11 @@
     $props();
 </script>
 
-<dl>
-  {#each items as item (item.label)}<div>
-      <dt>{item.label}</dt>
-      <dd>{item.value}</dd>
+<dl class="m-0 grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-4">
+  {#each items as item (item.label)}<div
+      class="flex flex-col-reverse gap-1.5 rounded-[10px] bg-sky-lightest p-5"
+    >
+      <dt class="text-[13px] text-ink-light">{item.label}</dt>
+      <dd class="m-0 text-[28px] font-semibold text-ink-dark">{item.value}</dd>
     </div>{/each}
 </dl>
-
-<style>
-  dl {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 16px;
-    margin: 0;
-  }
-  dl div {
-    display: flex;
-    flex-direction: column-reverse;
-    gap: 6px;
-    padding: 20px;
-    background: var(--sky-lightest);
-    border-radius: 10px;
-  }
-  dt {
-    color: var(--ink-light);
-    font-size: 13px;
-  }
-  dd {
-    margin: 0;
-    color: var(--ink-dark);
-    font-size: 28px;
-    font-weight: 600;
-  }
-</style>

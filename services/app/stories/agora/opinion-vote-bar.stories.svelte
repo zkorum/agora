@@ -16,7 +16,7 @@
 </script>
 
 {#snippet template({ dir = "ltr", ...args }: Args)}
-  <div {dir} style="max-width: 640px"><OpinionVoteBar {...args} /></div>
+  <div {dir} class="max-w-[640px]"><OpinionVoteBar {...args} /></div>
 {/snippet}
 
 <Story name="Mixed responses" />

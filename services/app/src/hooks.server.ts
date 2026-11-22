@@ -17,6 +17,10 @@ export const handle: Handle = ({ event, resolve }) =>
       return resolve(
         { ...event, request: localizedRequest },
         {
+          preload: (asset) =>
+            asset.type !== "font" ||
+            asset.filename ===
+              "src/lib/assets/fonts/albert-sans/AlbertSans-Variable.woff2",
           transformPageChunk: ({ html }) =>
             html
               .replace("%lang%", locale)

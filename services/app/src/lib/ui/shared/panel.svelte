@@ -5,20 +5,51 @@
     title,
     description,
     actions,
+    labelledby,
+    appearance,
     children,
   }: {
     title?: string;
     description?: string;
     actions?: Snippet;
+    appearance?: "activity" | "activity-summary" | "project";
+    labelledby?: string;
     children: Snippet;
   } = $props();
 </script>
 
-<section class="panel">
+<section
+  class={[
+    `
+      min-w-0 border border-sky-lighter
+      max-md:p-(--panel-mobile-padding,20px_16px)
+    `,
+    appearance === "project"
+      ? `
+        rounded-2xl
+        md:p-[clamp(16px,3vw,40px)]
+      `
+      : appearance
+        ? `
+          rounded-2xl
+          md:p-10
+        `
+        : `
+          rounded-(--panel-radius,12px)
+          md:p-(--panel-padding,28px)
+        `,
+    appearance === "activity"
+      ? "bg-sky-off-white"
+      : "bg-(--panel-background,var(--sky-white))",
+  ]}
+  aria-labelledby={labelledby}
+>
   {#if Boolean(title) || Boolean(description) || Boolean(actions)}
-    <header>
+    <header class="mb-6 flex flex-wrap items-center justify-between gap-4">
       <div>
-        {#if title}<h2>{title}</h2>{/if}{#if description}<p>
+        {#if title}<h2 class="text-xl font-semibold">
+            {title}
+          </h2>{/if}{#if description}<p class="mt-1.5 text-sm text-ink-light">
             {description}
           </p>{/if}
       </div>
@@ -27,35 +58,3 @@
   {/if}
   {@render children()}
 </section>
-
-<style>
-  .panel {
-    background: white;
-    border: 1px solid var(--sky-lighter);
-    border-radius: 12px;
-    padding: 28px;
-    min-width: 0;
-  }
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 16px;
-    margin-block-end: 24px;
-  }
-  h2 {
-    font-size: 20px;
-    font-weight: 600;
-  }
-  p {
-    font-size: 14px;
-    color: var(--ink-light);
-    margin-block-start: 6px;
-  }
-  @media (max-width: 760px) {
-    .panel {
-      padding: 20px 16px;
-    }
-  }
-</style>

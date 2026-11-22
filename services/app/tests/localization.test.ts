@@ -114,7 +114,7 @@ test("language switching preserves the current resource, query and anchor", asyn
   page,
 }) => {
   await page.goto("/resources/ai-charter-workshop?source=review#details");
-  await page.getByRole("button", { name: "EN", exact: true }).click();
+  await page.getByRole("button", { name: "Language", exact: true }).click();
   await expect(page.getByRole("option")).toHaveCount(locales.length);
   await page.getByRole("option", { name: "Français", exact: true }).click();
   await expect(page).toHaveURL(

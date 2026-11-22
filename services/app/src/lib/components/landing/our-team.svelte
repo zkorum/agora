@@ -47,8 +47,8 @@
             />
             <div
               class="
-                pointer-events-none absolute inset-0 rounded-2xl bg-[#2d226c]
-                mix-blend-screen
+                pointer-events-none absolute inset-0 rounded-2xl
+                bg-portrait-tint mix-blend-screen
               "
             ></div>
           </div>

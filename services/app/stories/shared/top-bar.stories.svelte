@@ -19,7 +19,7 @@
 </script>
 
 {#snippet template({ minimal = false, dir = "ltr", ...args }: Args)}
-  <div {dir} style:min-height={args.hideOnScroll ? "220vh" : "220px"}>
+  <div {dir} class={args.hideOnScroll ? "min-h-[220vh]" : "min-h-55"}>
     <TopBar {...args}>
       {#snippet start()}<span>Agora</span>{/snippet}
       {#snippet nav()}{#if !minimal}<li>
@@ -33,7 +33,7 @@
             disabled>Action</Button
           >{/if}{/snippet}
     </TopBar>
-    <p style="padding: 120px 32px 32px">
+    <p class="px-8 pt-30 pb-8">
       Neutral content for observing the shared top bar.
     </p>
   </div>

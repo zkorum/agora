@@ -17,41 +17,18 @@
   } = $props();
 </script>
 
-<div class="empty">
-  <span class="mark"><Icon name={icon} size={28} /></span>
-  <h3>{title}</h3>
-  <p>{description}</p>
+<div
+  class="
+    flex flex-col items-center gap-3.5 rounded-xl border border-dashed
+    border-sky-lighter px-6 py-14 text-center
+  "
+>
+  <span
+    class="
+      grid size-14 place-items-center rounded-2xl bg-sky-lightest text-ink-light
+    "><Icon name={icon} size={28} /></span
+  >
+  <h3 class="text-lg font-semibold text-ink-dark">{title}</h3>
+  <p class="max-w-95 text-sm text-ink-light">{description}</p>
   {#if actions}<div>{@render actions()}</div>{/if}
 </div>
-
-<style>
-  .empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 14px;
-    padding: 56px 24px;
-    text-align: center;
-    border: 1px dashed var(--sky-lighter);
-    border-radius: 12px;
-  }
-  .mark {
-    display: grid;
-    place-items: center;
-    width: 56px;
-    height: 56px;
-    background: var(--sky-lightest);
-    border-radius: 16px;
-    color: var(--ink-light);
-  }
-  h3 {
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--ink-dark);
-  }
-  p {
-    font-size: 14px;
-    max-width: 380px;
-    color: var(--ink-light);
-  }
-</style>

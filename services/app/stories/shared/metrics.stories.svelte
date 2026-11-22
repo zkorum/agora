@@ -21,7 +21,7 @@
 </script>
 
 {#snippet template({ dir = "ltr", ...args }: Args)}
-  <div {dir} style="max-width: 800px"><Metrics {...args} /></div>
+  <div {dir} class="w-full max-w-200"><Metrics {...args} /></div>
 {/snippet}
 
 <Story name="Participation" />

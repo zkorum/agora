@@ -27,7 +27,7 @@
 {#snippet template({ dir = "ltr", ...args }: Args)}
   <FixtureState initial={() => args.selected}>
     {#snippet children({ value: selected, set }: FixtureStateView<boolean>)}
-      <div {dir} style="max-width: 480px">
+      <div {dir} class="w-full max-w-120">
         <ChoiceCard
           {...args}
           {selected}

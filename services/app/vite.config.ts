@@ -14,6 +14,10 @@ export default defineConfig({
     ...browserBuildOptions,
     sourcemap: true,
   },
+  resolve: {
+    // Netlify installs this app's dependencies, not the sibling shared package.
+    dedupe: ["html-to-text", "sanitize-html"],
+  },
   plugins: [
     sentrySvelteKit({
       org: "zkorum",

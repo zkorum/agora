@@ -40,6 +40,73 @@ async function policy({ file, code }: { file?: string; code: string }) {
   );
 }
 
+describe("Svelte design system boundaries", () => {
+  test.each([
+    [
+      "src/lib/components/agora/probe.svelte",
+      '<div class="test">x</div><style>.test { display: flex; }</style>',
+      "tailwind",
+    ],
+    [
+      "src/lib/ui/shared/probe.svelte",
+      '<span style="color: red">x</span>',
+      "tailwind",
+    ],
+    [
+      "stories/shared/probe.svelte",
+      '<span style:width={"2rem"}>x</span>',
+      "tailwind",
+    ],
+    [
+      "src/lib/components/landing/probe.svelte",
+      '<script lang="ts">const hardcoded = 25;</script><span style:--amount={`${hardcoded}%`}>x</span>',
+      "tailwind",
+    ],
+    [
+      "src/lib/components/landing/probe.svelte",
+      '<script lang="ts">import "./probe.css";</script><span>x</span>',
+      "stylesheet",
+    ],
+    ["stories/shared/probe.ts", 'import { Select } from "bits-ui";', "bits"],
+    [
+      "src/routes/probe/+page.svelte",
+      '<button type="button">Open</button>',
+      "control",
+    ],
+    [
+      "src/lib/components/agora/probe.svelte",
+      '<div role="tablist"></div>',
+      "control",
+    ],
+    [
+      "stories/shared/probe.svelte",
+      '<script lang="ts">import { Dialog } from "bits-ui";</script><Dialog.Root/>',
+      "bits",
+    ],
+  ])("rejects %s: %s", async (file, code, messageId) => {
+    expect(await policy({ file, code })).toContainEqual(
+      expect.objectContaining({ messageId }),
+    );
+  });
+
+  test("accepts a runtime CSS variable consumed by a utility", async () => {
+    const code =
+      '<script lang="ts">let { percent }: { percent: number } = $props();</script><div style:--amount={`${percent}%`} class="w-(--amount)"></div>';
+    expect(
+      await policy({ file: "src/lib/ui/shared/probe.svelte", code }),
+    ).toEqual([]);
+  });
+
+  test("accepts a native form control inside a UI wrapper", async () => {
+    expect(
+      await policy({
+        file: "src/lib/ui/shared/probe.svelte",
+        code: '<input type="number" class="w-full" aria-label="Character limit" />',
+      }),
+    ).toEqual([]);
+  });
+});
+
 describe("production tooling boundaries", () => {
   test.each([
     'import "@storybook/svelte-vite";',
@@ -169,6 +236,41 @@ describe("architecture", () => {
     ],
     ["src/lib/logic/shared/probe.ts", 'import "$app/navigation";', "layer"],
     [
+      "src/lib/ui/agora/probe.ts",
+      'import "#lib/api/agora/projects.js";',
+      "layer",
+    ],
+    [
+      "src/lib/logic/agora/probe.ts",
+      'import "#lib/api/agora/projects.js";',
+      "layer",
+    ],
+    [
+      "src/lib/api/agora/probe.ts",
+      'import "$state/agora/workspace-projects.svelte.js";',
+      "layer",
+    ],
+    [
+      "src/lib/api/agora/probe.ts",
+      'import "$ui/agora/view-types.js";',
+      "layer",
+    ],
+    [
+      "src/lib/components/agora/probe.ts",
+      'import "#lib/api/agora/mock/projects.js";',
+      "layer",
+    ],
+    [
+      "src/lib/state/agora/probe.ts",
+      'import "#lib/api/agora/mock/projects.js";',
+      "layer",
+    ],
+    [
+      "src/routes/+page.ts",
+      'import "#lib/api/agora/mock/projects.js";',
+      "layer",
+    ],
+    [
       "src/lib/components/landing/probe.ts",
       'import "$ui/agora/view-types.js";',
       "feature",
@@ -205,6 +307,11 @@ describe("architecture", () => {
     ],
     ["src/lib/components/agora/probe.ts", 'import "$ui/shared/view-types.js";'],
     ["src/lib/ui/agora/probe.ts", 'import "$logic/agora/qv-allocation.js";'],
+    ["src/lib/state/agora/probe.ts", 'import "#lib/api/agora/projects.js";'],
+    [
+      "src/lib/api/agora/probe.ts",
+      'import "$logic/agora/project-creation.js";',
+    ],
     [
       "src/lib/server/landing/probe.ts",
       'import "$logic/landing/resource-types.js";',

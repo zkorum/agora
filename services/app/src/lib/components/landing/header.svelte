@@ -4,6 +4,7 @@
   import * as m from "#lib/paraglide/messages.js";
   import { localizeHref } from "#lib/paraglide/runtime.js";
   import LanguageSwitcher from "$components/shared/language-switcher.svelte";
+  import Button from "$ui/shared/button.svelte";
   import GradientButton from "$ui/shared/gradient-button.svelte";
   import MobileNavDrawer from "$ui/shared/mobile-nav-drawer.svelte";
   import TopBar from "$ui/shared/top-bar.svelte";
@@ -76,11 +77,13 @@
     </div>
 
     <!-- Mobile hamburger button -->
-    <button
+    <Button
+      variant="unstyled"
       type="button"
       class="
         inline-flex items-center justify-center rounded-md p-2
-        hover:bg-zinc-100
+        hover:bg-sky-lightest
+        focus-visible:outline-primary-base
         lg:hidden
       "
       onclick={() => (mobileMenuOpen = true)}
@@ -88,7 +91,7 @@
       aria-expanded={mobileMenuOpen}
     >
       <span class="icon-[lucide--menu] size-6 gradient-primary"></span>
-    </button>
+    </Button>
   {/snippet}
 </TopBar>
 

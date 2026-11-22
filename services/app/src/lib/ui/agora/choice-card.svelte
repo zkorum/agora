@@ -13,107 +13,50 @@
     disabled = false,
     radioValue,
   }: ChoiceCardProps = $props();
+  const selectClass =
+    "group flex cursor-pointer items-center gap-2.5 bg-transparent p-0 text-start text-sm text-ink-light after:absolute after:inset-0 after:rounded-xl focus-visible:after:outline-3 focus-visible:after:outline-primary-light focus-visible:after:outline-offset-2 disabled:cursor-not-allowed";
+  const radioClass =
+    "size-5 rounded-full border border-sky-base bg-sky-white group-aria-pressed:border-6 group-aria-pressed:border-primary-base group-data-[state=checked]:border-6 group-data-[state=checked]:border-primary-base";
 </script>
 
-<div class={["choice-card", { selected, disabled }]}>
-  <div class="text"><ExpandableText {text} lines={5} /></div>
+<div
+  class={[
+    `
+      relative flex min-h-55 w-full flex-col justify-between gap-10 rounded-xl
+      border p-7 text-start text-ink-dark
+      max-md:min-h-40 max-md:p-5
+    `,
+    selected
+      ? "border-primary-base bg-primary-lightest"
+      : "border-sky-lighter bg-sky-white",
+    disabled ? "opacity-60" : "hover:bg-sky-lightest",
+  ]}
+>
+  <div
+    class="
+      text-[20px] leading-normal font-medium
+      max-md:text-lg/normal
+    "
+  >
+    <ExpandableText {text} lines={5} />
+  </div>
   {#if radioValue !== undefined}
     <RadioGroup.Item
       value={radioValue}
       {disabled}
       aria-label={`${label}: ${text}`}
-      class="select-line"
+      class={selectClass}
     >
-      <span class="radio" aria-hidden="true"></span>{label}
+      <span class={radioClass} aria-hidden="true"></span>{label}
     </RadioGroup.Item>
   {:else}
     <Toggle.Root
       bind:pressed={() => selected, onselect}
       {disabled}
       aria-label={`${label}: ${text}`}
-      class="select-line"
+      class={selectClass}
     >
-      <span class="radio" aria-hidden="true"></span>{label}
+      <span class={radioClass} aria-hidden="true"></span>{label}
     </Toggle.Root>
   {/if}
 </div>
-
-<style>
-  .choice-card {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    gap: 40px;
-    width: 100%;
-    min-height: 220px;
-    padding: 28px;
-    border: 1px solid var(--sky-lighter);
-    border-radius: 12px;
-    background: white;
-    color: var(--ink-dark);
-    text-align: start;
-    font: inherit;
-  }
-  .choice-card:hover:not(.disabled) {
-    background: var(--sky-lightest);
-  }
-  .disabled {
-    opacity: 0.6;
-  }
-  .choice-card :global(.select-line:focus-visible::after) {
-    outline: 3px solid var(--primary-light);
-    outline-offset: 2px;
-  }
-  .selected {
-    background: var(--primary-lightest);
-    border-color: var(--primary-base);
-  }
-  .text {
-    font-size: 20px;
-    font-weight: 500;
-    line-height: 1.5;
-  }
-  .choice-card :global(.select-line) {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 14px;
-    color: var(--ink-light);
-    border: 0;
-    padding: 0;
-    background: transparent;
-    text-align: start;
-    font-family: inherit;
-    cursor: pointer;
-  }
-  .choice-card :global(.select-line::after) {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: 12px;
-  }
-  .choice-card :global(.select-line:disabled) {
-    cursor: not-allowed;
-  }
-  .radio {
-    width: 20px;
-    height: 20px;
-    border: 1px solid var(--sky-base);
-    border-radius: 50%;
-    background: white;
-  }
-  :global([aria-pressed="true"]) .radio,
-  :global([data-state="checked"]) .radio {
-    border: 6px solid var(--primary-base);
-  }
-  @media (max-width: 760px) {
-    .choice-card {
-      min-height: 160px;
-      padding: 20px;
-    }
-    .text {
-      font-size: 18px;
-    }
-  }
-</style>

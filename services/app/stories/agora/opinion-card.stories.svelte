@@ -41,7 +41,7 @@
       value: selected,
       set,
     }: FixtureStateView<OpinionVoteChoice | undefined>)}
-      <div {dir} style="max-width: 800px">
+      <div {dir} class="w-full max-w-200">
         <OpinionCard
           {...args}
           {selected}
